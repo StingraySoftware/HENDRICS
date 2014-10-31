@@ -155,8 +155,8 @@ def mp_cross_gtis(gti_list, bin_time=1):
     if ninst == 1:
         return gti_list[0]
 
-    start = np.min([gti_list[k][0][0] for k in gti_list])
-    stop = np.max([gti_list[k][-1][-1] for k in gti_list])
+    start = np.min([g[0][0] for g in gti_list])
+    stop = np.max([g[-1][-1] for g in gti_list])
 
     times = np.arange(start, stop, 1, dtype=np.longdouble)
 
