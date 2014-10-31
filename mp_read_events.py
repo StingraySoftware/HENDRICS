@@ -1,5 +1,5 @@
 from __future__ import division, print_function
-from mp_base import *
+from mp_base import mp_root, mp_read_header_key, mp_ref_mjd
 
 
 def mp_load_gtis(fits_file, gtistring=None):
@@ -137,4 +137,3 @@ if __name__ == "__main__":
 
     for f in files:
         mp_treat_event_file(f)
-
