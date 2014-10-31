@@ -1,6 +1,6 @@
 from __future__ import division, print_function
 import numpy as np
-from mp_base import *
+from mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis
 import cPickle as pickle
 
 
@@ -37,9 +37,75 @@ def mp_lcurve(event_list,
     return times, lc.astype(np.float)
 
 
+def mp_join_lightcurves(lcfilelist):
+    # TODO: Complete this!
+    lcdatas = []
+    for lfc in lcfilelist:
+        print("Loading file %s..." % lfc)
+        lcdata = pickle.load(open(lfc))
+        print("Done.")
+        lcdatas.append(lcdata)
+
+    # --------------- Check consistency of data --------------
+    lcdts = [lcdata['dt'] for lcdata in lcdatas]
+    # Find unique elements. If multiple bin times are used, throw an exception
+    lcdts = list(set(lcdts))
+    if len(lcdts) > 1:
+        raise Exception('Light curves must have same dt for scrunching')
+
+    instrs = [lcdata['Instr'] for lcdata in lcdatas]
+    # Find unique elements. A lightcurve will be produced for each instrument
+    instrs = list(set(instrs))
+    outlcs = {}
+    for instr in instrs:
+        outlcs[instr] = {'time': [], 'lc': [], 'dt': lcdts[0], 'gti': []}
+    # -------------------------------------------------------
+
+    for lcdata in lcdatas:
+        time = lcdata['time']
+        lc = lcdata['lc']
+        gti = lcdata['gti']
+        instr = lcdata['Instr']
+        outlcs[instr]['time'].extend(time)
+        outlcs[instr]['lc'].extend(lc)
+        outlcs[instr]['gti'].extend(gti)
+
+    return outlcs
+
+
+def mp_scrunch_lightcurves(lcfilelist, outfile='out_lc.p'):
+    lcdata = mp_join_lightcurves(lcfilelist)
+    instrs = lcdata.keys()
+    gti_lists = [lcdata[inst]['gti'] for inst in instrs]
+    gti = mp_cross_gtis(gti_lists)
+    # Determine limits
+    time0 = lcdata[instrs[0]]['time']
+    mask = mp_create_gti_mask(time0, gti)
+    time0 = time0[mask]
+    lc0 = lcdata[instrs[0]]['lc']
+    lc0 = lc0[mask]
+    for inst in instrs[1:]:
+        time1 = lcdata[inst]['time']
+        mask = mp_create_gti_mask(time1, gti)
+        assert np.all(time0 == time1), \
+            'Something is not right with gti filtering'
+        lc = lcdata[inst['lc']]
+        lc0 += lc
+
+    out = {}
+    out['lc'] = lc0
+    out['time'] = time0
+    out['dt'] = lcdata[instrs[0]]['dt']
+
+    print('Saving scrunched light curve to %s' % outfile)
+    pickle.dump(out, open(outfile, 'wb'))
+
+    return time0, lc0, gti
+
+
 def mp_filter_lc_gtis(time, lc, gti, safe_interval=None):
-    mask, newgtis = create_gti_mask(time, gti, return_new_gtis=True,
-                                    safe_interval=safe_interval)
+    mask, newgtis = mp_create_gti_mask(time, gti, return_new_gtis=True,
+                                       safe_interval=safe_interval)
 
     nomask = np.logical_not(mask)
 
@@ -67,8 +133,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     bintime = args.bintime
+
     if bintime < 0:
         bintime = 2 ** (-bintime)
+
+    bintime = np.longdouble(bintime)
+
     infiles = args.files
     safe_interval = args.safe_interval
     pi_interval = np.array(args.pi_interval)
@@ -87,6 +157,10 @@ if __name__ == "__main__":
         instr = evdata['Instr']
         gtis = evdata['GTI']
         mjdref = evdata['MJDref']
+
+        # make tstart and tstop multiples of bin times since MJDref
+        tstart = np.ceil(tstart / bintime, dtype=np.longdouble) * bintime
+        tstop = np.floor(tstop / bintime, dtype=np.longdouble) * bintime
 
         if np.all(pi_interval > 0):
             pis = evdata['PI']
@@ -112,9 +186,9 @@ if __name__ == "__main__":
             out['Emin'] = e_interval[0]
             out['Emax'] = e_interval[0]
 
-        time, lc = mp_lcurve(events, bintime, start_time=0,
-                             stop_time=tstop - tstart)
-        time, lc, newgtis = mp_filter_lc_gtis(time, lc, gtis - tstart,
+        time, lc = mp_lcurve(events, bintime, start_time=tstart,
+                             stop_time=tstop)
+        time, lc, newgtis = mp_filter_lc_gtis(time, lc, gtis,
                                               safe_interval=safe_interval)
 
         out['lc'] = lc
@@ -128,4 +202,3 @@ if __name__ == "__main__":
         outfile = mp_root(f) + tag + '_lc.p'
         print('Saving light curve to %s' % outfile)
         pickle.dump(out, open(outfile, 'wb'))
-
