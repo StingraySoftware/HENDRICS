@@ -70,7 +70,7 @@ def mp_root(filename):
     return filename
 
 
-def contiguous_regions(condition):
+def mp_contiguous_regions(condition):
     """Finds contiguous True regions of the boolean array "condition". Returns
         a 2D array where the first column is the start index of the region and
         the second column is the end index.
@@ -94,8 +94,8 @@ def contiguous_regions(condition):
     return idx
 
 
-def create_gti_mask(time, gtis, verbose=0, debug=False,
-                    safe_interval=0, min_length=0, return_new_gtis=False):
+def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
+                       safe_interval=0, min_length=0, return_new_gtis=False):
     import collections
     '''Creates GTI mask under the assumption that no overlaps are present
         between GTIs
@@ -129,3 +129,43 @@ def create_gti_mask(time, gtis, verbose=0, debug=False,
     if return_new_gtis:
         res = [res, newgtis[newgtimask]]
     return res
+
+
+def mp_create_gti_from_condition(time, condition, verbose=False,
+                                 safe_interval=0):
+    import collections
+    idxs = mp_contiguous_regions(condition)
+    if not isinstance(safe_interval, collections.Iterable):
+        safe_interval = [safe_interval, safe_interval]
+
+    gtis = []
+    for idx in idxs:
+        if verbose:
+            print (idx)
+        t0 = time[idx[0]] + safe_interval[0]
+        t1 = time[min(idx[1], len(time) - 1)] - safe_interval[1]
+        if t1 - t0 < 0:
+            continue
+        gtis.append([t0, t1])
+    return gtis
+
+
+def mp_cross_gtis(gti_list, bin_time=1):
+    ninst = len(gti_list)
+    if ninst == 1:
+        return gti_list[0]
+
+    start = np.min([gti_list[k][0][0] for k in gti_list])
+    stop = np.max([gti_list[k][-1][-1] for k in gti_list])
+
+    times = np.arange(start, stop, 1, dtype=np.longdouble)
+
+    mask0 = mp_create_gti_mask(times, gti_list[0], verbose=0)
+
+    for gti in gti_list:
+        mask = mp_create_gti_mask(times, gti, verbose=0)
+        mask0 = np.logical_and(mask0, mask)
+
+    gtis = mp_create_gti_from_condition(times, mask0)
+
+    return gtis
