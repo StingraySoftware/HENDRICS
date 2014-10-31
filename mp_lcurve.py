@@ -37,8 +37,7 @@ def mp_lcurve(event_list,
     return times, lc.astype(np.float)
 
 
-def mp_join_lightcurves(lcfilelist):
-    # TODO: Complete this!
+def mp_join_lightcurves(lcfilelist, outfile='out_lc.p'):
     lcdatas = []
     for lfc in lcfilelist:
         print("Loading file %s..." % lfc)
@@ -57,8 +56,14 @@ def mp_join_lightcurves(lcfilelist):
     # Find unique elements. A lightcurve will be produced for each instrument
     instrs = list(set(instrs))
     outlcs = {}
+    times = {}
+    lcs = {}
+    gtis = {}
     for instr in instrs:
-        outlcs[instr] = {'time': [], 'lc': [], 'dt': lcdts[0], 'gti': []}
+        outlcs[instr] = {'dt': lcdts[0]}
+        times[instr] = []
+        lcs[instr] = []
+        gtis[instr] = []
     # -------------------------------------------------------
 
     for lcdata in lcdatas:
@@ -66,14 +71,26 @@ def mp_join_lightcurves(lcfilelist):
         lc = lcdata['lc']
         gti = lcdata['gti']
         instr = lcdata['Instr']
-        outlcs[instr]['time'].extend(time)
-        outlcs[instr]['lc'].extend(lc)
-        outlcs[instr]['gti'].extend(gti)
+        times[instr].extend(time)
+        lcs[instr].extend(lc)
+        gtis[instr].extend(gti)
+
+    for instr in instrs:
+        outlcs[instr]['time'] = np.array(times[instr])
+        outlcs[instr]['lc'] = np.array(lcs[instr])
+        outlcs[instr]['gti'] = np.array(gtis[instr])
+
+    if outfile is not None:
+        print('Saving joined light curve to %s' % outfile)
+        pickle.dump(outlcs, open(outfile, 'wb'))
 
     return outlcs
 
 
-def mp_scrunch_lightcurves(lcfilelist, outfile='out_lc.p'):
+def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc.p'):
+    '''Create a single light curve from input light curves,
+    regardless of the instrument'''
+    import cPickle as pickle
     lcdata = mp_join_lightcurves(lcfilelist)
     instrs = lcdata.keys()
     gti_lists = [lcdata[inst]['gti'] for inst in instrs]
@@ -81,16 +98,19 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_lc.p'):
     # Determine limits
     time0 = lcdata[instrs[0]]['time']
     mask = mp_create_gti_mask(time0, gti)
+
     time0 = time0[mask]
     lc0 = lcdata[instrs[0]]['lc']
     lc0 = lc0[mask]
+
     for inst in instrs[1:]:
         time1 = lcdata[inst]['time']
         mask = mp_create_gti_mask(time1, gti)
+        time1 = time1[mask]
         assert np.all(time0 == time1), \
             'Something is not right with gti filtering'
-        lc = lcdata[inst['lc']]
-        lc0 += lc
+        lc = lcdata[inst]['lc']
+        lc0 += lc[mask]
 
     out = {}
     out['lc'] = lc0
@@ -130,6 +150,10 @@ if __name__ == "__main__":
     parser.add_argument('-e', "--e_interval", type=float, default=[-1, -1],
                         nargs=2,
                         help="Energy interval used for filtering")
+    parser.add_argument("-s", "--scrunch",
+                        help="Create scrunched light curve",
+                        default=False,
+                        action="store_true")
 
     args = parser.parse_args()
     bintime = args.bintime
@@ -146,6 +170,7 @@ if __name__ == "__main__":
 
     tag = ''
 
+    outfiles = []
     for f in infiles:
         print("Loading file %s..." % f)
         evdata = pickle.load(open(f))
@@ -202,3 +227,7 @@ if __name__ == "__main__":
         outfile = mp_root(f) + tag + '_lc.p'
         print('Saving light curve to %s' % outfile)
         pickle.dump(out, open(outfile, 'wb'))
+        outfiles.append(outfile)
+
+    if args.scrunch:
+        mp_scrunch_lightcurves(outfiles)
