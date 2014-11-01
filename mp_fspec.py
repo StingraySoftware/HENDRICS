@@ -1,5 +1,5 @@
 from __future__ import division, print_function
-from mp_base import mp_root, mp_cross_gtis
+from mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
 from mp_lcurve import mp_join_lightcurves, mp_scrunch_lightcurves
 import numpy as np
 
@@ -25,6 +25,7 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
     '''
 
     nph = sum(lc)
+    print (nph)
     freqs, ft = mp_fft(lc, bintime)
     # I'm pretty sure there is a faster way to do this.
     if nph != 0:
@@ -92,6 +93,25 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True):
         return freqs, cpds
     else:
         return cpds
+
+
+def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
+    '''Calculates the PDS of a light curve with constant binning time.'''
+    start_times = \
+        mp_decide_spectrum_intervals(gti, fftlen, verbose=False)
+
+    cpds = 0
+    npds = len(start_times)
+
+    for t in start_times:
+        good = np.logical_and(time >= t, time < t + fftlen)
+        l1 = lc1[good]
+        l2 = lc2[good]
+        f, p = mp_leahy_cpds(l1, l2, bintime)
+        cpds += p
+    cpds /= npds
+    ecpds = cpds / np.sqrt(npds)
+    return f, cpds, ecpds, npds
 
 
 def rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
@@ -162,7 +182,62 @@ def mp_calc_fspec(files, fftlen,
                        'fftlen': fftlen, 'Instr': instr, 'freq': freq}
             pickle.dump(outdata, open(root + '_pds.p', 'wb'))
 
-    # TODO: Implement CPDS
+    del freq, pds, epds, lc, time, gti, lcdata
+    if not calc_cpds:
+        return
+    print('Beware! For cpds and derivatives, I assume that the files are')
+    print('ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...')
+    files1 = files[:-1:2]
+    files2 = files[1::2]
+
+    assert len(files1) == len(files2), 'An even number of files is needed'
+
+    for i_f, f in enumerate(files1):
+        f1, f2 = f, files2[i_f]
+        print("Loading file %s..." % f1)
+        lcdata1 = pickle.load(open(f1))
+        print("Loading file %s..." % f2)
+        lcdata2 = pickle.load(open(f2))
+
+        time1 = lcdata1['time']
+        lc1 = lcdata1['lc']
+        dt1 = lcdata1['dt']
+        gti1 = lcdata1['gti']
+        instr1 = lcdata1['Instr']
+
+        time2 = lcdata2['time']
+        lc2 = lcdata2['lc']
+        dt2 = lcdata2['dt']
+        gti2 = lcdata2['gti']
+        instr2 = lcdata2['Instr']
+
+        assert instr1 != instr2, 'Did you check the ordering of files? ' + \
+            "These are both " + instr1
+
+        assert dt1 == dt2, 'Light curves are sampled differently'
+
+        gti = mp_cross_gtis([gti1, gti2])
+
+        mask1 = mp_create_gti_mask(time1, gti)
+        mask2 = mp_create_gti_mask(time2, gti)
+        time1 = time1[mask1]
+        time2 = time2[mask2]
+
+        assert np.all(time1 == time2), "Something's not right in GTI filtering"
+        time = time1
+        del time2
+
+        if bintime <= dt:
+            bintime = dt
+
+        freq, cpds, ecpds, ncpds = \
+            mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti)
+        outname = "cpds_%d.p" % i_f
+        outdata = {'time': gti[0][0], 'cpds': cpds, 'ncpds': ncpds,
+                   'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
+                   'freq': freq}
+        pickle.dump(outdata, open(outname, 'wb'))
+
     # TODO: Implement cospectrum
     # TODO: Implement lag
 
@@ -197,10 +272,11 @@ if __name__ == '__main__':
             do_cpds = True
         elif k == 'cos' or k == 'cospectrum':
             do_cos = True
+            do_cpds = True
         elif k == 'lag':
             do_lag = True
+            do_cpds = True
 
-    print(kinds)
     mp_calc_fspec(args.files, fftlen,
                   calc_pds=do_pds,
                   calc_cpds=do_cpds,
