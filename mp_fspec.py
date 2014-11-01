@@ -4,17 +4,17 @@ from mp_lcurve import mp_join_lightcurves, mp_scrunch_lightcurves
 import numpy as np
 
 
-def mp_fft(lc, bin_time):
+def mp_fft(lc, bintime):
     '''A wrapper for the fft function. Just numpy for now'''
     nbin = len(lc)
 
     ft = np.fft.fft(lc)
-    freqs = np.fft.fftfreq(nbin, bin_time)
+    freqs = np.fft.fftfreq(nbin, bintime)
 
-    return ft, freqs
+    return freqs, ft
 
 
-def mp_leahy_pds(lc, bin_time, return_freq=True):
+def mp_leahy_pds(lc, bintime, return_freq=True):
     '''
     Calculates the Power Density Spectrum \'a la Leahy (1983), given the
     lightcurve and its bin time.
@@ -26,7 +26,6 @@ def mp_leahy_pds(lc, bin_time, return_freq=True):
 
     nph = sum(lc)
     freqs, ft = mp_fft(lc, bintime)
-    #    print nph
     # I'm pretty sure there is a faster way to do this.
     if nph != 0:
         pds = np.absolute(ft.conjugate() * ft) * 2. / nph
@@ -43,7 +42,25 @@ def mp_leahy_pds(lc, bin_time, return_freq=True):
         return pds
 
 
-def mp_leahy_cpds(lc1, lc2, bin_time, return_freq=True):
+def mp_welch_pds(time, lc, bintime, fftlen, gti):
+    '''Calculates the PDS of a light curve with constant binning time.'''
+    start_times = \
+        mp_decide_spectrum_intervals(gti, fftlen, verbose=False)
+
+    pds = 0
+    npds = len(start_times)
+
+    for t in start_times:
+        good = np.logical_and(time >= t, time < t + fftlen)
+        l = lc[good]
+        f, p = mp_leahy_pds(l, bintime)
+        pds += p
+    pds /= npds
+    epds = pds / np.sqrt(npds)
+    return f, pds, epds, npds
+
+
+def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True):
     '''
     Calculates the Cross Power Density Spectrum, normalized similarly to the
     PDS in Leahy (1983), given the lightcurve and its bin time.
@@ -125,19 +142,26 @@ def mp_calc_fspec(files, fftlen,
     '''Calculates the frequency spectra:
         the PDS, the CPDS, the cospectrum, ...'''
 
-#    if calc_pds:
-#        for f in files:
-#        start_times = \
-#            mp_decide_spectrum_intervals(gti, fftlen, verbose=False)
-#
-#        for t in start_times:
-#        for inst in instrs:
-#            time = lcdata[inst]['time']
-#            lc = lcdata[inst]['lc']
-#            mp_leahy_pds()
-#
+    if calc_pds:
+        for lcf in files:
+            print("Loading file %s..." % lcf)
+            lcdata = pickle.load(open(lcf))
+            time = lcdata['time']
+            lc = lcdata['lc']
+            dt = lcdata['dt']
+            gti = lcdata['gti']
+            instr = lcdata['Instr']
 
-    # TODO: Implement PDS
+            if bintime <= dt:
+                bintime = dt
+
+            freq, pds, epds, npds = \
+                mp_welch_pds(time, lc, bintime, fftlen, gti)
+            root = mp_root(lcf)
+            outdata = {'time': time[0], 'pds': pds, 'npds': npds,
+                       'fftlen': fftlen, 'Instr': instr, 'freq': freq}
+            pickle.dump(outdata, open(root + '_pds.p', 'wb'))
+
     # TODO: Implement CPDS
     # TODO: Implement cospectrum
     # TODO: Implement lag
@@ -156,7 +180,6 @@ if __name__ == '__main__':
                         help='Spectra to calculate, as comma-separated list' +
                         ' (Accepted: PDS, CPDS, cos[pectrum], lag, all;' +
                         ' (Default: PDS, CPDS, cos[pectrum])')
-
     parser.add_argument("-o", "--outroot", type=str, default="out",
                         help='Root of output file names')
 
@@ -166,7 +189,7 @@ if __name__ == '__main__':
     fftlen = args.fftlen
 
     do_cpds = do_pds = do_cos = do_lag = False
-    kinds = args.kind.split()
+    kinds = args.kind.split(',')
     for k in kinds:
         if k == 'PDS':
             do_pds = True
@@ -177,6 +200,7 @@ if __name__ == '__main__':
         elif k == 'lag':
             do_lag = True
 
+    print(kinds)
     mp_calc_fspec(args.files, fftlen,
                   calc_pds=do_pds,
                   calc_cpds=do_cpds,
