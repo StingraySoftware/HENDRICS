@@ -169,3 +169,36 @@ def mp_cross_gtis(gti_list, bin_time=1):
     gtis = mp_create_gti_from_condition(times, mask0)
 
     return gtis
+
+
+def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
+    '''Rebins any pair of variables. Might be time and counts, or freq and pds.
+    Also possible to rebin the error on y.
+        '''
+    if factor <= 1:
+        res = [x, y]
+        if yerr is not None:
+            res.append(yerr)
+        return res
+
+    nbin = len(y)
+
+    arr_dtype = y.dtype
+    new_nbins = np.int(nbin / factor)
+
+    y_resh = np.reshape(y[:new_nbins * factor], (new_nbins, factor))
+    x_resh = np.reshape(x[:new_nbins * factor], (new_nbins, factor))
+
+    new_y = np.sum(y_resh, axis=1)
+    new_x = np.sum(x_resh, axis=1) / factor
+
+    if yerr is not None:
+        yerr_resh = np.reshape(yerr[:new_nbins * factor], (new_nbins, factor))
+        new_yerr = np.sum(yerr_resh, axis=1)
+    else:
+        new_yerr = np.zeros(len(new_x), dtype=arr_dtype)
+
+    if normalize:
+        return new_x, new_y / factor, new_yerr / factor
+    else:
+        return new_x, new_y, new_yerr
