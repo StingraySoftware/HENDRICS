@@ -159,8 +159,7 @@ if __name__ == "__main__":
     bintime = args.bintime
 
     if bintime < 0:
-        bintime = 2 ** (-bintime)
-
+        bintime = 2 ** (bintime)
     bintime = np.longdouble(bintime)
 
     infiles = args.files
