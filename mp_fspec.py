@@ -1,6 +1,6 @@
 from __future__ import division, print_function
-from mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask, mp_const_rebin
-from mp_lcurve import mp_join_lightcurves, mp_scrunch_lightcurves
+from mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
+from mp_rebin import mp_const_rebin
 import numpy as np
 
 
@@ -182,7 +182,7 @@ def mp_calc_pds(lcfile, fftlen,
                                      epds[1:])
 
     root = mp_root(lcfile)
-    outdata = {'time': time[0], 'pds': pds, 'npds': npds,
+    outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
                'rebin': pdsrebin}
     pickle.dump(outdata, open(root + '_pds.p', 'wb'))
@@ -248,7 +248,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
                                        ecpds[1:])
 
-    outdata = {'time': gti[0][0], 'cpds': cpds, 'ncpds': ncpds,
+    outdata = {'time': gti[0][0], 'cpds': cpds, 'ecpds': ecpds, 'ncpds': ncpds,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
                'freq': freq, 'rebin': pdsrebin}
     pickle.dump(outdata, open(outname, 'wb'))
@@ -261,7 +261,8 @@ def mp_calc_fspec(files, fftlen,
                   calc_lags=True,
                   save_dyn=False,
                   bintime=1,
-                  pdsrebin=1):
+                  pdsrebin=1,
+                  outroot='cpds'):
     '''Calculates the frequency spectra:
         the PDS, the CPDS, the cospectrum, ...'''
     # TODO: Implement cospectrum
@@ -293,7 +294,7 @@ def mp_calc_fspec(files, fftlen,
                      save_dyn=save_dyn,
                      bintime=bintime,
                      pdsrebin=pdsrebin,
-                     outname=outdir + "/cpds_%d.p" % i_f)
+                     outname=outdir + "/" + outroot + "_%d.p" % i_f)
 
 
 if __name__ == '__main__':
@@ -303,20 +304,24 @@ if __name__ == '__main__':
 
     parser.add_argument("files", help="List of light curve files", nargs='+')
     parser.add_argument("-b", "--bintime", type=float, default=1/4096,
-                        help="Bin time; if negative, negative power of 2")
+                        help="Light curve bin time; if negative, interpreted" +
+                        " as negative power of 2")
+    parser.add_argument("-r", "--rebin", type=int, default=1,
+                        help="(C)PDS rebinning to apply")
     parser.add_argument("-f", "--fftlen", type=float, default=512,
                         help="Length of FFTs")
     parser.add_argument("-k", "--kind", type=str, default="PDS,CPDS,cos",
                         help='Spectra to calculate, as comma-separated list' +
                         ' (Accepted: PDS, CPDS;' +
                         ' Default: PDS, CPDS)')
-    parser.add_argument("-o", "--outroot", type=str, default="out",
-                        help='Root of output file names')
+    parser.add_argument("-o", "--outroot", type=str, default="cpds",
+                        help='Root of output file names for CPDS only')
 
     args = parser.parse_args()
 
     bintime = args.bintime
     fftlen = args.fftlen
+    pdsrebin = args.rebin
 
     do_cpds = do_pds = do_cos = do_lag = False
     kinds = args.kind.split(',')
@@ -338,4 +343,6 @@ if __name__ == '__main__':
                   calc_cospectrum=do_cos,
                   calc_lags=do_lag,
                   save_dyn=False,
-                  bintime=bintime)
+                  bintime=bintime,
+                  pdsrebin=pdsrebin,
+                  outroot=args.outroot)
