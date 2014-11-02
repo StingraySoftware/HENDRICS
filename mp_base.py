@@ -171,34 +171,21 @@ def mp_cross_gtis(gti_list, bin_time=1):
     return gtis
 
 
-def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
-    '''Rebins any pair of variables. Might be time and counts, or freq and pds.
-    Also possible to rebin the error on y.
-        '''
-    if factor <= 1:
-        res = [x, y]
-        if yerr is not None:
-            res.append(yerr)
-        return res
+def mp_get_file_type(fname):
+    import cPickle as pickle
+    contents = pickle.load(open(fname))
+    '''Gets file type'''
+    # TODO: other file formats
 
-    nbin = len(y)
-
-    arr_dtype = y.dtype
-    new_nbins = np.int(nbin / factor)
-
-    y_resh = np.reshape(y[:new_nbins * factor], (new_nbins, factor))
-    x_resh = np.reshape(x[:new_nbins * factor], (new_nbins, factor))
-
-    new_y = np.sum(y_resh, axis=1)
-    new_x = np.sum(x_resh, axis=1) / factor
-
-    if yerr is not None:
-        yerr_resh = np.reshape(yerr[:new_nbins * factor], (new_nbins, factor))
-        new_yerr = np.sum(yerr_resh, axis=1)
-    else:
-        new_yerr = np.zeros(len(new_x), dtype=arr_dtype)
-
-    if normalize:
-        return new_x, new_y / factor, new_yerr / factor
-    else:
-        return new_x, new_y, new_yerr
+    keys = contents.keys()
+    if 'lc' in keys:
+        ftype = 'lc'
+    elif 'cpds' in keys:
+        ftype = 'cpds'
+        if 'fhi' in keys:
+            ftype = 'rebcpds'
+    elif 'pds' in keys:
+        ftype = 'pds'
+        if 'fhi' in keys:
+            ftype = 'rebpds'
+    return ftype, contents
