@@ -43,7 +43,7 @@ Most of these tools have help information that can be accessed by typing the nam
 $ python ../mp_calibrate.py -h
 usage: mp_calibrate.py [-h] [-r RMF] [-o] files [files ...]
 
-Calibrate event light curves by associating the correct energy to each PI
+Calibrates clean event files by associating the correct energy to each PI
 channel. Uses either a specified rmf file or (for NuSTAR only) an rmf file
 from the CALDB
 
