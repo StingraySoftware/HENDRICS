@@ -51,7 +51,7 @@ For I/O, I mostly use native Python `pickle` format. This is _very_ slow (It mig
 ### 1. Loading event lists
 Starting from cleaned event files, we will first save them in `MaLTPyNT` format (a pickle file basically). For example, I'm starting from two event lists called `002A.evt` and `002B.evt`, containing the cleaned event lists from a source observed with NuSTAR's `FPMA` and `FPMB` respectively.
 ```
-$ python mp_read_events.py 002[AB].evt
+$ python mp_read_events.py 002A.evt 002B.evt
 Opening 002A.evt
 Saving events and info to 002A_ev.p
 Opening 002B.evt
@@ -62,7 +62,7 @@ This will create new files with a `_ev.p` extension, containing the event times 
 ### 2. Calibrating event lists
 Use `mp_calibrate`. You can either specify an `rmf` file with the `-r` option, or just let it look for it in the NuSTAR `CALDB` (the environment variable has to be defined!)
 ```
-$ python mp_calibrate.py 002[AB]_ev.p
+$ python mp_calibrate.py 002A_ev.p 002B_ev.p
 Loading file 002A_ev.p...
 Done.
 ###############ATTENTION!!#####################
@@ -86,7 +86,7 @@ Choose carefully the binning time (option `-b`). Since what we are interested in
 Since we have calibrated the event files, we can also choose an event energy range, here between 3 and 30 keV.
 Another thing that is useful in NuSTAR data is taking some time intervals out from the start and the end of each GTI. This is mostly to eliminate an increase of background level that often appears at GTI borders and produces very nasty power spectral shapes. Here I filter 100 s from the start and 300 s from the end of each GTI.
 ```
-$ python mp_lcurve.py 002[AB]_ev_calib.p -b -8 -e 3 30 --safe_interval 100 300
+$ python mp_lcurve.py 002A_ev_calib.p 002B_ev_calib.p -b -8 -e 3 30 --safe_interval 100 300
 Loading file 002A_ev_calib.p...
 Done.
 Saving light curve to 002A_3-30_lc.p
@@ -101,7 +101,7 @@ python tests/test_lc.py 002A_3-30_lc.p
 ### 4. Joining, summing and ``scrunching'' light curves
 If we want a single light curve from multiple ones, either summing multiple instruments or multiple energy or time ranges, we can use `mp_scrunch_lc`:
 ```
-$ python mp_scrunch_lc.py 002[AB]_3-30_lc.p -o 002scrunch_3-30_lc.p
+$ python mp_scrunch_lc.py 002A_3-30_lc.p 002B_3-30_lc.p -o 002scrunch_3-30_lc.p
 Loading file 002A_3-30_lc.p...
 Done.
 Loading file 002B_3-30_lc.p...
@@ -140,4 +140,5 @@ $ python mp_save_as_xspec.py cpds_002_3-30_0_rebin1.2.p
 Saving to cpds_002_3-30_0_rebin1.2_xsp.qdp
 $ flx2xsp cpds_002_3-30_0_rebin1.2_xsp.qdp cospectrum.pha cospectrum.rsp
 ```
+When reading the CPDS, it is automatically converted to cospectrum.
 Then, use `cospectrum.pha` as a spectrum file in XSpec and cospectrum.rsp as its response. Enjoy!
