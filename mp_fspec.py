@@ -11,7 +11,7 @@ def mp_fft(lc, bintime):
     ft = np.fft.fft(lc)
     freqs = np.fft.fftfreq(nbin, bintime)
 
-    return freqs, ft
+    return freqs.astype(np.double), ft
 
 
 def mp_leahy_pds(lc, bintime, return_freq=True):
