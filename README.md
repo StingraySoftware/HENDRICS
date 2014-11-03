@@ -13,11 +13,7 @@ Put the python codes in the directory where you are analyzing the data. That's a
 ```
 $ python mp_read_events.py filename.evt
 ```
-Otherwise, you can put them in a directory on your PATH, `chmod +x` them and then just call them by name
-```
-$ mp_read_events.py filename.evt
-```
-I will hereafter use the first style, as it suits better the current evolutionary state of the code (easier to handle new dependencies that might be needed).
+I will make these codes a python package that can be installed properly, eventually.
 
 ## Tutorial
 ### 0. Preliminary info
