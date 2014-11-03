@@ -7,15 +7,17 @@ def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
     '''Rebins any pair of variables. Might be time and counts, or freq and pds.
     Also possible to rebin the error on y.
         '''
+    arr_dtype = y.dtype
     if factor <= 1:
         res = [x, y]
         if yerr is not None:
             res.append(yerr)
+        else:
+            res.append(np.zeros(len(y), dtype=arr_dtype))
         return res
 
     nbin = len(y)
 
-    arr_dtype = y.dtype
     new_nbins = np.int(nbin / factor)
 
     y_resh = np.reshape(y[:new_nbins * factor], (new_nbins, factor))
@@ -71,6 +73,7 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
 # Now the clever part: building a histogram of frequencies
     pds_dtype = pds.dtype
     pdse_dtype = pds_err.dtype
+
     bins = np.digitize(freq.astype(np.double), flo.astype(np.double))
     newpds = np.zeros(nmax, dtype=pds_dtype) - 1
     newpds_err = np.zeros(nmax, dtype=pdse_dtype)
@@ -115,6 +118,7 @@ def mp_rebin_file(filename, rebin):
         x = contents['freq']
         y = contents[ftype]
         ye = contents['e' + ftype]
+
         # if rebin is integer, use constant rebinning. Otherwise, geometrical
         if rebin == float(int(rebin)):
             print ('Applying a constant rebinning')
