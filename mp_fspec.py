@@ -16,8 +16,8 @@ def mp_fft(lc, bintime):
 
 def mp_leahy_pds(lc, bintime, return_freq=True):
     '''
-    Calculates the Power Density Spectrum \'a la Leahy (1983), given the
-    lightcurve and its bin time.
+    Calculates the Power Density Spectrum \'a la Leahy+1983, ApJ 266, 160,
+    given the lightcurve and its bin time.
     Assumes no gaps are present! Beware!
     Keyword arguments:
         return_freq: (bool, default True) Return the frequencies corresponding
@@ -63,7 +63,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti):
 def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True):
     '''
     Calculates the Cross Power Density Spectrum, normalized similarly to the
-    PDS in Leahy (1983), given the lightcurve and its bin time.
+    PDS in Leahy+1983, ApJ 266, 160., given the lightcurve and its bin time.
     Assumes no gaps are present! Beware!
     Keyword arguments:
         return_freq: (bool, default True) Return the frequencies corresponding
@@ -121,7 +121,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
         l1 = lc1[good]
         l2 = lc2[good]
         if np.sum(l1) == 0 or np.sum(l2) == 0:
-            print('Interval starting at time %.7f is bad. Check GTIs' % t)
+            print ('Interval starting at time %.7f is bad. Check GTIs' % t)
             npds -= 1
             continue
         f, p, pe = mp_leahy_cpds(l1, l2, bintime)
@@ -133,9 +133,10 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
     return f, cpds, ecpds, npds
 
 
-def rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
+def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
     '''
-    Normalize a Leahy PDS with RMS normalization.
+    Normalize a Leahy PDS with RMS normalization
+    (Belloni & Hasinger 1990, A&A, 230, 103; Miyamoto+1991, ApJ, 383, 784).
     Inputs:
         pds:           the Leahy-normalized PDS
         pds_err:       the uncertainties on the PDS values
@@ -160,7 +161,7 @@ def mp_decide_spectrum_intervals(gtis, fftlen, verbose=False):
     for g in gtis:
         if g[1] - g[0] < fftlen:
             if verbose:
-                print("Too short. Skipping.")
+                print ("Too short. Skipping.")
             continue
         newtimes = np.arange(g[0], g[1] - fftlen, np.longdouble(fftlen),
                              dtype=np.longdouble)
@@ -173,11 +174,12 @@ def mp_decide_spectrum_intervals(gtis, fftlen, verbose=False):
 def mp_calc_pds(lcfile, fftlen,
                 save_dyn=False,
                 bintime=1,
-                pdsrebin=1):
+                pdsrebin=1,
+                normalization='Leahy'):
     '''Calculates the PDS from an input light curve file'''
     # TODO:Implement save_dyn
 
-    print("Loading file %s..." % lcfile)
+    print ("Loading file %s..." % lcfile)
     lcdata = pickle.load(open(lcfile))
     time = lcdata['time']
     lc = lcdata['lc']
@@ -190,7 +192,7 @@ def mp_calc_pds(lcfile, fftlen,
     else:
         lcrebin = np.rint(bintime / dt)
         bintime = lcrebin * dt
-        print("Rebinning lc by a factor %d" % lcrebin)
+        print ("Rebinning lc by a factor %d" % lcrebin)
         time, lc, dum = \
             mp_const_rebin(time, lc, lcrebin, normalize=False)
 
@@ -200,12 +202,21 @@ def mp_calc_pds(lcfile, fftlen,
     freq, pds, epds = mp_const_rebin(freq[1:], pds[1:], pdsrebin,
                                      epds[1:])
 
+    if normalization == 'rms':
+        print ('Applying %s normalization' % normalization)
+        mask = mp_create_gti_mask(time, gti)
+        ctrate = np.mean(lc[mask]) / bintime
+        # TODO: allow to specify background ctrate
+        pds, epds = \
+            mp_rms_normalize_pds(pds, epds,
+                                 source_ctrate=ctrate,
+                                 back_ctrate=0)
     root = mp_root(lcfile)
     outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
-               'rebin': pdsrebin}
+               'rebin': pdsrebin, 'norm': normalization}
     outname = root + '_pds.p'
-    print('Saving PDS to %s' % outname)
+    print ('Saving PDS to %s' % outname)
     pickle.dump(outdata, open(outname, 'wb'))
 
 
@@ -213,14 +224,15 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                  save_dyn=False,
                  bintime=1,
                  pdsrebin=1,
-                 outname='cpds.p'):
+                 outname='cpds.p',
+                 normalization='Leahy'):
     '''Calculates the Cross Power Density Spectrum from a pair of
     input light curve files'''
     # TODO:Implement save_dyn
 
-    print("Loading file %s..." % lcfile1)
+    print ("Loading file %s..." % lcfile1)
     lcdata1 = pickle.load(open(lcfile1))
-    print("Loading file %s..." % lcfile2)
+    print ("Loading file %s..." % lcfile2)
     lcdata2 = pickle.load(open(lcfile2))
 
     time1 = lcdata1['time']
@@ -246,7 +258,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     else:
         lcrebin = np.rint(bintime / dt)
         dt = bintime
-        print("Rebinning lcs by a factor %d" % lcrebin)
+        print ("Rebinning lcs by a factor %d" % lcrebin)
         time1, lc1, dum = \
             mp_const_rebin(time1, lc1, lcrebin, normalize=False)
         time2, lc2, dum = \
@@ -272,10 +284,20 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
                                        ecpds[1:])
 
+    if normalization == 'rms':
+        print ('Applying %s normalization' % normalization)
+        mask = mp_create_gti_mask(time, gti)
+        ctrate = np.mean(np.sqrt(lc1[mask] * lc2[mask])) / bintime
+        # TODO: allow to specify background ctrate
+        cpds, ecpds = \
+            mp_rms_normalize_pds(cpds, ecpds,
+                                 source_ctrate=ctrate,
+                                 back_ctrate=0)
+
     outdata = {'time': gti[0][0], 'cpds': cpds, 'ecpds': ecpds, 'ncpds': ncpds,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
-               'freq': freq, 'rebin': pdsrebin}
-    print('Saving CPDS to %s' % outname)
+               'freq': freq, 'rebin': pdsrebin, 'norm': normalization}
+    print ('Saving CPDS to %s' % outname)
     pickle.dump(outdata, open(outname, 'wb'))
 
 
@@ -287,24 +309,32 @@ def mp_calc_fspec(files, fftlen,
                   save_dyn=False,
                   bintime=1,
                   pdsrebin=1,
-                  outroot='cpds'):
+                  outroot='cpds',
+                  normalization='Leahy'):
     '''Calculates the frequency spectra:
         the PDS, the CPDS, the cospectrum, ...'''
     # TODO: Implement cospectrum
     # TODO: Implement lags
     import os
 
+    if normalization not in ['Leahy', 'rms']:
+        print ('Beware! Unknown normalization!')
+        normalization == 'Leahy'
+
+    print ('Using %s normalization' % normalization)
+
     if calc_pds:
         for lcf in files:
             mp_calc_pds(lcf, fftlen,
                         save_dyn=save_dyn,
                         bintime=bintime,
-                        pdsrebin=pdsrebin)
+                        pdsrebin=pdsrebin,
+                        normalization=normalization)
 
     if not calc_cpds:
         return
-    print('Beware! For cpds and derivatives, I assume that the files are')
-    print('ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...')
+    print ('Beware! For cpds and derivatives, I assume that the files are')
+    print ('ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...')
     files1 = files[:-1:2]
     files2 = files[1::2]
 
@@ -320,7 +350,8 @@ def mp_calc_fspec(files, fftlen,
                      save_dyn=save_dyn,
                      bintime=bintime,
                      pdsrebin=pdsrebin,
-                     outname=outdir + "/" + outroot + "_%d.p" % i_f)
+                     outname=outdir + "/" + outroot + "_%d.p" % i_f,
+                     normalization=normalization)
 
 
 if __name__ == '__main__':
@@ -342,6 +373,10 @@ if __name__ == '__main__':
                         help='Spectra to calculate, as comma-separated list' +
                         ' (Accepted: PDS and CPDS;' +
                         ' Default: "PDS,CPDS")')
+    parser.add_argument("--norm", type=str, default="Leahy",
+                        help='Normalization to use' +
+                        ' (Accepted: Leahy and rms;' +
+                        ' Default: "Leahy")')
     parser.add_argument("-o", "--outroot", type=str, default="cpds",
                         help='Root of output file names for CPDS only')
 
@@ -350,6 +385,7 @@ if __name__ == '__main__':
     bintime = args.bintime
     fftlen = args.fftlen
     pdsrebin = args.rebin
+    normalization = args.norm
 
     do_cpds = do_pds = do_cos = do_lag = False
     kinds = args.kind.split(',')
@@ -373,4 +409,5 @@ if __name__ == '__main__':
                   save_dyn=False,
                   bintime=bintime,
                   pdsrebin=pdsrebin,
-                  outroot=args.outroot)
+                  outroot=args.outroot,
+                  normalization=normalization)
