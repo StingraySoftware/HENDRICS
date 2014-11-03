@@ -31,7 +31,7 @@ This software has a modular structure. One starts from cleaned event files (such
 
 4. (optional) **summed light curves** if we want to join events from multiple instruments, or just from different observing times
 
-5. **power spectrum** and/or **cross spectrum**
+5. **power spectrum** and/or **cross spectrum** (hereafter the ``frequency spectra'')
 
 6. **rebinning** of frequency spectra 
 
