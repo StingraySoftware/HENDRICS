@@ -17,6 +17,7 @@ $ mp_read_events.py filename.evt
 I will hereafter use the first style, as it suits better the current evolutionary state of the code (easier to handle new dependencies that might be needed).
 
 ## Tutorial
+### 0. Preliminary info
 This software has a modular structure. One starts from cleaned event files (such as those produced by nupipeline), and produces a series of products with subsequent steps:
 
 1. **event lists** containing event arrival times and PI channel information
@@ -35,9 +36,10 @@ This software has a modular structure. One starts from cleaned event files (such
 
 8. (optional) frequency spectra in XSpec format
 
-### 0. Preliminary info
 Most of these tools have help information that can be accessed by typing the name of the command plus -h or --help:
 ```
+#!console
+
 $ python mp_calibrate.py 002[AB]_ev.p --help
 usage: mp_calibrate.py [-h] [-r RMF] [-o] files [files ...]
 
@@ -54,6 +56,8 @@ For I/O, I mostly use native Python `pickle` format. This is _very_ slow (It mig
 ### 1. Loading event lists
 Starting from cleaned event files, we will first save them in `MaLTPyNT` format (a pickle file basically). For example, I'm starting from two event lists called `002A.evt` and `002B.evt`, containing the cleaned event lists from a source observed with NuSTAR's `FPMA` and `FPMB` respectively.
 ```
+#!console
+
 $ python mp_read_events.py 002A.evt 002B.evt
 Opening 002A.evt
 Saving events and info to 002A_ev.p
@@ -65,6 +69,8 @@ This will create new files with a `_ev.p` extension, containing the event times 
 ### 2. Calibrating event lists
 Use `mp_calibrate`. You can either specify an `rmf` file with the `-r` option, or just let it look for it in the NuSTAR `CALDB` (the environment variable has to be defined!)
 ```
+#!console
+
 $ python mp_calibrate.py 002A_ev.p 002B_ev.p
 Loading file 002A_ev.p...
 Done.
@@ -89,6 +95,8 @@ Choose carefully the binning time (option `-b`). Since what we are interested in
 Since we have calibrated the event files, we can also choose an event energy range, here between 3 and 30 keV.
 Another thing that is useful in NuSTAR data is taking some time intervals out from the start and the end of each GTI. This is mostly to eliminate an increase of background level that often appears at GTI borders and produces very nasty power spectral shapes. Here I filter 100 s from the start and 300 s from the end of each GTI.
 ```
+#!console
+
 $ python mp_lcurve.py 002A_ev_calib.p 002B_ev_calib.p -b -8 -e 3 30 --safe_interval 100 300
 Loading file 002A_ev_calib.p...
 Done.
@@ -99,11 +107,15 @@ Saving light curve to 002B_3-30_lc.p
 ```
 To check the light curve that was produced, use the `test_lc` program in `tests/`:
 ```
-python tests/test_lc.py 002A_3-30_lc.p
+#!console
+
+$ python tests/test_lc.py 002A_3-30_lc.p
 ```
 ### 4. Joining, summing and ``scrunching'' light curves
 If we want a single light curve from multiple ones, either summing multiple instruments or multiple energy or time ranges, we can use `mp_scrunch_lc`:
 ```
+#!console
+
 $ python mp_scrunch_lc.py 002A_3-30_lc.p 002B_3-30_lc.p -o 002scrunch_3-30_lc.p
 Loading file 002A_3-30_lc.p...
 Done.
@@ -117,6 +129,8 @@ This is only tested in ``safe'' situations (files are not too big and have consi
 ### 5. Producing power spectra and cross power spectra
 Let us just produce the cross power spectrum for now. To produce also the power spectra corresponding to each light curve, substitute `"CPDS"` with `"PDS,CPDS"`.
 ```
+#!console
+
 $ python mp_fspec.py 002A_3-30_lc.p 002B_3-30_lc.p -k 'CPDS'
 Beware! For cpds and derivatives, I assume that the files are
 ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...
@@ -128,6 +142,8 @@ Saving CPDS to ./cpds_002_3-30_0.p
 ### 6. Rebinning the spectrum
 Now let's rebin the spectrum. If the rebin factor is an integer, it is interpreted as a constant rebinning. Otherwise (only if >1), it is interpreted as a geometric binning.
 ```
+#!console
+
 $ python mp_rebin.py cpds_002_3-30_0.p -r 1.2
 Saving cpds to cpds_002_3-30_0_rebin1.2.p
 ```
@@ -139,9 +155,8 @@ For the cospectrum, it is sufficient to read the real part of the cross power sp
 ### 8. Saving the spectra in a format readable to XSpec
 To save the cospectrum in a format readable to XSpec it is sufficient to give the commands
 ```
+#!console
+
 $ python mp_save_as_xspec.py cpds_002_3-30_0_rebin1.2.p
 Saving to cpds_002_3-30_0_rebin1.2_xsp.qdp
-$ flx2xsp cpds_002_3-30_0_rebin1.2_xsp.qdp cospectrum.pha cospectrum.rsp
 ```
-When reading the CPDS, it is automatically converted to cospectrum.
-Then, use `cospectrum.pha` as a spectrum file in XSpec and cospectrum.rsp as its response. Enjoy!
