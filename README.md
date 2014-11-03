@@ -8,7 +8,7 @@ This software is **heavily focused on NuSTAR**, and it's mostly for educational 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
 ## Installation
-You'll need a recent python 2.7 installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/)  and [Astropy](http://www.astropy.org/) libraries.
+You'll need a recent python 2.7 installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/)  and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html).
 Put the python codes in the directory where you are analyzing the data. That's all. Then, you can call them with a python interpreter, e.g.
 ```
 $ python mp_read_events.py filename.evt
