@@ -123,7 +123,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc.p'):
     return time0, lc0, gti
 
 
-def mp_filter_lc_gtis(time, lc, gti, safe_interval=None):
+def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False):
     mask, newgtis = mp_create_gti_mask(time, gti, return_new_gtis=True,
                                        safe_interval=safe_interval)
 
@@ -133,7 +133,12 @@ def mp_filter_lc_gtis(time, lc, gti, safe_interval=None):
 
     nomask = np.logical_not(mask)
 
-    lc[nomask] = 0
+    if delete:
+        time = time[mask]
+        lc = lc[mask]
+    else:
+        lc[nomask] = 0
+
     return time, lc, newgtis
 
 
@@ -182,7 +187,8 @@ def mp_lcurve_from_events(f, safe_interval=0,
     time, lc = mp_lcurve(events, bintime, start_time=tstart,
                          stop_time=tstop)
     time, lc, newgtis = mp_filter_lc_gtis(time, lc, gtis,
-                                          safe_interval=safe_interval)
+                                          safe_interval=safe_interval,
+                                          delete=True)
 
     out['lc'] = lc
     out['time'] = time
