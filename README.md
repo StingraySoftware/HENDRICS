@@ -16,6 +16,7 @@ $ python mp_read_events.py filename.evt
 I will make these codes a python package that can be installed properly, eventually.
 
 ## Tutorial
+This is the same tutorial you can find in the Wiki, for convenience
 ### 0. Preliminary info
 This software has a modular structure. One starts from cleaned event files (such as those produced by nupipeline), and produces a series of products with subsequent steps:
 
@@ -39,8 +40,12 @@ Most of these tools have help information that can be accessed by typing the nam
 ```
 #!console
 
-$ python mp_calibrate.py 002*_ev.p --help
+$ python ../mp_calibrate.py -h
 usage: mp_calibrate.py [-h] [-r RMF] [-o] files [files ...]
+
+Calibrate event light curves by associating the correct energy to each PI
+channel. Uses either a specified rmf file or (for NuSTAR only) an rmf file
+from the CALDB
 
 positional arguments:
   files              List of files
