@@ -357,7 +357,9 @@ def mp_calc_fspec(files, fftlen,
 if __name__ == '__main__':
     import argparse
     import cPickle as pickle
-    parser = argparse.ArgumentParser()
+    description = 'Creates frequency spectra (PDS, CPDS, cospectrum)' + \
+        ' starting from well-defined input ligthcurves'
+    parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs='+')
     parser.add_argument("-b", "--bintime", type=float, default=1/4096,

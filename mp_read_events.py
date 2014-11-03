@@ -132,8 +132,13 @@ def mp_treat_event_file(filename):
 
 
 if __name__ == "__main__":
-    import sys
-    files = sys.argv[1:]
+    import argparse
+    description = 'Reads a cleaned event files and saves the relevant' +\
+        ' information in a standard format'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("files", help="List of files", nargs='+')
+    args = parser.parse_args()
+    files = args.files
 
     for f in files:
         mp_treat_event_file(f)

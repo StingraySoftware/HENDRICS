@@ -148,11 +148,15 @@ def mp_rebin_file(filename, rebin):
 if __name__ == '__main__':
     import argparse
     import cPickle as pickle
-    parser = argparse.ArgumentParser()
+    description = 'Rebins light curves and frequency spectra. '
+    parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs='+')
     parser.add_argument("-r", "--rebin", type=float, default=1,
-                        help="(C)PDS rebinning to apply")
+                        help="Rebinning to apply. Only if the quantity to" +
+                        " rebin is a (C)PDS, it is possible to specify a" +
+                        " non-integer rebin factor, in which case it is" +
+                        " interpreted as a geometrical binning factor")
 
     args = parser.parse_args()
 

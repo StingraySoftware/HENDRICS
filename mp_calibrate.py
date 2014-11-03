@@ -48,7 +48,10 @@ def mp_calibrate(pis, rmf_file=None):
 if __name__ == '__main__':
     import argparse
     import cPickle as pickle
-    parser = argparse.ArgumentParser()
+    description = 'Calibrate event light curves by associating the correct' + \
+        ' energy to each PI channel. Uses either a specified rmf file or' + \
+        ' (for NuSTAR only) an rmf file from the CALDB'
+    parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument("-r", "--rmf", help="rmf file used for calibration",

@@ -33,7 +33,12 @@ def mp_save_as_xspec(fname):
 
 
 if __name__ == '__main__':
-    import sys
-    fnames = sys.argv[1:]
+    import argparse
+    description = 'Saves a frequency spectrum in a qdp file that can be' + \
+        ' read by flx2xsp and produce a XSpec-compatible spectrum file'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("files", help="List of files", nargs='+')
+    args = parser.parse_args()
+    fnames = args.files
     for f in fnames:
         mp_save_as_xspec(f)
