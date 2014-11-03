@@ -2,6 +2,7 @@
 ** BEWARE! STILL UNDER TESTING. DO NOT USE IN PRODUCTION!**
 
 These tools are a stripped-down version of a huge and messy library of codes I've developed in the years to do timing with NuSTAR and other satellites. They contain what is needed for a quick look at the timing properties of an X-ray source.
+This software is **heavily focused on NuSTAR**, and it's mostly for educational purposes. Everything can be generalized to any point, but here I tried to make it readable by people starting their work on NuSTAR timing data. I also decided to use very few external libraries in order to make the installation easier, at the cost of losing some (well, a lot of) performance, in particular in I/O.
 
 ## Installation
 You'll need a recent python 2.7 installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/)  and [Astropy](http://www.astropy.org/) libraries.
@@ -28,9 +29,11 @@ This software has a modular structure. One starts from cleaned event files (such
 
 5. **power spectrum** and/or **cross spectrum**
 
-6. finally, **lags** and **cospectrum**
+6. **rebinning** of frequency spectra 
 
-7. (optional) frequency spectra in XSpec format
+7. finally, **lags** (still not implemented... ehm...) and **cospectrum**
+
+8. (optional) frequency spectra in XSpec format
 
 ### 0. Preliminary info
 Most of these tools have help information that can be accessed by typing the name of the command plus -h or --help:
