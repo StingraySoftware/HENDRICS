@@ -28,14 +28,14 @@ def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
 
     if yerr is not None:
         yerr_resh = np.reshape(yerr[:new_nbins * factor], (new_nbins, factor))
-        new_yerr = np.sum(yerr_resh, axis=1)
+        new_yerr = np.sum(yerr_resh ** 2, axis=1)
     else:
         new_yerr = np.zeros(len(new_x), dtype=arr_dtype)
 
     if normalize:
-        return new_x, new_y / factor, new_yerr / factor
+        return new_x, new_y / factor, np.sqrt(new_yerr) / factor
     else:
-        return new_x, new_y, new_yerr
+        return new_x, new_y, np.sqrt(new_yerr)
 
 
 def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
