@@ -6,9 +6,12 @@ import matplotlib.pyplot as plt
 pdsdata = pickle.load(open(sys.argv[1]))
 
 freq = pdsdata['freq']
-pds = pdsdata['cpds']
+cpds = pdsdata['cpds']
 
-print (pds)
-plt.loglog(freq[1:], freq[1:] * pds[1:].real, drawstyle='steps-mid')
+cospectrum = cpds.real
 
+plt.loglog(freq[1:], freq[1:] * cospectrum[1:], drawstyle='steps-mid')
+
+plt.xlabel('Frequency')
+plt.ylabel('Cospectrum')
 plt.show()
