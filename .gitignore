@@ -1,3 +1,4 @@
 *.pyc
 *~
-.spyderproject
+.spyderproject*.pha
+*.rsp
