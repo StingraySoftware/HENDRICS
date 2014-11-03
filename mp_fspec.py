@@ -74,6 +74,14 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True):
     nph2 = sum(lc2)
     freqs, ft1 = mp_fft(lc1, bintime)
     freqs, ft2 = mp_fft(lc2, bintime)
+    if nph1 <= 0 or nph2 <= 0:
+        dum = np.zeros(len(ft1[freqs > 0]))
+        return freqs, dum, dum
+
+    pds1 = ft1.conjugate() * ft1 * 2. / nph1
+    pds2 = ft2.conjugate() * ft2 * 2. / nph2
+    pds1e = np.copy(pds1)
+    pds2e = np.copy(pds2)
 
     # The "effective" count rate is the geometrical mean of the count rates
     # of the two light curves
@@ -84,32 +92,44 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True):
     else:
         cpds = np.zeros(len(freqs))
 
+    # Justification in timing paper! (Bachetti et al. arXiv:1409.3248)
+    # This only works for cospectrum. For the cross spectrum, I *think*
+    # it's irrelevant
+    cpdse = np.sqrt(pds1e * pds2e) / np.sqrt(2.)
+
     good = freqs >= 0
     freqs = freqs[good]
     cpds = cpds[good]
 
     if return_freq:
-        return freqs, cpds
+        return freqs, cpds, cpdse
     else:
-        return cpds
+        return cpds, cpdse
 
 
 def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
-    '''Calculates the PDS of a light curve with constant binning time.'''
+    '''Calculates the CPDS of a light curve with constant binning time.'''
     start_times = \
         mp_decide_spectrum_intervals(gti, fftlen, verbose=False)
 
     cpds = 0
+    ecpds = 0
     npds = len(start_times)
 
     for t in start_times:
         good = np.logical_and(time >= t, time < t + fftlen)
         l1 = lc1[good]
         l2 = lc2[good]
-        f, p = mp_leahy_cpds(l1, l2, bintime)
+        if np.sum(l1) == 0 or np.sum(l2) == 0:
+            print('Interval starting at time %.7f is bad. Check GTIs' % t)
+            npds -= 1
+            continue
+        f, p, pe = mp_leahy_cpds(l1, l2, bintime)
         cpds += p
+        ecpds += pe ** 2
+
     cpds /= npds
-    ecpds = cpds / np.sqrt(npds)
+    ecpds = np.sqrt(ecpds) / npds
     return f, cpds, ecpds, npds
 
 
@@ -138,16 +158,15 @@ def mp_decide_spectrum_intervals(gtis, fftlen, verbose=False):
 
     spectrum_start_times = np.array([])
     for g in gtis:
-        if verbose:
-            print("Calculating PDS over GTI %g--%g" % (g[0], g[1]))
         if g[1] - g[0] < fftlen:
             if verbose:
                 print("Too short. Skipping.")
             continue
+        newtimes = np.arange(g[0], g[1] - fftlen, np.longdouble(fftlen),
+                             dtype=np.longdouble)
         spectrum_start_times = \
             np.append(spectrum_start_times,
-                      np.arange(g[0], g[1] - fftlen, np.longdouble(fftlen),
-                                dtype=np.longdouble))
+                      newtimes)
     return spectrum_start_times
 
 
@@ -185,7 +204,9 @@ def mp_calc_pds(lcfile, fftlen,
     outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
                'rebin': pdsrebin}
-    pickle.dump(outdata, open(root + '_pds.p', 'wb'))
+    outname = root + '_pds.p'
+    print('Saving PDS to %s' % outname)
+    pickle.dump(outdata, open(outname, 'wb'))
 
 
 def mp_calc_cpds(lcfile1, lcfile2, fftlen,
@@ -231,6 +252,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
         time2, lc2, dum = \
             mp_const_rebin(time2, lc2, lcrebin, normalize=False)
 
+#    from test_cross_gtis import mp_cross_gtis
     gti = mp_cross_gtis([gti1, gti2])
 
     mask1 = mp_create_gti_mask(time1, gti)
@@ -242,6 +264,8 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     time = time1
     del time2
 
+    lc1 = lc1[mask1]
+    lc2 = lc2[mask2]
     freq, cpds, ecpds, ncpds = \
         mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti)
 
@@ -251,6 +275,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     outdata = {'time': gti[0][0], 'cpds': cpds, 'ecpds': ecpds, 'ncpds': ncpds,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
                'freq': freq, 'rebin': pdsrebin}
+    print('Saving CPDS to %s' % outname)
     pickle.dump(outdata, open(outname, 'wb'))
 
 
@@ -289,7 +314,8 @@ def mp_calc_fspec(files, fftlen,
         f1, f2 = f, files2[i_f]
 
         outdir = os.path.dirname(f1)
-
+        if outdir == '':
+            outdir = '.'
         mp_calc_cpds(f1, f2, fftlen,
                      save_dyn=save_dyn,
                      bintime=bintime,
@@ -305,15 +331,17 @@ if __name__ == '__main__':
     parser.add_argument("files", help="List of light curve files", nargs='+')
     parser.add_argument("-b", "--bintime", type=float, default=1/4096,
                         help="Light curve bin time; if negative, interpreted" +
-                        " as negative power of 2")
+                        " as negative power of 2." +
+                        " Default: 2^-10, or keep input lc bin time" +
+                        " (whatever is larger)")
     parser.add_argument("-r", "--rebin", type=int, default=1,
-                        help="(C)PDS rebinning to apply")
+                        help="(C)PDS rebinning to apply. Default: none")
     parser.add_argument("-f", "--fftlen", type=float, default=512,
-                        help="Length of FFTs")
+                        help="Length of FFTs. Default: 512 s")
     parser.add_argument("-k", "--kind", type=str, default="PDS,CPDS,cos",
                         help='Spectra to calculate, as comma-separated list' +
-                        ' (Accepted: PDS, CPDS;' +
-                        ' Default: PDS, CPDS)')
+                        ' (Accepted: PDS and CPDS;' +
+                        ' Default: "PDS,CPDS")')
     parser.add_argument("-o", "--outroot", type=str, default="cpds",
                         help='Root of output file names for CPDS only')
 
