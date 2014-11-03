@@ -301,6 +301,19 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     pickle.dump(outdata, open(outname, 'wb'))
 
 
+def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
+    '''Calculates time lags'''
+    lags = np.angle(cpds) / (2 * np.pi * freqs)
+    sigcpd = np.absolute(cpds)
+
+    rawcof = (sigcpd) ** 2 / ((pds1) * (pds1))
+
+    dum = (1. - rawcof) / (2. * rawcof)
+
+    lagse = np.sqrt(dum / n_chunks / rebin) / (2 * np.pi * freqs)
+    return lags, lagse
+
+
 def mp_calc_fspec(files, fftlen,
                   calc_pds=True,
                   calc_cpds=True,
