@@ -162,6 +162,7 @@ To save the cospectrum in a format readable to XSpec it is sufficient to give th
 
 $ python mp_save_as_xspec.py cpds_002_3-30_0_rebin1.03.p
 Saving to cpds_002_3-30_0_rebin1.03_xsp.qdp
+$ flx2xsp cpds_002_3-30_0_rebin1.03_xsp.qdp cpds.pha cpds.rsp
 ```
 
 ### 9. Open and fit in XSpec!
