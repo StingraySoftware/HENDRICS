@@ -127,6 +127,10 @@ def mp_filter_lc_gtis(time, lc, gti, safe_interval=None):
     mask, newgtis = mp_create_gti_mask(time, gti, return_new_gtis=True,
                                        safe_interval=safe_interval)
 
+#    # test if newgti-created mask coincides with mask
+#    newmask = mp_create_gti_mask(time, newgtis, safe_interval=0)
+#    print("Test: newly created gti is equivalent?", np.all(newmask == mask))
+
     nomask = np.logical_not(mask)
 
     lc[nomask] = 0
