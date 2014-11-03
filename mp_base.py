@@ -45,6 +45,7 @@ def mp_ref_mjd(fits_file, hdu=1):
 
 
 def mp_save_as_netcdf(vars, varnames, formats, fname):
+    '''The future. Much faster than pickle'''
     import netCDF4 as nc
     import collections
 
@@ -95,13 +96,14 @@ def mp_contiguous_regions(condition):
 
 
 def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
-                       safe_interval=0, min_length=0, return_new_gtis=False):
-    import collections
+                       safe_interval=0, min_length=0,
+                       return_new_gtis=False):
     '''Creates GTI mask under the assumption that no overlaps are present
         between GTIs
         '''
+    import collections
     if verbose:
-        print ("create_gti_mask_strict: warning: this routine assumes that ")
+        print ("create_gti_mask: warning: this routine assumes that ")
         print ("                no overlaps are present between GTIs")
 
     mask = np.zeros(len(time), dtype=bool)
@@ -117,11 +119,11 @@ def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
         limmin, limmax = gti
         limmin += safe_interval[0]
         limmax -= safe_interval[1]
-        newgtis[ig][:] = [limmin, limmax]
-        cond1 = time >= limmin
-        cond2 = time <= limmax
-        good = np.logical_and(cond1, cond2)
         if limmax - limmin > min_length:
+            newgtis[ig][:] = [limmin, limmax]
+            cond1 = time >= limmin
+            cond2 = time < limmax
+            good = np.logical_and(cond1, cond2)
             mask[good] = True
             newgtimask[ig] = True
 
@@ -133,6 +135,8 @@ def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
 
 def mp_create_gti_from_condition(time, condition, verbose=False,
                                  safe_interval=0):
+    '''Given a time array and a condition (e.g. obtained from lc > 0),
+    it creates a GTI list'''
     import collections
     idxs = mp_contiguous_regions(condition)
     if not isinstance(safe_interval, collections.Iterable):
@@ -151,6 +155,7 @@ def mp_create_gti_from_condition(time, condition, verbose=False,
 
 
 def mp_cross_gtis(gti_list, bin_time=1):
+    '''From multiple GTI lists, it extracts the common intervals'''
     ninst = len(gti_list)
     if ninst == 1:
         return gti_list[0]
