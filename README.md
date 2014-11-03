@@ -1,5 +1,5 @@
 # MaLTPyNT
-** BEWARE! I'M STILL DEALING WITH BUGS IN THIS VERSION. DO NOT USE IN PRODUCTION!**
+** BEWARE! STILL UNDER TESTING. DO NOT USE IN PRODUCTION!**
 
 These tools are a stripped-down version of a huge and messy library of codes I've developed in the years to do timing with NuSTAR and other satellites. They contain what is needed for a quick look at the timing properties of an X-ray source.
 
