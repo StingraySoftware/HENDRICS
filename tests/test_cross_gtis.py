@@ -1,6 +1,6 @@
 from __future__ import division, print_function
 import numpy as np
-from mp_base import *
+from mp_base import mp_create_gti_mask, mp_create_gti_from_condition
 
 
 def mp_cross_gtis(gti_list, bin_time=1, debug=True):
