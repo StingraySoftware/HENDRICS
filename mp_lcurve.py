@@ -40,9 +40,9 @@ def mp_lcurve(event_list,
 def mp_join_lightcurves(lcfilelist, outfile='out_lc.p'):
     lcdatas = []
     for lfc in lcfilelist:
-        print("Loading file %s..." % lfc)
+        print ("Loading file %s..." % lfc)
         lcdata = pickle.load(open(lfc))
-        print("Done.")
+        print ("Done.")
         lcdatas.append(lcdata)
 
     # --------------- Check consistency of data --------------
@@ -81,7 +81,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc.p'):
         outlcs[instr]['gti'] = np.array(gtis[instr])
 
     if outfile is not None:
-        print('Saving joined light curve to %s' % outfile)
+        print ('Saving joined light curve to %s' % outfile)
         pickle.dump(outlcs, open(outfile, 'wb'))
 
     return outlcs
@@ -117,7 +117,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc.p'):
     out['time'] = time0
     out['dt'] = lcdata[instrs[0]]['dt']
 
-    print('Saving scrunched light curve to %s' % outfile)
+    print ('Saving scrunched light curve to %s' % outfile)
     pickle.dump(out, open(outfile, 'wb'))
 
     return time0, lc0, gti
@@ -129,7 +129,7 @@ def mp_filter_lc_gtis(time, lc, gti, safe_interval=None):
 
 #    # test if newgti-created mask coincides with mask
 #    newmask = mp_create_gti_mask(time, newgtis, safe_interval=0)
-#    print("Test: newly created gti is equivalent?", np.all(newmask == mask))
+#    print ("Test: newly created gti is equivalent?", np.all(newmask == mask))
 
     nomask = np.logical_not(mask)
 
@@ -175,9 +175,9 @@ if __name__ == "__main__":
 
     outfiles = []
     for f in infiles:
-        print("Loading file %s..." % f)
+        print ("Loading file %s..." % f)
         evdata = pickle.load(open(f))
-        print("Done.")
+        print ("Done.")
         out = {}
         tstart = evdata['Tstart']
         tstop = evdata['Tstop']
@@ -228,7 +228,7 @@ if __name__ == "__main__":
         out['Instr'] = instr
 
         outfile = mp_root(f) + tag + '_lc.p'
-        print('Saving light curve to %s' % outfile)
+        print ('Saving light curve to %s' % outfile)
         pickle.dump(out, open(outfile, 'wb'))
         outfiles.append(outfile)
 

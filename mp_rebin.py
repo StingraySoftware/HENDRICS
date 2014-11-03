@@ -141,7 +141,7 @@ def mp_rebin_file(filename, rebin):
         raise Exception('Format was not recognized')
 
     outfile = f.replace('.p', '_rebin%g.p' % rebin)
-    print('Saving %s to %s' % (ftype, outfile))
+    print ('Saving %s to %s' % (ftype, outfile))
     pickle.dump(contents, open(outfile, 'wb'))
 
 

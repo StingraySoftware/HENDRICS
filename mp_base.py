@@ -33,7 +33,7 @@ def mp_ref_mjd(fits_file, hdu=1):
     if isinstance(fits_file, collections.Iterable) and\
             not isinstance("ba", types.StringTypes):
         fits_file = fits_file[0]
-        print("opening %s" % fits_file)
+        print ("opening %s" % fits_file)
 
     try:
         ref_mjd_int = np.long(mp_read_header_key(fits_file, 'MJDREFI'))

@@ -3,7 +3,7 @@ import cPickle as pickle
 import sys
 import matplotlib.pyplot as plt
 
-print('Loading lc file...')
+print ('Loading lc file...')
 lcdata = pickle.load(open(sys.argv[1]))
 
 time = lcdata['time']

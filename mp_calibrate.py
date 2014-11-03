@@ -67,12 +67,12 @@ if __name__ == '__main__':
             outname = f.replace('.p', '_calib.p')
 
         # Read event file
-        print("Loading file %s..." % f)
+        print ("Loading file %s..." % f)
         evdata = pickle.load(open(f))
-        print("Done.")
+        print ("Done.")
         pis = evdata['PI']
 
         es = mp_calibrate(pis, args.rmf)
         evdata['E'] = es
-        print('Saving calibrated data to %s' % outname)
+        print ('Saving calibrated data to %s' % outname)
         pickle.dump(evdata, open(outname, 'wb'))

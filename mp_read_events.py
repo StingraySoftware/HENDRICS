@@ -9,7 +9,7 @@ def mp_load_gtis(fits_file, gtistring=None):
 
     if gtistring is None:
         gtistring = 'GTI'
-    print("Loading GTIS from file" % fits_file)
+    print ("Loading GTIS from file" % fits_file)
     lchdulist = pf.open(fits_file, checksum=True)
     lchdulist.verify('warn')
 
@@ -52,11 +52,11 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
     try:
         timezero = np.longdouble(lchdulist[1].header['TIMEZERO'])
     except:
-        print("TIMEZERO is 0")
+        print ("TIMEZERO is 0")
         timezero = 0.
 
     if timezero != 0.:
-        print("TIMEZERO != 0, correcting")
+        print ("TIMEZERO != 0, correcting")
         ev_list += timezero
 
     if gtistring is None:
@@ -74,7 +74,7 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
                                                  gtistop)])
 
         except:
-            print("%s Extension not found in %s!! Please check!!" %
+            print ("%s Extension not found in %s!! Please check!!" %
                   (gtistring, fits_file))
             gti_list = [[ev_list[0], ev_list[-1]]]
     else:
@@ -108,7 +108,7 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
 def mp_treat_event_file(filename):
     import cPickle as pickle
 
-    print('Opening %s' % filename)
+    print ('Opening %s' % filename)
 
     instr = mp_read_header_key(filename, 'INSTRUME')
     mjdref = mp_ref_mjd(filename)
@@ -127,7 +127,7 @@ def mp_treat_event_file(filename):
            }
 
     outfile = mp_root(filename) + '_ev.p'
-    print('Saving events and info to %s' % outfile)
+    print ('Saving events and info to %s' % outfile)
     pickle.dump(out, open(outfile, 'wb'))
 
 
