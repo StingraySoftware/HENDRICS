@@ -43,7 +43,7 @@ Most of these tools have help information that can be accessed by typing the nam
 ```
 #!console
 
-$ python mp_calibrate.py 002[AB]_ev.p --help
+$ python mp_calibrate.py 002*_ev.p --help
 usage: mp_calibrate.py [-h] [-r RMF] [-o] files [files ...]
 
 positional arguments:
@@ -100,7 +100,7 @@ Another thing that is useful in NuSTAR data is taking some time intervals out fr
 ```
 #!console
 
-$ python mp_lcurve.py 002A_ev_calib.p 002B_ev_calib.p -b -8 -e 3 30 --safe_interval 100 300
+$ python mp_lcurve.py 002A_ev_calib.p 002B_ev_calib.p -b -6 -e 3 30 --safe_interval 100 300
 Loading file 002A_ev_calib.p...
 Done.
 Saving light curve to 002A_3-30_lc.p
@@ -130,11 +130,11 @@ Saving scrunched light curve to 002scrunch_3-30_lc.p
 This is only tested in ``safe'' situations (files are not too big and have consistent time and energy ranges), so it might give inconsistent results or crash in untested situations. Please report any problems!
 
 ### 5. Producing power spectra and cross power spectra
-Let us just produce the cross power spectrum for now. To produce also the power spectra corresponding to each light curve, substitute `"CPDS"` with `"PDS,CPDS"`.
+Let us just produce the cross power spectrum for now. To produce also the power spectra corresponding to each light curve, substitute `"CPDS"` with `"PDS,CPDS"`. I use rms normalization here, default would be Leahy normalization.
 ```
 #!console
 
-$ python mp_fspec.py 002A_3-30_lc.p 002B_3-30_lc.p -k 'CPDS'
+$ python mp_fspec.py 002A_3-30_lc.p 002B_3-30_lc.p -k CPDS -o cpds_002_3-30 --norm rms
 Beware! For cpds and derivatives, I assume that the files are
 ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...
 Loading file 002A_3-30_lc.p...
@@ -147,8 +147,8 @@ Now let's rebin the spectrum. If the rebin factor is an integer, it is interpret
 ```
 #!console
 
-$ python mp_rebin.py cpds_002_3-30_0.p -r 1.2
-Saving cpds to cpds_002_3-30_0_rebin1.2.p
+$ python mp_rebin.py cpds_002_3-30_0.p -r 1.03
+Saving cpds to cpds_002_3-30_0_rebin1.03.p
 ```
 
 ### 7. Calculating the cospectrum and phase/time lags
@@ -160,6 +160,9 @@ To save the cospectrum in a format readable to XSpec it is sufficient to give th
 ```
 #!console
 
-$ python mp_save_as_xspec.py cpds_002_3-30_0_rebin1.2.p
-Saving to cpds_002_3-30_0_rebin1.2_xsp.qdp
+$ python mp_save_as_xspec.py cpds_002_3-30_0_rebin1.03.p
+Saving to cpds_002_3-30_0_rebin1.03_xsp.qdp
 ```
+
+### 9. Open and fit in XSpec!
+![screenshot.png](https://bitbucket.org/repo/XA95dR/images/3911632225-screenshot.png)
