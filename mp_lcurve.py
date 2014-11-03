@@ -137,9 +137,72 @@ def mp_filter_lc_gtis(time, lc, gti, safe_interval=None):
     return time, lc, newgtis
 
 
+def mp_lcurve_from_events(f, safe_interval=0,
+                          pi_interval=None,
+                          e_interval=None):
+    print ("Loading file %s..." % f)
+    evdata = pickle.load(open(f))
+    print ("Done.")
+    tag = ''
+    out = {}
+    tstart = evdata['Tstart']
+    tstop = evdata['Tstop']
+    events = evdata['Events']
+    instr = evdata['Instr']
+    gtis = evdata['GTI']
+
+    # make tstart and tstop multiples of bin times since MJDref
+    tstart = np.ceil(tstart / bintime, dtype=np.longdouble) * bintime
+    tstop = np.floor(tstop / bintime, dtype=np.longdouble) * bintime
+
+    if pi_interval is not None and np.all(pi_interval > 0):
+        pis = evdata['PI']
+        good = np.logical_and(pis > pi_interval[0],
+                              pis <= pi_interval[1])
+        events = events[good]
+        tag = '_PI%g-%g' % (pi_interval[0], pi_interval[1])
+        out['PImin'] = e_interval[0]
+        out['PImax'] = e_interval[0]
+
+    if e_interval is not None and np.all(e_interval > 0):
+        try:
+            es = evdata['E']
+        except:
+            raise \
+                ValueError("No energy information is present in the file."
+                           + " Did you run mp_calibrate?")
+
+        good = np.logical_and(es > e_interval[0],
+                              es <= e_interval[1])
+        events = events[good]
+        tag = '_E%g-%g' % (e_interval[0], e_interval[1])
+        out['Emin'] = e_interval[0]
+        out['Emax'] = e_interval[0]
+
+    time, lc = mp_lcurve(events, bintime, start_time=tstart,
+                         stop_time=tstop)
+    time, lc, newgtis = mp_filter_lc_gtis(time, lc, gtis,
+                                          safe_interval=safe_interval)
+
+    out['lc'] = lc
+    out['time'] = time
+    out['dt'] = bintime
+    out['gti'] = newgtis
+    out['Tstart'] = tstart
+    out['Tstop'] = tstop
+    out['Instr'] = instr
+    outfile = mp_root(f) + tag + '_lc.p'
+    print ('Saving light curve to %s' % outfile)
+    pickle.dump(out, open(outfile, 'wb'))
+
+    return outfile
+
+
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser()
+    description = 'Creates lightcurves starting from event files. It is' + \
+        ' possible to specify energy or channel filtering options'
+    parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument("-b", "--bintime", type=float, default=1/4096,
@@ -171,65 +234,12 @@ if __name__ == "__main__":
     pi_interval = np.array(args.pi_interval)
     e_interval = np.array(args.e_interval)
 
-    tag = ''
-
     outfiles = []
     for f in infiles:
-        print ("Loading file %s..." % f)
-        evdata = pickle.load(open(f))
-        print ("Done.")
-        out = {}
-        tstart = evdata['Tstart']
-        tstop = evdata['Tstop']
-        events = evdata['Events']
-        instr = evdata['Instr']
-        gtis = evdata['GTI']
-        mjdref = evdata['MJDref']
+        outfile = mp_lcurve_from_events(f, safe_interval=safe_interval,
+                                        pi_interval=pi_interval,
+                                        e_interval=e_interval)
 
-        # make tstart and tstop multiples of bin times since MJDref
-        tstart = np.ceil(tstart / bintime, dtype=np.longdouble) * bintime
-        tstop = np.floor(tstop / bintime, dtype=np.longdouble) * bintime
-
-        if np.all(pi_interval > 0):
-            pis = evdata['PI']
-            good = np.logical_and(pis > pi_interval[0],
-                                  pis <= pi_interval[1])
-            events = events[good]
-            tag = '_%g-%g' % (pi_interval[0], pi_interval[1])
-            out['PImin'] = e_interval[0]
-            out['PImax'] = e_interval[0]
-
-        if np.all(e_interval > 0):
-            try:
-                es = evdata['E']
-            except:
-                raise \
-                    ValueError("No energy information is present in the file."
-                               + " Did you run mp_calibrate?")
-
-            good = np.logical_and(es > e_interval[0],
-                                  es <= e_interval[1])
-            events = events[good]
-            tag = '_%g-%g' % (e_interval[0], e_interval[1])
-            out['Emin'] = e_interval[0]
-            out['Emax'] = e_interval[0]
-
-        time, lc = mp_lcurve(events, bintime, start_time=tstart,
-                             stop_time=tstop)
-        time, lc, newgtis = mp_filter_lc_gtis(time, lc, gtis,
-                                              safe_interval=safe_interval)
-
-        out['lc'] = lc
-        out['time'] = time
-        out['dt'] = bintime
-        out['gti'] = newgtis
-        out['Tstart'] = tstart
-        out['Tstop'] = tstop
-        out['Instr'] = instr
-
-        outfile = mp_root(f) + tag + '_lc.p'
-        print ('Saving light curve to %s' % outfile)
-        pickle.dump(out, open(outfile, 'wb'))
         outfiles.append(outfile)
 
     if args.scrunch:
