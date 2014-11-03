@@ -16,6 +16,7 @@ $ python mp_read_events.py filename.evt
 I will make these codes a python package that can be installed properly, eventually.
 
 ## Tutorial
+This is the same tutorial you can find in the Wiki, for convenience
 ### 0. Preliminary info
 This software has a modular structure. One starts from cleaned event files (such as those produced by nupipeline), and produces a series of products with subsequent steps:
 
@@ -39,8 +40,12 @@ Most of these tools have help information that can be accessed by typing the nam
 ```
 #!console
 
-$ python mp_calibrate.py 002*_ev.p --help
+$ python ../mp_calibrate.py -h
 usage: mp_calibrate.py [-h] [-r RMF] [-o] files [files ...]
+
+Calibrate event light curves by associating the correct energy to each PI
+channel. Uses either a specified rmf file or (for NuSTAR only) an rmf file
+from the CALDB
 
 positional arguments:
   files              List of files
@@ -99,26 +104,26 @@ Another thing that is useful in NuSTAR data is taking some time intervals out fr
 $ python mp_lcurve.py 002A_ev_calib.p 002B_ev_calib.p -b -6 -e 3 30 --safe_interval 100 300
 Loading file 002A_ev_calib.p...
 Done.
-Saving light curve to 002A_3-30_lc.p
+Saving light curve to 002A_E3-30_lc.p
 Loading file 002B_ev_calib.p...
 Done.
-Saving light curve to 002B_3-30_lc.p
+Saving light curve to 002B_E3-30_lc.p
 ```
 To check the light curve that was produced, use the `test_lc` program in `tests/`:
 ```
 #!console
 
-$ python tests/test_lc.py 002A_3-30_lc.p
+$ python tests/test_lc.py 002A_E3-30_lc.p
 ```
 ### 4. Joining, summing and ``scrunching'' light curves
 If we want a single light curve from multiple ones, either summing multiple instruments or multiple energy or time ranges, we can use `mp_scrunch_lc`:
 ```
 #!console
 
-$ python mp_scrunch_lc.py 002A_3-30_lc.p 002B_3-30_lc.p -o 002scrunch_3-30_lc.p
-Loading file 002A_3-30_lc.p...
+$ python mp_scrunch_lc.py 002A_E3-30_lc.p 002B_E3-30_lc.p -o 002scrunch_3-30_lc.p
+Loading file 002A_E3-30_lc.p...
 Done.
-Loading file 002B_3-30_lc.p...
+Loading file 002B_E3-30_lc.p...
 Done.
 Saving joined light curve to out_lc.p
 Saving scrunched light curve to 002scrunch_3-30_lc.p
@@ -130,11 +135,11 @@ Let us just produce the cross power spectrum for now. To produce also the power 
 ```
 #!console
 
-$ python mp_fspec.py 002A_3-30_lc.p 002B_3-30_lc.p -k CPDS -o cpds_002_3-30 --norm rms
+$ python mp_fspec.py 002A_E3-30_lc.p 002B_E3-30_lc.p -k CPDS -o cpds_002_3-30 --norm rms
 Beware! For cpds and derivatives, I assume that the files are
 ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...
-Loading file 002A_3-30_lc.p...
-Loading file 002B_3-30_lc.p...
+Loading file 002A_E3-30_lc.p...
+Loading file 002B_E3-30_lc.p...
 Saving CPDS to ./cpds_002_3-30_0.p
 ```
 
