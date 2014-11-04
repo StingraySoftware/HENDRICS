@@ -113,6 +113,7 @@ def mp_rebin_file(filename, rebin):
             mp_const_rebin(x, y, rebin, ye, normalize=False)
         contents['time'] = x
         contents['lc'] = y
+        contents['rebin'] *= rebin
 
     elif ftype in ['pds', 'cpds']:
         x = contents['freq']
@@ -137,6 +138,7 @@ def mp_rebin_file(filename, rebin):
             contents[ftype] = y
             contents['e' + ftype] = ye
             contents['nbins'] = nbin
+            contents['rebin'] *= nbin
     else:
         raise Exception('Format was not recognized')
 
