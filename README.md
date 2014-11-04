@@ -18,6 +18,8 @@ I will make these codes a python package that can be installed properly, eventua
 ## Tutorial
 This is the same tutorial you can find in the Wiki, for convenience
 ### 0. Preliminary info
+This tutorial assumes that you have previous knowledge of timing techniques, so that I don't repeat concepts as Nyquist frequency, the importance of choosing carefully the binning time and the FFT length, and so on. If you are not familiar with these concepts, [this paper by Michiel is a very good place to start](http://dare.uva.nl/document/2/47104). Why in the example below I use the cospectrum instead of the PDS, is written in our [timing paper](http://arxiv.org/abs/1409.3248).
+
 This software has a modular structure. One starts from cleaned event files (such as those produced by nupipeline), and produces a series of products with subsequent steps:
 
 1. **event lists** containing event arrival times and PI channel information
