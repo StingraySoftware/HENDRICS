@@ -1,5 +1,6 @@
 from __future__ import division, print_function
 from mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
+from mp_base import mp_get_file_type
 from mp_rebin import mp_const_rebin
 import numpy as np
 
@@ -371,6 +372,24 @@ def mp_calc_fspec(files, fftlen,
                      pdsrebin=pdsrebin,
                      outname=outname,
                      normalization=normalization)
+
+
+def mp_read_fspec(fname):
+    ftype, contents = mp_get_file_type(fname)
+    if 'freq' in contents.keys():
+        freq = contents['freq']
+    elif 'flo' in contents.keys():
+        ftype = ftype.replace('reb', '')
+        flo = contents['flo']
+        fhi = contents['fhi']
+        freq = (fhi + flo) / 2
+
+    pds = contents[ftype]
+    epds = contents['e' + ftype]
+    nchunks = contents['n' + ftype]
+    rebin = contents['rebin']
+
+    return ftype, freq, pds, epds, nchunks, rebin
 
 
 if __name__ == '__main__':
