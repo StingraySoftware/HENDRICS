@@ -379,14 +379,14 @@ def mp_read_fspec(fname):
     if 'freq' in contents.keys():
         freq = contents['freq']
     elif 'flo' in contents.keys():
-        ftype = ftype.replace('reb', '')
         flo = contents['flo']
         fhi = contents['fhi']
-        freq = (fhi + flo) / 2
+        freq = [flo, fhi]
 
-    pds = contents[ftype]
-    epds = contents['e' + ftype]
-    nchunks = contents['n' + ftype]
+    ft = ftype.replace('reb', '')
+    pds = contents[ft]
+    epds = contents['e' + ft]
+    nchunks = contents['n' + ft]
     rebin = contents['rebin']
 
     return ftype, freq, pds, epds, nchunks, rebin
