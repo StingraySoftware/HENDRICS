@@ -1,4 +1,4 @@
-# MaLTPyNT
+# MaLTPyNT - Matteo's Library and Tools in Python for NuSTAR Timing.
 ** BEWARE! STILL UNDER TESTING. DO NOT USE IN PRODUCTION!**
 
 These tools are a stripped-down version of a huge and messy library of timing codes I've developed in the years. They contain what is needed for a quick look at the timing properties of an X-ray source.
