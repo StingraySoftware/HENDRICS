@@ -362,12 +362,14 @@ def mp_calc_fspec(files, fftlen,
 
         outdir = os.path.dirname(f1)
         if outdir == '':
-            outdir = '.'
+            outdir = os.getcwd()
+
+        outname = os.path.join(outdir, outroot + "_%d.p" % i_f)
         mp_calc_cpds(f1, f2, fftlen,
                      save_dyn=save_dyn,
                      bintime=bintime,
                      pdsrebin=pdsrebin,
-                     outname=outdir + "/" + outroot + "_%d.p" % i_f,
+                     outname=outname,
                      normalization=normalization)
 
 

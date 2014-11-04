@@ -9,8 +9,9 @@ def mp_default_nustar_rmf():
     print ("Rmf not specified. Using default NuSTAR rmf.")
     print ("")
     print ("###############################################")
-    return os.environ['CALDB'] + \
-        "/data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
+    rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
+    path = rmf.split('/')
+    return os.path.join(os.environ['CALDB'], path)
 
 
 def mp_read_rmf(rmf_file=None):
