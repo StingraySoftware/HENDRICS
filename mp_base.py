@@ -194,3 +194,44 @@ def mp_get_file_type(fname):
         if 'fhi' in keys:
             ftype = 'rebpds'
     return ftype, contents
+
+
+def mp_optimal_bin_time(fftlen, tbin):
+    '''Given an FFT length and a proposed bin time, it returns a bin time
+    slightly shorter than the original, that will produce a power-of-two number
+    of FFT bins'''
+    import numpy as np
+    return fftlen / (2 ** np.ceil(np.log2(fftlen / tbin)))
+
+
+def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
+    '''
+    Returns the detection level (with probability 1 - epsilon) for a Power
+    Density Spectrum of nbins bins, normalized à la Leahy (1983), based on
+    the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
+    PDS averaging (n_summed_spectra)
+    '''
+    try:
+        from scipy import stats
+    except:
+        raise Exception('You need Scipy to use this function')
+
+    return stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * n_rebin) \
+        / (n_summed_spectra * n_rebin)
+
+
+def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
+    '''
+    Returns the probability of a certain power level in a Power Density
+    Spectrum of nbins bins, normalized à la Leahy (1983), based on
+    the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
+    PDS averaging (n_summed_spectra)
+    '''
+    try:
+        from scipy import stats
+    except:
+        raise Exception('You need Scipy to use this function')
+
+    epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
+                                    2 * n_summed_spectra * n_rebin)
+    return 1 - epsilon
