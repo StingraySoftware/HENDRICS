@@ -178,6 +178,8 @@ def mp_calc_pds(lcfile, fftlen,
                 normalization='Leahy'):
     '''Calculates the PDS from an input light curve file'''
     # TODO:Implement save_dyn
+    if save_dyn:
+        print ('Beware! save_dyn not yet implemented')
 
     print ("Loading file %s..." % lcfile)
     lcdata = pickle.load(open(lcfile))
@@ -229,6 +231,8 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     '''Calculates the Cross Power Density Spectrum from a pair of
     input light curve files'''
     # TODO:Implement save_dyn
+    if save_dyn:
+        print ('Beware! save_dyn not yet implemented')
 
     print ("Loading file %s..." % lcfile1)
     lcdata1 = pickle.load(open(lcfile1))
