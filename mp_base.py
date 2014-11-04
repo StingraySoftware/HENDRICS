@@ -207,7 +207,7 @@ def mp_optimal_bin_time(fftlen, tbin):
 def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     '''
     Returns the detection level (with probability 1 - epsilon) for a Power
-    Density Spectrum of nbins bins, normalized à la Leahy (1983), based on
+    Density Spectrum of nbins bins, normalized \'a la Leahy (1983), based on
     the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
     PDS averaging (n_summed_spectra)
     '''
@@ -223,7 +223,7 @@ def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
 def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     '''
     Returns the probability of a certain power level in a Power Density
-    Spectrum of nbins bins, normalized à la Leahy (1983), based on
+    Spectrum of nbins bins, normalized \'a la Leahy (1983), based on
     the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
     PDS averaging (n_summed_spectra)
     '''
