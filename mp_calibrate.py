@@ -11,7 +11,8 @@ def mp_default_nustar_rmf():
     print ("###############################################")
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split('/')
-    return os.path.join(os.environ['CALDB'], path)
+    newpath = os.path.join(os.environ['CALDB'], *path)
+    return newpath
 
 
 def mp_read_rmf(rmf_file=None):
