@@ -163,12 +163,14 @@ def mp_cross_gtis(gti_list, bin_time=1):
     start = np.min([g[0][0] for g in gti_list])
     stop = np.max([g[-1][-1] for g in gti_list])
 
-    times = np.arange(start, stop, 1, dtype=np.longdouble)
+    times = np.arange(start, stop, bin_time, dtype=np.longdouble)
 
-    mask0 = mp_create_gti_mask(times, gti_list[0], verbose=0)
+    mask0 = mp_create_gti_mask(times, gti_list[0], verbose=0,
+                               safe_interval=[0, bin_time])
 
-    for gti in gti_list:
-        mask = mp_create_gti_mask(times, gti, verbose=0)
+    for gti in gti_list[1:]:
+        mask = mp_create_gti_mask(times, gti, verbose=0,
+                                  safe_interval=[0, bin_time])
         mask0 = np.logical_and(mask0, mask)
 
     gtis = mp_create_gti_from_condition(times, mask0)
