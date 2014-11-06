@@ -46,3 +46,6 @@ def mp_cross_gtis(gti_list, bin_time=1, debug=True):
         plt.ylim([-10, 10])
         plt.show()
     return gtis
+
+if __name__ == '__main__':
+    pass

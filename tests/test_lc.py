@@ -3,16 +3,17 @@ import cPickle as pickle
 import sys
 import matplotlib.pyplot as plt
 
-print ('Loading lc file...')
-lcdata = pickle.load(open(sys.argv[1]))
+if __name__=='__main__':
+    print ('Loading lc file...')
+    lcdata = pickle.load(open(sys.argv[1]))
 
-time = lcdata['time']
-lc = lcdata['lc']
-gti = lcdata['gti']
+    time = lcdata['time']
+    lc = lcdata['lc']
+    gti = lcdata['gti']
 
-plt.plot(time, lc, drawstyle='steps-mid', color='k')
+    plt.plot(time, lc, drawstyle='steps-mid', color='k')
 
-for g in gti:
-    plt.axvline(g[0], ls='--', color='red')
-    plt.axvline(g[1], ls='--', color='red')
-plt.show()
+    for g in gti:
+        plt.axvline(g[0], ls='--', color='red')
+        plt.axvline(g[1], ls='--', color='red')
+    plt.show()
