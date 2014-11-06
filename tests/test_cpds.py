@@ -15,4 +15,5 @@ if __name__ == '__main__':
 
     plt.xlabel('Frequency')
     plt.ylabel('Cospectrum')
+
     plt.show()
