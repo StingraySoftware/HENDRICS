@@ -1,6 +1,6 @@
 from __future__ import division, print_function
 from mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
-from mp_base import mp_get_file_type
+from mp_base import mp_get_file_type, mp_sort_files
 from mp_rebin import mp_const_rebin
 import numpy as np
 
@@ -351,13 +351,23 @@ def mp_calc_fspec(files, fftlen,
 
     if not calc_cpds:
         return
-    print ('Beware! For cpds and derivatives, I assume that the files are')
-    print ('ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...')
-    files1 = files[:-1:2]
-    files2 = files[1::2]
 
+    if len(files) > 2:
+        print ('Sorting file list')
+        sorted_files = mp_sort_files(files)
+        print ('Beware! For cpds and derivatives, I assume that the files are')
+        print ('from only two instruments and in pairs (even in random order)')
+
+        instrs = sorted_files.keys()
+        files1 = sorted_files[instrs[0]]
+        files2 = sorted_files[instrs[1]]
+    else:
+        files1 = [files[0]]
+        files2 = [files[1]]
+    print(instrs, files1, files2)
     assert len(files1) == len(files2), 'An even number of files is needed'
-
+    import sys
+    sys.exit()
     for i_f, f in enumerate(files1):
         f1, f2 = f, files2[i_f]
 

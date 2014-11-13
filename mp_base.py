@@ -237,3 +237,36 @@ def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
                                     2 * n_summed_spectra * n_rebin)
     return 1 - epsilon
+
+
+def mp_sort_files(files):
+    '''Sorts a list of MaLTPyNT files'''
+    all={}
+    ftypes = []
+    for f in files:
+        print ('Loading file', f )
+        ftype, contents = mp_get_file_type(f)
+        instr = contents['Instr']
+        ftypes.append(ftype)
+        if not instr in all.keys():
+            all[instr] = []
+        # Add file name to the dictionary
+        contents['FILENAME'] = f
+        all[instr].append(contents)
+
+    # Check if files are all of the same kind (lcs, PDSs, ...)
+    ftypes = list(set(ftypes))
+    assert len(ftypes) == 1, 'Files are not all of the same kind.'
+
+    instrs = all.keys()
+    for instr in instrs:
+        contents = list(all[instr])
+        tstarts = [c['Tstart'] for c in contents]
+        fnames = [c['FILENAME'] for c in contents]
+
+        fnames = [x for (y,x) in sorted(zip(tstarts,fnames))]
+
+        # Substitute dictionaries with the sorted list of files
+        all[instr] = fnames
+
+    return all
