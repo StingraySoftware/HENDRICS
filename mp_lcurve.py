@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 import numpy as np
 from mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis
+from mp_base import mp_contiguous_regions
 import cPickle as pickle
 
 
@@ -123,9 +124,12 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc.p'):
     return time0, lc0, gti
 
 
-def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False):
+def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
+                      min_length=0, return_borders=False):
+
     mask, newgtis = mp_create_gti_mask(time, gti, return_new_gtis=True,
-                                       safe_interval=safe_interval)
+                                       safe_interval=safe_interval,
+                                       min_length=min_length)
 
 #    # test if newgti-created mask coincides with mask
 #    newmask = mp_create_gti_mask(time, newgtis, safe_interval=0)
@@ -139,12 +143,20 @@ def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False):
     else:
         lc[nomask] = 0
 
-    return time, lc, newgtis
+    if return_borders:
+        # TODO: Check if this works with and without "delete" enabled
+        mask = mp_create_gti_mask(time, newgtis)
+        borders = mp_contiguous_regions(mask)
+        return time, lc, newgtis, borders
+    else:
+        return time, lc, newgtis
 
 
 def mp_lcurve_from_events(f, safe_interval=0,
                           pi_interval=None,
-                          e_interval=None):
+                          e_interval=None,
+                          min_length=0,
+                          gti_split=False):
     print ("Loading file %s..." % f)
     evdata = pickle.load(open(f))
     print ("Done.")
@@ -186,22 +198,52 @@ def mp_lcurve_from_events(f, safe_interval=0,
 
     time, lc = mp_lcurve(events, bintime, start_time=tstart,
                          stop_time=tstop)
-    time, lc, newgtis = mp_filter_lc_gtis(time, lc, gtis,
-                                          safe_interval=safe_interval,
-                                          delete=True)
+    if gti_split:
+        time, lc, newgtis, borders = \
+            mp_filter_lc_gtis(time, lc, gtis,
+                              safe_interval=safe_interval,
+                              delete=False,
+                              min_length=min_length,
+                              return_borders=True)
 
-    out['lc'] = lc
-    out['time'] = time
-    out['dt'] = bintime
-    out['gti'] = newgtis
-    out['Tstart'] = tstart
-    out['Tstop'] = tstop
-    out['Instr'] = instr
-    outfile = mp_root(f) + tag + '_lc.p'
-    print ('Saving light curve to %s' % outfile)
-    pickle.dump(out, open(outfile, 'wb'))
+        outfiles = []
+        print (borders)
+        for ib, b in enumerate(borders):
+            print (b)
+            local_tag = tag + '_gti%d' % ib
+            local_out = out.copy()
+            local_out['lc'] = lc[b[0]:b[1]]
+            local_out['time'] = time[b[0]:b[1]]
+            local_out['dt'] = bintime
+            local_out['gti'] = [[time[b[0]], time[b[1]]]]
+            local_out['Tstart'] = time[b[0]]
+            local_out['Tstop'] = time[b[1]]
+            local_out['Instr'] = instr
+            outfile = mp_root(f) + local_tag + '_lc.p'
+            print ('Saving light curve to %s' % outfile)
+            pickle.dump(local_out, open(outfile, 'wb'))
+            outfiles.append(outfile)
+    else:
+        time, lc, newgtis = mp_filter_lc_gtis(time, lc, gtis,
+                                              safe_interval=safe_interval,
+                                              delete=True,
+                                              min_length=min_length,
+                                              return_borders=False)
 
-    return outfile
+        out['lc'] = lc
+        out['time'] = time
+        out['dt'] = bintime
+        out['gti'] = newgtis
+        out['Tstart'] = tstart
+        out['Tstop'] = tstop
+        out['Instr'] = instr
+        outfile = mp_root(f) + tag + '_lc.p'
+        print ('Saving light curve to %s' % outfile)
+        pickle.dump(out, open(outfile, 'wb'))
+        outfiles = [outfile]
+
+    # For consistency in return value
+    return outfiles
 
 
 if __name__ == "__main__":
@@ -213,21 +255,27 @@ if __name__ == "__main__":
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument("-b", "--bintime", type=float, default=1/4096,
                         help="Bin time; if negative, negative power of 2")
-    parser.add_argument("--safe_interval", nargs=2, type=float,
+    parser.add_argument("--safe-interval", nargs=2, type=float,
                         default=[0, 0],
                         help="Interval at start and stop of GTIs used" +
                         " for filtering")
-    parser.add_argument("--pi_interval", type=long, default=[-1, -1],
+    parser.add_argument("--pi-interval", type=long, default=[-1, -1],
                         nargs=2,
                         help="PI interval used for filtering")
-    parser.add_argument('-e', "--e_interval", type=float, default=[-1, -1],
+    parser.add_argument('-e', "--e-interval", type=float, default=[-1, -1],
                         nargs=2,
                         help="Energy interval used for filtering")
     parser.add_argument("-s", "--scrunch",
                         help="Create scrunched light curve",
                         default=False,
                         action="store_true")
-
+    parser.add_argument("-g", "--gti-split",
+                        help="Split light curve by GTI",
+                        default=False,
+                        action="store_true")
+    parser.add_argument("--minlen",
+                        help="Minimum length of acceptable GTIs (default:100)",
+                        default=100, type=float)
     args = parser.parse_args()
     bintime = args.bintime
 
@@ -244,9 +292,13 @@ if __name__ == "__main__":
     for f in infiles:
         outfile = mp_lcurve_from_events(f, safe_interval=safe_interval,
                                         pi_interval=pi_interval,
-                                        e_interval=e_interval)
+                                        e_interval=e_interval,
+                                        min_length=args.minlen,
+                                        gti_split=args.gti_split)
 
-        outfiles.append(outfile)
+        outfiles.extend(outfile)
 
+    print (outfiles)
+    # TODO: test if this still works!
     if args.scrunch:
         mp_scrunch_lightcurves(outfiles)
