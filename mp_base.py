@@ -241,10 +241,10 @@ def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
 
 def mp_sort_files(files):
     '''Sorts a list of MaLTPyNT files'''
-    all={}
+    all = {}
     ftypes = []
     for f in files:
-        print ('Loading file', f )
+        print ('Loading file', f)
         ftype, contents = mp_get_file_type(f)
         instr = contents['Instr']
         ftypes.append(ftype)
@@ -264,7 +264,7 @@ def mp_sort_files(files):
         tstarts = [c['Tstart'] for c in contents]
         fnames = [c['FILENAME'] for c in contents]
 
-        fnames = [x for (y,x) in sorted(zip(tstarts,fnames))]
+        fnames = [x for (y, x) in sorted(zip(tstarts, fnames))]
 
         # Substitute dictionaries with the sorted list of files
         all[instr] = fnames
