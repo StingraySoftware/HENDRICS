@@ -34,7 +34,7 @@ This software has a modular structure. One starts from cleaned event files (such
 
 6. **rebinning** of frequency spectra 
 
-7. finally, **lags** (still not implemented... ehm...) and **cospectrum**
+7. finally, **lags** and **cospectrum**
 
 8. (optional) frequency spectra in XSpec format
 
@@ -42,7 +42,7 @@ Most of these tools have help information that can be accessed by typing the nam
 ```
 #!console
 
-$ python ../mp_calibrate.py -h
+$ python mp_calibrate.py -h
 usage: mp_calibrate.py [-h] [-r RMF] [-o] files [files ...]
 
 Calibrates clean event files by associating the correct energy to each PI
