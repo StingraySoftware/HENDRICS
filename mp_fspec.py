@@ -364,10 +364,9 @@ def mp_calc_fspec(files, fftlen,
     else:
         files1 = [files[0]]
         files2 = [files[1]]
-    print(instrs, files1, files2)
+
     assert len(files1) == len(files2), 'An even number of files is needed'
-    import sys
-    sys.exit()
+
     for i_f, f in enumerate(files1):
         f1, f2 = f, files2[i_f]
 
