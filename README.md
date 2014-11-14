@@ -1,10 +1,12 @@
 # MaLTPyNT - Matteo's Libraries and Tools in Python for NuSTAR Timing.
-** BEWARE! STILL UNDER TESTING. DO NOT USE IN PRODUCTION!**
+** BEWARE! STILL UNDER TESTING. USE WITH CARE IN PRODUCTION!**
 
 These tools are a stripped-down version of a huge and messy library of timing codes I've developed in the years. They contain what is needed for a quick look at the timing properties of an X-ray source.
 This software is **heavily focused on NuSTAR**, and it's mostly for educational purposes. Everything can be generalized to any point, but here I tried to focus on what can be useful to people making their first steps on NuSTAR timing data. I also decided to use very few external libraries in order to make the installation easier, at the cost of losing some (well, a lot of) performance, in particular in I/O.
 
-## Note for the users
+## Notes for the users
+**If you use this software in a publication** please write something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al., _submitted_ ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
+
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
 ## Installation
