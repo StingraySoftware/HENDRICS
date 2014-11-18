@@ -218,8 +218,16 @@ def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     except:
         raise Exception('You need Scipy to use this function')
 
-    return stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * n_rebin) \
-        / (n_summed_spectra * n_rebin)
+    import collections
+    if not isinstance(n_rebin, collections.Iterable):
+        r = n_rebin
+        retlev = stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) \
+            / (n_summed_spectra * r)
+    else:
+        retlev = [stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r)
+                  / (n_summed_spectra * r) for r in n_rebin]
+        retlev = np.array(retlev)
+    return retlev
 
 
 def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
