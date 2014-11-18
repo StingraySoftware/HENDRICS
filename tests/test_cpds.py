@@ -6,7 +6,14 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
     pdsdata = pickle.load(open(sys.argv[1]))
 
-    freq = pdsdata['freq']
+    try:
+        freq = pdsdata['freq']
+    except:
+        flo = pdsdata['flo']
+        fhi = pdsdata['fhi']
+        freq = (fhi + flo) / 2
+        plt.semilogx()
+
     cpds = pdsdata['cpds']
 
     cospectrum = cpds.real
