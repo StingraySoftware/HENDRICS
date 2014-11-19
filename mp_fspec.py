@@ -101,6 +101,7 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True):
     good = freqs >= 0
     freqs = freqs[good]
     cpds = cpds[good]
+    cpdse = cpdse[good]
 
     if return_freq:
         return freqs, cpds, cpdse
