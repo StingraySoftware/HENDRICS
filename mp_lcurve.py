@@ -156,7 +156,8 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           pi_interval=None,
                           e_interval=None,
                           min_length=0,
-                          gti_split=False):
+                          gti_split=False,
+                          ignore_gtis=False):
     print ("Loading file %s..." % f)
     evdata = pickle.load(open(f))
     print ("Done.")
@@ -167,6 +168,8 @@ def mp_lcurve_from_events(f, safe_interval=0,
     events = evdata['Events']
     instr = evdata['Instr']
     gtis = evdata['GTI']
+    if ignore_gtis:
+        gtis = np.array([[tstart, tstop]])
 
     # make tstart and tstop multiples of bin times since MJDref
     tstart = np.ceil(tstart / bintime, dtype=np.longdouble) * bintime
@@ -276,6 +279,10 @@ if __name__ == "__main__":
     parser.add_argument("--minlen",
                         help="Minimum length of acceptable GTIs (default:100)",
                         default=100, type=float)
+    parser.add_argument("--ignore-gtis",
+                        help="Ignore GTIs",
+                        default=False,
+                        action="store_true")
     args = parser.parse_args()
     bintime = args.bintime
 
@@ -294,7 +301,8 @@ if __name__ == "__main__":
                                         pi_interval=pi_interval,
                                         e_interval=e_interval,
                                         min_length=args.minlen,
-                                        gti_split=args.gti_split)
+                                        gti_split=args.gti_split,
+                                        ignore_gtis=args.ignore_gtis)
 
         outfiles.extend(outfile)
 
