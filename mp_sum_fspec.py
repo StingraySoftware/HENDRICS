@@ -42,7 +42,7 @@ def sum_fspec(files, outname=None):
         assert norm == norm0, 'Files must have the same normalization'
 
         tot_pds += pds * nchunks
-        tot_epds += epds ** 2 * nchunks
+        tot_epds += epds ** 2 * nchunks ** 2
         tot_npds += nchunks
 
     tot_contents[pdstype] = tot_pds / tot_npds
