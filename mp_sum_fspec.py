@@ -1,7 +1,6 @@
 from __future__ import division, print_function
-import cPickle as pickle
 import argparse
-from mp_fspec import mp_get_file_type
+from mp_io import mp_save_data, mp_get_file_type
 import numpy as np
 
 
@@ -50,7 +49,7 @@ def sum_fspec(files, outname=None):
     tot_contents['n' + pdstype] = tot_npds
 
     print ('Saving %s to %s' % (pdstype, outname))
-    pickle.dump(tot_contents, open(outname, 'wb'))
+    mp_save_data(tot_contents, open(outname, 'wb'), ftype)
 
     return tot_contents
 

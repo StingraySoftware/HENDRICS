@@ -1,4 +1,5 @@
 from __future__ import division, print_function
+from mp_io import mp_load_events, mp_save_events
 import numpy as np
 import os
 
@@ -49,7 +50,6 @@ def mp_calibrate(pis, rmf_file=None):
 
 if __name__ == '__main__':
     import argparse
-    import cPickle as pickle
     description = 'Calibrates clean event files by associating the correct' + \
         ' energy to each PI channel. Uses either a specified rmf file or' + \
         ' (for NuSTAR only) an rmf file from the CALDB'
@@ -73,11 +73,11 @@ if __name__ == '__main__':
 
         # Read event file
         print ("Loading file %s..." % f)
-        evdata = pickle.load(open(f))
+        evdata = mp_load_events(f)
         print ("Done.")
         pis = evdata['PI']
 
         es = mp_calibrate(pis, args.rmf)
         evdata['E'] = es
         print ('Saving calibrated data to %s' % outname)
-        pickle.dump(evdata, open(outname, 'wb'))
+        mp_save_events(evdata, outname)

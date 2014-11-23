@@ -1,5 +1,6 @@
 from __future__ import division, print_function
 from mp_base import mp_root, mp_read_header_key, mp_ref_mjd
+from mp_io import mp_save_events
 
 
 def mp_load_gtis(fits_file, gtistring=None):
@@ -106,7 +107,6 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
 
 
 def mp_treat_event_file(filename):
-    import cPickle as pickle
 
     print ('Opening %s' % filename)
 
@@ -127,8 +127,7 @@ def mp_treat_event_file(filename):
            }
 
     outfile = mp_root(filename) + '_ev.p'
-    print ('Saving events and info to %s' % outfile)
-    pickle.dump(out, open(outfile, 'wb'))
+    mp_save_events(out, outfile)
 
 
 if __name__ == "__main__":

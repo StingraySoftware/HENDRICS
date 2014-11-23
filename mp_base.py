@@ -44,26 +44,6 @@ def mp_ref_mjd(fits_file, hdu=1):
     return ref_mjd_val
 
 
-def mp_save_as_netcdf(vars, varnames, formats, fname):
-    '''The future. Much faster than pickle'''
-    import netCDF4 as nc
-    import collections
-
-    rootgrp = nc.Dataset(fname, 'w',
-                         format='NETCDF4')
-
-    for iv, v in enumerate(vars):
-        if isinstance(v, collections.Iterable):
-            dim = len(v)
-        else:
-            dim = 1
-        rootgrp.createDimension(varnames[iv]+"dim", dim)
-        vnc = rootgrp.createVariable(varnames[iv], formats[iv],
-                                     (varnames[iv]+"dim",))
-        vnc[:] = v
-    rootgrp.close()
-
-
 def mp_root(filename):
     filename = filename.replace('.evt', '').replace('.fits', '')
     filename = filename.replace('_ev.p', '').replace('_lc.p', '')
@@ -176,26 +156,6 @@ def mp_cross_gtis(gti_list, bin_time=1):
     gtis = mp_create_gti_from_condition(times, mask0)
 
     return gtis
-
-
-def mp_get_file_type(fname):
-    import cPickle as pickle
-    contents = pickle.load(open(fname))
-    '''Gets file type'''
-    # TODO: other file formats
-
-    keys = contents.keys()
-    if 'lc' in keys:
-        ftype = 'lc'
-    elif 'cpds' in keys:
-        ftype = 'cpds'
-        if 'fhi' in keys:
-            ftype = 'rebcpds'
-    elif 'pds' in keys:
-        ftype = 'pds'
-        if 'fhi' in keys:
-            ftype = 'rebpds'
-    return ftype, contents
 
 
 def mp_optimal_bin_time(fftlen, tbin):

@@ -1,5 +1,5 @@
 from __future__ import division, print_function
-from mp_base import mp_get_file_type
+from mp_io import mp_get_file_type
 import numpy as np
 
 

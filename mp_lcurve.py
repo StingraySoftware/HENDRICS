@@ -2,7 +2,7 @@ from __future__ import division, print_function
 import numpy as np
 from mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis
 from mp_base import mp_contiguous_regions
-import cPickle as pickle
+from mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
 
 
 def mp_lcurve(event_list,
@@ -42,7 +42,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc.p'):
     lcdatas = []
     for lfc in lcfilelist:
         print ("Loading file %s..." % lfc)
-        lcdata = pickle.load(open(lfc))
+        lcdata = mp_load_lcurve(lfc)
         print ("Done.")
         lcdatas.append(lcdata)
 
@@ -83,7 +83,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc.p'):
 
     if outfile is not None:
         print ('Saving joined light curve to %s' % outfile)
-        pickle.dump(outlcs, open(outfile, 'wb'))
+        mp_save_lcurve(outlcs, outfile)
 
     return outlcs
 
@@ -91,7 +91,6 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc.p'):
 def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc.p'):
     '''Create a single light curve from input light curves,
     regardless of the instrument'''
-    import cPickle as pickle
     lcdata = mp_join_lightcurves(lcfilelist)
     instrs = lcdata.keys()
     gti_lists = [lcdata[inst]['gti'] for inst in instrs]
@@ -119,7 +118,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc.p'):
     out['dt'] = lcdata[instrs[0]]['dt']
 
     print ('Saving scrunched light curve to %s' % outfile)
-    pickle.dump(out, open(outfile, 'wb'))
+    mp_save_lcurve(out, outfile)
 
     return time0, lc0, gti
 
@@ -159,7 +158,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           gti_split=False,
                           ignore_gtis=False):
     print ("Loading file %s..." % f)
-    evdata = pickle.load(open(f))
+    evdata = mp_load_events(f)
     print ("Done.")
     tag = ''
     out = {}
@@ -224,7 +223,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
             local_out['Instr'] = instr
             outfile = mp_root(f) + local_tag + '_lc.p'
             print ('Saving light curve to %s' % outfile)
-            pickle.dump(local_out, open(outfile, 'wb'))
+            mp_save_lcurve(local_out, outfile)
             outfiles.append(outfile)
     else:
         time, lc, newgtis = mp_filter_lc_gtis(time, lc, gtis,
@@ -242,7 +241,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         out['Instr'] = instr
         outfile = mp_root(f) + tag + '_lc.p'
         print ('Saving light curve to %s' % outfile)
-        pickle.dump(out, open(outfile, 'wb'))
+        mp_save_lcurve(out, outfile)
         outfiles = [outfile]
 
     # For consistency in return value

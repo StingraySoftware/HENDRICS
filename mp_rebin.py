@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 import numpy as np
-from mp_base import mp_get_file_type
+from mp_io import mp_get_file_type
+from mp_io import mp_save_data
 
 
 def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
@@ -147,12 +148,11 @@ def mp_rebin_file(filename, rebin):
 
     outfile = f.replace('.p', '_rebin%g.p' % rebin)
     print ('Saving %s to %s' % (ftype, outfile))
-    pickle.dump(contents, open(outfile, 'wb'))
+    mp_save_data(contents, outfile, ftype)
 
 
 if __name__ == '__main__':
     import argparse
-    import cPickle as pickle
     description = 'Rebins light curves and frequency spectra. '
     parser = argparse.ArgumentParser(description=description)
 

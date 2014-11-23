@@ -1,7 +1,8 @@
 from __future__ import division, print_function
 from mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
-from mp_base import mp_get_file_type, mp_sort_files
+from mp_base import mp_sort_files
 from mp_rebin import mp_const_rebin
+from mp_io import mp_get_file_type, mp_load_lcurve, mp_save_pds
 import numpy as np
 
 
@@ -196,7 +197,7 @@ def mp_calc_pds(lcfile, fftlen,
         print ('Beware! save_dyn not yet implemented')
 
     print ("Loading file %s..." % lcfile)
-    lcdata = pickle.load(open(lcfile))
+    lcdata = mp_load_lcurve(lcfile)
     time = lcdata['time']
     lc = lcdata['lc']
     dt = lcdata['dt']
@@ -233,7 +234,7 @@ def mp_calc_pds(lcfile, fftlen,
                'rebin': pdsrebin, 'norm': normalization}
     outname = root + '_pds.p'
     print ('Saving PDS to %s' % outname)
-    pickle.dump(outdata, open(outname, 'wb'))
+    mp_save_pds(outdata, outname)
 
 
 def mp_calc_cpds(lcfile1, lcfile2, fftlen,
@@ -249,9 +250,9 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
         print ('Beware! save_dyn not yet implemented')
 
     print ("Loading file %s..." % lcfile1)
-    lcdata1 = pickle.load(open(lcfile1))
+    lcdata1 = mp_load_lcurve(lcfile1)
     print ("Loading file %s..." % lcfile2)
-    lcdata2 = pickle.load(open(lcfile2))
+    lcdata2 = mp_load_lcurve(lcfile2)
 
     time1 = lcdata1['time']
     lc1 = lcdata1['lc']
@@ -316,7 +317,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
                'freq': freq, 'rebin': pdsrebin, 'norm': normalization}
     print ('Saving CPDS to %s' % outname)
-    pickle.dump(outdata, open(outname, 'wb'))
+    mp_save_pds(outdata, outname)
 
 
 def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
@@ -416,7 +417,6 @@ def mp_read_fspec(fname):
 
 if __name__ == '__main__':
     import argparse
-    import cPickle as pickle
     description = 'Creates frequency spectra (PDS, CPDS, cospectrum)' + \
         ' starting from well-defined input ligthcurves'
     parser = argparse.ArgumentParser(description=description)
