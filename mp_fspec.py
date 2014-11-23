@@ -61,7 +61,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti):
     return f, pds, epds, npds
 
 
-def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True):
+def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     '''
     Calculates the Cross Power Density Spectrum, normalized similarly to the
     PDS in Leahy+1983, ApJ 266, 160., given the lightcurve and its bin time.
@@ -79,8 +79,8 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True):
         dum = np.zeros(len(ft1[freqs > 0]))
         return freqs, dum, dum
 
-    pds1 = ft1.conjugate() * ft1 * 2. / nph1
-    pds2 = ft2.conjugate() * ft2 * 2. / nph2
+    pds1 = np.absolute(ft1.conjugate() * ft1) * 2. / nph1
+    pds2 = np.absolute(ft2.conjugate() * ft2) * 2. / nph2
     pds1e = np.copy(pds1)
     pds2e = np.copy(pds2)
 
@@ -104,9 +104,12 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True):
     cpdse = cpdse[good]
 
     if return_freq:
-        return freqs, cpds, cpdse
+        result = [freqs, cpds, cpdse]
     else:
-        return cpds, cpdse
+        result = [cpds, cpdse]
+    if return_pdss:
+        result.extend([pds1, pds2])
+    return result
 
 
 def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
@@ -117,6 +120,8 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
     cpds = 0
     ecpds = 0
     npds = len(start_times)
+    pds1 = 0
+    pds2 = 0
 
     for t in start_times:
         good = np.logical_and(time >= t, time < t + fftlen)
@@ -126,12 +131,19 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
             print ('Interval starting at time %.7f is bad. Check GTIs' % t)
             npds -= 1
             continue
-        f, p, pe = mp_leahy_cpds(l1, l2, bintime)
+        f, p, pe, p1, p2 = mp_leahy_cpds(l1, l2, bintime, return_pdss=True)
         cpds += p
-        ecpds += pe ** 2
+        pds1 += p1
+        pds2 += p2
 
     cpds /= npds
-    ecpds = np.sqrt(ecpds) / npds
+    pds1 /= npds
+    pds2 /= npds
+
+    # Justification in timing paper! (Bachetti et al. arXiv:1409.3248)
+    # This only works for cospectrum. For the cross spectrum, I *think*
+    # it's irrelevant
+    ecpds = np.sqrt(pds1 * pds2) / np.sqrt(2 * npds)
     return f, cpds, ecpds, npds
 
 
