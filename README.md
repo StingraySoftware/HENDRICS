@@ -10,7 +10,8 @@ This software is **heavily focused on NuSTAR**, and it's mostly for educational 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
 ## Installation
-You'll need a recent python 2.7 installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/)  and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html).
+You'll need a recent python 2.7 installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/)  [Scipy](http://scipy.org/) and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html). 
+An **optional but recommended** dependency is the [netCDF 4 library](http://www.unidata.ucar.edu/software/netcdf/) with its [python bindings](https://github.com/Unidata/netcdf4-python)
 Put the python codes in the directory where you are analyzing the data. That's all. Then, you can call them with a python interpreter, e.g.
 ```
 $ python mp_read_events.py filename.evt
@@ -59,7 +60,7 @@ optional arguments:
   -r RMF, --rmf RMF  rmf file used for calibration
   -o, --overwrite    Overwrite; default: no
 ```
-For I/O, I mostly use native Python `pickle` format. This is _very_ slow (It might take some minutes to load some files). I will eventually use some different file format like NetCDF as I do in my other codes. In this particular case, I valued portability over rapidity.
+For I/O, MaLTPyNT looks if the `netCDF4` library is installed. If it's found in the system, files will be saved in this format. Otherwise, the native Python `pickle` format format will be used. This format is _much_ slower (It might take some minutes to load some files) and files will be bigger, but this possibility ensures portability.
 
 ### 1. Loading event lists
 Starting from cleaned event files, we will first save them in `MaLTPyNT` format (a pickle file basically). For example, I'm starting from two event lists called `002A.evt` and `002B.evt`, containing the cleaned event lists from a source observed with NuSTAR's `FPMA` and `FPMB` respectively.
