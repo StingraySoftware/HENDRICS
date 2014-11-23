@@ -17,7 +17,7 @@ def mp_save_as_xspec(fname):
         np.savetxt(outname, np.transpose([freq - df / 2,
                                           freq + df / 2,
                                           pds.real * df,
-                                          epds.real * df]))
+                                          epds * df]))
     elif 'flo' in contents.keys():
         ftype = ftype.replace('reb', '')
         flo = contents['flo']
@@ -27,7 +27,7 @@ def mp_save_as_xspec(fname):
         df = fhi - flo
         np.savetxt(outname, np.transpose([flo, fhi,
                                           pds.real * df,
-                                          epds.real * df]))
+                                          epds * df]))
     else:
         raise Exception('File type not recognized')
 
