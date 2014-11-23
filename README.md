@@ -11,7 +11,9 @@ I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbach
 
 ## Installation
 You'll need a recent python 2.7 installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/)  [Scipy](http://scipy.org/) and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html). 
-An **optional but recommended** dependency is the [netCDF 4 library](http://www.unidata.ucar.edu/software/netcdf/) with its [python bindings](https://github.com/Unidata/netcdf4-python)
+
+An **optional but recommended** dependency is the [netCDF 4 library](http://www.unidata.ucar.edu/software/netcdf/) with its [python bindings](https://github.com/Unidata/netcdf4-python).
+
 Put the python codes in the directory where you are analyzing the data. That's all. Then, you can call them with a python interpreter, e.g.
 ```
 $ python mp_read_events.py filename.evt
@@ -60,7 +62,7 @@ optional arguments:
   -r RMF, --rmf RMF  rmf file used for calibration
   -o, --overwrite    Overwrite; default: no
 ```
-For I/O, MaLTPyNT looks if the `netCDF4` library is installed. If it's found in the system, files will be saved in this format. Otherwise, the native Python `pickle` format format will be used. This format is _much_ slower (It might take some minutes to load some files) and files will be bigger, but this possibility ensures portability.
+For I/O, MaLTPyNT looks if the `netCDF4` library is installed. If it's found in the system, files will be saved in this format. Otherwise, the native Python `pickle` format format will be used. This format is _much_ slower (It might take some minutes to load some files) and files will be bigger, but this possibility ensures portability. If you use netCDF4, you'll notice that file names will have the `.nc` extension instead of the `.p` below. The rest is the same.
 
 ### 1. Loading event lists
 Starting from cleaned event files, we will first save them in `MaLTPyNT` format (a pickle file basically). For example, I'm starting from two event lists called `002A.evt` and `002B.evt`, containing the cleaned event lists from a source observed with NuSTAR's `FPMA` and `FPMB` respectively.
@@ -73,7 +75,7 @@ Saving events and info to 002A_ev.p
 Opening 002B.evt
 Saving events and info to 002B_ev.p
 ```
-This will create new files with a `_ev.p` extension, containing the event times and the energy _channel_ (`PI`) of each event
+This will create new files with a `_ev.p` extension (`_ev.nc` if you use netCDF4), containing the event times and the energy _channel_ (`PI`) of each event
 
 ### 2. Calibrating event lists
 Use `mp_calibrate`. You can either specify an `rmf` file with the `-r` option, or just let it look for it in the NuSTAR `CALDB` (the environment variable has to be defined!)
