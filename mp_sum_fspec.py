@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 import argparse
 from mp_io import mp_save_data, mp_get_file_type
+from mp_io import MP_FILE_EXTENSION
 import numpy as np
 
 
@@ -22,7 +23,7 @@ def sum_fspec(files, outname=None):
     tot_npds = nchunks0
     tot_contents = contents.copy()
     if outname is None:
-        outname = 'tot_' + ftype0 + '.p'
+        outname = 'tot_' + ftype0 + MP_FILE_EXTENSION
 
     for f in args.files[1:]:
         ftype, contents = mp_get_file_type(f)
@@ -62,7 +63,7 @@ if __name__ == '__main__':
 
     parser.add_argument("-o", "--outname", type=str, default=None,
                         help='Output file name for summed (C)PDS. Default:' +
-                        ' tot_(c)pds.p')
+                        ' tot_(c)pds' + MP_FILE_EXTENSION)
 
     args = parser.parse_args()
 

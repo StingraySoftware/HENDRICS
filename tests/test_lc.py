@@ -1,12 +1,14 @@
 from __future__ import division, print_function
-import cPickle as pickle
+from __future__ import unicode_literals
 import sys
 import matplotlib.pyplot as plt
+from maltpynt.mp_io import mp_load_data
 
-if __name__=='__main__':
-    for lcdata in sys.argv[1:]:
-        print ('Loading %s...' % lcdata)
-        lcdata = pickle.load(open(sys.argv[1]))
+
+if __name__ == '__main__':
+    for lcfile in sys.argv[1:]:
+        print ('Loading %s...' % lcfile)
+        lcdata = mp_load_data(lcfile)
 
         time = lcdata['time']
         lc = lcdata['lc']

@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 from mp_base import mp_root, mp_read_header_key, mp_ref_mjd
 from mp_io import mp_save_events
+from mp_io import MP_FILE_EXTENSION
 
 
 def mp_load_gtis(fits_file, gtistring=None):
@@ -126,7 +127,7 @@ def mp_treat_event_file(filename):
            'Instr': instr
            }
 
-    outfile = mp_root(filename) + '_ev.p'
+    outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
     mp_save_events(out, outfile)
 
 

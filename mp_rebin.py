@@ -2,6 +2,7 @@ from __future__ import division, print_function
 import numpy as np
 from mp_io import mp_get_file_type
 from mp_io import mp_save_data
+from mp_io import MP_FILE_EXTENSION, mp_get_file_extension
 
 
 def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
@@ -142,11 +143,12 @@ def mp_rebin_file(filename, rebin):
             contents[ftype] = y
             contents['e' + ftype] = ye
             contents['nbins'] = nbin
-            contents['rebin'] *= nbin
+            contents['rebin'] = nbin * contents['rebin']
     else:
         raise Exception('Format was not recognized')
 
-    outfile = f.replace('.p', '_rebin%g.p' % rebin)
+    outfile = f.replace(mp_get_file_extension(f),
+                        '_rebin%g' % rebin + MP_FILE_EXTENSION)
     print ('Saving %s to %s' % (ftype, outfile))
     mp_save_data(contents, outfile, ftype)
 

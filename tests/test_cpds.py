@@ -1,10 +1,10 @@
 from __future__ import division, print_function
-import cPickle as pickle
 import sys
 import matplotlib.pyplot as plt
+from maltpynt.mp_io import mp_load_data
 
 if __name__ == '__main__':
-    pdsdata = pickle.load(open(sys.argv[1]))
+    pdsdata = mp_load_data(sys.argv[1])
 
     try:
         freq = pdsdata['freq']

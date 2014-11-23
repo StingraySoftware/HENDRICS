@@ -3,6 +3,7 @@ from mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
 from mp_base import mp_sort_files
 from mp_rebin import mp_const_rebin
 from mp_io import mp_get_file_type, mp_load_lcurve, mp_save_pds
+from mp_io import MP_FILE_EXTENSION
 import numpy as np
 
 
@@ -232,7 +233,7 @@ def mp_calc_pds(lcfile, fftlen,
     outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
                'rebin': pdsrebin, 'norm': normalization}
-    outname = root + '_pds.p'
+    outname = root + '_pds' + MP_FILE_EXTENSION
     print ('Saving PDS to %s' % outname)
     mp_save_pds(outdata, outname)
 
@@ -241,7 +242,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                  save_dyn=False,
                  bintime=1,
                  pdsrebin=1,
-                 outname='cpds.p',
+                 outname='cpds' + MP_FILE_EXTENSION,
                  normalization='Leahy'):
     '''Calculates the Cross Power Density Spectrum from a pair of
     input light curve files'''
@@ -388,7 +389,8 @@ def mp_calc_fspec(files, fftlen,
         if outdir == '':
             outdir = os.getcwd()
 
-        outname = os.path.join(outdir, outroot + "_%d.p" % i_f)
+        outname = os.path.join(outdir,
+                               outroot + "_%d" % i_f + MP_FILE_EXTENSION)
         mp_calc_cpds(f1, f2, fftlen,
                      save_dyn=save_dyn,
                      bintime=bintime,

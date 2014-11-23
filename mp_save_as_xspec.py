@@ -1,12 +1,13 @@
 from __future__ import division, print_function
 from mp_io import mp_get_file_type
 import numpy as np
+from mp_io import mp_get_file_extension
 
 
 def mp_save_as_xspec(fname):
     ftype, contents = mp_get_file_type(fname)
 
-    outname = fname.replace('.p', '_xsp.dat')
+    outname = fname.replace(mp_get_file_extension(fname), '_xsp.dat')
 
     if 'freq' in contents.keys():
         freq = contents['freq']

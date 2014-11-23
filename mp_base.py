@@ -1,5 +1,6 @@
 from __future__ import division, print_function
 import numpy as np
+from mp_io import mp_get_file_type
 
 
 def mp_mkdir_p(path):
@@ -45,10 +46,11 @@ def mp_ref_mjd(fits_file, hdu=1):
 
 
 def mp_root(filename):
-    filename = filename.replace('.evt', '').replace('.fits', '')
-    filename = filename.replace('_ev.p', '').replace('_lc.p', '')
-    filename = filename.replace('_ev_calib.p', '')
-    return filename
+    import os.path
+    fname = os.path.splitext(filename)[0]
+    fname = fname.replace('_ev', '').replace('_lc', '')
+    fname = fname.replace('_ev_calib', '')
+    return fname
 
 
 def mp_contiguous_regions(condition):

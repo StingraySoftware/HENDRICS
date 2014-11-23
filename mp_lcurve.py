@@ -3,6 +3,7 @@ import numpy as np
 from mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis
 from mp_base import mp_contiguous_regions
 from mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
+from mp_io import MP_FILE_EXTENSION
 
 
 def mp_lcurve(event_list,
@@ -38,7 +39,7 @@ def mp_lcurve(event_list,
     return times, lc.astype(np.float)
 
 
-def mp_join_lightcurves(lcfilelist, outfile='out_lc.p'):
+def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     lcdatas = []
     for lfc in lcfilelist:
         print ("Loading file %s..." % lfc)
@@ -88,7 +89,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc.p'):
     return outlcs
 
 
-def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc.p'):
+def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION):
     '''Create a single light curve from input light curves,
     regardless of the instrument'''
     lcdata = mp_join_lightcurves(lcfilelist)
@@ -221,7 +222,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
             local_out['Tstart'] = time[b[0]]
             local_out['Tstop'] = time[b[1]]
             local_out['Instr'] = instr
-            outfile = mp_root(f) + local_tag + '_lc.p'
+            outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
             print ('Saving light curve to %s' % outfile)
             mp_save_lcurve(local_out, outfile)
             outfiles.append(outfile)
@@ -239,7 +240,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         out['Tstart'] = tstart
         out['Tstop'] = tstop
         out['Instr'] = instr
-        outfile = mp_root(f) + tag + '_lc.p'
+        outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
         print ('Saving light curve to %s' % outfile)
         mp_save_lcurve(out, outfile)
         outfiles = [outfile]

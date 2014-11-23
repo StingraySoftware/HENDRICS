@@ -1,5 +1,6 @@
 from __future__ import division, print_function
 from mp_io import mp_load_events, mp_save_events
+from mp_io import mp_get_file_extension, MP_FILE_EXTENSION
 import numpy as np
 import os
 
@@ -69,7 +70,8 @@ if __name__ == '__main__':
     for i_f, f in enumerate(files):
         outname = f
         if args.overwrite is False:
-            outname = f.replace('.p', '_calib.p')
+            outname = f.replace(mp_get_file_extension(f), '_calib' +
+                                MP_FILE_EXTENSION)
 
         # Read event file
         print ("Loading file %s..." % f)
