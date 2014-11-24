@@ -133,6 +133,7 @@ def mp_rebin_file(filename, rebin):
             contents['freq'] = x
             contents[ftype] = y
             contents['e' + ftype] = ye
+            contents['rebin'] *= rebin
         else:
             print ('Applying a geometrical rebinning')
             x1, x2, y, ye, nbin = \
@@ -143,7 +144,7 @@ def mp_rebin_file(filename, rebin):
             contents[ftype] = y
             contents['e' + ftype] = ye
             contents['nbins'] = nbin
-            contents['rebin'] = nbin * contents['rebin']
+            contents['rebin'] *= nbin
     else:
         raise Exception('Format was not recognized')
 
