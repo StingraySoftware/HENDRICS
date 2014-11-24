@@ -25,7 +25,7 @@ def sum_fspec(files, outname=None):
     if outname is None:
         outname = 'tot_' + ftype0 + MP_FILE_EXTENSION
 
-    for f in args.files[1:]:
+    for f in files[1:]:
         ftype, contents = mp_get_file_type(f)
         pdstype = ftype.replace('reb', '')
         freq = contents['freq']
@@ -50,7 +50,7 @@ def sum_fspec(files, outname=None):
     tot_contents['n' + pdstype] = tot_npds
 
     print ('Saving %s to %s' % (pdstype, outname))
-    mp_save_data(tot_contents, open(outname, 'wb'), ftype)
+    mp_save_data(tot_contents, outname)
 
     return tot_contents
 
