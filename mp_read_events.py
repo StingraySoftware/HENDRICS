@@ -49,7 +49,12 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
     import numpy as np
 
     lchdulist = pf.open(fits_file)
-    lctable = lchdulist[hduname].data
+    hdunames = [h.name for h in lchdulist]
+    try:
+        lctable = lchdulist[hduname].data
+    except:
+        print ('HDU %s not found. Trying first extension' % hduname)
+        lctable = lchdulist[1].data
     ev_list = np.array(lctable.field(column), dtype=np.longdouble)
     try:
         timezero = np.longdouble(lchdulist[1].header['TIMEZERO'])
@@ -62,30 +67,48 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
         ev_list += timezero
 
     if gtistring is None:
-        gtistring = 'GTI'
+        accepted_gtistrings = ['GTI', 'STDGTI']
+    else:
+        accepted_gtistrings = [gtistring]
 
     if gti_file is None:
+        # Select first GTI with accepted name
+        gtiextn = [ix for ix, x in enumerate(hdunames)
+                   if x in accepted_gtistrings][0]
         try:
-            gtiext = lchdulist[gtistring, 1]
+            gtiext = lchdulist[gtiextn]
             gtitable = gtiext.data
+
+            colnames = [col.name for col in gtitable.columns.columns]
             # Default: NuSTAR: START, STOP. Otherwise, try RXTE: Start, Stop
-            gtistart = np.array(gtitable.field('START'), dtype=np.longdouble)
-            gtistop = np.array(gtitable.field('STOP'), dtype=np.longdouble)
+            if 'START' in colnames:
+                startstr, stopstr = 'START', 'STOP'
+            else:
+                startstr, stopstr = 'Start', 'Stop'
+
+            gtistart = np.array(gtitable.field(startstr), dtype=np.longdouble)
+            gtistop = np.array(gtitable.field(stopstr), dtype=np.longdouble)
             gti_list = np.array([[a, b]
                                  for a, b in zip(gtistart,
                                                  gtistop)])
 
         except:
-            print ("%s Extension not found in %s!! Please check!!" %
+            print ("%s Extension not found or invalid in %s!! Please check!!" %
                   (gtistring, fits_file))
-            gti_list = [[ev_list[0], ev_list[-1]]]
+            gti_list = np.array([[ev_list[0], ev_list[-1]]])
     else:
         gti_list = mp_load_gtis(gti_file, gtistring)
 
     if additional_columns is not None:
         additional_data = {}
         for a in additional_columns:
-            additional_data[a] = np.array(lctable.field(a))
+            try:
+                additional_data[a] = np.array(lctable.field(a))
+            except:
+                if a == 'PI':
+                    print ('Column PI not found. Trying with PHA')
+                    additional_data[a] = np.array(lctable.field('PHA'))
+
     lchdulist.close()
 
     if return_limits:
