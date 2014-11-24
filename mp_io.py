@@ -231,7 +231,6 @@ def save_data_nc(struct, fname, kind="data"):
             probekind = np.result_type(probe).kind
             probesize = np.result_type(probe).itemsize
 
-        print (probekind, probesize)
         if probesize == 16 and probekind == 'f':
             # If a longdouble, split it in integer + floating part
             if isinstance(var, collections.Iterable):
