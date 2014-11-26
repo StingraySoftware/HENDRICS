@@ -223,7 +223,11 @@ def save_data_nc(struct, fname, kind="data"):
         var = struct[k]
         probe = var
         if isinstance(var, collections.Iterable):
-            probe = var[0]
+            try:
+                probe = var[0]
+            except:
+                print ('This failed:', k, var, 'in file ', fname)
+                return -1
         if is_string(var):
             probekind = str
             probesize = -1

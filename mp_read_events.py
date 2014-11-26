@@ -73,9 +73,9 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
 
     if gti_file is None:
         # Select first GTI with accepted name
-        gtiextn = [ix for ix, x in enumerate(hdunames)
-                   if x in accepted_gtistrings][0]
         try:
+            gtiextn = [ix for ix, x in enumerate(hdunames)
+                       if x in accepted_gtistrings][0]
             gtiext = lchdulist[gtiextn]
             gtitable = gtiext.data
 
