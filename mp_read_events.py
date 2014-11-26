@@ -141,7 +141,7 @@ def mp_treat_event_file(filename):
                                 return_limits=True)
 
     pis = additional['PI']
-    out = {'Events': events,
+    out = {'time': events,
            'GTI': gtis,
            'PI': pis,
            'MJDref': mjdref,

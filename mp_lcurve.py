@@ -165,7 +165,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
     out = {}
     tstart = evdata['Tstart']
     tstop = evdata['Tstop']
-    events = evdata['Events']
+    events = evdata['time']
     instr = evdata['Instr']
     gtis = evdata['GTI']
     if ignore_gtis:
@@ -256,6 +256,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs='+')
+
     parser.add_argument("-b", "--bintime", type=float, default=1/4096,
                         help="Bin time; if negative, negative power of 2")
     parser.add_argument("--safe-interval", nargs=2, type=float,
