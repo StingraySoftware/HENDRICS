@@ -108,6 +108,8 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
                 if a == 'PI':
                     print ('Column PI not found. Trying with PHA')
                     additional_data[a] = np.array(lctable.field('PHA'))
+                else:
+                    raise Exception('Column' + a + 'not found')
 
     lchdulist.close()
 
