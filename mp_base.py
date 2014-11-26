@@ -47,6 +47,7 @@ def mp_ref_mjd(fits_file, hdu=1):
 
 def mp_root(filename):
     import os.path
+    fname = filename.replace('.gz', '')
     fname = os.path.splitext(filename)[0]
     fname = fname.replace('_ev', '').replace('_lc', '')
     fname = fname.replace('_ev_calib', '')
