@@ -134,7 +134,7 @@ def mp_create_gti_from_condition(time, condition, verbose=False,
         if t1 - t0 < 0:
             continue
         gtis.append([t0, t1])
-    return gtis
+    return np.array(gtis)
 
 
 def mp_cross_gtis(gti_list, bin_time=1):
