@@ -122,8 +122,6 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
     cpds = 0
     ecpds = 0
     npds = len(start_times)
-    pds1 = 0
-    pds2 = 0
 
     for t in start_times:
         good = np.logical_and(time >= t, time < t + fftlen)
@@ -133,19 +131,13 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
             print ('Interval starting at time %.7f is bad. Check GTIs' % t)
             npds -= 1
             continue
-        f, p, pe, p1, p2 = mp_leahy_cpds(l1, l2, bintime, return_pdss=True)
+        f, p, pe, p1, p2 = mp_leahy_cpds(l1, l2, bintime)
         cpds += p
-        pds1 += p1
-        pds2 += p2
+        ecpds += pe ** 2
 
     cpds /= npds
-    pds1 /= npds
-    pds2 /= npds
+    ecpds = np.sqrt(ecpds) / npds
 
-    # Justification in timing paper! (Bachetti et al. arXiv:1409.3248)
-    # This only works for cospectrum. For the cross spectrum, I *think*
-    # it's irrelevant
-    ecpds = np.sqrt(pds1 * pds2) / np.sqrt(2 * npds)
     return f, cpds, ecpds, npds
 
 
