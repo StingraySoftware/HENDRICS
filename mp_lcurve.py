@@ -257,7 +257,7 @@ if __name__ == "__main__":
 
     parser.add_argument("files", help="List of files", nargs='+')
 
-    parser.add_argument("-b", "--bintime", type=float, default=1/4096,
+    parser.add_argument("-b", "--bintime", type=float, default=1,
                         help="Bin time; if negative, negative power of 2")
     parser.add_argument("--safe-interval", nargs=2, type=float,
                         default=[0, 0],
