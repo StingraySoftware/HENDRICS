@@ -118,9 +118,6 @@ def mp_get_file_type(fname):
     keys = contents.keys()
     if 'lc' in keys:
         ftype = 'lc'
-    elif 'time' in keys:
-        # If it has not lc, but has time, ...
-        ftype = 'events'
     elif 'cpds' in keys:
         ftype = 'cpds'
         if 'fhi' in keys:
@@ -129,6 +126,9 @@ def mp_get_file_type(fname):
         ftype = 'pds'
         if 'fhi' in keys:
             ftype = 'rebpds'
+    elif 'time' in keys:
+        # If it has not lc, pds or cpds, but has time, ...
+        ftype = 'events'
     elif 'GTI' in keys:
         # If nothing of the above, but has GTIs, than...
         ftype = 'GTI'
@@ -235,7 +235,6 @@ def save_data_nc(struct, fname, kind="data"):
             except:
                 print ('This failed:', k, var, 'in file ', fname)
                 return -1
-        print (var)
         if is_string(var):
             probekind = str
             probesize = -1
