@@ -71,7 +71,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     for lcdata in lcdatas:
         time = lcdata['time']
         lc = lcdata['lc']
-        gti = lcdata['gti']
+        gti = lcdata['GTI']
         instr = lcdata['Instr']
         times[instr].extend(time)
         lcs[instr].extend(lc)
@@ -80,7 +80,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     for instr in instrs:
         outlcs[instr]['time'] = np.array(times[instr])
         outlcs[instr]['lc'] = np.array(lcs[instr])
-        outlcs[instr]['gti'] = np.array(gtis[instr])
+        outlcs[instr]['GTI'] = np.array(gtis[instr])
 
     if outfile is not None:
         print ('Saving joined light curve to %s' % outfile)
@@ -94,7 +94,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION):
     regardless of the instrument'''
     lcdata = mp_join_lightcurves(lcfilelist)
     instrs = lcdata.keys()
-    gti_lists = [lcdata[inst]['gti'] for inst in instrs]
+    gti_lists = [lcdata[inst]['GTI'] for inst in instrs]
     gti = mp_cross_gtis(gti_lists)
     # Determine limits
     time0 = lcdata[instrs[0]]['time']
@@ -218,7 +218,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
             local_out['lc'] = lc[b[0]:b[1]]
             local_out['time'] = time[b[0]:b[1]]
             local_out['dt'] = bintime
-            local_out['gti'] = [[time[b[0]], time[b[1]]]]
+            local_out['GTI'] = [[time[b[0]], time[b[1]]]]
             local_out['Tstart'] = time[b[0]]
             local_out['Tstop'] = time[b[1]]
             local_out['Instr'] = instr
@@ -236,7 +236,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         out['lc'] = lc
         out['time'] = time
         out['dt'] = bintime
-        out['gti'] = newgtis
+        out['GTI'] = newgtis
         out['Tstart'] = tstart
         out['Tstop'] = tstop
         out['Instr'] = instr

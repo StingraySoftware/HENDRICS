@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
         time = lcdata['time']
         lc = lcdata['lc']
-        gti = lcdata['gti']
+        gti = lcdata['GTI']
 
         plt.plot(time, lc, drawstyle='steps-mid', color='k')
 

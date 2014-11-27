@@ -202,7 +202,7 @@ def mp_calc_pds(lcfile, fftlen,
     time = lcdata['time']
     lc = lcdata['lc']
     dt = lcdata['dt']
-    gti = lcdata['gti']
+    gti = lcdata['GTI']
     instr = lcdata['Instr']
 
     if bintime <= dt:
@@ -258,13 +258,13 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     time1 = lcdata1['time']
     lc1 = lcdata1['lc']
     dt1 = lcdata1['dt']
-    gti1 = lcdata1['gti']
+    gti1 = lcdata1['GTI']
     instr1 = lcdata1['Instr']
 
     time2 = lcdata2['time']
     lc2 = lcdata2['lc']
     dt2 = lcdata2['dt']
-    gti2 = lcdata2['gti']
+    gti2 = lcdata2['GTI']
     instr2 = lcdata2['Instr']
 
     assert instr1 != instr2, 'Did you check the ordering of files? ' + \
