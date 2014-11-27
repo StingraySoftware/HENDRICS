@@ -13,6 +13,11 @@ if __name__ == '__main__':
         time = lcdata['time']
         lc = lcdata['lc']
         gti = lcdata['GTI']
+        instr = lcdata['Instr']
+        if instr == 'PCA':
+            # If RXTE, plot per PCU count rate
+            npcus = lcdata['nPCUs']
+            lc /= npcus
 
         plt.plot(time, lc, drawstyle='steps-mid', color='k')
 

@@ -2,6 +2,7 @@ from __future__ import division, print_function
 from mp_base import mp_root, mp_read_header_key, mp_ref_mjd
 from mp_io import mp_save_events
 from mp_io import MP_FILE_EXTENSION
+import numpy as np
 
 
 def mp_load_gtis(fits_file, gtistring=None):
@@ -137,9 +138,14 @@ def mp_treat_event_file(filename):
     print ('Opening %s' % filename)
 
     instr = mp_read_header_key(filename, 'INSTRUME')
+    additional_columns = ['PI']
+    if instr == 'PCA':
+        additional_columns.append('PCUID')
+
     mjdref = mp_ref_mjd(filename)
     events, gtis, additional, tstart, tstop = \
-        mp_load_events_and_gtis(filename, additional_columns=['PI'],
+        mp_load_events_and_gtis(filename,
+                                additional_columns=additional_columns,
                                 return_limits=True)
 
     pis = additional['PI']
@@ -151,6 +157,8 @@ def mp_treat_event_file(filename):
            'Tstop': tstop,
            'Instr': instr
            }
+    if instr == "PCA":
+        out['PCU'] = np.array(additional['PCUID'], dtype=np.byte)
 
     outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
     mp_save_events(out, outfile)

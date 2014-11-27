@@ -167,6 +167,8 @@ def mp_lcurve_from_events(f, safe_interval=0,
     tstop = evdata['Tstop']
     events = evdata['time']
     instr = evdata['Instr']
+    if instr == 'PCA':
+        pcus = evdata['PCU']
     gtis = evdata['GTI']
     if ignore_gtis:
         gtis = np.array([[tstart, tstop]])
@@ -222,6 +224,8 @@ def mp_lcurve_from_events(f, safe_interval=0,
             local_out['Tstart'] = time[b[0]]
             local_out['Tstop'] = time[b[1]]
             local_out['Instr'] = instr
+            if instr == 'PCA':
+                local_out['nPCUs'] = len(set(pcus))
             outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
             print ('Saving light curve to %s' % outfile)
             mp_save_lcurve(local_out, outfile)
@@ -240,6 +244,9 @@ def mp_lcurve_from_events(f, safe_interval=0,
         out['Tstart'] = tstart
         out['Tstop'] = tstop
         out['Instr'] = instr
+        if instr == 'PCA':
+            out['nPCUs'] = len(set(pcus))
+
         outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
         print ('Saving light curve to %s' % outfile)
         mp_save_lcurve(out, outfile)
