@@ -75,12 +75,19 @@ if __name__ == '__main__':
                         default=False, action="store_true",
                         help="Overwrite original file (Default: False)")
 
+    parser.add_argument("-a", "--apply-gti", type=str, default=None,
+                        help="Apply a GTI from this file to input files")
+
     args = parser.parse_args()
 
     filter_expr = args.filter
 
     for fname in args.files:
-        gtis = mp_create_gti(fname, filter_expr)
+        if args.apply_gti is not None:
+            data = mp_load_data(args.apply_gti)
+            gtis = data['GTI']
+        else:
+            gtis = mp_create_gti(fname, filter_expr)
         if args.create_only:
             continue
         if args.overwrite:
