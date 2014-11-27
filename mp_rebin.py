@@ -146,7 +146,7 @@ def mp_rebin_file(filename, rebin):
             contents['nbins'] = nbin
             contents['rebin'] *= nbin
     else:
-        raise Exception('Format was not recognized')
+        raise Exception('Format was not recognized:', ftype)
 
     outfile = f.replace(mp_get_file_extension(f),
                         '_rebin%g' % rebin + MP_FILE_EXTENSION)
