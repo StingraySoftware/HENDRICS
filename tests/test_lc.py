@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import sys
 import matplotlib.pyplot as plt
 from maltpynt.mp_io import mp_load_data
-from maltpynt.base import mp_create_gti_mask
+from maltpynt.mp_base import mp_create_gti_mask
 
 
 if __name__ == '__main__':
