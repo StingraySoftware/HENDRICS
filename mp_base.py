@@ -80,7 +80,7 @@ def mp_contiguous_regions(condition):
 
 def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
                        safe_interval=0, min_length=0,
-                       return_new_gtis=False):
+                       return_new_gtis=False, dt=None):
     '''Creates GTI mask under the assumption that no overlaps are present
         between GTIs
         '''
@@ -88,6 +88,9 @@ def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
     if verbose:
         print ("create_gti_mask: warning: this routine assumes that ")
         print ("                no overlaps are present between GTIs")
+
+    if dt is None:
+        dt = np.zeros_like(time) + (time[1] - time[0]) / 2
 
     mask = np.zeros(len(time), dtype=bool)
 
@@ -104,8 +107,8 @@ def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
         limmax -= safe_interval[1]
         if limmax - limmin > min_length:
             newgtis[ig][:] = [limmin, limmax]
-            cond1 = time >= limmin
-            cond2 = time < limmax
+            cond1 = time - dt >= limmin
+            cond2 = time + dt < limmax
             good = np.logical_and(cond1, cond2)
             mask[good] = True
             newgtimask[ig] = True
@@ -117,7 +120,7 @@ def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
 
 
 def mp_create_gti_from_condition(time, condition, verbose=False,
-                                 safe_interval=0):
+                                 safe_interval=0, dt=None):
     '''Given a time array and a condition (e.g. obtained from lc > 0),
     it creates a GTI list'''
     import collections
@@ -125,12 +128,15 @@ def mp_create_gti_from_condition(time, condition, verbose=False,
     if not isinstance(safe_interval, collections.Iterable):
         safe_interval = [safe_interval, safe_interval]
 
+    if dt is None:
+        dt = np.zeros_like(time) + (time[1] - time[0]) / 2
+
     gtis = []
     for idx in idxs:
         if verbose:
             print (idx)
-        t0 = time[idx[0]] + safe_interval[0]
-        t1 = time[min(idx[1], len(time) - 1)] - safe_interval[1]
+        t0 = time[idx[0]] - dt[idx[0]] + safe_interval[0]
+        t1 = time[min(idx[1], len(time) - 1)] + dt[idx[1]] - safe_interval[1]
         if t1 - t0 < 0:
             continue
         gtis.append([t0, t1])
@@ -146,7 +152,9 @@ def mp_cross_gtis(gti_list, bin_time=1):
     start = np.min([g[0][0] for g in gti_list])
     stop = np.max([g[-1][-1] for g in gti_list])
 
-    times = np.arange(start, stop, bin_time, dtype=np.longdouble)
+    times = np.arange(start + bin_time / 2,
+                      stop + bin_time / 2,
+                      bin_time, dtype=np.longdouble)
 
     mask0 = mp_create_gti_mask(times, gti_list[0], verbose=0,
                                safe_interval=[0, bin_time])
