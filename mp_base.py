@@ -125,6 +125,7 @@ def mp_create_gti_from_condition(time, condition, verbose=False,
     it creates a GTI list'''
     import collections
     idxs = mp_contiguous_regions(condition)
+
     if not isinstance(safe_interval, collections.Iterable):
         safe_interval = [safe_interval, safe_interval]
 
@@ -135,8 +136,11 @@ def mp_create_gti_from_condition(time, condition, verbose=False,
     for idx in idxs:
         if verbose:
             print (idx)
-        t0 = time[idx[0]] - dt[idx[0]] + safe_interval[0]
-        t1 = time[min(idx[1], len(time) - 1)] + dt[idx[1]] - safe_interval[1]
+        startidx = idx[0]
+        stopidx = idx[1]-1
+
+        t0 = time[startidx] - dt[startidx] + safe_interval[0]
+        t1 = time[stopidx] + dt[stopidx] - safe_interval[1]
         if t1 - t0 < 0:
             continue
         gtis.append([t0, t1])
