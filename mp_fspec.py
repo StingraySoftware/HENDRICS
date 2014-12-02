@@ -125,11 +125,10 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
     for start_bin, stop_bin in zip(start_bins, stop_bins):
         l1 = lc1[start_bin:stop_bin]
         l2 = lc2[start_bin:stop_bin]
-        f, p = mp_leahy_pds(l, bintime)
-        pds += p
 
         if np.sum(l1) == 0 or np.sum(l2) == 0:
-            print ('Interval starting at time %.7f is bad. Check GTIs' % t)
+            print ('Interval starting at time %.7f is bad. Check GTIs' %
+                   time[start_bin])
             npds -= 1
             continue
 
@@ -202,7 +201,7 @@ def mp_decide_spectrum_lc_intervals(gtis, fftlen, time, verbose=False):
         stopbin = np.argmin(np.abs(time - g[1]))
 
         newbins = np.arange(startbin, stopbin - nbin, nbin,
-                             dtype=np.long)
+                            dtype=np.long)
         spectrum_start_bins = \
             np.append(spectrum_start_bins,
                       newbins)
