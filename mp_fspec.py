@@ -55,6 +55,11 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti):
 
     for start_bin, stop_bin in zip(start_bins, stop_bins):
         l = lc[start_bin:stop_bin]
+        if np.sum(l) == 0:
+            print ('Interval starting at time %.7f is bad. Check GTIs' %
+                   time[start_bin])
+            npds -= 1
+            continue
         f, p = mp_leahy_pds(l, bintime)
         pds += p
     pds /= npds
