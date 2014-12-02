@@ -47,15 +47,14 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
 
 def mp_welch_pds(time, lc, bintime, fftlen, gti):
     '''Calculates the PDS of a light curve with constant binning time.'''
-    start_times = \
-        mp_decide_spectrum_intervals(gti, fftlen, verbose=False)
+    start_bins, stop_bins = \
+        mp_decide_spectrum_lc_intervals(gti, fftlen, time, verbose=False)
 
     pds = 0
-    npds = len(start_times)
+    npds = len(start_bins)
 
-    for t in start_times:
-        good = np.logical_and(time >= t, time < t + fftlen)
-        l = lc[good]
+    for start_bin, stop_bin in zip(start_bins, stop_bins):
+        l = lc[start_bin:stop_bin]
         f, p = mp_leahy_pds(l, bintime)
         pds += p
     pds /= npds
@@ -116,21 +115,24 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
 
 def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
     '''Calculates the CPDS of a light curve with constant binning time.'''
-    start_times = \
-        mp_decide_spectrum_intervals(gti, fftlen, verbose=False)
+    start_bins, stop_bins = \
+        mp_decide_spectrum_lc_intervals(gti, fftlen, time, verbose=False)
 
     cpds = 0
     ecpds = 0
-    npds = len(start_times)
+    npds = len(start_bins)
 
-    for t in start_times:
-        good = np.logical_and(time >= t, time < t + fftlen)
-        l1 = lc1[good]
-        l2 = lc2[good]
+    for start_bin, stop_bin in zip(start_bins, stop_bins):
+        l1 = lc1[start_bin:stop_bin]
+        l2 = lc2[start_bin:stop_bin]
+        f, p = mp_leahy_pds(l, bintime)
+        pds += p
+
         if np.sum(l1) == 0 or np.sum(l2) == 0:
             print ('Interval starting at time %.7f is bad. Check GTIs' % t)
             npds -= 1
             continue
+
         f, p, pe, p1, p2 = mp_leahy_cpds(l1, l2, bintime)
         cpds += p
         ecpds += pe ** 2
@@ -163,9 +165,10 @@ def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
 
 def mp_decide_spectrum_intervals(gtis, fftlen, verbose=False):
     '''A way to avoid gaps. Start each FFT/PDS/cospectrum from the start of
-    a GTI, and stop before the next gap.'''
+    a GTI, and stop before the next gap.
+    Only use for events! This will give problems with binned light curves'''
 
-    spectrum_start_times = np.array([])
+    spectrum_start_times = np.array([], dtype=np.longdouble)
     for g in gtis:
         if g[1] - g[0] < fftlen:
             if verbose:
@@ -176,7 +179,35 @@ def mp_decide_spectrum_intervals(gtis, fftlen, verbose=False):
         spectrum_start_times = \
             np.append(spectrum_start_times,
                       newtimes)
+
     return spectrum_start_times
+
+
+def mp_decide_spectrum_lc_intervals(gtis, fftlen, time, verbose=False):
+    '''Similar to mp_decide_spectrum_intervals, but dedicated to light curves.
+    In this case, it is necessary to specify the time array containing the
+    times of the light curve bins.
+    Returns start and stop bins of the intervals to use for the PDS'''
+
+    bintime = time[1] - time[0]
+    nbin = np.long(fftlen / bintime)
+
+    spectrum_start_bins = np.array([], dtype=long)
+    for g in gtis:
+        if g[1] - g[0] < fftlen:
+            if verbose:
+                print ("Too short. Skipping.")
+            continue
+        startbin = np.argmin(np.abs(time - g[0]))
+        stopbin = np.argmin(np.abs(time - g[1]))
+
+        newbins = np.arange(startbin, stopbin - nbin, nbin,
+                             dtype=np.long)
+        spectrum_start_bins = \
+            np.append(spectrum_start_bins,
+                      newbins)
+
+    return spectrum_start_bins, spectrum_start_bins + nbin
 
 
 def mp_calc_pds(lcfile, fftlen,
@@ -206,8 +237,13 @@ def mp_calc_pds(lcfile, fftlen,
         time, lc, dum = \
             mp_const_rebin(time, lc, lcrebin, normalize=False)
 
-    freq, pds, epds, npds = \
-        mp_welch_pds(time, lc, bintime, fftlen, gti)
+    try:
+        freq, pds, epds, npds = \
+            mp_welch_pds(time, lc, bintime, fftlen, gti)
+    except:
+        # If it fails, exit cleanly
+        print ('Problems with the PDS. Check input files!')
+        return -1
 
     freq, pds, epds = mp_const_rebin(freq[1:], pds[1:], pdsrebin,
                                      epds[1:])
@@ -290,9 +326,13 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     lc1 = lc1[mask1]
     lc2 = lc2[mask2]
-    freq, cpds, ecpds, ncpds = \
-        mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti)
-
+    try:
+        freq, cpds, ecpds, ncpds = \
+            mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti)
+    except:
+        # If it fails, exit cleanly
+        print ('Problems with the CPDS. Check input files!')
+        return -1
     freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
                                        ecpds[1:])
 
