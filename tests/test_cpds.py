@@ -4,21 +4,22 @@ import matplotlib.pyplot as plt
 from maltpynt.mp_io import mp_load_data
 
 if __name__ == '__main__':
-    pdsdata = mp_load_data(sys.argv[1])
+    for fname in sys.argv[1:]:
+        pdsdata = mp_load_data(fname)
 
-    try:
-        freq = pdsdata['freq']
-    except:
-        flo = pdsdata['flo']
-        fhi = pdsdata['fhi']
-        freq = (fhi + flo) / 2
-        plt.semilogx()
+        try:
+            freq = pdsdata['freq']
+        except:
+            flo = pdsdata['flo']
+            fhi = pdsdata['fhi']
+            freq = (fhi + flo) / 2
+            plt.semilogx()
 
-    cpds = pdsdata['cpds']
+        cpds = pdsdata['cpds']
 
-    cospectrum = cpds.real
+        cospectrum = cpds.real
 
-    plt.loglog(freq[1:], freq[1:] * cospectrum[1:], drawstyle='steps-mid')
+        plt.loglog(freq[1:], freq[1:] * cospectrum[1:], drawstyle='steps-mid')
 
     plt.xlabel('Frequency')
     plt.ylabel('Cospectrum')
