@@ -6,9 +6,17 @@ from maltpynt.mp_io import mp_load_data
 import collections
 import numpy as np
 
+from scipy.optimize import curve_fit
+
+
+def baseline_fun(x, a):
+    return a
+
 
 if __name__ == '__main__':
-    for fname in sys.argv[1:]:
+    ax = plt.subplot(1,1,1)
+    rainbow = ax._get_lines.color_cycle
+    for i, fname in enumerate(sys.argv[1:]):
         pdsdata = mp_load_data(fname)
         try:
             freq = pdsdata['freq']
@@ -26,22 +34,19 @@ if __name__ == '__main__':
 
         nbin = len(pds[1:])
 
-        meanp = np.mean(pds[len(pds)//2:])
         lev = mp_detection_level(nbin, n_summed_spectra=npds, n_rebin=rebin)
 
-        if meanp < 2:
-            print ('Renormalizing PDS because of PDS average < 2')
-            print ('The procedure is not failproof. Beware of wrong results')
-    #        lev = lev / 2 * meanp
-            pds = pds / meanp * 2
-        if isinstance(lev, collections.Iterable):
-            plt.plot(freq, lev)
-        else:
-            plt.axhline(lev)
+        color = rainbow.next()
 
-        plt.plot(freq[1:], pds[1:],
-                 drawstyle='steps-mid')
-        plt.errorbar(freq[1:], pds[1:], yerr=epds[1:], fmt='o')
+        p, pcov = curve_fit(baseline_fun, freq, pds, p0=[2], sigma=epds)
+        pds -= p[0]
+        if isinstance(lev, collections.Iterable):
+            plt.plot(freq, lev - p[0], color=color)
+        else:
+            plt.axhline(lev - p[0], color=color)
+
+        plt.errorbar(freq[1:], pds[1:], yerr=epds[1:], fmt='-',
+                     drawstyle='steps-mid', color=color)
 
     plt.xlabel('Frequency')
     if norm == 'rms':
