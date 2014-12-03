@@ -242,6 +242,7 @@ def mp_calc_pds(lcfile, fftlen,
     dt = lcdata['dt']
     gti = lcdata['GTI']
     instr = lcdata['Instr']
+    tctrate = lcdata['total_ctrate']
 
     if bintime <= dt:
         bintime = dt
@@ -266,7 +267,9 @@ def mp_calc_pds(lcfile, fftlen,
     if normalization == 'rms':
         print ('Applying %s normalization' % normalization)
 
-        # TODO: allow to specify background ctrate
+        # TODO: allow to specify background ctrate.
+        # Do not confuse with the count rate outside the source region.
+        # Here we are talking about contamination inside the source region
         pds, epds = \
             mp_rms_normalize_pds(pds, epds,
                                  source_ctrate=ctrate,
@@ -274,7 +277,9 @@ def mp_calc_pds(lcfile, fftlen,
     root = mp_root(lcfile)
     outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
-               'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate}
+               'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate,
+               'total_ctrate': tctrate}
+
     outname = root + '_pds' + MP_FILE_EXTENSION
     print ('Saving PDS to %s' % outname)
     mp_save_pds(outdata, outname)
@@ -302,12 +307,16 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     dt1 = lcdata1['dt']
     gti1 = lcdata1['GTI']
     instr1 = lcdata1['Instr']
+    tctrate1 = lcdata1['total_ctrate']
 
     time2 = lcdata2['time']
     lc2 = lcdata2['lc']
     dt2 = lcdata2['dt']
     gti2 = lcdata2['GTI']
     instr2 = lcdata2['Instr']
+    tctrate2 = lcdata2['total_ctrate']
+
+    tctrate = np.sqrt(tctrate1 * tctrate2)
 
     assert instr1 != instr2, 'Did you check the ordering of files? ' + \
         "These are both " + instr1
@@ -326,7 +335,6 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
         time2, lc2, dum = \
             mp_const_rebin(time2, lc2, lcrebin, normalize=False)
 
-#    from test_cross_gtis import mp_cross_gtis
     gti = mp_cross_gtis([gti1, gti2])
 
     mask1 = mp_create_gti_mask(time1, gti)
@@ -340,14 +348,16 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     lc1 = lc1[mask1]
     lc2 = lc2[mask2]
-#    try:
-    freq, cpds, ecpds, ncpds, ctrate = \
-        mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
-                      return_ctrate=True)
-#    except:
-#        # If it fails, exit cleanly
-#        print ('Problems with the CPDS. Check input files!')
-#        return -1
+
+    try:
+        freq, cpds, ecpds, ncpds, ctrate = \
+            mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
+                          return_ctrate=True)
+    except:
+        # If it fails, exit cleanly
+        print ('Problems with the CPDS. Check input files!')
+        return -1
+
     freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
                                        ecpds[1:])
 
@@ -363,7 +373,8 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     outdata = {'time': gti[0][0], 'cpds': cpds, 'ecpds': ecpds, 'ncpds': ncpds,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
                'freq': freq, 'rebin': pdsrebin, 'norm': normalization,
-               'ctrate': ctrate}
+               'ctrate': ctrate, 'total_ctrate': tctrate}
+
     print ('Saving CPDS to %s' % outname)
     mp_save_pds(outdata, outname)
 

@@ -1,7 +1,7 @@
 from __future__ import division, print_function
 import numpy as np
 from mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis
-from mp_base import mp_contiguous_regions
+from mp_base import mp_contiguous_regions, mp_calc_countrate
 from mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
 from mp_io import MP_FILE_EXTENSION
 
@@ -157,7 +157,8 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           e_interval=None,
                           min_length=0,
                           gti_split=False,
-                          ignore_gtis=False):
+                          ignore_gtis=False,
+                          bintime=1):
     print ("Loading file %s..." % f)
     evdata = mp_load_events(f)
     print ("Done.")
@@ -177,6 +178,19 @@ def mp_lcurve_from_events(f, safe_interval=0,
     tstart = np.ceil(tstart / bintime, dtype=np.longdouble) * bintime
     tstop = np.floor(tstop / bintime, dtype=np.longdouble) * bintime
 
+    # First of all, calculate total count rate (no filtering applied)
+    time, lc = mp_lcurve(events, bintime, start_time=tstart,
+                         stop_time=tstop)
+
+    time, lc, newgtis = \
+        mp_filter_lc_gtis(time, lc, gtis,
+                          safe_interval=safe_interval,
+                          delete=True,
+                          min_length=min_length)
+
+    out['total_ctrate'] = mp_calc_countrate(time, lc, bintime=bintime)
+
+    # Then, apply filters
     if pi_interval is not None and np.all(pi_interval > 0):
         pis = evdata['PI']
         good = np.logical_and(pis > pi_interval[0],
@@ -185,8 +199,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         tag = '_PI%g-%g' % (pi_interval[0], pi_interval[1])
         out['PImin'] = e_interval[0]
         out['PImax'] = e_interval[0]
-
-    if e_interval is not None and np.all(e_interval > 0):
+    elif e_interval is not None and np.all(e_interval > 0):
         try:
             es = evdata['E']
         except:
@@ -203,14 +216,19 @@ def mp_lcurve_from_events(f, safe_interval=0,
 
     time, lc = mp_lcurve(events, bintime, start_time=tstart,
                          stop_time=tstop)
-    if gti_split:
-        time, lc, newgtis, borders = \
-            mp_filter_lc_gtis(time, lc, gtis,
-                              safe_interval=safe_interval,
-                              delete=False,
-                              min_length=min_length,
-                              return_borders=True)
 
+    time, lc, newgtis, borders = \
+        mp_filter_lc_gtis(time, lc, gtis,
+                          safe_interval=safe_interval,
+                          delete=False,
+                          min_length=min_length,
+                          return_borders=True)
+
+    out['source_ctrate'] = mp_calc_countrate(time, lc, gtis=newgtis,
+                                             bintime=bintime)
+
+    # TODO: implement per-interval count rates
+    if gti_split:
         outfiles = []
         print (borders)
         for ib, b in enumerate(borders):
@@ -231,12 +249,6 @@ def mp_lcurve_from_events(f, safe_interval=0,
             mp_save_lcurve(local_out, outfile)
             outfiles.append(outfile)
     else:
-        time, lc, newgtis = mp_filter_lc_gtis(time, lc, gtis,
-                                              safe_interval=safe_interval,
-                                              delete=True,
-                                              min_length=min_length,
-                                              return_borders=False)
-
         out['lc'] = lc
         out['time'] = time
         out['dt'] = bintime
@@ -310,7 +322,8 @@ if __name__ == "__main__":
                                         e_interval=e_interval,
                                         min_length=args.minlen,
                                         gti_split=args.gti_split,
-                                        ignore_gtis=args.ignore_gtis)
+                                        ignore_gtis=args.ignore_gtis,
+                                        bintime=bintime)
 
         outfiles.extend(outfile)
 

@@ -253,3 +253,12 @@ def mp_sort_files(files):
         all[instr] = fnames
 
     return all
+
+
+def mp_calc_countrate(time, lc, gtis=None, bintime=1):
+    if gtis is not None:
+        mask = mp_create_gti_mask(time, gtis)
+        lc = lc[mask]
+    return np.mean(lc) / bintime
+
+
