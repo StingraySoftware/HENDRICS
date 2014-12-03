@@ -45,7 +45,7 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
         return pds
 
 
-def mp_welch_pds(time, lc, bintime, fftlen, gti):
+def mp_welch_pds(time, lc, bintime, fftlen, gti, return_ctrate=False):
     '''Calculates the PDS of a light curve with constant binning time.'''
     start_bins, stop_bins = \
         mp_decide_spectrum_lc_intervals(gti, fftlen, time, verbose=False)
@@ -53,6 +53,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti):
     pds = 0
     npds = len(start_bins)
 
+    mask = np.zeros(len(lc), dtype=np.bool)
     for start_bin, stop_bin in zip(start_bins, stop_bins):
         l = lc[start_bin:stop_bin]
         if np.sum(l) == 0:
@@ -62,9 +63,13 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti):
             continue
         f, p = mp_leahy_pds(l, bintime)
         pds += p
+        mask[start_bin:stop_bin] = True
     pds /= npds
     epds = pds / np.sqrt(npds)
-    return f, pds, epds, npds
+    if return_ctrate:
+        return f, pds, epds, npds, np.mean(lc[mask]) / bintime
+    else:
+        return f, pds, epds, npds
 
 
 def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
@@ -118,7 +123,7 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     return result
 
 
-def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
+def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti, return_ctrate=False):
     '''Calculates the CPDS of a light curve with constant binning time.'''
     start_bins, stop_bins = \
         mp_decide_spectrum_lc_intervals(gti, fftlen, time, verbose=False)
@@ -126,6 +131,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
     cpds = 0
     ecpds = 0
     npds = len(start_bins)
+    mask = np.zeros(len(lc1), dtype=np.bool)
 
     for start_bin, stop_bin in zip(start_bins, stop_bins):
         l1 = lc1[start_bin:stop_bin]
@@ -137,14 +143,19 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti):
             npds -= 1
             continue
 
-        f, p, pe, p1, p2 = mp_leahy_cpds(l1, l2, bintime)
+        f, p, pe, p1, p2 = mp_leahy_cpds(l1, l2, bintime, return_pdss=True)
         cpds += p
         ecpds += pe ** 2
+        mask[start_bin:stop_bin] = True
 
     cpds /= npds
     ecpds = np.sqrt(ecpds) / npds
 
-    return f, cpds, ecpds, npds
+    if return_ctrate:
+        return f, cpds, ecpds, npds, \
+            np.mean(np.sqrt(lc1[mask]*lc2[mask])) / bintime
+    else:
+        return f, cpds, ecpds, npds
 
 
 def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
@@ -242,8 +253,8 @@ def mp_calc_pds(lcfile, fftlen,
             mp_const_rebin(time, lc, lcrebin, normalize=False)
 
     try:
-        freq, pds, epds, npds = \
-            mp_welch_pds(time, lc, bintime, fftlen, gti)
+        freq, pds, epds, npds, ctrate = \
+            mp_welch_pds(time, lc, bintime, fftlen, gti, return_ctrate=True)
     except:
         # If it fails, exit cleanly
         print ('Problems with the PDS. Check input files!')
@@ -254,8 +265,7 @@ def mp_calc_pds(lcfile, fftlen,
 
     if normalization == 'rms':
         print ('Applying %s normalization' % normalization)
-        mask = mp_create_gti_mask(time, gti)
-        ctrate = np.mean(lc[mask]) / bintime
+
         # TODO: allow to specify background ctrate
         pds, epds = \
             mp_rms_normalize_pds(pds, epds,
@@ -264,7 +274,7 @@ def mp_calc_pds(lcfile, fftlen,
     root = mp_root(lcfile)
     outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
-               'rebin': pdsrebin, 'norm': normalization}
+               'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate}
     outname = root + '_pds' + MP_FILE_EXTENSION
     print ('Saving PDS to %s' % outname)
     mp_save_pds(outdata, outname)
@@ -330,20 +340,20 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     lc1 = lc1[mask1]
     lc2 = lc2[mask2]
-    try:
-        freq, cpds, ecpds, ncpds = \
-            mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti)
-    except:
-        # If it fails, exit cleanly
-        print ('Problems with the CPDS. Check input files!')
-        return -1
+#    try:
+    freq, cpds, ecpds, ncpds, ctrate = \
+        mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
+                      return_ctrate=True)
+#    except:
+#        # If it fails, exit cleanly
+#        print ('Problems with the CPDS. Check input files!')
+#        return -1
     freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
                                        ecpds[1:])
 
     if normalization == 'rms':
         print ('Applying %s normalization' % normalization)
-        mask = mp_create_gti_mask(time, gti)
-        ctrate = np.mean(np.sqrt(lc1[mask] * lc2[mask])) / bintime
+
         # TODO: allow to specify background ctrate
         cpds, ecpds = \
             mp_rms_normalize_pds(cpds, ecpds,
@@ -352,7 +362,8 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     outdata = {'time': gti[0][0], 'cpds': cpds, 'ecpds': ecpds, 'ncpds': ncpds,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
-               'freq': freq, 'rebin': pdsrebin, 'norm': normalization}
+               'freq': freq, 'rebin': pdsrebin, 'norm': normalization,
+               'ctrate': ctrate}
     print ('Saving CPDS to %s' % outname)
     mp_save_pds(outdata, outname)
 
