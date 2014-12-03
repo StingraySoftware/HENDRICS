@@ -277,3 +277,52 @@ def mp_load_data(fname):
         return load_data_pickle(fname)
     elif mp_get_file_format(fname) == 'nc':
         return load_data_nc(fname)
+
+
+# QDP format is often used in FTOOLS
+def save_as_qdp(arrays, errors=None, filename="out.qdp"):
+    '''
+    Saves an array of variables, and possibly their errors, to a QDP file.
+    input:
+        arrays: list of variables. All variables must be arrays and of the same
+                length!
+        errors: list of errors. The order has to be the same of arrays; the
+                value can be
+                  - None if no error is assigned
+                  - an array of same length of variable for symmetric errors
+                  - an array of len-2 lists for non-symmetric errors (e.g.
+                    [[errm1, errp1], [errm2, errp2], [errm3, errp3], ...])
+    '''
+    import numpy as np
+    if errors is None:
+        errors = [None for i in arrays]
+    data_to_write = []
+    list_of_errs = []
+    for ia, ar in enumerate(arrays):
+        data_to_write.append(ar)
+        if errors[ia] is None:
+            continue
+        shape = np.shape(errors[ia])
+        assert shape[0] == len(ar), \
+            'Errors and arrays must have same length'
+        if len(shape) == 1:
+            list_of_errs.append([ia, 'S'])
+            data_to_write.append(errors[ia])
+        elif shape[1] == 2:
+            list_of_errs.append([ia, 'T'])
+            mine = [k[0] for k in errors[ia]]
+            maxe = [k[1] for k in errors[ia]]
+            data_to_write.append(mine)
+            data_to_write.append(maxe)
+    outfile = open(filename, 'w')
+    for l in list_of_errs:
+        i, kind = l
+        print >> outfile, 'READ %s' % kind + 'ERR %d' % (i + 1)
+
+    length = len(data_to_write[0])
+    for i in range(length):
+        for idw, d in enumerate(data_to_write):
+            print >> outfile, d[i],
+        print >> outfile, ""
+
+    outfile.close()
