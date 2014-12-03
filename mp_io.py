@@ -317,12 +317,12 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
     outfile = open(filename, 'w')
     for l in list_of_errs:
         i, kind = l
-        print >> outfile, 'READ %s' % kind + 'ERR %d' % (i + 1)
+        print ('READ %s' % kind + 'ERR %d' % (i + 1), file=outfile)
 
     length = len(data_to_write[0])
     for i in range(length):
         for idw, d in enumerate(data_to_write):
-            print >> outfile, d[i],
-        print >> outfile, ""
+            print (d[i], file=outfile, end=" ")
+        print ("", file=outfile)
 
     outfile.close()
