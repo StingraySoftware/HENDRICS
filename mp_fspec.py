@@ -28,12 +28,14 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
     '''
 
     nph = sum(lc)
+
+    # Checks must be done before. At this point, only good light curves have to
+    # be provided
+    assert (nph > 0), 'Invalid interval. Light curve is empty'
+
     freqs, ft = mp_fft(lc, bintime)
     # I'm pretty sure there is a faster way to do this.
-    if nph != 0:
-        pds = np.absolute(ft.conjugate() * ft) * 2. / nph
-    else:
-        pds = np.zeros(len(freqs))
+    pds = np.absolute(ft.conjugate() * ft) * 2. / nph
 
     good = freqs >= 0
     freqs = freqs[good]
@@ -45,8 +47,32 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
         return pds
 
 
-def mp_welch_pds(time, lc, bintime, fftlen, gti, return_ctrate=False):
-    '''Calculates the PDS of a light curve with constant binning time.'''
+def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False):
+    '''
+    Calculates the Power Density Spectrum à la Leahy (1983), given the
+    lightcurve and its bin time, over equal chunks of length fftlen, and
+    returns the average of all PDSs, or the sum PDS and the number of chunks
+    Arguments:
+        time:         central times of light curve bins
+        lc:           light curve
+        bintime:      bin time of the light curve
+        fftlen:       length of each FFT
+
+    Keyword arguments:
+        gti:          good time intervals [[g1s, g1e], [g2s,g2e], [g3s,g3e],..]
+                      defaults to [[time[0] - bintime/2, time[-1] + bintime/2]]
+        return_ctrate:if True, return also the count rate
+
+    Return values:
+        freq:         array of frequencies corresponding to PDS bins
+        pds:          the values of the PDS
+        pds_err:      the values of the PDS
+        n_chunks:     the number of summed PDSs (if normalize is False)
+        ctrate:       the average count rate in the two lcs
+    '''
+    if gti is None:
+        gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
+
     start_bins, stop_bins = \
         mp_decide_spectrum_lc_intervals(gti, fftlen, time, verbose=False)
 
@@ -61,11 +87,15 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti, return_ctrate=False):
                    time[start_bin])
             npds -= 1
             continue
+
         f, p = mp_leahy_pds(l, bintime)
+
         pds += p
         mask[start_bin:stop_bin] = True
+
     pds /= npds
     epds = pds / np.sqrt(npds)
+
     if return_ctrate:
         return f, pds, epds, npds, np.mean(lc[mask]) / bintime
     else:
@@ -84,11 +114,13 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     assert len(lc1) == len(lc2), 'Light curves MUST have the same length!'
     nph1 = sum(lc1)
     nph2 = sum(lc2)
+    # Checks must be done before. At this point, only good light curves have to
+    # be provided
+    assert (nph1 > 0 and nph2 > 0), 'Invalid interval. At least one light ' + \
+        'curve is empty'
+
     freqs, ft1 = mp_fft(lc1, bintime)
     freqs, ft2 = mp_fft(lc2, bintime)
-    if nph1 <= 0 or nph2 <= 0:
-        dum = np.zeros(len(ft1[freqs > 0]))
-        return freqs, dum, dum
 
     pds1 = np.absolute(ft1.conjugate() * ft1) * 2. / nph1
     pds2 = np.absolute(ft2.conjugate() * ft2) * 2. / nph2
@@ -123,8 +155,34 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     return result
 
 
-def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti, return_ctrate=False):
-    '''Calculates the CPDS of a light curve with constant binning time.'''
+def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
+                  return_ctrate=False):
+    '''
+    Calculates the Cross Power Density Spectrum normalized like PDS, given the
+    lightcurve and its bin time, over equal chunks of length fftlen, and
+    returns the average of all PDSs, or the sum PDS and the number of chunks
+    Arguments:
+        time:         central times of light curve bins
+        lc1:          light curve 1
+        lc2:          light curve 2
+        bintime:      bin time of the light curve
+        fftlen:       length of each FFT
+
+    Keyword arguments:
+        gti:          good time intervals [[g1s, g1e], [g2s,g2e], [g3s,g3e],..]
+                      defaults to [[time[0] - bintime/2, time[-1] + bintime/2]]
+        return_ctrate:if True, return also the count rate
+
+    Return values:
+        freq:         array of frequencies corresponding to CPDS bins
+        pds:          the values of the CPDS
+        pds_err:      the values of the CPDS
+        n_chunks:     the number of summed CPDSs
+        ctrate:       the average count rate in the two lcs
+    '''
+    if gti is None:
+        gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
+
     start_bins, stop_bins = \
         mp_decide_spectrum_lc_intervals(gti, fftlen, time, verbose=False)
 
