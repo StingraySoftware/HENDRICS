@@ -47,16 +47,22 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
         t_stop
     '''
     from astropy.io import fits as pf
-    import numpy as np
 
     lchdulist = pf.open(fits_file)
+
     hdunames = [h.name for h in lchdulist]
+
+    # Load data table
     try:
         lctable = lchdulist[hduname].data
     except:
         print ('HDU %s not found. Trying first extension' % hduname)
         lctable = lchdulist[1].data
+
+    # Read event list
     ev_list = np.array(lctable.field(column), dtype=np.longdouble)
+
+    # Read TIMEZERO keyword and apply it to events
     try:
         timezero = np.longdouble(lchdulist[1].header['TIMEZERO'])
     except:
@@ -67,6 +73,16 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
         print ("TIMEZERO != 0, correcting")
         ev_list += timezero
 
+    # Read TSTART, TSTOP from header
+    try:
+        t_start = np.longdouble(lchdulist[1].header['TSTART'])
+        t_stop = np.longdouble(lchdulist[1].header['TSTOP'])
+    except:
+        print ("Tstart and Tstop error. using defaults")
+        t_start = ev_list[0]
+        t_stop = ev_list[-1]
+
+    # Read and handle GTI extension
     if gtistring is None:
         accepted_gtistrings = ['GTI', 'STDGTI']
     else:
@@ -91,12 +107,14 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
             gtistop = np.array(gtitable.field(stopstr), dtype=np.longdouble)
             gti_list = np.array([[a, b]
                                  for a, b in zip(gtistart,
-                                                 gtistop)])
+                                                 gtistop)],
+                                dtype=np.longdouble)
 
         except:
             print ("%s Extension not found or invalid in %s!! Please check!!" %
                   (gtistring, fits_file))
-            gti_list = np.array([[ev_list[0], ev_list[-1]]])
+            gti_list = np.array([[t_start, t_stop]],
+                                dtype=np.longdouble)
     else:
         gti_list = mp_load_gtis(gti_file, gtistring)
 
@@ -115,13 +133,6 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
     lchdulist.close()
 
     if return_limits:
-        try:
-            t_start = np.longdouble(lchdulist[1].header['TSTART'])
-            t_stop = np.longdouble(lchdulist[1].header['TSTOP'])
-        except:
-            print ("Tstart and Tstop error. using defaults")
-            t_start = ev_list[0]
-            t_stop = ev_list[-1]
         if additional_columns is not None:
             return ev_list, gti_list, additional_data, t_start, t_stop
         else:
@@ -157,6 +168,7 @@ def mp_treat_event_file(filename):
            'Tstop': tstop,
            'Instr': instr
            }
+
     if instr == "PCA":
         out['PCU'] = np.array(additional['PCUID'], dtype=np.byte)
 
