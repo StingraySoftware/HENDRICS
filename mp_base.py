@@ -50,7 +50,7 @@ def mp_root(filename):
     fname = filename.replace('.gz', '')
     fname = os.path.splitext(filename)[0]
     fname = fname.replace('_ev', '').replace('_lc', '')
-    fname = fname.replace('_ev_calib', '')
+    fname = fname.replace('_calib', '')
     return fname
 
 
