@@ -39,6 +39,7 @@ if __name__ == '__main__':
         color = rainbow.next()
 
         p, pcov = curve_fit(baseline_fun, freq, pds, p0=[2], sigma=epds)
+        print ('White noise level is', p[0])
         pds -= p[0]
         if isinstance(lev, collections.Iterable):
             plt.plot(freq, lev - p[0], color=color)
