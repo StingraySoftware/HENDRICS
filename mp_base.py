@@ -45,6 +45,20 @@ def mp_ref_mjd(fits_file, hdu=1):
     return ref_mjd_val
 
 
+def common_name(str1, str2, default='common'):
+    '''Strips two file names of the letters not in common. Filenames must be of
+    same length and only differ by a few letters'''
+    if not len(str1) == len(str2):
+        return default
+    common_str = ''
+    for i, letter in enumerate(str1):
+        if str2[i] == letter:
+            common_str += letter
+    if common_str == '':
+        common_str = default
+    return common_str
+
+
 def mp_root(filename):
     import os.path
     fname = filename.replace('.gz', '')
