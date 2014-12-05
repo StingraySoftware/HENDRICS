@@ -49,7 +49,7 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
 
 def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False):
     '''
-    Calculates the Power Density Spectrum à la Leahy (1983), given the
+    Calculates the Power Density Spectrum \'a la Leahy (1983), given the
     lightcurve and its bin time, over equal chunks of length fftlen, and
     returns the average of all PDSs, or the sum PDS and the number of chunks
     Arguments:
@@ -80,6 +80,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False):
     npds = len(start_bins)
 
     mask = np.zeros(len(lc), dtype=np.bool)
+
     for start_bin, stop_bin in zip(start_bins, stop_bins):
         l = lc[start_bin:stop_bin]
         if np.sum(l) == 0:
@@ -416,8 +417,9 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
         print ('Problems with the CPDS. Check input files!')
         return -1
 
-    freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
-                                       ecpds[1:])
+    if pdsrebin > 1:
+        freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
+                                           ecpds[1:])
 
     if normalization == 'rms':
         print ('Applying %s normalization' % normalization)
