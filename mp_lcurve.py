@@ -1,9 +1,10 @@
 from __future__ import division, print_function
 import numpy as np
-from mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis
+from mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis, mp_mkdir_p
 from mp_base import mp_contiguous_regions, mp_calc_countrate
 from mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
 from mp_io import MP_FILE_EXTENSION
+import os
 
 
 def mp_lcurve(event_list,
@@ -158,10 +159,16 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           min_length=0,
                           gti_split=False,
                           ignore_gtis=False,
-                          bintime=1):
+                          bintime=1,
+                          outdir=None):
     print ("Loading file %s..." % f)
     evdata = mp_load_events(f)
     print ("Done.")
+
+    if bintime < 0:
+        bintime = 2 ** (bintime)
+    bintime = np.longdouble(bintime)
+
     tag = ''
     out = {}
     tstart = evdata['Tstart']
@@ -227,6 +234,11 @@ def mp_lcurve_from_events(f, safe_interval=0,
     out['source_ctrate'] = mp_calc_countrate(time, lc, gtis=newgtis,
                                              bintime=bintime)
 
+    if outdir is not None:
+        _, f = os.path.split(f)
+        mp_mkdir_p(outdir)
+        f = os.path.join(outdir, f)
+
     # TODO: implement per-interval count rates
     if gti_split:
         outfiles = []
@@ -244,6 +256,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
             local_out['Instr'] = instr
             if instr == 'PCA':
                 local_out['nPCUs'] = len(set(pcus))
+
             outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
             print ('Saving light curve to %s' % outfile)
             mp_save_lcurve(local_out, outfile)
@@ -303,12 +316,11 @@ if __name__ == "__main__":
                         help="Ignore GTIs",
                         default=False,
                         action="store_true")
+    parser.add_argument("-d", "--outdir", type=str, default=None,
+                        help='Output directory')
+
     args = parser.parse_args()
     bintime = args.bintime
-
-    if bintime < 0:
-        bintime = 2 ** (bintime)
-    bintime = np.longdouble(bintime)
 
     infiles = args.files
     safe_interval = args.safe_interval
@@ -323,7 +335,8 @@ if __name__ == "__main__":
                                         min_length=args.minlen,
                                         gti_split=args.gti_split,
                                         ignore_gtis=args.ignore_gtis,
-                                        bintime=bintime)
+                                        bintime=bintime,
+                                        outdir=args.outdir)
 
         outfiles.extend(outfile)
 
