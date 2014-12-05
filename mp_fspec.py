@@ -212,7 +212,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
 
     if return_ctrate:
         return f, cpds, ecpds, npds, \
-            np.mean(np.sqrt(lc1[mask]*lc2[mask])) / bintime
+            np.sqrt(np.mean(lc1[mask])*np.mean(lc2[mask])) / bintime
     else:
         return f, cpds, ecpds, npds
 
@@ -325,7 +325,6 @@ def mp_calc_pds(lcfile, fftlen,
 
     if normalization == 'rms':
         print ('Applying %s normalization' % normalization)
-
         # TODO: allow to specify background ctrate.
         # Do not confuse with the count rate outside the source region.
         # Here we are talking about contamination inside the source region
@@ -333,6 +332,7 @@ def mp_calc_pds(lcfile, fftlen,
             mp_rms_normalize_pds(pds, epds,
                                  source_ctrate=ctrate,
                                  back_ctrate=0)
+
     root = mp_root(lcfile)
     outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
@@ -423,7 +423,6 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     if normalization == 'rms':
         print ('Applying %s normalization' % normalization)
-
         # TODO: allow to specify background ctrate
         cpds, ecpds = \
             mp_rms_normalize_pds(cpds, ecpds,
