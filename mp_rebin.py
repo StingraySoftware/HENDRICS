@@ -49,9 +49,12 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     from numpy import log10
 
     df = freq[1] - freq[0]
+
     if freq[0] < 1e-10:
         freq = freq[1:]
         pds = pds[1:]
+        pds_err = pds_err[1:]
+
     fmin = min(freq)
     fmax = max(freq)
     if npds is None:
