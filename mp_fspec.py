@@ -469,7 +469,7 @@ def mp_calc_fspec(files, fftlen,
 
     if normalization not in ['Leahy', 'rms']:
         print ('Beware! Unknown normalization!')
-        normalization == 'Leahy'
+        normalization = 'Leahy'
 
     print ('Using %s normalization' % normalization)
 
