@@ -18,10 +18,17 @@ if __name__ == '__main__':
         cpds = pdsdata['cpds']
 
         cospectrum = cpds.real
-
+        plt.figure('Log')
         plt.loglog(freq[1:], freq[1:] * cospectrum[1:], drawstyle='steps-mid')
+        plt.figure('Lin')
+        plt.plot(freq[1:], cospectrum[1:], drawstyle='steps-mid')
 
+    plt.figure('Log')
     plt.xlabel('Frequency')
     plt.ylabel('Cospectrum')
 
+    plt.figure('Lin')
+    plt.axhline(0, lw=3, ls='--', color='k')
+    plt.xlabel('Frequency')
+    plt.ylabel('Cospectrum')
     plt.show()
