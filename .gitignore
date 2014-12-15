@@ -6,3 +6,6 @@
 *.p
 *.nc
 *.dat
+*egg-info*
+build
+dist
