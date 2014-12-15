@@ -3,3 +3,6 @@
 .spyderproject
 *.pha
 *.rsp
+*.p
+*.nc
+*.dat
