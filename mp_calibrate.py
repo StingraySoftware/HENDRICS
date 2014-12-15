@@ -37,7 +37,7 @@ def mp_read_rmf(rmf_file=None):
     return pis, e_mins, e_maxs
 
 
-def mp_calibrate(pis, rmf_file=None):
+def mp_read_calibration(pis, rmf_file=None):
     '''Very rough calibration. Beware'''
     calp, calEmin, calEmax = mp_read_rmf(rmf_file)
     es = np.zeros(len(pis), dtype=np.float)
@@ -48,6 +48,21 @@ def mp_calibrate(pis, rmf_file=None):
         es[good] = (calEmin[ic] + calEmax[ic]) / 2
 
     return es
+
+
+def mp_calibrate(fname, outname, rmf=None):
+    '''Do calibration'''
+    # Read event file
+    print ("Loading file %s..." % fname)
+    evdata = mp_load_events(fname)
+    print ("Done.")
+    pis = evdata['PI']
+
+    es = mp_read_calibration(pis, rmf)
+    evdata['E'] = es
+    print ('Saving calibrated data to %s' % outname)
+    mp_save_events(evdata, outname)
+
 
 if __name__ == '__main__':
     import argparse
@@ -72,14 +87,4 @@ if __name__ == '__main__':
         if args.overwrite is False:
             outname = f.replace(mp_get_file_extension(f), '_calib' +
                                 MP_FILE_EXTENSION)
-
-        # Read event file
-        print ("Loading file %s..." % f)
-        evdata = mp_load_events(f)
-        print ("Done.")
-        pis = evdata['PI']
-
-        es = mp_calibrate(pis, args.rmf)
-        evdata['E'] = es
-        print ('Saving calibrated data to %s' % outname)
-        mp_save_events(evdata, outname)
+        mp_calibrate(f, outname, args.rmf)
