@@ -14,11 +14,24 @@ You'll need a recent python 2.7 installation, and the [Numpy](http://www.numpy.o
 
 An **optional but recommended** dependency is the [netCDF 4 library](http://www.unidata.ucar.edu/software/netcdf/) with its [python bindings](https://github.com/Unidata/netcdf4-python).
 
-Put the python codes in the directory where you are analyzing the data. That's all. Then, you can call them with a python interpreter, e.g.
+To install, download the distribution directory:
 ```
-$ python mp_read_events.py filename.evt
+#!console
+$ git clone git@bitbucket.org:mbachett/maltpynt.git
 ```
-I will make these codes a python package that can be installed properly, eventually.
+enter  the distribution directory and run
+```
+#!console
+$ cd maltpynt
+$ python setup.py install
+```
+this will check for the existing dependencies and install the files in a proper way.
+From that point on, executables will be somewhere in your PATH and python libraries will be available in python scripts with the usual
+```
+#!python
+
+import maltpynt
+```
 
 ## Tutorial
 This is the same tutorial you can find in the Wiki, for convenience
@@ -47,8 +60,8 @@ Most of these tools have help information that can be accessed by typing the nam
 ```
 #!console
 
-$ python mp_calibrate.py -h
-usage: mp_calibrate.py [-h] [-r RMF] [-o] files [files ...]
+$ MPcalibrate -h
+usage: MPcalibrate [-h] [-r RMF] [-o] files [files ...]
 
 Calibrates clean event files by associating the correct energy to each PI
 channel. Uses either a specified rmf file or (for NuSTAR only) an rmf file
@@ -69,7 +82,7 @@ Starting from cleaned event files, we will first save them in `MaLTPyNT` format 
 ```
 #!console
 
-$ python mp_read_events.py 002A.evt 002B.evt
+$ MPreadevents 002A.evt 002B.evt
 Opening 002A.evt
 Saving events and info to 002A_ev.p
 Opening 002B.evt
@@ -78,11 +91,11 @@ Saving events and info to 002B_ev.p
 This will create new files with a `_ev.p` extension (`_ev.nc` if you use netCDF4), containing the event times and the energy _channel_ (`PI`) of each event
 
 ### 2. Calibrating event lists
-Use `mp_calibrate`. You can either specify an `rmf` file with the `-r` option, or just let it look for it in the NuSTAR `CALDB` (the environment variable has to be defined!)
+Use `MPcalibrate`. You can either specify an `rmf` file with the `-r` option, or just let it look for it in the NuSTAR `CALDB` (the environment variable has to be defined!)
 ```
 #!console
 
-$ python mp_calibrate.py 002A_ev.p 002B_ev.p
+$ MPcalibrate 002A_ev.p 002B_ev.p
 Loading file 002A_ev.p...
 Done.
 ###############ATTENTION!!#####################
@@ -108,7 +121,7 @@ Another thing that is useful in NuSTAR data is taking some time intervals out fr
 ```
 #!console
 
-$ python mp_lcurve.py 002A_ev_calib.p 002B_ev_calib.p -b -6 -e 3 30 --safe_interval 100 300
+$ MPlcurve 002A_ev_calib.p 002B_ev_calib.p -b -6 -e 3 30 --safe_interval 100 300
 Loading file 002A_ev_calib.p...
 Done.
 Saving light curve to 002A_E3-30_lc.p
@@ -127,7 +140,7 @@ If we want a single light curve from multiple ones, either summing multiple inst
 ```
 #!console
 
-$ python mp_scrunch_lc.py 002A_E3-30_lc.p 002B_E3-30_lc.p -o 002scrunch_3-30_lc.p
+$ MPscrunchlc 002A_E3-30_lc.p 002B_E3-30_lc.p -o 002scrunch_3-30_lc.p
 Loading file 002A_E3-30_lc.p...
 Done.
 Loading file 002B_E3-30_lc.p...
@@ -142,7 +155,7 @@ Let us just produce the cross power spectrum for now. To produce also the power 
 ```
 #!console
 
-$ python mp_fspec.py 002A_E3-30_lc.p 002B_E3-30_lc.p -k CPDS -o cpds_002_3-30 --norm rms
+$ MPfspec 002A_E3-30_lc.p 002B_E3-30_lc.p -k CPDS -o cpds_002_3-30 --norm rms
 Beware! For cpds and derivatives, I assume that the files are
 ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...
 Loading file 002A_E3-30_lc.p...
@@ -155,7 +168,7 @@ Now let's rebin the spectrum. If the rebin factor is an integer, it is interpret
 ```
 #!console
 
-$ python mp_rebin.py cpds_002_3-30_0.p -r 1.03
+$ MPrebin cpds_002_3-30_0.p -r 1.03
 Saving cpds to cpds_002_3-30_0_rebin1.03.p
 ```
 
@@ -168,7 +181,7 @@ To save the cospectrum in a format readable to XSpec it is sufficient to give th
 ```
 #!console
 
-$ python mp_save_as_xspec.py cpds_002_3-30_0_rebin1.03.p
+$ MP2xspec cpds_002_3-30_0_rebin1.03.p
 Saving to cpds_002_3-30_0_rebin1.03_xsp.qdp
 $ flx2xsp cpds_002_3-30_0_rebin1.03_xsp.qdp cpds.pha cpds.rsp
 ```
