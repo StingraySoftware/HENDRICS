@@ -1,4 +1,8 @@
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
+
 import glob
 
 setup(
@@ -9,7 +13,7 @@ setup(
     packages = ['maltpynt'],
     author = 'Matteo Bachetti',
     author_email = "matteo@matteobachetti.it",
-    license = 'MIT',
+    license = 'read README.md',
     url = '',
     keywords = 'X-ray astronomy nustar rxte xmm timing cospectrum PDS',
     scripts = glob.glob('scripts/*'),
@@ -19,5 +23,11 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Astronomy'
-   ],
+        ],
+    install_requires=[
+        'matplotlib',
+        'scipy',
+        'numpy', 
+        'astropy'
+        ]
 )
