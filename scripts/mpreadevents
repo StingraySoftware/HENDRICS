@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+from __future__ import division, print_function
+from maltpynt.mp_read_events import mp_treat_event_file
+import argparse
+
+description = 'Reads a cleaned event files and saves the relevant' +\
+    ' information in a standard format'
+parser = argparse.ArgumentParser(description=description)
+parser.add_argument("files", help="List of files", nargs='+')
+args = parser.parse_args()
+files = args.files
+
+for f in files:
+    mp_treat_event_file(f)
