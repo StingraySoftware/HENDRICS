@@ -3,8 +3,8 @@ from __future__ import division, print_function
 from maltpynt.mp_fspec import mp_calc_fspec
 import argparse
 
-description = 'Creates frequency spectra (PDS, CPDS, cospectrum)' + \
-    ' starting from well-defined input ligthcurves'
+description = ('Creates frequency spectra (PDS, CPDS, cospectrum) '
+               'starting from well-defined input ligthcurves')
 parser = argparse.ArgumentParser(description=description)
 
 parser.add_argument("files", help="List of light curve files", nargs='+')

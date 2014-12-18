@@ -8,7 +8,7 @@ from maltpynt.mp_base import mp_create_gti_mask
 
 if __name__ == '__main__':
     for lcfile in sys.argv[1:]:
-        print ('Loading %s...' % lcfile)
+        print('Loading %s...' % lcfile)
         lcdata = mp_load_data(lcfile)
 
         time = lcdata['time']

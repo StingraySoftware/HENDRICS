@@ -4,8 +4,8 @@ from maltpynt.mp_lcurve import mp_lcurve_from_events, mp_scrunch_lightcurves
 import argparse
 import numpy as np
 
-description = 'Creates lightcurves starting from event files. It is' + \
-    ' possible to specify energy or channel filtering options'
+description = ('Creates lightcurves starting from event files. It is '
+               'possible to specify energy or channel filtering options')
 parser = argparse.ArgumentParser(description=description)
 
 parser.add_argument("files", help="List of files", nargs='+')

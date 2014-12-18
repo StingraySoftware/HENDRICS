@@ -27,7 +27,7 @@ setup(
     install_requires=[
         'matplotlib',
         'scipy',
-        'numpy', 
+        'numpy',
         'astropy'
         ]
 )
