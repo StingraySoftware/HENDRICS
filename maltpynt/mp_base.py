@@ -16,9 +16,9 @@ def mp_mkdir_p(path):
 
 
 def mp_read_header_key(fits_file, key, hdu=1):
+    '''Read the header key key from HDU hdu of the file fits_file'''
     from astropy.io import fits as pf
 
-    '''Read the header key key from HDU hdu of the file fits_file'''
     hdulist = pf.open(fits_file)
     value = hdulist[hdu].header[key]
     hdulist.close()
