@@ -326,3 +326,42 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
         print ("", file=outfile)
 
     outfile.close()
+
+
+def save_as_ascii(cols, filename="out.txt", colnames=None, verbose=-1,
+                  append=False):
+    '''
+    Saves as TXT file with respective errors
+    '''
+    import numpy as np
+
+    if verbose > 1:
+        print (cols, np.shape(cols))
+    if append:
+        txtfile = open(filename, "a")
+    else:
+        txtfile = open(filename, "w")
+    shape = np.shape(cols)
+    ndim = len(shape)
+    #if colnames is None:
+        #colnames = range(len(cols))
+    if ndim == 1:
+        cols = [cols]
+    elif ndim > 3 or ndim == 0:
+        print ("Only one- or two-dim arrays accepted")
+        return -1
+    lcol = len(cols[0])
+
+    if colnames is not None:
+        print ("#", file=txtfile, end=' ')
+        for i_c, c in enumerate(cols):
+            print (colnames[i_c], file=txtfile, end=' ')
+        print ('', file=txtfile)
+    for i in range(lcol):
+        for c in cols:
+            print (c[i], file=txtfile, end=' ')
+
+        print ('', file=txtfile)
+    txtfile.close()
+    return 0
+
