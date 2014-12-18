@@ -18,7 +18,7 @@ def mp_mkdir_p(path):
 def mp_read_header_key(fits_file, key, hdu=1):
     from astropy.io import fits as pf
 
-    '''Reads the header key key from HDU hdu of the file fits_file'''
+    '''Read the header key key from HDU hdu of the file fits_file'''
     hdulist = pf.open(fits_file)
     value = hdulist[hdu].header[key]
     hdulist.close()
@@ -27,7 +27,7 @@ def mp_read_header_key(fits_file, key, hdu=1):
 
 def mp_ref_mjd(fits_file, hdu=1):
     '''
-    Reads MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header
+    Read MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header
     '''
     import collections
     import types
@@ -46,7 +46,7 @@ def mp_ref_mjd(fits_file, hdu=1):
 
 
 def common_name(str1, str2, default='common'):
-    '''Strips two file names of the letters not in common. Filenames must be of
+    '''Strip two file names of the letters not in common. Filenames must be of
     same length and only differ by a few letters'''
     if not len(str1) == len(str2):
         return default
@@ -69,12 +69,13 @@ def mp_root(filename):
 
 
 def mp_contiguous_regions(condition):
-    """Finds contiguous True regions of the boolean array "condition". Returns
-        a 2D array where the first column is the start index of the region and
-        the second column is the end index.
-        From http://stackoverflow.com/questions/4494404/
-        find-large-number-of-consecutive-values-fulfilling-
-        condition-in-a-numpy-array"""
+    """Find contiguous True regions of the boolean array "condition".
+
+    Return a 2D array where the first column is the start index of the region
+    and the second column is the end index.
+    From http://stackoverflow.com/questions/4494404/
+    find-large-number-of-consecutive-values-fulfilling-
+    condition-in-a-numpy-array"""
     # Find the indicies of changes in "condition"
     diff = np.diff(condition)
     idx, = diff.nonzero()
@@ -95,8 +96,8 @@ def mp_contiguous_regions(condition):
 def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
                        safe_interval=0, min_length=0,
                        return_new_gtis=False, dt=None):
-    '''Creates GTI mask under the assumption that no overlaps are present
-        between GTIs
+    '''Create GTI mask under the assumption that no overlaps are present
+    between GTIs
         '''
     import collections
     if verbose:
@@ -135,9 +136,15 @@ def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
 
 def mp_create_gti_from_condition(time, condition, verbose=False,
                                  safe_interval=0, dt=None):
-    '''Given a time array and a condition (e.g. obtained from lc > 0),
-    it creates a GTI list'''
+    '''Create a GTI list from a time array and a boolean mask ("condition").
+
+    A possible condition can be, e.g., lc > 0.
+    The length of the condition array and the time array must be the same.
+    '''
     import collections
+
+    assert len(time) == len(condition), \
+        'The length of the condition and time arrays must be the same.'
     idxs = mp_contiguous_regions(condition)
 
     if not isinstance(safe_interval, collections.Iterable):
@@ -162,7 +169,7 @@ def mp_create_gti_from_condition(time, condition, verbose=False,
 
 
 def mp_cross_gtis(gti_list, bin_time=1):
-    '''From multiple GTI lists, it extracts the common intervals'''
+    '''From multiple GTI lists, extract the common intervals'''
     ninst = len(gti_list)
     if ninst == 1:
         return gti_list[0]
@@ -188,7 +195,9 @@ def mp_cross_gtis(gti_list, bin_time=1):
 
 
 def mp_optimal_bin_time(fftlen, tbin):
-    '''Given an FFT length and a proposed bin time, it returns a bin time
+    '''Vary slightly the bin time to have a power of two number of bins.
+
+    Given an FFT length and a proposed bin time, return a bin time
     slightly shorter than the original, that will produce a power-of-two number
     of FFT bins'''
     import numpy as np
@@ -197,7 +206,7 @@ def mp_optimal_bin_time(fftlen, tbin):
 
 def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     '''
-    Returns the detection level (with probability 1 - epsilon) for a Power
+    Return the detection level (with probability 1 - epsilon) for a Power
     Density Spectrum of nbins bins, normalized \'a la Leahy (1983), based on
     the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
     PDS averaging (n_summed_spectra)
@@ -221,7 +230,7 @@ def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
 
 def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     '''
-    Returns the probability of a certain power level in a Power Density
+    Return the probability of a certain power level in a Power Density
     Spectrum of nbins bins, normalized \'a la Leahy (1983), based on
     the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
     PDS averaging (n_summed_spectra)
@@ -237,7 +246,7 @@ def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
 
 
 def mp_sort_files(files):
-    '''Sorts a list of MaLTPyNT files'''
+    '''Sort a list of MaLTPyNT files'''
     all = {}
     ftypes = []
     for f in files:
