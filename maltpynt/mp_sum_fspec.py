@@ -56,7 +56,7 @@ def sum_fspec(files, outname=None):
 
 
 if __name__ == '__main__':
-    description = 'Sums (C)PDSs contained in different files'
+    description = 'Sum (C)PDSs contained in different files'
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs='+')

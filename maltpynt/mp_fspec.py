@@ -117,8 +117,8 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     nph2 = sum(lc2)
     # Checks must be done before. At this point, only good light curves have to
     # be provided
-    assert (nph1 > 0 and nph2 > 0), 'Invalid interval. At least one light ' + \
-        'curve is empty'
+    assert (nph1 > 0 and nph2 > 0), ('Invalid interval. At least one light '
+                                     'curve is empty')
 
     freqs, ft1 = mp_fft(lc1, bintime)
     freqs, ft2 = mp_fft(lc2, bintime)
@@ -198,7 +198,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
 
         if np.sum(l1) == 0 or np.sum(l2) == 0:
             print('Interval starting at time %.7f is bad. Check GTIs' %
-                   time[start_bin])
+                  time[start_bin])
             npds -= 1
             continue
 
@@ -266,7 +266,7 @@ def mp_decide_spectrum_lc_intervals(gtis, fftlen, time, verbose=False):
     bintime = time[1] - time[0]
     nbin = np.long(fftlen / bintime)
 
-    spectrum_start_bins = np.array([], dtype=long)
+    spectrum_start_bins = np.array([], dtype=np.long)
     for g in gtis:
         if g[1] - g[0] < fftlen:
             if verbose:
@@ -377,8 +377,8 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     tctrate = np.sqrt(tctrate1 * tctrate2)
 
-    assert instr1 != instr2, 'Did you check the ordering of files? ' + \
-        "These are both " + instr1
+    assert instr1 != instr2, ('Did you check the ordering of files? '
+                              'These are both ' + instr1)
 
     assert dt1 == dt2, 'Light curves are sampled differently'
     dt = dt1
@@ -536,8 +536,8 @@ def mp_read_fspec(fname):
 
 if __name__ == '__main__':
     import argparse
-    description = 'Creates frequency spectra (PDS, CPDS, cospectrum)' + \
-        ' starting from well-defined input ligthcurves'
+    description = ('Create frequency spectra (PDS, CPDS, cospectrum) '
+                   'starting from well-defined input ligthcurves')
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs='+')

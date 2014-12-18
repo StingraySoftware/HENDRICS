@@ -283,8 +283,8 @@ def mp_lcurve_from_events(f, safe_interval=0,
 
 if __name__ == "__main__":
     import argparse
-    description = 'Creates lightcurves starting from event files. It is' + \
-        ' possible to specify energy or channel filtering options'
+    description = ('Create light curves starting from event files. It is '
+                   'possible to specify energy or channel filtering options')
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs='+')

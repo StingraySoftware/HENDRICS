@@ -162,7 +162,7 @@ def mp_rebin_file(filename, rebin):
 
 if __name__ == '__main__':
     import argparse
-    description = 'Rebins light curves and frequency spectra. '
+    description = 'Rebin light curves and frequency spectra. '
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs='+')

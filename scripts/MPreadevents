@@ -3,7 +3,7 @@ from __future__ import division, print_function
 from maltpynt.mp_read_events import mp_treat_event_file
 import argparse
 
-description = ('Reads a cleaned event files and saves the relevant '
+description = ('Read a cleaned event files and saves the relevant '
                'information in a standard format')
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument("files", help="List of files", nargs='+')

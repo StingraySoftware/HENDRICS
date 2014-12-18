@@ -3,7 +3,7 @@ from __future__ import division, print_function
 from maltpynt.mp_rebin import mp_rebin_file
 import argparse
 
-description = 'Rebins light curves and frequency spectra. '
+description = 'Rebin light curves and frequency spectra. '
 parser = argparse.ArgumentParser(description=description)
 
 parser.add_argument("files", help="List of light curve files", nargs='+')

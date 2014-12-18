@@ -6,7 +6,7 @@ from mp_io import mp_load_data
 from maltpynt.mp_create_gti import mp_apply_gti, mp_create_gti
 
 import argparse
-description = ('Creates GTI files from a filter expression, or applies '
+description = ('Create GTI files from a filter expression, or applies '
                'previously created GTIs to a file')
 parser = argparse.ArgumentParser(description=description)
 

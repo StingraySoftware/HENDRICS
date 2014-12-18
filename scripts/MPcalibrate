@@ -4,7 +4,7 @@ from maltpynt.mp_io import mp_get_file_extension, MP_FILE_EXTENSION
 from maltpynt.mp_calibrate import mp_calibrate
 import argparse
 
-description = ('Calibrates clean event files by associating the correct '
+description = ('Calibrate clean event files by associating the correct '
                'energy to each PI channel. Uses either a specified rmf file or '
                '(for NuSTAR only) an rmf file from the CALDB')
 parser = argparse.ArgumentParser(description=description)

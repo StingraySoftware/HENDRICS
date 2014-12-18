@@ -28,8 +28,8 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file):
 
 if __name__ == '__main__':
     import argparse
-    description = 'Calculates time lags from the cross power spectrum and' + \
-        ' the power spectra of the two channels'
+    description = ('Calculate time lags from the cross power spectrum and '
+                   'the power spectra of the two channels')
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="Three files: the cross spectrum" +
                         " and the two power spectra", nargs='+')
