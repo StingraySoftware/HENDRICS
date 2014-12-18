@@ -7,3 +7,6 @@ import mp_read_events as read_events
 import mp_rebin as rebin
 import mp_save_as_xspec as save_as_xspec
 import mp_io as io
+import mp_fold as fold
+
+
