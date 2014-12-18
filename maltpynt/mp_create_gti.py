@@ -19,7 +19,7 @@ def mp_create_gti(fname, filter_expr, safe_interval=[0, 0]):
 
     instr = data['Instr']
     if ftype == 'lc' and instr == 'PCA':
-        print ('RXTE/PCA data; normalizing lc per no. PCUs')
+        print('RXTE/PCA data; normalizing lc per no. PCUs')
         # If RXTE, plot per PCU count rate
         data['lc'] /= data['nPCUs']
     # Map all entries of data to local variables
@@ -45,7 +45,7 @@ def mp_apply_gti(fname, gti, outname=None):
         datagti = data['GTI']
         newgtis = mp_cross_gtis([gti, datagti])
     except:
-        print ('Data have no GTI extension')
+        print('Data have no GTI extension')
         newgtis = gti
 
     data['GTI'] = newgtis

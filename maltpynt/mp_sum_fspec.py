@@ -49,7 +49,7 @@ def sum_fspec(files, outname=None):
     tot_contents['e' + pdstype] = np.sqrt(tot_epds) / tot_npds
     tot_contents['n' + pdstype] = tot_npds
 
-    print ('Saving %s to %s' % (pdstype, outname))
+    print('Saving %s to %s' % (pdstype, outname))
     mp_save_data(tot_contents, outname)
 
     return tot_contents

@@ -18,13 +18,13 @@ def mp_lcurve(event_list,
         times, lc = bin_events(event_list, bin_time)
         '''
     if start_time is None:
-        print ("mp_lcurve: Changing start time")
+        print("mp_lcurve: Changing start time")
         start_time = np.floor(event_list[0])
     if stop_time is None:
-        print ("mp_lcurve: Changing stop time")
+        print("mp_lcurve: Changing stop time")
         stop_time = np.ceil(event_list[-1])
     if verbose > 0:
-        print ("mp_lcurve: Time limits: %g -- %g" % (start_time, stop_time))
+        print("mp_lcurve: Time limits: %g -- %g" % (start_time, stop_time))
 
     new_event_list = event_list[event_list >= start_time]
     new_event_list = new_event_list[new_event_list <= stop_time]
@@ -35,18 +35,18 @@ def mp_lcurve(event_list,
     times = np.arange(start_time, stop_time, bin_time)
     lc = np.bincount(new_event_list, minlength=len(times))
     if verbose > 1:
-        print ("mp_lcurve: Length of the lightcurve: %g" % len(times))
-    #    print len(times), len (lc)
+        print("mp_lcurve: Length of the lightcurve: %g" % len(times))
     return times, lc.astype(np.float)
 
 
 def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     lcdatas = []
     for lfc in lcfilelist:
-        print ("Loading file %s..." % lfc)
+        print("Loading file %s..." % lfc)
         lcdata = mp_load_lcurve(lfc)
-        print ("Done.")
+        print("Done.")
         lcdatas.append(lcdata)
+        del lcdata
 
     # --------------- Check consistency of data --------------
     lcdts = [lcdata['dt'] for lcdata in lcdatas]
@@ -84,7 +84,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
         outlcs[instr]['GTI'] = np.array(gtis[instr])
 
     if outfile is not None:
-        print ('Saving joined light curve to %s' % outfile)
+        print('Saving joined light curve to %s' % outfile)
         mp_save_lcurve(outlcs, outfile)
 
     return outlcs
@@ -119,7 +119,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION):
     out['time'] = time0
     out['dt'] = lcdata[instrs[0]]['dt']
 
-    print ('Saving scrunched light curve to %s' % outfile)
+    print('Saving scrunched light curve to %s' % outfile)
     mp_save_lcurve(out, outfile)
 
     return time0, lc0, gti
@@ -134,7 +134,7 @@ def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
 
 #    # test if newgti-created mask coincides with mask
 #    newmask = mp_create_gti_mask(time, newgtis, safe_interval=0)
-#    print ("Test: newly created gti is equivalent?", np.all(newmask == mask))
+#    print("Test: newly created gti is equivalent?", np.all(newmask == mask))
 
     nomask = np.logical_not(mask)
 
@@ -161,9 +161,9 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           ignore_gtis=False,
                           bintime=1,
                           outdir=None):
-    print ("Loading file %s..." % f)
+    print("Loading file %s..." % f)
     evdata = mp_load_events(f)
-    print ("Done.")
+    print("Done.")
 
     if bintime < 0:
         bintime = 2 ** (bintime)
@@ -242,9 +242,9 @@ def mp_lcurve_from_events(f, safe_interval=0,
     # TODO: implement per-interval count rates
     if gti_split:
         outfiles = []
-        print (borders)
+        print(borders)
         for ib, b in enumerate(borders):
-            print (b)
+            print(b)
             local_tag = tag + '_gti%d' % ib
             local_out = out.copy()
             local_out['lc'] = lc[b[0]:b[1]]
@@ -258,7 +258,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
                 local_out['nPCUs'] = len(set(pcus))
 
             outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
-            print ('Saving light curve to %s' % outfile)
+            print('Saving light curve to %s' % outfile)
             mp_save_lcurve(local_out, outfile)
             outfiles.append(outfile)
     else:
@@ -273,7 +273,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
             out['nPCUs'] = len(set(pcus))
 
         outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
-        print ('Saving light curve to %s' % outfile)
+        print('Saving light curve to %s' % outfile)
         mp_save_lcurve(out, outfile)
         outfiles = [outfile]
 
@@ -295,7 +295,7 @@ if __name__ == "__main__":
                         default=[0, 0],
                         help="Interval at start and stop of GTIs used" +
                         " for filtering")
-    parser.add_argument("--pi-interval", type=long, default=[-1, -1],
+    parser.add_argument("--pi-interval", type=int, default=[-1, -1],
                         nargs=2,
                         help="PI interval used for filtering")
     parser.add_argument('-e', "--e-interval", type=float, default=[-1, -1],
@@ -340,7 +340,7 @@ if __name__ == "__main__":
 
         outfiles.extend(outfile)
 
-    print (outfiles)
+    print(outfiles)
     # TODO: test if this still works!
     if args.scrunch:
         mp_scrunch_lightcurves(outfiles)

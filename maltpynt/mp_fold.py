@@ -99,7 +99,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
     if baseline:
         guess_pars = [np.mean(profile)] + guess_pars
         if debug:
-            print (guess_pars)
+            print(guess_pars)
         startidx = 1
     chisq_save = 1000000000000.
     fit_pars_save = guess_pars
@@ -112,7 +112,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
     for phase in np.arange(0., 1., 0.1):
         guess_pars[3 + startidx] = phase
         if debug:
-            print (guess_pars)
+            print(guess_pars)
         if debug:
             plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
         fit_pars, success = optimize.leastsq(std_residuals, guess_pars[:],
@@ -133,7 +133,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
             success_save = success
 
         if debug:
-            print (success_save, fit_pars_save, chisq_save)
+            print(success_save, fit_pars_save, chisq_save)
             plt.show()
     return fit_pars_save, success_save, chisq_save
 

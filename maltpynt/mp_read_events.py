@@ -12,7 +12,7 @@ def mp_load_gtis(fits_file, gtistring=None):
 
     if gtistring is None:
         gtistring = 'GTI'
-    print ("Loading GTIS from file" % fits_file)
+    print("Loading GTIS from file" % fits_file)
     lchdulist = pf.open(fits_file, checksum=True)
     lchdulist.verify('warn')
 
@@ -56,7 +56,7 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
     try:
         lctable = lchdulist[hduname].data
     except:
-        print ('HDU %s not found. Trying first extension' % hduname)
+        print('HDU %s not found. Trying first extension' % hduname)
         lctable = lchdulist[1].data
 
     # Read event list
@@ -66,11 +66,11 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
     try:
         timezero = np.longdouble(lchdulist[1].header['TIMEZERO'])
     except:
-        print ("TIMEZERO is 0")
+        print("TIMEZERO is 0")
         timezero = 0.
 
     if timezero != 0.:
-        print ("TIMEZERO != 0, correcting")
+        print("TIMEZERO != 0, correcting")
         ev_list += timezero
 
     # Read TSTART, TSTOP from header
@@ -78,7 +78,7 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
         t_start = np.longdouble(lchdulist[1].header['TSTART'])
         t_stop = np.longdouble(lchdulist[1].header['TSTOP'])
     except:
-        print ("Tstart and Tstop error. using defaults")
+        print("Tstart and Tstop error. using defaults")
         t_start = ev_list[0]
         t_stop = ev_list[-1]
 
@@ -111,7 +111,7 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
                                 dtype=np.longdouble)
 
         except:
-            print ("%s Extension not found or invalid in %s!! Please check!!" %
+            print("%s Extension not found or invalid in %s!! Please check!!" %
                   (gtistring, fits_file))
             gti_list = np.array([[t_start, t_stop]],
                                 dtype=np.longdouble)
@@ -125,7 +125,7 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
                 additional_data[a] = np.array(lctable.field(a))
             except:
                 if a == 'PI':
-                    print ('Column PI not found. Trying with PHA')
+                    print('Column PI not found. Trying with PHA')
                     additional_data[a] = np.array(lctable.field('PHA'))
                 else:
                     raise Exception('Column' + a + 'not found')
@@ -146,7 +146,7 @@ def mp_load_events_and_gtis(fits_file, verbose=0, return_limits=False,
 
 def mp_treat_event_file(filename):
 
-    print ('Opening %s' % filename)
+    print('Opening %s' % filename)
 
     instr = mp_read_header_key(filename, 'INSTRUME')
     additional_columns = ['PI']

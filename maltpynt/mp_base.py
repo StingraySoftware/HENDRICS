@@ -34,7 +34,7 @@ def mp_ref_mjd(fits_file, hdu=1):
     if isinstance(fits_file, collections.Iterable) and\
             not isinstance("ba", types.StringTypes):
         fits_file = fits_file[0]
-        print ("opening %s" % fits_file)
+        print("opening %s" % fits_file)
 
     try:
         ref_mjd_int = np.long(mp_read_header_key(fits_file, 'MJDREFI'))
@@ -100,8 +100,8 @@ def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
         '''
     import collections
     if verbose:
-        print ("create_gti_mask: warning: this routine assumes that ")
-        print ("                no overlaps are present between GTIs")
+        print("create_gti_mask: warning: this routine assumes that ")
+        print("                no overlaps are present between GTIs")
 
     if dt is None:
         dt = np.zeros_like(time) + (time[1] - time[0]) / 2
@@ -149,7 +149,7 @@ def mp_create_gti_from_condition(time, condition, verbose=False,
     gtis = []
     for idx in idxs:
         if verbose:
-            print (idx)
+            print(idx)
         startidx = idx[0]
         stopidx = idx[1]-1
 
@@ -241,7 +241,7 @@ def mp_sort_files(files):
     all = {}
     ftypes = []
     for f in files:
-        print ('Loading file', f)
+        print('Loading file', f)
         ftype, contents = mp_get_file_type(f)
         instr = contents['Instr']
         ftypes.append(ftype)

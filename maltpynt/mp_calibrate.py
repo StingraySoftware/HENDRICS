@@ -6,11 +6,11 @@ import os
 
 
 def mp_default_nustar_rmf():
-    print ("###############ATTENTION!!#####################")
-    print ("")
-    print ("Rmf not specified. Using default NuSTAR rmf.")
-    print ("")
-    print ("###############################################")
+    print("###############ATTENTION!!#####################")
+    print("")
+    print("Rmf not specified. Using default NuSTAR rmf.")
+    print("")
+    print("###############################################")
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split('/')
     newpath = os.path.join(os.environ['CALDB'], *path)
@@ -53,14 +53,14 @@ def mp_read_calibration(pis, rmf_file=None):
 def mp_calibrate(fname, outname, rmf=None):
     '''Do calibration'''
     # Read event file
-    print ("Loading file %s..." % fname)
+    print("Loading file %s..." % fname)
     evdata = mp_load_events(fname)
-    print ("Done.")
+    print("Done.")
     pis = evdata['PI']
 
     es = mp_read_calibration(pis, rmf)
     evdata['E'] = es
-    print ('Saving calibrated data to %s' % outname)
+    print('Saving calibrated data to %s' % outname)
     mp_save_events(evdata, outname)
 
 

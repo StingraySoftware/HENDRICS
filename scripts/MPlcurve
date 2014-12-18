@@ -61,7 +61,7 @@ for f in infiles:
 
     outfiles.extend(outfile)
 
-print (outfiles)
+print(outfiles)
 # TODO: test if this still works!
 if args.scrunch:
     mp_scrunch_lightcurves(outfiles)

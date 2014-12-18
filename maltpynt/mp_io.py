@@ -184,13 +184,13 @@ def mp_load_pds(fname):
 
 # ---- GENERIC function to save stuff.
 def load_data_pickle(fname, kind="data"):
-    print ('Loading %s and info from %s' % (kind, fname))
+    print('Loading %s and info from %s' % (kind, fname))
     return pickle.load(open(fname))
     return
 
 
 def save_data_pickle(struct, fname, kind="data"):
-    print ('Saving %s and info to %s' % (kind, fname))
+    print('Saving %s and info to %s' % (kind, fname))
     pickle.dump(struct, open(fname, 'wb'))
     return
 
@@ -221,7 +221,7 @@ def load_data_nc(fname):
 
 
 def save_data_nc(struct, fname, kind="data"):
-    print ('Saving %s and info to %s' % (kind, fname))
+    print('Saving %s and info to %s' % (kind, fname))
     varnames = []
     values = []
     formats = []
@@ -233,7 +233,7 @@ def save_data_nc(struct, fname, kind="data"):
             try:
                 probe = var[0]
             except:
-                print ('This failed:', k, var, 'in file ', fname)
+                print('This failed:', k, var, 'in file ', fname)
                 return -1
         if is_string(var):
             probekind = str
@@ -317,13 +317,13 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
     outfile = open(filename, 'w')
     for l in list_of_errs:
         i, kind = l
-        print ('READ %s' % kind + 'ERR %d' % (i + 1), file=outfile)
+        print('READ %s' % kind + 'ERR %d' % (i + 1), file=outfile)
 
     length = len(data_to_write[0])
     for i in range(length):
         for idw, d in enumerate(data_to_write):
-            print (d[i], file=outfile, end=" ")
-        print ("", file=outfile)
+            print(d[i], file=outfile, end=" ")
+        print("", file=outfile)
 
     outfile.close()
 
@@ -336,7 +336,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, verbose=-1,
     import numpy as np
 
     if verbose > 1:
-        print (cols, np.shape(cols))
+        print(cols, np.shape(cols))
     if append:
         txtfile = open(filename, "a")
     else:
@@ -348,20 +348,20 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, verbose=-1,
     if ndim == 1:
         cols = [cols]
     elif ndim > 3 or ndim == 0:
-        print ("Only one- or two-dim arrays accepted")
+        print("Only one- or two-dim arrays accepted")
         return -1
     lcol = len(cols[0])
 
     if colnames is not None:
-        print ("#", file=txtfile, end=' ')
+        print("#", file=txtfile, end=' ')
         for i_c, c in enumerate(cols):
-            print (colnames[i_c], file=txtfile, end=' ')
-        print ('', file=txtfile)
+            print(colnames[i_c], file=txtfile, end=' ')
+        print('', file=txtfile)
     for i in range(lcol):
         for c in cols:
-            print (c[i], file=txtfile, end=' ')
+            print(c[i], file=txtfile, end=' ')
 
-        print ('', file=txtfile)
+        print('', file=txtfile)
     txtfile.close()
     return 0
 
