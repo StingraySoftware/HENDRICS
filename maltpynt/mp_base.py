@@ -4,6 +4,8 @@ from mp_io import mp_get_file_type
 
 
 def mp_mkdir_p(path):
+    '''Found at http://stackoverflow.com/questions/600268/
+    mkdir-p-functionality-in-python'''
     import os
     import errno
     try:
@@ -254,7 +256,7 @@ def mp_sort_files(files):
         ftype, contents = mp_get_file_type(f)
         instr = contents['Instr']
         ftypes.append(ftype)
-        if not instr in all.keys():
+        if instr not in all.keys():
             all[instr] = []
         # Add file name to the dictionary
         contents['FILENAME'] = f
@@ -283,5 +285,3 @@ def mp_calc_countrate(time, lc, gtis=None, bintime=1):
         mask = mp_create_gti_mask(time, gtis)
         lc = lc[mask]
     return np.mean(lc) / bintime
-
-

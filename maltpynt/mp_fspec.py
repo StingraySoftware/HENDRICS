@@ -85,7 +85,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False):
         l = lc[start_bin:stop_bin]
         if np.sum(l) == 0:
             print('Interval starting at time %.7f is bad. Check GTIs' %
-                   time[start_bin])
+                  time[start_bin])
             npds -= 1
             continue
 

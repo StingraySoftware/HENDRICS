@@ -68,7 +68,8 @@ def mp_apply_gti(fname, gti, outname=None):
 
 if __name__ == '__main__':
     import argparse
-    description = 'Create GTI files from a filter expression, or applies previously created GTIs to a file'
+    description = ('Create GTI files from a filter expression, or applies '
+                   'previously created GTIs to a file')
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs='+')

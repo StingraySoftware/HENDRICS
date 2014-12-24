@@ -40,7 +40,7 @@ def mp_get_file_format(fname):
         raise Exception("File format not recognized")
 
 
-#---- Base function to save NetCDF4 files
+# ---- Base function to save NetCDF4 files
 def mp_save_as_netcdf(vars, varnames, formats, fname):
     '''The future. Much faster than pickle'''
 
@@ -109,7 +109,7 @@ def mp_read_from_netcdf(fname):
     return out
 
 
-#----- Functions to handle file types
+# ----- Functions to handle file types
 def mp_get_file_type(fname):
     contents = mp_load_data(fname)
     '''Gets file type'''
@@ -136,7 +136,7 @@ def mp_get_file_type(fname):
     return ftype, contents
 
 
-#----- functions to save and load EVENT data
+# ----- functions to save and load EVENT data
 def mp_save_events(eventStruct, fname):
     if mp_get_file_format(fname) == 'pickle':
         save_data_pickle(eventStruct, fname)
@@ -151,7 +151,7 @@ def mp_load_events(fname):
         return load_data_nc(fname)
 
 
-#----- functions to save and load LCURVE data
+# ----- functions to save and load LCURVE data
 def mp_save_lcurve(lcurveStruct, fname):
     if mp_get_file_format(fname) == 'pickle':
         return save_data_pickle(lcurveStruct, fname)
@@ -343,8 +343,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, verbose=-1,
         txtfile = open(filename, "w")
     shape = np.shape(cols)
     ndim = len(shape)
-    #if colnames is None:
-        #colnames = range(len(cols))
+
     if ndim == 1:
         cols = [cols]
     elif ndim > 3 or ndim == 0:
@@ -364,4 +363,3 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, verbose=-1,
         print('', file=txtfile)
     txtfile.close()
     return 0
-
