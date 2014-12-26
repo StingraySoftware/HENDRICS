@@ -1,8 +1,8 @@
 from __future__ import division, print_function
 import numpy as np
-from mp_io import mp_get_file_type
-from mp_io import mp_save_data
-from mp_io import MP_FILE_EXTENSION, mp_get_file_extension
+from .mp_io import mp_get_file_type
+from .mp_io import mp_save_data
+from .mp_io import MP_FILE_EXTENSION, mp_get_file_extension
 
 
 def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
@@ -75,7 +75,7 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     nmax = np.int((log10(fmax) - log10(fmin)) / logstep + 0.5)
 
 # Low frequency grid
-    flo = fmin * 10 ** (np.array(range(nmax)) * logstep)
+    flo = fmin * 10 ** (np.arange(nmax) * logstep)
     flo = np.append(flo, [fmax])
 
 # Now the clever part: building a histogram of frequencies
@@ -86,7 +86,7 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     newpds = np.zeros(nmax, dtype=pds_dtype) - 1
     newpds_err = np.zeros(nmax, dtype=pdse_dtype)
     newfreqlo = np.zeros(nmax)
-    new_nbins = np.zeros(nmax, dtype=long)
+    new_nbins = np.zeros(nmax, dtype=np.long)
     for i in range(nmax):
         good = bins == i
         ngood = np.count_nonzero(good)
@@ -121,7 +121,7 @@ def mp_rebin_file(filename, rebin):
             mp_const_rebin(x, y, rebin, ye, normalize=False)
         contents['time'] = x
         contents['lc'] = y
-        if 'rebin' in contents.keys():
+        if 'rebin' in list(contents.keys()):
             contents['rebin'] *= rebin
         else:
             contents['rebin'] = rebin

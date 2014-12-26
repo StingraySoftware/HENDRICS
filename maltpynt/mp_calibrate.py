@@ -1,6 +1,6 @@
 from __future__ import division, print_function
-from mp_io import mp_load_events, mp_save_events
-from mp_io import mp_get_file_extension, MP_FILE_EXTENSION
+from .mp_io import mp_load_events, mp_save_events
+from .mp_io import mp_get_file_extension, MP_FILE_EXTENSION
 import numpy as np
 import os
 

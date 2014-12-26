@@ -1,9 +1,9 @@
 from __future__ import division, print_function
 import numpy as np
-from mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis, mp_mkdir_p
-from mp_base import mp_contiguous_regions, mp_calc_countrate
-from mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
-from mp_io import MP_FILE_EXTENSION
+from .mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis, mp_mkdir_p
+from .mp_base import mp_contiguous_regions, mp_calc_countrate
+from .mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
+from .mp_io import MP_FILE_EXTENSION
 import os
 
 
@@ -94,7 +94,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION):
     '''Create a single light curve from input light curves,
     regardless of the instrument'''
     lcdata = mp_join_lightcurves(lcfilelist)
-    instrs = lcdata.keys()
+    instrs = list(lcdata.keys())
     gti_lists = [lcdata[inst]['GTI'] for inst in instrs]
     gti = mp_cross_gtis(gti_lists)
     # Determine limits

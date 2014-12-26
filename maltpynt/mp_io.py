@@ -6,7 +6,14 @@ try:
 except:
     MP_FILE_EXTENSION = '.p'
     pass
-import cPickle as pickle
+
+try:
+    # Python 3
+    import pickle
+except:
+    # Python 2
+    import cPickle as pickle
+
 import collections
 import numpy as np
 import os.path
@@ -115,7 +122,7 @@ def mp_get_file_type(fname):
     '''Gets file type'''
     # TODO: other file formats
 
-    keys = contents.keys()
+    keys = list(contents.keys())
     if 'lc' in keys:
         ftype = 'lc'
     elif 'cpds' in keys:
@@ -197,14 +204,14 @@ def save_data_pickle(struct, fname, kind="data"):
 
 def load_data_nc(fname):
     contents = mp_read_from_netcdf(fname)
-    keys = contents.keys()
+    keys = list(contents.keys())
 
     keys_to_delete = []
     for k in keys:
         if k[-2:] in ['_I', '_F']:
             kcorr = k[:-2]
 
-            if kcorr not in contents.keys():
+            if kcorr not in list(contents.keys()):
                 contents[kcorr] = np.longdouble(0)
             dum = contents[k]
             if isinstance(dum, collections.Iterable):

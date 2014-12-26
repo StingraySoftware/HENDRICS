@@ -1,17 +1,17 @@
 from __future__ import division, print_function
 from __future__ import unicode_literals
 import sys
-from mp_io import mp_load_data
-from mp_io import MP_FILE_EXTENSION, mp_save_data
-from mp_base import mp_create_gti_from_condition, mp_root, mp_create_gti_mask
-from mp_base import mp_cross_gtis, mp_get_file_type
+from .mp_io import mp_load_data
+from .mp_io import MP_FILE_EXTENSION, mp_save_data
+from .mp_base import mp_create_gti_from_condition, mp_root, mp_create_gti_mask
+from .mp_base import mp_cross_gtis, mp_get_file_type
 
 
 def mp_create_gti(fname, filter_expr, safe_interval=[0, 0]):
     '''Creates a GTI list by using boolean operation on any of the data
     sections of the file'''
     # Necessary as nc variables are sometimes defined as array
-    from numpy import *
+    from numpy import array
 
     if filter_expr is None:
         sys.exit('Please specify a filter expression')

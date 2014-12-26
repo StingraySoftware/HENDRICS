@@ -1,7 +1,7 @@
 from __future__ import division, print_function
-from mp_io import mp_get_file_type
+from .mp_io import mp_get_file_type
 import numpy as np
-from mp_io import mp_get_file_extension
+from .mp_io import mp_get_file_extension
 
 
 def mp_save_as_xspec(fname):
@@ -9,7 +9,7 @@ def mp_save_as_xspec(fname):
 
     outname = fname.replace(mp_get_file_extension(fname), '_xsp.dat')
 
-    if 'freq' in contents.keys():
+    if 'freq' in list(contents.keys()):
         freq = contents['freq']
         pds = contents[ftype]
         epds = contents['e' + ftype]
@@ -19,7 +19,7 @@ def mp_save_as_xspec(fname):
                                           freq + df / 2,
                                           pds.real * df,
                                           epds * df]))
-    elif 'flo' in contents.keys():
+    elif 'flo' in list(contents.keys()):
         ftype = ftype.replace('reb', '')
         flo = contents['flo']
         fhi = contents['fhi']

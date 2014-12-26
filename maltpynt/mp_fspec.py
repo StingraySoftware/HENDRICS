@@ -1,9 +1,9 @@
 from __future__ import division, print_function
-from mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
-from mp_base import mp_sort_files
-from mp_rebin import mp_const_rebin
-from mp_io import mp_get_file_type, mp_load_lcurve, mp_save_pds
-from mp_io import MP_FILE_EXTENSION
+from .mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
+from .mp_base import mp_sort_files
+from .mp_rebin import mp_const_rebin
+from .mp_io import mp_get_file_type, mp_load_lcurve, mp_save_pds
+from .mp_io import MP_FILE_EXTENSION
 import numpy as np
 
 
@@ -490,7 +490,7 @@ def mp_calc_fspec(files, fftlen,
         print('Beware! For cpds and derivatives, I assume that the files are')
         print('from only two instruments and in pairs (even in random order)')
 
-        instrs = sorted_files.keys()
+        instrs = list(sorted_files.keys())
         files1 = sorted_files[instrs[0]]
         files2 = sorted_files[instrs[1]]
     else:
@@ -518,9 +518,9 @@ def mp_calc_fspec(files, fftlen,
 
 def mp_read_fspec(fname):
     ftype, contents = mp_get_file_type(fname)
-    if 'freq' in contents.keys():
+    if 'freq' in list(contents.keys()):
         freq = contents['freq']
-    elif 'flo' in contents.keys():
+    elif 'flo' in list(contents.keys()):
         flo = contents['flo']
         fhi = contents['fhi']
         freq = [flo, fhi]
