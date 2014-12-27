@@ -10,7 +10,7 @@ def fold_profile_stat(profile, profile_err, meanprof=None):
     '''
     if meanprof is None:
         meanprof = np.mean(profile)
-    return np.sum((profile - meanprof) ** 2 / profile_err ** 2)
+    return np.sum((profile - meanprof)**2 / profile_err**2)
 
 
 def fold_detection_level(nbin, epsilon=0.01):
@@ -33,9 +33,9 @@ def dbl_cos_fit_func(p, x):
         base = p[0]
         startidx = 1
     first_harm = \
-        p[startidx] * np.cos(2 * np.pi * (x) + 2 * np.pi * p[startidx + 1])
+        p[startidx] * np.cos(2*np.pi*x + 2*np.pi*p[startidx + 1])
     second_harm = \
-        p[startidx + 2] * np.cos(4. * np.pi * (x) + 4 * np.pi * p[startidx + 3])
+        p[startidx + 2] * np.cos(4.*np.pi*x + 4*np.pi*p[startidx + 3])
     return base + first_harm + second_harm
 
 
@@ -144,5 +144,3 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
                                       nperiods=nperiods,
                                       phaseref=phaseref,
                                       baseline=baseline)
-
-

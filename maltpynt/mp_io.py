@@ -6,7 +6,14 @@ try:
 except:
     MP_FILE_EXTENSION = '.p'
     pass
-import cPickle as pickle
+
+try:
+    # Python 3
+    import pickle
+except:
+    # Python 2
+    import cPickle as pickle
+
 import collections
 import numpy as np
 import os.path
@@ -40,7 +47,7 @@ def mp_get_file_format(fname):
         raise Exception("File format not recognized")
 
 
-#---- Base function to save NetCDF4 files
+# ---- Base function to save NetCDF4 files
 def mp_save_as_netcdf(vars, varnames, formats, fname):
     '''The future. Much faster than pickle'''
 
@@ -109,13 +116,13 @@ def mp_read_from_netcdf(fname):
     return out
 
 
-#----- Functions to handle file types
+# ----- Functions to handle file types
 def mp_get_file_type(fname):
     contents = mp_load_data(fname)
     '''Gets file type'''
     # TODO: other file formats
 
-    keys = contents.keys()
+    keys = list(contents.keys())
     if 'lc' in keys:
         ftype = 'lc'
     elif 'cpds' in keys:
@@ -136,7 +143,7 @@ def mp_get_file_type(fname):
     return ftype, contents
 
 
-#----- functions to save and load EVENT data
+# ----- functions to save and load EVENT data
 def mp_save_events(eventStruct, fname):
     if mp_get_file_format(fname) == 'pickle':
         save_data_pickle(eventStruct, fname)
@@ -151,7 +158,7 @@ def mp_load_events(fname):
         return load_data_nc(fname)
 
 
-#----- functions to save and load LCURVE data
+# ----- functions to save and load LCURVE data
 def mp_save_lcurve(lcurveStruct, fname):
     if mp_get_file_format(fname) == 'pickle':
         return save_data_pickle(lcurveStruct, fname)
@@ -197,14 +204,14 @@ def save_data_pickle(struct, fname, kind="data"):
 
 def load_data_nc(fname):
     contents = mp_read_from_netcdf(fname)
-    keys = contents.keys()
+    keys = list(contents.keys())
 
     keys_to_delete = []
     for k in keys:
         if k[-2:] in ['_I', '_F']:
             kcorr = k[:-2]
 
-            if kcorr not in contents.keys():
+            if kcorr not in list(contents.keys()):
                 contents[kcorr] = np.longdouble(0)
             dum = contents[k]
             if isinstance(dum, collections.Iterable):
@@ -343,8 +350,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, verbose=-1,
         txtfile = open(filename, "w")
     shape = np.shape(cols)
     ndim = len(shape)
-    #if colnames is None:
-        #colnames = range(len(cols))
+
     if ndim == 1:
         cols = [cols]
     elif ndim > 3 or ndim == 0:
@@ -364,4 +370,3 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, verbose=-1,
         print('', file=txtfile)
     txtfile.close()
     return 0
-

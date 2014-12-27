@@ -1,9 +1,11 @@
 from __future__ import division, print_function
 import numpy as np
-from mp_io import mp_get_file_type
+from .mp_io import mp_get_file_type, is_string
 
 
 def mp_mkdir_p(path):
+    '''Found at http://stackoverflow.com/questions/600268/
+    mkdir-p-functionality-in-python'''
     import os
     import errno
     try:
@@ -30,9 +32,9 @@ def mp_ref_mjd(fits_file, hdu=1):
     Read MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header
     '''
     import collections
-    import types
+
     if isinstance(fits_file, collections.Iterable) and\
-            not isinstance("ba", types.StringTypes):
+            not is_string(fits_file):
         fits_file = fits_file[0]
         print("opening %s" % fits_file)
 
@@ -247,35 +249,35 @@ def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
 
 def mp_sort_files(files):
     '''Sort a list of MaLTPyNT files'''
-    all = {}
+    allfiles = {}
     ftypes = []
     for f in files:
         print('Loading file', f)
         ftype, contents = mp_get_file_type(f)
         instr = contents['Instr']
         ftypes.append(ftype)
-        if not instr in all.keys():
-            all[instr] = []
+        if instr not in list(allfiles.keys()):
+            allfiles[instr] = []
         # Add file name to the dictionary
         contents['FILENAME'] = f
-        all[instr].append(contents)
+        allfiles[instr].append(contents)
 
     # Check if files are all of the same kind (lcs, PDSs, ...)
     ftypes = list(set(ftypes))
     assert len(ftypes) == 1, 'Files are not all of the same kind.'
 
-    instrs = all.keys()
+    instrs = list(allfiles.keys())
     for instr in instrs:
-        contents = list(all[instr])
+        contents = list(allfiles[instr])
         tstarts = [c['Tstart'] for c in contents]
         fnames = [c['FILENAME'] for c in contents]
 
         fnames = [x for (y, x) in sorted(zip(tstarts, fnames))]
 
         # Substitute dictionaries with the sorted list of files
-        all[instr] = fnames
+        allfiles[instr] = fnames
 
-    return all
+    return allfiles
 
 
 def mp_calc_countrate(time, lc, gtis=None, bintime=1):
@@ -283,5 +285,3 @@ def mp_calc_countrate(time, lc, gtis=None, bintime=1):
         mask = mp_create_gti_mask(time, gtis)
         lc = lc[mask]
     return np.mean(lc) / bintime
-
-

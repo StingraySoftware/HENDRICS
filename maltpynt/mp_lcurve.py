@@ -1,9 +1,9 @@
 from __future__ import division, print_function
 import numpy as np
-from mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis, mp_mkdir_p
-from mp_base import mp_contiguous_regions, mp_calc_countrate
-from mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
-from mp_io import MP_FILE_EXTENSION
+from .mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis, mp_mkdir_p
+from .mp_base import mp_contiguous_regions, mp_calc_countrate
+from .mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
+from .mp_io import MP_FILE_EXTENSION
 import os
 
 
@@ -94,7 +94,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION):
     '''Create a single light curve from input light curves,
     regardless of the instrument'''
     lcdata = mp_join_lightcurves(lcfilelist)
-    instrs = lcdata.keys()
+    instrs = list(lcdata.keys())
     gti_lists = [lcdata[inst]['GTI'] for inst in instrs]
     gti = mp_cross_gtis(gti_lists)
     # Determine limits
@@ -198,7 +198,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
     out['total_ctrate'] = mp_calc_countrate(time, lc, bintime=bintime)
 
     # Then, apply filters
-    if pi_interval is not None and np.all(pi_interval > 0):
+    if pi_interval is not None and np.all(np.array(pi_interval) > 0):
         pis = evdata['PI']
         good = np.logical_and(pis > pi_interval[0],
                               pis <= pi_interval[1])
@@ -206,7 +206,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         tag = '_PI%g-%g' % (pi_interval[0], pi_interval[1])
         out['PImin'] = e_interval[0]
         out['PImax'] = e_interval[0]
-    elif e_interval is not None and np.all(e_interval > 0):
+    elif e_interval is not None and np.all(np.array(e_interval) > 0):
         try:
             es = evdata['E']
         except:

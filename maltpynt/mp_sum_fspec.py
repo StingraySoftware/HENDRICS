@@ -1,7 +1,7 @@
 from __future__ import division, print_function
 import argparse
-from mp_io import mp_save_data, mp_get_file_type
-from mp_io import MP_FILE_EXTENSION
+from .mp_io import mp_save_data, mp_get_file_type
+from .mp_io import MP_FILE_EXTENSION
 import numpy as np
 
 

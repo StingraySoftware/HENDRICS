@@ -1,5 +1,5 @@
 from __future__ import division, print_function
-from mp_fspec import mp_calc_lags, mp_read_fspec
+from .mp_fspec import mp_calc_lags, mp_read_fspec
 import numpy as np
 
 

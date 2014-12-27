@@ -1,7 +1,7 @@
 from __future__ import division, print_function
-from mp_base import mp_root, mp_read_header_key, mp_ref_mjd
-from mp_io import mp_save_events
-from mp_io import MP_FILE_EXTENSION
+from .mp_base import mp_root, mp_read_header_key, mp_ref_mjd
+from .mp_io import mp_save_events
+from .mp_io import MP_FILE_EXTENSION
 import numpy as np
 
 
