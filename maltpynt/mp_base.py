@@ -122,10 +122,10 @@ def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
         limmin, limmax = gti
         limmin += safe_interval[0]
         limmax -= safe_interval[1]
-        if limmax - limmin > min_length:
+        if limmax - limmin >= min_length:
             newgtis[ig][:] = [limmin, limmax]
             cond1 = time - dt >= limmin
-            cond2 = time + dt < limmax
+            cond2 = time + dt <= limmax
             good = np.logical_and(cond1, cond2)
             mask[good] = True
             newgtimask[ig] = True
@@ -170,8 +170,10 @@ def mp_create_gti_from_condition(time, condition, verbose=False,
     return np.array(gtis)
 
 
-def mp_cross_gtis(gti_list, bin_time=1):
-    '''From multiple GTI lists, extract the common intervals'''
+def mp_cross_gtis_bin(gti_list, bin_time=1):
+    '''From multiple GTI lists, extract the common intervals.
+
+    Uses a very rough algorithm. Better to use mp_cross_gtis.'''
     ninst = len(gti_list)
     if ninst == 1:
         return gti_list[0]
@@ -194,6 +196,93 @@ def mp_cross_gtis(gti_list, bin_time=1):
     gtis = mp_create_gti_from_condition(times, mask0)
 
     return gtis
+
+
+def mp_cross_two_gtis(gti0, gti1):
+    '''Extract the common intervals from two GTI lists *EXACTLY*.'''
+
+    gti0_start = gti0[:, 0]
+    gti0_end = gti0[:, 1]
+    gti1_start = gti1[:, 0]
+    gti1_end = gti1[:, 1]
+
+    # Check that GTIs are well-behaved
+    assert np.all(gti0_end >= gti0_start), 'First GTI is incorrect'
+    assert np.all(gti1_end >= gti1_start), 'Second GTI is incorrect'
+    # Check that there are no overlaps in GTIs
+    assert np.all(gti0_start[1:] >= gti0_end[:-1]), 'First GTI has overlaps'
+    assert np.all(gti1_start[1:] >= gti1_end[:-1]), 'Second GTI has overlaps'
+
+    # Create a list that references to the two start and end series
+    gti_start = [gti0_start, gti1_start]
+    gti_end = [gti0_end, gti1_end]
+
+    # Concatenate the series, while keeping track of the correct origin of
+    # each start and end time
+    gti0_tag = np.array([0 for g in gti0_start], dtype=bool)
+    gti1_tag = np.array([1 for g in gti1_start], dtype=bool)
+    conc_start = np.concatenate((gti0_start, gti1_start))
+    conc_end = np.concatenate((gti0_end, gti1_end))
+    conc_tag = np.concatenate((gti0_tag, gti1_tag))
+
+    # Put in time order
+    order = np.argsort(conc_end)
+    conc_start = conc_start[order]
+    conc_end = conc_end[order]
+    conc_tag = conc_tag[order]
+
+    last_end = conc_start[0] - 1
+    final_gti = []
+    for ie, e in enumerate(conc_end):
+        # Is this ending in series 0 or 1?
+        this_series = conc_tag[ie]
+        other_series = not this_series
+
+        # Check that this closes intervals in both series.
+        # 1. Check that there is an opening in both series 0 and 1 lower than e
+        try:
+            st_pos = \
+                np.argmax(gti_start[this_series][gti_start[this_series] < e])
+            so_pos = \
+                np.argmax(gti_start[other_series][gti_start[other_series] < e])
+            st = gti_start[this_series][st_pos]
+            so = gti_start[other_series][so_pos]
+
+            s = max([st, so])
+        except:
+            continue
+
+        # If this start is inside the last interval (It can happen for equal
+        # GTI start times between the two series), then skip!
+        if s <= last_end:
+            continue
+        # 2. Check that there is no closing before e in the "other series",
+        # from intervals starting either after s, or starting and ending
+        # between the last closed interval and this one
+        cond1 = (gti_end[other_series] > s) * (gti_end[other_series] < e)
+        cond2 = gti_end[other_series][so_pos] < s
+        condition = np.any(np.logical_or(cond1, cond2))
+        # Well, if none of the conditions at point 2 apply, then you can
+        # create the new gti!
+        if not condition:
+            final_gti.append([s, e])
+            last_end = e
+
+    return final_gti
+
+
+def mp_cross_gtis(gti_list):
+    '''From multiple GTI lists, extract the common intervals *EXACTLY*'''
+    ninst = len(gti_list)
+    if ninst == 1:
+        return gti_list[0]
+
+    gti0 = gti_list[0]
+
+    for gti in gti_list[1:]:
+        gti0 = mp_cross_two_gtis(gti0, gti)
+
+    return gti0
 
 
 def mp_optimal_bin_time(fftlen, tbin):
