@@ -1,4 +1,4 @@
-from . import mp_base
+from . import mp_base as base
 from . import mp_calibrate as calibrate
 from . import mp_fspec as fspec
 from . import mp_lags as lags
