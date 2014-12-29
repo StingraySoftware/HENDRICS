@@ -5,6 +5,7 @@ from .mp_io import mp_load_data
 from .mp_io import is_string
 from .mp_base import mp_create_gti_mask
 from .mp_base import mp_detection_level
+import logging
 
 
 def baseline_fun(x, a):
@@ -43,7 +44,7 @@ def mp_plot_pds(fnames):
         color = next(rainbow)
 
         p, pcov = curve_fit(baseline_fun, freq, pds, p0=[2], sigma=epds)
-        print('White noise level is', p[0])
+        logging.info('White noise level is', p[0])
         pds -= p[0]
         if isinstance(lev, collections.Iterable):
             plt.plot(freq, lev - p[0], color=color)
@@ -102,7 +103,7 @@ def mp_plot_lc(lcfiles):
         lcfiles = [lcfiles]
 
     for lcfile in lcfiles:
-        print('Loading %s...' % lcfile)
+        logging.info('Loading %s...' % lcfile)
         lcdata = mp_load_data(lcfile)
 
         time = lcdata['time']

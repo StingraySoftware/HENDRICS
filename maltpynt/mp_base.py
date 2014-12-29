@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 import numpy as np
 from .mp_io import mp_get_file_type, is_string
+import logging
 
 
 def mp_mkdir_p(path):
@@ -36,7 +37,7 @@ def mp_ref_mjd(fits_file, hdu=1):
     if isinstance(fits_file, collections.Iterable) and\
             not is_string(fits_file):
         fits_file = fits_file[0]
-        print("opening %s" % fits_file)
+        logging.info("opening %s" % fits_file)
 
     try:
         ref_mjd_int = np.long(mp_read_header_key(fits_file, 'MJDREFI'))
@@ -95,16 +96,29 @@ def mp_contiguous_regions(condition):
     return idx
 
 
-def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
-                       safe_interval=0, min_length=0,
+def mp_check_gtis(gti):
+    '''Check if GTIs are well-behaved'''
+    gti_start = gti[:, 0]
+    gti_end = gti[:, 1]
+
+    logging.debug('-- GTI: ' + repr(gti))
+    # Check that GTIs are well-behaved
+    assert np.all(gti_end >= gti_start), 'This GTI is incorrect'
+    # Check that there are no overlaps in GTIs
+    assert np.all(gti_start[1:] >= gti_end[:-1]), 'This GTI has overlaps'
+    logging.debug('-- Correct')
+
+    return
+
+
+def mp_create_gti_mask(time, gtis, safe_interval=0, min_length=0,
                        return_new_gtis=False, dt=None):
     '''Create GTI mask under the assumption that no overlaps are present
     between GTIs
         '''
     import collections
-    if verbose:
-        print("create_gti_mask: warning: this routine assumes that ")
-        print("                no overlaps are present between GTIs")
+
+    mp_check_gtis(gtis)
 
     if dt is None:
         dt = np.zeros_like(time) + (time[1] - time[0]) / 2
@@ -136,7 +150,7 @@ def mp_create_gti_mask(time, gtis, verbose=0, debug=False,
     return res
 
 
-def mp_create_gti_from_condition(time, condition, verbose=False,
+def mp_create_gti_from_condition(time, condition,
                                  safe_interval=0, dt=None):
     '''Create a GTI list from a time array and a boolean mask ("condition").
 
@@ -157,8 +171,7 @@ def mp_create_gti_from_condition(time, condition, verbose=False,
 
     gtis = []
     for idx in idxs:
-        if verbose:
-            print(idx)
+        logging.debug(idx)
         startidx = idx[0]
         stopidx = idx[1]-1
 
@@ -185,29 +198,17 @@ def mp_cross_gtis_bin(gti_list, bin_time=1):
                       stop + bin_time / 2,
                       bin_time, dtype=np.longdouble)
 
-    mask0 = mp_create_gti_mask(times, gti_list[0], verbose=0,
+    mask0 = mp_create_gti_mask(times, gti_list[0],
                                safe_interval=[0, bin_time])
 
     for gti in gti_list[1:]:
-        mask = mp_create_gti_mask(times, gti, verbose=0,
+        mask = mp_create_gti_mask(times, gti,
                                   safe_interval=[0, bin_time])
         mask0 = np.logical_and(mask0, mask)
 
     gtis = mp_create_gti_from_condition(times, mask0)
 
     return gtis
-
-
-def mp_check_gtis(gti):
-    '''Check if GTIs are well-behaved'''
-    gti_start = gti[:, 0]
-    gti_end = gti[:, 1]
-
-    # Check that GTIs are well-behaved
-    assert np.all(gti_end >= gti_start), 'First GTI is incorrect'
-    # Check that there are no overlaps in GTIs
-    assert np.all(gti_start[1:] >= gti_end[:-1]), 'First GTI has overlaps'
-    return
 
 
 def mp_cross_two_gtis(gti0, gti1):
@@ -381,7 +382,7 @@ def mp_sort_files(files):
     allfiles = {}
     ftypes = []
     for f in files:
-        print('Loading file', f)
+        logging.info('Loading file', f)
         ftype, contents = mp_get_file_type(f)
         instr = contents['Instr']
         ftypes.append(ftype)

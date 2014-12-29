@@ -3,14 +3,11 @@ from .mp_io import mp_load_events, mp_save_events
 from .mp_io import mp_get_file_extension, MP_FILE_EXTENSION
 import numpy as np
 import os
+import logging
 
 
 def mp_default_nustar_rmf():
-    print("###############ATTENTION!!#####################")
-    print("")
-    print("Rmf not specified. Using default NuSTAR rmf.")
-    print("")
-    print("###############################################")
+    logging.warning("Rmf not specified. Using default NuSTAR rmf.")
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split('/')
     newpath = os.path.join(os.environ['CALDB'], *path)
@@ -18,7 +15,6 @@ def mp_default_nustar_rmf():
 
 
 def mp_read_rmf(rmf_file=None):
-
     '''Loads RMF info
     preliminary: only EBOUNDS
     '''
@@ -53,14 +49,14 @@ def mp_read_calibration(pis, rmf_file=None):
 def mp_calibrate(fname, outname, rmf=None):
     '''Do calibration'''
     # Read event file
-    print("Loading file %s..." % fname)
+    logging.info("Loading file %s..." % fname)
     evdata = mp_load_events(fname)
-    print("Done.")
+    logging.info("Done.")
     pis = evdata['PI']
 
     es = mp_read_calibration(pis, rmf)
     evdata['E'] = es
-    print('Saving calibrated data to %s' % outname)
+    logging.info('Saving calibrated data to %s' % outname)
     mp_save_events(evdata, outname)
 
 

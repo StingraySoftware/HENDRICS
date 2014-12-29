@@ -2,6 +2,7 @@ from __future__ import print_function, division, unicode_literals
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import optimize
+import logging
 
 
 def fold_profile_stat(profile, profile_err, meanprof=None):
@@ -111,8 +112,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
 
     for phase in np.arange(0., 1., 0.1):
         guess_pars[3 + startidx] = phase
-        if debug:
-            print(guess_pars)
+        logging.debug(guess_pars)
         if debug:
             plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
         fit_pars, success = optimize.leastsq(std_residuals, guess_pars[:],

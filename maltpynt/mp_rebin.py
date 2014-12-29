@@ -3,6 +3,7 @@ import numpy as np
 from .mp_io import mp_get_file_type
 from .mp_io import mp_save_data
 from .mp_io import MP_FILE_EXTENSION, mp_get_file_extension
+import logging
 
 
 def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
@@ -41,7 +42,7 @@ def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
 
 
 def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
-                verbose=0, return_nbins=False):
+                return_nbins=False):
     '''
     Given a PDS, bin it geometrically. Freely taken from the algorithm
     in isisscripts.sl
@@ -62,7 +63,7 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     if pds_err is None:
         pds_err = np.zeros(len(pds))
     if bin_factor <= 1:
-        print("Bin factor must be > 1!!")
+        logging.warning("Bin factor must be > 1!!")
         f0 = freq - df / 2.
         f1 = freq + df / 2.
         retval = [f0, f1, pds, pds_err]
@@ -116,7 +117,7 @@ def mp_rebin_file(filename, rebin):
         x = contents['time']
         y = contents['lc']
         ye = np.sqrt(y)
-        print('Applying a constant rebinning')
+        logging.info('Applying a constant rebinning')
         x, y, ye = \
             mp_const_rebin(x, y, rebin, ye, normalize=False)
         contents['time'] = x
@@ -133,7 +134,7 @@ def mp_rebin_file(filename, rebin):
 
         # if rebin is integer, use constant rebinning. Otherwise, geometrical
         if rebin == float(int(rebin)):
-            print('Applying a constant rebinning')
+            logging.info('Applying a constant rebinning')
             x, y, ye = \
                 mp_const_rebin(x, y, rebin, ye, normalize=True)
             contents['freq'] = x
@@ -141,7 +142,7 @@ def mp_rebin_file(filename, rebin):
             contents['e' + ftype] = ye
             contents['rebin'] *= rebin
         else:
-            print('Applying a geometrical rebinning')
+            logging.info('Applying a geometrical rebinning')
             x1, x2, y, ye, nbin = \
                 mp_geom_bin(x, y, rebin, ye, return_nbins=True)
             del contents['freq']
@@ -156,7 +157,7 @@ def mp_rebin_file(filename, rebin):
 
     outfile = f.replace(mp_get_file_extension(f),
                         '_rebin%g' % rebin + MP_FILE_EXTENSION)
-    print('Saving %s to %s' % (ftype, outfile))
+    logging.info('Saving %s to %s' % (ftype, outfile))
     mp_save_data(contents, outfile, ftype)
 
 

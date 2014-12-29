@@ -3,6 +3,7 @@ import argparse
 from .mp_io import mp_save_data, mp_get_file_type
 from .mp_io import MP_FILE_EXTENSION
 import numpy as np
+import logging
 
 
 def sum_fspec(files, outname=None):
@@ -49,7 +50,7 @@ def sum_fspec(files, outname=None):
     tot_contents['e' + pdstype] = np.sqrt(tot_epds) / tot_npds
     tot_contents['n' + pdstype] = tot_npds
 
-    print('Saving %s to %s' % (pdstype, outname))
+    logging.info('Saving %s to %s' % (pdstype, outname))
     mp_save_data(tot_contents, outname)
 
     return tot_contents

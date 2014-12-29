@@ -4,6 +4,7 @@ import sys
 from maltpynt.mp_io import mp_get_file_type, is_string
 import collections
 
+
 def usage():
     print('''Usage:
 

@@ -3,6 +3,9 @@ import unittest
 import maltpynt as mp
 import numpy as np
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
+import logging
+
+logging.basicConfig(filename='MP.log', level=logging.INFO)
 
 
 class TestFullRun(unittest.TestCase):

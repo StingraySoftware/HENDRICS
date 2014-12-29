@@ -5,6 +5,7 @@ from .mp_rebin import mp_const_rebin
 from .mp_io import mp_get_file_type, mp_load_lcurve, mp_save_pds
 from .mp_io import MP_FILE_EXTENSION
 import numpy as np
+import logging
 
 
 def mp_fft(lc, bintime):
@@ -74,7 +75,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False):
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
 
     start_bins, stop_bins = \
-        mp_decide_spectrum_lc_intervals(gti, fftlen, time, verbose=False)
+        mp_decide_spectrum_lc_intervals(gti, fftlen, time)
 
     pds = 0
     npds = len(start_bins)
@@ -84,8 +85,9 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False):
     for start_bin, stop_bin in zip(start_bins, stop_bins):
         l = lc[start_bin:stop_bin]
         if np.sum(l) == 0:
-            print('Interval starting at time %.7f is bad. Check GTIs' %
-                  time[start_bin])
+            logging.warning('Interval starting at' +
+                            ' time %.7f' % time[start_bin] +
+                            ' is bad. Check GTIs')
             npds -= 1
             continue
 
@@ -185,7 +187,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
 
     start_bins, stop_bins = \
-        mp_decide_spectrum_lc_intervals(gti, fftlen, time, verbose=False)
+        mp_decide_spectrum_lc_intervals(gti, fftlen, time)
 
     cpds = 0
     ecpds = 0
@@ -197,8 +199,9 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         l2 = lc2[start_bin:stop_bin]
 
         if np.sum(l1) == 0 or np.sum(l2) == 0:
-            print('Interval starting at time %.7f is bad. Check GTIs' %
-                  time[start_bin])
+            logging.warning('Interval starting at' +
+                            ' time %.7f' % time[start_bin] +
+                            ' is bad. Check GTIs')
             npds -= 1
             continue
 
@@ -231,13 +234,13 @@ def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
         pds_err:       the uncertainties on the PDS values
     '''
     if back_ctrate is None:
-        print("Assuming background level 0")
+        logging.warning("Assuming background level 0")
         back_ctrate = 0
     factor = (source_ctrate + back_ctrate) / source_ctrate ** 2
     return pds * factor, pds_err * factor
 
 
-def mp_decide_spectrum_intervals(gtis, fftlen, verbose=False):
+def mp_decide_spectrum_intervals(gtis, fftlen):
     '''A way to avoid gaps. Start each FFT/PDS/cospectrum from the start of
     a GTI, and stop before the next gap.
     Only use for events! This will give problems with binned light curves'''
@@ -245,9 +248,10 @@ def mp_decide_spectrum_intervals(gtis, fftlen, verbose=False):
     spectrum_start_times = np.array([], dtype=np.longdouble)
     for g in gtis:
         if g[1] - g[0] < fftlen:
-            if verbose:
-                print("Too short. Skipping.")
+            logging.info("GTI at %g--%g is Too short. Skipping." %
+                         (g[0], g[1]))
             continue
+
         newtimes = np.arange(g[0], g[1] - fftlen, np.longdouble(fftlen),
                              dtype=np.longdouble)
         spectrum_start_times = \
@@ -257,7 +261,7 @@ def mp_decide_spectrum_intervals(gtis, fftlen, verbose=False):
     return spectrum_start_times
 
 
-def mp_decide_spectrum_lc_intervals(gtis, fftlen, time, verbose=False):
+def mp_decide_spectrum_lc_intervals(gtis, fftlen, time):
     '''Similar to mp_decide_spectrum_intervals, but dedicated to light curves.
     In this case, it is necessary to specify the time array containing the
     times of the light curve bins.
@@ -269,8 +273,8 @@ def mp_decide_spectrum_lc_intervals(gtis, fftlen, time, verbose=False):
     spectrum_start_bins = np.array([], dtype=np.long)
     for g in gtis:
         if g[1] - g[0] < fftlen:
-            if verbose:
-                print("Too short. Skipping.")
+            logging.info("GTI at %g--%g is Too short. Skipping." %
+                         (g[0], g[1]))
             continue
         startbin = np.argmin(np.abs(time - g[0]))
         stopbin = np.argmin(np.abs(time - g[1]))
@@ -292,9 +296,9 @@ def mp_calc_pds(lcfile, fftlen,
     '''Calculates the PDS from an input light curve file'''
     # TODO:Implement save_dyn
     if save_dyn:
-        print('Beware! save_dyn not yet implemented')
+        logging.warning('Beware! save_dyn not yet implemented')
 
-    print("Loading file %s..." % lcfile)
+    logging.info("Loading file %s..." % lcfile)
     lcdata = mp_load_lcurve(lcfile)
     time = lcdata['time']
     lc = lcdata['lc']
@@ -308,7 +312,7 @@ def mp_calc_pds(lcfile, fftlen,
     else:
         lcrebin = np.rint(bintime / dt)
         bintime = lcrebin * dt
-        print("Rebinning lc by a factor %d" % lcrebin)
+        logging.info("Rebinning lc by a factor %d" % lcrebin)
         time, lc, dum = \
             mp_const_rebin(time, lc, lcrebin, normalize=False)
 
@@ -317,14 +321,14 @@ def mp_calc_pds(lcfile, fftlen,
             mp_welch_pds(time, lc, bintime, fftlen, gti, return_ctrate=True)
     except:
         # If it fails, exit cleanly
-        print('Problems with the PDS. Check input files!')
+        logging.error('Problems with the PDS. Check input files!')
         return -1
 
     freq, pds, epds = mp_const_rebin(freq[1:], pds[1:], pdsrebin,
                                      epds[1:])
 
     if normalization == 'rms':
-        print('Applying %s normalization' % normalization)
+        logging.info('Applying %s normalization' % normalization)
         # TODO: allow to specify background ctrate.
         # Do not confuse with the count rate outside the source region.
         # Here we are talking about contamination inside the source region
@@ -340,7 +344,7 @@ def mp_calc_pds(lcfile, fftlen,
                'total_ctrate': tctrate}
 
     outname = root + '_pds' + MP_FILE_EXTENSION
-    print('Saving PDS to %s' % outname)
+    logging.info('Saving PDS to %s' % outname)
     mp_save_pds(outdata, outname)
 
 
@@ -354,11 +358,11 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     input light curve files'''
     # TODO:Implement save_dyn
     if save_dyn:
-        print('Beware! save_dyn not yet implemented')
+        logging.warning('Beware! save_dyn not yet implemented')
 
-    print("Loading file %s..." % lcfile1)
+    logging.info("Loading file %s..." % lcfile1)
     lcdata1 = mp_load_lcurve(lcfile1)
-    print("Loading file %s..." % lcfile2)
+    logging.info("Loading file %s..." % lcfile2)
     lcdata2 = mp_load_lcurve(lcfile2)
 
     time1 = lcdata1['time']
@@ -388,7 +392,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     else:
         lcrebin = np.rint(bintime / dt)
         dt = bintime
-        print("Rebinning lcs by a factor %d" % lcrebin)
+        logging.info("Rebinning lcs by a factor %d" % lcrebin)
         time1, lc1, dum = \
             mp_const_rebin(time1, lc1, lcrebin, normalize=False)
         time2, lc2, dum = \
@@ -414,7 +418,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                           return_ctrate=True)
     except:
         # If it fails, exit cleanly
-        print('Problems with the CPDS. Check input files!')
+        logging.error('Problems with the CPDS. Check input files!')
         return -1
 
     if pdsrebin > 1:
@@ -422,7 +426,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                                            ecpds[1:])
 
     if normalization == 'rms':
-        print('Applying %s normalization' % normalization)
+        logging.info('Applying %s normalization' % normalization)
         # TODO: allow to specify background ctrate
         cpds, ecpds = \
             mp_rms_normalize_pds(cpds, ecpds,
@@ -434,7 +438,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                'freq': freq, 'rebin': pdsrebin, 'norm': normalization,
                'ctrate': ctrate, 'total_ctrate': tctrate}
 
-    print('Saving CPDS to %s' % outname)
+    logging.info('Saving CPDS to %s' % outname)
     mp_save_pds(outdata, outname)
 
 
@@ -468,10 +472,10 @@ def mp_calc_fspec(files, fftlen,
     import os
 
     if normalization not in ['Leahy', 'rms']:
-        print('Beware! Unknown normalization!')
+        logging.warning('Beware! Unknown normalization!')
         normalization = 'Leahy'
 
-    print('Using %s normalization' % normalization)
+    logging.info('Using %s normalization' % normalization)
 
     if calc_pds:
         for lcf in files:
@@ -485,10 +489,11 @@ def mp_calc_fspec(files, fftlen,
         return
 
     if len(files) > 2:
-        print('Sorting file list')
+        logging.info('Sorting file list')
         sorted_files = mp_sort_files(files)
-        print('Beware! For cpds and derivatives, I assume that the files are')
-        print('from only two instruments and in pairs (even in random order)')
+        logging.warning('Beware! For cpds and derivatives, I assume that the'
+                        'files are from only two instruments and in pairs'
+                        '(even in random order)')
 
         instrs = list(sorted_files.keys())
         files1 = sorted_files[instrs[0]]

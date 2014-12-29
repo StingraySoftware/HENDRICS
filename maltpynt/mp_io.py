@@ -17,6 +17,7 @@ except:
 import collections
 import numpy as np
 import os.path
+import logging
 
 
 cpl128 = np.dtype([(str('real'), np.double),
@@ -191,13 +192,13 @@ def mp_load_pds(fname):
 
 # ---- GENERIC function to save stuff.
 def load_data_pickle(fname, kind="data"):
-    print('Loading %s and info from %s' % (kind, fname))
+    logging.info('Loading %s and info from %s' % (kind, fname))
     return pickle.load(open(fname))
     return
 
 
 def save_data_pickle(struct, fname, kind="data"):
-    print('Saving %s and info to %s' % (kind, fname))
+    logging.info('Saving %s and info to %s' % (kind, fname))
     pickle.dump(struct, open(fname, 'wb'))
     return
 
@@ -228,7 +229,7 @@ def load_data_nc(fname):
 
 
 def save_data_nc(struct, fname, kind="data"):
-    print('Saving %s and info to %s' % (kind, fname))
+    logging.info('Saving %s and info to %s' % (kind, fname))
     varnames = []
     values = []
     formats = []
@@ -240,7 +241,8 @@ def save_data_nc(struct, fname, kind="data"):
             try:
                 probe = var[0]
             except:
-                print('This failed:', k, var, 'in file ', fname)
+                logging.error('This failed: %s %s in file %s' %
+                              (k, repr(var), fname))
                 return -1
         if is_string(var):
             probekind = str
@@ -335,15 +337,14 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
     outfile.close()
 
 
-def save_as_ascii(cols, filename="out.txt", colnames=None, verbose=-1,
+def save_as_ascii(cols, filename="out.txt", colnames=None,
                   append=False):
     '''
     Saves as TXT file with respective errors
     '''
     import numpy as np
 
-    if verbose > 1:
-        print(cols, np.shape(cols))
+    logging.debug('%s %s' % (repr(cols), repr(np.shape(cols))))
     if append:
         txtfile = open(filename, "a")
     else:
@@ -354,7 +355,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, verbose=-1,
     if ndim == 1:
         cols = [cols]
     elif ndim > 3 or ndim == 0:
-        print("Only one- or two-dim arrays accepted")
+        logging.error("Only one- or two-dim arrays accepted")
         return -1
     lcol = len(cols[0])
 

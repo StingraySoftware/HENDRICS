@@ -5,26 +5,26 @@ from .mp_base import mp_contiguous_regions, mp_calc_countrate
 from .mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
 from .mp_io import MP_FILE_EXTENSION
 import os
+import logging
 
 
 def mp_lcurve(event_list,
               bin_time,
               start_time=None,
-              stop_time=None,
-              verbose=0):
+              stop_time=None):
     '''
         From a list of event times, it extracts a lightcurve
         usage:
         times, lc = bin_events(event_list, bin_time)
         '''
     if start_time is None:
-        print("mp_lcurve: Changing start time")
+        logging.warning("mp_lcurve: Changing start time")
         start_time = np.floor(event_list[0])
     if stop_time is None:
-        print("mp_lcurve: Changing stop time")
+        logging.warning("mp_lcurve: Changing stop time")
         stop_time = np.ceil(event_list[-1])
-    if verbose > 0:
-        print("mp_lcurve: Time limits: %g -- %g" % (start_time, stop_time))
+    logging.debug("mp_lcurve: Time limits: %g -- %g" %
+                  (start_time, stop_time))
 
     new_event_list = event_list[event_list >= start_time]
     new_event_list = new_event_list[new_event_list <= stop_time]
@@ -34,17 +34,16 @@ def mp_lcurve(event_list,
     new_event_list = ((new_event_list - start_time) / bin_time).astype(int)
     times = np.arange(start_time, stop_time, bin_time)
     lc = np.bincount(new_event_list, minlength=len(times))
-    if verbose > 1:
-        print("mp_lcurve: Length of the lightcurve: %g" % len(times))
+    logging.debug("mp_lcurve: Length of the lightcurve: %g" % len(times))
     return times, lc.astype(np.float)
 
 
 def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     lcdatas = []
     for lfc in lcfilelist:
-        print("Loading file %s..." % lfc)
+        logging.info("Loading file %s..." % lfc)
         lcdata = mp_load_lcurve(lfc)
-        print("Done.")
+        logging.info("Done.")
         lcdatas.append(lcdata)
         del lcdata
 
@@ -84,7 +83,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
         outlcs[instr]['GTI'] = np.array(gtis[instr])
 
     if outfile is not None:
-        print('Saving joined light curve to %s' % outfile)
+        logging.info('Saving joined light curve to %s' % outfile)
         mp_save_lcurve(outlcs, outfile)
 
     return outlcs
@@ -119,7 +118,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION):
     out['time'] = time0
     out['dt'] = lcdata[instrs[0]]['dt']
 
-    print('Saving scrunched light curve to %s' % outfile)
+    logging.info('Saving scrunched light curve to %s' % outfile)
     mp_save_lcurve(out, outfile)
 
     return time0, lc0, gti
@@ -161,9 +160,9 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           ignore_gtis=False,
                           bintime=1,
                           outdir=None):
-    print("Loading file %s..." % f)
+    logging.info("Loading file %s..." % f)
     evdata = mp_load_events(f)
-    print("Done.")
+    logging.info("Done.")
 
     if bintime < 0:
         bintime = 2 ** (bintime)
@@ -242,9 +241,9 @@ def mp_lcurve_from_events(f, safe_interval=0,
     # TODO: implement per-interval count rates
     if gti_split:
         outfiles = []
-        print(borders)
+        logging.debug(borders)
         for ib, b in enumerate(borders):
-            print(b)
+            logging.debug(b)
             local_tag = tag + '_gti%d' % ib
             local_out = out.copy()
             local_out['lc'] = lc[b[0]:b[1]]
@@ -258,7 +257,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
                 local_out['nPCUs'] = len(set(pcus))
 
             outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
-            print('Saving light curve to %s' % outfile)
+            logging.info('Saving light curve to %s' % outfile)
             mp_save_lcurve(local_out, outfile)
             outfiles.append(outfile)
     else:
@@ -273,7 +272,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
             out['nPCUs'] = len(set(pcus))
 
         outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
-        print('Saving light curve to %s' % outfile)
+        logging.info('Saving light curve to %s' % outfile)
         mp_save_lcurve(out, outfile)
         outfiles = [outfile]
 
@@ -340,7 +339,7 @@ if __name__ == "__main__":
 
         outfiles.extend(outfile)
 
-    print(outfiles)
+    logging.info(outfiles)
     # TODO: test if this still works!
     if args.scrunch:
         mp_scrunch_lightcurves(outfiles)

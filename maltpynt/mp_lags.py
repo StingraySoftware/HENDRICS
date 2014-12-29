@@ -1,11 +1,12 @@
 from __future__ import division, print_function
 from .mp_fspec import mp_calc_lags, mp_read_fspec
 import numpy as np
+import logging
 
 
 def mp_lags_from_spectra(cpdsfile, pds1file, pds2file):
 
-    print('mp_lags_from_spectra Needs testing')
+    logging.warning('mp_lags_from_spectra Needs testing')
 
     ftype,  cfreq, cpds, ecpds, nchunks, rebin = mp_read_fspec(cpdsfile)
     ftype, p1freq, pds1, epds1, nchunks, rebin = mp_read_fspec(pds1file)

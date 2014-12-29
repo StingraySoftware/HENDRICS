@@ -3,6 +3,7 @@ from __future__ import division, print_function
 from maltpynt.mp_io import mp_get_file_extension, MP_FILE_EXTENSION
 from maltpynt.mp_calibrate import mp_calibrate
 import argparse
+import logging
 
 description = ('Calibrate clean event files by associating the correct '
                'energy to each PI channel. Uses either a specified rmf file '
@@ -16,9 +17,22 @@ parser.add_argument("-o", "--overwrite",
                     help="Overwrite; default: no",
                     default=False,
                     action="store_true")
+parser.add_argument("--loglevel",
+                    help=("use given logging level (one between INFO, "
+                          "WARNING, ERROR, CRITICAL, DEBUG; default:WARNING)"),
+                    default='WARNING',
+                    type=str)
+parser.add_argument("--debug", help="use DEBUG logging level",
+                    default=False, action='store_true')
 args = parser.parse_args()
-
 files = args.files
+
+if args.debug:
+    args.loglevel = 'DEBUG'
+
+numeric_level = getattr(logging, args.loglevel.upper(), None)
+logging.basicConfig(filename='MPcalibrate.log', level=numeric_level,
+                    filemode='w')
 
 for i_f, f in enumerate(files):
     outname = f
