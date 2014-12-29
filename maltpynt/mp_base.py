@@ -198,20 +198,29 @@ def mp_cross_gtis_bin(gti_list, bin_time=1):
     return gtis
 
 
+def mp_check_gtis(gti):
+    '''Check if GTIs are well-behaved'''
+    gti_start = gti[:, 0]
+    gti_end = gti[:, 1]
+
+    # Check that GTIs are well-behaved
+    assert np.all(gti_end >= gti_start), 'First GTI is incorrect'
+    # Check that there are no overlaps in GTIs
+    assert np.all(gti_start[1:] >= gti_end[:-1]), 'First GTI has overlaps'
+    return
+
+
 def mp_cross_two_gtis(gti0, gti1):
     '''Extract the common intervals from two GTI lists *EXACTLY*.'''
+
+    # Check GTIs
+    mp_check_gtis(gti0)
+    mp_check_gtis(gti1)
 
     gti0_start = gti0[:, 0]
     gti0_end = gti0[:, 1]
     gti1_start = gti1[:, 0]
     gti1_end = gti1[:, 1]
-
-    # Check that GTIs are well-behaved
-    assert np.all(gti0_end >= gti0_start), 'First GTI is incorrect'
-    assert np.all(gti1_end >= gti1_start), 'Second GTI is incorrect'
-    # Check that there are no overlaps in GTIs
-    assert np.all(gti0_start[1:] >= gti0_end[:-1]), 'First GTI has overlaps'
-    assert np.all(gti1_start[1:] >= gti1_end[:-1]), 'Second GTI has overlaps'
 
     # Create a list that references to the two start and end series
     gti_start = [gti0_start, gti1_start]
@@ -268,7 +277,7 @@ def mp_cross_two_gtis(gti0, gti1):
             final_gti.append([s, e])
             last_end = e
 
-    return final_gti
+    return np.array(final_gti, dtype=np.longdouble)
 
 
 def mp_cross_gtis(gti_list):
@@ -283,6 +292,32 @@ def mp_cross_gtis(gti_list):
         gti0 = mp_cross_two_gtis(gti0, gti)
 
     return gti0
+
+
+def get_btis(gtis, start_time=None, stop_time=None):
+    '''From GTIs, obtain bad time intervals.
+
+    GTIs have to be well-behaved! No overlaps, no other crap'''
+    # Check GTIs
+    mp_check_gtis(gtis)
+
+    if start_time is None:
+        start_time = gtis[0][0]
+    if stop_time is None:
+        stop_time = gtis[-1][1]
+    if gtis[0][0] - start_time <= 0:
+        btis = []
+    else:
+        btis = [[gtis[0][0] - start_time]]
+    # Transform GTI list in
+    flat_gtis = gtis.flatten()
+    new_flat_btis = zip(flat_gtis[1:-2:2], flat_gtis[2:-1:2])
+    btis.extend(new_flat_btis)
+
+    if stop_time - gtis[-1][1] > 0:
+        btis.extend([[gtis[0][0] - stop_time]])
+
+    return np.array(btis, dtype=np.longdouble)
 
 
 def mp_optimal_bin_time(fftlen, tbin):
