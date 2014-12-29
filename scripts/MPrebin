@@ -2,7 +2,7 @@
 from __future__ import division, print_function
 from maltpynt.mp_rebin import mp_rebin_file
 import argparse
-imoprt logging
+import logging
 
 description = 'Rebin light curves and frequency spectra. '
 parser = argparse.ArgumentParser(description=description)

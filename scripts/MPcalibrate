@@ -39,4 +39,4 @@ for i_f, f in enumerate(files):
     if args.overwrite is False:
         outname = f.replace(mp_get_file_extension(f), '_calib' +
                             MP_FILE_EXTENSION)
-    mp_calibrate(f, outname)
+    mp_calibrate(f, outname, args.rmf)
