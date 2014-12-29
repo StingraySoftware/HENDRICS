@@ -211,7 +211,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         except:
             raise \
                 ValueError("No energy information is present in the file."
-                           + " Did you run mp_calibrate?")
+                           + " Did you run MPcalibrate?")
 
         good = np.logical_and(es > e_interval[0],
                               es <= e_interval[1])

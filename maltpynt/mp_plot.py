@@ -60,8 +60,6 @@ def mp_plot_pds(fnames):
     elif norm == 'Leahy':
         plt.ylabel('Leahy power')
 
-    plt.show()
-
 
 def mp_plot_cospectrum(fnames):
     '''Plot the cospectra from a list of CPDSs, or a single one'''
@@ -94,7 +92,6 @@ def mp_plot_cospectrum(fnames):
     plt.axhline(0, lw=3, ls='--', color='k')
     plt.xlabel('Frequency')
     plt.ylabel('Cospectrum')
-    plt.show()
 
 
 def mp_plot_lc(lcfiles):
@@ -128,5 +125,3 @@ def mp_plot_lc(lcfiles):
         plt.ylabel('light curve (Ct/bin/PCU)')
     else:
         plt.ylabel('light curve (Ct/bin)')
-
-    plt.show()
