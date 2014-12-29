@@ -22,6 +22,7 @@ setup(
         'Intended Audience :: Science/Research, Education, Developers',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
         'Topic :: Scientific/Engineering :: Astronomy'
         ],
     install_requires=[
