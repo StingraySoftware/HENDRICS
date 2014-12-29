@@ -5,93 +5,93 @@ import numpy as np
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 
 
-#class TestFullRun(unittest.TestCase):
-#    '''Monolithic test case. Usually considered bad practice, but in this
-#    case I need to test the full run of the codes, and files depend on each
-#    other.
-#    Inspired by http://stackoverflow.com/questions/5387299/
-#    python-unittest-testcase-execution-order'''
-#
-#    def step1_load_events(self):
-#        print ('--------------------------------')
-#        print ('Testing event file reading')
-#        print ('--------------------------------')
-#        try:
-#            mp.read_events.mp_treat_event_file('../data/A.evt')
-#            mp.read_events.mp_treat_event_file('../data/B.evt')
-#        except:
-#            raise(Exception('Loading event file failed'))
-#        print ('--------------------------------')
-#
-#    def step2_calibrate(self):
-#        print ('--------------------------------')
-#        print ('Testing event file calibration')
-#        print ('--------------------------------')
-#        try:
-#            mp.calibrate.mp_calibrate('../data/A_ev' + MP_FILE_EXTENSION,
-#                                      '../data/A_ev_calib' +
-#                                      MP_FILE_EXTENSION)
-#            mp.calibrate.mp_calibrate('../data/B_ev' + MP_FILE_EXTENSION,
-#                                      '../data/B_ev_calib' +
-#                                      MP_FILE_EXTENSION)
-#        except:
-#            raise(Exception('Calibrating event file failed'))
-#        print ('--------------------------------')
-#
-#    def step3_lcurve(self):
-#        print ('--------------------------------')
-#        print ('Testing light curve production')
-#        print ('--------------------------------')
-#        try:
-#            mp.lcurve.mp_lcurve_from_events('../data/A_ev_calib' +
-#                                            MP_FILE_EXTENSION,
-#                                            e_interval=[3, 50],
-#                                            safe_interval=[100, 300])
-#            mp.lcurve.mp_lcurve_from_events('../data/B_ev_calib' +
-#                                            MP_FILE_EXTENSION,
-#                                            e_interval=[3, 50],
-#                                            safe_interval=[100, 300])
-#        except:
-#            raise(Exception('Production of light curve failed'))
-#        print ('--------------------------------')
-#
-#    def step4_pds(self):
-#        print ('--------------------------------')
-#        print ('Testing PDS production')
-#        print ('--------------------------------')
-#        try:
-#            mp.fspec.mp_calc_pds('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
-#                                 128)
-#            mp.fspec.mp_calc_pds('../data/B_E3-50_lc' + MP_FILE_EXTENSION,
-#                                 128)
-#        except:
-#            raise(Exception('Production of PDSs failed'))
-#        print ('--------------------------------')
-#
-#    def step5_cpds(self):
-#        print ('--------------------------------')
-#        print ('Testing CPDS production')
-#        print ('--------------------------------')
-#        try:
-#            mp.fspec.mp_calc_cpds('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
-#                                  '../data/B_E3-50_lc' + MP_FILE_EXTENSION,
-#                                  128)
-#        except:
-#            raise(Exception('Production of CPDS failed'))
-#        print ('--------------------------------')
-#
-#    def steps(self):
-#        for name in sorted(dir(self)):
-#            if name.startswith("step"):
-#                yield name, getattr(self, name)
-#
-#    def test_steps(self):
-#        for name, step in self.steps():
-#            try:
-#                step()
-#            except Exception as e:
-#                self.fail("{} failed ({}: {})".format(step, type(e), e))
-#
+class TestFullRun(unittest.TestCase):
+    '''Monolithic test case. Usually considered bad practice, but in this
+    case I need to test the full run of the codes, and files depend on each
+    other.
+    Inspired by http://stackoverflow.com/questions/5387299/
+    python-unittest-testcase-execution-order'''
+
+    def step1_load_events(self):
+        print ('--------------------------------')
+        print ('Testing event file reading')
+        print ('--------------------------------')
+        try:
+            mp.read_events.mp_treat_event_file('../data/A.evt')
+            mp.read_events.mp_treat_event_file('../data/B.evt')
+        except:
+            raise(Exception('Loading event file failed'))
+        print ('--------------------------------')
+
+    def step2_calibrate(self):
+        print ('--------------------------------')
+        print ('Testing event file calibration')
+        print ('--------------------------------')
+        try:
+            mp.calibrate.mp_calibrate('../data/A_ev' + MP_FILE_EXTENSION,
+                                      '../data/A_ev_calib' +
+                                      MP_FILE_EXTENSION)
+            mp.calibrate.mp_calibrate('../data/B_ev' + MP_FILE_EXTENSION,
+                                      '../data/B_ev_calib' +
+                                      MP_FILE_EXTENSION)
+        except:
+            raise(Exception('Calibrating event file failed'))
+        print ('--------------------------------')
+
+    def step3_lcurve(self):
+        print ('--------------------------------')
+        print ('Testing light curve production')
+        print ('--------------------------------')
+        try:
+            mp.lcurve.mp_lcurve_from_events('../data/A_ev_calib' +
+                                            MP_FILE_EXTENSION,
+                                            e_interval=[3, 50],
+                                            safe_interval=[100, 300])
+            mp.lcurve.mp_lcurve_from_events('../data/B_ev_calib' +
+                                            MP_FILE_EXTENSION,
+                                            e_interval=[3, 50],
+                                            safe_interval=[100, 300])
+        except:
+            raise(Exception('Production of light curve failed'))
+        print ('--------------------------------')
+
+    def step4_pds(self):
+        print ('--------------------------------')
+        print ('Testing PDS production')
+        print ('--------------------------------')
+        try:
+            mp.fspec.mp_calc_pds('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
+                                 128)
+            mp.fspec.mp_calc_pds('../data/B_E3-50_lc' + MP_FILE_EXTENSION,
+                                 128)
+        except:
+            raise(Exception('Production of PDSs failed'))
+        print ('--------------------------------')
+
+    def step5_cpds(self):
+        print ('--------------------------------')
+        print ('Testing CPDS production')
+        print ('--------------------------------')
+        try:
+            mp.fspec.mp_calc_cpds('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
+                                  '../data/B_E3-50_lc' + MP_FILE_EXTENSION,
+                                  128)
+        except:
+            raise(Exception('Production of CPDS failed'))
+        print ('--------------------------------')
+
+    def steps(self):
+        for name in sorted(dir(self)):
+            if name.startswith("step"):
+                yield name, getattr(self, name)
+
+    def test_steps(self):
+        for name, step in self.steps():
+            try:
+                step()
+            except Exception as e:
+                self.fail("{} failed ({}: {})".format(step, type(e), e))
+
 
 class TestAll(unittest.TestCase):
 
