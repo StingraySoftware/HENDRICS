@@ -299,6 +299,11 @@ def get_btis(gtis, start_time=None, stop_time=None):
 
     GTIs have to be well-behaved! No overlaps, no other crap'''
     # Check GTIs
+    if len(gtis) == 0:
+        assert start_time is not None and stop_time is not None, \
+            'Empty GTI and no valid start_time and stop_time. BAD!'
+
+        return np.array([[start_time, stop_time]], dtype=np.longdouble)
     mp_check_gtis(gtis)
 
     if start_time is None:
