@@ -15,21 +15,16 @@ class TestFullRun(unittest.TestCase):
     Inspired by http://stackoverflow.com/questions/5387299/
     python-unittest-testcase-execution-order'''
 
-    def step1_load_events(self):
-        print ('--------------------------------')
-        print ('Testing event file reading')
-        print ('--------------------------------')
+    def step01_load_events(self):
+        '''Test event file reading'''
         try:
             mp.read_events.mp_treat_event_file('../data/A.evt')
             mp.read_events.mp_treat_event_file('../data/B.evt')
         except:
             raise(Exception('Loading event file failed'))
-        print ('--------------------------------')
 
-    def step2_calibrate(self):
-        print ('--------------------------------')
-        print ('Testing event file calibration')
-        print ('--------------------------------')
+    def step02_calibrate(self):
+        '''Test event file calibration'''
         try:
             mp.calibrate.mp_calibrate('../data/A_ev' + MP_FILE_EXTENSION,
                                       '../data/A_ev_calib' +
@@ -39,12 +34,9 @@ class TestFullRun(unittest.TestCase):
                                       MP_FILE_EXTENSION)
         except:
             raise(Exception('Calibrating event file failed'))
-        print ('--------------------------------')
 
-    def step3_lcurve(self):
-        print ('--------------------------------')
-        print ('Testing light curve production')
-        print ('--------------------------------')
+    def step03_lcurve(self):
+        '''Test light curve production'''
         try:
             mp.lcurve.mp_lcurve_from_events('../data/A_ev_calib' +
                                             MP_FILE_EXTENSION,
@@ -56,12 +48,9 @@ class TestFullRun(unittest.TestCase):
                                             safe_interval=[100, 300])
         except:
             raise(Exception('Production of light curve failed'))
-        print ('--------------------------------')
 
-    def step4_pds(self):
-        print ('--------------------------------')
-        print ('Testing PDS production')
-        print ('--------------------------------')
+    def step04_pds(self):
+        '''Test PDS production'''
         try:
             mp.fspec.mp_calc_pds('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
                                  128)
@@ -69,19 +58,59 @@ class TestFullRun(unittest.TestCase):
                                  128)
         except:
             raise(Exception('Production of PDSs failed'))
-        print ('--------------------------------')
 
-    def step5_cpds(self):
-        print ('--------------------------------')
-        print ('Testing CPDS production')
-        print ('--------------------------------')
+    def step05_cpds(self):
+        '''Test CPDS production'''
         try:
             mp.fspec.mp_calc_cpds('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
                                   '../data/B_E3-50_lc' + MP_FILE_EXTENSION,
                                   128)
         except:
             raise(Exception('Production of CPDS failed'))
-        print ('--------------------------------')
+
+    def step06_rebinlc(self):
+        '''Test LC rebinning'''
+        try:
+            mp.rebin.mp_rebin_file('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
+                                   2)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('LC rebin', type(e), e))
+
+    def step07_rebinpds1(self):
+        '''Test PDS rebinning 1'''
+        try:
+            mp.rebin.mp_rebin_file('../data/A_E3-50_pds' + MP_FILE_EXTENSION,
+                                   2)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('PDS rebin Test 1', type(e),
+                                                  e))
+
+    def step08_rebinpds2(self):
+        '''Test PDS rebinning 2'''
+        try:
+            mp.rebin.mp_rebin_file('../data/A_E3-50_pds' + MP_FILE_EXTENSION,
+                                   1.03)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('PDS rebin Test 2', type(e),
+                                                  e))
+
+    def step09_savexspec1(self):
+        '''Test save as Xspec 1'''
+        try:
+            mp.save_as_xspec.mp_save_as_xspec('../data/A_E3-50_pds_rebin2'
+                                              + MP_FILE_EXTENSION)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('MP2Xspec Test 1', type(e),
+                                                  e))
+
+    def step10_savexspec2(self):
+        '''Test save as Xspec 2'''
+        try:
+            mp.save_as_xspec.mp_save_as_xspec('../data/A_E3-50_pds_rebin1.03'
+                                              + MP_FILE_EXTENSION)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('MP2Xspec Test 2', type(e),
+                                                  e))
 
     def steps(self):
         for name in sorted(dir(self)):
