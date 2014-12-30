@@ -1,7 +1,47 @@
 from __future__ import division, print_function
-from .mp_fspec import mp_calc_lags, mp_read_fspec
+from .mp_fspec import mp_read_fspec
 import numpy as np
 import logging
+
+
+def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
+    '''Calculates time lags'''
+    lags = np.angle(cpds) / (2 * np.pi * freqs)
+    sigcpd = np.absolute(cpds)
+
+    rawcof = (sigcpd) ** 2 / ((pds1) * (pds1))
+
+    dum = (1. - rawcof) / (2. * rawcof)
+
+    lagse = np.sqrt(dum / n_chunks / rebin) / (2 * np.pi * freqs)
+
+    bad = np.logical_or(lagse != lagse, lags != lags)
+
+    if np.any(bad):
+        logging.error('Bad element(s) in lag or lag error array:')
+        fbad = freqs[bad]
+        lbad = lags[bad]
+        lebad = lagse[bad]
+        cbad = cpds[bad]
+        p1bad = pds1[bad]
+        p2bad = pds2[bad]
+
+        for i, f in enumerate(fbad):
+            logging.error('--------------------------------------------------')
+            logging.error('Freq (Hz), Lag, Lag_err, CPDS (x + jy), PDS1, PDS2')
+            logging.error('--------------------------------------------------')
+            logging.error(" ".join([repr(fbad[i]),
+                                    repr(lbad[i]),
+                                    repr(lebad[i]),
+                                    repr(cbad[i]),
+                                    repr(p1bad[i]),
+                                    repr(p2bad[i])]
+                                   )
+                          )
+        lags[bad] = 0
+        lagse[bad] = 0
+
+    return lags, lagse
 
 
 def mp_lags_from_spectra(cpdsfile, pds1file, pds2file):
@@ -19,6 +59,13 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file):
     else:
         freq = cfreq
         df = np.zeros(len(freq)) + (freq[1] - freq[0])
+
+    logging.debug(repr(cpds))
+    logging.debug(repr(pds1))
+    logging.debug(repr(pds1))
+    logging.debug(len(cpds))
+    logging.debug(len(pds1))
+    logging.debug(len(pds1))
 
     assert len(cpds) == len(pds1), 'Files are not compatible'
     assert len(cpds) == len(pds2), 'Files are not compatible'

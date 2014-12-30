@@ -421,9 +421,8 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
         logging.error('Problems with the CPDS. Check input files!')
         return -1
 
-    if pdsrebin > 1:
-        freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
-                                           ecpds[1:])
+    freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
+                                       ecpds[1:])
 
     if normalization == 'rms':
         logging.info('Applying %s normalization' % normalization)
@@ -440,19 +439,6 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     logging.info('Saving CPDS to %s' % outname)
     mp_save_pds(outdata, outname)
-
-
-def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
-    '''Calculates time lags'''
-    lags = np.angle(cpds) / (2 * np.pi * freqs)
-    sigcpd = np.absolute(cpds)
-
-    rawcof = (sigcpd) ** 2 / ((pds1) * (pds1))
-
-    dum = (1. - rawcof) / (2. * rawcof)
-
-    lagse = np.sqrt(dum / n_chunks / rebin) / (2 * np.pi * freqs)
-    return lags, lagse
 
 
 def mp_calc_fspec(files, fftlen,
