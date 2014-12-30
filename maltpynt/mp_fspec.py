@@ -1,6 +1,6 @@
 from __future__ import division, print_function
 from .mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
-from .mp_base import mp_sort_files
+from .mp_base import mp_sort_files, common_name
 from .mp_rebin import mp_const_rebin
 from .mp_io import mp_get_file_type, mp_load_lcurve, mp_save_pds
 from .mp_io import MP_FILE_EXTENSION
@@ -449,7 +449,7 @@ def mp_calc_fspec(files, fftlen,
                   save_dyn=False,
                   bintime=1,
                   pdsrebin=1,
-                  outroot='cpds',
+                  outroot=None,
                   normalization='Leahy'):
     '''Calculates the frequency spectra:
         the PDS, the CPDS, the cospectrum, ...'''
@@ -497,8 +497,11 @@ def mp_calc_fspec(files, fftlen,
         if outdir == '':
             outdir = os.getcwd()
 
+        if outroot is None:
+            outroot = common_name(f1, f2, default='cpds_%d' % i_f)
+
         outname = os.path.join(outdir,
-                               outroot + "_%d" % i_f + MP_FILE_EXTENSION)
+                               outroot + MP_FILE_EXTENSION)
         mp_calc_cpds(f1, f2, fftlen,
                      save_dyn=save_dyn,
                      bintime=bintime,
