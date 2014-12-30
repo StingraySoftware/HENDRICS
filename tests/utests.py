@@ -5,7 +5,7 @@ import numpy as np
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 import logging
 
-logging.basicConfig(filename='MP.log', level=logging.INFO)
+logging.basicConfig(filename='MP.log', level=logging.DEBUG, filemode='w')
 
 
 class TestFullRun(unittest.TestCase):
@@ -64,7 +64,9 @@ class TestFullRun(unittest.TestCase):
         try:
             mp.fspec.mp_calc_cpds('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
                                   '../data/B_E3-50_lc' + MP_FILE_EXTENSION,
-                                  128)
+                                  128,
+                                  outname='../data/E3-50_cpds' +
+                                  MP_FILE_EXTENSION)
         except:
             raise(Exception('Production of CPDS failed'))
 
@@ -118,11 +120,16 @@ class TestFullRun(unittest.TestCase):
                 yield name, getattr(self, name)
 
     def test_steps(self):
+        '''Test a full run of the codes on two event lists'''
+        print('')
         for name, step in self.steps():
             try:
+                print('- ', step.__doc__, '...', end=' ')
                 step()
+                print('OK')
             except Exception as e:
                 self.fail("{} failed ({}: {})".format(step, type(e), e))
+                print('Failed')
 
 
 class TestAll(unittest.TestCase):
@@ -223,6 +230,12 @@ class TestAll(unittest.TestCase):
 
         assert np.all(bti == [[2, 4], [5, 7], [10, 11], [11.2, 12.2]]), \
             'BTI is wrong!, %s' % repr(bti)
+
+    def test_common_name(self):
+        '''Test the common_name function'''
+        a = 'A_3-50_A.nc'
+        b = 'B_3-50_B.nc'
+        assert mp.base.common_name(a, b) == '3-50'
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
