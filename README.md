@@ -173,7 +173,7 @@ Saving cpds to cpds_002_3-30_0_rebin1.03.nc
 ```
 
 ### 7. Calculating the cospectrum and phase/time lags
-The calculation of lags and their errors is implemented in `mp_lags.py`, not yet in one of the easy programs, and needs to be tested properly. 
+The calculation of lags and their errors is implemented in `MPlags`, and needs to be tested properly. 
 For the cospectrum, it is sufficient to read the real part of the cross power spectrum as depicted in the relevant function in `mp_plot.py` ([Use the source, Luke!](http://adastraerrans.com/archivos/use-the-source-luke.png)).
 
 ### 8. Saving the spectra in a format readable to XSpec
