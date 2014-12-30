@@ -54,11 +54,18 @@ def common_name(str1, str2, default='common'):
     if not len(str1) == len(str2):
         return default
     common_str = ''
+    # Extract the MP root of the name (in case they're event files)
+    str1 = mp_root(str1)
+    str2 = mp_root(str2)
     for i, letter in enumerate(str1):
         if str2[i] == letter:
             common_str += letter
+    # Remove leading and trailing underscores and dashes
+    common_str = common_str.rstrip('_').rstrip('-')
+    common_str = common_str.lstrip('_').lstrip('-')
     if common_str == '':
         common_str = default
+    logging.debug('common_name: %s %s -> %s' % (str1, str2, common_str))
     return common_str
 
 
