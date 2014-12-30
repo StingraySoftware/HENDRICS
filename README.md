@@ -2,7 +2,7 @@
 ** BEWARE! STILL UNDER TESTING. USE WITH CARE IN PRODUCTION!**
 
 These tools are a stripped-down version of a huge and messy library of timing codes I've developed in the years. They contain what is needed for a quick look at the timing properties of an X-ray source.
-This software is **heavily focused on NuSTAR**, and it's mostly for educational purposes. Everything can be generalized to any point, but here I tried to focus on what can be useful to people making their first steps on NuSTAR timing data. I also decided to use very few external libraries in order to make the installation easier, at the cost of losing some (well, a lot of) performance, in particular in I/O.
+This software is **heavily focused on NuSTAR**, and it's mostly for educational purposes. Everything can be generalized to any point, but here I tried to focus on what can be useful to people making their first steps on NuSTAR timing data. I also decided to use very few external libraries in order to make the installation easier.
 
 ## Notes for the users
 **If you use this software in a publication** please write something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al., _ApJ_, in press ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
@@ -75,7 +75,7 @@ optional arguments:
   -r RMF, --rmf RMF  rmf file used for calibration
   -o, --overwrite    Overwrite; default: no
 ```
-For I/O, MaLTPyNT looks if the `netCDF4` library is installed. If it's found in the system, files will be saved in this format. Otherwise, the native Python `pickle` format format will be used. This format is _much_ slower (It might take some minutes to load some files) and files will be bigger, but this possibility ensures portability. If you use netCDF4, you'll notice that file names will have the `.nc` extension instead of the `.p` below. The rest is the same.
+For I/O, MaLTPyNT looks if the `netCDF4` library is installed. If it's found in the system, files will be saved in this format. Otherwise, the native Python `pickle` format format will be used. This format is _much_ slower (It might take some minutes to load some files) and files will be bigger, but this possibility ensures portability. If you don't use netCDF4, you'll notice that file names will have the `.p` extension instead of the `.nc` below. The rest is the same.
 
 ### 1. Loading event lists
 Starting from cleaned event files, we will first save them in `MaLTPyNT` format (a pickle file basically). For example, I'm starting from two event lists called `002A.evt` and `002B.evt`, containing the cleaned event lists from a source observed with NuSTAR's `FPMA` and `FPMB` respectively.
@@ -84,36 +84,36 @@ Starting from cleaned event files, we will first save them in `MaLTPyNT` format 
 
 $ MPreadevents 002A.evt 002B.evt
 Opening 002A.evt
-Saving events and info to 002A_ev.p
+Saving events and info to 002A_ev.nc
 Opening 002B.evt
-Saving events and info to 002B_ev.p
+Saving events and info to 002B_ev.nc
 ```
-This will create new files with a `_ev.p` extension (`_ev.nc` if you use netCDF4), containing the event times and the energy _channel_ (`PI`) of each event
+This will create new files with a `_ev.nc` extension (`_ev.p` if you don't use netCDF4), containing the event times and the energy _channel_ (`PI`) of each event
 
 ### 2. Calibrating event lists
 Use `MPcalibrate`. You can either specify an `rmf` file with the `-r` option, or just let it look for it in the NuSTAR `CALDB` (the environment variable has to be defined!)
 ```
 #!console
 
-$ MPcalibrate 002A_ev.p 002B_ev.p
-Loading file 002A_ev.p...
+$ MPcalibrate 002A_ev.nc 002B_ev.nc
+Loading file 002A_ev.nc...
 Done.
 ###############ATTENTION!!#####################
 
 Rmf not specified. Using default NuSTAR rmf.
 
 ###############################################
-Saving calibrated data to 002A_ev_calib.p
-Loading file 002B_ev.p...
+Saving calibrated data to 002A_ev_calib.nc
+Loading file 002B_ev.nc...
 Done.
 ###############ATTENTION!!#####################
 
 Rmf not specified. Using default NuSTAR rmf.
 
 ###############################################
-Saving calibrated data to 002B_ev_calib.p
+Saving calibrated data to 002B_ev_calib.nc
 ```
-This will create two new files with `_ev_calib.p` suffix that will contain energy information. Optionally, you can overwrite the original event lists.
+This will create two new files with `_ev_calib.nc` suffix that will contain energy information. Optionally, you can overwrite the original event lists.
 ### 3. Producing light curves
 Choose carefully the binning time (option `-b`). Since what we are interested in is a power spectrum, this binning time will limit our maximum frequency in the power spectrum. We are here specifying 2^-8 =0.00390625 for binning time (how to use the `-b` option is of course documented. Use `-h` FMI).
 Since we have calibrated the event files, we can also choose an event energy range, here between 3 and 30 keV.
@@ -121,32 +121,32 @@ Another thing that is useful in NuSTAR data is taking some time intervals out fr
 ```
 #!console
 
-$ MPlcurve 002A_ev_calib.p 002B_ev_calib.p -b -6 -e 3 30 --safe_interval 100 300
-Loading file 002A_ev_calib.p...
+$ MPlcurve 002A_ev_calib.nc 002B_ev_calib.p -b -6 -e 3 30 --safe_interval 100 300
+Loading file 002A_ev_calib.nc...
 Done.
-Saving light curve to 002A_E3-30_lc.p
-Loading file 002B_ev_calib.p...
+Saving light curve to 002A_E3-30_lc.nc
+Loading file 002B_ev_calib.nc...
 Done.
-Saving light curve to 002B_E3-30_lc.p
+Saving light curve to 002B_E3-30_lc.nc
 ```
-To check the light curve that was produced, use the `test_lc` program in `tests/`:
+To check the light curve that was produced, use the `MPplot` program:
 ```
 #!console
 
-$ python tests/test_lc.py 002A_E3-30_lc.p
+$ MPplot 002A_E3-30_lc.nc
 ```
 ### 4. Joining, summing and ``scrunching'' light curves
 If we want a single light curve from multiple ones, either summing multiple instruments or multiple energy or time ranges, we can use `mp_scrunch_lc`:
 ```
 #!console
 
-$ MPscrunchlc 002A_E3-30_lc.p 002B_E3-30_lc.p -o 002scrunch_3-30_lc.p
-Loading file 002A_E3-30_lc.p...
+$ MPscrunchlc 002A_E3-30_lc.nc 002B_E3-30_lc.nc -o 002scrunch_3-30_lc.nc
+Loading file 002A_E3-30_lc.nc...
 Done.
-Loading file 002B_E3-30_lc.p...
+Loading file 002B_E3-30_lc.nc...
 Done.
-Saving joined light curve to out_lc.p
-Saving scrunched light curve to 002scrunch_3-30_lc.p
+Saving joined light curve to out_lc.nc
+Saving scrunched light curve to 002scrunch_3-30_lc.nc
 ```
 This is only tested in ``safe'' situations (files are not too big and have consistent time and energy ranges), so it might give inconsistent results or crash in untested situations. Please report any problems!
 
@@ -155,12 +155,12 @@ Let us just produce the cross power spectrum for now. To produce also the power 
 ```
 #!console
 
-$ MPfspec 002A_E3-30_lc.p 002B_E3-30_lc.p -k CPDS -o cpds_002_3-30 --norm rms
+$ MPfspec 002A_E3-30_lc.nc 002B_E3-30_lc.nc -k CPDS -o cpds_002_3-30 --norm rms
 Beware! For cpds and derivatives, I assume that the files are
 ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...
-Loading file 002A_E3-30_lc.p...
-Loading file 002B_E3-30_lc.p...
-Saving CPDS to ./cpds_002_3-30_0.p
+Loading file 002A_E3-30_lc.nc...
+Loading file 002B_E3-30_lc.nc...
+Saving CPDS to ./cpds_002_3-30_0.nc
 ```
 
 ### 6. Rebinning the spectrum
@@ -168,20 +168,20 @@ Now let's rebin the spectrum. If the rebin factor is an integer, it is interpret
 ```
 #!console
 
-$ MPrebin cpds_002_3-30_0.p -r 1.03
-Saving cpds to cpds_002_3-30_0_rebin1.03.p
+$ MPrebin cpds_002_3-30_0.nc -r 1.03
+Saving cpds to cpds_002_3-30_0_rebin1.03.nc
 ```
 
 ### 7. Calculating the cospectrum and phase/time lags
-Lag error calculation still to be implemented (quite easy, will do soon).
-For the cospectrum, it is sufficient to read the real part of the cross power spectrum as depicted in `tests/test_cpds.py`
+The calculation of lags and their errors is implemented in `MPlags`, and needs to be tested properly. 
+For the cospectrum, it is sufficient to read the real part of the cross power spectrum as depicted in the relevant function in `mp_plot.py` ([Use the source, Luke!](http://adastraerrans.com/archivos/use-the-source-luke.png)).
 
 ### 8. Saving the spectra in a format readable to XSpec
 To save the cospectrum in a format readable to XSpec it is sufficient to give the commands
 ```
 #!console
 
-$ MP2xspec cpds_002_3-30_0_rebin1.03.p
+$ MP2xspec cpds_002_3-30_0_rebin1.03.nc
 Saving to cpds_002_3-30_0_rebin1.03_xsp.qdp
 $ flx2xsp cpds_002_3-30_0_rebin1.03_xsp.qdp cpds.pha cpds.rsp
 ```
