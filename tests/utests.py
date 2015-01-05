@@ -1,11 +1,14 @@
 from __future__ import print_function, unicode_literals
-import unittest
+import unittest2 as unittest
 import maltpynt as mp
 import numpy as np
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 import logging
+import os
 
 logging.basicConfig(filename='MP.log', level=logging.DEBUG, filemode='w')
+curdir = os.path.abspath(os.path.dirname(__file__))
+datadir = os.path.join(curdir, 'data')
 
 
 class TestFullRun(unittest.TestCase):
@@ -18,19 +21,21 @@ class TestFullRun(unittest.TestCase):
     def step01_load_events(self):
         '''Test event file reading'''
         try:
-            mp.read_events.mp_treat_event_file('../data/A.evt')
-            mp.read_events.mp_treat_event_file('../data/B.evt')
+            mp.read_events.mp_treat_event_file(os.path.join(datadir, 'A.evt'))
+            mp.read_events.mp_treat_event_file(os.path.join(datadir, 'B.evt'))
         except:
             raise(Exception('Loading event file failed'))
 
     def step02_calibrate(self):
         '''Test event file calibration'''
         try:
-            mp.calibrate.mp_calibrate('../data/A_ev' + MP_FILE_EXTENSION,
-                                      '../data/A_ev_calib' +
+            mp.calibrate.mp_calibrate(os.path.join(datadir, 'A_ev' +
+                                      MP_FILE_EXTENSION),
+                                      os.path.join(datadir, 'A_ev_calib') +
                                       MP_FILE_EXTENSION)
-            mp.calibrate.mp_calibrate('../data/B_ev' + MP_FILE_EXTENSION,
-                                      '../data/B_ev_calib' +
+            mp.calibrate.mp_calibrate(os.path.join(datadir, 'B_ev') +
+                                      MP_FILE_EXTENSION,
+                                      os.path.join(datadir, 'B_ev_calib') +
                                       MP_FILE_EXTENSION)
         except:
             raise(Exception('Calibrating event file failed'))
@@ -38,23 +43,25 @@ class TestFullRun(unittest.TestCase):
     def step03_lcurve(self):
         '''Test light curve production'''
         try:
-            mp.lcurve.mp_lcurve_from_events('../data/A_ev_calib' +
-                                            MP_FILE_EXTENSION,
-                                            e_interval=[3, 50],
-                                            safe_interval=[100, 300])
-            mp.lcurve.mp_lcurve_from_events('../data/B_ev_calib' +
-                                            MP_FILE_EXTENSION,
-                                            e_interval=[3, 50],
-                                            safe_interval=[100, 300])
+            mp.lcurve.mp_lcurve_from_events(
+                os.path.join(datadir, 'A_ev_calib') + MP_FILE_EXTENSION,
+                e_interval=[3, 50],
+                safe_interval=[100, 300])
+            mp.lcurve.mp_lcurve_from_events(
+                os.path.join(datadir, 'B_ev_calib') + MP_FILE_EXTENSION,
+                e_interval=[3, 50],
+                safe_interval=[100, 300])
         except:
             raise(Exception('Production of light curve failed'))
 
     def step04_pds(self):
         '''Test PDS production'''
         try:
-            mp.fspec.mp_calc_pds('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
+            mp.fspec.mp_calc_pds(os.path.join(datadir, 'A_E3-50_lc') +
+                                 MP_FILE_EXTENSION,
                                  128)
-            mp.fspec.mp_calc_pds('../data/B_E3-50_lc' + MP_FILE_EXTENSION,
+            mp.fspec.mp_calc_pds(os.path.join(datadir, 'B_E3-50_lc') +
+                                 MP_FILE_EXTENSION,
                                  128)
         except:
             raise(Exception('Production of PDSs failed'))
@@ -62,10 +69,12 @@ class TestFullRun(unittest.TestCase):
     def step05_cpds(self):
         '''Test CPDS production'''
         try:
-            mp.fspec.mp_calc_cpds('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
-                                  '../data/B_E3-50_lc' + MP_FILE_EXTENSION,
+            mp.fspec.mp_calc_cpds(os.path.join(datadir, 'A_E3-50_lc') +
+                                  MP_FILE_EXTENSION,
+                                  os.path.join(datadir, 'B_E3-50_lc') +
+                                  MP_FILE_EXTENSION,
                                   128,
-                                  outname='../data/E3-50_cpds' +
+                                  outname=os.path.join(datadir, 'E3-50_cpds') +
                                   MP_FILE_EXTENSION)
         except:
             raise(Exception('Production of CPDS failed'))
@@ -73,7 +82,8 @@ class TestFullRun(unittest.TestCase):
     def step06_rebinlc(self):
         '''Test LC rebinning'''
         try:
-            mp.rebin.mp_rebin_file('../data/A_E3-50_lc' + MP_FILE_EXTENSION,
+            mp.rebin.mp_rebin_file(os.path.join(datadir, 'A_E3-50_lc') +
+                                   MP_FILE_EXTENSION,
                                    2)
         except Exception as e:
             self.fail("{} failed ({}: {})".format('LC rebin', type(e), e))
@@ -81,7 +91,8 @@ class TestFullRun(unittest.TestCase):
     def step07_rebinpds1(self):
         '''Test PDS rebinning 1'''
         try:
-            mp.rebin.mp_rebin_file('../data/A_E3-50_pds' + MP_FILE_EXTENSION,
+            mp.rebin.mp_rebin_file(os.path.join(datadir, 'A_E3-50_pds') +
+                                   MP_FILE_EXTENSION,
                                    2)
         except Exception as e:
             self.fail("{} failed ({}: {})".format('PDS rebin Test 1', type(e),
@@ -90,8 +101,8 @@ class TestFullRun(unittest.TestCase):
     def step08_rebinpds2(self):
         '''Test PDS rebinning 2'''
         try:
-            mp.rebin.mp_rebin_file('../data/A_E3-50_pds' + MP_FILE_EXTENSION,
-                                   1.03)
+            mp.rebin.mp_rebin_file(os.path.join(datadir, 'A_E3-50_pds') +
+                                   MP_FILE_EXTENSION, 1.03)
         except Exception as e:
             self.fail("{} failed ({}: {})".format('PDS rebin Test 2', type(e),
                                                   e))
@@ -99,8 +110,9 @@ class TestFullRun(unittest.TestCase):
     def step09_savexspec1(self):
         '''Test save as Xspec 1'''
         try:
-            mp.save_as_xspec.mp_save_as_xspec('../data/A_E3-50_pds_rebin2'
-                                              + MP_FILE_EXTENSION)
+            mp.save_as_xspec.mp_save_as_xspec(
+                os.path.join(datadir, 'A_E3-50_pds_rebin2')
+                + MP_FILE_EXTENSION)
         except Exception as e:
             self.fail("{} failed ({}: {})".format('MP2Xspec Test 1', type(e),
                                                   e))
@@ -108,8 +120,9 @@ class TestFullRun(unittest.TestCase):
     def step10_savexspec2(self):
         '''Test save as Xspec 2'''
         try:
-            mp.save_as_xspec.mp_save_as_xspec('../data/A_E3-50_pds_rebin1.03'
-                                              + MP_FILE_EXTENSION)
+            mp.save_as_xspec.mp_save_as_xspec(
+                os.path.join(datadir, 'A_E3-50_pds_rebin1.03')
+                + MP_FILE_EXTENSION)
         except Exception as e:
             self.fail("{} failed ({}: {})".format('MP2Xspec Test 2', type(e),
                                                   e))
