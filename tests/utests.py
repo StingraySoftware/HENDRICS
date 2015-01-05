@@ -1,5 +1,5 @@
 from __future__ import print_function, unicode_literals
-import unittest2 as unittest
+import unittest
 import maltpynt as mp
 import numpy as np
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
@@ -251,4 +251,9 @@ class TestAll(unittest.TestCase):
         assert mp.base.common_name(a, b) == '3-50'
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    try:
+        unittest.main(verbosity=2)
+    except:
+        # Python 2.6 does not accept the verbosity keyword. Let's try if this
+        # is the case
+        unittest.main()
