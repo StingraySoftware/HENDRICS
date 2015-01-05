@@ -9,3 +9,6 @@
 *egg-info*
 build
 dist
+.tox
+local_data
+*.log
