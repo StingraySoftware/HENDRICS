@@ -525,7 +525,7 @@ def mp_read_fspec(fname):
     nchunks = contents['n' + ft]
     rebin = contents['rebin']
 
-    return ftype, freq, pds, epds, nchunks, rebin
+    return ftype, freq, pds, epds, nchunks, rebin, contents
 
 
 if __name__ == '__main__':

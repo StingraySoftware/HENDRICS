@@ -134,6 +134,10 @@ def mp_get_file_type(fname):
         ftype = 'pds'
         if 'fhi' in keys:
             ftype = 'rebpds'
+    elif 'lag' in keys:
+        ftype = 'lag'
+        if 'fhi' in keys:
+            ftype = 'reblag'
     elif 'time' in keys:
         # If it has not lc, pds or cpds, but has time, ...
         ftype = 'events'
