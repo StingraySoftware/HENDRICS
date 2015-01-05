@@ -155,8 +155,8 @@ def mp_rebin_file(filename, rebin):
     else:
         raise Exception('Format was not recognized:', ftype)
 
-    outfile = f.replace(mp_get_file_extension(f),
-                        '_rebin%g' % rebin + MP_FILE_EXTENSION)
+    outfile = filename.replace(mp_get_file_extension(filename),
+                               '_rebin%g' % rebin + MP_FILE_EXTENSION)
     logging.info('Saving %s to %s' % (ftype, outfile))
     mp_save_data(contents, outfile, ftype)
 

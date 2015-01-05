@@ -1,9 +1,13 @@
 from __future__ import unicode_literals
 from __future__ import print_function
+import logging
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
 except:
+    msg = "Warning! NetCDF is not available. Using pickle format."
+    logging.warning(msg)
+    print(msg)
     MP_FILE_EXTENSION = '.p'
     pass
 
@@ -17,7 +21,6 @@ except:
 import collections
 import numpy as np
 import os.path
-import logging
 
 
 cpl128 = np.dtype([(str('real'), np.double),
@@ -134,6 +137,10 @@ def mp_get_file_type(fname):
         ftype = 'pds'
         if 'fhi' in keys:
             ftype = 'rebpds'
+    elif 'lag' in keys:
+        ftype = 'lag'
+        if 'fhi' in keys:
+            ftype = 'reblag'
     elif 'time' in keys:
         # If it has not lc, pds or cpds, but has time, ...
         ftype = 'events'

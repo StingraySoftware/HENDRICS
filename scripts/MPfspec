@@ -26,7 +26,7 @@ parser.add_argument("--norm", type=str, default="Leahy",
                     help='Normalization to use' +
                     ' (Accepted: Leahy and rms;' +
                     ' Default: "Leahy")')
-parser.add_argument("-o", "--outroot", type=str, default="cpds",
+parser.add_argument("-o", "--outroot", type=str, default=None,
                     help='Root of output file names for CPDS only')
 parser.add_argument("--loglevel",
                     help=("use given logging level (one between INFO, "
