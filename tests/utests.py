@@ -1,10 +1,18 @@
 from __future__ import print_function, unicode_literals
-import unittest
 import maltpynt as mp
 import numpy as np
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 import logging
 import os
+import sys
+
+PY2 = sys.version_info[0] == 2
+PYX6 = sys.version_info[1] == 6
+
+if PY2 and PYX6:
+    import unittest2 as unittest
+else:
+    import unittest
 
 logging.basicConfig(filename='MP.log', level=logging.DEBUG, filemode='w')
 curdir = os.path.abspath(os.path.dirname(__file__))
@@ -145,79 +153,89 @@ class TestFullRun(unittest.TestCase):
                 print('Failed')
 
 
-class TestAll(unittest.TestCase):
+class TestPDS(unittest.TestCase):
+    # First define a class variable that determines
+    # if setUp was ever run
+    ClassIsSetup = False
+
+    @classmethod
+    def setUpClass(cls):
+
+        print("Setting up")
+        import numpy.random as ra
+        cls.length = 512000
+        cls.tstart = 0
+        cls.tstop = cls.tstart + cls.length
+        cls.ctrate = 100
+        cls.bintime = 1
+        cls.nphot = ra.poisson(cls.length * cls.ctrate)
+
+        events = ra.uniform(cls.tstart, cls.tstop, cls.nphot)
+
+        time, cls.lc1 = \
+            mp.lcurve.mp_lcurve(events,
+                                cls.bintime,
+                                start_time=cls.tstart,
+                                stop_time=cls.tstop)
+
+        events = ra.uniform(cls.tstart, cls.tstop, cls.nphot)
+
+        time, cls.lc2 = \
+            mp.lcurve.mp_lcurve(events,
+                                cls.bintime,
+                                start_time=cls.tstart,
+                                stop_time=cls.tstop)
+        cls.time = time
+
+        cls.freq1, cls.pds1, cls.pdse1, dum = \
+            mp.fspec.mp_welch_pds(cls.time, cls.lc1, cls.bintime, 128)
+        cls.freq2, cls.pds2, cls.pdse2, dum = \
+            mp.fspec.mp_welch_pds(cls.time, cls.lc2, cls.bintime, 128)
+
+        dum, cls.cpds, cls.ec, dum = \
+            mp.fspec.mp_welch_cpds(cls.time, cls.lc1, cls.lc2,
+                                   cls.bintime, 128)
+
+        # Calculate the variance discarding the freq=0 Hz element
+        cls.varp1 = np.var(cls.pds1[1:])
+        cls.varp2 = np.var(cls.pds2[1:])
+        cls.varcr = np.var(cls.cpds.real[1:])
 
     def test_pdsstat1(self):
         '''Test that the Leahy PDS goes to 2'''
-        import numpy.random as ra
         from scipy.optimize import curve_fit
-        length = 512
-        tstart = 0
-        tstop = tstart + length
-        ctrate = 100
-        bintime = 1
 
-        tot_pds = 0
+        baseline_fun = lambda x, a: a
+        p, pcov = curve_fit(baseline_fun, self.freq1[1:], self.pds1,
+                            p0=[2], sigma=self.pdse1, absolute_sigma=True)
 
-        iter_ns = np.arange(10000)
-        for iter_n in iter_ns + 1:
-            nphot = ra.poisson(ctrate * length)
-            event_list = ra.uniform(tstart, tstop, nphot)
+        perr = np.sqrt(np.diag(pcov))
 
-            time, lc = mp.lcurve.mp_lcurve(event_list,
-                                           bintime,
-                                           start_time=tstart,
-                                           stop_time=tstop)
-
-            freq, pds = mp.fspec.mp_leahy_pds(lc, bintime)
-
-            tot_pds += pds[1:]
-
-            tot_pdse = tot_pds / iter_n / np.sqrt(iter_n)
-
-            baseline_fun = lambda x, a: a
-            p, pcov = curve_fit(baseline_fun, freq[1:], tot_pds / iter_n,
-                                p0=[2], sigma=tot_pdse, absolute_sigma=True)
-
-            perr = np.sqrt(np.diag(pcov))
-
-            if iter_n > 100 and np.abs(p - 2) < perr:
-                return
-        raise Exception('PDS white level did not converge to 2 after '
-                        '10000 iterations')
+        assert np.abs(p - 2) < perr * 3, \
+            ('PDS white level did not converge to 2')
 
     def test_pdsstat2(self):
+        '''Test the statistical properties of the PDS.'''
+        assert np.abs(self.varp1 / np.mean(self.pdse1[1:] ** 2)) - 1 < 0.3
+
+    def test_pdsstat3(self):
+        '''Test the statistical properties of the PDS.'''
+        assert np.abs(self.varp2 / np.mean(self.pdse2[1:] ** 2)) - 1 < 0.3
+
+    def test_pdsstat4(self):
+        '''Test the statistical properties of the cospectrum.'''
+        assert np.abs(self.varcr / np.mean(self.ec[1:] ** 2)) - 1 < 0.3
+
+    def test_pdsstat5(self):
         '''Test the statistical properties of the cospectrum.
 
         In particular ,the standard deviation of the cospectrum is a factor
         ~sqrt(2) smaller than the standard deviation of the PDS'''
-        tMin = 0
-        tMax = 512
-        ctrate = 10000
-        bintime = 0.01
+        geom_mean = np.sqrt(self.varp1 * self.varp2)
+        assert np.abs(2 * self.varcr / geom_mean) - 1 < 0.3
 
-        events = np.random.uniform(tMin, tMax, ctrate * (tMax - tMin))
-        time1, lc1 = mp.lcurve.mp_lcurve(events, bintime, start_time=tMin,
-                                         stop_time=tMax)
-        events = np.random.uniform(tMin, tMax, ctrate * (tMax - tMin))
-        time2, lc2 = mp.lcurve.mp_lcurve(events, bintime, start_time=tMin,
-                                         stop_time=tMax)
-        del time1
-        time = time2
-        dum, pds1, dum, dum = \
-            mp.fspec.mp_welch_pds(time, lc1, bintime, 128)
-        dum, pds2, dum, dum = \
-            mp.fspec.mp_welch_pds(time, lc2, bintime, 128)
 
-        dum, cpds, dum, dum = \
-            mp.fspec.mp_welch_cpds(time, lc1, lc2, bintime, 128)
-
-        # Calculate the variance discarding the freq=0 Hz element
-        varp1 = np.var(pds1[1:])
-        varp2 = np.var(pds2[1:])
-        varcr = np.var(cpds.real[1:])
-
-        assert np.rint(np.sqrt(varp1 * varp2) / varcr) == 2
+class TestAll(unittest.TestCase):
 
     def test_crossgti1(self):
         '''Test the basic working of the intersection of GTIs'''
@@ -251,9 +269,4 @@ class TestAll(unittest.TestCase):
         assert mp.base.common_name(a, b) == '3-50'
 
 if __name__ == '__main__':
-    try:
-        unittest.main(verbosity=2)
-    except:
-        # Python 2.6 does not accept the verbosity keyword. Let's try if this
-        # is the case
-        unittest.main()
+    unittest.main(verbosity=2)
