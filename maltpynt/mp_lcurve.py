@@ -11,12 +11,14 @@ import logging
 def mp_lcurve(event_list,
               bin_time,
               start_time=None,
-              stop_time=None):
+              stop_time=None,
+              centertime=False):
     '''
-        From a list of event times, it extracts a lightcurve
-        usage:
-        times, lc = bin_events(event_list, bin_time)
-        '''
+    From a list of event times, estract a lightcurve
+
+    Usage:
+    times, lc = bin_events(event_list, bin_time)
+    '''
     if start_time is None:
         logging.warning("mp_lcurve: Changing start time")
         start_time = np.floor(event_list[0])
@@ -35,6 +37,8 @@ def mp_lcurve(event_list,
     times = np.arange(start_time, stop_time, bin_time)
     lc = np.bincount(new_event_list, minlength=len(times))
     logging.debug("mp_lcurve: Length of the lightcurve: %g" % len(times))
+    if centertime:
+        times += bin_time / 2
     return times, lc.astype(np.float)
 
 
