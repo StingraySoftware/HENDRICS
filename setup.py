@@ -1,10 +1,25 @@
+from __future__ import print_function
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
 
 import glob
+import sys
+PY2 = sys.version_info[0] == 2
+PYX6 = sys.version_info[1] <= 6
 
+install_requires = [
+    'matplotlib',
+    'scipy',
+    'numpy',
+    'astropy'
+    ]
+
+if PY2 and PYX6:
+    install_requires += ['unittest2']
+
+print(install_requires)
 setup(name='maltpynt',
       version='beta',
       description="Matteo's Library and Tools in Python for NuSTAR Timing",
@@ -27,10 +42,5 @@ setup(name='maltpynt',
           'Programming Language :: Python :: 3.4',
           'Topic :: Scientific/Engineering :: Astronomy'
           ],
-      install_requires=[
-          'matplotlib',
-          'scipy',
-          'numpy',
-          'astropy'
-          ]
+      install_requires=install_requires
       )
