@@ -56,8 +56,6 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
         pds = pds[1:]
         pds_err = pds_err[1:]
 
-    fmin = min(freq)
-    fmax = max(freq)
     if npds is None:
         npds = 1.
     if pds_err is None:
@@ -70,6 +68,12 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
         if return_nbins:
             retval.append(np.ones(len(pds)) * npds)
         return retval
+
+    # Input frequencies are referred to the center of the bin. But from now on
+    # I'll be interested in the start and stop of each frequency bin.
+    freq -= df / 2
+    fmin = min(freq)
+    fmax = max(freq) + df
 
     logstep = log10(bin_factor)
 #    maximum number of bins
@@ -104,6 +108,7 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     newpds_err = newpds_err[good]
     newfreqhi = newfreqlo[1:]
     newfreqhi = np.append(newfreqhi, [fmax])
+
 
     retval = [newfreqlo, newfreqhi, newpds, newpds_err]
     if return_nbins:
