@@ -109,7 +109,6 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     newfreqhi = newfreqlo[1:]
     newfreqhi = np.append(newfreqhi, [fmax])
 
-
     retval = [newfreqlo, newfreqhi, newpds, newpds_err]
     if return_nbins:
         retval.append(new_nbins)
