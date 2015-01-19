@@ -24,6 +24,12 @@ To use this command you will probably need to setup an SSH key for your account 
 #!console
 $ git clone https://<yourusername>@bitbucket.org/mbachett/maltpynt.git
 ```
+To update the software, just run
+```
+#!console
+$ git pull
+```
+from the source directory (usually, the command gives troubleshooting information if this doesn't work the first time).
 
 Enter  the distribution directory and run
 ```
