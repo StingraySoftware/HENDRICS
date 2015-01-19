@@ -19,7 +19,13 @@ To install, download the distribution directory:
 #!console
 $ git clone git@bitbucket.org:mbachett/maltpynt.git
 ```
-enter  the distribution directory and run
+To use this command you will probably need to setup an SSH key for your account (in Manage Account, recommended!). Otherwise, you can use the command
+```
+#!console
+$ git clone https://<yourusername>@bitbucket.org/mbachett/maltpynt.git
+```
+
+Enter  the distribution directory and run
 ```
 #!console
 $ cd maltpynt
