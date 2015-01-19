@@ -42,8 +42,16 @@ def mp_lcurve(event_list,
     times = np.arange(start_time, stop_time, bin_time)
     lc = np.bincount(new_event_list, minlength=len(times))
     logging.debug("mp_lcurve: Length of the lightcurve: %g" % len(times))
+    logging.debug("Times, kind: %s, %s" % (repr(times), type(times[0])))
+    logging.debug("Lc, kind: %s, %s" % (repr(lc), type(lc[0])))
+    logging.debug("bin_time, kind: %s, %s" % (repr(bin_time), type(bin_time)))
     if centertime:
-        times += bin_time / 2
+        # TODO: in tox, this raises
+        # DeprecationWarning: Implicitly casting between incompatible kinds.
+        # In a future numpy release, this will raise an error. Use
+        # casting="unsafe" if this is intentional.
+        # Check what the heck is going on here.
+        times += bin_time / 2.
     return times, lc.astype(np.float)
 
 
@@ -167,7 +175,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           min_length=0,
                           gti_split=False,
                           ignore_gtis=False,
-                          bintime=1,
+                          bintime=1.,
                           outdir=None):
     logging.info("Loading file %s..." % f)
     evdata = mp_load_events(f)
