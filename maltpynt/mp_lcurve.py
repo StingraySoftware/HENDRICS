@@ -12,12 +12,17 @@ def mp_lcurve(event_list,
               bin_time,
               start_time=None,
               stop_time=None,
-              centertime=False):
+              centertime=True):
     '''
     From a list of event times, estract a lightcurve
 
     Usage:
     times, lc = bin_events(event_list, bin_time)
+
+    Optional keywords:
+    start_time
+    stop_time
+    centertime: if False, time is teh start of the bin
     '''
     if start_time is None:
         logging.warning("mp_lcurve: Changing start time")
