@@ -10,7 +10,7 @@ This software is **heavily focused on NuSTAR**, and it's mostly for educational 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
 ## Installation
-You'll need a recent python 2.7 or 3.4 installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/)  [Scipy](http://scipy.org/) and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html). 
+You'll need a recent python 2.7 or 3.4 installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/), [Scipy](http://scipy.org/) and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html). 
 
 An **optional but recommended** dependency is the [netCDF 4 library](http://www.unidata.ucar.edu/software/netcdf/) with its [python bindings](https://github.com/Unidata/netcdf4-python).
 
@@ -19,7 +19,19 @@ To install, download the distribution directory:
 #!console
 $ git clone git@bitbucket.org:mbachett/maltpynt.git
 ```
-enter  the distribution directory and run
+To use this command you will probably need to setup an SSH key for your account (in Manage Account, recommended!). Otherwise, you can use the command
+```
+#!console
+$ git clone https://<yourusername>@bitbucket.org/mbachett/maltpynt.git
+```
+To update the software, just run
+```
+#!console
+$ git pull
+```
+from the source directory (usually, the command gives troubleshooting information if this doesn't work the first time).
+
+Enter  the distribution directory and run
 ```
 #!console
 $ cd maltpynt
