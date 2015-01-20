@@ -34,7 +34,6 @@ from the source directory (usually, the command gives troubleshooting informatio
 Enter  the distribution directory and run
 ```
 #!console
-$ cd maltpynt
 $ python setup.py install
 ```
 this will check for the existing dependencies and install the files in a proper way.
