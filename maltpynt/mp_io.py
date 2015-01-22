@@ -252,7 +252,8 @@ def save_data_nc(struct, fname, kind="data"):
             except:
                 logging.error('This failed: %s %s in file %s' %
                               (k, repr(var), fname))
-                return -1
+                raise Exception('This failed: %s %s in file %s' %
+                                (k, repr(var), fname))
         if is_string(var):
             probekind = str
             probesize = -1
