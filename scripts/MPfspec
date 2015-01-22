@@ -35,6 +35,8 @@ parser.add_argument("--loglevel",
                     type=str)
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
+parser.add_argument("--save-dyn", help="save dynamical power spectrum",
+                    default=False, action='store_true')
 args = parser.parse_args()
 
 if args.debug:
@@ -68,7 +70,7 @@ mp_calc_fspec(args.files, fftlen,
               calc_cpds=do_cpds,
               calc_cospectrum=do_cos,
               calc_lags=do_lag,
-              save_dyn=False,
+              save_dyn=args.save_dyn,
               bintime=bintime,
               pdsrebin=pdsrebin,
               outroot=args.outroot,
