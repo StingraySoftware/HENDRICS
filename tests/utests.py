@@ -188,9 +188,10 @@ class TestPDS(unittest.TestCase):
         cls.time = time
 
         cls.freq1, cls.pds1, cls.pdse1, dum = \
-            mp.fspec.mp_welch_pds(cls.time, cls.lc1, cls.bintime, 128)
+            mp.fspec.mp_welch_pds(cls.time, cls.lc1, cls.bintime, 512)
+
         cls.freq2, cls.pds2, cls.pdse2, dum = \
-            mp.fspec.mp_welch_pds(cls.time, cls.lc2, cls.bintime, 128)
+            mp.fspec.mp_welch_pds(cls.time, cls.lc2, cls.bintime, 512)
 
         dum, cls.cpds, cls.ec, dum = \
             mp.fspec.mp_welch_cpds(cls.time, cls.lc1, cls.lc2,

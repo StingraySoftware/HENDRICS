@@ -8,6 +8,11 @@ import numpy as np
 import logging
 
 
+class _empty():
+    def __init__(self):
+        pass
+
+
 def mp_fft(lc, bintime):
     '''A wrapper for the fft function. Just numpy for now'''
     nbin = len(lc)
@@ -48,7 +53,8 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
         return pds
 
 
-def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False):
+def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
+                 return_all=False):
     '''
     Calculates the Power Density Spectrum \'a la Leahy (1983), given the
     lightcurve and its bin time, over equal chunks of length fftlen, and
@@ -77,6 +83,10 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False):
     start_bins, stop_bins = \
         mp_decide_spectrum_lc_intervals(gti, fftlen, time)
 
+    if return_all:
+        results = _empty()
+        results.dynpds = []
+
     pds = 0
     npds = len(start_bins)
 
@@ -93,14 +103,27 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False):
 
         f, p = mp_leahy_pds(l, bintime)
 
+        if return_all:
+            results.dynpds.append(p)
+
         pds += p
         mask[start_bin:stop_bin] = True
 
     pds /= npds
     epds = pds / np.sqrt(npds)
+    ctrate = np.mean(lc[mask]) / bintime
+
+    if return_all:
+        results.f = f
+        results.pds = pds
+        results.epds = epds
+        results.npds = npds
+        results.ctrate = ctrate
+
+        return results
 
     if return_ctrate:
-        return f, pds, epds, npds, np.mean(lc[mask]) / bintime
+        return f, pds, epds, npds, ctrate
     else:
         return f, pds, epds, npds
 
@@ -159,7 +182,7 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
 
 
 def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
-                  return_ctrate=False):
+                  return_ctrate=False, return_all=False):
     '''
     Calculates the Cross Power Density Spectrum normalized like PDS, given the
     lightcurve and its bin time, over equal chunks of length fftlen, and
@@ -194,6 +217,14 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
     npds = len(start_bins)
     mask = np.zeros(len(lc1), dtype=np.bool)
 
+    if return_all:
+        results = _empty()
+        results.dyncpds = []
+
+    cpds = 0
+    ecpds = 0
+    npds = len(start_bins)
+
     for start_bin, stop_bin in zip(start_bins, stop_bins):
         l1 = lc1[start_bin:stop_bin]
         l2 = lc2[start_bin:stop_bin]
@@ -208,14 +239,27 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         f, p, pe, p1, p2 = mp_leahy_cpds(l1, l2, bintime, return_pdss=True)
         cpds += p
         ecpds += pe ** 2
+        if return_all:
+            results.dyncpds.append(p)
+
         mask[start_bin:stop_bin] = True
 
     cpds /= npds
     ecpds = np.sqrt(ecpds) / npds
 
+    ctrate = np.sqrt(np.mean(lc1[mask])*np.mean(lc2[mask])) / bintime
+
+    if return_all:
+        results.f = f
+        results.cpds = cpds
+        results.ecpds = ecpds
+        results.ncpds = npds
+        results.ctrate = ctrate
+
+        return results
+
     if return_ctrate:
-        return f, cpds, ecpds, npds, \
-            np.sqrt(np.mean(lc1[mask])*np.mean(lc2[mask])) / bintime
+        return f, cpds, ecpds, npds, ctrate
     else:
         return f, cpds, ecpds, npds
 
@@ -294,9 +338,6 @@ def mp_calc_pds(lcfile, fftlen,
                 pdsrebin=1,
                 normalization='Leahy'):
     '''Calculates the PDS from an input light curve file'''
-    # TODO:Implement save_dyn
-    if save_dyn:
-        logging.warning('Beware! save_dyn not yet implemented')
 
     logging.info("Loading file %s..." % lcfile)
     lcdata = mp_load_lcurve(lcfile)
@@ -317,12 +358,18 @@ def mp_calc_pds(lcfile, fftlen,
             mp_const_rebin(time, lc, lcrebin, normalize=False)
 
     try:
-        freq, pds, epds, npds, ctrate = \
-            mp_welch_pds(time, lc, bintime, fftlen, gti, return_ctrate=True)
-    except:
+        results = mp_welch_pds(time, lc, bintime, fftlen, gti, return_all=True)
+        freq = results.f
+        pds = results.pds
+        epds = results.epds
+        npds = results.npds
+        ctrate = results.ctrate
+    except Exception as e:
         # If it fails, exit cleanly
-        logging.error('Problems with the PDS. Check input files!')
-        return -1
+        logging.error("{} failed ({}: {})".format('Problems with the PDS.',
+                                                  type(e), e))
+        raise Exception("{} failed ({}: {})".format('Problems with the PDS.',
+                                                    type(e), e))
 
     freq, pds, epds = mp_const_rebin(freq[1:], pds[1:], pdsrebin,
                                      epds[1:])
@@ -342,6 +389,10 @@ def mp_calc_pds(lcfile, fftlen,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
                'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate,
                'total_ctrate': tctrate}
+    logging.debug(repr(results.dynpds))
+
+    if save_dyn:
+        outdata["dynpds"] = np.array(results.dynpds)
 
     outname = root + '_pds' + MP_FILE_EXTENSION
     logging.info('Saving PDS to %s' % outname)
@@ -356,9 +407,6 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                  normalization='Leahy'):
     '''Calculates the Cross Power Density Spectrum from a pair of
     input light curve files'''
-    # TODO:Implement save_dyn
-    if save_dyn:
-        logging.warning('Beware! save_dyn not yet implemented')
 
     logging.info("Loading file %s..." % lcfile1)
     lcdata1 = mp_load_lcurve(lcfile1)
@@ -413,13 +461,19 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     lc2 = lc2[mask2]
 
     try:
-        freq, cpds, ecpds, ncpds, ctrate = \
-            mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
-                          return_ctrate=True)
-    except:
+        results = mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
+                                return_all=True)
+        freq = results.f
+        cpds = results.cpds
+        ecpds = results.ecpds
+        ncpds = results.ncpds
+        ctrate = results.ctrate
+    except Exception as e:
         # If it fails, exit cleanly
-        logging.error('Problems with the CPDS. Check input files!')
-        return -1
+        logging.error("{} failed ({}: {})".format('Problems with the CPDS.',
+                                                  type(e), e))
+        raise Exception("{} failed ({}: {})".format('Problems with the CPDS.',
+                                                    type(e), e))
 
     freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
                                        ecpds[1:])
@@ -436,6 +490,10 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
                'freq': freq, 'rebin': pdsrebin, 'norm': normalization,
                'ctrate': ctrate, 'total_ctrate': tctrate}
+
+    logging.debug(repr(results.dyncpds))
+    if save_dyn:
+        outdata["dyncpds"] = np.array(results.dyncpds)
 
     logging.info('Saving CPDS to %s' % outname)
     mp_save_pds(outdata, outname)
@@ -562,6 +620,8 @@ if __name__ == '__main__':
                         type=str)
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
+    parser.add_argument("--save-dyn", help="save dynamical power spectrum",
+                        default=False, action='store_true')
     args = parser.parse_args()
 
     if args.debug:
@@ -595,7 +655,7 @@ if __name__ == '__main__':
                   calc_cpds=do_cpds,
                   calc_cospectrum=do_cos,
                   calc_lags=do_lag,
-                  save_dyn=False,
+                  save_dyn=args.save_dyn,
                   bintime=bintime,
                   pdsrebin=pdsrebin,
                   outroot=args.outroot,

@@ -65,7 +65,9 @@ def mp_save_as_netcdf(vars, varnames, formats, fname):
 
         if formats[iv] == 'c16':
             # unicode_literals breaks something, I need to specify str.
-            complex128_t = rootgrp.createCompoundType(cpl128, 'cpl128')
+
+            if 'cpl128' not in rootgrp.cmptypes.keys():
+                complex128_t = rootgrp.createCompoundType(cpl128, 'cpl128')
             vcomp = np.empty(v.size, dtype=cpl128)
             vcomp['real'] = v.real
             vcomp['imag'] = v.imag
