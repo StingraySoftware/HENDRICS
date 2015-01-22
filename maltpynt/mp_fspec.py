@@ -338,9 +338,6 @@ def mp_calc_pds(lcfile, fftlen,
                 pdsrebin=1,
                 normalization='Leahy'):
     '''Calculates the PDS from an input light curve file'''
-    # TODO:Implement save_dyn
-    if save_dyn:
-        logging.warning('Beware! save_dyn not yet implemented')
 
     logging.info("Loading file %s..." % lcfile)
     lcdata = mp_load_lcurve(lcfile)
@@ -410,9 +407,6 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                  normalization='Leahy'):
     '''Calculates the Cross Power Density Spectrum from a pair of
     input light curve files'''
-    # TODO:Implement save_dyn
-    if save_dyn:
-        logging.warning('Beware! save_dyn not yet implemented')
 
     logging.info("Loading file %s..." % lcfile1)
     lcdata1 = mp_load_lcurve(lcfile1)
