@@ -106,15 +106,22 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
             else:
                 tag = instr
             logging.info('Saving joined light curve to %s' % outfile)
-            mp_save_lcurve(outlcs[instr], tag + outfile)
+
+            dname, fname = os.path.split(outfile)
+            mp_save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
 
     return outlcs
 
 
-def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION):
+def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
+                           save_joint=False):
     '''Create a single light curve from input light curves,
     regardless of the instrument'''
-    lcdata = mp_join_lightcurves(lcfilelist)
+    if save_joint:
+        lcdata = mp_join_lightcurves(lcfilelist)
+    else:
+        lcdata = mp_join_lightcurves(lcfilelist, outfile=None)
+
     instrs = list(lcdata.keys())
     gti_lists = [lcdata[inst]['GTI'] for inst in instrs]
     gti = mp_cross_gtis(gti_lists)
