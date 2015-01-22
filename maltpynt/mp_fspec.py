@@ -392,6 +392,10 @@ def mp_calc_pds(lcfile, fftlen,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
                'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate,
                'total_ctrate': tctrate}
+    logging.debug(repr(results.dynpds))
+
+    if save_dyn:
+        outdata["dynpds"] = np.array(results.dynpds)
 
     outname = root + '_pds' + MP_FILE_EXTENSION
     logging.info('Saving PDS to %s' % outname)
@@ -492,6 +496,10 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
                'freq': freq, 'rebin': pdsrebin, 'norm': normalization,
                'ctrate': ctrate, 'total_ctrate': tctrate}
+
+    logging.debug(repr(results.dyncpds))
+    if save_dyn:
+        outdata["dyncpds"] = np.array(results.dyncpds)
 
     logging.info('Saving CPDS to %s' % outname)
     mp_save_pds(outdata, outname)
@@ -618,6 +626,8 @@ if __name__ == '__main__':
                         type=str)
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
+    parser.add_argument("--save-dyn", help="save dynamical power spectrum",
+                        default=False, action='store_true')
     args = parser.parse_args()
 
     if args.debug:
@@ -651,7 +661,7 @@ if __name__ == '__main__':
                   calc_cpds=do_cpds,
                   calc_cospectrum=do_cos,
                   calc_lags=do_lag,
-                  save_dyn=False,
+                  save_dyn=args.save_dyn,
                   bintime=bintime,
                   pdsrebin=pdsrebin,
                   outroot=args.outroot,
