@@ -100,8 +100,13 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
         outlcs[instr]['GTI'] = np.array(gtis[instr])
 
     if outfile is not None:
-        logging.info('Saving joined light curve to %s' % outfile)
-        mp_save_lcurve(outlcs, outfile)
+        for instr in instrs:
+            if len(instrs) == 1:
+                tag = ""
+            else:
+                tag = instr
+            logging.info('Saving joined light curve to %s' % outfile)
+            mp_save_lcurve(outlcs[instr], tag + outfile)
 
     return outlcs
 
@@ -134,6 +139,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION):
     out['lc'] = lc0
     out['time'] = time0
     out['dt'] = lcdata[instrs[0]]['dt']
+    out['GTI'] = gti
 
     logging.info('Saving scrunched light curve to %s' % outfile)
     mp_save_lcurve(out, outfile)
