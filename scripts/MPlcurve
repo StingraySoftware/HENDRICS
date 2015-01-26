@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
 from maltpynt.mp_lcurve import mp_lcurve_from_events, mp_scrunch_lightcurves
+from maltpynt.mp_lcurve import mp_lcurve_from_fits, mp_lcurve_from_txt
 import argparse
 import numpy as np
 import logging
-
 
 description = ('Create lightcurves starting from event files. It is '
                'possible to specify energy or channel filtering options')
@@ -43,10 +43,17 @@ parser.add_argument("-d", "--outdir", type=str, default=None,
                     help='Output directory')
 parser.add_argument("--loglevel",
                     help=("use given logging level (one between INFO, "
-                          "WARNING, ERROR, CRITICAL, DEBUG; default:WARNING)"),
+                          "WARNING, ERROR, CRITICAL, DEBUG; "
+                          "default:WARNING)"),
                     default='WARNING',
                     type=str)
 parser.add_argument("--debug", help="use DEBUG logging level",
+                    default=False, action='store_true')
+parser.add_argument("--fits-input",
+                    help="Input files are light curves in FITS format",
+                    default=False, action='store_true')
+parser.add_argument("--txt-input",
+                    help="Input files are light curves in txt format",
                     default=False, action='store_true')
 args = parser.parse_args()
 
@@ -65,18 +72,23 @@ e_interval = np.array(args.e_interval)
 
 outfiles = []
 for f in infiles:
-    outfile = mp_lcurve_from_events(f, safe_interval=safe_interval,
-                                    pi_interval=pi_interval,
-                                    e_interval=e_interval,
-                                    min_length=args.minlen,
-                                    gti_split=args.gti_split,
-                                    ignore_gtis=args.ignore_gtis,
-                                    bintime=bintime,
-                                    outdir=args.outdir)
+    if args.fits_input:
+        outfile = mp_lcurve_from_fits(f)
+    elif args.txt_input:
+        outfile = mp_lcurve_from_txt(f)
+    else:
+        outfile = mp_lcurve_from_events(f, safe_interval=safe_interval,
+                                        pi_interval=pi_interval,
+                                        e_interval=e_interval,
+                                        min_length=args.minlen,
+                                        gti_split=args.gti_split,
+                                        ignore_gtis=args.ignore_gtis,
+                                        bintime=bintime,
+                                        outdir=args.outdir)
 
     outfiles.extend(outfile)
 
-logging.info(outfiles)
+logging.debug(outfiles)
 # TODO: test if this still works!
 if args.scrunch:
     mp_scrunch_lightcurves(outfiles)

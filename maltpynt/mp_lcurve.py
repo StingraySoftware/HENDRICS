@@ -310,6 +310,157 @@ def mp_lcurve_from_events(f, safe_interval=0,
     return outfiles
 
 
+def _high_precision_keyword_read(hdr, keyword):
+    try:
+        value = np.longdouble(hdr[keyword])
+    except:
+        value = np.longdouble(hdr[keyword + 'I'])
+        value += np.longdouble(hdr[keyword + 'F'])
+
+    return value
+
+
+def mp_lcurve_from_fits(fits_file, gtistring='GTI',
+                        timecolumn='TIME', ratecolumn=None, ratehdu=1,
+                        fracexp_limit=0.9):
+    '''
+    Load a lightcurve from a fits file.
+
+    Outputs a light curve file in MaLTPyNT format
+    '''
+    from astropy.io import fits as pf
+    import numpy as np
+    from .mp_base import mp_create_gti_from_condition
+
+    lchdulist = pf.open(fits_file)
+    lctable = lchdulist[ratehdu].data
+    dt = _high_precision_keyword_read(lchdulist[ratehdu].header, 'TIMEDEL')
+
+    # ----------------------------------------------------------------
+    # Trying to comply with all different formats of fits light curves.
+    # It's a madness...
+    try:
+        tstart = _high_precision_keyword_read(lchdulist[ratehdu].header,
+                                              'TSTART')
+        tstop = _high_precision_keyword_read(lchdulist[ratehdu].header,
+                                             'TSTOP')
+    except:
+        raise(Exception('TSTART and TSTOP need to be specified'))
+
+    try:
+        timezero = _high_precision_keyword_read(lchdulist[ratehdu].header,
+                                                'TIMEZERO')
+        # Sometimes timezero is "from tstart", sometimes it's an absolute time.
+        # This tries to detect which case is this, and always consider it
+        # referred to tstart
+        if timezero > tstart:
+            timezero -= tstart
+    except:
+        timezero = 0
+
+    time = np.array(lctable.field(timecolumn), dtype=np.longdouble)
+    if time[-1] < tstart:
+        time += timezero + tstart
+    else:
+        time += timezero
+
+    # ----------------------------------------------------------------
+    if ratecolumn is None:
+        for i in ['RATE', 'RATE1', 'COUNTS']:
+            if i in lctable.names:
+                ratecolumn = i
+                break
+    rate = np.array(lctable.field(ratecolumn), dtype=np.float)
+
+    try:
+        rate_e = np.array(lctable.field('ERROR'), dtype=np.longdouble)
+    except:
+        rate_e = np.zeros_like(rate)
+
+    if 'RATE' in ratecolumn:
+        rate *= dt
+
+    try:
+        fracexp = np.array(lctable.field('FRACEXP'), dtype=np.longdouble)
+    except:
+        fracexp = np.ones_like(rate)
+
+    good_intervals = np.logical_and(fracexp >= fracexp_limit, fracexp <= 1)
+    good_intervals = (rate == rate) * (fracexp >= fracexp_limit) * \
+        (fracexp <= 1)
+
+    rate[good_intervals] /= fracexp[good_intervals]
+    rate_e[good_intervals] /= fracexp[good_intervals]
+
+    rate[np.logical_not(good_intervals)] = 0
+
+    try:
+        gtitable = lchdulist[gtistring].data
+        gti_list = np.array([[a, b]
+                             for a, b in zip(gtitable.field('START'),
+                                             gtitable.field('STOP'))],
+                            dtype=np.longdouble)
+    except:
+        gti_list = mp_create_gti_from_condition(time, good_intervals)
+
+    lchdulist.close()
+
+    out = {}
+    out['lc'] = rate
+    out['time'] = time
+    out['dt'] = dt
+    out['GTI'] = gti_list
+    out['Tstart'] = tstart
+    out['Tstop'] = tstop
+    out['Instr'] = 'EXTERN'
+
+    outfile = mp_root(fits_file) + '_lc' + MP_FILE_EXTENSION
+    logging.info('Saving light curve to %s' % outfile)
+    mp_save_lcurve(out, outfile)
+    return [outfile]
+
+
+def test_lcurve_from_fits():
+    '''Placeholder function'''
+    # TODO: implement this
+    pass
+
+
+def mp_lcurve_from_txt(txt_file):
+    '''
+    Load a lightcurve from a text file.
+
+    Assumes two columns: time, counts
+    '''
+    import numpy as np
+
+    time, lc = np.loadtxt(txt_file, delimiter=' ', unpack=True)
+
+    time = np.array(time, dtype=np.longdouble)
+    lc = np.array(lc, dtype=np.float)
+    dt = time[1] - time[0]
+    out = {}
+    out['lc'] = lc
+    out['time'] = time
+    out['dt'] = dt
+    out['GTI'] = np.array([[time[0] - dt / 2, time[-1] + dt / 2]])
+    out['Tstart'] = time[0] - dt / 2
+    out['Tstop'] = time[-1] + dt / 2
+    out['Instr'] = 'EXTERN'
+
+    print(time, lc)
+    outfile = mp_root(txt_file) + '_lc' + MP_FILE_EXTENSION
+    logging.info('Saving light curve to %s' % outfile)
+    mp_save_lcurve(out, outfile)
+    return [outfile]
+
+
+def test_lcurve_from_txt():
+    '''Placeholder function'''
+    # TODO: implement this
+    pass
+
+
 if __name__ == "__main__":
     import argparse
     description = ('Create lightcurves starting from event files. It is '
@@ -347,7 +498,6 @@ if __name__ == "__main__":
                         action="store_true")
     parser.add_argument("-d", "--outdir", type=str, default=None,
                         help='Output directory')
-
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
                               "WARNING, ERROR, CRITICAL, DEBUG; "
@@ -355,6 +505,12 @@ if __name__ == "__main__":
                         default='WARNING',
                         type=str)
     parser.add_argument("--debug", help="use DEBUG logging level",
+                        default=False, action='store_true')
+    parser.add_argument("--fits-input",
+                        help="Input files are light curves in FITS format",
+                        default=False, action='store_true')
+    parser.add_argument("--txt-input",
+                        help="Input files are light curves in txt format",
                         default=False, action='store_true')
     args = parser.parse_args()
 
@@ -373,18 +529,23 @@ if __name__ == "__main__":
 
     outfiles = []
     for f in infiles:
-        outfile = mp_lcurve_from_events(f, safe_interval=safe_interval,
-                                        pi_interval=pi_interval,
-                                        e_interval=e_interval,
-                                        min_length=args.minlen,
-                                        gti_split=args.gti_split,
-                                        ignore_gtis=args.ignore_gtis,
-                                        bintime=bintime,
-                                        outdir=args.outdir)
+        if args.fits_input:
+            outfile = mp_lcurve_from_fits(f)
+        elif args.txt_input:
+            outfile = mp_lcurve_from_txt(f)
+        else:
+            outfile = mp_lcurve_from_events(f, safe_interval=safe_interval,
+                                            pi_interval=pi_interval,
+                                            e_interval=e_interval,
+                                            min_length=args.minlen,
+                                            gti_split=args.gti_split,
+                                            ignore_gtis=args.ignore_gtis,
+                                            bintime=bintime,
+                                            outdir=args.outdir)
 
         outfiles.extend(outfile)
 
-    logging.info(outfiles)
+    logging.debug(outfiles)
     # TODO: test if this still works!
     if args.scrunch:
         mp_scrunch_lightcurves(outfiles)
