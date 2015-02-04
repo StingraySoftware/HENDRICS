@@ -5,7 +5,7 @@ These tools are a stripped-down version of a huge and messy library of timing co
 This software is **heavily focused on NuSTAR**, and it's mostly for educational purposes. Everything can be generalized to any point, but here I tried to focus on what can be useful to people making their first steps on NuSTAR timing data. I also decided to use very few external libraries in order to make the installation easier.
 
 ## Notes for the users
-**If you use this software in a publication** please write something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al., _ApJ_, in press ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
+**If you use this software in a publication**, it would be great if you wrote something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al., _ApJ_, in press ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
