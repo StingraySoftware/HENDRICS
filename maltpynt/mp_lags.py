@@ -1,4 +1,8 @@
-from __future__ import division, print_function
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+from __future__ import (absolute_import, unicode_literals, division,
+                        print_function)
+
 from .mp_fspec import mp_read_fspec
 from .mp_base import mp_root
 from .mp_io import MP_FILE_EXTENSION, mp_save_data

@@ -1,5 +1,8 @@
-from __future__ import unicode_literals
-from __future__ import print_function
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+from __future__ import (absolute_import, unicode_literals, division,
+                        print_function)
+
 import logging
 try:
     import netCDF4 as nc
