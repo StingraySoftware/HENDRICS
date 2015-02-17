@@ -1,4 +1,8 @@
-from __future__ import division, print_function
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+from __future__ import (absolute_import, unicode_literals, division,
+                        print_function)
+
 import numpy as np
 from .mp_io import mp_get_file_type
 from .mp_io import mp_save_data

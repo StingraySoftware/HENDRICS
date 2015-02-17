@@ -1,4 +1,8 @@
-from __future__ import division, print_function
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+from __future__ import (absolute_import, unicode_literals, division,
+                        print_function)
+
 import numpy as np
 from .mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis, mp_mkdir_p
 from .mp_base import mp_contiguous_regions, mp_calc_countrate

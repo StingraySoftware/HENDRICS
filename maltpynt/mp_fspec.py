@@ -1,4 +1,8 @@
-from __future__ import division, print_function
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+from __future__ import (absolute_import, unicode_literals, division,
+                        print_function)
+
 from .mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
 from .mp_base import mp_sort_files, common_name
 from .mp_rebin import mp_const_rebin

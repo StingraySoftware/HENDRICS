@@ -1,5 +1,8 @@
-from __future__ import division, print_function
-from __future__ import unicode_literals
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+from __future__ import (absolute_import, unicode_literals, division,
+                        print_function)
+
 import matplotlib.pyplot as plt
 from .mp_io import mp_load_data
 from .mp_io import is_string

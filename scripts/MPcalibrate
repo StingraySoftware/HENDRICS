@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+from __future__ import (absolute_import, unicode_literals, division,
+                        print_function)
+
 from maltpynt.mp_io import mp_get_file_extension, MP_FILE_EXTENSION
 from maltpynt.mp_calibrate import mp_calibrate
 import argparse
