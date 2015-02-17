@@ -2,15 +2,17 @@
 ** BEWARE! STILL UNDER TESTING. USE WITH CARE IN PRODUCTION!**
 
 These tools are a stripped-down version of a huge and messy library of timing codes I've developed in the years. They contain what is needed for a quick look at the timing properties of an X-ray source.
-This software is **heavily focused on NuSTAR**, and it's mostly for educational purposes. Everything can be generalized to any point, but here I tried to focus on what can be useful to people making their first steps on NuSTAR timing data. I also decided to use very few external libraries in order to make the installation easier.
+This software is mostly focused on NuSTAR. I tried to focus on what can be useful to people making their first steps on NuSTAR timing data. Nonetheless, a good part of it can be used on X-ray data from other satellites (for sure XMM-Newton and RXTE). 
 
 ## Notes for the users
+This software is released with a 3-clause BSD license. You can find license information in the `LICENSE.rst` file.
+
 **If you use this software in a publication**, it would be great if you wrote something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al., _ApJ_, in press ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
 ## Installation
-You'll need a recent python 2.7 or 3.4 installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/), [Scipy](http://scipy.org/) and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html). 
+You'll need a recent python 2.6+ or 3.3+ installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/), [Scipy](http://scipy.org/) and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html). 
 
 An **optional but recommended** dependency is the [netCDF 4 library](http://www.unidata.ucar.edu/software/netcdf/) with its [python bindings](https://github.com/Unidata/netcdf4-python).
 
@@ -193,8 +195,8 @@ To save the cospectrum in a format readable to XSpec it is sufficient to give th
 #!console
 
 $ MP2xspec cpds_002_3-30_0_rebin1.03.nc
-Saving to cpds_002_3-30_0_rebin1.03_xsp.qdp
-$ flx2xsp cpds_002_3-30_0_rebin1.03_xsp.qdp cpds.pha cpds.rsp
+Saving to cpds_002_3-30_0_rebin1.03_xsp.dat
+$ flx2xsp cpds_002_3-30_0_rebin1.03_xsp.dat cpds.pha cpds.rsp
 ```
 
 ### 9. Open and fit in XSpec!
