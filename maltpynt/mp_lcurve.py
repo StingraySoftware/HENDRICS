@@ -50,12 +50,7 @@ def mp_lcurve(event_list,
     logging.debug("Lc, kind: %s, %s" % (repr(lc), type(lc[0])))
     logging.debug("bin_time, kind: %s, %s" % (repr(bin_time), type(bin_time)))
     if centertime:
-        # TODO: in tox, this raises
-        # DeprecationWarning: Implicitly casting between incompatible kinds.
-        # In a future numpy release, this will raise an error. Use
-        # casting="unsafe" if this is intentional.
-        # Check what the heck is going on here.
-        times += bin_time / 2.
+        times = times + bin_time / 2.
     return times, lc.astype(np.float)
 
 
