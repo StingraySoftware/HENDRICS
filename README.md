@@ -23,6 +23,12 @@ This software is released with a 3-clause BSD license. You can find license info
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
+```
+## Acknowledgements
+First of all, I would like to thank all the co-authors of [the NuSTAR timing paper](http://arxiv.org/abs/1409.3248) and the NuSTAR X-ray binaries working group. This software would not exist without the interesting discussions before and around that paper.
+In particular, I would like to thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code and giving various suggestions on how to improve it.
+Last but not least, I would like to thank Marco Buttu (by the way, [check out his book if you speak Italian](http://www.amazon.it/Programmare-con-Python-completa-DigitalLifeStyle-ebook/dp/B00L95VURC/ref=sr_1_1?s=books&ie=UTF8&qid=1424298092&sr=1-1)) for his priceless pointers on Python coding and code management techniques.
+
 ## Installation
 You'll need a recent python 2.6+ or 3.3+ installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/), [Scipy](http://scipy.org/) and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html). 
 
@@ -56,11 +62,6 @@ From that point on, executables will be somewhere in your PATH and python librar
 #!python
 
 import maltpynt
-```
-## Acknowledgements
-First of all, I would like to thank all the co-authors of [the NuSTAR timing paper](http://arxiv.org/abs/1409.3248) and the NuSTAR X-ray binaries working group. This software would not exist without the interesting discussions before and around that paper.
-In particular, I would like to thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code and giving various suggestions on how to improve it.
-Last but not least, I would like to thank Marco Buttu for his priceless pointers on Python coding and code management techniques.
 
 ## Tutorial
 This is the same tutorial you can find in the Wiki, for convenience
