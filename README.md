@@ -19,7 +19,7 @@ MaLTPyNT **does not supersede [nulccorr](https://heasarc.gsfc.nasa.gov/ftools/ca
 ## License and notes for the users
 This software is released with a 3-clause BSD license. You can find license information in the `LICENSE.rst` file.
 
-**If you use this software in a publication**, it would be great if you wrote something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al., _ApJ_, in press ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
+**If you use this software in a publication**, it would be great if you wrote something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al. 2015, _ApJ_, in press ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
@@ -57,6 +57,10 @@ From that point on, executables will be somewhere in your PATH and python librar
 
 import maltpynt
 ```
+## Acknowledgements
+First of all, I would like to thank all the co-authors of [the NuSTAR timing paper](http://arxiv.org/abs/1409.3248) and the NuSTAR X-ray binaries working group. This software would not exist without the interesting discussions before and around that paper.
+In particular, I would like to thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code and giving various suggestions on how to improve it.
+Last but not least, I would like to thank Marco Buttu for his priceless pointers on Python coding and code management techniques.
 
 ## Tutorial
 This is the same tutorial you can find in the Wiki, for convenience
