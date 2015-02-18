@@ -52,12 +52,16 @@ class TestFullRun(unittest.TestCase):
                                       MP_FILE_EXTENSION),
                                       os.path.join(datadir,
                                       'monol_testA_ev_calib') +
-                                      MP_FILE_EXTENSION)
+                                      MP_FILE_EXTENSION,
+                                      os.path.join(datadir,
+                                      'test.rmf'))
             mp.calibrate.mp_calibrate(os.path.join(datadir, 'monol_testB_ev') +
                                       MP_FILE_EXTENSION,
                                       os.path.join(datadir,
                                       'monol_testB_ev_calib') +
-                                      MP_FILE_EXTENSION)
+                                      MP_FILE_EXTENSION,
+                                      os.path.join(datadir,
+                                      'test.rmf'))
         except:
             raise(Exception('Calibrating event file failed'))
 
@@ -78,17 +82,33 @@ class TestFullRun(unittest.TestCase):
             raise(Exception('Production of light curve failed'))
 
     def step03b_lcurve(self):
-        lcurve_ftools = os.path.join(datadir, 'lcurveA.fits',
-                                     outfile='lcurve_ftools_lc')
+        '''Test light curves from FITS'''
+        lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
         mp.lcurve.mp_lcurve_from_events(
             os.path.join(datadir,
-                         'monol_testA_ev') + MP_FILE_EXTENSION)
+                         'monol_testA_ev') + MP_FILE_EXTENSION,
+            outfile=os.path.join(datadir,
+                                 'lcurve_mp_lc'))
+        mp.lcurve.mp_lcurve_from_fits(lcurve_ftools_orig,
+            outfile=os.path.join(datadir,
+                                 'lcurve_ftools_lc'))
+        lcurve_ftools = os.path.join(datadir,
+                                     'lcurve_ftools_lc' +
+                                     MP_FILE_EXTENSION)
         lcurve_mp = os.path.join(datadir,
-                                 'monol_testA_lc' +
+                                 'lcurve_mp_lc' +
                                  MP_FILE_EXTENSION)
+        lcdata_mp = mp.mp_io.mp_load_lcurve(lcurve_mp)
+        lcdata_ftools = mp.mp_io.mp_load_lcurve(lcurve_ftools)
 
+        lc_mp = lcdata_mp['lc']
+        lenmp = len(lc_mp)
+        lc_ftools = lcdata_ftools['lc']
+        lenftools = len(lc_ftools)
+        goodlen = min([lenftools, lenmp])
 
-        ##### TODO: Compare light curves
+        assert np.all(np.abs(lc_mp[:goodlen] - lc_ftools[:goodlen]) <= 1e-3), \
+            'Light curve data do not coincide between FITS and MP'
 
     def step04_pds(self):
         '''Test PDS production'''
