@@ -23,7 +23,6 @@ This software is released with a 3-clause BSD license. You can find license info
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
-```
 ## Acknowledgements
 First of all, I would like to thank all the co-authors of [the NuSTAR timing paper](http://arxiv.org/abs/1409.3248) and the NuSTAR X-ray binaries working group. This software would not exist without the interesting discussions before and around that paper.
 In particular, I would like to thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code and giving various suggestions on how to improve it.
@@ -62,6 +61,7 @@ From that point on, executables will be somewhere in your PATH and python librar
 #!python
 
 import maltpynt
+```
 
 ## Tutorial
 This is the same tutorial you can find in the Wiki, for convenience
