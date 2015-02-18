@@ -466,12 +466,6 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     return [outfile]
 
 
-def test_lcurve_from_fits():
-    '''Placeholder function'''
-    # TODO: implement this
-    pass
-
-
 def mp_lcurve_from_txt(txt_file):
     '''
     Load a lightcurve from a text file.
@@ -494,7 +488,6 @@ def mp_lcurve_from_txt(txt_file):
     out['Tstop'] = time[-1] + dt / 2
     out['Instr'] = 'EXTERN'
 
-    print(time, lc)
     outfile = mp_root(txt_file) + '_lc' + MP_FILE_EXTENSION
     logging.info('Saving light curve to %s' % outfile)
     mp_save_lcurve(out, outfile)
