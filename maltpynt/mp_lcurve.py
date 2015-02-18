@@ -339,10 +339,8 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
 
     Outputs a light curve file in MaLTPyNT format
     '''
-    logging.error('''WARNING! FITS light curve handling is broken.
+    logging.warning('''WARNING! FITS light curve handling is broken.
                   Absolute times are incorrect''')
-    print('''WARNING! FITS light curve handling is broken.
-          Absolute times are incorrect''')
     # TODO:
     # treat consistently TDB, UTC, TAI, etc. This requires some documentation
     # reading. For now, we assume TDB
