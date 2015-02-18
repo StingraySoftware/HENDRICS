@@ -1,9 +1,13 @@
 language: python
 python:
+  - "2.6"
   - "2.7"
   - "3.3"
   - "3.4"
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -r requirements.txt
+install:
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then travis_retry pip install unittest2; fi
+  - travis_retry pip install -r requirements.txt
 # command to run tests, e.g. python setup.py test
-script:  python tests/utests.py
+script:
+  - python tests/utests.py
