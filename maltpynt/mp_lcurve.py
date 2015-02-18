@@ -188,7 +188,10 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           gti_split=False,
                           ignore_gtis=False,
                           bintime=1.,
-                          outdir=None):
+                          outdir=None,
+                          outfile=None):
+    if (outfile is not None) and (outdir is not None):
+        raise Exception('Please specify only one between outdir and outfile')
     logging.info("Loading file %s..." % f)
     evdata = mp_load_events(f)
     logging.info("Done.")
@@ -303,7 +306,11 @@ def mp_lcurve_from_events(f, safe_interval=0,
         if instr == 'PCA':
             out['nPCUs'] = len(set(pcus))
 
-        outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
+        if outfile is None:
+            outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
+        else:
+            outfile = \
+                outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
         logging.info('Saving light curve to %s' % outfile)
         mp_save_lcurve(out, outfile)
         outfiles = [outfile]
@@ -321,7 +328,6 @@ def _high_precision_keyword_read(hdr, keyword):
         value = np.longdouble(hdr[keyword + 'I'])
         value += np.longdouble(hdr[keyword + 'F'])
 
-    print(keyword)
     return value
 
 
@@ -374,7 +380,6 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
         # Sometimes timezero is "from tstart", sometimes it's an absolute time.
         # This tries to detect which case is this, and always consider it
         # referred to tstart
-        print(timezero)
     except:
         timezero = 0
 
@@ -382,7 +387,6 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
         # TODO:
         # Check this. For now, I assume TD (JD - 2440000.5).
         # This is likely wrong
-        print(timezero, tstart, tstop)
         timezero = Time(2440000.5 + timezero, scale='tdb', format='jd')
         tstart = Time(2440000.5 + tstart, scale='tdb', format='jd')
         tstop = Time(2440000.5 + tstop, scale='tdb', format='jd')
@@ -390,14 +394,11 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
             # use NuSTAR defaulf MJDREF
             mjdref = Time(np.longdouble(55197.00076601852), scale='tdb',
                           format='mjd')
-        print(timezero, tstart, tstop)
         timezero = (timezero - mjdref).to('s').value
         tstart = (tstart - mjdref).to('s').value
         tstop = (tstop - mjdref).to('s').value
-        print(timezero, tstart, tstop)
         if timezero > tstart:
             timezero -= tstart
-        print(timezero, tstart, tstop)
 
     time = np.array(lctable.field(timecolumn), dtype=np.longdouble)
     if time[-1] < tstart:
@@ -455,7 +456,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     out['Tstart'] = tstart
     out['Tstop'] = tstop
     out['Instr'] = 'EXTERN'
-    out['MJDref'] = mjdref
+    out['MJDref'] = mjdref.value
 
     if outfile is None:
         outfile = mp_root(fits_file) + '_lc'
