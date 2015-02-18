@@ -9,7 +9,7 @@ before-install:
     - sudo apt-get install -qq python-numpy python-scipy python-matplotlib
 install:
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then travis_retry pip install unittest2; fi
-  - travis_retry pip install -r requirements.txt
+  - travis_retry pip install astropy
 # command to run tests, e.g. python setup.py test
 script:
   - python tests/utests.py
