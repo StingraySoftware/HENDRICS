@@ -1,13 +1,25 @@
 # MaLTPyNT - Matteo's Libraries and Tools in Python for NuSTAR Timing.
 ** BEWARE! STILL UNDER TESTING. USE WITH CARE IN PRODUCTION!**
 
-These tools are a stripped-down version of a huge and messy library of timing codes I've developed in the years. They contain what is needed for a quick look at the timing properties of an X-ray source.
-This software is mostly focused on NuSTAR. I tried to focus on what can be useful to people making their first steps on NuSTAR timing data. Nonetheless, a good part of it can be used on X-ray data from other satellites (for sure XMM-Newton and RXTE). 
+This software is mostly focused on doing correctly and fairly easily a **quick-look timing analysis** of NuSTAR data, treating properly orbital gaps and exploiting the presence of two independent detectors by using the **cospectrum** as a proxy for the power density spectrum (for an explanation of why this is important, look at Bachetti et al., _ApJ_, in press - [arXiv:1409.3248](http://arxiv.org/abs/1409.3248)). The output of the analysis is a cospectrum, or a power density spectrum, that can be fitted with [Xspec](http://heasarc.gsfc.nasa.gov/xanadu/xspec/) or [Isis](http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html). Also, one can calculate in the same easy way **time lags** (still under testing, help is welcome).
+Despite its main focus on NuSTAR, the software can be used to make standard spectral analysis on X-ray data from, in principle, any other satellite (for sure XMM-Newton and RXTE). 
 
-## Notes for the users
+## MaLTPyNT vs FTOOLS (and together with FTOOLS)
+
+### vs POWSPEC
+MaLTPyNT does a better job than POWSPEC from several points of view:
+
+- **Good time intervals** (GTIs) are completely avoided in the computation. No gaps dirtying up the power spectrum! (This is particularly important for NuSTAR, as orbital gaps are always present in typical observation timescales)
+
+- The number of bins used in the power spectrum (or the cospectrum) need not be a power of two! No padding needed.
+
+### Clarification about dead time treatment
+MaLTPyNT **does not supersede [nulccorr](https://heasarc.gsfc.nasa.gov/ftools/caldb/help/nulccorr.html)**. If one is only interested in frequencies below ~0.5 Hz, nulccorr treats robustly various dead time components and its use is recommended. Light curves produced by nulccorr can be converted to MaLTPyNT format using `MPlcurve --fits-input <lcname>.fits`, and used for the subsequent steps of the timing analysis. 
+
+## License and notes for the users
 This software is released with a 3-clause BSD license. You can find license information in the `LICENSE.rst` file.
 
-**If you use this software in a publication**, it would be great if you wrote something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al., _ApJ_, in press ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
+**If you use this software in a publication**, it would be great if you wrote something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al. 2015, _ApJ_, in press ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
@@ -45,13 +57,17 @@ From that point on, executables will be somewhere in your PATH and python librar
 
 import maltpynt
 ```
+## Acknowledgements
+First of all, I would like to thank all the co-authors of [the NuSTAR timing paper](http://arxiv.org/abs/1409.3248) and the NuSTAR X-ray binaries working group. This software would not exist without the interesting discussions before and around that paper.
+In particular, I would like to thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code and giving various suggestions on how to improve it.
+Last but not least, I would like to thank Marco Buttu for his priceless pointers on Python coding and code management techniques.
 
 ## Tutorial
 This is the same tutorial you can find in the Wiki, for convenience
 ### 0. Preliminary info
 This tutorial assumes that you have previous knowledge of timing techniques, so that I don't repeat concepts as Nyquist frequency, the importance of choosing carefully the binning time and the FFT length, and so on. If you are not familiar with these concepts, [this paper by Michiel is a very good place to start](http://dare.uva.nl/document/2/47104). Why in the example below I use the cospectrum instead of the PDS, is written in our [timing paper](http://arxiv.org/abs/1409.3248).
 
-This software has a modular structure. One starts from cleaned event files (such as those produced by nupipeline), and produces a series of products with subsequent steps:
+This software has a modular structure. One starts from cleaned event files (such as those produced by tools like `nupipeline` and possibly barycentered with `barycorr` or equivalent), and produces a series of products with subsequent steps:
 
 1. **event lists** containing event arrival times and PI channel information
 
@@ -200,4 +216,17 @@ $ flx2xsp cpds_002_3-30_0_rebin1.03_xsp.dat cpds.pha cpds.rsp
 ```
 
 ### 9. Open and fit in XSpec!
+```
+#!console
+$ xspec
+XSPEC> data cpds.pha
+XSPEC> cpd /xw; setp ener; setp comm log y
+XSPEC> mo lore + lore + lore
+(...)
+XSPEC> fit
+XSPEC> pl eufspe delchi  
+```
+etc.
 ![screenshot.png](https://bitbucket.org/repo/XA95dR/images/3911632225-screenshot.png)
+
+(NOTE: [I know, Mike, it's unfolded... but for a flat response it shouldn't matter, right?](http://space.mit.edu/home/mnowak/isis_vs_xspec/plots.html)  ;) )
