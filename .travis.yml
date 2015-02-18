@@ -14,8 +14,7 @@ before_install:
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib
-  - travis_retry pip install astropy 
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib astropy
   - travis_retry pip install netCDF4
   - python setup.py install
 # command to run tests, e.g. python setup.py test
