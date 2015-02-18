@@ -65,7 +65,7 @@ class TestFullRun(unittest.TestCase):
         except:
             raise(Exception('Calibrating event file failed'))
 
-    def step03_lcurve(self):
+    def step03a_lcurve(self):
         '''Test light curve production'''
         try:
             mp.lcurve.mp_lcurve_from_events(
@@ -81,34 +81,67 @@ class TestFullRun(unittest.TestCase):
         except:
             raise(Exception('Production of light curve failed'))
 
-    def step03b_lcurve(self):
+    def step03b_fits_lcurve(self):
         '''Test light curves from FITS'''
-        lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
-        mp.lcurve.mp_lcurve_from_events(
-            os.path.join(datadir,
-                         'monol_testA_ev') + MP_FILE_EXTENSION,
-            outfile=os.path.join(datadir,
-                                 'lcurve_mp_lc'))
-        mp.lcurve.mp_lcurve_from_fits(lcurve_ftools_orig,
-            outfile=os.path.join(datadir,
-                                 'lcurve_ftools_lc'))
-        lcurve_ftools = os.path.join(datadir,
-                                     'lcurve_ftools_lc' +
+        try:
+            lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
+            mp.lcurve.mp_lcurve_from_events(
+                os.path.join(datadir,
+                             'monol_testA_ev') + MP_FILE_EXTENSION,
+                outfile=os.path.join(datadir,
+                                     'lcurve_mp_lc'))
+            mp.lcurve.mp_lcurve_from_fits(lcurve_ftools_orig,
+                outfile=os.path.join(datadir,
+                                     'lcurve_ftools_lc'))
+            lcurve_ftools = os.path.join(datadir,
+                                         'lcurve_ftools_lc' +
+                                         MP_FILE_EXTENSION)
+            lcurve_mp = os.path.join(datadir,
+                                     'lcurve_mp_lc' +
                                      MP_FILE_EXTENSION)
-        lcurve_mp = os.path.join(datadir,
-                                 'lcurve_mp_lc' +
-                                 MP_FILE_EXTENSION)
-        lcdata_mp = mp.mp_io.mp_load_lcurve(lcurve_mp)
-        lcdata_ftools = mp.mp_io.mp_load_lcurve(lcurve_ftools)
+            lcdata_mp = mp.mp_io.mp_load_lcurve(lcurve_mp)
+            lcdata_ftools = mp.mp_io.mp_load_lcurve(lcurve_ftools)
 
-        lc_mp = lcdata_mp['lc']
-        lenmp = len(lc_mp)
-        lc_ftools = lcdata_ftools['lc']
-        lenftools = len(lc_ftools)
-        goodlen = min([lenftools, lenmp])
+            lc_mp = lcdata_mp['lc']
+            lenmp = len(lc_mp)
+            lc_ftools = lcdata_ftools['lc']
+            lenftools = len(lc_ftools)
+            goodlen = min([lenftools, lenmp])
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('LC fits', type(e), e))
 
         assert np.all(np.abs(lc_mp[:goodlen] - lc_ftools[:goodlen]) <= 1e-3), \
             'Light curve data do not coincide between FITS and MP'
+
+    def step03c_txt_lcurve(self):
+        '''Test light curves from txt'''
+        try:
+            lcurve_mp = os.path.join(datadir,
+                                     'lcurve_mp_lc' +
+                                     MP_FILE_EXTENSION)
+            lcdata_mp = mp.mp_io.mp_load_lcurve(lcurve_mp)
+            lc_mp = lcdata_mp['lc']
+            time_mp = lcdata_mp['time']
+
+            lcurve_txt_orig = os.path.join(datadir,
+                                           'lcurve_txt_lc.txt')
+
+            mp.io.save_as_ascii([time_mp, lc_mp], lcurve_txt_orig)
+
+            lcurve_txt = os.path.join(datadir,
+                                      'lcurve_txt_lc' +
+                                      MP_FILE_EXTENSION)
+            mp.lcurve.mp_lcurve_from_txt(lcurve_txt_orig,
+                outfile=lcurve_txt)
+            lcdata_txt = mp.mp_io.mp_load_lcurve(lcurve_txt)
+
+            lc_txt = lcdata_txt['lc']
+
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('LC txt', type(e), e))
+
+        assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
+            'Light curve data do not coincide between txt and MP'
 
     def step04_pds(self):
         '''Test PDS production'''

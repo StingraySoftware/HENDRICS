@@ -3,7 +3,6 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 before_install:
   - sudo apt-get install libnetcdf-dev libhdf5-serial-dev
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -14,9 +13,8 @@ before_install:
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib astropy
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy matplotlib astropy
   - travis_retry pip install netCDF4
   - python setup.py install
-# command to run tests, e.g. python setup.py test
 script:
   - python tests/utests.py
