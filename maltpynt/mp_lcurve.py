@@ -390,7 +390,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
         tstop = Time(2440000.5 + tstop, scale='tdb', format='jd')
         if mjdref is None:
             # use NuSTAR defaulf MJDREF
-            mjdref = Time(np.longdouble(55197.00076601852), scale='tdb',
+            mjdref = Time(np.longdouble('55197.00076601852'), scale='tdb',
                           format='mjd')
         timezero = (timezero - mjdref).to('s').value
         tstart = (tstart - mjdref).to('s').value
@@ -466,20 +466,21 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     return [outfile]
 
 
-def mp_lcurve_from_txt(txt_file):
+def mp_lcurve_from_txt(txt_file, outfile=None):
     '''
     Load a lightcurve from a text file.
 
-    Assumes two columns: time, counts
+    Assumes two columns: time, counts. Times are by default seconds from
+    MJDREF 55197.00076601852 (NuSTAR).
     '''
     import numpy as np
 
-    time, lc = np.loadtxt(txt_file, delimiter=' ', unpack=True)
-
+    time, lc = np.genfromtxt(txt_file, delimiter=' ', unpack=True)
     time = np.array(time, dtype=np.longdouble)
     lc = np.array(lc, dtype=np.float)
     dt = time[1] - time[0]
     out = {}
+
     out['lc'] = lc
     out['time'] = time
     out['dt'] = dt
@@ -487,17 +488,14 @@ def mp_lcurve_from_txt(txt_file):
     out['Tstart'] = time[0] - dt / 2
     out['Tstop'] = time[-1] + dt / 2
     out['Instr'] = 'EXTERN'
+    out['MJDref'] = np.longdouble('55197.00076601852')
 
-    outfile = mp_root(txt_file) + '_lc' + MP_FILE_EXTENSION
+    if outfile is None:
+        outfile = mp_root(txt_file) + '_lc'
+    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
     logging.info('Saving light curve to %s' % outfile)
     mp_save_lcurve(out, outfile)
     return [outfile]
-
-
-def test_lcurve_from_txt():
-    '''Placeholder function'''
-    # TODO: implement this
-    pass
 
 
 if __name__ == "__main__":
@@ -549,7 +547,9 @@ if __name__ == "__main__":
                         help="Input files are light curves in FITS format",
                         default=False, action='store_true')
     parser.add_argument("--txt-input",
-                        help="Input files are light curves in txt format",
+                        help=("Input files are light curves in txt format "
+                              "(Times measured in seconds from MJD "
+                              "55197.00076601852)"),
                         default=False, action='store_true')
     args = parser.parse_args()
 
