@@ -203,12 +203,15 @@ def mp_lcurve_from_events(f, safe_interval=0,
     tstop = evdata['Tstop']
     events = evdata['time']
     instr = evdata['Instr']
+    mjdref = evdata['MJDref']
+
     if instr == 'PCA':
         pcus = evdata['PCU']
     gtis = evdata['GTI']
     if ignore_gtis:
         gtis = np.array([[tstart, tstop]])
 
+    out['MJDref'] = mjdref
     # make tstart and tstop multiples of bin times since MJDref
     tstart = np.ceil(tstart / bintime, dtype=np.longdouble) * bintime
     tstop = np.floor(tstop / bintime, dtype=np.longdouble) * bintime
@@ -313,27 +316,46 @@ def _high_precision_keyword_read(hdr, keyword):
     try:
         value = np.longdouble(hdr[keyword])
     except:
+        if len(keyword) == 8:
+            keyword = keyword[:7]
         value = np.longdouble(hdr[keyword + 'I'])
         value += np.longdouble(hdr[keyword + 'F'])
 
+    print(keyword)
     return value
 
 
 def mp_lcurve_from_fits(fits_file, gtistring='GTI',
                         timecolumn='TIME', ratecolumn=None, ratehdu=1,
-                        fracexp_limit=0.9):
+                        fracexp_limit=0.9, outfile=None):
     '''
     Load a lightcurve from a fits file.
 
     Outputs a light curve file in MaLTPyNT format
     '''
+    logging.error('''WARNING! FITS light curve handling is broken.
+                  Absolute times are incorrect''')
+    print('''WARNING! FITS light curve handling is broken.
+          Absolute times are incorrect''')
+    # TODO:
+    # treat consistently TDB, UTC, TAI, etc. This requires some documentation
+    # reading. For now, we assume TDB
     from astropy.io import fits as pf
+    from astropy.time import Time
     import numpy as np
     from .mp_base import mp_create_gti_from_condition
 
     lchdulist = pf.open(fits_file)
     lctable = lchdulist[ratehdu].data
-    dt = _high_precision_keyword_read(lchdulist[ratehdu].header, 'TIMEDEL')
+
+    # Units of header keywords
+    tunit = lchdulist[ratehdu].header['TIMEUNIT']
+
+    try:
+        mjdref = lchdulist[ratehdu].header['MJDREF']
+        mjdref = Time(mjdref, scale='tdb', format='mjd')
+    except:
+        mjdref = None
 
     # ----------------------------------------------------------------
     # Trying to comply with all different formats of fits light curves.
@@ -352,10 +374,30 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
         # Sometimes timezero is "from tstart", sometimes it's an absolute time.
         # This tries to detect which case is this, and always consider it
         # referred to tstart
-        if timezero > tstart:
-            timezero -= tstart
+        print(timezero)
     except:
         timezero = 0
+
+    if tunit == 'd':
+        # TODO:
+        # Check this. For now, I assume TD (JD - 2440000.5).
+        # This is likely wrong
+        print(timezero, tstart, tstop)
+        timezero = Time(2440000.5 + timezero, scale='tdb', format='jd')
+        tstart = Time(2440000.5 + tstart, scale='tdb', format='jd')
+        tstop = Time(2440000.5 + tstop, scale='tdb', format='jd')
+        if mjdref is None:
+            # use NuSTAR defaulf MJDREF
+            mjdref = Time(np.longdouble(55197.00076601852), scale='tdb',
+                          format='mjd')
+        print(timezero, tstart, tstop)
+        timezero = (timezero - mjdref).to('s').value
+        tstart = (tstart - mjdref).to('s').value
+        tstop = (tstop - mjdref).to('s').value
+        print(timezero, tstart, tstop)
+        if timezero > tstart:
+            timezero -= tstart
+        print(timezero, tstart, tstop)
 
     time = np.array(lctable.field(timecolumn), dtype=np.longdouble)
     if time[-1] < tstart:
@@ -363,6 +405,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     else:
         time += timezero
 
+    dt = time[1] - time[0]
     # ----------------------------------------------------------------
     if ratecolumn is None:
         for i in ['RATE', 'RATE1', 'COUNTS']:
@@ -412,8 +455,13 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     out['Tstart'] = tstart
     out['Tstop'] = tstop
     out['Instr'] = 'EXTERN'
+    out['MJDref'] = mjdref
 
-    outfile = mp_root(fits_file) + '_lc' + MP_FILE_EXTENSION
+    if outfile is None:
+        outfile = mp_root(fits_file) + '_lc'
+
+    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+
     logging.info('Saving light curve to %s' % outfile)
     mp_save_lcurve(out, outfile)
     return [outfile]

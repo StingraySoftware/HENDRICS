@@ -77,6 +77,19 @@ class TestFullRun(unittest.TestCase):
         except:
             raise(Exception('Production of light curve failed'))
 
+    def step03b_lcurve(self):
+        lcurve_ftools = os.path.join(datadir, 'lcurveA.fits',
+                                     outfile='lcurve_ftools_lc')
+        mp.lcurve.mp_lcurve_from_events(
+            os.path.join(datadir,
+                         'monol_testA_ev') + MP_FILE_EXTENSION)
+        lcurve_mp = os.path.join(datadir,
+                                 'monol_testA_lc' +
+                                 MP_FILE_EXTENSION)
+
+
+        ##### TODO: Compare light curves
+
     def step04_pds(self):
         '''Test PDS production'''
         try:
