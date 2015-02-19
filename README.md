@@ -1,7 +1,7 @@
 # MaLTPyNT - Matteo's Libraries and Tools in Python for NuSTAR Timing.
 ** BEWARE! STILL UNDER TESTING. USE WITH CARE IN PRODUCTION!**
 
-This software is mostly focused on doing correctly and fairly easily a **quick-look timing analysis** of NuSTAR data, treating properly orbital gaps and exploiting the presence of two independent detectors by using the **cospectrum** as a proxy for the power density spectrum (for an explanation of why this is important, look at Bachetti et al., _ApJ_, in press - [arXiv:1409.3248](http://arxiv.org/abs/1409.3248)). The output of the analysis is a cospectrum, or a power density spectrum, that can be fitted with [Xspec](http://heasarc.gsfc.nasa.gov/xanadu/xspec/) or [Isis](http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html). Also, one can calculate in the same easy way **time lags** (still under testing, help is welcome).
+This software is mostly focused on doing correctly and fairly easily a **quick-look timing analysis** of NuSTAR data, treating properly orbital gaps and exploiting the presence of two independent detectors by using the **cospectrum** as a proxy for the power density spectrum (for an explanation of why this is important, look at Bachetti et al., _ApJ_, 800, 109 -[arXiv:1409.3248](http://arxiv.org/abs/1409.3248)). The output of the analysis is a cospectrum, or a power density spectrum, that can be fitted with [Xspec](http://heasarc.gsfc.nasa.gov/xanadu/xspec/) or [Isis](http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html). Also, one can calculate in the same easy way **time lags** (still under testing, help is welcome).
 Despite its main focus on NuSTAR, the software can be used to make standard spectral analysis on X-ray data from, in principle, any other satellite (for sure XMM-Newton and RXTE). 
 
 ## MaLTPyNT vs FTOOLS (and together with FTOOLS)
@@ -19,12 +19,18 @@ MaLTPyNT **does not supersede [nulccorr](https://heasarc.gsfc.nasa.gov/ftools/ca
 ## License and notes for the users
 This software is released with a 3-clause BSD license. You can find license information in the `LICENSE.rst` file.
 
-**If you use this software in a publication**, it would be great if you wrote something along these lines in the acknowledgements: "This work made use of the MaLTPyNT software for timing analysis". In particular **if you use the cospectrum**, please refer to Bachetti et al. 2015, _ApJ_, in press ([arXiv:1409.3248](http://arxiv.org/abs/1409.3248)).
+**If you use this software in a publication**, please refer to its Astrophysics Source Code Library identifier: 
+
+1. Bachetti, M. 2015, MaLTPyNT, Astrophysics Source Code Library, record [ascl:1502.021](http://ascl.net/1502.021). 
+
+In particular, **if you use the cospectrum**, please refer also to:
+
+2. Bachetti et al. 2015, [_ApJ_](http://iopscience.iop.org/0004-637X/800/2/109/) , 800, 109.
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
 ## Acknowledgements
-First of all, I would like to thank all the co-authors of [the NuSTAR timing paper](http://arxiv.org/abs/1409.3248) and the NuSTAR X-ray binaries working group. This software would not exist without the interesting discussions before and around that paper.
+I would like to thank all the co-authors of [the NuSTAR timing paper](http://arxiv.org/abs/1409.3248) and the NuSTAR X-ray binaries working group. This software would not exist without the interesting discussions before and around that paper.
 In particular, I would like to thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code and giving various suggestions on how to improve it.
 Last but not least, I would like to thank Marco Buttu (by the way, [check out his book if you speak Italian](http://www.amazon.it/Programmare-con-Python-completa-DigitalLifeStyle-ebook/dp/B00L95VURC/ref=sr_1_1?s=books&ie=UTF8&qid=1424298092&sr=1-1)) for his priceless pointers on Python coding and code management techniques.
 
