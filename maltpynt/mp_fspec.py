@@ -563,7 +563,8 @@ def mp_calc_fspec(files, fftlen,
             outroot = common_name(f1, f2, default='cpds_%d' % i_f)
 
         outname = os.path.join(outdir,
-                               outroot + MP_FILE_EXTENSION)
+                               outroot.replace(MP_FILE_EXTENSION, '') +
+                               MP_FILE_EXTENSION)
         mp_calc_cpds(f1, f2, fftlen,
                      save_dyn=save_dyn,
                      bintime=bintime,
