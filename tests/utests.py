@@ -276,6 +276,11 @@ class TestFullRun(unittest.TestCase):
                                    '*monol_test*')
                       + MP_FILE_EXTENSION) + \
             glob.glob(os.path.join(datadir,
+                                   '*lcurve*')
+                      + MP_FILE_EXTENSION) + \
+            glob.glob(os.path.join(datadir,
+                                   '*lcurve*.txt')) + \
+            glob.glob(os.path.join(datadir,
                                    '*.log')) + \
             glob.glob(os.path.join(datadir,
                                    '*monol_test*.dat'))
