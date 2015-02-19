@@ -23,7 +23,7 @@ This software is released with a 3-clause BSD license. You can find license info
 
 1. Bachetti, M. 2015, MaLTPyNT, Astrophysics Source Code Library, record [ascl:1502.021](http://ascl.net/1502.021). 
 
-In particular, **if you use the cospectrum**, please refer also to:
+In particular, **if you use the cospectrum**, please also refer to:
 
 2. Bachetti et al. 2015, [_ApJ_](http://iopscience.iop.org/0004-637X/800/2/109/) , 800, 109.
 
