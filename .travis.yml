@@ -12,9 +12,12 @@ before_install:
   - conda update --yes conda
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
+env:
+  - WITH_NETCDF="yes"
+  - WITH_NETCDF="no"
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy matplotlib astropy
-  - travis_retry pip install netCDF4
+  - if [[ WITH_NETCDF = "yes" ]] travis_retry pip install netCDF4
   - python setup.py install
 script:
   - python tests/utests.py
