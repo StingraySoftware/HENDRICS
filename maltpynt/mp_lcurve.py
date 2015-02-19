@@ -173,7 +173,6 @@ def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
         lc[nomask] = 0
 
     if return_borders:
-        # TODO: Check if this works with and without "delete" enabled
         mask = mp_create_gti_mask(time, newgtis)
         borders = mp_contiguous_regions(mask)
         return time, lc, newgtis, borders
@@ -585,6 +584,6 @@ if __name__ == "__main__":
         outfiles.extend(outfile)
 
     logging.debug(outfiles)
-    # TODO: test if this still works!
+
     if args.scrunch:
         mp_scrunch_lightcurves(outfiles)

@@ -129,7 +129,6 @@ def mp_read_from_netcdf(fname):
 def mp_get_file_type(fname):
     contents = mp_load_data(fname)
     '''Gets file type'''
-    # TODO: other file formats
 
     keys = list(contents.keys())
     if 'lc' in keys:
