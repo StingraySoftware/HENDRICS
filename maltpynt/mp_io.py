@@ -205,13 +205,22 @@ def mp_load_pds(fname):
 # ---- GENERIC function to save stuff.
 def load_data_pickle(fname, kind="data"):
     logging.info('Loading %s and info from %s' % (kind, fname))
-    return pickle.load(open(fname))
-    return
+    try:
+        return pickle.load(open(fname))
+    except Exception as e:
+        raise Exception("{} failed ({}: {})".format('load_data_pickle',
+                                                    type(e), e))
+        print('Failed')
 
 
 def save_data_pickle(struct, fname, kind="data"):
     logging.info('Saving %s and info to %s' % (kind, fname))
-    pickle.dump(struct, open(fname, 'wb'))
+    try:
+        pickle.dump(struct, open(fname, 'wb'))
+    except Exception as e:
+        raise Exception("{} failed ({}: {})".format('save_data_pickle',
+                                                    type(e), e))
+        print('Failed')
     return
 
 
