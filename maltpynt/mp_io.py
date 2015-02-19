@@ -206,7 +206,9 @@ def mp_load_pds(fname):
 def load_data_pickle(fname, kind="data"):
     logging.info('Loading %s and info from %s' % (kind, fname))
     try:
-        return pickle.load(open(fname, 'rb'))
+        with open(fname, 'rb') as fobj:
+            result = pickle.load(fobj)
+        return result
     except Exception as e:
         raise Exception("{} failed ({}: {})".format('load_data_pickle',
                                                     type(e), e))
@@ -216,7 +218,8 @@ def load_data_pickle(fname, kind="data"):
 def save_data_pickle(struct, fname, kind="data"):
     logging.info('Saving %s and info to %s' % (kind, fname))
     try:
-        pickle.dump(struct, open(fname, 'wb'))
+        with open(fname, 'wb') as fobj:
+            pickle.dump(struct, fobj)
     except Exception as e:
         raise Exception("{} failed ({}: {})".format('save_data_pickle',
                                                     type(e), e))
