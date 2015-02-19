@@ -4,7 +4,6 @@ python:
   - "3.3"
   - "3.4"
 before_install:
-  - sudo apt-get install libnetcdf-dev libhdf5-serial-dev
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
@@ -16,8 +15,9 @@ env:
   - WITH_NETCDF="yes"
   - WITH_NETCDF="no"
 install:
+  - if [[ WITH_NETCDF == "yes" ]]; then sudo apt-get install libnetcdf-dev libhdf5-serial-dev; fi
   - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy matplotlib astropy
-  - if [[ WITH_NETCDF = "yes" ]] travis_retry pip install netCDF4
+  - if [[ WITH_NETCDF == "yes" ]]; then travis_retry pip install netCDF4; fi
   - python setup.py install
 script:
   - python tests/utests.py
