@@ -206,7 +206,7 @@ def mp_load_pds(fname):
 def load_data_pickle(fname, kind="data"):
     logging.info('Loading %s and info from %s' % (kind, fname))
     try:
-        return pickle.load(open(fname))
+        return pickle.load(open(fname, 'rb'))
     except Exception as e:
         raise Exception("{} failed ({}: {})".format('load_data_pickle',
                                                     type(e), e))
