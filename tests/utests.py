@@ -312,7 +312,11 @@ class TestPDS(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        print("Setting up")
+        print("Setting up.")
+        print("This test is about the statistical properties of frequency"
+              "spectra and it is based on random number generation. It might,"
+              "randomly, fail. Always repeat the test if it does and only "
+              "worry if it repeatedly fails.")
         import numpy.random as ra
         cls.length = 512000
         cls.tstart = 0
