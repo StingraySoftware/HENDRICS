@@ -592,76 +592,11 @@ def mp_read_fspec(fname):
 
 
 if __name__ == '__main__':
-    import argparse
-    description = ('Create frequency spectra (PDS, CPDS, cospectrum) '
-                   'starting from well-defined input ligthcurves')
-    parser = argparse.ArgumentParser(description=description)
+    import sys
+    import subprocess as sp
 
-    parser.add_argument("files", help="List of light curve files", nargs='+')
-    parser.add_argument("-b", "--bintime", type=float, default=1/4096,
-                        help="Light curve bin time; if negative, interpreted" +
-                        " as negative power of 2." +
-                        " Default: 2^-10, or keep input lc bin time" +
-                        " (whatever is larger)")
-    parser.add_argument("-r", "--rebin", type=int, default=1,
-                        help="(C)PDS rebinning to apply. Default: none")
-    parser.add_argument("-f", "--fftlen", type=float, default=512,
-                        help="Length of FFTs. Default: 512 s")
-    parser.add_argument("-k", "--kind", type=str, default="PDS,CPDS,cos",
-                        help='Spectra to calculate, as comma-separated list' +
-                        ' (Accepted: PDS and CPDS;' +
-                        ' Default: "PDS,CPDS")')
-    parser.add_argument("--norm", type=str, default="Leahy",
-                        help='Normalization to use' +
-                        ' (Accepted: Leahy and rms;' +
-                        ' Default: "Leahy")')
-    parser.add_argument("-o", "--outroot", type=str, default="cpds",
-                        help='Root of output file names for CPDS only')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG;"
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--save-dyn", help="save dynamical power spectrum",
-                        default=False, action='store_true')
-    args = parser.parse_args()
+    print('Calling script...')
 
-    if args.debug:
-        args.loglevel = 'DEBUG'
+    args = sys.argv[1:]
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPfspec.log', level=numeric_level,
-                        filemode='w')
-
-    bintime = args.bintime
-    fftlen = args.fftlen
-    pdsrebin = args.rebin
-    normalization = args.norm
-
-    do_cpds = do_pds = do_cos = do_lag = False
-    kinds = args.kind.split(',')
-    for k in kinds:
-        if k == 'PDS':
-            do_pds = True
-        elif k == 'CPDS':
-            do_cpds = True
-        elif k == 'cos' or k == 'cospectrum':
-            do_cos = True
-            do_cpds = True
-        elif k == 'lag':
-            do_lag = True
-            do_cpds = True
-
-    mp_calc_fspec(args.files, fftlen,
-                  calc_pds=do_pds,
-                  calc_cpds=do_cpds,
-                  calc_cospectrum=do_cos,
-                  calc_lags=do_lag,
-                  save_dyn=args.save_dyn,
-                  bintime=bintime,
-                  pdsrebin=pdsrebin,
-                  outroot=args.outroot,
-                  normalization=normalization)
+    sp.check_call(['MPfspec'] + args)

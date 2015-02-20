@@ -4,7 +4,6 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .mp_fspec import mp_read_fspec
-from .mp_base import mp_root
 from .mp_io import MP_FILE_EXTENSION, mp_save_data
 import numpy as np
 import logging
@@ -113,39 +112,11 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag'):
 
 
 if __name__ == '__main__':
-    import argparse
+    import sys
+    import subprocess as sp
 
-    description = ('Calculate time lags from the cross power spectrum and '
-                   'the power spectra of the two channels')
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("files", help="Three files: the cross spectrum" +
-                        " and the two power spectra", nargs='+')
-    parser.add_argument("-o", "--outroot", type=str, default=None,
-                        help='Root of output file names')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG;"
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    args = parser.parse_args()
+    print('Calling script...')
 
-    if args.debug:
-        args.loglevel = 'DEBUG'
+    args = sys.argv[1:]
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPlags.log', level=numeric_level,
-                        filemode='w')
-
-    if len(args.files) != 3:
-        raise Exception('Invalid number of arguments')
-    cfile, p1file, p2file = args.files
-
-    if args.outroot is None:
-        outroot = mp_root(cfile) + '_lag'
-    else:
-        outroot = args.outroot
-
-    f, df, l, le = mp_lags_from_spectra(cfile, p1file, p2file, outroot=outroot)
+    sp.check_call(['MPlags'] + args)

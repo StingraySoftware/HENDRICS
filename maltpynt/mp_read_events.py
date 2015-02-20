@@ -182,28 +182,11 @@ def mp_treat_event_file(filename):
 
 
 if __name__ == "__main__":
-    import argparse
-    description = ('Read a cleaned event files and saves the relevant '
-                   'information in a standard format')
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    args = parser.parse_args()
-    files = args.files
+    import sys
+    import subprocess as sp
 
-    if args.debug:
-        args.loglevel = 'DEBUG'
+    print('Calling script...')
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
-                        filemode='w')
+    args = sys.argv[1:]
 
-    for f in files:
-        mp_treat_event_file(f)
+    sp.check_call(['MPreadevents'] + args)

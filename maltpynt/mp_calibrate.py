@@ -4,7 +4,6 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .mp_io import mp_load_events, mp_save_events
-from .mp_io import mp_get_file_extension, MP_FILE_EXTENSION
 import numpy as np
 import os
 import logging
@@ -65,40 +64,11 @@ def mp_calibrate(fname, outname, rmf=None):
 
 
 if __name__ == '__main__':
-    import argparse
-    description = ('Calibrate clean event files by associating the correct '
-                   'energy to each PI channel. Uses either a specified rmf '
-                   'file or (for NuSTAR only) an rmf file from the CALDB')
-    parser = argparse.ArgumentParser(description=description)
+    import sys
+    import subprocess as sp
 
-    parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument("-r", "--rmf", help="rmf file used for calibration",
-                        default=None, type=str)
-    parser.add_argument("-o", "--overwrite",
-                        help="Overwrite; default: no",
-                        default=False,
-                        action="store_true")
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    args = parser.parse_args()
-    files = args.files
+    print('Calling script...')
 
-    if args.debug:
-        args.loglevel = 'DEBUG'
+    args = sys.argv[1:]
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPcalibrate.log', level=numeric_level,
-                        filemode='w')
-
-    for i_f, f in enumerate(files):
-        outname = f
-        if args.overwrite is False:
-            outname = f.replace(mp_get_file_extension(f), '_calib' +
-                                MP_FILE_EXTENSION)
-        mp_calibrate(f, outname, args.rmf)
+    sp.check_call(['MPcalibrate'] + args)

@@ -170,34 +170,11 @@ def mp_rebin_file(filename, rebin):
 
 
 if __name__ == '__main__':
-    import argparse
-    description = 'Rebin light curves and frequency spectra. '
-    parser = argparse.ArgumentParser(description=description)
+    import sys
+    import subprocess as sp
 
-    parser.add_argument("files", help="List of light curve files", nargs='+')
-    parser.add_argument("-r", "--rebin", type=float, default=1,
-                        help="Rebinning to apply. Only if the quantity to" +
-                        " rebin is a (C)PDS, it is possible to specify a" +
-                        " non-integer rebin factor, in which case it is" +
-                        " interpreted as a geometrical binning factor")
+    print('Calling script...')
 
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    args = parser.parse_args()
-    files = args.files
+    args = sys.argv[1:]
 
-    if args.debug:
-        args.loglevel = 'DEBUG'
-
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPrebin.log', level=numeric_level,
-                        filemode='w')
-    rebin = args.rebin
-    for f in files:
-        mp_rebin_file(f, rebin)
+    sp.check_call(['MPrebin'] + args)

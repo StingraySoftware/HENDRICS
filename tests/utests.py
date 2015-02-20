@@ -90,7 +90,8 @@ class TestFullRun(unittest.TestCase):
                              'monol_testA_ev') + MP_FILE_EXTENSION,
                 outfile=os.path.join(datadir,
                                      'lcurve_mp_lc'))
-            mp.lcurve.mp_lcurve_from_fits(lcurve_ftools_orig,
+            mp.lcurve.mp_lcurve_from_fits(
+                lcurve_ftools_orig,
                 outfile=os.path.join(datadir,
                                      'lcurve_ftools_lc'))
             lcurve_ftools = os.path.join(datadir,

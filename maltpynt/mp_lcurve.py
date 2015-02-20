@@ -498,92 +498,11 @@ def mp_lcurve_from_txt(txt_file, outfile=None):
 
 
 if __name__ == "__main__":
-    import argparse
-    description = ('Create lightcurves starting from event files. It is '
-                   'possible to specify energy or channel filtering options')
-    parser = argparse.ArgumentParser(description=description)
+    import sys
+    import subprocess as sp
 
-    parser.add_argument("files", help="List of files", nargs='+')
+    print('Calling script...')
 
-    parser.add_argument("-b", "--bintime", type=float, default=1,
-                        help="Bin time; if negative, negative power of 2")
-    parser.add_argument("--safe-interval", nargs=2, type=float,
-                        default=[0, 0],
-                        help="Interval at start and stop of GTIs used" +
-                        " for filtering")
-    parser.add_argument("--pi-interval", type=int, default=[-1, -1],
-                        nargs=2,
-                        help="PI interval used for filtering")
-    parser.add_argument('-e', "--e-interval", type=float, default=[-1, -1],
-                        nargs=2,
-                        help="Energy interval used for filtering")
-    parser.add_argument("-s", "--scrunch",
-                        help="Create scrunched light curve",
-                        default=False,
-                        action="store_true")
-    parser.add_argument("-g", "--gti-split",
-                        help="Split light curve by GTI",
-                        default=False,
-                        action="store_true")
-    parser.add_argument("--minlen",
-                        help="Minimum length of acceptable GTIs (default:100)",
-                        default=100, type=float)
-    parser.add_argument("--ignore-gtis",
-                        help="Ignore GTIs",
-                        default=False,
-                        action="store_true")
-    parser.add_argument("-d", "--outdir", type=str, default=None,
-                        help='Output directory')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--fits-input",
-                        help="Input files are light curves in FITS format",
-                        default=False, action='store_true')
-    parser.add_argument("--txt-input",
-                        help=("Input files are light curves in txt format "
-                              "(Times measured in seconds from MJD "
-                              "55197.00076601852)"),
-                        default=False, action='store_true')
-    args = parser.parse_args()
+    args = sys.argv[1:]
 
-    if args.debug:
-        args.loglevel = 'DEBUG'
-    bintime = args.bintime
-
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPlcurve.log', level=numeric_level,
-                        filemode='w')
-
-    infiles = args.files
-    safe_interval = args.safe_interval
-    pi_interval = np.array(args.pi_interval)
-    e_interval = np.array(args.e_interval)
-
-    outfiles = []
-    for f in infiles:
-        if args.fits_input:
-            outfile = mp_lcurve_from_fits(f)
-        elif args.txt_input:
-            outfile = mp_lcurve_from_txt(f)
-        else:
-            outfile = mp_lcurve_from_events(f, safe_interval=safe_interval,
-                                            pi_interval=pi_interval,
-                                            e_interval=e_interval,
-                                            min_length=args.minlen,
-                                            gti_split=args.gti_split,
-                                            ignore_gtis=args.ignore_gtis,
-                                            bintime=bintime,
-                                            outdir=args.outdir)
-
-        outfiles.extend(outfile)
-
-    logging.debug(outfiles)
-
-    if args.scrunch:
-        mp_scrunch_lightcurves(outfiles)
+    sp.check_call(['MPlcurve'] + args)
