@@ -64,7 +64,6 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag'):
             "this first on known data!\n\n"
             "--------------------------------------------------------")
 
-    print(warn)
     logging.warning(warn)
 
     ftype,  cfreq, cpds, ecpds, nchunks, rebin, ccontents = \
