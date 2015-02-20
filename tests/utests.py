@@ -132,7 +132,7 @@ class TestFullRun(unittest.TestCase):
                                       'lcurve_txt_lc' +
                                       MP_FILE_EXTENSION)
             mp.lcurve.mp_lcurve_from_txt(lcurve_txt_orig,
-                outfile=lcurve_txt)
+                                         outfile=lcurve_txt)
             lcdata_txt = mp.mp_io.mp_load_lcurve(lcurve_txt)
 
             lc_txt = lcdata_txt['lc']
@@ -168,12 +168,26 @@ class TestFullRun(unittest.TestCase):
                                   MP_FILE_EXTENSION,
                                   128,
                                   outname=os.path.join(datadir,
-                                      'monol_test_E3-50_cpds') +
-                                  MP_FILE_EXTENSION)
+                                                       'monol_test_E3-50_cpds')
+                                  + MP_FILE_EXTENSION)
         except:
             raise(Exception('Production of CPDS failed'))
 
-    def step06_rebinlc(self):
+    def step06_lags(self):
+        '''Test Lag calculations'''
+        try:
+            mp.lags.mp_lags_from_spectra(
+                os.path.join(datadir,
+                             'monol_test_E3-50_cpds') + MP_FILE_EXTENSION,
+                os.path.join(datadir,
+                             'monol_testA_E3-50_pds') + MP_FILE_EXTENSION,
+                os.path.join(datadir,
+                             'monol_testB_E3-50_pds') + MP_FILE_EXTENSION)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('Lags production',
+                                                  type(e), e))
+
+    def step07_rebinlc(self):
         '''Test LC rebinning'''
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
@@ -183,7 +197,7 @@ class TestFullRun(unittest.TestCase):
         except Exception as e:
             self.fail("{} failed ({}: {})".format('LC rebin', type(e), e))
 
-    def step07_rebinpds1(self):
+    def step08_rebinpds1(self):
         '''Test PDS rebinning 1'''
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
@@ -194,7 +208,7 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('PDS rebin Test 1', type(e),
                                                   e))
 
-    def step08_rebinpds2(self):
+    def step09_rebinpds2(self):
         '''Test PDS rebinning 2'''
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
@@ -204,7 +218,7 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('PDS rebin Test 2', type(e),
                                                   e))
 
-    def step09_savexspec1(self):
+    def step10_savexspec1(self):
         '''Test save as Xspec 1'''
         try:
             mp.save_as_xspec.mp_save_as_xspec(
@@ -214,7 +228,7 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('MP2Xspec Test 1', type(e),
                                                   e))
 
-    def step10_savexspec2(self):
+    def step11_savexspec2(self):
         '''Test save as Xspec 2'''
         try:
             mp.save_as_xspec.mp_save_as_xspec(
@@ -224,7 +238,7 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('MP2Xspec Test 2', type(e),
                                                   e))
 
-    def step11_joinlcs(self):
+    def step12_joinlcs(self):
         '''Test produce joined light curves'''
         try:
             mp.mp_lcurve.mp_join_lightcurves(
@@ -238,7 +252,7 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('MPscrunchlc', type(e),
                                                   e))
 
-    def step12_scrunchlcs(self):
+    def step13_scrunchlcs(self):
         '''Test produce scrunched light curves'''
         try:
             mp.mp_lcurve.mp_scrunch_lightcurves(
@@ -253,7 +267,8 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('MPscrunchlc', type(e),
                                                   e))
 
-    def steps(self):
+    def all_steps(self):
+
         for name in sorted(dir(self)):
             if name.startswith("step"):
                 yield name, getattr(self, name)
@@ -261,7 +276,7 @@ class TestFullRun(unittest.TestCase):
     def test_steps(self):
         '''Test a full run of the codes on two event lists'''
         print('')
-        for name, step in self.steps():
+        for name, step in self.all_steps():
             try:
                 print('- ', step.__doc__, '...', end=' ')
                 step()
