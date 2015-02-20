@@ -11,13 +11,14 @@ before_install:
   - conda update --yes conda
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
+  - sudo apt-get update
 env:
   - WITH_NETCDF="yes"
   - WITH_NETCDF="no"
 install:
   - if [[ $WITH_NETCDF == "yes" ]]; then sudo apt-get install libnetcdf-dev libhdf5-serial-dev; fi
   - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy matplotlib astropy
-  - if [[ $WITH_NETCDF == "yes" ]]; then travis_retry pip install netCDF4; fi
+  - if [[ $WITH_NETCDF == "yes" ]]; then travis_retry pip install netCDF4==1.1.3; fi
   - python setup.py install
 script:
   - python tests/utests.py
