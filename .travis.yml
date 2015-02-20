@@ -16,7 +16,7 @@ env:
   - WITH_NETCDF="yes"
   - WITH_NETCDF="no"
 install:
-  - if [[ $WITH_NETCDF == "yes" ]]; then sudo apt-get install libnetcdf-dev  netcdf-bin libhdf5-serial-dev; fi
+  - if [[ $WITH_NETCDF == "yes" ]]; then sudo apt-get install libnetcdf-dev  libhdf5-serial-dev; fi
   - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy matplotlib astropy
   - if [[ $WITH_NETCDF == "yes" ]]; then travis_retry pip install netCDF4; fi
   - python setup.py install
