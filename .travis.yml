@@ -11,6 +11,7 @@ before_install:
   - conda update --yes conda
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
+  - sudo apt-get update
 env:
   - WITH_NETCDF="yes"
   - WITH_NETCDF="no"
