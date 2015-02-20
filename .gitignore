@@ -12,3 +12,5 @@ dist
 .tox
 local_data
 *.log
+.coverage
+htmlcov
