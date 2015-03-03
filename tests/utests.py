@@ -144,7 +144,7 @@ class TestFullRun(unittest.TestCase):
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
             'Light curve data do not coincide between txt and MP'
 
-    def step04_pds(self):
+    def step04a_pds(self):
         '''Test PDS production'''
         try:
             mp.fspec.mp_calc_pds(os.path.join(datadir,
@@ -157,6 +157,30 @@ class TestFullRun(unittest.TestCase):
                                  128)
         except:
             raise(Exception('Production of PDSs failed'))
+
+    def step04b_pds_fits(self):
+        '''Test PDS production with light curves obtained from FITS files'''
+        lcurve_ftools = os.path.join(datadir,
+                                     'lcurve_ftools_lc' +
+                                     MP_FILE_EXTENSION)
+        try:
+            mp.fspec.mp_calc_pds(lcurve_ftools,
+                                 128)
+
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('PDS LC FITS', type(e), e))
+
+    def step04c_pds_txt(self):
+        '''Test PDS production with light curves obtained from txt files'''
+        lcurve_txt = os.path.join(datadir,
+                                  'lcurve_txt_lc' +
+                                  MP_FILE_EXTENSION)
+        try:
+            mp.fspec.mp_calc_pds(lcurve_txt,
+                                 128)
+
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('PDS LC txt', type(e), e))
 
     def step05_cpds(self):
         '''Test CPDS production'''
@@ -183,7 +207,9 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir,
                              'monol_testA_E3-50_pds') + MP_FILE_EXTENSION,
                 os.path.join(datadir,
-                             'monol_testB_E3-50_pds') + MP_FILE_EXTENSION)
+                             'monol_testB_E3-50_pds') + MP_FILE_EXTENSION,
+                outroot=os.path.join(datadir,
+                                     'monol_test_lags' + MP_FILE_EXTENSION))
         except Exception as e:
             self.fail("{} failed ({}: {})".format('Lags production',
                                                   type(e), e))

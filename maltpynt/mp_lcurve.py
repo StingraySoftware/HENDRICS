@@ -454,6 +454,10 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     out['Tstop'] = tstop
     out['Instr'] = 'EXTERN'
     out['MJDref'] = mjdref.value
+    out['total_ctrate'] = mp_calc_countrate(time, rate, gtis=gti_list,
+                                            bintime=dt)
+    out['source_ctrate'] = mp_calc_countrate(time, rate, gtis=gti_list,
+                                             bintime=dt)
 
     if outfile is None:
         outfile = mp_root(fits_file) + '_lc'
@@ -483,11 +487,16 @@ def mp_lcurve_from_txt(txt_file, outfile=None):
     out['lc'] = lc
     out['time'] = time
     out['dt'] = dt
-    out['GTI'] = np.array([[time[0] - dt / 2, time[-1] + dt / 2]])
+    gtis = np.array([[time[0] - dt / 2, time[-1] + dt / 2]])
+    out['GTI'] = gtis
     out['Tstart'] = time[0] - dt / 2
     out['Tstop'] = time[-1] + dt / 2
     out['Instr'] = 'EXTERN'
     out['MJDref'] = np.longdouble('55197.00076601852')
+    out['total_ctrate'] = mp_calc_countrate(time, lc, gtis=gtis,
+                                            bintime=dt)
+    out['source_ctrate'] = mp_calc_countrate(time, lc, gtis=gtis,
+                                             bintime=dt)
 
     if outfile is None:
         outfile = mp_root(txt_file) + '_lc'
