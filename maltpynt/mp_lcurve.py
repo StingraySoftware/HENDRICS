@@ -338,8 +338,9 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
 
     Outputs a light curve file in MaLTPyNT format
     '''
-    logging.warning('''WARNING! FITS light curve handling is broken.
-                  Absolute times are incorrect''')
+    logging.warning(
+        '''WARNING! FITS light curve handling is still under testing.
+        Absolute times might be incorrect''')
     # TODO:
     # treat consistently TDB, UTC, TAI, etc. This requires some documentation
     # reading. For now, we assume TDB
@@ -355,7 +356,8 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     tunit = lchdulist[ratehdu].header['TIMEUNIT']
 
     try:
-        mjdref = lchdulist[ratehdu].header['MJDREF']
+        mjdref = _high_precision_keyword_read(lchdulist[ratehdu].header,
+                                              'MJDREF')
         mjdref = Time(mjdref, scale='tdb', format='mjd')
     except:
         mjdref = None
@@ -371,6 +373,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     except:
         raise(Exception('TSTART and TSTOP need to be specified'))
 
+    # For nulccorr lcs this whould work
     try:
         timezero = _high_precision_keyword_read(lchdulist[ratehdu].header,
                                                 'TIMEZERO')
@@ -380,6 +383,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     except:
         timezero = 0
 
+    # for lcurve light curves this should instead work
     if tunit == 'd':
         # TODO:
         # Check this. For now, I assume TD (JD - 2440000.5).
@@ -394,8 +398,8 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
         timezero = (timezero - mjdref).to('s').value
         tstart = (tstart - mjdref).to('s').value
         tstop = (tstop - mjdref).to('s').value
-        if timezero > tstart:
-            timezero -= tstart
+    if timezero > tstart:
+        timezero -= tstart
 
     time = np.array(lctable.field(timecolumn), dtype=np.longdouble)
     if time[-1] < tstart:
@@ -403,7 +407,14 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     else:
         time += timezero
 
-    dt = time[1] - time[0]
+    try:
+        dt = _high_precision_keyword_read(lchdulist[ratehdu].header,
+                                          'TIMEDEL')
+    except:
+        print('Assuming that TIMEDEL is the difference between the first two'
+              'times of the light curve')
+        dt = time[1] - time[0]
+
     # ----------------------------------------------------------------
     if ratecolumn is None:
         for i in ['RATE', 'RATE1', 'COUNTS']:
@@ -453,7 +464,9 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     out['Tstart'] = tstart
     out['Tstop'] = tstop
     out['Instr'] = 'EXTERN'
+
     out['MJDref'] = mjdref.value
+
     out['total_ctrate'] = mp_calc_countrate(time, rate, gtis=gti_list,
                                             bintime=dt)
     out['source_ctrate'] = mp_calc_countrate(time, rate, gtis=gti_list,
