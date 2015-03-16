@@ -157,7 +157,7 @@ Another thing that is useful in NuSTAR data is taking some time intervals out fr
 ```
 #!console
 
-$ MPlcurve 002A_ev_calib.nc 002B_ev_calib.p -b -6 -e 3 30 --safe_interval 100 300
+$ MPlcurve 002A_ev_calib.nc 002B_ev_calib.nc -b -8 -e 3 30 --safe-interval 100 300
 Loading file 002A_ev_calib.nc...
 Done.
 Saving light curve to 002A_E3-30_lc.nc
