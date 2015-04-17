@@ -462,5 +462,12 @@ class TestAll(unittest.TestCase):
         b = 'B_3-50_B.nc'
         assert mp.base.common_name(a, b) == '3-50'
 
+    def test_geom_bin(self):
+        '''Test if geom_bin fails under some conditions'''
+        freq = np.arange(0, 100, 0.1)
+        pds = np.random.normal(2, 0.1, len(freq))
+        _ = mp.rebin.mp_geom_bin(freq, pds, 1.3, pds_err=pds)
+        _ = mp.rebin.mp_geom_bin(freq, pds, 1.3)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

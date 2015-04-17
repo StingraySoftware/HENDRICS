@@ -55,15 +55,16 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
 
     df = freq[1] - freq[0]
 
+    if npds is None:
+        npds = 1.
+    if pds_err is None:
+        pds_err = np.zeros(len(pds))
+
     if freq[0] < 1e-10:
         freq = freq[1:]
         pds = pds[1:]
         pds_err = pds_err[1:]
 
-    if npds is None:
-        npds = 1.
-    if pds_err is None:
-        pds_err = np.zeros(len(pds))
     if bin_factor <= 1:
         logging.warning("Bin factor must be > 1!!")
         f0 = freq - df / 2.
