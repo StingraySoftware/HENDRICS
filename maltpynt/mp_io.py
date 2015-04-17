@@ -71,7 +71,7 @@ def mp_save_as_netcdf(vars, varnames, formats, fname):
 
             if 'cpl128' not in rootgrp.cmptypes.keys():
                 complex128_t = rootgrp.createCompoundType(cpl128, 'cpl128')
-            vcomp = np.empty(v.size, dtype=cpl128)
+            vcomp = np.empty(v.shape, dtype=cpl128)
             vcomp['real'] = v.real
             vcomp['imag'] = v.imag
             v = vcomp
