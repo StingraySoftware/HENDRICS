@@ -25,7 +25,7 @@ This software is released with a 3-clause BSD license. You can find license info
 
 In particular, **if you use the cospectrum**, please also refer to:
 
-2. Bachetti et al. 2015, [_ApJ_](http://iopscience.iop.org/0004-637X/800/2/109/) , 800, 109.
+2. Bachetti et al. 2015, [_ApJ_](http://iopscience.iop.org/0004-637X/800/2/109/) , **800**, 109.
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
