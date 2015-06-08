@@ -294,6 +294,29 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('MPscrunchlc', type(e),
                                                   e))
 
+    def step13_dumpdynpds(self):
+        '''Test produce scrunched light curves'''
+        import subprocess as sp
+        try:
+            sp.check_output('MPdumpdyn ' +
+                            os.path.join(datadir,
+                                         'monol_testA_E3-50_pds') +
+                            MP_FILE_EXTENSION)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('MPdumpdyn <pds>', type(e),
+                                                  e))
+
+    def step14_dumpdyncpds(self):
+        '''Test produce scrunched light curves'''
+        import subprocess as sp
+        try:
+            sp.check_output('MPdumpdyn ' +
+                            os.path.join(datadir,
+                                         'monol_test_E3-50_cpds') +
+                            MP_FILE_EXTENSION)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('MPdumpdyn <cpds>', type(e),
+                                                  e))
     def all_steps(self):
 
         for name in sorted(dir(self)):
