@@ -9,6 +9,7 @@ from maltpynt.mp_io import mp_get_file_type, is_string
 import collections
 import matplotlib.pyplot as plt
 import numpy as np
+import argparse
 
 
 def normalize(array, ref=0):
@@ -67,12 +68,19 @@ def dumpdyn(fname, plot=False):
 
         plt.show()
 
+description = ('Dump dynamical (cross) power spectra')
+parser = argparse.ArgumentParser(description=description)
 
-try:
-    fnames = sys.argv[1:]
-except:
+parser.add_argument("files", help="List of (c)PDS files", nargs='+')
+parser.add_argument("--noplot", help="plot results",
+                    default=False, action='store_true')
+args = parser.parse_args()
+
+fnames = args.files
+
+if len(fnames) == 0:
     usage()
     sys.exit()
 
 for f in fnames:
-    dumpdyn(f, plot=True)
+    dumpdyn(f, plot=not args.noplot)

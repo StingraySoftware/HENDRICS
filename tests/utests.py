@@ -150,11 +150,11 @@ class TestFullRun(unittest.TestCase):
             mp.fspec.mp_calc_pds(os.path.join(datadir,
                                               'monol_testA_E3-50_lc') +
                                  MP_FILE_EXTENSION,
-                                 128)
+                                 128, save_dyn=True)
             mp.fspec.mp_calc_pds(os.path.join(datadir,
                                               'monol_testB_E3-50_lc') +
                                  MP_FILE_EXTENSION,
-                                 128)
+                                 128, save_dyn=True)
         except:
             raise(Exception('Production of PDSs failed'))
 
@@ -194,7 +194,7 @@ class TestFullRun(unittest.TestCase):
                                   128,
                                   outname=os.path.join(datadir,
                                                        'monol_test_E3-50_cpds')
-                                  + MP_FILE_EXTENSION)
+                                  + MP_FILE_EXTENSION, save_dyn=True)
         except:
             raise(Exception('Production of CPDS failed'))
 
@@ -298,10 +298,10 @@ class TestFullRun(unittest.TestCase):
         '''Test produce scrunched light curves'''
         import subprocess as sp
         try:
-            sp.check_output('MPdumpdyn ' +
-                            os.path.join(datadir,
-                                         'monol_testA_E3-50_pds') +
-                            MP_FILE_EXTENSION)
+            command = 'MPdumpdyn --noplot ' + \
+                os.path.join(datadir,
+                             'monol_testA_E3-50_pds') + MP_FILE_EXTENSION
+            sp.check_output(command.split())
         except Exception as e:
             self.fail("{} failed ({}: {})".format('MPdumpdyn <pds>', type(e),
                                                   e))
@@ -310,13 +310,14 @@ class TestFullRun(unittest.TestCase):
         '''Test produce scrunched light curves'''
         import subprocess as sp
         try:
-            sp.check_output('MPdumpdyn ' +
-                            os.path.join(datadir,
-                                         'monol_test_E3-50_cpds') +
-                            MP_FILE_EXTENSION)
+            command = 'MPdumpdyn --noplot ' + \
+                os.path.join(datadir,
+                             'monol_test_E3-50_cpds') + MP_FILE_EXTENSION
+            sp.check_output(command.split())
         except Exception as e:
             self.fail("{} failed ({}: {})".format('MPdumpdyn <cpds>', type(e),
                                                   e))
+
     def all_steps(self):
 
         for name in sorted(dir(self)):
