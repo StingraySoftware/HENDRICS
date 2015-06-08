@@ -109,7 +109,7 @@ def mp_read_from_netcdf(fname):
         values = dum.__array__()
         # Handle special case of complex
         if dum.dtype == cpl128:
-            arr = np.empty(values.size, dtype=np.complex128)
+            arr = np.empty(values.shape, dtype=np.complex128)
             arr.real = values[str('real')]
             arr.imag = values[str('imag')]
             values = arr

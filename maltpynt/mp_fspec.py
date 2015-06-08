@@ -502,7 +502,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     logging.debug(repr(results.dyncpds))
     if save_dyn:
-        outdata["dyncpds"] = np.array(results.dyncpds)
+        outdata["dyncpds"] = np.array(results.dyncpds)[:, 1:]
         outdata["dyntimes"] = np.array(results.times)
 
     logging.info('Saving CPDS to %s' % outname)
