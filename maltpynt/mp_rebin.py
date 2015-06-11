@@ -53,6 +53,8 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     '''
     from numpy import log10
 
+    assert len(list(set(np.diff(freq)))) > 1, 'This only works for not previously rebinned spectra'
+
     df = freq[1] - freq[0]
 
     if npds is None:
@@ -76,7 +78,7 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
 
     # Input frequencies are referred to the center of the bin. But from now on
     # I'll be interested in the start and stop of each frequency bin.
-    freq -= df / 2
+    freq = freq - df / 2
     fmin = min(freq)
     fmax = max(freq) + df
 
@@ -122,6 +124,10 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
 
 def mp_rebin_file(filename, rebin):
     ftype, contents = mp_get_file_type(filename)
+    do_dyn = False
+    if 'dyn{}'.format(ftype) in contents.keys():
+        do_dyn = True
+
     if ftype == 'lc':
         x = contents['time']
         y = contents['lc']
@@ -144,6 +150,23 @@ def mp_rebin_file(filename, rebin):
         # if rebin is integer, use constant rebinning. Otherwise, geometrical
         if rebin == float(int(rebin)):
             logging.info('Applying a constant rebinning')
+            if do_dyn:
+                old_dynspec = contents['dyn{}'.format(ftype)]
+                old_edynspec = contents['edyn{}'.format(ftype)]
+
+                dynspec = []
+                edynspec = []
+                for i_s, spec in enumerate(old_dynspec):
+                    _, sp, spe = \
+                        mp_const_rebin(x, spec, rebin,
+                                       old_edynspec[i_s],
+                                       normalize=True)
+                    dynspec.append(sp)
+                    edynspec.append(spe)
+
+                contents['dyn{}'.format(ftype)] = np.array(dynspec)
+                contents['edyn{}'.format(ftype)] = np.array(edynspec)
+
             x, y, ye = \
                 mp_const_rebin(x, y, rebin, ye, normalize=True)
             contents['freq'] = x
@@ -152,6 +175,23 @@ def mp_rebin_file(filename, rebin):
             contents['rebin'] *= rebin
         else:
             logging.info('Applying a geometrical rebinning')
+            if do_dyn:
+                old_dynspec = contents['dyn{}'.format(ftype)]
+                old_edynspec = contents['edyn{}'.format(ftype)]
+
+                dynspec = []
+                edynspec = []
+                for i_s, spec in enumerate(old_dynspec):
+                    _, _, sp, spe, _ = \
+                        mp_geom_bin(x, spec, rebin,
+                                    old_edynspec[i_s],
+                                    return_nbins=True)
+                    dynspec.append(sp)
+                    edynspec.append(spe)
+
+                contents['dyn{}'.format(ftype)] = np.array(dynspec)
+                contents['edyn{}'.format(ftype)] = np.array(edynspec)
+
             x1, x2, y, ye, nbin = \
                 mp_geom_bin(x, y, rebin, ye, return_nbins=True)
             del contents['freq']

@@ -35,9 +35,10 @@ def usage():
 
 
 def dumpdyn(fname, plot=False):
-    ftype, pdsdata = mp_get_file_type(fname)
+    ftype, pdsdata = mp_get_file_type(fname, specify_reb=False)
 
     dynpds = pdsdata['dyn' + ftype]
+    edynpds = pdsdata['edyn' + ftype]
 
     try:
         freq = pdsdata['freq']
@@ -57,9 +58,10 @@ def dumpdyn(fname, plot=False):
     t = times.real.flatten()
     f = freqs.real.flatten()
     d = dynpds.real.flatten()
+    e = edynpds.real.flatten()
 
     np.savetxt('{}_dumped_{}.txt'.format(mp_root(fname), ftype),
-               np.array([t, f, d]).T)
+               np.array([t, f, d, e]).T)
     size = normalize(d)
     if plot:
         plt.scatter(t, f, s=size)

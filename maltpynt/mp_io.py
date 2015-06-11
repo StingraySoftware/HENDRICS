@@ -126,7 +126,7 @@ def mp_read_from_netcdf(fname):
 
 
 # ----- Functions to handle file types
-def mp_get_file_type(fname):
+def mp_get_file_type(fname, specify_reb=True):
     contents = mp_load_data(fname)
     '''Gets file type'''
 
@@ -135,15 +135,15 @@ def mp_get_file_type(fname):
         ftype = 'lc'
     elif 'cpds' in keys:
         ftype = 'cpds'
-        if 'fhi' in keys:
+        if 'fhi' in keys and specify_reb:
             ftype = 'rebcpds'
     elif 'pds' in keys:
         ftype = 'pds'
-        if 'fhi' in keys:
+        if 'fhi' in keys and specify_reb:
             ftype = 'rebpds'
     elif 'lag' in keys:
         ftype = 'lag'
-        if 'fhi' in keys:
+        if 'fhi' in keys and specify_reb:
             ftype = 'reblag'
     elif 'time' in keys:
         # If it has not lc, pds or cpds, but has time, ...
