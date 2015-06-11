@@ -235,11 +235,21 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('PDS rebin Test 1', type(e),
                                                   e))
 
-    def step09_rebinpds2(self):
+    def step08a_rebinpds2(self):
         '''Test PDS rebinning 2'''
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
                                                 'monol_testA_E3-50_pds') +
+                                   MP_FILE_EXTENSION, 1.03)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('PDS rebin Test 2', type(e),
+                                                  e))
+
+    def step09_rebincpds(self):
+        '''Test CPDS rebinning'''
+        try:
+            mp.rebin.mp_rebin_file(os.path.join(datadir,
+                                                'monol_test_E3-50_cpds') +
                                    MP_FILE_EXTENSION, 1.03)
         except Exception as e:
             self.fail("{} failed ({}: {})".format('PDS rebin Test 2', type(e),
@@ -300,7 +310,8 @@ class TestFullRun(unittest.TestCase):
         try:
             command = 'MPdumpdyn --noplot ' + \
                 os.path.join(datadir,
-                             'monol_testA_E3-50_pds') + MP_FILE_EXTENSION
+                             'monol_testA_E3-50_pds_rebin1.03') + \
+                                 MP_FILE_EXTENSION
             sp.check_output(command.split())
         except Exception as e:
             self.fail("{} failed ({}: {})".format('MPdumpdyn <pds>', type(e),
@@ -312,7 +323,8 @@ class TestFullRun(unittest.TestCase):
         try:
             command = 'MPdumpdyn --noplot ' + \
                 os.path.join(datadir,
-                             'monol_test_E3-50_cpds') + MP_FILE_EXTENSION
+                             'monol_test_E3-50_cpds_rebin1.03') + \
+                                 MP_FILE_EXTENSION
             sp.check_output(command.split())
         except Exception as e:
             self.fail("{} failed ({}: {})".format('MPdumpdyn <cpds>', type(e),

@@ -53,7 +53,9 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     '''
     from numpy import log10
 
-    assert len(list(set(np.diff(freq)))) > 1, 'This only works for not previously rebinned spectra'
+    df = np.diff(freq)
+    assert np.max(df) - np.min(df) < 1e-5 * np.max(df), \
+        'This only works for not previously rebinned spectra'
 
     df = freq[1] - freq[0]
 
