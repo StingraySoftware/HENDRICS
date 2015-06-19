@@ -17,7 +17,7 @@ def mp_load_gtis(fits_file, gtistring=None):
 
     if gtistring is None:
         gtistring = 'GTI'
-    logging.info("Loading GTIS from file" % fits_file)
+    logging.info("Loading GTIS from file %s" % fits_file)
     lchdulist = pf.open(fits_file, checksum=True)
     lchdulist.verify('warn')
 
