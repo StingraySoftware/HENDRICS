@@ -25,7 +25,7 @@ This software is released with a 3-clause BSD license. You can find license info
 
 In particular, **if you use the cospectrum**, please also refer to:
 
-2. Bachetti et al. 2015, [_ApJ_](http://iopscience.iop.org/0004-637X/800/2/109/) , 800, 109.
+2. Bachetti et al. 2015, [_ApJ_](http://iopscience.iop.org/0004-637X/800/2/109/) , **800**, 109.
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
@@ -157,7 +157,7 @@ Another thing that is useful in NuSTAR data is taking some time intervals out fr
 ```
 #!console
 
-$ MPlcurve 002A_ev_calib.nc 002B_ev_calib.p -b -6 -e 3 30 --safe_interval 100 300
+$ MPlcurve 002A_ev_calib.nc 002B_ev_calib.nc -b -8 -e 3 30 --safe-interval 100 300
 Loading file 002A_ev_calib.nc...
 Done.
 Saving light curve to 002A_E3-30_lc.nc

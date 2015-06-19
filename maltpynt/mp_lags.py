@@ -14,7 +14,7 @@ def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
     lags = np.angle(cpds) / (2 * np.pi * freqs)
     sigcpd = np.absolute(cpds)
 
-    rawcof = (sigcpd) ** 2 / ((pds1) * (pds1))
+    rawcof = (sigcpd) ** 2 / ((pds1) * (pds2))
 
     dum = (1. - rawcof) / (2. * rawcof)
 
@@ -64,7 +64,6 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag'):
             "this first on known data!\n\n"
             "--------------------------------------------------------")
 
-    print(warn)
     logging.warning(warn)
 
     ftype,  cfreq, cpds, ecpds, nchunks, rebin, ccontents = \

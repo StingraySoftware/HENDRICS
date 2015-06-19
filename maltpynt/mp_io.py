@@ -71,7 +71,7 @@ def mp_save_as_netcdf(vars, varnames, formats, fname):
 
             if 'cpl128' not in rootgrp.cmptypes.keys():
                 complex128_t = rootgrp.createCompoundType(cpl128, 'cpl128')
-            vcomp = np.empty(v.size, dtype=cpl128)
+            vcomp = np.empty(v.shape, dtype=cpl128)
             vcomp['real'] = v.real
             vcomp['imag'] = v.imag
             v = vcomp
@@ -109,7 +109,7 @@ def mp_read_from_netcdf(fname):
         values = dum.__array__()
         # Handle special case of complex
         if dum.dtype == cpl128:
-            arr = np.empty(values.size, dtype=np.complex128)
+            arr = np.empty(values.shape, dtype=np.complex128)
             arr.real = values[str('real')]
             arr.imag = values[str('imag')]
             values = arr
@@ -126,7 +126,7 @@ def mp_read_from_netcdf(fname):
 
 
 # ----- Functions to handle file types
-def mp_get_file_type(fname):
+def mp_get_file_type(fname, specify_reb=True):
     contents = mp_load_data(fname)
     '''Gets file type'''
 
@@ -135,15 +135,15 @@ def mp_get_file_type(fname):
         ftype = 'lc'
     elif 'cpds' in keys:
         ftype = 'cpds'
-        if 'fhi' in keys:
+        if 'fhi' in keys and specify_reb:
             ftype = 'rebcpds'
     elif 'pds' in keys:
         ftype = 'pds'
-        if 'fhi' in keys:
+        if 'fhi' in keys and specify_reb:
             ftype = 'rebpds'
     elif 'lag' in keys:
         ftype = 'lag'
-        if 'fhi' in keys:
+        if 'fhi' in keys and specify_reb:
             ftype = 'reblag'
     elif 'time' in keys:
         # If it has not lc, pds or cpds, but has time, ...

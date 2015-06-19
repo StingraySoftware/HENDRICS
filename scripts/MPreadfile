@@ -12,7 +12,7 @@ import collections
 def usage():
     print('''Usage:
 
-          mpreadfile filename
+          MPreadfile filename
 
           where filename is any file in a valid MaLTPyNT format
           ''')

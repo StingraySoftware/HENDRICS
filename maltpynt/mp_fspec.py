@@ -90,6 +90,8 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
     if return_all:
         results = _empty()
         results.dynpds = []
+        results.edynpds = []
+        results.times = []
 
     pds = 0
     npds = len(start_bins)
@@ -109,6 +111,8 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
 
         if return_all:
             results.dynpds.append(p)
+            results.edynpds.append(p)
+            results.times.append(time[start_bin])
 
         pds += p
         mask[start_bin:stop_bin] = True
@@ -224,6 +228,8 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
     if return_all:
         results = _empty()
         results.dyncpds = []
+        results.edyncpds = []
+        results.times = []
 
     cpds = 0
     ecpds = 0
@@ -245,6 +251,8 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         ecpds += pe ** 2
         if return_all:
             results.dyncpds.append(p)
+            results.edyncpds.append(pe)
+            results.times.append(time[start_bin])
 
         mask[start_bin:stop_bin] = True
 
@@ -396,7 +404,10 @@ def mp_calc_pds(lcfile, fftlen,
     logging.debug(repr(results.dynpds))
 
     if save_dyn:
-        outdata["dynpds"] = np.array(results.dynpds)
+        outdata["dynpds"] = np.array(results.dynpds)[:, 1:]
+        outdata["edynpds"] = np.array(results.edynpds)[:, 1:]
+
+        outdata["dyntimes"] = np.array(results.times)
 
     outname = root + '_pds' + MP_FILE_EXTENSION
     logging.info('Saving PDS to %s' % outname)
@@ -497,7 +508,9 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     logging.debug(repr(results.dyncpds))
     if save_dyn:
-        outdata["dyncpds"] = np.array(results.dyncpds)
+        outdata["dyncpds"] = np.array(results.dyncpds)[:, 1:]
+        outdata["edyncpds"] = np.array(results.edyncpds)[:, 1:]
+        outdata["dyntimes"] = np.array(results.times)
 
     logging.info('Saving CPDS to %s' % outname)
     mp_save_pds(outdata, outname)

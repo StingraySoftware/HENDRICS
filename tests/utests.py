@@ -144,19 +144,43 @@ class TestFullRun(unittest.TestCase):
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
             'Light curve data do not coincide between txt and MP'
 
-    def step04_pds(self):
+    def step04a_pds(self):
         '''Test PDS production'''
         try:
             mp.fspec.mp_calc_pds(os.path.join(datadir,
                                               'monol_testA_E3-50_lc') +
                                  MP_FILE_EXTENSION,
-                                 128)
+                                 128, save_dyn=True)
             mp.fspec.mp_calc_pds(os.path.join(datadir,
                                               'monol_testB_E3-50_lc') +
                                  MP_FILE_EXTENSION,
-                                 128)
+                                 128, save_dyn=True)
         except:
             raise(Exception('Production of PDSs failed'))
+
+    def step04b_pds_fits(self):
+        '''Test PDS production with light curves obtained from FITS files'''
+        lcurve_ftools = os.path.join(datadir,
+                                     'lcurve_ftools_lc' +
+                                     MP_FILE_EXTENSION)
+        try:
+            mp.fspec.mp_calc_pds(lcurve_ftools,
+                                 128)
+
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('PDS LC FITS', type(e), e))
+
+    def step04c_pds_txt(self):
+        '''Test PDS production with light curves obtained from txt files'''
+        lcurve_txt = os.path.join(datadir,
+                                  'lcurve_txt_lc' +
+                                  MP_FILE_EXTENSION)
+        try:
+            mp.fspec.mp_calc_pds(lcurve_txt,
+                                 128)
+
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('PDS LC txt', type(e), e))
 
     def step05_cpds(self):
         '''Test CPDS production'''
@@ -170,7 +194,7 @@ class TestFullRun(unittest.TestCase):
                                   128,
                                   outname=os.path.join(datadir,
                                                        'monol_test_E3-50_cpds')
-                                  + MP_FILE_EXTENSION)
+                                  + MP_FILE_EXTENSION, save_dyn=True)
         except:
             raise(Exception('Production of CPDS failed'))
 
@@ -183,7 +207,9 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir,
                              'monol_testA_E3-50_pds') + MP_FILE_EXTENSION,
                 os.path.join(datadir,
-                             'monol_testB_E3-50_pds') + MP_FILE_EXTENSION)
+                             'monol_testB_E3-50_pds') + MP_FILE_EXTENSION,
+                outroot=os.path.join(datadir,
+                                     'monol_test_lags' + MP_FILE_EXTENSION))
         except Exception as e:
             self.fail("{} failed ({}: {})".format('Lags production',
                                                   type(e), e))
@@ -209,11 +235,21 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('PDS rebin Test 1', type(e),
                                                   e))
 
-    def step09_rebinpds2(self):
+    def step08a_rebinpds2(self):
         '''Test PDS rebinning 2'''
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
                                                 'monol_testA_E3-50_pds') +
+                                   MP_FILE_EXTENSION, 1.03)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('PDS rebin Test 2', type(e),
+                                                  e))
+
+    def step09_rebincpds(self):
+        '''Test CPDS rebinning'''
+        try:
+            mp.rebin.mp_rebin_file(os.path.join(datadir,
+                                                'monol_test_E3-50_cpds') +
                                    MP_FILE_EXTENSION, 1.03)
         except Exception as e:
             self.fail("{} failed ({}: {})".format('PDS rebin Test 2', type(e),
@@ -268,6 +304,32 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('MPscrunchlc', type(e),
                                                   e))
 
+    def step13_dumpdynpds(self):
+        '''Test produce scrunched light curves'''
+        import subprocess as sp
+        try:
+            command = 'MPdumpdyn --noplot ' + \
+                os.path.join(datadir,
+                             'monol_testA_E3-50_pds_rebin1.03') + \
+                                 MP_FILE_EXTENSION
+            sp.check_output(command.split())
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('MPdumpdyn <pds>', type(e),
+                                                  e))
+
+    def step14_dumpdyncpds(self):
+        '''Test produce scrunched light curves'''
+        import subprocess as sp
+        try:
+            command = 'MPdumpdyn --noplot ' + \
+                os.path.join(datadir,
+                             'monol_test_E3-50_cpds_rebin1.03') + \
+                                 MP_FILE_EXTENSION
+            sp.check_output(command.split())
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('MPdumpdyn <cpds>', type(e),
+                                                  e))
+
     def all_steps(self):
 
         for name in sorted(dir(self)):
@@ -312,7 +374,11 @@ class TestPDS(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        print("Setting up")
+        print("Setting up.")
+        print("This test is about the statistical properties of frequency "
+              "spectra and it is based on random number generation. It might, "
+              "randomly, fail. Always repeat the test if it does and only "
+              "worry if it repeatedly fails.")
         import numpy.random as ra
         cls.length = 512000
         cls.tstart = 0
@@ -431,6 +497,13 @@ class TestAll(unittest.TestCase):
         a = 'A_3-50_A.nc'
         b = 'B_3-50_B.nc'
         assert mp.base.common_name(a, b) == '3-50'
+
+    def test_geom_bin(self):
+        '''Test if geom_bin fails under some conditions'''
+        freq = np.arange(0, 100, 0.1)
+        pds = np.random.normal(2, 0.1, len(freq))
+        _ = mp.rebin.mp_geom_bin(freq, pds, 1.3, pds_err=pds)
+        _ = mp.rebin.mp_geom_bin(freq, pds, 1.3)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
