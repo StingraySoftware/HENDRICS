@@ -426,3 +426,7 @@ def mp_calc_countrate(time, lc, gtis=None, bintime=1):
         mask = mp_create_gti_mask(time, gtis)
         lc = lc[mask]
     return np.mean(lc) / bintime
+
+
+def mp_gti_len(gti):
+    return np.sum([g[1] - g[0] for g in gti])

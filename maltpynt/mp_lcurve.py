@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 import numpy as np
 from .mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis, mp_mkdir_p
-from .mp_base import mp_contiguous_regions, mp_calc_countrate
+from .mp_base import mp_contiguous_regions, mp_calc_countrate, mp_gti_len
 from .mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
 from .mp_io import MP_FILE_EXTENSION
 import os
@@ -78,13 +78,22 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     lcs = {}
     gtis = {}
     for instr in instrs:
-        outlcs[instr] = {'dt': lcdts[0]}
+        outlcs[instr] = {'dt': lcdts[0], 'Tstart': 1e32, 'Tstop': -11,
+                         'MJDref': lcdatas[0]['MJDref'], 'source_ctrate': 0,
+                         'total_ctrate': 0}
         times[instr] = []
         lcs[instr] = []
         gtis[instr] = []
     # -------------------------------------------------------
 
     for lcdata in lcdatas:
+        tstart = lcdata['Tstart']
+        tstop = lcdata['Tstop']
+        if outlcs[instr]['Tstart'] > tstart:
+            outlcs[instr]['Tstart'] = tstart
+        if outlcs[instr]['Tstop'] < tstop:
+            outlcs[instr]['Tstop'] = tstop
+
         time = lcdata['time']
         lc = lcdata['lc']
         gti = lcdata['GTI']
@@ -93,10 +102,21 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
         lcs[instr].extend(lc)
         gtis[instr].extend(gti)
 
+        goodlen = mp_gti_len(gti)
+        outlcs[instr]['source_ctrate'] += lcdata['source_ctrate'] * goodlen
+        outlcs[instr]['total_ctrate'] += lcdata['total_ctrate'] * goodlen
+
     for instr in instrs:
+        gti = np.array(gtis[instr])
         outlcs[instr]['time'] = np.array(times[instr])
         outlcs[instr]['lc'] = np.array(lcs[instr])
-        outlcs[instr]['GTI'] = np.array(gtis[instr])
+        outlcs[instr]['GTI'] = gti
+        outlcs[instr]['Instr'] = instr
+
+        goodlen = mp_gti_len(gti)
+
+        outlcs[instr]['source_ctrate'] /= goodlen
+        outlcs[instr]['total_ctrate'] /= goodlen
 
     if outfile is not None:
         for instr in instrs:

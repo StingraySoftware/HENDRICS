@@ -4,8 +4,9 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_lcurve import mp_lcurve_from_events, mp_scrunch_lightcurves
-from maltpynt.mp_lcurve import mp_lcurve_from_fits, mp_lcurve_from_txt
+from maltpynt.mp_lcurve import (mp_lcurve_from_events, mp_scrunch_lightcurves,
+                                mp_join_lightcurves, mp_lcurve_from_fits,
+                                mp_lcurve_from_txt)
 import argparse
 import numpy as np
 import logging
@@ -29,7 +30,11 @@ parser.add_argument('-e', "--e-interval", type=float, default=[-1, -1],
                     nargs=2,
                     help="Energy interval used for filtering")
 parser.add_argument("-s", "--scrunch",
-                    help="Create scrunched light curve",
+                    help="Create scrunched light curve (single channel)",
+                    default=False,
+                    action="store_true")
+parser.add_argument("-j", "--join",
+                    help="Create joint light curve (multiple channels)",
                     default=False,
                     action="store_true")
 parser.add_argument("-g", "--gti-split",
@@ -96,3 +101,6 @@ logging.debug(outfiles)
 # TODO: test if this still works!
 if args.scrunch:
     mp_scrunch_lightcurves(outfiles)
+
+if args.join:
+    mp_join_lightcurves(outfiles)
