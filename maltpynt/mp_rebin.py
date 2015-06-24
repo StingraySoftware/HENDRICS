@@ -121,6 +121,7 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     retval = [newfreqlo, newfreqhi, newpds, newpds_err]
     if return_nbins:
         retval.append(new_nbins)
+
     return retval
 
 

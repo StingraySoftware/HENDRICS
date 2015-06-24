@@ -161,11 +161,16 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
         lc = lcdata[inst]['lc']
         lc0 += lc[mask]
 
-    out = {}
+    out = lcdata[instrs[0]].copy()
     out['lc'] = lc0
     out['time'] = time0
     out['dt'] = lcdata[instrs[0]]['dt']
     out['GTI'] = gti
+
+    out['Instr'] = ",".join(instrs)
+
+    out['source_ctrate'] = np.sum([lcdata[i]['source_ctrate'] for i in instrs])
+    out['total_ctrate'] = np.sum([lcdata[i]['total_ctrate'] for i in instrs])
 
     logging.info('Saving scrunched light curve to %s' % outfile)
     mp_save_lcurve(out, outfile)
