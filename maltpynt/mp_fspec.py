@@ -318,11 +318,12 @@ def mp_decide_spectrum_intervals(gtis, fftlen):
 
 
 def mp_decide_spectrum_lc_intervals(gtis, fftlen, time):
-    '''Similar to mp_decide_spectrum_intervals, but dedicated to light curves.
+    """Similar to mp_decide_spectrum_intervals, but dedicated to light curves.
+
     In this case, it is necessary to specify the time array containing the
     times of the light curve bins.
-    Returns start and stop bins of the intervals to use for the PDS'''
-
+    Returns start and stop bins of the intervals to use for the PDS
+    """
     bintime = time[1] - time[0]
     nbin = np.long(fftlen / bintime)
 
@@ -526,10 +527,8 @@ def mp_calc_fspec(files, fftlen,
                   pdsrebin=1,
                   outroot=None,
                   normalization='Leahy'):
-    '''Calculates the frequency spectra:
-        the PDS, the CPDS, the cospectrum, ...'''
-    # TODO: Implement cospectrum
-    # TODO: Implement lags
+    '''Calculates the frequency spectra: the PDS, the cospectrum, ...'''
+
     import os
 
     if normalization not in ['Leahy', 'rms']:
@@ -576,7 +575,7 @@ def mp_calc_fspec(files, fftlen,
             outroot = common_name(f1, f2, default='cpds_%d' % i_f)
 
         outname = os.path.join(outdir,
-                               outroot.replace(MP_FILE_EXTENSION, '') +
+                               outroot.replace(MP_FILE_EXTENSION, '_cpds') +
                                MP_FILE_EXTENSION)
         mp_calc_cpds(f1, f2, fftlen,
                      save_dyn=save_dyn,

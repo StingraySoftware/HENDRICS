@@ -392,8 +392,9 @@ def mp_sort_files(files):
     '''Sort a list of MaLTPyNT files'''
     allfiles = {}
     ftypes = []
+
     for f in files:
-        logging.info('Loading file', f)
+        logging.info('Loading file ' + f)
         ftype, contents = mp_get_file_type(f)
         instr = contents['Instr']
         ftypes.append(ftype)

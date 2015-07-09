@@ -308,9 +308,9 @@ def mp_lcurve_from_events(f, safe_interval=0,
             local_out['lc'] = lc[b[0]:b[1]]
             local_out['time'] = time[b[0]:b[1]]
             local_out['dt'] = bintime
-            local_out['GTI'] = [[time[b[0]], time[b[1]]]]
+            local_out['GTI'] = np.array([[time[b[0]], time[b[1]-1]]])
             local_out['Tstart'] = time[b[0]]
-            local_out['Tstop'] = time[b[1]]
+            local_out['Tstop'] = time[b[1]-1]
             local_out['Instr'] = instr
             if instr == 'PCA':
                 local_out['nPCUs'] = len(set(pcus))

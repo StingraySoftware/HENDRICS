@@ -286,7 +286,7 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir, 'monol_test_joinlc' +
                              MP_FILE_EXTENSION))
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('MPscrunchlc', type(e),
+            self.fail("{} failed ({}: {})".format('Join lcs', type(e),
                                                   e))
 
     def step13_scrunchlcs(self):
