@@ -77,13 +77,15 @@ def mp_plot_cospectrum(fnames):
             flo = pdsdata['flo']
             fhi = pdsdata['fhi']
             freq = (fhi + flo) / 2
-            plt.semilogx()
 
         cpds = pdsdata['cpds']
 
         cospectrum = cpds.real
         plt.figure('Log')
-        plt.loglog(freq[1:], freq[1:] * cospectrum[1:], drawstyle='steps-mid')
+        ax = plt.gca()
+        ax.set_xscale('log', nonposx='clip')
+        ax.set_yscale('log', nonposy='clip')
+        plt.plot(freq[1:], freq[1:] * cospectrum[1:], drawstyle='steps-mid')
         plt.figure('Lin')
         plt.plot(freq[1:], cospectrum[1:], drawstyle='steps-mid')
 
