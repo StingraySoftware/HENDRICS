@@ -14,7 +14,7 @@ def sum_fspec(files, outname=None):
     '''Takes a bunch of (C)PDSs and sums them'''
 
     # Read first file
-    ftype0, contents = mp_get_file_type(args.files[0])
+    ftype0, contents = mp_get_file_type(files[0])
     pdstype = ftype0.replace('reb', '')
     freq0 = contents['freq']
     pds0 = contents[pdstype]
@@ -58,18 +58,3 @@ def sum_fspec(files, outname=None):
     mp_save_data(tot_contents, outname)
 
     return tot_contents
-
-
-if __name__ == '__main__':
-    description = 'Sum (C)PDSs contained in different files'
-    parser = argparse.ArgumentParser(description=description)
-
-    parser.add_argument("files", help="List of light curve files", nargs='+')
-
-    parser.add_argument("-o", "--outname", type=str, default=None,
-                        help='Output file name for summed (C)PDS. Default:' +
-                        ' tot_(c)pds' + MP_FILE_EXTENSION)
-
-    args = parser.parse_args()
-
-    sum_fspec(args.files, args.outname)
