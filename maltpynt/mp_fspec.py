@@ -402,6 +402,13 @@ def mp_calc_pds(lcfile, fftlen,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
                'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate,
                'total_ctrate': tctrate}
+    if 'Emin' in lcdata.keys():
+        outdata['Emin'] = lcdata['Emin']
+        outdata['Emax'] = lcdata['Emax']
+    if 'PImin' in lcdata.keys():
+        outdata['PImin'] = lcdata['PImin']
+        outdata['PImax'] = lcdata['PImax']
+
     logging.debug(repr(results.dynpds))
 
     if save_dyn:
@@ -507,6 +514,20 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                'freq': freq, 'rebin': pdsrebin, 'norm': normalization,
                'ctrate': ctrate, 'total_ctrate': tctrate}
 
+    if 'Emin' in lcdata1.keys():
+        outdata['Emin1'] = lcdata1['Emin']
+        outdata['Emax1'] = lcdata1['Emax']
+    if 'Emin' in lcdata2.keys():
+        outdata['Emin2'] = lcdata2['Emin']
+        outdata['Emax2'] = lcdata2['Emax']
+
+    if 'PImin' in lcdata1.keys():
+        outdata['PImin1'] = lcdata1['PImin']
+        outdata['PImax1'] = lcdata1['PImax']
+    if 'PImin' in lcdata2.keys():
+        outdata['PImin2'] = lcdata2['PImin']
+        outdata['PImax2'] = lcdata2['PImax']
+
     logging.debug(repr(results.dyncpds))
     if save_dyn:
         outdata["dyncpds"] = np.array(results.dyncpds)[:, 1:]
@@ -572,11 +593,14 @@ def mp_calc_fspec(files, fftlen,
             outdir = os.getcwd()
 
         if outroot is None:
-            outroot = common_name(f1, f2, default='cpds_%d' % i_f)
+            outr = common_name(f1, f2, default='%d' % i_f)
+        else:
+            outr = outroot
 
         outname = os.path.join(outdir,
-                               outroot.replace(MP_FILE_EXTENSION, '_cpds') +
-                               MP_FILE_EXTENSION)
+                               outr.replace(MP_FILE_EXTENSION, '') +
+                               '_cpds' + MP_FILE_EXTENSION)
+
         mp_calc_cpds(f1, f2, fftlen,
                      save_dyn=save_dyn,
                      bintime=bintime,

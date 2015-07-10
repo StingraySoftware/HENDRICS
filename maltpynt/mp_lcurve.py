@@ -277,7 +277,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         events = events[good]
         tag = '_E%g-%g' % (e_interval[0], e_interval[1])
         out['Emin'] = e_interval[0]
-        out['Emax'] = e_interval[0]
+        out['Emax'] = e_interval[1]
 
     time, lc = mp_lcurve(events, bintime, start_time=tstart,
                          stop_time=tstop)
