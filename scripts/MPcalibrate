@@ -8,6 +8,12 @@ from maltpynt.mp_io import mp_get_file_extension, MP_FILE_EXTENSION
 from maltpynt.mp_calibrate import mp_calibrate
 import argparse
 import logging
+from multiprocessing import Pool
+
+
+def mp_calib_wrap(args):
+    f, outname, rmf = args
+    return mp_calibrate(f, outname, rmf)
 
 description = ('Calibrate clean event files by associating the correct '
                'energy to each PI channel. Uses either a specified rmf file '
@@ -28,6 +34,10 @@ parser.add_argument("--loglevel",
                     type=str)
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
+parser.add_argument("--nproc",
+                    help=("Number of processors to use"),
+                    default=1,
+                    type=int)
 args = parser.parse_args()
 files = args.files
 
@@ -38,9 +48,14 @@ numeric_level = getattr(logging, args.loglevel.upper(), None)
 logging.basicConfig(filename='MPcalibrate.log', level=numeric_level,
                     filemode='w')
 
+funcargs = []
 for i_f, f in enumerate(files):
     outname = f
     if args.overwrite is False:
         outname = f.replace(mp_get_file_extension(f), '_calib' +
                             MP_FILE_EXTENSION)
-    mp_calibrate(f, outname, args.rmf)
+    funcargs.append([f, outname, args.rmf])
+
+with Pool(processes=args.nproc) as pool:
+    for i in pool.imap_unordered(mp_calib_wrap, funcargs):
+        print('Done ', i)
