@@ -10,6 +10,8 @@ from maltpynt.mp_lcurve import (mp_lcurve_from_events, mp_scrunch_lightcurves,
 import argparse
 import numpy as np
 import logging
+from multiprocessing import Pool
+import functools
 
 description = ('Create lightcurves starting from event files. It is '
                'possible to specify energy or channel filtering options')
@@ -56,6 +58,10 @@ parser.add_argument("--loglevel",
                           "default:WARNING)"),
                     default='WARNING',
                     type=str)
+parser.add_argument("--nproc",
+                    help=("Number of processors to use"),
+                    default=1,
+                    type=int)
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
 parser.add_argument("--fits-input",
@@ -79,23 +85,26 @@ safe_interval = args.safe_interval
 pi_interval = np.array(args.pi_interval)
 e_interval = np.array(args.e_interval)
 
+# ------ Use functools.partial to wrap mp_lcurve* with relevant keywords----
+if args.fits_input:
+    wrap_fun = functools.partial(mp_lcurve_from_fits)
+elif args.txt_input:
+    wrap_fun = functools.partial(mp_lcurve_from_txt)
+else:
+    wrap_fun = functools.partial(
+        mp_lcurve_from_events, safe_interval=safe_interval,
+        pi_interval=pi_interval,
+        e_interval=e_interval,
+        min_length=args.minlen,
+        gti_split=args.gti_split,
+        ignore_gtis=args.ignore_gtis,
+        bintime=bintime, outdir=args.outdir)
+# ---------------------------------------------------------------------------
 outfiles = []
-for f in infiles:
-    if args.fits_input:
-        outfile = mp_lcurve_from_fits(f)
-    elif args.txt_input:
-        outfile = mp_lcurve_from_txt(f)
-    else:
-        outfile = mp_lcurve_from_events(f, safe_interval=safe_interval,
-                                        pi_interval=pi_interval,
-                                        e_interval=e_interval,
-                                        min_length=args.minlen,
-                                        gti_split=args.gti_split,
-                                        ignore_gtis=args.ignore_gtis,
-                                        bintime=bintime,
-                                        outdir=args.outdir)
 
-    outfiles.extend(outfile)
+with Pool(processes=args.nproc) as pool:
+    for i in pool.imap_unordered(wrap_fun, args.files, ):
+        outfiles.append(i)
 
 logging.debug(outfiles)
 # TODO: test if this still works!
