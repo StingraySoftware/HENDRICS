@@ -14,7 +14,7 @@ env:
   - WITH_NETCDF="yes"
   - WITH_NETCDF="no"
 install:
-  - if [[ $WITH_NETCDF == "yes" ]]; then conda install netcdf4 libnetcdf hdf5 h5py; fi
+  - if [[ $WITH_NETCDF == "yes" ]]; then conda install --yes python=$TRAVIS_PYTHON_VERSION netcdf4 libnetcdf hdf5 h5py; fi
   - conda install --yes python=$TRAVIS_PYTHON_VERSION scipy matplotlib astropy
   - if [[ $WITH_NETCDF == "yes" ]]; then travis_retry pip install netCDF4; fi
   - python setup.py install
