@@ -111,6 +111,9 @@ optional arguments:
   -r RMF, --rmf RMF  rmf file used for calibration
   -o, --overwrite    Overwrite; default: no
 ```
+
+Some scripts (e.g. `MPreadevents`, `MPlcurve`, `MPfspec`) have a `--nproc` option, useful when one needs to treat multiple files at a time. The load is divided among `nproc` processors, that work in parallel cutting down considerably the execution time. 
+
 For I/O, MaLTPyNT looks if the `netCDF4` library is installed. If it's found in the system, files will be saved in this format. Otherwise, the native Python `pickle` format format will be used. This format is _much_ slower (It might take some minutes to load some files) and files will be bigger, but this possibility ensures portability. If you don't use netCDF4, you'll notice that file names will have the `.p` extension instead of the `.nc` below. The rest is the same.
 
 ### 1. Loading event lists
