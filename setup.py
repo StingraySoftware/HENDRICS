@@ -21,7 +21,7 @@ if PY2 and PYX6:
 
 print(install_requires)
 setup(name='maltpynt',
-      version='1.0b1',
+      version='1.0rc0',
       description="Matteo's Library and Tools in Python for NuSTAR Timing",
       packages=['maltpynt'],
       package_data={'': ['README.md']},
