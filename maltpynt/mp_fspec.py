@@ -10,6 +10,13 @@ from .mp_io import mp_get_file_type, mp_load_lcurve, mp_save_pds
 from .mp_io import MP_FILE_EXTENSION
 import numpy as np
 import logging
+from multiprocessing import Pool
+import functools
+
+
+def _wrap_calc_cpds(arglist, **kwargs):
+    f1, f2, outname = arglist
+    return mp_calc_cpds(f1, f2, outname=outname, **kwargs)
 
 
 class _empty():
@@ -547,7 +554,8 @@ def mp_calc_fspec(files, fftlen,
                   bintime=1,
                   pdsrebin=1,
                   outroot=None,
-                  normalization='Leahy'):
+                  normalization='Leahy',
+                  nproc=1):
     '''Calculates the frequency spectra: the PDS, the cospectrum, ...'''
 
     import os
@@ -559,12 +567,16 @@ def mp_calc_fspec(files, fftlen,
     logging.info('Using %s normalization' % normalization)
 
     if calc_pds:
-        for lcf in files:
-            mp_calc_pds(lcf, fftlen,
-                        save_dyn=save_dyn,
-                        bintime=bintime,
-                        pdsrebin=pdsrebin,
-                        normalization=normalization)
+        wrap_fun = functools.partial(
+            mp_calc_pds, fftlen=fftlen,
+            save_dyn=save_dyn,
+            bintime=bintime,
+            pdsrebin=pdsrebin,
+            normalization=normalization)
+
+        with Pool(processes=nproc) as pool:
+            for i in pool.imap_unordered(wrap_fun, files):
+                pass
 
     if not calc_cpds:
         return
@@ -585,6 +597,15 @@ def mp_calc_fspec(files, fftlen,
 
     assert len(files1) == len(files2), 'An even number of files is needed'
 
+    wrap_fun = functools.partial(
+        _wrap_calc_cpds, fftlen=fftlen,
+        save_dyn=save_dyn,
+        bintime=bintime,
+        pdsrebin=pdsrebin,
+        normalization=normalization)
+
+    funcargs = []
+
     for i_f, f in enumerate(files1):
         f1, f2 = f, files2[i_f]
 
@@ -601,12 +622,11 @@ def mp_calc_fspec(files, fftlen,
                                outr.replace(MP_FILE_EXTENSION, '') +
                                '_cpds' + MP_FILE_EXTENSION)
 
-        mp_calc_cpds(f1, f2, fftlen,
-                     save_dyn=save_dyn,
-                     bintime=bintime,
-                     pdsrebin=pdsrebin,
-                     outname=outname,
-                     normalization=normalization)
+        funcargs.append([f1, f2, outname])
+
+    with Pool(processes=nproc) as pool:
+        for i in pool.imap_unordered(wrap_fun, funcargs):
+            pass
 
 
 def mp_read_fspec(fname):
