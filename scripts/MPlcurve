@@ -103,11 +103,11 @@ else:
 outfiles = []
 
 with Pool(processes=args.nproc) as pool:
-    for i in pool.imap_unordered(wrap_fun, args.files, ):
+    for i in pool.imap_unordered(wrap_fun, args.files):
         outfiles.append(i)
 
 logging.debug(outfiles)
-# TODO: test if this still works!
+
 if args.scrunch:
     mp_scrunch_lightcurves(outfiles)
 
