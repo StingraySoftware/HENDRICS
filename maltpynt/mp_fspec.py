@@ -361,7 +361,8 @@ def mp_calc_pds(lcfile, fftlen,
                 save_dyn=False,
                 bintime=1,
                 pdsrebin=1,
-                normalization='Leahy'):
+                normalization='Leahy',
+                back_ctrate=0.):
     '''Calculates the PDS from an input light curve file'''
 
     logging.info("Loading file %s..." % lcfile)
@@ -401,19 +402,18 @@ def mp_calc_pds(lcfile, fftlen,
 
     if normalization == 'rms':
         logging.info('Applying %s normalization' % normalization)
-        # TODO: allow to specify background ctrate.
-        # Do not confuse with the count rate outside the source region.
-        # Here we are talking about contamination inside the source region
+
         pds, epds = \
             mp_rms_normalize_pds(pds, epds,
                                  source_ctrate=ctrate,
-                                 back_ctrate=0)
+                                 back_ctrate=back_ctrate)
 
     root = mp_root(lcfile)
     outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
                'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate,
-               'total_ctrate': tctrate}
+               'total_ctrate': tctrate,
+               'back_ctrate': back_ctrate}
     if 'Emin' in lcdata.keys():
         outdata['Emin'] = lcdata['Emin']
         outdata['Emax'] = lcdata['Emax']
@@ -440,7 +440,8 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                  bintime=1,
                  pdsrebin=1,
                  outname='cpds' + MP_FILE_EXTENSION,
-                 normalization='Leahy'):
+                 normalization='Leahy',
+                 back_ctrate=0.):
     '''Calculates the Cross Power Density Spectrum from a pair of
     input light curve files'''
 
@@ -516,16 +517,16 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
 
     if normalization == 'rms':
         logging.info('Applying %s normalization' % normalization)
-        # TODO: allow to specify background ctrate
         cpds, ecpds = \
             mp_rms_normalize_pds(cpds, ecpds,
                                  source_ctrate=ctrate,
-                                 back_ctrate=0)
+                                 back_ctrate=back_ctrate)
 
     outdata = {'time': gti[0][0], 'cpds': cpds, 'ecpds': ecpds, 'ncpds': ncpds,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
                'freq': freq, 'rebin': pdsrebin, 'norm': normalization,
-               'ctrate': ctrate, 'total_ctrate': tctrate}
+               'ctrate': ctrate, 'total_ctrate': tctrate,
+               'back_ctrate': back_ctrate}
 
     if 'Emin' in lcdata1.keys():
         outdata['Emin1'] = lcdata1['Emin']
@@ -562,7 +563,8 @@ def mp_calc_fspec(files, fftlen,
                   pdsrebin=1,
                   outroot=None,
                   normalization='Leahy',
-                  nproc=1):
+                  nproc=1,
+                  back_ctrate=0.):
     '''Calculates the frequency spectra: the PDS, the cospectrum, ...'''
 
     import os
@@ -579,7 +581,8 @@ def mp_calc_fspec(files, fftlen,
             save_dyn=save_dyn,
             bintime=bintime,
             pdsrebin=pdsrebin,
-            normalization=normalization)
+            normalization=normalization,
+            back_ctrate=back_ctrate)
 
         with Pool(processes=nproc) as pool:
             for i in pool.imap_unordered(wrap_fun, files):
@@ -609,7 +612,8 @@ def mp_calc_fspec(files, fftlen,
         save_dyn=save_dyn,
         bintime=bintime,
         pdsrebin=pdsrebin,
-        normalization=normalization)
+        normalization=normalization,
+        back_ctrate=back_ctrate)
 
     funcargs = []
 

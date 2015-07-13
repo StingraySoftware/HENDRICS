@@ -41,6 +41,10 @@ parser.add_argument("--nproc",
                     help=("Number of processors to use"),
                     default=1,
                     type=int)
+parser.add_argument("--back",
+                    help=("Estimated background (non-source) count rate"),
+                    default=0.,
+                    type=float)
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
 parser.add_argument("--save-dyn", help="save dynamical power spectrum",
@@ -83,4 +87,5 @@ mp_calc_fspec(args.files, fftlen,
               pdsrebin=pdsrebin,
               outroot=args.outroot,
               normalization=normalization,
-              nproc=args.nproc)
+              nproc=args.nproc,
+              back_ctrate=args.back)
