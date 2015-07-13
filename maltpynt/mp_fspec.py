@@ -98,6 +98,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
         results = _empty()
         results.dynpds = []
         results.edynpds = []
+        results.dynctrate = []
         results.times = []
 
     pds = 0
@@ -119,6 +120,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
         if return_all:
             results.dynpds.append(p)
             results.edynpds.append(p)
+            results.dynctrate.append(np.mean(l) / bintime)
             results.times.append(time[start_bin])
 
         pds += p
@@ -236,6 +238,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         results = _empty()
         results.dyncpds = []
         results.edyncpds = []
+        results.dynctrate = []
         results.times = []
 
     cpds = 0
@@ -259,6 +262,8 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         if return_all:
             results.dyncpds.append(p)
             results.edyncpds.append(pe)
+            results.dynctrate.append(
+                np.sqrt(np.mean(l1)*np.mean(l2)) / bintime)
             results.times.append(time[start_bin])
 
         mask[start_bin:stop_bin] = True
@@ -421,6 +426,7 @@ def mp_calc_pds(lcfile, fftlen,
     if save_dyn:
         outdata["dynpds"] = np.array(results.dynpds)[:, 1:]
         outdata["edynpds"] = np.array(results.edynpds)[:, 1:]
+        outdata["dynctrate"] = np.array(results.dynctrate)
 
         outdata["dyntimes"] = np.array(results.times)
 
@@ -539,6 +545,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     if save_dyn:
         outdata["dyncpds"] = np.array(results.dyncpds)[:, 1:]
         outdata["edyncpds"] = np.array(results.edyncpds)[:, 1:]
+        outdata["dynctrate"] = np.array(results.dynctrate)
         outdata["dyntimes"] = np.array(results.times)
 
     logging.info('Saving CPDS to %s' % outname)
@@ -578,7 +585,7 @@ def mp_calc_fspec(files, fftlen,
             for i in pool.imap_unordered(wrap_fun, files):
                 pass
 
-    if not calc_cpds:
+    if not calc_cpds or len(files) < 2:
         return
 
     if len(files) > 2:
