@@ -408,6 +408,15 @@ def mp_calc_pds(lcfile, fftlen,
                                  source_ctrate=ctrate,
                                  back_ctrate=back_ctrate)
 
+        for ic, pd in enumerate(results.dynpds):
+            ep = results.edynpds[ic].copy()
+            ct = results.dynctrate[ic].copy()
+
+            pd, ep = mp_rms_normalize_pds(pd, ep, source_ctrate=ct,
+                                          back_ctrate=back_ctrate)
+            results.edynpds[ic][:] = ep
+            results.dynpds[ic][:] = pd
+
     root = mp_root(lcfile)
     outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
@@ -521,6 +530,14 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
             mp_rms_normalize_pds(cpds, ecpds,
                                  source_ctrate=ctrate,
                                  back_ctrate=back_ctrate)
+        for ic, cp in enumerate(results.dyncpds):
+            ec = results.edyncpds[ic].copy()
+            ct = results.dynctrate[ic].copy()
+
+            cp, ec = mp_rms_normalize_pds(cp, ec, source_ctrate=ct,
+                                          back_ctrate=back_ctrate)
+            results.edyncpds[ic][:] = ec
+            results.dyncpds[ic][:] = cp
 
     outdata = {'time': gti[0][0], 'cpds': cpds, 'ecpds': ecpds, 'ncpds': ncpds,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
