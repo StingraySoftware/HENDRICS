@@ -19,7 +19,6 @@ install_requires = [
 if PY2 and PYX6:
     install_requires += ['unittest2']
 
-print(install_requires)
 setup(name='maltpynt',
       version='1.0rc1',
       description="Matteo's Library and Tools in Python for NuSTAR Timing",
@@ -43,4 +42,4 @@ setup(name='maltpynt',
           'Topic :: Scientific/Engineering :: Astronomy'
           ],
       install_requires=install_requires,
-      test_suite='tests.utests')
+      test_suite='tests')

@@ -1,17 +1,13 @@
 # MaLTPyNT - Matteo's Libraries and Tools in Python for NuSTAR Timing.
 
-Master build status: [![Build Status](https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=master)](https://travis-ci.org/matteobachetti/MaLTPyNT)
+Master: [![Build Status](https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=master)](https://travis-ci.org/matteobachetti/MaLTPyNT) [![Coverage Status](https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=master&service=github)](https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=master)
 
-Master coverage status: [![Coverage Status](https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github)](https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=master)
-
-Development build status: [![Build Status](https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable)](https://travis-ci.org/matteobachetti/MaLTPyNT)
-
-Development coverage status: [![Coverage Status](https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github)](https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=unstable)
+Devel:  [![Build Status](https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable)](https://travis-ci.org/matteobachetti/MaLTPyNT) [![Coverage Status](https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github)](https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=unstable)
 
 ** BEWARE! STILL UNDER TESTING. USE WITH CARE IN PRODUCTION!**
 
 This software is mostly focused on doing correctly and fairly easily a **quick-look timing analysis** of NuSTAR data, treating properly orbital gaps and exploiting the presence of two independent detectors by using the **cospectrum** as a proxy for the power density spectrum (for an explanation of why this is important, look at Bachetti et al., _ApJ_, 800, 109 -[arXiv:1409.3248](http://arxiv.org/abs/1409.3248)). The output of the analysis is a cospectrum, or a power density spectrum, that can be fitted with [Xspec](http://heasarc.gsfc.nasa.gov/xanadu/xspec/) or [Isis](http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html). Also, one can calculate in the same easy way **time lags** (still under testing, help is welcome).
-Despite its main focus on NuSTAR, the software can be used to make standard spectral analysis on X-ray data from, in principle, any other satellite (for sure XMM-Newton and RXTE). 
+Despite its main focus on NuSTAR, the software can be used to make standard spectral analysis on X-ray data from, in principle, any other satellite (for sure XMM-Newton and RXTE).
 
 ## MaLTPyNT vs FTOOLS (and together with FTOOLS)
 
@@ -23,14 +19,14 @@ MaLTPyNT does a better job than POWSPEC from several points of view:
 - The number of bins used in the power spectrum (or the cospectrum) need not be a power of two! No padding needed.
 
 ### Clarification about dead time treatment
-MaLTPyNT **does not supersede [nulccorr](https://heasarc.gsfc.nasa.gov/ftools/caldb/help/nulccorr.html)**. If one is only interested in frequencies below ~0.5 Hz, nulccorr treats robustly various dead time components and its use is recommended. Light curves produced by nulccorr can be converted to MaLTPyNT format using `MPlcurve --fits-input <lcname>.fits`, and used for the subsequent steps of the timing analysis. 
+MaLTPyNT **does not supersede [nulccorr](https://heasarc.gsfc.nasa.gov/ftools/caldb/help/nulccorr.html)**. If one is only interested in frequencies below ~0.5 Hz, nulccorr treats robustly various dead time components and its use is recommended. Light curves produced by nulccorr can be converted to MaLTPyNT format using `MPlcurve --fits-input <lcname>.fits`, and used for the subsequent steps of the timing analysis.
 
 ## License and notes for the users
 This software is released with a 3-clause BSD license. You can find license information in the `LICENSE.rst` file.
 
-**If you use this software in a publication**, please refer to its Astrophysics Source Code Library identifier: 
+**If you use this software in a publication**, please refer to its Astrophysics Source Code Library identifier:
 
-1. Bachetti, M. 2015, MaLTPyNT, Astrophysics Source Code Library, record [ascl:1502.021](http://ascl.net/1502.021). 
+1. Bachetti, M. 2015, MaLTPyNT, Astrophysics Source Code Library, record [ascl:1502.021](http://ascl.net/1502.021).
 
 In particular, **if you use the cospectrum**, please also refer to:
 
@@ -44,7 +40,7 @@ In particular, I would like to thank Ivan Zolotukhin, Francesca Fornasini, Erin 
 Last but not least, I would like to thank Marco Buttu (by the way, [check out his book if you speak Italian](http://www.amazon.it/Programmare-con-Python-completa-DigitalLifeStyle-ebook/dp/B00L95VURC/ref=sr_1_1?s=books&ie=UTF8&qid=1424298092&sr=1-1)) for his priceless pointers on Python coding and code management techniques.
 
 ## Installation
-You'll need a recent python 2.6+ or 3.3+ installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/), [Scipy](http://scipy.org/) and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html). 
+You'll need a recent python 2.6+ or 3.3+ installation, and the [Numpy](http://www.numpy.org/), [Matplotlib](http://matplotlib.org/), [Scipy](http://scipy.org/) and [Astropy](http://www.astropy.org/) libraries. You should also have a working [HEASoft](http://heasarc.nasa.gov/lheasoft/) installation to produce the cleaned event files and to use [XSpec](http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html).
 
 An **optional but recommended** dependency is the [netCDF 4 library](http://www.unidata.ucar.edu/software/netcdf/) with its [python bindings](https://github.com/Unidata/netcdf4-python).
 
@@ -95,7 +91,7 @@ This software has a modular structure. One starts from cleaned event files (such
 
 5. **power spectrum** and/or **cross spectrum** (hereafter the ``frequency spectra'')
 
-6. **rebinning** of frequency spectra 
+6. **rebinning** of frequency spectra
 
 7. finally, **lags** and **cospectrum**
 
@@ -121,7 +117,7 @@ optional arguments:
   -o, --overwrite    Overwrite; default: no
 ```
 
-Some scripts (e.g. `MPreadevents`, `MPlcurve`, `MPfspec`) have a `--nproc` option, useful when one needs to treat multiple files at a time. The load is divided among `nproc` processors, that work in parallel cutting down considerably the execution time. 
+Some scripts (e.g. `MPreadevents`, `MPlcurve`, `MPfspec`) have a `--nproc` option, useful when one needs to treat multiple files at a time. The load is divided among `nproc` processors, that work in parallel cutting down considerably the execution time.
 
 For I/O, MaLTPyNT looks if the `netCDF4` library is installed. If it's found in the system, files will be saved in this format. Otherwise, the native Python `pickle` format format will be used. This format is _much_ slower (It might take some minutes to load some files) and files will be bigger, but this possibility ensures portability. If you don't use netCDF4, you'll notice that file names will have the `.p` extension instead of the `.nc` below. The rest is the same.
 
@@ -221,7 +217,7 @@ Saving cpds to cpds_002_3-30_0_rebin1.03.nc
 ```
 
 ### 7. Calculating the cospectrum and phase/time lags
-The calculation of lags and their errors is implemented in `MPlags`, and needs to be tested properly. 
+The calculation of lags and their errors is implemented in `MPlags`, and needs to be tested properly.
 For the cospectrum, it is sufficient to read the real part of the cross power spectrum as depicted in the relevant function in `mp_plot.py` ([Use the source, Luke!](http://adastraerrans.com/archivos/use-the-source-luke.png)).
 
 ### 8. Saving the spectra in a format readable to XSpec
