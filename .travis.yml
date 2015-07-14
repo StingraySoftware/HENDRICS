@@ -16,6 +16,9 @@ env:
 install:
   - if [[ $WITH_NETCDF == "yes" ]]; then conda install --yes python=$TRAVIS_PYTHON_VERSION libnetcdf hdf5 h5py netCDF4 scipy matplotlib astropy; fi
   - if [[ $WITH_NETCDF == "no" ]]; then conda install --yes python=$TRAVIS_PYTHON_VERSION scipy matplotlib astropy; fi
+  - pip install coveralls
   - python setup.py install
 script:
-  - python tests/utests.py
+  - coverage run --source=maltpynt setup.py test
+after_success:
+  coveralls
