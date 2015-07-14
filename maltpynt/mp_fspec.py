@@ -601,9 +601,10 @@ def mp_calc_fspec(files, fftlen,
             normalization=normalization,
             back_ctrate=back_ctrate)
 
-        with Pool(processes=nproc) as pool:
-            for i in pool.imap_unordered(wrap_fun, files):
-                pass
+        pool = Pool(processes=nproc)
+        for i in pool.imap_unordered(wrap_fun, files):
+            pass
+        pool.close()
 
     if not calc_cpds or len(files) < 2:
         return
@@ -652,9 +653,10 @@ def mp_calc_fspec(files, fftlen,
 
         funcargs.append([f1, f2, outname])
 
-    with Pool(processes=nproc) as pool:
-        for i in pool.imap_unordered(wrap_fun, funcargs):
-            pass
+    pool = Pool(processes=nproc)
+    for i in pool.imap_unordered(wrap_fun, funcargs):
+        pass
+    pool.close()
 
 
 def mp_read_fspec(fname):

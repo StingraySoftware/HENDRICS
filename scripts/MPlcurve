@@ -102,9 +102,10 @@ else:
 # ---------------------------------------------------------------------------
 outfiles = []
 
-with Pool(processes=args.nproc) as pool:
-    for i in pool.imap_unordered(wrap_fun, args.files):
-        outfiles.append(i)
+pool = Pool(processes=args.nproc)
+for i in pool.imap_unordered(wrap_fun, args.files):
+    outfiles.append(i)
+pool.close()
 
 logging.debug(outfiles)
 

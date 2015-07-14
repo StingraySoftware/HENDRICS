@@ -56,6 +56,7 @@ for i_f, f in enumerate(files):
                             MP_FILE_EXTENSION)
     funcargs.append([f, outname, args.rmf])
 
-with Pool(processes=args.nproc) as pool:
-    for i in pool.imap_unordered(mp_calib_wrap, funcargs):
-        print('Done ', i)
+pool = Pool(processes=args.nproc)
+for i in pool.imap_unordered(mp_calib_wrap, funcargs):
+    pass
+pool.close()
