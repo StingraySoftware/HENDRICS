@@ -6,12 +6,14 @@ from __future__ import (absolute_import, unicode_literals, division,
 from .mp_io import mp_get_file_type
 import numpy as np
 from .mp_io import mp_get_file_extension
+import subprocess as sp
 
 
-def mp_save_as_xspec(fname):
+def mp_save_as_xspec(fname, direct_save=False):
     ftype, contents = mp_get_file_type(fname)
 
-    outname = fname.replace(mp_get_file_extension(fname), '_xsp.dat')
+    outroot = fname.replace(mp_get_file_extension(fname), '')
+    outname = outroot + '_xsp.dat'
 
     if 'freq' in list(contents.keys()):
         freq = contents['freq']
@@ -36,10 +38,13 @@ def mp_save_as_xspec(fname):
     else:
         raise Exception('File type not recognized')
 
+    if direct_save:
+        sp.check_call('flx2xsp {} {}.pha {}.rsp'.format(
+            outname, outroot, outroot).split())
+
 
 if __name__ == '__main__':
     import sys
-    import subprocess as sp
 
     print('Calling script...')
 
