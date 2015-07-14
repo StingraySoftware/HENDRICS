@@ -2,7 +2,7 @@
 TRAVIS_PYTHON_VERSION=$1
 WITH_NETCDF=$2
 
-if test ! -e /home/travis/miniconda; then
+if test ! -e /home/travis/miniconda/pkgs/; then
     wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
     chmod +x miniconda.sh
     ./miniconda.sh -b
