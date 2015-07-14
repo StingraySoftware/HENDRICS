@@ -7,16 +7,11 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
-before_install:
-  - . travis_scripts/install_miniconda.sh
-  - export PATH=/home/travis/miniconda/bin:$PATH
-  - conda update --yes conda
 env:
   - WITH_NETCDF="yes"
   - WITH_NETCDF="no"
 install:
-  - if [[ $WITH_NETCDF == "yes" ]]; then conda install --yes python=$TRAVIS_PYTHON_VERSION libnetcdf hdf5 h5py netCDF4 scipy matplotlib astropy; fi
-  - if [[ $WITH_NETCDF == "no" ]]; then conda install --yes python=$TRAVIS_PYTHON_VERSION scipy matplotlib astropy; fi
+  - . travis_scripts/install_miniconda.sh $TRAVIS_PYTHON_VERSION $WITH_NETCDF
   - pip install coveralls
   - python setup.py install
 script:
