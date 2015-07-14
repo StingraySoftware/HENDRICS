@@ -221,13 +221,11 @@ The calculation of lags and their errors is implemented in `MPlags`, and needs t
 For the cospectrum, it is sufficient to read the real part of the cross power spectrum as depicted in the relevant function in `mp_plot.py` ([Use the source, Luke!](http://adastraerrans.com/archivos/use-the-source-luke.png)).
 
 ### 8. Saving the spectra in a format readable to XSpec
-To save the cospectrum in a format readable to XSpec it is sufficient to give the commands
+To save the cospectrum in a format readable to XSpec it is sufficient to give the command
 ```
 #!console
 
-$ MP2xspec cpds_002_3-30_0_rebin1.03.nc
-Saving to cpds_002_3-30_0_rebin1.03_xsp.dat
-$ flx2xsp cpds_002_3-30_0_rebin1.03_xsp.dat cpds.pha cpds.rsp
+$ MP2xspec cpds_002_3-30_0_rebin1.03.nc --flx2xsp
 ```
 
 ### 9. Open and fit in XSpec!
