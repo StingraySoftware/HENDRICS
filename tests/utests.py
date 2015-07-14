@@ -241,22 +241,22 @@ class TestFullRun(unittest.TestCase):
         '''Test save as Xspec 1'''
         try:
             sp.check_call(
-                'MP2Xspec {}'.format(
+                'MP2xspec {}'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2') +
                     MP_FILE_EXTENSION).split())
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('MP2Xspec Test 1', type(e),
+            self.fail("{} failed ({}: {})".format('MP2xspec Test 1', type(e),
                                                   e))
 
     def step11_savexspec2(self):
         '''Test save as Xspec 2'''
         try:
             sp.check_call(
-                'MP2Xspec {}'.format(
+                'MP2xspec {}'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') +
                     MP_FILE_EXTENSION).split())
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('MP2Xspec Test 2', type(e),
+            self.fail("{} failed ({}: {})".format('MP2xspec Test 2', type(e),
                                                   e))
 
     def step12_joinlcs(self):
