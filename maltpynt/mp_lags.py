@@ -103,7 +103,7 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag'):
                'freq': freq, 'rebin': rebin,
                'ctrate': ctrate, 'total_ctrate': tctrate}
 
-    outname = outroot + MP_FILE_EXTENSION
+    outname = outroot + "_lag" + MP_FILE_EXTENSION
     logging.info('Saving lags to %s' % outname)
     mp_save_data(outdata, outname)
 

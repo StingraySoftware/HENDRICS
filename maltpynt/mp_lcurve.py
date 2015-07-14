@@ -244,16 +244,17 @@ def mp_lcurve_from_events(f, safe_interval=0,
     tstop = np.floor(tstop / bintime, dtype=np.longdouble) * bintime
 
     # First of all, calculate total count rate (no filtering applied)
-    time, lc = mp_lcurve(events, bintime, start_time=tstart,
-                         stop_time=tstop)
+    tot_time, tot_lc = mp_lcurve(events, bintime, start_time=tstart,
+                                 stop_time=tstop)
 
-    time, lc, newgtis = \
-        mp_filter_lc_gtis(time, lc, gtis,
+    tot_time, tot_lc, newgtis, tot_borders = \
+        mp_filter_lc_gtis(tot_time, tot_lc, gtis,
                           safe_interval=safe_interval,
-                          delete=True,
-                          min_length=min_length)
+                          delete=False,
+                          min_length=min_length,
+                          return_borders=True)
 
-    out['total_ctrate'] = mp_calc_countrate(time, lc, bintime=bintime)
+    out['total_ctrate'] = mp_calc_countrate(tot_time, tot_lc, bintime=bintime)
 
     # Then, apply filters
     if pi_interval is not None and np.all(np.array(pi_interval) > 0):
@@ -289,6 +290,9 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           min_length=min_length,
                           return_borders=True)
 
+    assert np.all(borders == tot_borders), \
+        'Borders do not coincide: {} {}'.format(borders, tot_borders)
+
     out['source_ctrate'] = mp_calc_countrate(time, lc, gtis=newgtis,
                                              bintime=bintime)
 
@@ -297,7 +301,6 @@ def mp_lcurve_from_events(f, safe_interval=0,
         mp_mkdir_p(outdir)
         f = os.path.join(outdir, f)
 
-    # TODO: implement per-interval count rates
     if gti_split:
         outfiles = []
         logging.debug(borders)
@@ -308,10 +311,17 @@ def mp_lcurve_from_events(f, safe_interval=0,
             local_out['lc'] = lc[b[0]:b[1]]
             local_out['time'] = time[b[0]:b[1]]
             local_out['dt'] = bintime
-            local_out['GTI'] = np.array([[time[b[0]], time[b[1]-1]]])
+            local_gti = np.array([[time[b[0]], time[b[1]-1]]])
+            local_out['GTI'] = local_gti
             local_out['Tstart'] = time[b[0]]
             local_out['Tstop'] = time[b[1]-1]
             local_out['Instr'] = instr
+            local_out['source_ctrate'] = mp_calc_countrate(time[b[0]:b[1]],
+                                                           lc[b[0]:b[1]],
+                                                           bintime=bintime)
+            local_out['total_ctrate'] = mp_calc_countrate(tot_time[b[0]:b[1]],
+                                                          tot_lc[b[0]:b[1]],
+                                                          bintime=bintime)
             if instr == 'PCA':
                 local_out['nPCUs'] = len(set(pcus))
 

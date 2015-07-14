@@ -34,6 +34,7 @@ numeric_level = getattr(logging, args.loglevel.upper(), None)
 logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
                     filemode='w')
 
-with Pool(processes=args.nproc) as pool:
-    for i in pool.imap_unordered(mp_treat_event_file, files):
-        print('Done')
+pool = Pool(processes=args.nproc)
+for i in pool.imap_unordered(mp_treat_event_file, files):
+    pass
+pool.close()
