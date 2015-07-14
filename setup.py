@@ -43,4 +43,4 @@ setup(name='maltpynt',
           'Topic :: Scientific/Engineering :: Astronomy'
           ],
       install_requires=install_requires,
-      test_suite='tests/utests.py')
+      test_suite='tests.utests')
