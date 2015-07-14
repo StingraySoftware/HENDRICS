@@ -13,4 +13,7 @@ if test ! -e /home/travis/miniconda/pkgs/; then
     else
         conda install --yes python=$TRAVIS_PYTHON_VERSION scipy matplotlib astropy numpy
     fi
+else:
+    export PATH=/home/travis/miniconda/bin:$PATH
+    conda update --yes conda    
 fi
