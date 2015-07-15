@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Test a full run of the codes from the command line."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -26,11 +27,15 @@ datadir = os.path.join(curdir, 'data')
 
 
 class TestCommandline(unittest.TestCase):
-    '''Tests how command lines work. When command line is missing, revert
-       to library calls (some overlap with utests.py)'''
+
+    """Test how command lines work.
+
+    When command line is missing, revert
+    to library calls (some overlap with utests.py).
+    """
 
     def step01_load_events(self):
-        '''Test event file reading'''
+        """Test event file reading."""
         try:
             sp.check_call('MPreadevents {} {}'.format(
                 os.path.join(datadir, 'monol_testA.evt'),
@@ -39,7 +44,7 @@ class TestCommandline(unittest.TestCase):
             raise(Exception('Loading event file failed'))
 
     def step02_calibrate(self):
-        '''Test event file calibration'''
+        """Test event file calibration."""
         try:
             sp.check_call('MPcalibrate {} {} -r {}'.format(
                 os.path.join(datadir, 'monol_testA_ev' + MP_FILE_EXTENSION),
@@ -49,7 +54,7 @@ class TestCommandline(unittest.TestCase):
             raise(Exception('Calibrating event file failed'))
 
     def step03a_lcurve(self):
-        '''Test light curve production'''
+        """Test light curve production."""
         try:
             sp.check_call(
                 'MPlcurve {} {} -e {} {} --safe-interval {} {}'.format(
@@ -62,7 +67,7 @@ class TestCommandline(unittest.TestCase):
             raise(Exception('Production of light curve failed'))
 
     def step03b_fits_lcurve(self):
-        '''Test light curves from FITS'''
+        """Test light curves from FITS."""
         try:
             lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
             mp.lcurve.mp_lcurve_from_events(
@@ -95,7 +100,7 @@ class TestCommandline(unittest.TestCase):
             'Light curve data do not coincide between FITS and MP'
 
     def step03c_txt_lcurve(self):
-        '''Test light curves from txt'''
+        """Test light curves from txt."""
         try:
             lcurve_mp = os.path.join(datadir,
                                      'lcurve_mp_lc' +
@@ -125,7 +130,7 @@ class TestCommandline(unittest.TestCase):
             'Light curve data do not coincide between txt and MP'
 
     def step04a_pds(self):
-        '''Test PDS production'''
+        """Test PDS production."""
         try:
             sp.check_call(
                 'MPfspec {} {} -f 128 --save-dyn -k PDS'.format(
@@ -137,7 +142,7 @@ class TestCommandline(unittest.TestCase):
             raise(Exception('Production of PDSs failed'))
 
     def step04b_pds_fits(self):
-        '''Test PDS production with light curves obtained from FITS files'''
+        """Test PDS production with light curves obtained from FITS files."""
         lcurve_ftools = os.path.join(datadir,
                                      'lcurve_ftools_lc' +
                                      MP_FILE_EXTENSION)
@@ -148,7 +153,7 @@ class TestCommandline(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('PDS LC FITS', type(e), e))
 
     def step04c_pds_txt(self):
-        '''Test PDS production with light curves obtained from txt files'''
+        """Test PDS production with light curves obtained from txt files."""
         lcurve_txt = os.path.join(datadir,
                                   'lcurve_txt_lc' +
                                   MP_FILE_EXTENSION)
@@ -159,7 +164,7 @@ class TestCommandline(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('PDS LC txt', type(e), e))
 
     def step05_cpds(self):
-        '''Test CPDS production'''
+        """Test CPDS production."""
         try:
             sp.check_call(
                 'MPfspec {} {} -f 128 --save-dyn -k CPDS -o {}'.format(
@@ -172,7 +177,7 @@ class TestCommandline(unittest.TestCase):
             raise(Exception('Production of CPDS failed'))
 
     def step06_lags(self):
-        '''Test Lag calculations'''
+        """Test Lag calculations."""
         try:
             sp.check_call(
                 'MPlags {} {} {} -o {}'.format(
@@ -188,7 +193,7 @@ class TestCommandline(unittest.TestCase):
                                                   type(e), e))
 
     def step07_rebinlc(self):
-        '''Test LC rebinning'''
+        """Test LC rebinning."""
         try:
             sp.check_call(
                 'MPrebin {} -r 2'.format(
@@ -198,7 +203,7 @@ class TestCommandline(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('LC rebin', type(e), e))
 
     def step08_rebinpds1(self):
-        '''Test PDS rebinning 1'''
+        """Test PDS rebinning 1."""
         try:
             sp.check_call(
                 'MPrebin {} -r 2'.format(
@@ -209,7 +214,7 @@ class TestCommandline(unittest.TestCase):
                                                   e))
 
     def step08a_rebinpds2(self):
-        '''Test PDS rebinning 2'''
+        """Test PDS rebinning 2."""
         try:
             sp.check_call(
                 'MPrebin {} -r 1.03'.format(
@@ -220,7 +225,7 @@ class TestCommandline(unittest.TestCase):
                                                   e))
 
     def step09_rebincpds(self):
-        '''Test CPDS rebinning'''
+        """Test CPDS rebinning."""
         try:
             sp.check_call(
                 'MPrebin {} -r 1.03'.format(
@@ -231,7 +236,7 @@ class TestCommandline(unittest.TestCase):
                                                   type(e), e))
 
     def step10_savexspec1(self):
-        '''Test save as Xspec 1'''
+        """Test save as Xspec 1."""
         try:
             sp.check_call(
                 'MP2xspec {}'.format(
@@ -242,7 +247,7 @@ class TestCommandline(unittest.TestCase):
                                                   e))
 
     def step11_savexspec2(self):
-        '''Test save as Xspec 2'''
+        """Test save as Xspec 2."""
         try:
             sp.check_call(
                 'MP2xspec {}'.format(
@@ -253,7 +258,7 @@ class TestCommandline(unittest.TestCase):
                                                   e))
 
     def step12_joinlcs(self):
-        '''Test produce joined light curves'''
+        """Test produce joined light curves."""
         try:
             mp.mp_lcurve.mp_join_lightcurves(
                 [os.path.join(datadir, 'monol_testA_E3-50_lc') +
@@ -267,7 +272,7 @@ class TestCommandline(unittest.TestCase):
                                                   e))
 
     def step13_scrunchlcs(self):
-        '''Test produce scrunched light curves'''
+        """Test produce scrunched light curves."""
         try:
             sp.check_call(
                 'MPscrunchlc {} {} -o {}'.format(
@@ -282,7 +287,7 @@ class TestCommandline(unittest.TestCase):
                                                   e))
 
     def step13_dumpdynpds(self):
-        '''Test dump dynamical PDSs'''
+        """Test dump dynamical PDSs."""
         import subprocess as sp
         try:
             command = 'MPdumpdyn --noplot ' + \
@@ -295,7 +300,7 @@ class TestCommandline(unittest.TestCase):
                                                   e))
 
     def step14_dumpdyncpds(self):
-        '''Test produce scrunched light curves'''
+        """Test produce scrunched light curves."""
         import subprocess as sp
         try:
             command = 'MPdumpdyn --noplot ' + \
@@ -307,16 +312,16 @@ class TestCommandline(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('MPdumpdyn <cpds>', type(e),
                                                   e))
 
-    def all_steps(self):
+    def _all_steps(self):
 
         for name in sorted(dir(self)):
             if name.startswith("step"):
                 yield name, getattr(self, name)
 
     def test_steps(self):
-        '''Test a full run of the scripts (command lines).'''
+        """Test a full run of the scripts (command lines)."""
         print('')
-        for name, step in self.all_steps():
+        for name, step in self._all_steps():
             try:
                 print('- ', step.__doc__, '...', end=' (command line) ')
                 step()

@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""First set of tests."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -29,14 +30,18 @@ def _ratio(a, b):
 
 
 class TestFullRun(unittest.TestCase):
-    '''Monolithic test case. Usually considered bad practice, but in this
+
+    """Monolithic test case.
+
+    Usually considered bad practice, but in this
     case I need to test the full run of the codes, and files depend on each
     other.
     Inspired by http://stackoverflow.com/questions/5387299/
-    python-unittest-testcase-execution-order'''
+    python-unittest-testcase-execution-order
+    """
 
     def step01_load_events(self):
-        '''Test event file reading'''
+        """Test event file reading."""
         try:
             mp.read_events.mp_treat_event_file(
                 os.path.join(datadir, 'monol_testA.evt'))
@@ -46,7 +51,7 @@ class TestFullRun(unittest.TestCase):
             raise(Exception('Loading event file failed'))
 
     def step02_calibrate(self):
-        '''Test event file calibration'''
+        """Test event file calibration."""
         try:
             mp.calibrate.mp_calibrate(os.path.join(datadir, 'monol_testA_ev' +
                                       MP_FILE_EXTENSION),
@@ -66,7 +71,7 @@ class TestFullRun(unittest.TestCase):
             raise(Exception('Calibrating event file failed'))
 
     def step03a_lcurve(self):
-        '''Test light curve production'''
+        """Test light curve production."""
         try:
             mp.lcurve.mp_lcurve_from_events(
                 os.path.join(datadir,
@@ -82,7 +87,7 @@ class TestFullRun(unittest.TestCase):
             raise(Exception('Production of light curve failed'))
 
     def step03b_fits_lcurve(self):
-        '''Test light curves from FITS'''
+        """Test light curves from FITS."""
         try:
             lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
             mp.lcurve.mp_lcurve_from_events(
@@ -115,7 +120,7 @@ class TestFullRun(unittest.TestCase):
             'Light curve data do not coincide between FITS and MP'
 
     def step03c_txt_lcurve(self):
-        '''Test light curves from txt'''
+        """Test light curves from txt."""
         try:
             lcurve_mp = os.path.join(datadir,
                                      'lcurve_mp_lc' +
@@ -145,7 +150,7 @@ class TestFullRun(unittest.TestCase):
             'Light curve data do not coincide between txt and MP'
 
     def step04a_pds(self):
-        '''Test PDS production'''
+        """Test PDS production."""
         try:
             mp.fspec.mp_calc_pds(os.path.join(datadir,
                                               'monol_testA_E3-50_lc') +
@@ -159,7 +164,7 @@ class TestFullRun(unittest.TestCase):
             raise(Exception('Production of PDSs failed'))
 
     def step04b_pds_fits(self):
-        '''Test PDS production with light curves obtained from FITS files'''
+        """Test PDS production with light curves obtained from FITS files."""
         lcurve_ftools = os.path.join(datadir,
                                      'lcurve_ftools_lc' +
                                      MP_FILE_EXTENSION)
@@ -171,7 +176,7 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('PDS LC FITS', type(e), e))
 
     def step04c_pds_txt(self):
-        '''Test PDS production with light curves obtained from txt files'''
+        """Test PDS production with light curves obtained from txt files."""
         lcurve_txt = os.path.join(datadir,
                                   'lcurve_txt_lc' +
                                   MP_FILE_EXTENSION)
@@ -183,7 +188,7 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('PDS LC txt', type(e), e))
 
     def step05_cpds(self):
-        '''Test CPDS production'''
+        """Test CPDS production."""
         try:
             mp.fspec.mp_calc_cpds(os.path.join(datadir,
                                                'monol_testA_E3-50_lc') +
@@ -200,7 +205,7 @@ class TestFullRun(unittest.TestCase):
             raise(Exception('Production of CPDS failed'))
 
     def step06_lags(self):
-        '''Test Lag calculations'''
+        """Test Lag calculations."""
         try:
             mp.lags.mp_lags_from_spectra(
                 os.path.join(datadir,
@@ -216,7 +221,7 @@ class TestFullRun(unittest.TestCase):
                                                   type(e), e))
 
     def step07_rebinlc(self):
-        '''Test LC rebinning'''
+        """Test LC rebinning."""
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
                                                 'monol_testA_E3-50_lc') +
@@ -226,7 +231,7 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('LC rebin', type(e), e))
 
     def step08_rebinpds1(self):
-        '''Test PDS rebinning 1'''
+        """Test PDS rebinning 1."""
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
                                                 'monol_testA_E3-50_pds') +
@@ -237,7 +242,7 @@ class TestFullRun(unittest.TestCase):
                                                   e))
 
     def step08a_rebinpds2(self):
-        '''Test PDS rebinning 2'''
+        """Test PDS rebinning 2."""
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
                                                 'monol_testA_E3-50_pds') +
@@ -247,7 +252,7 @@ class TestFullRun(unittest.TestCase):
                                                   e))
 
     def step09_rebincpds(self):
-        '''Test CPDS rebinning'''
+        """Test CPDS rebinning."""
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
                                                 'monol_test_E3-50_cpds') +
@@ -257,7 +262,7 @@ class TestFullRun(unittest.TestCase):
                                                   type(e), e))
 
     def step10_savexspec1(self):
-        '''Test save as Xspec 1'''
+        """Test save as Xspec 1."""
         try:
             mp.save_as_xspec.mp_save_as_xspec(
                 os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2')
@@ -267,7 +272,7 @@ class TestFullRun(unittest.TestCase):
                                                   e))
 
     def step11_savexspec2(self):
-        '''Test save as Xspec 2'''
+        """Test save as Xspec 2."""
         try:
             mp.save_as_xspec.mp_save_as_xspec(
                 os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03')
@@ -277,7 +282,7 @@ class TestFullRun(unittest.TestCase):
                                                   e))
 
     def step12_joinlcs(self):
-        '''Test produce joined light curves'''
+        """Test produce joined light curves."""
         try:
             mp.mp_lcurve.mp_join_lightcurves(
                 [os.path.join(datadir, 'monol_testA_E3-50_lc') +
@@ -291,7 +296,7 @@ class TestFullRun(unittest.TestCase):
                                                   e))
 
     def step13_scrunchlcs(self):
-        '''Test produce scrunched light curves'''
+        """Test produce scrunched light curves."""
         try:
             mp.mp_lcurve.mp_scrunch_lightcurves(
                 [os.path.join(datadir, 'monol_testA_E3-50_lc') +
@@ -305,42 +310,30 @@ class TestFullRun(unittest.TestCase):
             self.fail("{} failed ({}: {})".format('MPscrunchlc', type(e),
                                                   e))
 
-    def step13_dumpdynpds(self):
-        '''Test dump dynamical PDSs'''
-        import subprocess as sp
+    def step14_sumpds(self):
+        """Test the sum of pdss."""
         try:
-            command = 'MPdumpdyn --noplot ' + \
+            mp.mp_sum_fspec.sum_fspec([
                 os.path.join(datadir,
-                             'monol_testA_E3-50_pds_rebin1.03') + \
-                MP_FILE_EXTENSION
-            sp.check_output(command.split())
-        except Exception as e:
-            self.fail("{} failed ({}: {})".format('MPdumpdyn <pds>', type(e),
-                                                  e))
-
-    def step14_dumpdyncpds(self):
-        '''Test produce scrunched light curves'''
-        import subprocess as sp
-        try:
-            command = 'MPdumpdyn --noplot ' + \
+                             'monol_testA_E3-50_pds') + MP_FILE_EXTENSION,
                 os.path.join(datadir,
-                             'monol_test_E3-50_cpds_rebin1.03') + \
-                MP_FILE_EXTENSION
-            sp.check_output(command.split())
+                             'monol_testB_E3-50_pds') + MP_FILE_EXTENSION],
+                outname=os.path.join(datadir,
+                                     'monol_test_sum' + MP_FILE_EXTENSION))
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('MPdumpdyn <cpds>', type(e),
-                                                  e))
+            self.fail("{} failed ({}: {})".format('Lags production',
+                                                  type(e), e))
 
-    def all_steps(self):
+    def _all_steps(self):
 
         for name in sorted(dir(self)):
             if name.startswith("step"):
                 yield name, getattr(self, name)
 
     def test_steps(self):
-        '''Test a full run of the codes on two event lists'''
+        """Test a full run of the codes on two event lists."""
         print('')
-        for name, step in self.all_steps():
+        for name, step in self._all_steps():
             try:
                 print('- ', step.__doc__, '...', end=' ')
                 step()
@@ -368,13 +361,16 @@ class TestFullRun(unittest.TestCase):
 
 
 class TestPDS(unittest.TestCase):
+
+    """Test PDS statistics."""
+
     # First define a class variable that determines
     # if setUp was ever run
     ClassIsSetup = False
 
     @classmethod
     def setUpClass(cls):
-
+        """Class setup, prior to tests."""
         print("Setting up.")
         print("This test is about the statistical properties of frequency "
               "spectra and it is based on random number generation. It might, "
@@ -421,7 +417,7 @@ class TestPDS(unittest.TestCase):
         cls.varcr = np.var(cls.cpds.real[1:])
 
     def test_pdsstat1(self):
-        '''Test that the Leahy PDS goes to 2'''
+        """Test that the Leahy PDS goes to 2."""
         from scipy.optimize import curve_fit
 
         baseline_fun = lambda x, a: a
@@ -438,28 +434,29 @@ class TestPDS(unittest.TestCase):
             ('PDS white level did not converge to 2')
 
     def test_pdsstat2(self):
-        '''Test the statistical properties of the PDS.'''
+        """Test the statistical properties of the PDS."""
         r = _ratio(self.varp1, np.mean(self.pdse1[1:] ** 2))
         assert r < 0.1, \
             "{} {} {}".format(self.varp1, np.mean(self.pdse1[1:] ** 2), r)
 
     def test_pdsstat3(self):
-        '''Test the statistical properties of the PDS.'''
+        """Test the statistical properties of the PDS."""
         r = _ratio(self.varp2, np.mean(self.pdse2[1:] ** 2))
         assert r < 0.1, \
             "{} {} {}".format(self.varp2, np.mean(self.pdse2[1:] ** 2), r)
 
     def test_pdsstat4(self):
-        '''Test the statistical properties of the cospectrum.'''
+        """Test the statistical properties of the cospectrum."""
         r = _ratio(self.varcr, np.mean(self.ec[1:] ** 2))
         assert r < 0.1, \
             "{} {} {}".format(self.varcr, np.mean(self.ec[1:] ** 2), r)
 
     def test_pdsstat5(self):
-        '''Test the statistical properties of the cospectrum.
+        """Test the statistical properties of the cospectrum.
 
         In particular ,the standard deviation of the cospectrum is a factor
-        ~sqrt(2) smaller than the standard deviation of the PDS'''
+        ~sqrt(2) smaller than the standard deviation of the PDS.
+        """
         geom_mean = np.sqrt(self.varp1 * self.varp2)
         r = _ratio(2 * self.varcr, geom_mean)
         assert r < 0.1, \
@@ -468,8 +465,10 @@ class TestPDS(unittest.TestCase):
 
 class TestAll(unittest.TestCase):
 
+    """Real unit tests."""
+
     def test_crossgti1(self):
-        '''Test the basic working of the intersection of GTIs'''
+        """Test the basic working of the intersection of GTIs."""
         gti1 = np.array([[1, 4]])
         gti2 = np.array([[2, 5]])
         newgti = mp.base.mp_cross_gtis([gti1, gti2])
@@ -477,7 +476,7 @@ class TestAll(unittest.TestCase):
         assert np.all(newgti == [[2, 4]]), 'GTIs do not coincide!'
 
     def test_crossgti2(self):
-        '''A more complicated example of intersection of GTIs'''
+        """A more complicated example of intersection of GTIs."""
         gti1 = np.array([[1, 2], [4, 5], [7, 10], [11, 11.2], [12.2, 13.2]])
         gti2 = np.array([[2, 5], [6, 9], [11.4, 14]])
         newgti = mp.base.mp_cross_gtis([gti1, gti2])
@@ -486,7 +485,7 @@ class TestAll(unittest.TestCase):
             'GTIs do not coincide!'
 
     def test_bti(self):
-        '''Test the inversion of GTIs'''
+        """Test the inversion of GTIs."""
         gti = np.array([[1, 2], [4, 5], [7, 10], [11, 11.2], [12.2, 13.2]])
         bti = mp.base.get_btis(gti)
 
@@ -494,13 +493,13 @@ class TestAll(unittest.TestCase):
             'BTI is wrong!, %s' % repr(bti)
 
     def test_common_name(self):
-        '''Test the common_name function'''
+        """Test the common_name function."""
         a = 'A_3-50_A.nc'
         b = 'B_3-50_B.nc'
         assert mp.base.common_name(a, b) == '3-50'
 
     def test_geom_bin(self):
-        '''Test if geom_bin fails under some conditions'''
+        """Test if geom_bin fails under some conditions."""
         freq = np.arange(0, 100, 0.1)
         pds = np.random.normal(2, 0.1, len(freq))
         _ = mp.rebin.mp_geom_bin(freq, pds, 1.3, pds_err=pds)
