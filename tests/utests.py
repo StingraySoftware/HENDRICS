@@ -155,7 +155,7 @@ class TestFullRun(unittest.TestCase):
             mp.fspec.mp_calc_pds(os.path.join(datadir,
                                               'monol_testA_E3-50_lc') +
                                  MP_FILE_EXTENSION,
-                                 128, save_dyn=True)
+                                 128, save_dyn=True, normalization='rms')
             mp.fspec.mp_calc_pds(os.path.join(datadir,
                                               'monol_testB_E3-50_lc') +
                                  MP_FILE_EXTENSION,
