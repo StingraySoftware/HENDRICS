@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-
+"""Functions to save data in a Xspec-readable format."""
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
@@ -10,6 +10,11 @@ import subprocess as sp
 
 
 def mp_save_as_xspec(fname, direct_save=False):
+    """Save frequency spectra in a format readable to Xspec.
+
+    Uses method described here:
+    https://asd.gsfc.nasa.gov/XSPECwiki/fitting_timing_power_spectra_in_XSPEC
+    """
     ftype, contents = mp_get_file_type(fname)
 
     outroot = fname.replace(mp_get_file_extension(fname), '')

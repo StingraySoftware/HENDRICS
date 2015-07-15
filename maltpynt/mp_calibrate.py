@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Calibrate event lists by looking in rmf files."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -10,6 +11,7 @@ import logging
 
 
 def mp_default_nustar_rmf():
+    """Look for the default rmf file in the CALDB."""
     logging.warning("Rmf not specified. Using default NuSTAR rmf.")
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split('/')
@@ -18,9 +20,10 @@ def mp_default_nustar_rmf():
 
 
 def mp_read_rmf(rmf_file=None):
-    '''Loads RMF info
-    preliminary: only EBOUNDS
-    '''
+    """Load RMF info.
+
+    Preliminary: only EBOUNDS.
+    """
     from astropy.io import fits as pf
 
     if rmf_file is None or rmf_file == '':
@@ -37,7 +40,7 @@ def mp_read_rmf(rmf_file=None):
 
 
 def mp_read_calibration(pis, rmf_file=None):
-    '''Very rough calibration. Beware'''
+    """Very rough calibration. Beware."""
     calp, calEmin, calEmax = mp_read_rmf(rmf_file)
     es = np.zeros(len(pis), dtype=np.float)
     for ic, c in enumerate(calp):
@@ -50,7 +53,7 @@ def mp_read_calibration(pis, rmf_file=None):
 
 
 def mp_calibrate(fname, outname, rmf=None):
-    '''Do calibration'''
+    """Do calibration."""
     # Read event file
     logging.info("Loading file %s..." % fname)
     evdata = mp_load_events(fname)

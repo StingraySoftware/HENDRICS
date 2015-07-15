@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-
+"""Functions to calculate frequency spectra."""
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
@@ -12,6 +12,7 @@ import numpy as np
 import logging
 from multiprocessing import Pool
 import functools
+import os
 
 
 def _wrap_calc_cpds(arglist, **kwargs):
@@ -25,7 +26,7 @@ class _empty():
 
 
 def mp_fft(lc, bintime):
-    '''A wrapper for the fft function. Just numpy for now'''
+    """A wrapper for the fft function. Just numpy for now."""
     nbin = len(lc)
 
     ft = np.fft.fft(lc)
@@ -35,15 +36,15 @@ def mp_fft(lc, bintime):
 
 
 def mp_leahy_pds(lc, bintime, return_freq=True):
-    '''
+    r"""Calculate the PDS.
+
     Calculates the Power Density Spectrum \'a la Leahy+1983, ApJ 266, 160,
     given the lightcurve and its bin time.
     Assumes no gaps are present! Beware!
     Keyword arguments:
         return_freq: (bool, default True) Return the frequencies corresponding
                      to the PDS bins?
-    '''
-
+    """
     nph = sum(lc)
 
     # Checks must be done before. At this point, only good light curves have to
@@ -66,7 +67,8 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
 
 def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
                  return_all=False):
-    '''
+    r"""Calculate the PDS, averaged over equal chunks of data.
+
     Calculates the Power Density Spectrum \'a la Leahy (1983), given the
     lightcurve and its bin time, over equal chunks of length fftlen, and
     returns the average of all PDSs, or the sum PDS and the number of chunks
@@ -87,7 +89,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
         pds_err:      the values of the PDS
         n_chunks:     the number of summed PDSs (if normalize is False)
         ctrate:       the average count rate in the two lcs
-    '''
+    """
     if gti is None:
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
 
@@ -146,14 +148,15 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
 
 
 def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
-    '''
+    """Calculate the cross power density spectrum.
+
     Calculates the Cross Power Density Spectrum, normalized similarly to the
     PDS in Leahy+1983, ApJ 266, 160., given the lightcurve and its bin time.
     Assumes no gaps are present! Beware!
     Keyword arguments:
         return_freq: (bool, default True) Return the frequencies corresponding
                      to the CPDS bins?
-    '''
+    """
     assert len(lc1) == len(lc2), 'Light curves MUST have the same length!'
     nph1 = sum(lc1)
     nph2 = sum(lc2)
@@ -200,7 +203,8 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
 
 def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
                   return_ctrate=False, return_all=False):
-    '''
+    """Calculate the CPDS, averaged over equal chunks of data.
+
     Calculates the Cross Power Density Spectrum normalized like PDS, given the
     lightcurve and its bin time, over equal chunks of length fftlen, and
     returns the average of all PDSs, or the sum PDS and the number of chunks
@@ -222,7 +226,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         pds_err:      the values of the CPDS
         n_chunks:     the number of summed CPDSs
         ctrate:       the average count rate in the two lcs
-    '''
+    """
     if gti is None:
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
 
@@ -289,9 +293,9 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
 
 
 def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
-    '''
-    Normalize a Leahy PDS with RMS normalization
-    (Belloni & Hasinger 1990, A&A, 230, 103; Miyamoto+1991, ApJ, 383, 784).
+    """Normalize a Leahy PDS with RMS normalization.
+
+    Ref: (Belloni & Hasinger 1990, A&A, 230, 103; Miyamoto+1991, ApJ, 383, 784)
     Inputs:
         pds:           the Leahy-normalized PDS
         pds_err:       the uncertainties on the PDS values
@@ -300,7 +304,7 @@ def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
     Outputs:
         pds:           the RMS-normalized PDS
         pds_err:       the uncertainties on the PDS values
-    '''
+    """
     if back_ctrate is None:
         logging.warning("Assuming background level 0")
         back_ctrate = 0
@@ -309,10 +313,12 @@ def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
 
 
 def mp_decide_spectrum_intervals(gtis, fftlen):
-    '''A way to avoid gaps. Start each FFT/PDS/cospectrum from the start of
-    a GTI, and stop before the next gap.
-    Only use for events! This will give problems with binned light curves'''
+    """A way to avoid gaps.
 
+    Start each FFT/PDS/cospectrum from the start of
+    a GTI, and stop before the next gap.
+    Only use for events! This will give problems with binned light curves.
+    """
     spectrum_start_times = np.array([], dtype=np.longdouble)
     for g in gtis:
         if g[1] - g[0] < fftlen:
@@ -363,8 +369,7 @@ def mp_calc_pds(lcfile, fftlen,
                 pdsrebin=1,
                 normalization='Leahy',
                 back_ctrate=0.):
-    '''Calculates the PDS from an input light curve file'''
-
+    """Calculate the PDS from an input light curve file."""
     logging.info("Loading file %s..." % lcfile)
     lcdata = mp_load_lcurve(lcfile)
     time = lcdata['time']
@@ -451,9 +456,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                  outname='cpds' + MP_FILE_EXTENSION,
                  normalization='Leahy',
                  back_ctrate=0.):
-    '''Calculates the Cross Power Density Spectrum from a pair of
-    input light curve files'''
-
+    """Calculate the CPDS from a pair of input light curve files."""
     logging.info("Loading file %s..." % lcfile1)
     lcdata1 = mp_load_lcurve(lcfile1)
     logging.info("Loading file %s..." % lcfile2)
@@ -582,10 +585,7 @@ def mp_calc_fspec(files, fftlen,
                   normalization='Leahy',
                   nproc=1,
                   back_ctrate=0.):
-    '''Calculates the frequency spectra: the PDS, the cospectrum, ...'''
-
-    import os
-
+    """Calculate the frequency spectra: the PDS, the cospectrum, ..."""
     if normalization not in ['Leahy', 'rms']:
         logging.warning('Beware! Unknown normalization!')
         normalization = 'Leahy'
@@ -660,6 +660,7 @@ def mp_calc_fspec(files, fftlen,
 
 
 def mp_read_fspec(fname):
+    """Read the frequency spectrum from a file."""
     ftype, contents = mp_get_file_type(fname)
     if 'freq' in list(contents.keys()):
         freq = contents['freq']

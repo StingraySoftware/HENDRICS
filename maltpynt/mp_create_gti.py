@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Functions to create GTIs."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -10,8 +11,7 @@ import logging
 
 
 def mp_create_gti(fname, filter_expr, safe_interval=[0, 0]):
-    '''Creates a GTI list by using boolean operation on any of the data
-    sections of the file'''
+    """Create a GTI list by using boolean operations on file data."""
     # Necessary as nc variables are sometimes defined as array
     from numpy import array
 
@@ -39,8 +39,10 @@ def mp_create_gti(fname, filter_expr, safe_interval=[0, 0]):
 
 
 def mp_apply_gti(fname, gti, outname=None):
-    '''Applies a GTI list to the data contained in a file. File MUST have a
-    GTI extension already, and an extension called `time`'''
+    """Apply a GTI list to the data contained in a file.
+
+    File MUST have a GTI extension already, and an extension called `time`.
+    """
     ftype, data = mp_get_file_type(fname)
 
     try:

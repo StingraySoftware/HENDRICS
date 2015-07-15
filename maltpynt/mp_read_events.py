@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-
+"""Read and save event lists from FITS files."""
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
@@ -11,7 +11,7 @@ import logging
 
 
 def mp_load_gtis(fits_file, gtistring=None):
-    '''Loads GTI from HDU EVENTS of file fits_file'''
+    """Load GTI from HDU EVENTS of file fits_file."""
     from astropy.io import fits as pf
     import numpy as np
 
@@ -33,7 +33,8 @@ def mp_load_gtis(fits_file, gtistring=None):
 def mp_load_events_and_gtis(fits_file, return_limits=False,
                             additional_columns=None, gtistring=None,
                             gti_file=None, hduname='EVENTS', column='TIME'):
-    '''
+    """Load event lists and GTIs from one or more files.
+
     Loads event list from HDU EVENTS of file fits_file, with Good Time
     intervals. Optionally, returns additional columns of data from the same
     HDU of the events.
@@ -50,7 +51,7 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
             the values of the specified column in the fits file.
         t_start
         t_stop
-    '''
+    """
     from astropy.io import fits as pf
 
     lchdulist = pf.open(fits_file)
@@ -150,7 +151,7 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
 
 
 def mp_treat_event_file(filename):
-
+    """Read data from an event file, with no GTI information."""
     logging.info('Opening %s' % filename)
 
     instr = mp_read_header_key(filename, 'INSTRUME')
