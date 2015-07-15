@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""MaLTPyNT base functions."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -9,8 +10,11 @@ import logging
 
 
 def mp_mkdir_p(path):
-    '''Found at http://stackoverflow.com/questions/600268/
-    mkdir-p-functionality-in-python'''
+    """Safe mkdir function.
+
+    Found at http://stackoverflow.com/questions/600268/
+    mkdir-p-functionality-in-python
+    """
     import os
     import errno
     try:
@@ -23,7 +27,7 @@ def mp_mkdir_p(path):
 
 
 def mp_read_header_key(fits_file, key, hdu=1):
-    '''Read the header key key from HDU hdu of the file fits_file'''
+    """Read the header key key from HDU hdu of the file fits_file."""
     from astropy.io import fits as pf
 
     hdulist = pf.open(fits_file)
@@ -33,9 +37,7 @@ def mp_read_header_key(fits_file, key, hdu=1):
 
 
 def mp_ref_mjd(fits_file, hdu=1):
-    '''
-    Read MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header
-    '''
+    """Read MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header."""
     import collections
 
     if isinstance(fits_file, collections.Iterable) and\
@@ -53,8 +55,10 @@ def mp_ref_mjd(fits_file, hdu=1):
 
 
 def common_name(str1, str2, default='common'):
-    '''Strip two file names of the letters not in common. Filenames must be of
-    same length and only differ by a few letters'''
+    """Strip two file names of the letters not in common.
+
+    Filenames must be of same length and only differ by a few letters.
+    """
     if not len(str1) == len(str2):
         return default
     common_str = ''
@@ -74,6 +78,7 @@ def common_name(str1, str2, default='common'):
 
 
 def mp_root(filename):
+    """Root file name (without _ev, _lc, etc.)."""
     import os.path
     fname = filename.replace('.gz', '')
     fname = os.path.splitext(filename)[0]
@@ -89,7 +94,8 @@ def mp_contiguous_regions(condition):
     and the second column is the end index.
     From http://stackoverflow.com/questions/4494404/
     find-large-number-of-consecutive-values-fulfilling-
-    condition-in-a-numpy-array"""
+    condition-in-a-numpy-array
+    """
     # Find the indicies of changes in "condition"
     diff = np.diff(condition)
     idx, = diff.nonzero()
@@ -108,7 +114,7 @@ def mp_contiguous_regions(condition):
 
 
 def mp_check_gtis(gti):
-    '''Check if GTIs are well-behaved'''
+    """Check if GTIs are well-behaved."""
     gti_start = gti[:, 0]
     gti_end = gti[:, 1]
 
@@ -124,9 +130,10 @@ def mp_check_gtis(gti):
 
 def mp_create_gti_mask(time, gtis, safe_interval=0, min_length=0,
                        return_new_gtis=False, dt=None):
-    '''Create GTI mask under the assumption that no overlaps are present
-    between GTIs
-        '''
+    """Create GTI mask.
+
+    Assumes that no overlaps are present between GTIs
+    """
     import collections
 
     mp_check_gtis(gtis)
@@ -163,11 +170,11 @@ def mp_create_gti_mask(time, gtis, safe_interval=0, min_length=0,
 
 def mp_create_gti_from_condition(time, condition,
                                  safe_interval=0, dt=None):
-    '''Create a GTI list from a time array and a boolean mask ("condition").
+    """Create a GTI list from a time array and a boolean mask ("condition").
 
     A possible condition can be, e.g., lc > 0.
     The length of the condition array and the time array must be the same.
-    '''
+    """
     import collections
 
     assert len(time) == len(condition), \
@@ -195,9 +202,10 @@ def mp_create_gti_from_condition(time, condition,
 
 
 def mp_cross_gtis_bin(gti_list, bin_time=1):
-    '''From multiple GTI lists, extract the common intervals.
+    """From multiple GTI lists, extract the common intervals.
 
-    Uses a very rough algorithm. Better to use mp_cross_gtis.'''
+    Uses a very rough algorithm. Better to use mp_cross_gtis.
+    """
     ninst = len(gti_list)
     if ninst == 1:
         return gti_list[0]
@@ -223,8 +231,7 @@ def mp_cross_gtis_bin(gti_list, bin_time=1):
 
 
 def mp_cross_two_gtis(gti0, gti1):
-    '''Extract the common intervals from two GTI lists *EXACTLY*.'''
-
+    """Extract the common intervals from two GTI lists *EXACTLY*."""
     # Check GTIs
     mp_check_gtis(gti0)
     mp_check_gtis(gti1)
@@ -293,7 +300,7 @@ def mp_cross_two_gtis(gti0, gti1):
 
 
 def mp_cross_gtis(gti_list):
-    '''From multiple GTI lists, extract the common intervals *EXACTLY*'''
+    """From multiple GTI lists, extract the common intervals *EXACTLY*."""
     ninst = len(gti_list)
     if ninst == 1:
         return gti_list[0]
@@ -307,9 +314,10 @@ def mp_cross_gtis(gti_list):
 
 
 def get_btis(gtis, start_time=None, stop_time=None):
-    '''From GTIs, obtain bad time intervals.
+    """From GTIs, obtain bad time intervals.
 
-    GTIs have to be well-behaved! No overlaps, no other crap'''
+    GTIs have to be well-behaved! No overlaps, no other crap.
+    """
     # Check GTIs
     if len(gtis) == 0:
         assert start_time is not None and stop_time is not None, \
@@ -338,22 +346,24 @@ def get_btis(gtis, start_time=None, stop_time=None):
 
 
 def mp_optimal_bin_time(fftlen, tbin):
-    '''Vary slightly the bin time to have a power of two number of bins.
+    """Vary slightly the bin time to have a power of two number of bins.
 
     Given an FFT length and a proposed bin time, return a bin time
     slightly shorter than the original, that will produce a power-of-two number
-    of FFT bins'''
+    of FFT bins.
+    """
     import numpy as np
     return fftlen / (2 ** np.ceil(np.log2(fftlen / tbin)))
 
 
 def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
-    '''
+    r"""Detection level for a PDS.
+
     Return the detection level (with probability 1 - epsilon) for a Power
     Density Spectrum of nbins bins, normalized \'a la Leahy (1983), based on
     the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
     PDS averaging (n_summed_spectra)
-    '''
+    """
     try:
         from scipy import stats
     except:
@@ -372,12 +382,13 @@ def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
 
 
 def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
-    '''
+    r"""Give the probability of a given power level in PDS.
+
     Return the probability of a certain power level in a Power Density
     Spectrum of nbins bins, normalized \'a la Leahy (1983), based on
     the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
     PDS averaging (n_summed_spectra)
-    '''
+    """
     try:
         from scipy import stats
     except:
@@ -389,7 +400,7 @@ def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
 
 
 def mp_sort_files(files):
-    '''Sort a list of MaLTPyNT files'''
+    """Sort a list of MaLTPyNT files."""
     allfiles = {}
     ftypes = []
 
@@ -423,6 +434,7 @@ def mp_sort_files(files):
 
 
 def mp_calc_countrate(time, lc, gtis=None, bintime=1):
+    """Calculate the count rate from a light curve."""
     if gtis is not None:
         mask = mp_create_gti_mask(time, gtis)
         lc = lc[mask]
@@ -430,4 +442,5 @@ def mp_calc_countrate(time, lc, gtis=None, bintime=1):
 
 
 def mp_gti_len(gti):
+    """Return the sum of the lengths of GTIs."""
     return np.sum([g[1] - g[0] for g in gti])

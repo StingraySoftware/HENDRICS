@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Functions to calculate lags."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -10,7 +11,7 @@ import logging
 
 
 def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
-    '''Calculate time lags'''
+    """Calculate time lags."""
     lags = np.angle(cpds) / (2 * np.pi * freqs)
     sigcpd = np.absolute(cpds)
 
@@ -50,14 +51,13 @@ def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
 
 
 def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag'):
-    '''Calculate time lags.
+    """Calculate time lags.
 
     Inputs:
         cpdsfile: the MP-format file containing the CPDS
         pds1file: the MP-format file containing the first PDS used for the CPDS
         pds1file: the MP-format file containing the second PDS
-        '''
-
+    """
     warn = ("----------------- mp_lags_from_spectra -----------------\n\n"
             "This program is still under testing and no assurance of\n"
             "validity is provided. If you'd like to help, please test\n"

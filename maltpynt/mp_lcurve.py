@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Light curve-related functions."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -17,8 +18,7 @@ def mp_lcurve(event_list,
               start_time=None,
               stop_time=None,
               centertime=True):
-    '''
-    From a list of event times, estract a lightcurve
+    """From a list of event times, estract a lightcurve.
 
     Usage:
     times, lc = bin_events(event_list, bin_time)
@@ -27,7 +27,7 @@ def mp_lcurve(event_list,
     start_time
     stop_time
     centertime: if False, time is teh start of the bin
-    '''
+    """
     if start_time is None:
         logging.warning("mp_lcurve: Changing start time")
         start_time = np.floor(event_list[0])
@@ -55,6 +55,7 @@ def mp_lcurve(event_list,
 
 
 def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
+    """Join light curves from different files."""
     lcdatas = []
     for lfc in lcfilelist:
         logging.info("Loading file %s..." % lfc)
@@ -134,8 +135,10 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
 
 def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
                            save_joint=False):
-    '''Create a single light curve from input light curves,
-    regardless of the instrument'''
+    """Create a single light curve from input light curves.
+
+    This is done regardless of the instrument.
+    """
     if save_joint:
         lcdata = mp_join_lightcurves(lcfilelist)
     else:
@@ -180,14 +183,10 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
 
 def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
                       min_length=0, return_borders=False):
-
+    """Filter a light curve for GTIs."""
     mask, newgtis = mp_create_gti_mask(time, gti, return_new_gtis=True,
                                        safe_interval=safe_interval,
                                        min_length=min_length)
-
-#    # test if newgti-created mask coincides with mask
-#    newmask = mp_create_gti_mask(time, newgtis, safe_interval=0)
-#    print("Test: newly created gti is equivalent?", np.all(newmask == mask))
 
     nomask = np.logical_not(mask)
 
@@ -214,6 +213,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           bintime=1.,
                           outdir=None,
                           outfile=None):
+    """Bin an event list in a light curve."""
     if (outfile is not None) and (outdir is not None):
         raise Exception('Please specify only one between outdir and outfile')
     logging.info("Loading file %s..." % f)
@@ -368,14 +368,14 @@ def _high_precision_keyword_read(hdr, keyword):
 def mp_lcurve_from_fits(fits_file, gtistring='GTI',
                         timecolumn='TIME', ratecolumn=None, ratehdu=1,
                         fracexp_limit=0.9, outfile=None):
-    '''
+    """
     Load a lightcurve from a fits file.
 
     Outputs a light curve file in MaLTPyNT format
-    '''
+    """
     logging.warning(
-        '''WARNING! FITS light curve handling is still under testing.
-        Absolute times might be incorrect''')
+        """WARNING! FITS light curve handling is still under testing.
+        Absolute times might be incorrect.""")
     # TODO:
     # treat consistently TDB, UTC, TAI, etc. This requires some documentation
     # reading. For now, we assume TDB
@@ -518,12 +518,12 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
 
 
 def mp_lcurve_from_txt(txt_file, outfile=None):
-    '''
+    """
     Load a lightcurve from a text file.
 
     Assumes two columns: time, counts. Times are by default seconds from
     MJDREF 55197.00076601852 (NuSTAR).
-    '''
+    """
     import numpy as np
 
     time, lc = np.genfromtxt(txt_file, delimiter=' ', unpack=True)

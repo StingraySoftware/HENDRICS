@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-
+"""Quicklook plots."""
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
@@ -12,12 +12,12 @@ import logging
 
 
 def baseline_fun(x, a):
-    '''A constant function'''
+    """A constant function."""
     return a
 
 
 def mp_plot_pds(fnames):
-    '''Plot a list of PDSs, or a single one'''
+    """Plot a list of PDSs, or a single one."""
     from scipy.optimize import curve_fit
     import collections
     if is_string(fnames):
@@ -65,7 +65,7 @@ def mp_plot_pds(fnames):
 
 
 def mp_plot_cospectrum(fnames):
-    '''Plot the cospectra from a list of CPDSs, or a single one'''
+    """Plot the cospectra from a list of CPDSs, or a single one."""
     if is_string(fnames):
         fnames = [fnames]
     for fname in fnames:
@@ -100,7 +100,7 @@ def mp_plot_cospectrum(fnames):
 
 
 def mp_plot_lc(lcfiles):
-    '''Plot a list of light curve files, or a single one'''
+    """Plot a list of light curve files, or a single one."""
     if is_string(lcfiles):
         lcfiles = [lcfiles]
 

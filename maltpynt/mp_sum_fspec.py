@@ -1,9 +1,9 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Function to sum frequency spectra."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-import argparse
 from .mp_io import mp_save_data, mp_get_file_type
 from .mp_io import MP_FILE_EXTENSION
 import numpy as np
@@ -11,8 +11,7 @@ import logging
 
 
 def sum_fspec(files, outname=None):
-    '''Takes a bunch of (C)PDSs and sums them'''
-
+    """Take a bunch of (C)PDSs and sums them."""
     # Read first file
     ftype0, contents = mp_get_file_type(files[0])
     pdstype = ftype0.replace('reb', '')

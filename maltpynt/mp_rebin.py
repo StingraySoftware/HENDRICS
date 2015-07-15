@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-
+"""Functions to rebin light curves and frequency spectra."""
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
@@ -11,9 +11,11 @@ import logging
 
 
 def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
-    '''Rebins any pair of variables. Might be time and counts, or freq and pds.
+    """Rebin any pair of variables.
+
+    Might be time and counts, or freq and pds.
     Also possible to rebin the error on y.
-        '''
+    """
     arr_dtype = y.dtype
     if factor <= 1:
         res = [x, y]
@@ -47,10 +49,10 @@ def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
 
 def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
                 return_nbins=False):
-    '''
-    Given a PDS, bin it geometrically. Freely taken from the algorithm
-    in isisscripts.sl
-    '''
+    """Given a PDS, bin it geometrically.
+
+    Freely taken from an algorithm in isisscripts.sl
+    """
     from numpy import log10
 
     df = np.diff(freq)
@@ -126,6 +128,7 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
 
 
 def mp_rebin_file(filename, rebin):
+    """Rebin the contents of a file, be it a light curve or a spectrum."""
     ftype, contents = mp_get_file_type(filename)
     do_dyn = False
     if 'dyn{}'.format(ftype) in contents.keys():

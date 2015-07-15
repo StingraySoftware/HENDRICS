@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-
+"""Functions to perform input/output operations."""
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
@@ -24,14 +24,14 @@ except:
 import collections
 import numpy as np
 import os.path
-
+import sys
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
 
 
 def is_string(s):
-    import sys
+    """Portable function to answer this question."""
     PY3 = sys.version_info[0] == 3
     if PY3:
         return isinstance(s, str)
@@ -40,11 +40,12 @@ def is_string(s):
 
 
 def mp_get_file_extension(fname):
+    """Get the file extension."""
     return os.path.splitext(fname)[1]
 
 
 def mp_get_file_format(fname):
-    '''Decide the file format of the file'''
+    """Decide the file format of the file."""
     ext = mp_get_file_extension(fname)
     if ext == '.p':
         return 'pickle'
@@ -56,8 +57,7 @@ def mp_get_file_format(fname):
 
 # ---- Base function to save NetCDF4 files
 def mp_save_as_netcdf(vars, varnames, formats, fname):
-    '''The future. Much faster than pickle'''
-
+    """The future. Much faster than pickle."""
     rootgrp = nc.Dataset(fname, 'w',
                          format='NETCDF4')
 
@@ -102,6 +102,7 @@ def mp_save_as_netcdf(vars, varnames, formats, fname):
 
 
 def mp_read_from_netcdf(fname):
+    """Read from a netcdf file."""
     rootgrp = nc.Dataset(fname)
     out = {}
     for k in rootgrp.variables.keys():
@@ -127,8 +128,12 @@ def mp_read_from_netcdf(fname):
 
 # ----- Functions to handle file types
 def mp_get_file_type(fname, specify_reb=True):
+    """Return the file type and its contents.
+
+    Only works for maltpynt-format pickle or netcdf files.
+    """
     contents = mp_load_data(fname)
-    '''Gets file type'''
+    """Gets file type."""
 
     keys = list(contents.keys())
     if 'lc' in keys:
@@ -157,6 +162,7 @@ def mp_get_file_type(fname, specify_reb=True):
 
 # ----- functions to save and load EVENT data
 def mp_save_events(eventStruct, fname):
+    """Save events in a file."""
     if mp_get_file_format(fname) == 'pickle':
         save_data_pickle(eventStruct, fname)
     elif mp_get_file_format(fname) == 'nc':
@@ -164,6 +170,7 @@ def mp_save_events(eventStruct, fname):
 
 
 def mp_load_events(fname):
+    """Load events from a file."""
     if mp_get_file_format(fname) == 'pickle':
         return load_data_pickle(fname)
     elif mp_get_file_format(fname) == 'nc':
@@ -172,6 +179,7 @@ def mp_load_events(fname):
 
 # ----- functions to save and load LCURVE data
 def mp_save_lcurve(lcurveStruct, fname):
+    """Save light curve in a file."""
     if mp_get_file_format(fname) == 'pickle':
         return save_data_pickle(lcurveStruct, fname)
     elif mp_get_file_format(fname) == 'nc':
@@ -179,6 +187,7 @@ def mp_save_lcurve(lcurveStruct, fname):
 
 
 def mp_load_lcurve(fname):
+    """Load light curve from a file."""
     if mp_get_file_format(fname) == 'pickle':
         return load_data_pickle(fname)
     elif mp_get_file_format(fname) == 'nc':
@@ -188,6 +197,7 @@ def mp_load_lcurve(fname):
 # ---- Functions to save PDSs
 
 def mp_save_pds(pdsStruct, fname):
+    """Save PDS in a file."""
     if mp_get_file_format(fname) == 'pickle':
         return save_data_pickle(pdsStruct, fname)
     elif mp_get_file_format(fname) == 'nc':
@@ -195,6 +205,7 @@ def mp_save_pds(pdsStruct, fname):
 
 
 def mp_load_pds(fname):
+    """Load PDS from a file."""
     if mp_get_file_format(fname) == 'pickle':
         return load_data_pickle(fname)
     elif mp_get_file_format(fname) == 'nc':
@@ -203,6 +214,7 @@ def mp_load_pds(fname):
 
 # ---- GENERIC function to save stuff.
 def load_data_pickle(fname, kind="data"):
+    """Load generic data in pickle format."""
     logging.info('Loading %s and info from %s' % (kind, fname))
     try:
         with open(fname, 'rb') as fobj:
@@ -215,6 +227,7 @@ def load_data_pickle(fname, kind="data"):
 
 
 def save_data_pickle(struct, fname, kind="data"):
+    """Save generic data in pickle format."""
     logging.info('Saving %s and info to %s' % (kind, fname))
     try:
         with open(fname, 'wb') as fobj:
@@ -227,6 +240,7 @@ def save_data_pickle(struct, fname, kind="data"):
 
 
 def load_data_nc(fname):
+    """Load generic data in netcdf format."""
     contents = mp_read_from_netcdf(fname)
     keys = list(contents.keys())
 
@@ -252,6 +266,7 @@ def load_data_nc(fname):
 
 
 def save_data_nc(struct, fname, kind="data"):
+    """Save generic data in netcdf format."""
     logging.info('Saving %s and info to %s' % (kind, fname))
     varnames = []
     values = []
@@ -299,6 +314,7 @@ def save_data_nc(struct, fname, kind="data"):
 
 
 def mp_save_data(struct, fname, ftype='data'):
+    """Save generic data in maltpynt format."""
     if mp_get_file_format(fname) == 'pickle':
         save_data_pickle(struct, fname)
     elif mp_get_file_format(fname) == 'nc':
@@ -306,6 +322,7 @@ def mp_save_data(struct, fname, ftype='data'):
 
 
 def mp_load_data(fname):
+    """Load generic data in maltpynt format."""
     if mp_get_file_format(fname) == 'pickle':
         return load_data_pickle(fname)
     elif mp_get_file_format(fname) == 'nc':
@@ -314,7 +331,8 @@ def mp_load_data(fname):
 
 # QDP format is often used in FTOOLS
 def save_as_qdp(arrays, errors=None, filename="out.qdp"):
-    '''
+    """Save arrays in a QDP file.
+
     Saves an array of variables, and possibly their errors, to a QDP file.
     input:
         arrays: list of variables. All variables must be arrays and of the same
@@ -325,7 +343,7 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
                   - an array of same length of variable for symmetric errors
                   - an array of len-2 lists for non-symmetric errors (e.g.
                     [[errm1, errp1], [errm2, errp2], [errm3, errp3], ...])
-    '''
+    """
     import numpy as np
     if errors is None:
         errors = [None for i in arrays]
@@ -363,9 +381,7 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
 
 def save_as_ascii(cols, filename="out.txt", colnames=None,
                   append=False):
-    '''
-    Saves as TXT file with respective errors
-    '''
+    """Save arrays as TXT file with respective errors."""
     import numpy as np
 
     logging.debug('%s %s' % (repr(cols), repr(np.shape(cols))))
