@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import sys
-from maltpynt.mp_io import mp_get_file_type, is_string
+from maltpynt.mp_io import mp_get_file_type, is_string, mp_print_fits_info
 import collections
 
 
@@ -23,10 +23,14 @@ except:
     usage()
     sys.exit()
 
-print(fnames)
 for fname in fnames:
-    ftype, contents = mp_get_file_type(fname)
     print('-----------------------------')
+    if fname.endswith('.fits') or fname.endswith('.evt'):
+        print('This FITS file contains:', end='\n\n')
+        mp_print_fits_info(fname)
+        print('-----------------------------')
+        continue
+    ftype, contents = mp_get_file_type(fname)
     print('This file contains:', end='\n\n')
     for k in sorted(contents.keys()):
         val = contents[k]
