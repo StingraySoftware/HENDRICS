@@ -5,9 +5,7 @@ Master: |Build Status Master| |Coverage Status Master|
 
 Devel: |Build Status Unstable| |Coverage Status Unstable|
 
-\*\* BEWARE! STILL UNDER TESTING. USE WITH CARE IN PRODUCTION!\*\*
-
-This software is mostly focused on doing correctly and fairly easily a
+This software is designed to do correctly and fairly easily a
 **quick-look timing analysis** of NuSTAR data, treating properly orbital
 gaps and exploiting the presence of two independent detectors by using
 the **cospectrum** as a proxy for the power density spectrum (for an
@@ -79,10 +77,11 @@ I would like to thank all the co-authors of `the NuSTAR timing
 paper <http://arxiv.org/abs/1409.3248>`__ and the NuSTAR X-ray binaries
 working group. This software would not exist without the interesting
 discussions before and around that paper. In particular, I would like to
-thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Poshak Gandhi,
-John Tomsick and Abdu Zoghbi for helping testing the code and giving
-various suggestions on how to improve it. Last but not least, I would
-like to thank Marco Buttu (by the way, `check out his book if you speak
+thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Felix Fürst,
+Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code
+and giving various suggestions on how to improve it. Last but not least,
+I would like to thank Marco Buttu (by the way, `check out his book if
+you speak
 Italian <http://www.amazon.it/Programmare-con-Python-completa-DigitalLifeStyle-ebook/dp/B00L95VURC/ref=sr_1_1?s=books&ie=UTF8&qid=1424298092&sr=1-1>`__)
 for his priceless pointers on Python coding and code management
 techniques.
