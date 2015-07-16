@@ -5,9 +5,10 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .mp_fspec import mp_read_fspec
-from .mp_io import MP_FILE_EXTENSION, mp_save_data
+from .mp_io import MP_FILE_EXTENSION, mp_save_data, mp_load_data
 import numpy as np
 import logging
+import os
 
 
 def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
@@ -50,7 +51,8 @@ def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
     return lags, lagse
 
 
-def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag'):
+def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
+                         noclobber=False):
     """Calculate time lags.
 
     Inputs:
@@ -65,6 +67,13 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag'):
             "--------------------------------------------------------")
 
     logging.warning(warn)
+
+    outname = outroot + "_lag" + MP_FILE_EXTENSION
+    if noclobber and os.path.exists(outname):
+        print('File exists, and noclobber option used. Skipping')
+        contents = mp_load_data(outname)
+        return contents['freq'], contents['df'], \
+            contents['lags'], contents['elags']
 
     ftype,  cfreq, cpds, ecpds, nchunks, rebin, ccontents = \
         mp_read_fspec(cpdsfile)
@@ -81,7 +90,7 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag'):
     if 'reb' in ftype:
         flo, fhi = cfreq
         freq = (flo + fhi) / 2
-        df = fhi - flo
+        df = (fhi - flo)
     else:
         freq = cfreq
         df = np.zeros(len(freq)) + (freq[1] - freq[0])
@@ -100,10 +109,9 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag'):
 
     outdata = {'time': ctime, 'lag': lags, 'elag': elags, 'ncpds': nchunks,
                'fftlen': fftlen, 'Instrs': instrs,
-               'freq': freq, 'rebin': rebin,
+               'freq': freq, 'df': df, 'rebin': rebin,
                'ctrate': ctrate, 'total_ctrate': tctrate}
 
-    outname = outroot + "_lag" + MP_FILE_EXTENSION
     logging.info('Saving lags to %s' % outname)
     mp_save_data(outdata, outname)
 

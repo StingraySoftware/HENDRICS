@@ -411,3 +411,31 @@ def save_as_ascii(cols, filename="out.txt", colnames=None,
         print('', file=txtfile)
     txtfile.close()
     return 0
+
+
+def mp_print_fits_info(fits_file, hdu=1):
+    """Print general info about an observation."""
+    from astropy.io import fits as pf
+
+    lchdulist = pf.open(fits_file)
+
+    datahdu = lchdulist[hdu]
+    header = datahdu.header
+
+    info = {}
+    info['N. events'] = header['NAXIS2']
+    info['Telescope'] = header['TELESCOP']
+    info['Instrument'] = header['INSTRUME']
+    info['OBS_ID'] = header['OBS_ID']
+    info['Target'] = header['OBJECT']
+    info['Start'] = header['DATE-OBS']
+    info['Stop'] = header['DATE-END']
+
+    print('ObsID:         {}\n'.format(info['OBS_ID']))
+    print('Date:          {} -- {}\n'.format(info['Start'], info['Stop']))
+    print('Instrument:    {}/{}\n'.format(info['Telescope'],
+                                          info['Instrument']))
+    print('Target:        {}\n'.format(info['Target']))
+    print('N. Events:     {}\n'.format(info['N. events']))
+
+    return info

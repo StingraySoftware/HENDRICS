@@ -30,6 +30,8 @@ parser.add_argument("--norm", type=str, default="Leahy",
                     help='Normalization to use' +
                     ' (Accepted: Leahy and rms;' +
                     ' Default: "Leahy")')
+parser.add_argument("--noclobber", help="Do not overwrite existing files",
+                    default=False, action='store_true')
 parser.add_argument("-o", "--outroot", type=str, default=None,
                     help='Root of output file names for CPDS only')
 parser.add_argument("--loglevel",
@@ -88,4 +90,5 @@ mp_calc_fspec(args.files, fftlen,
               outroot=args.outroot,
               normalization=normalization,
               nproc=args.nproc,
-              back_ctrate=args.back)
+              back_ctrate=args.back,
+              noclobber=args.noclobber)

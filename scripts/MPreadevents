@@ -8,6 +8,7 @@ from maltpynt.mp_read_events import mp_treat_event_file
 import argparse
 import logging
 from multiprocessing import Pool
+import functools
 
 description = ('Read a cleaned event files and saves the relevant '
                'information in a standard format')
@@ -22,6 +23,9 @@ parser.add_argument("--nproc",
                     help=("Number of processors to use"),
                     default=1,
                     type=int)
+parser.add_argument("--noclobber",
+                    help=("Do not overwrite existing event files"),
+                    default=False, action='store_true')
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
 args = parser.parse_args()
@@ -34,7 +38,9 @@ numeric_level = getattr(logging, args.loglevel.upper(), None)
 logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
                     filemode='w')
 
+_wrap_fun = functools.partial(mp_treat_event_file, noclobber=args.noclobber)
+
 pool = Pool(processes=args.nproc)
-for i in pool.imap_unordered(mp_treat_event_file, files):
+for i in pool.imap_unordered(_wrap_fun, files):
     pass
 pool.close()
