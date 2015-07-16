@@ -25,6 +25,8 @@ except:
 
 for fname in fnames:
     print('-----------------------------')
+    print('{}'.format(fname))
+    print('-----------------------------')
     if fname.endswith('.fits') or fname.endswith('.evt'):
         print('This FITS file contains:', end='\n\n')
         mp_print_fits_info(fname)

@@ -64,6 +64,8 @@ parser.add_argument("--nproc",
                     type=int)
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
+parser.add_argument("--noclobber", help="Do not overwrite existing files",
+                    default=False, action='store_true')
 parser.add_argument("--fits-input",
                     help="Input files are light curves in FITS format",
                     default=False, action='store_true')
@@ -87,9 +89,9 @@ e_interval = np.array(args.e_interval)
 
 # ------ Use functools.partial to wrap mp_lcurve* with relevant keywords----
 if args.fits_input:
-    wrap_fun = functools.partial(mp_lcurve_from_fits)
+    wrap_fun = functools.partial(mp_lcurve_from_fits, noclobber=args.noclobber)
 elif args.txt_input:
-    wrap_fun = functools.partial(mp_lcurve_from_txt)
+    wrap_fun = functools.partial(mp_lcurve_from_txt, noclobber=args.noclobber)
 else:
     wrap_fun = functools.partial(
         mp_lcurve_from_events, safe_interval=safe_interval,
@@ -98,7 +100,8 @@ else:
         min_length=args.minlen,
         gti_split=args.gti_split,
         ignore_gtis=args.ignore_gtis,
-        bintime=bintime, outdir=args.outdir)
+        bintime=bintime, outdir=args.outdir,
+        noclobber=args.noclobber)
 # ---------------------------------------------------------------------------
 outfiles = []
 

@@ -8,6 +8,7 @@ from .mp_io import mp_save_events
 from .mp_io import MP_FILE_EXTENSION
 import numpy as np
 import logging
+import os
 
 
 def mp_load_gtis(fits_file, gtistring=None):
@@ -150,9 +151,13 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
             return ev_list, gti_list
 
 
-def mp_treat_event_file(filename):
+def mp_treat_event_file(filename, noclobber=False):
     """Read data from an event file, with no GTI information."""
     logging.info('Opening %s' % filename)
+    outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
+    if noclobber and os.path.exists(outfile):
+        print('File exists, and noclobber option used. Skipping')
+        return
 
     instr = mp_read_header_key(filename, 'INSTRUME')
     additional_columns = ['PI']
@@ -178,7 +183,6 @@ def mp_treat_event_file(filename):
     if instr == "PCA":
         out['PCU'] = np.array(additional['PCUID'], dtype=np.byte)
 
-    outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
     mp_save_events(out, outfile)
 
 

@@ -22,6 +22,8 @@ parser.add_argument("--loglevel",
                           "default:WARNING)"),
                     default='WARNING',
                     type=str)
+parser.add_argument("--noclobber", help="Do not overwrite existing files",
+                    default=False, action='store_true')
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
 args = parser.parse_args()
@@ -42,4 +44,5 @@ if args.outroot is None:
 else:
     outroot = args.outroot
 
-f, df, l, le = mp_lags_from_spectra(cfile, p1file, p2file, outroot=outroot)
+f, df, l, le = mp_lags_from_spectra(cfile, p1file, p2file, outroot=outroot,
+                                    noclobber=args.noclobber)

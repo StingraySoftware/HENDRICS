@@ -417,8 +417,7 @@ def mp_print_fits_info(fits_file, hdu=1):
     """Print general info about an observation."""
     from astropy.io import fits as pf
 
-    lchdulist = pf.open(fits_file, checksum=True)
-    lchdulist.verify('warn')
+    lchdulist = pf.open(fits_file)
 
     datahdu = lchdulist[hdu]
     header = datahdu.header

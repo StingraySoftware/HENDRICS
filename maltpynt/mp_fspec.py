@@ -368,8 +368,15 @@ def mp_calc_pds(lcfile, fftlen,
                 bintime=1,
                 pdsrebin=1,
                 normalization='Leahy',
-                back_ctrate=0.):
+                back_ctrate=0.,
+                noclobber=False):
     """Calculate the PDS from an input light curve file."""
+    root = mp_root(lcfile)
+    outname = root + '_pds' + MP_FILE_EXTENSION
+    if noclobber and os.path.exists(outname):
+        print('File exists, and noclobber option used. Skipping')
+        return
+
     logging.info("Loading file %s..." % lcfile)
     lcdata = mp_load_lcurve(lcfile)
     time = lcdata['time']
@@ -422,7 +429,6 @@ def mp_calc_pds(lcfile, fftlen,
             results.edynpds[ic][:] = ep
             results.dynpds[ic][:] = pd
 
-    root = mp_root(lcfile)
     outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
                'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate,
@@ -444,7 +450,6 @@ def mp_calc_pds(lcfile, fftlen,
 
         outdata["dyntimes"] = np.array(results.times)
 
-    outname = root + '_pds' + MP_FILE_EXTENSION
     logging.info('Saving PDS to %s' % outname)
     mp_save_pds(outdata, outname)
 
@@ -455,8 +460,13 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                  pdsrebin=1,
                  outname='cpds' + MP_FILE_EXTENSION,
                  normalization='Leahy',
-                 back_ctrate=0.):
+                 back_ctrate=0.,
+                 noclobber=False):
     """Calculate the CPDS from a pair of input light curve files."""
+    if noclobber and os.path.exists(outname):
+        print('File exists, and noclobber option used. Skipping')
+        return
+
     logging.info("Loading file %s..." % lcfile1)
     lcdata1 = mp_load_lcurve(lcfile1)
     logging.info("Loading file %s..." % lcfile2)
@@ -584,7 +594,8 @@ def mp_calc_fspec(files, fftlen,
                   outroot=None,
                   normalization='Leahy',
                   nproc=1,
-                  back_ctrate=0.):
+                  back_ctrate=0.,
+                  noclobber=False):
     """Calculate the frequency spectra: the PDS, the cospectrum, ..."""
     if normalization not in ['Leahy', 'rms']:
         logging.warning('Beware! Unknown normalization!')
@@ -599,7 +610,8 @@ def mp_calc_fspec(files, fftlen,
             bintime=bintime,
             pdsrebin=pdsrebin,
             normalization=normalization,
-            back_ctrate=back_ctrate)
+            back_ctrate=back_ctrate,
+            noclobber=noclobber)
 
         pool = Pool(processes=nproc)
         for i in pool.imap_unordered(wrap_fun, files):
@@ -631,7 +643,8 @@ def mp_calc_fspec(files, fftlen,
         bintime=bintime,
         pdsrebin=pdsrebin,
         normalization=normalization,
-        back_ctrate=back_ctrate)
+        back_ctrate=back_ctrate,
+        noclobber=noclobber)
 
     funcargs = []
 
