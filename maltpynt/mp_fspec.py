@@ -332,6 +332,9 @@ def mp_decide_spectrum_intervals(gtis, fftlen):
             np.append(spectrum_start_times,
                       newtimes)
 
+    assert len(spectrum_start_times) > 0, \
+        "No GTIs are equal to or longer than fftlen. " + \
+        "Choose shorter fftlen (MPfspec -f <fftlen> <options> <filename>)"
     return spectrum_start_times
 
 
@@ -360,6 +363,9 @@ def mp_decide_spectrum_lc_intervals(gtis, fftlen, time):
             np.append(spectrum_start_bins,
                       newbins)
 
+    assert len(spectrum_start_bins) > 0, \
+        "No GTIs are equal to or longer than fftlen. " + \
+        "Choose shorter fftlen (MPfspec -f <fftlen> <options> <filename>)"
     return spectrum_start_bins, spectrum_start_bins + nbin
 
 
