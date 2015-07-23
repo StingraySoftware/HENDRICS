@@ -417,6 +417,11 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     except:
         mjdref = None
 
+    try:
+        instr = lchdulist[ratehdu].header['INSTRUME']
+    except:
+        instr = 'EXTERN'
+
     # ----------------------------------------------------------------
     # Trying to comply with all different formats of fits light curves.
     # It's a madness...
@@ -485,6 +490,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
 
     if 'RATE' in ratecolumn:
         rate *= dt
+        rate_e *= dt
 
     try:
         fracexp = np.array(lctable.field('FRACEXP'), dtype=np.longdouble)
@@ -513,12 +519,13 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
 
     out = {}
     out['lc'] = rate
+    out['elc'] = rate_e
     out['time'] = time
     out['dt'] = dt
     out['GTI'] = gti_list
     out['Tstart'] = tstart
     out['Tstop'] = tstop
-    out['Instr'] = 'EXTERN'
+    out['Instr'] = instr
 
     out['MJDref'] = mjdref.value
 
