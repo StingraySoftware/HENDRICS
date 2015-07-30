@@ -151,7 +151,7 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
             return ev_list, gti_list
 
 
-def mp_treat_event_file(filename, noclobber=False):
+def mp_treat_event_file(filename, noclobber=False, gti_split=False):
     """Read data from an event file, with no GTI information."""
     logging.info('Opening %s' % filename)
     outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
@@ -183,7 +183,21 @@ def mp_treat_event_file(filename, noclobber=False):
     if instr == "PCA":
         out['PCU'] = np.array(additional['PCUID'], dtype=np.byte)
 
-    mp_save_events(out, outfile)
+    if gti_split:
+        for ig, g in gtis:
+            outfile_local = \
+                '{}_{}'.format(outfile.replace(MP_FILE_EXTENSION, ''), ig) + \
+                MP_FILE_EXTENSION
+            out_local = out.copy()
+            good = np.logical_and(events >= g[0], events < g[1])
+            out_local['time'] = events[good]
+            out_local['Tstart'] = g[0]
+            out_local['Tstop'] = g[1]
+            out_local['PI'] = pis[good]
+            mp_save_events(out_local, outfile_local)
+        pass
+    else:
+        mp_save_events(out, outfile)
 
 
 if __name__ == "__main__":

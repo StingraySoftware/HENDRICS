@@ -26,6 +26,10 @@ parser.add_argument("--nproc",
 parser.add_argument("--noclobber",
                     help=("Do not overwrite existing event files"),
                     default=False, action='store_true')
+parser.add_argument("-g", "--gti-split",
+                    help="Split event list by GTI",
+                    default=False,
+                    action="store_true")
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
 args = parser.parse_args()
@@ -38,7 +42,8 @@ numeric_level = getattr(logging, args.loglevel.upper(), None)
 logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
                     filemode='w')
 
-_wrap_fun = functools.partial(mp_treat_event_file, noclobber=args.noclobber)
+_wrap_fun = functools.partial(mp_treat_event_file, noclobber=args.noclobber,
+                              gti_split=args.gti_split)
 
 pool = Pool(processes=args.nproc)
 for i in pool.imap_unordered(_wrap_fun, files):
