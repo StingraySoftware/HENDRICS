@@ -170,8 +170,8 @@ def mp_treat_event_file(filename, noclobber=False, gti_split=False,
     """
     logging.info('Opening %s' % filename)
     outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
-    if noclobber and os.path.exists(outfile):
-        print('File exists, and noclobber option used. Skipping')
+    if noclobber and os.path.exists(outfile) and (not gti_split):
+        print('{} exists, and noclobber option used. Skipping'.format(outfile))
         return
 
     instr = mp_read_header_key(filename, 'INSTRUME')
@@ -208,6 +208,10 @@ def mp_treat_event_file(filename, noclobber=False, gti_split=False,
             outfile_local = \
                 '{}_{}'.format(outfile.replace(MP_FILE_EXTENSION, ''), ig) + \
                 MP_FILE_EXTENSION
+            if noclobber and os.path.exists(outfile_local):
+                print('{} exists, '.format(outfile_local) +
+                      'and noclobber option used. Skipping')
+                return
             out_local = out.copy()
             good = np.logical_and(events >= g[0], events < g[1])
             if not np.any(good):
