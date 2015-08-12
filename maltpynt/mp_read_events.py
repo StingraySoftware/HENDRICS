@@ -151,8 +151,23 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
             return ev_list, gti_list
 
 
-def mp_treat_event_file(filename, noclobber=False, gti_split=False):
-    """Read data from an event file, with no GTI information."""
+def mp_treat_event_file(filename, noclobber=False, gti_split=False,
+                        min_length=4):
+    """Read data from an event file, with no external GTI information.
+
+    Parameters
+    ----------
+    filename : str
+
+    Other Parameters
+    ----------------
+    noclobber: bool
+        if a file is present, do not overwrite it
+    gti_split: bool
+        split the file in multiple chunks, containing one GTI each
+    min_length: float
+        minimum length of GTIs accepted (only if gti_split is True)
+    """
     logging.info('Opening %s' % filename)
     outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outfile):
@@ -184,16 +199,25 @@ def mp_treat_event_file(filename, noclobber=False, gti_split=False):
         out['PCU'] = np.array(additional['PCUID'], dtype=np.byte)
 
     if gti_split:
-        for ig, g in gtis:
+        for ig, g in enumerate(gtis):
+            length = g[1] - g[0]
+            if length < 4:
+                print("This GTI is shorter than 4s; skipping")
+                continue
+
             outfile_local = \
                 '{}_{}'.format(outfile.replace(MP_FILE_EXTENSION, ''), ig) + \
                 MP_FILE_EXTENSION
             out_local = out.copy()
             good = np.logical_and(events >= g[0], events < g[1])
+            if not np.any(good):
+                print("This GTI has no valid events; skipping")
+                continue
             out_local['time'] = events[good]
             out_local['Tstart'] = g[0]
             out_local['Tstop'] = g[1]
             out_local['PI'] = pis[good]
+            out_local['GTI'] = np.array([g], dtype=np.longdouble)
             mp_save_events(out_local, outfile_local)
         pass
     else:

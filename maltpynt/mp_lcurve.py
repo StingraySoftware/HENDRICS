@@ -301,6 +301,10 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           min_length=min_length,
                           return_borders=True)
 
+    if len(newgtis) == 0:
+        print("No GTIs above min_length ({}s) found.".format(min_length))
+        return
+
     assert np.all(borders == tot_borders), \
         'Borders do not coincide: {} {}'.format(borders, tot_borders)
 

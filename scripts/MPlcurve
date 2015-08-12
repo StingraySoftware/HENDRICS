@@ -44,8 +44,8 @@ parser.add_argument("-g", "--gti-split",
                     default=False,
                     action="store_true")
 parser.add_argument("--minlen",
-                    help="Minimum length of acceptable GTIs (default:100)",
-                    default=100, type=float)
+                    help="Minimum length of acceptable GTIs (default:4)",
+                    default=4, type=float)
 parser.add_argument("--ignore-gtis",
                     help="Ignore GTIs",
                     default=False,
