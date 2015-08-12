@@ -1,12 +1,11 @@
 # MaLTPyNT - Matteo's Libraries and Tools in Python for NuSTAR Timing.
 
-Master: [![Build Status](https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=master)](https://travis-ci.org/matteobachetti/MaLTPyNT) [![Coverage Status](https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=master&service=github)](https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=master)
+Master: [![Build Status Master](https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=master)](https://travis-ci.org/matteobachetti/MaLTPyNT) [![Coverage Status Master](https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=master&service=github)](https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=master)
 
-Devel:  [![Build Status](https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable)](https://travis-ci.org/matteobachetti/MaLTPyNT) [![Coverage Status](https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github)](https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=unstable)
+Devel:  [![Build Status Unstable](https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable)](https://travis-ci.org/matteobachetti/MaLTPyNT) [![Coverage Status Unstable](https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github)](https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=unstable)
 
-** BEWARE! STILL UNDER TESTING. USE WITH CARE IN PRODUCTION!**
 
-This software is mostly focused on doing correctly and fairly easily a **quick-look timing analysis** of NuSTAR data, treating properly orbital gaps and exploiting the presence of two independent detectors by using the **cospectrum** as a proxy for the power density spectrum (for an explanation of why this is important, look at Bachetti et al., _ApJ_, 800, 109 -[arXiv:1409.3248](http://arxiv.org/abs/1409.3248)). The output of the analysis is a cospectrum, or a power density spectrum, that can be fitted with [Xspec](http://heasarc.gsfc.nasa.gov/xanadu/xspec/) or [Isis](http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html). Also, one can calculate in the same easy way **time lags** (still under testing, help is welcome).
+This software is designed to do correctly and fairly easily a **quick-look timing analysis** of NuSTAR data, treating properly orbital gaps and exploiting the presence of two independent detectors by using the **cospectrum** as a proxy for the power density spectrum (for an explanation of why this is important, look at Bachetti et al., _ApJ_, 800, 109 -[arXiv:1409.3248](http://arxiv.org/abs/1409.3248)). The output of the analysis is a cospectrum, or a power density spectrum, that can be fitted with [Xspec](http://heasarc.gsfc.nasa.gov/xanadu/xspec/) or [Isis](http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html). Also, one can calculate in the same easy way **time lags** (still under testing, help is welcome).
 Despite its main focus on NuSTAR, the software can be used to make standard spectral analysis on X-ray data from, in principle, any other satellite (for sure XMM-Newton and RXTE).
 
 ## MaLTPyNT vs FTOOLS (and together with FTOOLS)
@@ -19,7 +18,7 @@ MaLTPyNT does a better job than POWSPEC from several points of view:
 - The number of bins used in the power spectrum (or the cospectrum) need not be a power of two! No padding needed.
 
 ### Clarification about dead time treatment
-MaLTPyNT **does not supersede [nulccorr](https://heasarc.gsfc.nasa.gov/ftools/caldb/help/nulccorr.html)**. If one is only interested in frequencies below ~0.5 Hz, nulccorr treats robustly various dead time components and its use is recommended. Light curves produced by nulccorr can be converted to MaLTPyNT format using `MPlcurve --fits-input <lcname>.fits`, and used for the subsequent steps of the timing analysis.
+MaLTPyNT **does not supersede** [nulccorr](https://heasarc.gsfc.nasa.gov/ftools/caldb/help/nulccorr.html). If one is only interested in frequencies below ~0.5 Hz, nulccorr treats robustly various dead time components and its use is recommended. Light curves produced by nulccorr can be converted to MaLTPyNT format using `MPlcurve --fits-input <lcname>.fits`, and used for the subsequent steps of the timing analysis.
 
 ## License and notes for the users
 This software is released with a 3-clause BSD license. You can find license information in the `LICENSE.rst` file.
@@ -30,13 +29,13 @@ This software is released with a 3-clause BSD license. You can find license info
 
 In particular, **if you use the cospectrum**, please also refer to:
 
-2. Bachetti et al. 2015, [_ApJ_](http://iopscience.iop.org/0004-637X/800/2/109/) , **800**, 109.
+2. Bachetti et al. 2015, [ApJ](http://iopscience.iop.org/0004-637X/800/2/109/) , **800**, 109.
 
 I listed a number of **open issues** in the [Issues](https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open) page. Feel free to **comment** on them and **propose more**. Please choose carefully the category: bugs, enhancements, etc.
 
 ## Acknowledgements
 I would like to thank all the co-authors of [the NuSTAR timing paper](http://arxiv.org/abs/1409.3248) and the NuSTAR X-ray binaries working group. This software would not exist without the interesting discussions before and around that paper.
-In particular, I would like to thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code and giving various suggestions on how to improve it.
+In particular, I would like to thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Felix Fürst, Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code and giving various suggestions on how to improve it.
 Last but not least, I would like to thank Marco Buttu (by the way, [check out his book if you speak Italian](http://www.amazon.it/Programmare-con-Python-completa-DigitalLifeStyle-ebook/dp/B00L95VURC/ref=sr_1_1?s=books&ie=UTF8&qid=1424298092&sr=1-1)) for his priceless pointers on Python coding and code management techniques.
 
 ## Installation
@@ -76,6 +75,7 @@ import maltpynt
 
 ## Tutorial
 This is the same tutorial you can find in the Wiki, for convenience
+
 ### 0. Preliminary info
 This tutorial assumes that you have previous knowledge of timing techniques, so that I don't repeat concepts as Nyquist frequency, the importance of choosing carefully the binning time and the FFT length, and so on. If you are not familiar with these concepts, [this paper by Michiel is a very good place to start](http://dare.uva.nl/document/2/47104). Why in the example below I use the cospectrum instead of the PDS, is written in our [timing paper](http://arxiv.org/abs/1409.3248).
 
@@ -179,7 +179,8 @@ To check the light curve that was produced, use the `MPplot` program:
 
 $ MPplot 002A_E3-30_lc.nc
 ```
-### 4. Joining, summing and ``scrunching'' light curves
+### 4. Joining, summing and "scrunching" light curves
+
 If we want a single light curve from multiple ones, either summing multiple instruments or multiple energy or time ranges, we can use `mp_scrunch_lc`:
 ```
 #!console

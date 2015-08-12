@@ -212,10 +212,12 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           ignore_gtis=False,
                           bintime=1.,
                           outdir=None,
-                          outfile=None):
+                          outfile=None,
+                          noclobber=False):
     """Bin an event list in a light curve."""
     if (outfile is not None) and (outdir is not None):
         raise Exception('Please specify only one between outdir and outfile')
+
     logging.info("Loading file %s..." % f)
     evdata = mp_load_events(f)
     logging.info("Done.")
@@ -280,6 +282,15 @@ def mp_lcurve_from_events(f, safe_interval=0,
         out['Emin'] = e_interval[0]
         out['Emax'] = e_interval[1]
 
+    if outfile is None:
+        outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
+    else:
+        outfile = \
+            outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+    if noclobber and os.path.exists(outfile):
+        print('File exists, and noclobber option used. Skipping')
+        return [outfile]
+
     time, lc = mp_lcurve(events, bintime, start_time=tstart,
                          stop_time=tstop)
 
@@ -289,6 +300,10 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           delete=False,
                           min_length=min_length,
                           return_borders=True)
+
+    if len(newgtis) == 0:
+        print("No GTIs above min_length ({}s) found.".format(min_length))
+        return
 
     assert np.all(borders == tot_borders), \
         'Borders do not coincide: {} {}'.format(borders, tot_borders)
@@ -305,8 +320,13 @@ def mp_lcurve_from_events(f, safe_interval=0,
         outfiles = []
         logging.debug(borders)
         for ib, b in enumerate(borders):
-            logging.debug(b)
             local_tag = tag + '_gti%d' % ib
+            outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
+            if noclobber and os.path.exists(outfile):
+                print('File exists, and noclobber option used. Skipping')
+                outfiles.append(outfile)
+
+            logging.debug(b)
             local_out = out.copy()
             local_out['lc'] = lc[b[0]:b[1]]
             local_out['time'] = time[b[0]:b[1]]
@@ -325,7 +345,6 @@ def mp_lcurve_from_events(f, safe_interval=0,
             if instr == 'PCA':
                 local_out['nPCUs'] = len(set(pcus))
 
-            outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
             logging.info('Saving light curve to %s' % outfile)
             mp_save_lcurve(local_out, outfile)
             outfiles.append(outfile)
@@ -340,11 +359,6 @@ def mp_lcurve_from_events(f, safe_interval=0,
         if instr == 'PCA':
             out['nPCUs'] = len(set(pcus))
 
-        if outfile is None:
-            outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
-        else:
-            outfile = \
-                outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
         logging.info('Saving light curve to %s' % outfile)
         mp_save_lcurve(out, outfile)
         outfiles = [outfile]
@@ -367,7 +381,8 @@ def _high_precision_keyword_read(hdr, keyword):
 
 def mp_lcurve_from_fits(fits_file, gtistring='GTI',
                         timecolumn='TIME', ratecolumn=None, ratehdu=1,
-                        fracexp_limit=0.9, outfile=None):
+                        fracexp_limit=0.9, outfile=None,
+                        noclobber=False):
     """
     Load a lightcurve from a fits file.
 
@@ -384,6 +399,15 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     import numpy as np
     from .mp_base import mp_create_gti_from_condition
 
+    if outfile is None:
+        outfile = mp_root(fits_file) + '_lc'
+
+    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+
+    if noclobber and os.path.exists(outfile):
+        print('File exists, and noclobber option used. Skipping')
+        return [outfile]
+
     lchdulist = pf.open(fits_file)
     lctable = lchdulist[ratehdu].data
 
@@ -396,6 +420,11 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
         mjdref = Time(mjdref, scale='tdb', format='mjd')
     except:
         mjdref = None
+
+    try:
+        instr = lchdulist[ratehdu].header['INSTRUME']
+    except:
+        instr = 'EXTERN'
 
     # ----------------------------------------------------------------
     # Trying to comply with all different formats of fits light curves.
@@ -465,6 +494,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
 
     if 'RATE' in ratecolumn:
         rate *= dt
+        rate_e *= dt
 
     try:
         fracexp = np.array(lctable.field('FRACEXP'), dtype=np.longdouble)
@@ -493,12 +523,13 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
 
     out = {}
     out['lc'] = rate
+    out['elc'] = rate_e
     out['time'] = time
     out['dt'] = dt
     out['GTI'] = gti_list
     out['Tstart'] = tstart
     out['Tstop'] = tstop
-    out['Instr'] = 'EXTERN'
+    out['Instr'] = instr
 
     out['MJDref'] = mjdref.value
 
@@ -507,17 +538,13 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     out['source_ctrate'] = mp_calc_countrate(time, rate, gtis=gti_list,
                                              bintime=dt)
 
-    if outfile is None:
-        outfile = mp_root(fits_file) + '_lc'
-
-    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
-
     logging.info('Saving light curve to %s' % outfile)
     mp_save_lcurve(out, outfile)
     return [outfile]
 
 
-def mp_lcurve_from_txt(txt_file, outfile=None):
+def mp_lcurve_from_txt(txt_file, outfile=None,
+                       noclobber=False):
     """
     Load a lightcurve from a text file.
 
@@ -525,6 +552,14 @@ def mp_lcurve_from_txt(txt_file, outfile=None):
     MJDREF 55197.00076601852 (NuSTAR).
     """
     import numpy as np
+
+    if outfile is None:
+        outfile = mp_root(txt_file) + '_lc'
+    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+
+    if noclobber and os.path.exists(outfile):
+        print('File exists, and noclobber option used. Skipping')
+        return [outfile]
 
     time, lc = np.genfromtxt(txt_file, delimiter=' ', unpack=True)
     time = np.array(time, dtype=np.longdouble)
@@ -546,9 +581,6 @@ def mp_lcurve_from_txt(txt_file, outfile=None):
     out['source_ctrate'] = mp_calc_countrate(time, lc, gtis=gtis,
                                              bintime=dt)
 
-    if outfile is None:
-        outfile = mp_root(txt_file) + '_lc'
-    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
     logging.info('Saving light curve to %s' % outfile)
     mp_save_lcurve(out, outfile)
     return [outfile]

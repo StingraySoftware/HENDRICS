@@ -343,7 +343,9 @@ class TestCommandline(unittest.TestCase):
             glob.glob(os.path.join(datadir,
                                    '*.log')) + \
             glob.glob(os.path.join(datadir,
-                                   '*monol_test*.dat'))
+                                   '*monol_test*.dat')) + \
+            glob.glob(os.path.join(datadir,
+                                   '*monol_test*.txt'))
         for f in file_list:
             os.remove(f)
 
