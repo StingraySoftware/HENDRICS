@@ -47,6 +47,9 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir, 'monol_testA.evt'))
             mp.read_events.mp_treat_event_file(
                 os.path.join(datadir, 'monol_testB.evt'))
+            mp.read_events.mp_treat_event_file(
+                os.path.join(datadir, 'monol_testB.evt'),
+                gti_split=True, noclobber=True, min_length=0)
         except:
             raise(Exception('Loading event file failed'))
 
@@ -83,6 +86,9 @@ class TestFullRun(unittest.TestCase):
                              'monol_testB_ev_calib') + MP_FILE_EXTENSION,
                 e_interval=[3, 50],
                 safe_interval=[100, 300])
+            mp.lcurve.mp_lcurve_from_events(
+                os.path.join(datadir,
+                             'monol_testB_ev_0') + MP_FILE_EXTENSION)
         except:
             raise(Exception('Production of light curve failed'))
 
@@ -355,7 +361,9 @@ class TestFullRun(unittest.TestCase):
             glob.glob(os.path.join(datadir,
                                    '*.log')) + \
             glob.glob(os.path.join(datadir,
-                                   '*monol_test*.dat'))
+                                   '*monol_test*.dat')) + \
+            glob.glob(os.path.join(datadir,
+                                   '*monol_test*.txt'))
         for f in file_list:
             os.remove(f)
 
