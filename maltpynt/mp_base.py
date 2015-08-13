@@ -12,6 +12,13 @@ import logging
 def mp_mkdir_p(path):
     """Safe mkdir function.
 
+    Parameters
+    ----------
+    path: str
+        Name of the directory/ies to create
+
+    Notes
+    -----
     Found at http://stackoverflow.com/questions/600268/
     mkdir-p-functionality-in-python
     """
@@ -27,7 +34,18 @@ def mp_mkdir_p(path):
 
 
 def mp_read_header_key(fits_file, key, hdu=1):
-    """Read the header key key from HDU hdu of the file fits_file."""
+    """Read the header key key from HDU hdu of the file fits_file.
+
+    Parameters
+    ----------
+    fits_file: str
+    key: str
+        The keyword to be read
+
+    Other Parameters
+    ----------------
+    hdu:int
+    """
     from astropy.io import fits as pf
 
     hdulist = pf.open(fits_file)
@@ -37,7 +55,21 @@ def mp_read_header_key(fits_file, key, hdu=1):
 
 
 def mp_ref_mjd(fits_file, hdu=1):
-    """Read MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header."""
+    """Read MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header.
+
+    Parameters
+    ----------
+    fits_file: str
+
+    Returns
+    -------
+    mjdref: numpy.longdouble
+        the reference MJD
+
+    Other Parameters
+    ----------------
+    hdu:int
+    """
     import collections
 
     if isinstance(fits_file, collections.Iterable) and\
@@ -55,9 +87,24 @@ def mp_ref_mjd(fits_file, hdu=1):
 
 
 def common_name(str1, str2, default='common'):
-    """Strip two file names of the letters not in common.
+    """Strip two strings of the letters not in common.
 
     Filenames must be of same length and only differ by a few letters.
+
+    Parameters
+    ----------
+    str1: str
+    str2: str
+
+    Returns
+    -------
+    common_str: str
+        A string containing the parts of the two names in common
+
+    Other Parameters
+    ----------------
+    default: str
+        The string to return if common_str is empty
     """
     if not len(str1) == len(str2):
         return default
@@ -78,7 +125,12 @@ def common_name(str1, str2, default='common'):
 
 
 def mp_root(filename):
-    """Root file name (without _ev, _lc, etc.)."""
+    """Return the root file name (without _ev, _lc, etc.).
+
+    Parameters
+    ----------
+    filename:str
+    """
     import os.path
     fname = filename.replace('.gz', '')
     fname = os.path.splitext(filename)[0]
@@ -92,6 +144,19 @@ def mp_contiguous_regions(condition):
 
     Return a 2D array where the first column is the start index of the region
     and the second column is the end index.
+
+    Parameters
+    ----------
+    condition : boolean array
+
+    Returns
+    -------
+    idx: 2-D int array
+        A list of integer couples, with the start and end of each True blocks
+        in the original array
+
+    Notes
+    -----
     From http://stackoverflow.com/questions/4494404/
     find-large-number-of-consecutive-values-fulfilling-
     condition-in-a-numpy-array
@@ -133,6 +198,23 @@ def mp_create_gti_mask(time, gtis, safe_interval=0, min_length=0,
     """Create GTI mask.
 
     Assumes that no overlaps are present between GTIs
+
+    Parameters
+    ----------
+    time : float array
+    gtis : [[g0_0, g0_1], [g1_0, g1_1], ...], float array-like
+
+    Returns
+    -------
+    mask : boolean array
+    new_gtis : Nx2 array
+
+    Other parameters
+    ----------------
+    safe_interval : float or [float, float]
+    min_length : float
+    return_new_gtis : bool
+    dt : float
     """
     import collections
 
