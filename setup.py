@@ -20,7 +20,7 @@ if PY2 and PYX6:
     install_requires += ['unittest2']
 
 setup(name='maltpynt',
-      version='1.0rc3',
+      version='1.0rc4',
       description="Matteo's Library and Tools in Python for NuSTAR Timing",
       packages=['maltpynt'],
       package_data={'': ['README.md']},
