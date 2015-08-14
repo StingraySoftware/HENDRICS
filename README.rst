@@ -22,8 +22,11 @@ testing, help is welcome). Despite its main focus on NuSTAR, the
 software can be used to make standard spectral analysis on X-ray data
 from, in principle, any other satellite (for sure XMM-Newton and RXTE).
 
-The documentation can be found
-`here <http://maltpynt.readthedocs.org/en/latest/>`__
+The **documentation** can be found
+`here <http://maltpynt.readthedocs.org/en/latest/>`__.
+
+A **tutorial** is also available
+`here <http://maltpynt.readthedocs.org/en/latest/tutorial.html>`__
 
 .. |Build Status Master| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=master
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
