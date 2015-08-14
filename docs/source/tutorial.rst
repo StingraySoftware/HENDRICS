@@ -1,7 +1,7 @@
 Tutorial
 ========
 
-0. Preliminary info
+Preliminary info
 ~~~~~~~~~~~~~~~~~~~
 
 This tutorial assumes that you have previous knowledge of timing
@@ -71,7 +71,7 @@ will be bigger, but this possibility ensures portability. If you don't
 use netCDF4, you'll notice that file names will have the ``.p``
 extension instead of the ``.nc`` below. The rest is the same.
 
-1. Loading event lists
+Loading event lists
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Starting from cleaned event files, we will first save them in
@@ -92,7 +92,7 @@ This will create new files with a ``_ev.nc`` extension (``_ev.p`` if you
 don't use netCDF4), containing the event times and the energy *channel*
 (``PI``) of each event
 
-2. Calibrating event lists
+Calibrating event lists
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use ``MPcalibrate``. You can either specify an ``rmf`` file with the
@@ -150,7 +150,7 @@ To check the light curve that was produced, use the ``MPplot`` program:
 
     $ MPplot 002A_E3-30_lc.nc
 
-4. Joining, summing and "scrunching" light curves
+Joining, summing and "scrunching" light curves
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If we want a single light curve from multiple ones, either summing
@@ -171,7 +171,7 @@ This is only tested in \`\`safe'' situations (files are not too big and
 have consistent time and energy ranges), so it might give inconsistent
 results or crash in untested situations. Please report any problems!
 
-5. Producing power spectra and cross power spectra
+Producing power spectra and cross power spectra
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let us just produce the cross power spectrum for now. To produce also
@@ -188,7 +188,7 @@ would be Leahy normalization.
     Loading file 002B_E3-30_lc.nc...
     Saving CPDS to ./cpds_002_3-30_0.nc
 
-6. Rebinning the spectrum
+Rebinning the spectrum
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now let's rebin the spectrum. If the rebin factor is an integer, it is
@@ -200,7 +200,7 @@ interpreted as a geometric binning.
     $ MPrebin cpds_002_3-30_0.nc -r 1.03
     Saving cpds to cpds_002_3-30_0_rebin1.03.nc
 
-7. Calculating the cospectrum and phase/time lags
+Calculating the cospectrum and phase/time lags
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The calculation of lags and their errors is implemented in ``MPlags``,
@@ -209,7 +209,7 @@ read the real part of the cross power spectrum as depicted in the
 relevant function in ``mp_plot.py`` (`Use the source,
 Luke! <http://adastraerrans.com/archivos/use-the-source-luke.png>`__).
 
-8. Saving the spectra in a format readable to XSpec
+Saving the spectra in a format readable to XSpec
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To save the cospectrum in a format readable to XSpec it is sufficient to
@@ -219,7 +219,7 @@ give the command
 
     $ MP2xspec cpds_002_3-30_0_rebin1.03.nc --flx2xsp
 
-9. Open and fit in XSpec!
+Open and fit in XSpec!
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
