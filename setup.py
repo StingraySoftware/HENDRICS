@@ -6,6 +6,16 @@ except ImportError:
 
 import glob
 import sys
+import os
+
+
+def generate_version_py(version):
+    fname = os.path.join('maltpynt', 'version.py')
+    versionstring = "version = '{}'\n".format(version)
+    with open(fname, 'w') as fobj:
+        fobj.write(versionstring)
+
+
 PY2 = sys.version_info[0] == 2
 PYX6 = sys.version_info[1] <= 6
 
@@ -20,8 +30,12 @@ install_requires = [
 if PY2 and PYX6:
     install_requires += ['unittest2']
 
+version = '1.0-rc5'
+
+generate_version_py(version)
+
 setup(name='maltpynt',
-      version='1.0rc4',
+      version=version,
       description="Matteo's Library and Tools in Python for NuSTAR Timing",
       packages=['maltpynt'],
       package_data={'': ['README.md']},
