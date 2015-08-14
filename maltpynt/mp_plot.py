@@ -130,3 +130,14 @@ def mp_plot_lc(lcfiles):
         plt.ylabel('light curve (Ct/bin/PCU)')
     else:
         plt.ylabel('light curve (Ct/bin)')
+
+
+if __name__ == "__main__":
+    import sys
+    import subprocess as sp
+
+    print('Calling script...')
+
+    args = sys.argv[1:]
+
+    sp.check_call(['MPplot'] + args)
