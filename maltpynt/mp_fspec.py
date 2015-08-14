@@ -26,7 +26,19 @@ class _empty():
 
 
 def mp_fft(lc, bintime):
-    """A wrapper for the fft function. Just numpy for now."""
+    """A wrapper for the fft function. Just numpy for now.
+
+    Parameters
+    ----------
+    lc : array-like
+    bintime : float
+
+    Returns
+    -------
+    freq : array-like
+    ft : array-like
+        the Fourier transform.
+    """
     nbin = len(lc)
 
     ft = np.fft.fft(lc)
@@ -36,14 +48,24 @@ def mp_fft(lc, bintime):
 
 
 def mp_leahy_pds(lc, bintime, return_freq=True):
-    r"""Calculate the PDS.
+    r"""Calculate the power density spectrum.
 
     Calculates the Power Density Spectrum \'a la Leahy+1983, ApJ 266, 160,
     given the lightcurve and its bin time.
     Assumes no gaps are present! Beware!
-    Keyword arguments:
-        return_freq: (bool, default True) Return the frequencies corresponding
-                     to the PDS bins?
+
+    Parameters
+    ----------
+    lc : array-like
+        the light curve
+    bintime : array-like
+        the bin time of the light curve
+
+    Other Parameters
+    ----------
+    return_freq : bool, default True
+        Return the frequencies corresponding to the PDS bins?
+
     """
     nph = sum(lc)
 
@@ -72,23 +94,43 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
     Calculates the Power Density Spectrum \'a la Leahy (1983), given the
     lightcurve and its bin time, over equal chunks of length fftlen, and
     returns the average of all PDSs, or the sum PDS and the number of chunks
-    Arguments:
-        time:         central times of light curve bins
-        lc:           light curve
-        bintime:      bin time of the light curve
-        fftlen:       length of each FFT
 
-    Keyword arguments:
-        gti:          good time intervals [[g1s, g1e], [g2s,g2e], [g3s,g3e],..]
-                      defaults to [[time[0] - bintime/2, time[-1] + bintime/2]]
-        return_ctrate:if True, return also the count rate
+    Parameters
+    ----------
+    time : array-like
+        Central times of light curve bins
+    lc : array-like
+        Light curve
+    bintime : float
+        Bin time of the light curve
+    fftlen : float
+        Length of each FFT
+    gti : [[g0_0, g0_1], [g1_0, g1_1], ...]
+         Good time intervals. Defaults to
+         [[time[0] - bintime/2, time[-1] + bintime/2]]
 
-    Return values:
-        freq:         array of frequencies corresponding to PDS bins
-        pds:          the values of the PDS
-        pds_err:      the values of the PDS
-        n_chunks:     the number of summed PDSs (if normalize is False)
-        ctrate:       the average count rate in the two lcs
+    Other parameters
+    ----------------
+    return_ctrate : bool
+        if True, return also the count rate
+    return_all : bool
+        if True, return everything, including the dynamical PDS
+
+    Returns
+    -------
+    return_str : object, optional
+        An Object containing all return values below, plus the dynamical PDS.
+        This is returned if return_all is True
+    freq : array-like
+        array of frequencies corresponding to PDS bins
+    pds : array-like
+        the values of the PDS
+    pds_err : array-like
+        the values of the PDS
+    n_chunks : int
+        the number of summed PDSs (if normalize is False)
+    ctrate : float
+        the average count rate in the two lcs
     """
     if gti is None:
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
@@ -153,9 +195,21 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     Calculates the Cross Power Density Spectrum, normalized similarly to the
     PDS in Leahy+1983, ApJ 266, 160., given the lightcurve and its bin time.
     Assumes no gaps are present! Beware!
-    Keyword arguments:
-        return_freq: (bool, default True) Return the frequencies corresponding
-                     to the CPDS bins?
+
+    Parameters
+    ----------
+    lc1 : array-like
+        The first light curve
+    lc2 : array-like
+        The light curve
+    bintime : array-like
+        The bin time of the light curve
+
+    Other Parameters
+    ----------------
+    return_freq : bool, default True
+        Return the frequencies corresponding to the PDS bins?
+
     """
     assert len(lc1) == len(lc2), 'Light curves MUST have the same length!'
     nph1 = sum(lc1)
@@ -208,24 +262,45 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
     Calculates the Cross Power Density Spectrum normalized like PDS, given the
     lightcurve and its bin time, over equal chunks of length fftlen, and
     returns the average of all PDSs, or the sum PDS and the number of chunks
-    Arguments:
-        time:         central times of light curve bins
-        lc1:          light curve 1
-        lc2:          light curve 2
-        bintime:      bin time of the light curve
-        fftlen:       length of each FFT
 
-    Keyword arguments:
-        gti:          good time intervals [[g1s, g1e], [g2s,g2e], [g3s,g3e],..]
-                      defaults to [[time[0] - bintime/2, time[-1] + bintime/2]]
-        return_ctrate:if True, return also the count rate
+    Parameters
+    ----------
+    time : array-like
+        Central times of light curve bins
+    lc1 : array-like
+        Light curve 1
+    lc2 : array-like
+        Light curve 2
+    bintime : float
+        Bin time of the light curve
+    fftlen : float
+        Length of each FFT
+    gti : [[g0_0, g0_1], [g1_0, g1_1], ...]
+         Good time intervals. Defaults to
+         [[time[0] - bintime/2, time[-1] + bintime/2]]
 
-    Return values:
-        freq:         array of frequencies corresponding to CPDS bins
-        pds:          the values of the CPDS
-        pds_err:      the values of the CPDS
-        n_chunks:     the number of summed CPDSs
-        ctrate:       the average count rate in the two lcs
+    Other parameters
+    ----------------
+    return_ctrate : bool
+        if True, return also the count rate
+    return_all : bool
+        if True, return everything, including the dynamical PDS
+
+    Returns
+    -------
+    return_str : object, optional
+        An Object containing all return values below, plus the dynamical PDS.
+        This is returned if return_all is True
+    freq : array-like
+        array of frequencies corresponding to PDS bins
+    pds : array-like
+        the values of the PDS
+    pds_err : array-like
+        the values of the PDS
+    n_chunks : int
+        the number of summed PDSs (if normalize is False)
+    ctrate : float
+        the average count rate in the two lcs
     """
     if gti is None:
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
@@ -293,17 +368,32 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
 
 
 def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
-    """Normalize a Leahy PDS with RMS normalization.
+    """Normalize a Leahy PDS with RMS normalization ([1]_, [2]_).
 
-    Ref: (Belloni & Hasinger 1990, A&A, 230, 103; Miyamoto+1991, ApJ, 383, 784)
-    Inputs:
-        pds:           the Leahy-normalized PDS
-        pds_err:       the uncertainties on the PDS values
-        source_ctrate: the source count rate
-        back_ctrate:   (optional) the background count rate
-    Outputs:
-        pds:           the RMS-normalized PDS
-        pds_err:       the uncertainties on the PDS values
+    Parameters
+    ----------
+    pds : array-like
+        The Leahy-normalized PDS
+    pds_err : array-like
+        The uncertainties on the PDS values
+    source_ctrate : float
+        The source count rate
+    back_ctrate: float, optional
+        The background count rate
+
+    Returns
+    -------
+    pds : array-like
+        the RMS-normalized PDS
+    pds_err : array-like
+        the uncertainties on the PDS values
+
+    References
+    ----------
+    .. [1] Belloni & Hasinger 1990, A&A, 230, 103
+
+    .. [2] Miyamoto+1991, ApJ, 383, 784
+
     """
     if back_ctrate is None:
         logging.warning("Assuming background level 0")
@@ -313,11 +403,17 @@ def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
 
 
 def mp_decide_spectrum_intervals(gtis, fftlen):
-    """A way to avoid gaps.
+    """Decide the start times of PDSs.
 
-    Start each FFT/PDS/cospectrum from the start of
-    a GTI, and stop before the next gap.
+    Start each FFT/PDS/cospectrum from the start of a GTI, and stop before the
+    next gap.
     Only use for events! This will give problems with binned light curves.
+
+    Parameters
+    ----------
+    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+    fftlen : float
+        Length of the chunks
     """
     spectrum_start_times = np.array([], dtype=np.longdouble)
     for g in gtis:
@@ -344,6 +440,14 @@ def mp_decide_spectrum_lc_intervals(gtis, fftlen, time):
     In this case, it is necessary to specify the time array containing the
     times of the light curve bins.
     Returns start and stop bins of the intervals to use for the PDS
+
+    Parameters
+    ----------
+    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+    fftlen : float
+        Length of the chunks
+    time : array-like
+        Times of light curve bins
     """
     bintime = time[1] - time[0]
     nbin = np.long(fftlen / bintime)

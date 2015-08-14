@@ -14,13 +14,12 @@ def mp_mkdir_p(path):
 
     Parameters
     ----------
-    path: str
+    path : str
         Name of the directory/ies to create
 
     Notes
     -----
-    Found at http://stackoverflow.com/questions/600268/
-    mkdir-p-functionality-in-python
+    Found at http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
     import os
     import errno
@@ -44,7 +43,7 @@ def mp_read_header_key(fits_file, key, hdu=1):
 
     Other Parameters
     ----------------
-    hdu:int
+    hdu : int
     """
     from astropy.io import fits as pf
 
@@ -59,16 +58,16 @@ def mp_ref_mjd(fits_file, hdu=1):
 
     Parameters
     ----------
-    fits_file: str
+    fits_file : str
 
     Returns
     -------
-    mjdref: numpy.longdouble
+    mjdref : numpy.longdouble
         the reference MJD
 
     Other Parameters
     ----------------
-    hdu:int
+    hdu : int
     """
     import collections
 
@@ -93,17 +92,17 @@ def common_name(str1, str2, default='common'):
 
     Parameters
     ----------
-    str1: str
-    str2: str
+    str1 : str
+    str2 : str
 
     Returns
     -------
-    common_str: str
+    common_str : str
         A string containing the parts of the two names in common
 
     Other Parameters
     ----------------
-    default: str
+    default : str
         The string to return if common_str is empty
     """
     if not len(str1) == len(str2):
@@ -129,7 +128,7 @@ def mp_root(filename):
 
     Parameters
     ----------
-    filename:str
+    filename : str
     """
     import os.path
     fname = filename.replace('.gz', '')
@@ -151,15 +150,13 @@ def mp_contiguous_regions(condition):
 
     Returns
     -------
-    idx: 2-D int array
+    idx : [[i0_0, i0_1], [i1_0, i1_1], ...]
         A list of integer couples, with the start and end of each True blocks
         in the original array
 
     Notes
     -----
-    From http://stackoverflow.com/questions/4494404/
-    find-large-number-of-consecutive-values-fulfilling-
-    condition-in-a-numpy-array
+    From http://stackoverflow.com/questions/4494404/find-large-number-of-consecutive-values-fulfilling-condition-in-a-numpy-array
     """
     # Find the indicies of changes in "condition"
     diff = np.diff(condition)
@@ -442,9 +439,9 @@ def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     r"""Detection level for a PDS.
 
     Return the detection level (with probability 1 - epsilon) for a Power
-    Density Spectrum of nbins bins, normalized \'a la Leahy (1983), based on
-    the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
-    PDS averaging (n_summed_spectra)
+    Density Spectrum of nbins bins, normalized a la Leahy (1983), based on
+    the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
+    and multiple PDS averaging (n_summed_spectra)
     """
     try:
         from scipy import stats
@@ -467,9 +464,9 @@ def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     r"""Give the probability of a given power level in PDS.
 
     Return the probability of a certain power level in a Power Density
-    Spectrum of nbins bins, normalized \'a la Leahy (1983), based on
-    the 2 dof Chi^2 statistics, corrected for rebinning (n_rebin) and multiple
-    PDS averaging (n_summed_spectra)
+    Spectrum of nbins bins, normalized a la Leahy (1983), based on
+    the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
+    and multiple PDS averaging (n_summed_spectra)
     """
     try:
         from scipy import stats

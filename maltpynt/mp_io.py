@@ -334,15 +334,18 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
     """Save arrays in a QDP file.
 
     Saves an array of variables, and possibly their errors, to a QDP file.
-    input:
-        arrays: list of variables. All variables must be arrays and of the same
-                length!
-        errors: list of errors. The order has to be the same of arrays; the
-                value can be
-                  - None if no error is assigned
-                  - an array of same length of variable for symmetric errors
-                  - an array of len-2 lists for non-symmetric errors (e.g.
-                    [[errm1, errp1], [errm2, errp2], [errm3, errp3], ...])
+
+    Parameters
+    ----------
+    arrays: [array1, array2]
+        List of variables. All variables must be arrays and of the same length.
+    errors: [array1, array2]
+        List of errors. The order has to be the same of arrays; the value can
+        be:
+        - None if no error is assigned
+        - an array of same length of variable for symmetric errors
+        - an array of len-2 lists for non-symmetric errors (e.g.
+        [[errm1, errp1], [errm2, errp2], [errm3, errp3], ...])
     """
     import numpy as np
     if errors is None:

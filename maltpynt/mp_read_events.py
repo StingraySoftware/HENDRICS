@@ -39,19 +39,26 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
     Loads event list from HDU EVENTS of file fits_file, with Good Time
     intervals. Optionally, returns additional columns of data from the same
     HDU of the events.
-    Inputs:
-        fits_file
-        return_limits:  (bool) return the TSTART and TSTOP keyword values
-        additional_columns: (optional) a list of keys corresponding to the
-            additional columns to extract from the event HDU (ex.: ['PI', 'X'])
-    Outputs:
-        ev_list
-        gtis
-        additional_data: (dictionary of arrays) the key of the dictionary is
-            the one specified in additional_colums. The data are an array with
-            the values of the specified column in the fits file.
-        t_start
-        t_stop
+
+    Parameters
+    ----------
+    fits_file : str
+    return_limits: bool, optional
+        Return the TSTART and TSTOP keyword values
+    additional_columns: list of str, optional
+        A list of keys corresponding to the additional columns to extract from
+        the event HDU (ex.: ['PI', 'X'])
+
+    Returns
+    -------
+    ev_list : array-like
+    gtis: [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+    additional_data: dict
+        A dictionary, where each key is the one specified in additional_colums.
+        The data are an array with the values of the specified column in the
+        fits file.
+    t_start : float
+    t_stop : float
     """
     from astropy.io import fits as pf
 
