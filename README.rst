@@ -1,9 +1,11 @@
 MaLTPyNT - Matteo's Libraries and Tools in Python for NuSTAR Timing.
 ====================================================================
 
-Master: |Build Status Master| |Coverage Status Master|
+Master: |Build Status Master| |Coverage Status Master| |Documentation
+Status Master|
 
-Devel: |Build Status Unstable| |Coverage Status Unstable|
+Devel: |Build Status Unstable| |Coverage Status
+Unstable|\ |Documentation Status Master|
 
 This software is designed to do correctly and fairly easily a
 **quick-look timing analysis** of NuSTAR data, treating properly orbital
@@ -27,6 +29,8 @@ The documentation can be found
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
 .. |Coverage Status Master| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=master&service=github
    :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=master
+.. |Documentation Status Master| image:: https://readthedocs.org/projects/pip/badge/?version=latest
+   :target: https://readthedocs.org/projects/pip/badge/?version=latest
 .. |Build Status Unstable| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
 .. |Coverage Status Unstable| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github
