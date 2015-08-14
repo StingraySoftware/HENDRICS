@@ -15,3 +15,5 @@ from . import mp_read_events as read_events
 from . import mp_rebin as rebin
 from . import mp_save_as_xspec as save_as_xspec
 from . import mp_sum_fspec as sum_fspec
+
+from .version import version as __version__

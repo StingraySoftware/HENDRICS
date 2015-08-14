@@ -3,7 +3,11 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    # Permit to import the module anyway if matplotlib is not present
+    pass
 from .mp_io import mp_load_data
 from .mp_io import is_string
 from .mp_base import mp_create_gti_mask

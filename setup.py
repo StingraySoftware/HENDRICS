@@ -23,8 +23,7 @@ install_requires = [
     'matplotlib',
     'scipy',
     'numpy',
-    'astropy',
-    'numpydoc'
+    'astropy'
     ]
 
 if PY2 and PYX6:
