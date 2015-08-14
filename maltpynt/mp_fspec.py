@@ -109,13 +109,6 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
          Good time intervals. Defaults to
          [[time[0] - bintime/2, time[-1] + bintime/2]]
 
-    Other parameters
-    ----------------
-    return_ctrate : bool
-        if True, return also the count rate
-    return_all : bool
-        if True, return everything, including the dynamical PDS
-
     Returns
     -------
     return_str : object, optional
@@ -131,6 +124,13 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
         the number of summed PDSs (if normalize is False)
     ctrate : float
         the average count rate in the two lcs
+
+    Other parameters
+    ----------------
+    return_ctrate : bool
+        if True, return also the count rate
+    return_all : bool
+        if True, return everything, including the dynamical PDS
     """
     if gti is None:
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
@@ -279,13 +279,6 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
          Good time intervals. Defaults to
          [[time[0] - bintime/2, time[-1] + bintime/2]]
 
-    Other parameters
-    ----------------
-    return_ctrate : bool
-        if True, return also the count rate
-    return_all : bool
-        if True, return everything, including the dynamical PDS
-
     Returns
     -------
     return_str : object, optional
@@ -301,6 +294,14 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         the number of summed PDSs (if normalize is False)
     ctrate : float
         the average count rate in the two lcs
+
+    Other parameters
+    ----------------
+    return_ctrate : bool
+        if True, return also the count rate
+    return_all : bool
+        if True, return everything, including the dynamical PDS
+
     """
     if gti is None:
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
