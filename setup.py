@@ -14,6 +14,7 @@ install_requires = [
     'scipy',
     'numpy',
     'astropy'
+    'numpydoc'
     ]
 
 if PY2 and PYX6:
