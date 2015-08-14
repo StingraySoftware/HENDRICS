@@ -94,4 +94,3 @@ techniques.
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
 .. |Coverage Status Unstable| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github
    :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=unstable
-.
