@@ -14,7 +14,7 @@ Contents:
    introduction
    install
    tutorial
-
+   maltpynt/modules
 
 
 Indices and tables
