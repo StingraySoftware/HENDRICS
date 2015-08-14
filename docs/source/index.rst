@@ -14,6 +14,10 @@ Contents:
    introduction
    install
    tutorial
+
+.. toctree::
+   :hidden:
+
    maltpynt/modules
 
 

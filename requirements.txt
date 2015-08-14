@@ -2,4 +2,3 @@ numpy
 scipy
 astropy
 matplotlib
-numpydoc>=0.5
