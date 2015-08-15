@@ -62,7 +62,7 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
         the bin time of the light curve
 
     Other Parameters
-    ----------
+    ----------------
     return_freq : bool, default True
         Return the frequencies corresponding to the PDS bins?
 

@@ -55,10 +55,32 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
                          noclobber=False):
     """Calculate time lags.
 
-    Inputs:
-        cpdsfile: the MP-format file containing the CPDS
-        pds1file: the MP-format file containing the first PDS used for the CPDS
-        pds1file: the MP-format file containing the second PDS
+    Parameters
+    ----------
+    cpdsfile : str
+        The MP-format file containing the CPDS
+    pds1file : str
+        The MP-format file containing the first PDS used for the CPDS
+    pds1file : str
+        The MP-format file containing the second PDS
+
+    Returns
+    -------
+    freq : array-like
+        Central frequencies of spectral bins
+    df : array-like
+        Width of each spectral bin
+    lags : array-like
+        Time lags
+    elags : array-like
+        Error on the time lags
+
+    Other Parameters
+    ----------------
+    outroot : str
+        Root of the output filename
+    noclobber : bool
+        If True, do not overwrite existing files
     """
     warn = ("----------------- mp_lags_from_spectra -----------------\n\n"
             "This program is still under testing and no assurance of\n"
