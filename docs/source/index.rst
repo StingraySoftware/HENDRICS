@@ -22,11 +22,14 @@ testing, help is welcome). Despite its main focus on NuSTAR, the
 software can be used to make standard spectral analysis on X-ray data
 from, in principle, any other satellite (for sure XMM-Newton and RXTE).
 
+Preliminary notes
+-----------------
+
 MaLTPyNT vs FTOOLS (and together with FTOOLS)
----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 vs POWSPEC
-~~~~~~~~~~
+++++++++++
 
 MaLTPyNT does a better job than POWSPEC from several points of view:
 
@@ -39,8 +42,7 @@ MaLTPyNT does a better job than POWSPEC from several points of view:
   need not be a power of two! No padding needed.
 
 Clarification about dead time treatment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
++++++++++++++++++++++++++++++++++++++++
 MaLTPyNT **does not supersede**
 `nulccorr <https://heasarc.gsfc.nasa.gov/ftools/caldb/help/nulccorr.html>`__.
 If one is only interested in frequencies below ~0.5 Hz, nulccorr treats
@@ -50,7 +52,7 @@ curves produced by nulccorr can be converted to MaLTPyNT format using
 steps of the timing analysis.
 
 License and notes for the users
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This software is released with a 3-clause BSD license. You can find
 license information in the ``LICENSE.rst`` file.
@@ -70,7 +72,7 @@ page. Feel free to **comment** on them and **propose more**. Please
 choose carefully the category: bugs, enhancements, etc.
 
 Acknowledgements
-----------------
+~~~~~~~~~~~~~~~~
 
 I would like to thank all the co-authors of `the NuSTAR timing
 paper <http://arxiv.org/abs/1409.3248>`__ and the NuSTAR X-ray binaries
