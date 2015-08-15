@@ -1,11 +1,11 @@
 MaLTPyNT - Matteo's Libraries and Tools in Python for NuSTAR Timing.
 ====================================================================
 
-+----------+---------------------------+------------------------------+---------------------------------+
-| Master   | |Build Status Master|     | |Coverage Status Master|     | |Documentation Status Master|   |
-+==========+===========================+==============================+=================================+
-| Devel    | |Build Status Unstable|   | |Coverage Status Unstable|   | |Documentation Status|          |
-+----------+---------------------------+------------------------------+---------------------------------+
++--------------+---------------------------+------------------------------+---------------------------------+
+| **Master**   | |Build Status Master|     | |Coverage Status Master|     | |Documentation Status Master|   |
++==============+===========================+==============================+=================================+
+| **Devel**    | |Build Status Unstable|   | |Coverage Status Unstable|   | |Documentation Status|          |
++--------------+---------------------------+------------------------------+---------------------------------+
 
 This software is designed to do correctly and fairly easily a
 **quick-look timing analysis** of NuSTAR data, treating properly orbital
