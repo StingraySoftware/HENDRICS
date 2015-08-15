@@ -32,11 +32,11 @@ A **tutorial** is also available
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
 .. |Coverage Status Master| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=master&service=github
    :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=master
-.. |Documentation Status Master| image:: https://readthedocs.org/projects/pip/badge/?version=latest
-   :target: https://readthedocs.org/projects/pip/badge/?version=latest
+.. |Documentation Status Master| image:: https://readthedocs.org/projects/maltpynt/badge/?version=latest
+   :target: https://readthedocs.org/projects/maltpynt/badge/?version=latest
 .. |Build Status Unstable| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
 .. |Coverage Status Unstable| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github
    :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=unstable
-.. |Documentation Status| image:: https://readthedocs.org/projects/pip/badge/?version=latest
-   :target: https://readthedocs.org/projects/pip/badge/?version=latest
+.. |Documentation Status| image:: https://readthedocs.org/projects/maltpynt/badge/?version=unstable
+   :target: https://readthedocs.org/projects/maltpynt/badge/?version=unstable
