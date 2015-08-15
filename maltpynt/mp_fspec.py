@@ -301,7 +301,6 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         if True, return also the count rate
     return_all : bool
         if True, return everything, including the dynamical PDS
-
     """
     if gti is None:
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
