@@ -391,7 +391,6 @@ def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
     References
     ----------
     .. [1] Belloni & Hasinger 1990, A&A, 230, 103
-
     .. [2] Miyamoto+1991, ApJ, 383, 784
 
     """
@@ -479,8 +478,36 @@ def mp_calc_pds(lcfile, fftlen,
                 pdsrebin=1,
                 normalization='Leahy',
                 back_ctrate=0.,
-                noclobber=False):
-    """Calculate the PDS from an input light curve file."""
+                noclobber=False,
+                outname=None):
+    """Calculate the PDS from an input light curve file.
+
+    Parameters
+    ----------
+    lcfile : str
+        The light curve file
+    fftlen : float
+        The length of the chunks over which FFTs will be calculated, in seconds
+
+    Other Parameters
+    ----------------
+    save_dyn : bool
+        If True, save the dynamical power spectrum
+    bintime : float
+        The bin time. If different from that of the light curve, a rebinning is
+        performed
+    pdsrebin : int
+        Rebin the PDS of this factor.
+    normalization : str
+        'Leahy' or 'rms'
+    back_ctrate : float
+        The non-source count rate
+    noclobber : bool
+        If True, do not overwrite existing files
+    outname : str
+        If speficied, output file name. If not specified or None, the new file
+        will have the same root as the input light curve and the '_pds' suffix
+    """
     root = mp_root(lcfile)
     outname = root + '_pds' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
@@ -572,7 +599,35 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
                  normalization='Leahy',
                  back_ctrate=0.,
                  noclobber=False):
-    """Calculate the CPDS from a pair of input light curve files."""
+    """Calculate the CPDS from a pair of input light curve files.
+
+    Parameters
+    ----------
+    lcfile1 : str
+        The first light curve file
+    lcfile2 : str
+        The second light curve file
+    fftlen : float
+        The length of the chunks over which FFTs will be calculated, in seconds
+
+    Other Parameters
+    ----------------
+    save_dyn : bool
+        If True, save the dynamical power spectrum
+    bintime : float
+        The bin time. If different from that of the light curve, a rebinning is
+        performed
+    pdsrebin : int
+        Rebin the PDS of this factor.
+    normalization : str
+        'Leahy' or 'rms'. Default 'Leahy'
+    back_ctrate : float
+        The non-source count rate
+    noclobber : bool
+        If True, do not overwrite existing files
+    outname : str
+        Output file name for the cpds. Default: cpds.[nc|p]
+    """
     if noclobber and os.path.exists(outname):
         print('File exists, and noclobber option used. Skipping')
         return
@@ -706,7 +761,45 @@ def mp_calc_fspec(files, fftlen,
                   nproc=1,
                   back_ctrate=0.,
                   noclobber=False):
-    """Calculate the frequency spectra: the PDS, the cospectrum, ..."""
+    r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
+
+    Parameters
+    ----------
+    files : list of str
+        List of input file names
+    fftlen : float
+        length of chunks to perform the FFT on.
+
+    Other Parameters
+    ----------------
+    save_dyn : bool
+        If True, save the dynamical power spectrum
+    bintime : float
+        The bin time. If different from that of the light curve, a rebinning is
+        performed
+    pdsrebin : int
+        Rebin the PDS of this factor.
+    normalization : str
+        'Leahy' [3]_ or 'rms' [4]_ [5]_. Default 'Leahy'.
+    back_ctrate : float
+        The non-source count rate
+    noclobber : bool
+        If True, do not overwrite existing files
+    outroot : str
+        Output file name root
+    nproc : int
+        Number of processors to use to parallelize the processing of multiple
+        files
+
+    References
+    ----------
+    .. [3] Leahy et al. 1983, ApJ, 266, 160.
+
+    .. [4] Belloni & Hasinger 1990, A&A, 230, 103
+
+    .. [5] Miyamoto et al. 1991, ApJ, 383, 784
+
+    """
     if normalization not in ['Leahy', 'rms']:
         logging.warning('Beware! Unknown normalization!')
         normalization = 'Leahy'
@@ -783,7 +876,28 @@ def mp_calc_fspec(files, fftlen,
 
 
 def mp_read_fspec(fname):
-    """Read the frequency spectrum from a file."""
+    """Read the frequency spectrum from a file.
+    Parameters
+    ----------
+    fname : str
+        The input file name
+
+    Returns
+    -------
+    ftype : str
+        File type
+    freq : array-like
+        Frequency array
+    fspec : array-like
+        Frequency spectrum array
+    efspec : array-like
+        Errors on spectral bins
+    nchunks : int
+        Number of spectra that have been summed to obtain fspec
+    rebin : array-like or int
+        Rebin factor in each bin. Might be irregular in case of geometrical
+        binning
+    """
     ftype, contents = mp_get_file_type(fname)
     if 'freq' in list(contents.keys()):
         freq = contents['freq']
