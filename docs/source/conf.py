@@ -19,6 +19,8 @@ import shlex
 import maltpynt
 import glob
 
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -43,10 +45,11 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
-    'sphinx.ext.viewcode',
-    'sphinxcontrib.autoprogram',
-    'sphinxcontrib.restbuilder'
-]
+    'sphinx.ext.viewcode']
+
+if not on_rtd:
+    extensions.extend(['sphinxcontrib.autoprogram',
+                       'sphinxcontrib.restbuilder'])
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -126,7 +129,6 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #html_theme = 'alabaster'
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme
