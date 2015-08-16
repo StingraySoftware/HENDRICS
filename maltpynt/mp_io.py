@@ -57,7 +57,7 @@ def mp_get_file_format(fname):
 
 # ---- Base function to save NetCDF4 files
 def mp_save_as_netcdf(vars, varnames, formats, fname):
-    """The future. Much faster than pickle."""
+    """Save variables in a NetCDF4 file."""
     rootgrp = nc.Dataset(fname, 'w',
                          format='NETCDF4')
 
@@ -102,7 +102,7 @@ def mp_save_as_netcdf(vars, varnames, formats, fname):
 
 
 def mp_read_from_netcdf(fname):
-    """Read from a netcdf file."""
+    """Read from a netCDF4 file."""
     rootgrp = nc.Dataset(fname)
     out = {}
     for k in rootgrp.variables.keys():
