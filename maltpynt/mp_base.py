@@ -179,7 +179,13 @@ def mp_contiguous_regions(condition):
 
 
 def mp_check_gtis(gti):
-    """Check if GTIs are well-behaved."""
+    """Check if GTIs are well-behaved. No start>end, no overlaps.
+
+    Raises
+    ------
+    AssertionError
+        If GTIs are not well-behaved.
+    """
     gti_start = gti[:, 0]
     gti_end = gti[:, 1]
 
@@ -452,7 +458,8 @@ def mp_cross_gtis(gti_list):
 def get_btis(gtis, start_time=None, stop_time=None):
     """From GTIs, obtain bad time intervals.
 
-    GTIs have to be well-behaved! No overlaps, etc.
+    GTIs have to be well-behaved, in the sense that they have to pass
+    `mp_check_gtis`.
     """
     # Check GTIs
     if len(gtis) == 0:
@@ -569,8 +576,28 @@ def mp_sort_files(files):
     return allfiles
 
 
-def mp_calc_countrate(time, lc, gtis=None, bintime=1):
-    """Calculate the count rate from a light curve."""
+def mp_calc_countrate(time, lc, gtis=None, bintime=None):
+    """Calculate the count rate from a light curve.
+
+    Parameters
+    ----------
+    time : array-like
+    lc : array-like
+
+    Returns
+    -------
+    countrate : float
+        The mean count rate
+
+    Other Parameters
+    ----------------
+    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+    bintime : float
+        The bin time of the light curve. If not specified, the minimum
+        difference between time bins is used
+    """
+    if bintime is None:
+        bintime = np.min(np.diff(time))
     if gtis is not None:
         mask = mp_create_gti_mask(time, gtis)
         lc = lc[mask]
