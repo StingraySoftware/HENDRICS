@@ -4,43 +4,41 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-import sys
 from maltpynt.mp_io import mp_get_file_type, is_string, mp_print_fits_info
 import collections
+import argparse
 
 
-def usage():
-    print('''Usage:
+description = \
+    'Print the content of MaLTPyNT files'
+parser = argparse.ArgumentParser(description=description)
+parser.add_argument("files", help="List of files", nargs='+')
 
-          MPreadfile filename
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) == 1:
+        parser.print_help()
+    sys.exit(1)
+    args = parser.parse_args()
 
-          where filename is any file in a valid MaLTPyNT format
-          ''')
-
-try:
-    fnames = sys.argv[1:]
-except:
-    usage()
-    sys.exit()
-
-for fname in fnames:
-    print('-----------------------------')
-    print('{}'.format(fname))
-    print('-----------------------------')
-    if fname.endswith('.fits') or fname.endswith('.evt'):
-        print('This FITS file contains:', end='\n\n')
-        mp_print_fits_info(fname)
+    for fname in args.files:
         print('-----------------------------')
-        continue
-    ftype, contents = mp_get_file_type(fname)
-    print('This file contains:', end='\n\n')
-    for k in sorted(contents.keys()):
-        val = contents[k]
-        if isinstance(val, collections.Iterable) and not is_string(val):
-            if len(val) < 4:
-                val = repr(list(val[:4]))
-            else:
-                val = repr(list(val[:4])).replace(']', '') + '...]'
-        print((k + ':').ljust(15), val, end='\n\n')
+        print('{}'.format(fname))
+        print('-----------------------------')
+        if fname.endswith('.fits') or fname.endswith('.evt'):
+            print('This FITS file contains:', end='\n\n')
+            mp_print_fits_info(fname)
+            print('-----------------------------')
+            continue
+        ftype, contents = mp_get_file_type(fname)
+        print('This file contains:', end='\n\n')
+        for k in sorted(contents.keys()):
+            val = contents[k]
+            if isinstance(val, collections.Iterable) and not is_string(val):
+                if len(val) < 4:
+                    val = repr(list(val[:4]))
+                else:
+                    val = repr(list(val[:4])).replace(']', '') + '...]'
+            print((k + ':').ljust(15), val, end='\n\n')
 
-    print('-----------------------------')
+        print('-----------------------------')

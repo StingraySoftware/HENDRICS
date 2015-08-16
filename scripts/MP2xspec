@@ -21,14 +21,16 @@ parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
 parser.add_argument("--flx2xsp", help="Also call flx2xsp at the end",
                     default=False, action='store_true')
-args = parser.parse_args()
-files = args.files
-if args.debug:
-    args.loglevel = 'DEBUG'
 
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-logging.basicConfig(filename='MP2xpec.log', level=numeric_level,
-                    filemode='w')
+if __name__ == '__main__':
+    args = parser.parse_args()
+    files = args.files
+    if args.debug:
+        args.loglevel = 'DEBUG'
 
-for f in files:
-    mp_save_as_xspec(f, direct_save=args.flx2xsp)
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MP2xpec.log', level=numeric_level,
+                        filemode='w')
+
+    for f in files:
+        mp_save_as_xspec(f, direct_save=args.flx2xsp)

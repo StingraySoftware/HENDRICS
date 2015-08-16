@@ -26,23 +26,25 @@ parser.add_argument("--noclobber", help="Do not overwrite existing files",
                     default=False, action='store_true')
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
-args = parser.parse_args()
 
-if args.debug:
-    args.loglevel = 'DEBUG'
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-logging.basicConfig(filename='MPlags.log', level=numeric_level,
-                    filemode='w')
+    if args.debug:
+        args.loglevel = 'DEBUG'
 
-if len(args.files) != 3:
-    raise Exception('Invalid number of arguments')
-cfile, p1file, p2file = args.files
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPlags.log', level=numeric_level,
+                        filemode='w')
 
-if args.outroot is None:
-    outroot = mp_root(cfile) + '_lag'
-else:
-    outroot = args.outroot
+    if len(args.files) != 3:
+        raise Exception('Invalid number of arguments')
+    cfile, p1file, p2file = args.files
 
-f, df, l, le = mp_lags_from_spectra(cfile, p1file, p2file, outroot=outroot,
-                                    noclobber=args.noclobber)
+    if args.outroot is None:
+        outroot = mp_root(cfile) + '_lag'
+    else:
+        outroot = args.outroot
+
+    f, df, l, le = mp_lags_from_spectra(cfile, p1file, p2file, outroot=outroot,
+                                        noclobber=args.noclobber)

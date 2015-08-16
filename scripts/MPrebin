@@ -25,15 +25,17 @@ parser.add_argument("--loglevel",
                     type=str)
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
-args = parser.parse_args()
-files = args.files
 
-if args.debug:
-    args.loglevel = 'DEBUG'
+if __name__ == '__main__':
+    args = parser.parse_args()
+    files = args.files
 
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-logging.basicConfig(filename='MPrebin.log', level=numeric_level,
-                    filemode='w')
-rebin = args.rebin
-for f in files:
-    mp_rebin_file(f, rebin)
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPrebin.log', level=numeric_level,
+                        filemode='w')
+    rebin = args.rebin
+    for f in files:
+        mp_rebin_file(f, rebin)

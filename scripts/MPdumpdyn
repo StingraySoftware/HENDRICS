@@ -76,13 +76,15 @@ parser = argparse.ArgumentParser(description=description)
 parser.add_argument("files", help="List of (c)PDS files", nargs='+')
 parser.add_argument("--noplot", help="plot results",
                     default=False, action='store_true')
-args = parser.parse_args()
 
-fnames = args.files
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-if len(fnames) == 0:
-    usage()
-    sys.exit()
+    fnames = args.files
 
-for f in fnames:
-    dumpdyn(f, plot=not args.noplot)
+    if len(fnames) == 0:
+        usage()
+        sys.exit()
+
+    for f in fnames:
+        dumpdyn(f, plot=not args.noplot)

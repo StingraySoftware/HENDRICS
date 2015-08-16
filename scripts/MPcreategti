@@ -43,30 +43,32 @@ parser.add_argument("--loglevel",
                     type=str)
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
-args = parser.parse_args()
-files = args.files
 
-if args.debug:
-    args.loglevel = 'DEBUG'
+if __name__ == '__main__':
+    args = parser.parse_args()
+    files = args.files
 
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-logging.basicConfig(filename='MPcreategti.log', level=numeric_level,
-                    filemode='w')
+    if args.debug:
+        args.loglevel = 'DEBUG'
 
-filter_expr = args.filter
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPcreategti.log', level=numeric_level,
+                        filemode='w')
 
-for fname in files:
-    if args.apply_gti is not None:
-        data = mp_load_data(args.apply_gti)
-        gtis = data['GTI']
-    else:
-        gtis = mp_create_gti(fname, filter_expr,
-                             safe_interval=args.safe_interval)
-    if args.create_only:
-        continue
-    if args.overwrite:
-        outname = fname
-    else:
-        # Use default
-        outname = None
-    mp_apply_gti(fname, gtis)
+    filter_expr = args.filter
+
+    for fname in files:
+        if args.apply_gti is not None:
+            data = mp_load_data(args.apply_gti)
+            gtis = data['GTI']
+        else:
+            gtis = mp_create_gti(fname, filter_expr,
+                                 safe_interval=args.safe_interval)
+        if args.create_only:
+            continue
+        if args.overwrite:
+            outname = fname
+        else:
+            # Use default
+            outname = None
+        mp_apply_gti(fname, gtis)

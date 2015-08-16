@@ -38,25 +38,27 @@ parser.add_argument("--nproc",
                     help=("Number of processors to use"),
                     default=1,
                     type=int)
-args = parser.parse_args()
-files = args.files
 
-if args.debug:
-    args.loglevel = 'DEBUG'
+if __name__ == '__main__':
+    args = parser.parse_args()
+    files = args.files
 
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-logging.basicConfig(filename='MPcalibrate.log', level=numeric_level,
-                    filemode='w')
+    if args.debug:
+        args.loglevel = 'DEBUG'
 
-funcargs = []
-for i_f, f in enumerate(files):
-    outname = f
-    if args.overwrite is False:
-        outname = f.replace(mp_get_file_extension(f), '_calib' +
-                            MP_FILE_EXTENSION)
-    funcargs.append([f, outname, args.rmf])
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPcalibrate.log', level=numeric_level,
+                        filemode='w')
 
-pool = Pool(processes=args.nproc)
-for i in pool.imap_unordered(mp_calib_wrap, funcargs):
-    pass
-pool.close()
+    funcargs = []
+    for i_f, f in enumerate(files):
+        outname = f
+        if args.overwrite is False:
+            outname = f.replace(mp_get_file_extension(f), '_calib' +
+                                MP_FILE_EXTENSION)
+        funcargs.append([f, outname, args.rmf])
+
+    pool = Pool(processes=args.nproc)
+    for i in pool.imap_unordered(mp_calib_wrap, funcargs):
+        pass
+    pool.close()

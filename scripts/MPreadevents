@@ -32,20 +32,23 @@ parser.add_argument("-g", "--gti-split",
                     action="store_true")
 parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
-args = parser.parse_args()
-files = args.files
 
-if args.debug:
-    args.loglevel = 'DEBUG'
+if __name__ == '__main__':
+    args = parser.parse_args()
+    files = args.files
 
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
-                    filemode='w')
+    if args.debug:
+        args.loglevel = 'DEBUG'
 
-_wrap_fun = functools.partial(mp_treat_event_file, noclobber=args.noclobber,
-                              gti_split=args.gti_split)
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
+                        filemode='w')
 
-pool = Pool(processes=args.nproc)
-for i in pool.imap_unordered(_wrap_fun, files):
-    pass
-pool.close()
+    _wrap_fun = functools.partial(mp_treat_event_file,
+                                  noclobber=args.noclobber,
+                                  gti_split=args.gti_split)
+
+    pool = Pool(processes=args.nproc)
+    for i in pool.imap_unordered(_wrap_fun, files):
+        pass
+    pool.close()

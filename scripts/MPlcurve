@@ -72,48 +72,52 @@ parser.add_argument("--fits-input",
 parser.add_argument("--txt-input",
                     help="Input files are light curves in txt format",
                     default=False, action='store_true')
-args = parser.parse_args()
 
-if args.debug:
-    args.loglevel = 'DEBUG'
-bintime = args.bintime
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-logging.basicConfig(filename='MPlcurve.log', level=numeric_level,
-                    filemode='w')
+    if args.debug:
+        args.loglevel = 'DEBUG'
+    bintime = args.bintime
 
-infiles = args.files
-safe_interval = args.safe_interval
-pi_interval = np.array(args.pi_interval)
-e_interval = np.array(args.e_interval)
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPlcurve.log', level=numeric_level,
+                        filemode='w')
 
-# ------ Use functools.partial to wrap mp_lcurve* with relevant keywords----
-if args.fits_input:
-    wrap_fun = functools.partial(mp_lcurve_from_fits, noclobber=args.noclobber)
-elif args.txt_input:
-    wrap_fun = functools.partial(mp_lcurve_from_txt, noclobber=args.noclobber)
-else:
-    wrap_fun = functools.partial(
-        mp_lcurve_from_events, safe_interval=safe_interval,
-        pi_interval=pi_interval,
-        e_interval=e_interval,
-        min_length=args.minlen,
-        gti_split=args.gti_split,
-        ignore_gtis=args.ignore_gtis,
-        bintime=bintime, outdir=args.outdir,
-        noclobber=args.noclobber)
-# ---------------------------------------------------------------------------
-outfiles = []
+    infiles = args.files
+    safe_interval = args.safe_interval
+    pi_interval = np.array(args.pi_interval)
+    e_interval = np.array(args.e_interval)
 
-pool = Pool(processes=args.nproc)
-for i in pool.imap_unordered(wrap_fun, args.files):
-    outfiles.append(i)
-pool.close()
+    # ------ Use functools.partial to wrap mp_lcurve* with relevant keywords---
+    if args.fits_input:
+        wrap_fun = functools.partial(mp_lcurve_from_fits,
+                                     noclobber=args.noclobber)
+    elif args.txt_input:
+        wrap_fun = functools.partial(mp_lcurve_from_txt,
+                                     noclobber=args.noclobber)
+    else:
+        wrap_fun = functools.partial(
+            mp_lcurve_from_events, safe_interval=safe_interval,
+            pi_interval=pi_interval,
+            e_interval=e_interval,
+            min_length=args.minlen,
+            gti_split=args.gti_split,
+            ignore_gtis=args.ignore_gtis,
+            bintime=bintime, outdir=args.outdir,
+            noclobber=args.noclobber)
+    # -------------------------------------------------------------------------
+    outfiles = []
 
-logging.debug(outfiles)
+    pool = Pool(processes=args.nproc)
+    for i in pool.imap_unordered(wrap_fun, args.files):
+        outfiles.append(i)
+    pool.close()
 
-if args.scrunch:
-    mp_scrunch_lightcurves(outfiles)
+    logging.debug(outfiles)
 
-if args.join:
-    mp_join_lightcurves(outfiles)
+    if args.scrunch:
+        mp_scrunch_lightcurves(outfiles)
+
+    if args.join:
+        mp_join_lightcurves(outfiles)

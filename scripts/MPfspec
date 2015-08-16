@@ -51,44 +51,46 @@ parser.add_argument("--debug", help="use DEBUG logging level",
                     default=False, action='store_true')
 parser.add_argument("--save-dyn", help="save dynamical power spectrum",
                     default=False, action='store_true')
-args = parser.parse_args()
 
-if args.debug:
-    args.loglevel = 'DEBUG'
+if __name__ == '__main__':
+    args = parser.parse_args()
 
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-logging.basicConfig(filename='MPfspec.log', level=numeric_level,
-                    filemode='w')
+    if args.debug:
+        args.loglevel = 'DEBUG'
 
-bintime = args.bintime
-fftlen = args.fftlen
-pdsrebin = args.rebin
-normalization = args.norm
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPfspec.log', level=numeric_level,
+                        filemode='w')
 
-do_cpds = do_pds = do_cos = do_lag = False
-kinds = args.kind.split(',')
-for k in kinds:
-    if k == 'PDS':
-        do_pds = True
-    elif k == 'CPDS':
-        do_cpds = True
-    elif k == 'cos' or k == 'cospectrum':
-        do_cos = True
-        do_cpds = True
-    elif k == 'lag':
-        do_lag = True
-        do_cpds = True
+    bintime = args.bintime
+    fftlen = args.fftlen
+    pdsrebin = args.rebin
+    normalization = args.norm
 
-mp_calc_fspec(args.files, fftlen,
-              calc_pds=do_pds,
-              calc_cpds=do_cpds,
-              calc_cospectrum=do_cos,
-              calc_lags=do_lag,
-              save_dyn=args.save_dyn,
-              bintime=bintime,
-              pdsrebin=pdsrebin,
-              outroot=args.outroot,
-              normalization=normalization,
-              nproc=args.nproc,
-              back_ctrate=args.back,
-              noclobber=args.noclobber)
+    do_cpds = do_pds = do_cos = do_lag = False
+    kinds = args.kind.split(',')
+    for k in kinds:
+        if k == 'PDS':
+            do_pds = True
+        elif k == 'CPDS':
+            do_cpds = True
+        elif k == 'cos' or k == 'cospectrum':
+            do_cos = True
+            do_cpds = True
+        elif k == 'lag':
+            do_lag = True
+            do_cpds = True
+
+    mp_calc_fspec(args.files, fftlen,
+                  calc_pds=do_pds,
+                  calc_cpds=do_cpds,
+                  calc_cospectrum=do_cos,
+                  calc_lags=do_lag,
+                  save_dyn=args.save_dyn,
+                  bintime=bintime,
+                  pdsrebin=pdsrebin,
+                  outroot=args.outroot,
+                  normalization=normalization,
+                  nproc=args.nproc,
+                  back_ctrate=args.back,
+                  noclobber=args.noclobber)
