@@ -12,7 +12,30 @@ import os
 
 
 def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
-    """Calculate time lags."""
+    """Calculate time lags.
+
+    Parameters
+    ----------
+    freqs : array-like
+        The frequency array
+    cpds : array-like
+        The cross power spectrum
+    pds1 : array-like
+        The PDS of the first channel
+    pds2 : array-like
+        The PDS of the second channel
+    n_chunks : int or array-like
+        The number of PDSs averaged
+    rebin : int or array-like
+        The number of bins averaged to obtain each bin
+
+    Returns
+    -------
+    lags : array-like
+        The lags spectrum at frequencies corresponding to freqs
+    lagse : array-like
+        The errors on `lags`
+    """
     lags = np.angle(cpds) / (2 * np.pi * freqs)
     sigcpd = np.absolute(cpds)
 
