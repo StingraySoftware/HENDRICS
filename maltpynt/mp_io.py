@@ -164,34 +164,34 @@ def mp_get_file_type(fname, specify_reb=True):
 def mp_save_events(eventStruct, fname):
     """Save events in a file."""
     if mp_get_file_format(fname) == 'pickle':
-        save_data_pickle(eventStruct, fname)
+        _save_data_pickle(eventStruct, fname)
     elif mp_get_file_format(fname) == 'nc':
-        save_data_nc(eventStruct, fname)
+        _save_data_nc(eventStruct, fname)
 
 
 def mp_load_events(fname):
     """Load events from a file."""
     if mp_get_file_format(fname) == 'pickle':
-        return load_data_pickle(fname)
+        return _load_data_pickle(fname)
     elif mp_get_file_format(fname) == 'nc':
-        return load_data_nc(fname)
+        return _load_data_nc(fname)
 
 
 # ----- functions to save and load LCURVE data
 def mp_save_lcurve(lcurveStruct, fname):
     """Save light curve in a file."""
     if mp_get_file_format(fname) == 'pickle':
-        return save_data_pickle(lcurveStruct, fname)
+        return _save_data_pickle(lcurveStruct, fname)
     elif mp_get_file_format(fname) == 'nc':
-        return save_data_nc(lcurveStruct, fname)
+        return _save_data_nc(lcurveStruct, fname)
 
 
 def mp_load_lcurve(fname):
     """Load light curve from a file."""
     if mp_get_file_format(fname) == 'pickle':
-        return load_data_pickle(fname)
+        return _load_data_pickle(fname)
     elif mp_get_file_format(fname) == 'nc':
-        return load_data_nc(fname)
+        return _load_data_nc(fname)
 
 
 # ---- Functions to save PDSs
@@ -199,21 +199,21 @@ def mp_load_lcurve(fname):
 def mp_save_pds(pdsStruct, fname):
     """Save PDS in a file."""
     if mp_get_file_format(fname) == 'pickle':
-        return save_data_pickle(pdsStruct, fname)
+        return _save_data_pickle(pdsStruct, fname)
     elif mp_get_file_format(fname) == 'nc':
-        return save_data_nc(pdsStruct, fname)
+        return _save_data_nc(pdsStruct, fname)
 
 
 def mp_load_pds(fname):
     """Load PDS from a file."""
     if mp_get_file_format(fname) == 'pickle':
-        return load_data_pickle(fname)
+        return _load_data_pickle(fname)
     elif mp_get_file_format(fname) == 'nc':
-        return load_data_nc(fname)
+        return _load_data_nc(fname)
 
 
 # ---- GENERIC function to save stuff.
-def load_data_pickle(fname, kind="data"):
+def _load_data_pickle(fname, kind="data"):
     """Load generic data in pickle format."""
     logging.info('Loading %s and info from %s' % (kind, fname))
     try:
@@ -221,25 +221,25 @@ def load_data_pickle(fname, kind="data"):
             result = pickle.load(fobj)
         return result
     except Exception as e:
-        raise Exception("{} failed ({}: {})".format('load_data_pickle',
+        raise Exception("{} failed ({}: {})".format('_load_data_pickle',
                                                     type(e), e))
         print('Failed')
 
 
-def save_data_pickle(struct, fname, kind="data"):
+def _save_data_pickle(struct, fname, kind="data"):
     """Save generic data in pickle format."""
     logging.info('Saving %s and info to %s' % (kind, fname))
     try:
         with open(fname, 'wb') as fobj:
             pickle.dump(struct, fobj)
     except Exception as e:
-        raise Exception("{} failed ({}: {})".format('save_data_pickle',
+        raise Exception("{} failed ({}: {})".format('_save_data_pickle',
                                                     type(e), e))
         print('Failed')
     return
 
 
-def load_data_nc(fname):
+def _load_data_nc(fname):
     """Load generic data in netcdf format."""
     contents = mp_read_from_netcdf(fname)
     keys = list(contents.keys())
@@ -265,7 +265,7 @@ def load_data_nc(fname):
     return contents
 
 
-def save_data_nc(struct, fname, kind="data"):
+def _save_data_nc(struct, fname, kind="data"):
     """Save generic data in netcdf format."""
     logging.info('Saving %s and info to %s' % (kind, fname))
     varnames = []
@@ -316,17 +316,17 @@ def save_data_nc(struct, fname, kind="data"):
 def mp_save_data(struct, fname, ftype='data'):
     """Save generic data in maltpynt format."""
     if mp_get_file_format(fname) == 'pickle':
-        save_data_pickle(struct, fname)
+        _save_data_pickle(struct, fname)
     elif mp_get_file_format(fname) == 'nc':
-        save_data_nc(struct, fname)
+        _save_data_nc(struct, fname)
 
 
 def mp_load_data(fname):
     """Load generic data in maltpynt format."""
     if mp_get_file_format(fname) == 'pickle':
-        return load_data_pickle(fname)
+        return _load_data_pickle(fname)
     elif mp_get_file_format(fname) == 'nc':
-        return load_data_nc(fname)
+        return _load_data_nc(fname)
 
 
 # QDP format is often used in FTOOLS
