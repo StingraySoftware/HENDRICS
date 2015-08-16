@@ -1,5 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""MaLTPyNT base functions."""
+"""A miscellaneous collection of basic functions, that are likely to be used by
+the other modules.
+
+"""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -209,6 +212,8 @@ def mp_create_gti_mask(time, gtis, safe_interval=0, min_length=0,
     Other parameters
     ----------------
     safe_interval : float or [float, float]
+        A safe interval to exclude at both ends (if single float) or the start
+        and the end (if pair of values) of GTIs.
     min_length : float
     return_new_gtis : bool
     dt : float
@@ -251,8 +256,26 @@ def mp_create_gti_from_condition(time, condition,
                                  safe_interval=0, dt=None):
     """Create a GTI list from a time array and a boolean mask ("condition").
 
-    A possible condition can be, e.g., lc > 0.
-    The length of the condition array and the time array must be the same.
+    Parameters
+    ----------
+    time : array-like
+        Array containing times
+    condition : array-like
+        An array of bools, of the same length of time.
+        A possible condition can be, e.g., the result of lc > 0.
+
+    Returns
+    -------
+    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+        The newly created GTIs
+
+    Other parameters
+    ----------------
+    safe_interval : float or [float, float]
+        A safe interval to exclude at both ends (if single float) or the start
+        and the end (if pair of values) of GTIs.
+    dt : float
+        The width (in sec) of each bin of the time array. Can be irregular.
     """
     import collections
 
@@ -283,7 +306,9 @@ def mp_create_gti_from_condition(time, condition,
 def mp_cross_gtis_bin(gti_list, bin_time=1):
     """From multiple GTI lists, extract the common intervals.
 
-    Uses a very rough algorithm. Better to use mp_cross_gtis.
+    .. note:: Deprecated
+          `mp_cross_gtis_bin` will be removed, it is replaced by
+          `mp_cross_gtis` because the latter uses a better algorithm.
     """
     ninst = len(gti_list)
     if ninst == 1:
@@ -310,7 +335,23 @@ def mp_cross_gtis_bin(gti_list, bin_time=1):
 
 
 def mp_cross_two_gtis(gti0, gti1):
-    """Extract the common intervals from two GTI lists *EXACTLY*."""
+    """Extract the common intervals from two GTI lists *EXACTLY*.
+
+    Parameters
+    ----------
+    gti0 : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+    gti1 : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+
+    Returns
+    -------
+    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+        The newly created GTIs
+
+    See Also
+    --------
+    mp_cross_gtis : From multiple GTI lists, extract the common intervals *EXACTLY*
+
+    """
     # Check GTIs
     mp_check_gtis(gti0)
     mp_check_gtis(gti1)
@@ -379,7 +420,23 @@ def mp_cross_two_gtis(gti0, gti1):
 
 
 def mp_cross_gtis(gti_list):
-    """From multiple GTI lists, extract the common intervals *EXACTLY*."""
+    """From multiple GTI lists, extract the common intervals *EXACTLY*.
+
+    Parameters
+    ----------
+    gti_list : array-like
+        List of GTI arrays, each one in the usual format [[gti0_0, gti0_1],
+        [gti0_0, gti0_1], ...]
+
+    Returns
+    -------
+    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+        The newly created GTIs
+
+    See Also
+    --------
+    mp_cross_two_gtis : Extract the common intervals from two GTI lists *EXACTLY*
+    """
     ninst = len(gti_list)
     if ninst == 1:
         return gti_list[0]
@@ -395,7 +452,7 @@ def mp_cross_gtis(gti_list):
 def get_btis(gtis, start_time=None, stop_time=None):
     """From GTIs, obtain bad time intervals.
 
-    GTIs have to be well-behaved! No overlaps, no other crap.
+    GTIs have to be well-behaved! No overlaps, etc.
     """
     # Check GTIs
     if len(gtis) == 0:
@@ -479,7 +536,7 @@ def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
 
 
 def mp_sort_files(files):
-    """Sort a list of MaLTPyNT files."""
+    """Sort a list of MaLTPyNT files, looking at `Tstart` in each."""
     allfiles = {}
     ftypes = []
 
@@ -521,5 +578,5 @@ def mp_calc_countrate(time, lc, gtis=None, bintime=1):
 
 
 def mp_gti_len(gti):
-    """Return the sum of the lengths of GTIs."""
+    """Return the total good time from a list of GTIs."""
     return np.sum([g[1] - g[0] for g in gti])

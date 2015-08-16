@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""Functions to create GTIs."""
+"""Functions to create and apply GTIs."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -11,7 +11,27 @@ import logging
 
 
 def mp_create_gti(fname, filter_expr, safe_interval=[0, 0]):
-    """Create a GTI list by using boolean operations on file data."""
+    """Create a GTI list by using boolean operations on file data.
+
+    Parameters
+    ----------
+    fname : str
+        File name. The file must be in MaLTPyNT format.
+    filter_expr : str
+        A boolean condition on one or more of the arrays contained in the data.
+        E.g. '(lc > 10) & (lc < 20)'
+
+    Returns
+    -------
+    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+        The newly created GTIs
+
+    Other parameters
+    ----------------
+    safe_interval : float or [float, float]
+        A safe interval to exclude at both ends (if single float) or the start
+        and the end (if pair of values) of GTIs.
+    """
     # Necessary as nc variables are sometimes defined as array
     from numpy import array
 
