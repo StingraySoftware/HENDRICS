@@ -17,12 +17,14 @@ import sys
 import os
 import shlex
 import maltpynt
+import glob
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-# sys.path.insert(0, os.path.dirname(
-#     os.path.dirname(os.path.abspath('.'))))
+sys.path.insert(0, os.path.dirname(
+    os.path.dirname(os.path.abspath('.'))))
+
 
 # -- General configuration ------------------------------------------------
 
@@ -41,7 +43,9 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
-    'sphinx.ext.viewcode'
+    'sphinx.ext.viewcode',
+    'sphinxcontrib.autoprogram',
+    'sphinxcontrib.restbuilder'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

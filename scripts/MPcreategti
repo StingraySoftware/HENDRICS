@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from mp_io import mp_load_data
+from maltpynt.mp_io import mp_load_data
 import logging
 from maltpynt.mp_create_gti import mp_apply_gti, mp_create_gti
 import argparse

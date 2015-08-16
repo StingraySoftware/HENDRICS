@@ -96,6 +96,14 @@ Getting started
    install
    tutorial
 
+Command line interface
+----------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   cli
+
 API documentation
 -----------------
 
