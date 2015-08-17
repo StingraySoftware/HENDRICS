@@ -71,7 +71,7 @@ def mp_apply_gti(fname, gti, outname=None):
     try:
         datagti = data['GTI']
         newgtis = mp_cross_gtis([gti, datagti])
-    except:
+    except:  # pragma: no cover
         logging.warning('Data have no GTI extension')
         newgtis = gti
 
@@ -82,7 +82,7 @@ def mp_apply_gti(fname, gti, outname=None):
         data['lc'] = data['lc'][good]
     elif ftype == 'events':
         data['PI'] = data['PI'][good]
-        if data['Instr'] == 'PCA':
+        if data['Instr'] == 'PCA':  # pragma: no cover
             data['PCU'] = data['PCU'][good]
 
     if outname is None:
