@@ -10,8 +10,18 @@ import subprocess as sp
 
 
 def mp_save_as_xspec(fname, direct_save=False):
-    """Save frequency spectra in a format readable to Xspec.
+    """Save frequency spectra in a format readable to FTOOLS and Xspec.
 
+    Parameters
+    ----------
+    fname : str
+        Input MaLTPyNT frequency spectrum file name
+    direct_save : bool
+        If True, also call `flx2xsp` to produce the output .pha and .rsp files.
+        If False (default), flx2xsp has to be called from the user
+
+    Notes
+    -----
     Uses method described here:
     https://asd.gsfc.nasa.gov/XSPECwiki/fitting_timing_power_spectra_in_XSPEC
     """
