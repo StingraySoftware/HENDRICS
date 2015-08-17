@@ -336,20 +336,38 @@ class TestFullRun(unittest.TestCase):
         """Test plotting a PDS"""
         fname = os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
             MP_FILE_EXTENSION
-        mp.mp_plot.mp_plot_pds(fname, figname='monol_test_pds.png')
+        figname = os.path.join(datadir, 'monol_test_pds.png')
+        mp.mp_plot.mp_plot_pds(fname, figname=figname)
 
     def step16_plotcpds(self):
         """Test plotting a cospectrum"""
         fname = os.path.join(datadir, 'monol_test_E3-50_cpds_rebin1.03') + \
             MP_FILE_EXTENSION
-        mp.mp_plot.mp_plot_cospectrum(fname, figname='monol_test_cpds.png')
+        figname = os.path.join(datadir, 'monol_test_cpds.png')
+        mp.mp_plot.mp_plot_cospectrum(fname, figname=figname)
 
     def step17_plotlc(self):
         """Test plotting a light curve"""
 
         fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
-        mp.mp_plot.mp_plot_lc(fname, figname='monol_test_lc.png')
+        figname = os.path.join(datadir, 'monol_test_lc.png')
+        mp.mp_plot.mp_plot_lc(fname, figname=figname)
+
+    def step18_create_gti(self):
+        """Test creating a GTI file"""
+
+        fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        mp.mp_create_gti.mp_create_gti(fname, filter_expr='lc>0',
+                                       outfile=fname.replace('_lc', '_gti'))
+
+    def step19_apply_gti(self):
+        """Test applying GTIs to a light curve"""
+
+        fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        mp.mp_create_gti.mp_apply_gti(fname, [[80000100, 80000300]])
 
 
     def _all_steps(self):
@@ -385,7 +403,9 @@ class TestFullRun(unittest.TestCase):
             glob.glob(os.path.join(datadir,
                                    '*monol_test*.dat')) + \
             glob.glob(os.path.join(datadir,
-                                   '*monol_test*.txt'))
+                                   '*monol_test*.txt')) + \
+            glob.glob(os.path.join(datadir,
+                                   '*monol_test*.png'))
         for f in file_list:
             os.remove(f)
 

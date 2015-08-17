@@ -10,7 +10,7 @@ from .mp_base import mp_cross_gtis, mp_get_file_type
 import logging
 
 
-def mp_create_gti(fname, filter_expr, safe_interval=[0, 0]):
+def mp_create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
     """Create a GTI list by using boolean operations on file data.
 
     Parameters
@@ -31,6 +31,8 @@ def mp_create_gti(fname, filter_expr, safe_interval=[0, 0]):
     safe_interval : float or [float, float]
         A safe interval to exclude at both ends (if single float) or the start
         and the end (if pair of values) of GTIs.
+    outfile : str
+        The output file name. If None, use a default root + '_gti' combination
     """
     # Necessary as nc variables are sometimes defined as array
     from numpy import array
@@ -52,7 +54,8 @@ def mp_create_gti(fname, filter_expr, safe_interval=[0, 0]):
     gtis = mp_create_gti_from_condition(locals()['time'], good,
                                         safe_interval=safe_interval)
 
-    outfile = mp_root(fname) + '_gti' + MP_FILE_EXTENSION
+    if outfile is None:
+        outfile = mp_root(fname) + '_gti' + MP_FILE_EXTENSION
     mp_save_data({'GTI': gtis}, outfile)
 
     return gtis

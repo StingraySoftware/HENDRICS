@@ -358,6 +358,8 @@ def mp_cross_two_gtis(gti0, gti1):
     mp_cross_gtis : From multiple GTI lists, extract the common intervals *EXACTLY*
 
     """
+    gti0 = np.array(gti0, dtype=np.longdouble)
+    gti1 = np.array(gti1, dtype=np.longdouble)
     # Check GTIs
     mp_check_gtis(gti0)
     mp_check_gtis(gti1)
