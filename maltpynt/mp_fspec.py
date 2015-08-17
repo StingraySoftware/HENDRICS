@@ -824,19 +824,16 @@ def mp_calc_fspec(files, fftlen,
     if not calc_cpds or len(files) < 2:
         return
 
-    if len(files) > 2:
-        logging.info('Sorting file list')
-        sorted_files = mp_sort_files(files)
-        logging.warning('Beware! For cpds and derivatives, I assume that the'
-                        'files are from only two instruments and in pairs'
-                        '(even in random order)')
+    logging.info('Sorting file list')
+    sorted_files = mp_sort_files(files)
 
-        instrs = list(sorted_files.keys())
-        files1 = sorted_files[instrs[0]]
-        files2 = sorted_files[instrs[1]]
-    else:
-        files1 = [files[0]]
-        files2 = [files[1]]
+    logging.warning('Beware! For cpds and derivatives, I assume that the'
+                    'files are from only two instruments and in pairs'
+                    '(even in random order)')
+
+    instrs = list(sorted_files.keys())
+    files1 = sorted_files[instrs[0]]
+    files2 = sorted_files[instrs[1]]
 
     assert len(files1) == len(files2), 'An even number of files is needed'
 

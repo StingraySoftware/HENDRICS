@@ -12,7 +12,7 @@ from .mp_io import mp_get_file_type, is_string
 import logging
 
 
-def mp_mkdir_p(path):
+def mp_mkdir_p(path):  # pragma: no cover
     """Safe mkdir function.
 
     Parameters
@@ -53,7 +53,7 @@ def mp_read_header_key(fits_file, key, hdu=1):
     hdulist = pf.open(fits_file)
     try:
         value = hdulist[hdu].header[key]
-    except:
+    except:  # pragma: no cover
         value = ''
     hdulist.close()
     return value
@@ -78,7 +78,7 @@ def mp_ref_mjd(fits_file, hdu=1):
     import collections
 
     if isinstance(fits_file, collections.Iterable) and\
-            not is_string(fits_file):
+            not is_string(fits_file):  # pragma: no cover
         fits_file = fits_file[0]
         logging.info("opening %s" % fits_file)
 
@@ -86,7 +86,7 @@ def mp_ref_mjd(fits_file, hdu=1):
         ref_mjd_int = np.long(mp_read_header_key(fits_file, 'MJDREFI'))
         ref_mjd_float = np.longdouble(mp_read_header_key(fits_file, 'MJDREFF'))
         ref_mjd_val = ref_mjd_int + ref_mjd_float
-    except:
+    except:  # pragma: no cover
         ref_mjd_val = np.longdouble(mp_read_header_key(fits_file, 'MJDREF'))
     return ref_mjd_val
 
@@ -408,7 +408,7 @@ def mp_cross_two_gtis(gti0, gti1):
             so = gti_start[other_series][so_pos]
 
             s = max([st, so])
-        except:
+        except:  # pragma: no cover
             continue
 
         # If this start is inside the last interval (It can happen for equal
@@ -514,7 +514,7 @@ def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     """
     try:
         from scipy import stats
-    except:
+    except:  # pragma: no cover
         raise Exception('You need Scipy to use this function')
 
     import collections
@@ -539,7 +539,7 @@ def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     """
     try:
         from scipy import stats
-    except:
+    except:  # pragma: no cover
         raise Exception('You need Scipy to use this function')
 
     epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,

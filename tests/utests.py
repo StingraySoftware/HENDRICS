@@ -221,6 +221,19 @@ class TestFullRun(unittest.TestCase):
         except:
             raise(Exception('Production of CPDS failed'))
 
+    def step05b_fspecs(self):
+        """Test all frequency spectra production."""
+        files = [os.path.join(datadir, 'monol_testA_E3-50_lc') +
+                 MP_FILE_EXTENSION,
+                 os.path.join(datadir, 'monol_testB_E3-50_lc') +
+                 MP_FILE_EXTENSION]
+        outroot = os.path.join(datadir, 'monol_test_E3-50_fspecs')
+        try:
+            mp.fspec.mp_calc_fspec(files, 128,
+                                   outroot=outroot)
+        except:
+            raise(Exception('Production of frequency spectra failed'))
+
     def step06_lags(self):
         """Test Lag calculations."""
         try:
@@ -387,8 +400,9 @@ class TestFullRun(unittest.TestCase):
         """Test saving arrays in a qdp file"""
         arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
         errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
-        mp.mp_io.save_as_qdp(arrays, errors, filename="monol_test_qdp.txt")
-
+        mp.mp_io.save_as_qdp(arrays, errors,
+                             filename=os.path.join(datadir,
+                                                   "monol_test_qdp.txt"))
 
     def _all_steps(self):
 
