@@ -96,6 +96,10 @@ class TestFullRun(unittest.TestCase):
             mp.lcurve.mp_lcurve_from_events(
                 os.path.join(datadir,
                              'monol_testB_ev_0') + MP_FILE_EXTENSION)
+            mp.lcurve.mp_lcurve_from_events(
+                os.path.join(datadir,
+                             'monol_testB_ev_0') + MP_FILE_EXTENSION,
+                gti_split=True)
         except:
             raise(Exception('Production of light curve failed'))
 
