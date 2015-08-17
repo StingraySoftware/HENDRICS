@@ -20,7 +20,7 @@ def baseline_fun(x, a):
     return a
 
 
-def mp_plot_pds(fnames):
+def mp_plot_pds(fnames, figname=None):
     """Plot a list of PDSs, or a single one."""
     from scipy.optimize import curve_fit
     import collections
@@ -51,7 +51,7 @@ def mp_plot_pds(fnames):
         color = next(rainbow)
 
         p, pcov = curve_fit(baseline_fun, freq, pds, p0=[2], sigma=epds)
-        logging.info('White noise level is', p[0])
+        logging.info('White noise level is {}'.format(p[0]))
         pds -= p[0]
         if isinstance(lev, collections.Iterable):
             plt.plot(freq, lev - p[0], color=color)
@@ -67,8 +67,11 @@ def mp_plot_pds(fnames):
     elif norm == 'Leahy':
         plt.ylabel('Leahy power')
 
+    if figname is not None:
+        plt.savefig(figname)
 
-def mp_plot_cospectrum(fnames):
+
+def mp_plot_cospectrum(fnames, figname=None):
     """Plot the cospectra from a list of CPDSs, or a single one."""
     if is_string(fnames):
         fnames = [fnames]
@@ -102,8 +105,11 @@ def mp_plot_cospectrum(fnames):
     plt.xlabel('Frequency')
     plt.ylabel('Cospectrum')
 
+    if figname is not None:
+        plt.savefig(figname)
 
-def mp_plot_lc(lcfiles):
+
+def mp_plot_lc(lcfiles, figname=None):
     """Plot a list of light curve files, or a single one."""
     if is_string(lcfiles):
         lcfiles = [lcfiles]
@@ -134,6 +140,9 @@ def mp_plot_lc(lcfiles):
         plt.ylabel('light curve (Ct/bin/PCU)')
     else:
         plt.ylabel('light curve (Ct/bin)')
+
+    if figname is not None:
+        plt.savefig(figname)
 
 
 if __name__ == "__main__":
