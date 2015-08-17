@@ -69,7 +69,7 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
     # Load data table
     try:
         lctable = lchdulist[hduname].data
-    except:
+    except:  # pragma: no cover
         logging.warning('HDU %s not found. Trying first extension' % hduname)
         lctable = lchdulist[1].data
 
@@ -79,9 +79,9 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
     # Read TIMEZERO keyword and apply it to events
     try:
         timezero = np.longdouble(lchdulist[1].header['TIMEZERO'])
-    except:
+    except:  # pragma: no cover
         logging.warning("TIMEZERO is 0")
-        timezero = 0.
+        timezero = np.longdouble(0.)
 
     if timezero != 0.:
         logging.warning("TIMEZERO != 0, correcting")
@@ -91,7 +91,7 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
     try:
         t_start = np.longdouble(lchdulist[1].header['TSTART'])
         t_stop = np.longdouble(lchdulist[1].header['TSTOP'])
-    except:
+    except:  # pragma: no cover
         logging.warning("Tstart and Tstop error. using defaults")
         t_start = ev_list[0]
         t_stop = ev_list[-1]
@@ -124,7 +124,7 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
                                                  gtistop)],
                                 dtype=np.longdouble)
 
-        except:
+        except:  # pragma: no cover
             logging.warning("%s Extension not found or invalid " % gtistring +
                             "in %s!! Please check!!" % fits_file)
             gti_list = np.array([[t_start, t_stop]],
@@ -137,7 +137,7 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
         for a in additional_columns:
             try:
                 additional_data[a] = np.array(lctable.field(a))
-            except:
+            except:  # pragma: no cover
                 if a == 'PI':
                     logging.warning('Column PI not found. Trying with PHA')
                     additional_data[a] = np.array(lctable.field('PHA'))
