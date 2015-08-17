@@ -4,8 +4,6 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-import matplotlib
-matplotlib.use('Agg')
 import maltpynt as mp
 import numpy as np
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
@@ -52,6 +50,8 @@ class TestFullRun(unittest.TestCase):
         try:
             mp.read_events.mp_treat_event_file(
                 os.path.join(datadir, 'monol_testA.evt'))
+            mp.read_events.mp_treat_event_file(
+                os.path.join(datadir, 'monol_testA_timezero.evt'))
             mp.read_events.mp_treat_event_file(
                 os.path.join(datadir, 'monol_testB.evt'))
             mp.read_events.mp_treat_event_file(
@@ -122,14 +122,18 @@ class TestFullRun(unittest.TestCase):
             lcdata_ftools = mp.mp_io.mp_load_lcurve(lcurve_ftools)
 
             lc_mp = lcdata_mp['lc']
+
             lenmp = len(lc_mp)
             lc_ftools = lcdata_ftools['lc']
             lenftools = len(lc_ftools)
             goodlen = min([lenftools, lenmp])
+
+            diff = lc_mp[:goodlen] - lc_ftools[:goodlen]
+
         except Exception as e:
             self.fail("{} failed ({}: {})".format('LC fits', type(e), e))
 
-        assert np.all(np.abs(lc_mp[:goodlen] - lc_ftools[:goodlen]) <= 1e-3), \
+        assert np.all(np.abs(diff) <= 1e-3), \
             'Light curve data do not coincide between FITS and MP'
 
     def step03c_txt_lcurve(self):
@@ -373,6 +377,17 @@ class TestFullRun(unittest.TestCase):
         fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
         mp.mp_create_gti.mp_apply_gti(fname, [[80000100, 80000300]])
+
+    def step20_load_gtis(self):
+        """Test loading of GTIs from FITS files"""
+        fits_file = os.path.join(datadir, 'monol_testA.evt')
+        mp.mp_read_events.mp_load_gtis(fits_file)
+
+    def step21_save_as_qdp(self):
+        """Test saving arrays in a qdp file"""
+        arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
+        errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
+        mp.mp_io.save_as_qdp(arrays, errors, filename="monol_test_qdp.txt")
 
 
     def _all_steps(self):
