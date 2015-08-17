@@ -42,6 +42,11 @@ class TestFullRun(unittest.TestCase):
     python-unittest-testcase-execution-order
     """
 
+    def step00_print_info(self):
+        """Test printing info about FITS file"""
+        fits_file = os.path.join(datadir, 'monol_testA.evt')
+        mp.mp_io.mp_print_fits_info(fits_file, hdu=1)
+
     def step01_load_events(self):
         """Test event file reading."""
         try:
