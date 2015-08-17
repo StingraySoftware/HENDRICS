@@ -50,7 +50,7 @@ def mp_fft(lc, bintime):
 def mp_leahy_pds(lc, bintime, return_freq=True):
     r"""Calculate the power density spectrum.
 
-    Calculates the Power Density Spectrum \'a la Leahy+1983, ApJ 266, 160,
+    Calculates the Power Density Spectrum a la Leahy+1983, ApJ 266, 160,
     given the lightcurve and its bin time.
     Assumes no gaps are present! Beware!
 

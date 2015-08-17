@@ -23,7 +23,7 @@ def mp_create_gti(fname, filter_expr, safe_interval=[0, 0]):
 
     Returns
     -------
-    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
         The newly created GTIs
 
     Other parameters

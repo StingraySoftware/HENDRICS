@@ -9,6 +9,8 @@ import sys
 import os
 
 if 'test' in sys.argv:
+    # If running tests, use the Agg backend. This avoids DISPLAY problems in
+    # Travis CI
     import matplotlib
     matplotlib.use('Agg')
 
