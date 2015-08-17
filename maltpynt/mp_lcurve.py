@@ -20,13 +20,28 @@ def mp_lcurve(event_list,
               centertime=True):
     """From a list of event times, estract a lightcurve.
 
-    Usage:
-    times, lc = bin_events(event_list, bin_time)
+    Parameters
+    ----------
+    event_list : array-like
+        Times of arrival of events
+    bin_time : float
+        Binning time of the light curve
 
-    Optional keywords:
-    start_time
-    stop_time
-    centertime: if False, time is teh start of the bin
+    Returns
+    -------
+    time : array-like
+        The time bins of the light curve
+    lc : array-like
+        The light curve
+
+    Other Parameters
+    ----------------
+    start_time : float
+        Initial time of the light curve
+    stop_time : float
+        Stop time of the light curve
+    centertime: bool
+        If False, time is the start of the bin. Otherwise, the center
     """
     if start_time is None:
         logging.warning("mp_lcurve: Changing start time")
@@ -55,7 +70,21 @@ def mp_lcurve(event_list,
 
 
 def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
-    """Join light curves from different files."""
+    """Join light curves from different files.
+
+    Light curves from different instruments are put in different channels.
+
+    Parameters
+    ----------
+    lcfilelist :
+    outfile :
+
+    See Also
+    --------
+        mp_scrunch_lightcurves : Create a single light curve from input light
+                                 curves.
+
+    """
     lcdatas = []
     for lfc in lcfilelist:
         logging.info("Loading file %s..." % lfc)
@@ -137,7 +166,34 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
                            save_joint=False):
     """Create a single light curve from input light curves.
 
-    This is done regardless of the instrument.
+    Light curves are appended when they cover different times, and summed when
+    they fall in the same time range. This is done regardless of the channel
+    or the instrument.
+
+    Parameters
+    ----------
+    lcfilelist : list of str
+        The list of light curve files to scrunch
+
+    Returns
+    -------
+    time : array-like
+        The time array
+    lc :
+        The new light curve
+    gti : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+        Good Time Intervals
+
+    Other Parameters
+    ----------------
+    outfile : str
+        The output file name
+    save_joint : bool
+        If True, save the per-channel joint light curves
+
+    See Also
+    --------
+        mp_join_lightcurves : Join light curves from different files
     """
     if save_joint:
         lcdata = mp_join_lightcurves(lcfilelist)
@@ -183,7 +239,43 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
 
 def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
                       min_length=0, return_borders=False):
-    """Filter a light curve for GTIs."""
+    """Filter a light curve for GTIs.
+
+    Parameters
+    ----------
+    time : array-like
+        The time bins of the light curve
+    lc : array-like
+        The light curve
+    gti : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+        Good Time Intervals
+
+    Returns
+    -------
+    time : array-like
+        The time bins of the light curve
+    lc : array-like
+        The output light curve
+    newgtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+        The output Good Time Intervals
+    borders : [[i0_0, i0_1], [i1_0, i1_1], ...], optional
+        The indexes of the light curve corresponding to the borders of the
+        GTIs. Returned if return_borders is set to True
+    Other Parameters
+    ----------------
+    safe_interval : float or [float, float]
+        Seconds to filter out at the start and end of each GTI. If single
+        float, these safe windows are equal, otherwise the two numbers refer
+        to the start and end of the GTI respectively
+    delete : bool
+        If delete is True, the intervals outside of GTIs are filtered out from
+        the light curve. Otherwise, they are set to zero.
+    min_length : float
+        Minimum length of GTI. GTIs below this length will be removed.
+    return_borders : bool
+        If True, return also the indexes of the light curve corresponding to
+        the borders of the GTIs
+    """
     mask, newgtis = mp_create_gti_mask(time, gti, return_new_gtis=True,
                                        safe_interval=safe_interval,
                                        min_length=min_length)
@@ -214,7 +306,47 @@ def mp_lcurve_from_events(f, safe_interval=0,
                           outdir=None,
                           outfile=None,
                           noclobber=False):
-    """Bin an event list in a light curve."""
+    """Bin an event list in a light curve.
+
+    Parameters
+    ----------
+    f : str
+        Input event file name
+    bintime : float
+        The bin time of the output light curve
+
+    Returns
+    -------
+    outfiles : list
+        List of output light curves
+
+    Other Parameters
+    ----------------
+    safe_interval : float or [float, float]
+        Seconds to filter out at the start and end of each GTI. If single
+        float, these safe windows are equal, otherwise the two numbers refer
+        to the start and end of the GTI respectively
+    pi_interval : [int, int]
+        PI channel interval to select. Default None, meaning that all PI
+        channels are used
+    e_interval : [float, float]
+        Energy interval to select (only works if event list is calibrated with
+        `mp_calibrate`). Default None
+    min_length : float
+        GTIs below this length will be filtered out
+    gti_split : bool
+        If True, create one light curve for each good time interval
+    ignore_gtis : bool
+        Ignore good time intervals, and get a single light curve that includes
+        possible gaps
+    outdir : str
+        Output directory
+    outfile : str
+        Output file
+    noclobber : bool
+        If True, do not overwrite existing files
+
+    """
     if (outfile is not None) and (outdir is not None):
         raise Exception('Please specify only one between outdir and outfile')
 
@@ -384,9 +516,39 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
                         fracexp_limit=0.9, outfile=None,
                         noclobber=False):
     """
-    Load a lightcurve from a fits file.
+    Load a lightcurve from a fits file and save it in MaLTPyNT format.
 
-    Outputs a light curve file in MaLTPyNT format
+    .. note ::
+        FITS light curve handling is still under testing.
+        Absolute times might be incorrect depending on the light curve format.
+
+    Parameters
+    ----------
+    fits_file : str
+        File name of the input light curve in FITS format
+
+    Returns
+    -------
+    outfile : [str]
+        Returned as a list with a single element for consistency with
+        `mp_lcurve_from_events`
+
+    Other Parameters
+    ----------------
+    gtistring : str
+        Name of the GTI extension in the FITS file
+    timecolumn : str
+        Name of the column containing times in the FITS file
+    ratecolumn : str
+        Name of the column containing rates in the FITS file
+    ratehdu : str or int
+        Name or index of the FITS extension containing the light curve
+    fracexp_limit : float
+        Minimum exposure fraction allowed
+    outfile : str
+        Output file name
+    noclobber : bool
+        If True, do not overwrite existing files
     """
     logging.warning(
         """WARNING! FITS light curve handling is still under testing.
@@ -548,8 +710,25 @@ def mp_lcurve_from_txt(txt_file, outfile=None,
     """
     Load a lightcurve from a text file.
 
-    Assumes two columns: time, counts. Times are by default seconds from
-    MJDREF 55197.00076601852 (NuSTAR).
+
+    Parameters
+    ----------
+    txt_file : str
+        File name of the input light curve in text format. Assumes two columns:
+        time, counts. Times are seconds from MJDREF 55197.00076601852 (NuSTAR).
+
+    Returns
+    -------
+    outfile : [str]
+        Returned as a list with a single element for consistency with
+        `mp_lcurve_from_events`
+
+    Other Parameters
+    ----------------
+    outfile : str
+        Output file name
+    noclobber : bool
+        If True, do not overwrite existing files
     """
     import numpy as np
 
