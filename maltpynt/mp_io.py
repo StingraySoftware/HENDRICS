@@ -416,6 +416,13 @@ def save_as_ascii(cols, filename="out.txt", colnames=None,
     return 0
 
 
+def _get_key(dict_like, key):
+    try:
+        return dict_like[key]
+    except:
+        return ""
+
+
 def mp_print_fits_info(fits_file, hdu=1):
     """Print general info about an observation."""
     from astropy.io import fits as pf
@@ -426,13 +433,13 @@ def mp_print_fits_info(fits_file, hdu=1):
     header = datahdu.header
 
     info = {}
-    info['N. events'] = header['NAXIS2']
-    info['Telescope'] = header['TELESCOP']
-    info['Instrument'] = header['INSTRUME']
-    info['OBS_ID'] = header['OBS_ID']
-    info['Target'] = header['OBJECT']
-    info['Start'] = header['DATE-OBS']
-    info['Stop'] = header['DATE-END']
+    info['N. events'] = _get_key(header, 'NAXIS2')
+    info['Telescope'] = _get_key(header, 'TELESCOP')
+    info['Instrument'] = _get_key(header, 'INSTRUME')
+    info['OBS_ID'] = _get_key(header, 'OBS_ID')
+    info['Target'] = _get_key(header, 'OBJECT')
+    info['Start'] = _get_key(header, 'DATE-OBS')
+    info['Stop'] = _get_key(header, 'DATE-END')
 
     print('ObsID:         {}\n'.format(info['OBS_ID']))
     print('Date:          {} -- {}\n'.format(info['Start'], info['Stop']))
