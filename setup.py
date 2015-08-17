@@ -8,6 +8,10 @@ import glob
 import sys
 import os
 
+if 'test' in sys.argv:
+    import matplotlib
+    matplotlib.use('Agg')
+
 
 def generate_version_py(version):
     fname = os.path.join('maltpynt', 'version.py')
