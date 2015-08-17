@@ -624,6 +624,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
         timezero = (timezero - mjdref).to('s').value
         tstart = (tstart - mjdref).to('s').value
         tstop = (tstop - mjdref).to('s').value
+
     if timezero > tstart:
         timezero -= tstart
 
@@ -636,6 +637,8 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     try:
         dt = _high_precision_keyword_read(lchdulist[ratehdu].header,
                                           'TIMEDEL')
+        if tunit == 'd':
+            dt *= 86400
     except:
         print('Assuming that TIMEDEL is the difference between the first two'
               'times of the light curve')
