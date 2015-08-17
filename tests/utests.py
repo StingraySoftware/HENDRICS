@@ -4,6 +4,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
+import matplotlib
+matplotlib.use('Agg')
 import maltpynt as mp
 import numpy as np
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
