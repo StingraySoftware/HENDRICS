@@ -51,7 +51,10 @@ def mp_read_header_key(fits_file, key, hdu=1):
     from astropy.io import fits as pf
 
     hdulist = pf.open(fits_file)
-    value = hdulist[hdu].header[key]
+    try:
+        value = hdulist[hdu].header[key]
+    except:
+        value = ''
     hdulist.close()
     return value
 
