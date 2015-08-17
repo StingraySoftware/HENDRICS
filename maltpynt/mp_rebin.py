@@ -216,7 +216,7 @@ def mp_rebin_file(filename, rebin):
     mp_save_data(contents, outfile, ftype)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     import sys
     import subprocess as sp
 

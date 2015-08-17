@@ -58,7 +58,7 @@ def mp_save_as_xspec(fname, direct_save=False):
             outname, outroot, outroot).split())
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     import sys
 
     print('Calling script...')

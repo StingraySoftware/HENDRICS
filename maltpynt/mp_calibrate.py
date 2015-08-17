@@ -115,7 +115,7 @@ def mp_calibrate(fname, outname, rmf_file=None):
     mp_save_events(evdata, outname)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     import sys
     import subprocess as sp
 

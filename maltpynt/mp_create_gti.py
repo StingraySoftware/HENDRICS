@@ -93,7 +93,7 @@ def mp_apply_gti(fname, gti, outname=None):
     return newgtis
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     import sys
     import subprocess as sp
 

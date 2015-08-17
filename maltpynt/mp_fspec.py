@@ -915,7 +915,7 @@ def mp_read_fspec(fname):
     return ftype, freq, pds, epds, nchunks, rebin, contents
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     import sys
     import subprocess as sp
 

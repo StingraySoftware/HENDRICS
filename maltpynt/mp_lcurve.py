@@ -765,7 +765,7 @@ def mp_lcurve_from_txt(txt_file, outfile=None,
     return [outfile]
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import sys
     import subprocess as sp
 

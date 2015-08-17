@@ -235,7 +235,7 @@ def mp_treat_event_file(filename, noclobber=False, gti_split=False,
         mp_save_events(out, outfile)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import sys
     import subprocess as sp
 

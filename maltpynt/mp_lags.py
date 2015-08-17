@@ -163,7 +163,7 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
     return freq, df, lags, elags
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     import sys
     import subprocess as sp
 
