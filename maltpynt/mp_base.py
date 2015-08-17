@@ -272,7 +272,7 @@ def mp_create_gti_from_condition(time, condition,
 
     Returns
     -------
-    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
         The newly created GTIs
 
     Other parameters
@@ -345,12 +345,12 @@ def mp_cross_two_gtis(gti0, gti1):
 
     Parameters
     ----------
-    gti0 : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
-    gti1 : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+    gti0 : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+    gti1 : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
 
     Returns
     -------
-    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
         The newly created GTIs
 
     See Also
@@ -432,11 +432,11 @@ def mp_cross_gtis(gti_list):
     ----------
     gti_list : array-like
         List of GTI arrays, each one in the usual format [[gti0_0, gti0_1],
-        [gti0_0, gti0_1], ...]
+        [gti1_0, gti1_1], ...]
 
     Returns
     -------
-    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
         The newly created GTIs
 
     See Also
@@ -591,7 +591,7 @@ def mp_calc_countrate(time, lc, gtis=None, bintime=None):
 
     Other Parameters
     ----------------
-    gtis : [[gti0_0, gti0_1], [gti0_0, gti0_1], ...]
+    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
     bintime : float
         The bin time of the light curve. If not specified, the minimum
         difference between time bins is used
