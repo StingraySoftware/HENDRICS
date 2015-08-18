@@ -290,6 +290,16 @@ class TestFullRun(unittest.TestCase):
         try:
             mp.rebin.mp_rebin_file(os.path.join(datadir,
                                                 'monol_test_E3-50_cpds') +
+                                   MP_FILE_EXTENSION, 2)
+        except Exception as e:
+            self.fail("{} failed ({}: {})".format('CPDS rebin Test 1.03',
+                                                  type(e), e))
+
+    def step09a_rebincpds2(self):
+        """Test CPDS rebinning."""
+        try:
+            mp.rebin.mp_rebin_file(os.path.join(datadir,
+                                                'monol_test_E3-50_cpds') +
                                    MP_FILE_EXTENSION, 1.03)
         except Exception as e:
             self.fail("{} failed ({}: {})".format('CPDS rebin Test 1.03',
