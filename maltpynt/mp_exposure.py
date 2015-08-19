@@ -3,9 +3,12 @@
    taken in specific data modes of NuSTAR, where all events are telemetered.
 
 """
+from __future__ import (absolute_import, unicode_literals, division,
+                        print_function)
+
 import numpy as np
 from .mp_read_events import mp_load_events_and_gtis
-from .mp_io import mp_load_data
+from .mp_io import mp_get_file_type
 
 
 def mp_get_exposure_from_uf(time, uf_file, dt=None):
@@ -50,7 +53,8 @@ def mp_get_exposure_from_uf(time, uf_file, dt=None):
 
     tbins = np.append(time - dt / 2, [time[-1] + dt / 2])
 
-    expo = np.histogram(priors, bins=tbins)
+    # This is wrong. Doesn't consider time bin borders.
+    expo, bins = np.histogram(events, bins=tbins, weights=priors)
 
     return expo
 
@@ -58,13 +62,17 @@ def mp_get_exposure_from_uf(time, uf_file, dt=None):
 if __name__ == '__main__':
     import sys
     import matplotlib.pyplot as plt
-    lc_file = sys.argv[1]
-    uf_file = sys.argv[2]
+    uf_file = sys.argv[1]
+    lc_file = sys.argv[2]
 
-    contents, ftype = mp_load_data(lc_file)
+    ftype, contents = mp_get_file_type(lc_file)
+
     time = contents["time"]
+    lc = contents["lc"]
     dt = contents["dt"]
     expo = mp_get_exposure_from_uf(time, uf_file, dt=dt)
 
-    plt.plot(time, expo)
+    plt.plot(time, expo / np.max(expo) * np.max(lc))
+    plt.plot(time, lc)
+    plt.plot(time, lc / expo)
     plt.show()
