@@ -23,17 +23,17 @@ software can be used to make standard spectral analysis on X-ray data
 from, in principle, any other satellite (for sure XMM-Newton and RXTE).
 
 The **documentation** can be found
-`here <http://maltpynt.readthedocs.org/en/latest/>`__.
+`here <http://maltpynt.readthedocs.org>`__.
 
 A **tutorial** is also available
-`here <http://maltpynt.readthedocs.org/en/latest/tutorial.html>`__
+`here <http://maltpynt.readthedocs.org/en/stable/tutorial.html>`__
 
 .. |Build Status Master| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=master
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
 .. |Coverage Status Master| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=master&service=github
    :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=master
-.. |Documentation Status Master| image:: https://readthedocs.org/projects/maltpynt/badge/?version=latest
-   :target: https://readthedocs.org/projects/maltpynt/badge/?version=latest
+.. |Documentation Status Master| image:: https://readthedocs.org/projects/maltpynt/badge/?version=master
+   :target: https://readthedocs.org/projects/maltpynt/badge/?version=master
 .. |Build Status Unstable| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
 .. |Coverage Status Unstable| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github
