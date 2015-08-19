@@ -35,7 +35,7 @@ install_requires = [
 if PY2 and PYX6:
     install_requires += ['unittest2']
 
-version = '1.0.3'
+version = '1.0.4'
 
 generate_version_py(version)
 
@@ -53,7 +53,9 @@ setup(name='maltpynt',
       scripts=glob.glob('scripts/*'),
       platforms='all',
       classifiers=[
-          'Intended Audience :: Science/Research, Education, Developers',
+          'Intended Audience :: Science/Research',
+          'Intended Audience :: Education',
+          'Intended Audience :: Developers',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 2.6',
           'Programming Language :: Python :: 2.7',

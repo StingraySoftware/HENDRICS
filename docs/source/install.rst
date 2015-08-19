@@ -16,8 +16,21 @@ An **optional but recommended** dependency is the `netCDF 4
 library <http://www.unidata.ucar.edu/software/netcdf/>`__ with its
 `python bindings <https://github.com/Unidata/netcdf4-python>`__.
 
+Quick Installation(stable releases)
+-----------------------------------
+Run
+
+::
+
+    $ pip install maltpynt
+
+and that's it!
+
+Installing the Development version
+----------------------------------
+
 Download
---------
+~~~~~~~~
 
 Download the distribution directory:
 
@@ -43,7 +56,7 @@ from the source directory (usually, the command gives troubleshooting
 information if this doesn't work the first time).
 
 Installation
-------------
+~~~~~~~~~~~~
 
 Enter the distribution directory and run
 
