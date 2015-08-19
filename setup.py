@@ -35,7 +35,7 @@ install_requires = [
 if PY2 and PYX6:
     install_requires += ['unittest2']
 
-version = '1.0.2'
+version = '1.0.3'
 
 generate_version_py(version)
 
