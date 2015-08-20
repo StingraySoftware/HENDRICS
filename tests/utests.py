@@ -17,6 +17,7 @@ PYX6 = sys.version_info[1] == 6
 
 if PY2 and PYX6:
     import unittest2 as unittest
+    print("\nunittest2!!\n")
 else:
     import unittest
 
@@ -135,7 +136,7 @@ class TestFullRun(unittest.TestCase):
             diff = lc_mp[:goodlen] - lc_ftools[:goodlen]
 
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('LC fits', type(e), e))
+            self.fail("{0} failed ({1}: {2})".format('LC fits', type(e), e))
 
         assert np.all(np.abs(diff) <= 1e-3), \
             'Light curve data do not coincide between FITS and MP'
@@ -165,7 +166,7 @@ class TestFullRun(unittest.TestCase):
             lc_txt = lcdata_txt['lc']
 
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('LC txt', type(e), e))
+            self.fail("{0} failed ({1}: {2})".format('LC txt', type(e), e))
 
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
             'Light curve data do not coincide between txt and MP'
@@ -194,7 +195,7 @@ class TestFullRun(unittest.TestCase):
                                  128)
 
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('PDS LC FITS', type(e), e))
+            self.fail("{0} failed ({1}: {2})".format('PDS LC FITS', type(e), e))
 
     def step04c_pds_txt(self):
         """Test PDS production with light curves obtained from txt files."""
@@ -206,7 +207,7 @@ class TestFullRun(unittest.TestCase):
                                  128)
 
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('PDS LC txt', type(e), e))
+            self.fail("{0} failed ({1}: {2})".format('PDS LC txt', type(e), e))
 
     def step05_cpds(self):
         """Test CPDS production."""
@@ -251,7 +252,7 @@ class TestFullRun(unittest.TestCase):
                 outroot=os.path.join(datadir,
                                      'monol_test_lags' + MP_FILE_EXTENSION))
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('Lags production',
+            self.fail("{0} failed ({1}: {2})".format('Lags production',
                                                   type(e), e))
 
     def step07_rebinlc(self):
@@ -262,7 +263,7 @@ class TestFullRun(unittest.TestCase):
                                    MP_FILE_EXTENSION,
                                    2)
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('LC rebin', type(e), e))
+            self.fail("{0} failed ({1}: {2})".format('LC rebin', type(e), e))
 
     def step08_rebinpds1(self):
         """Test PDS rebinning 1."""
@@ -272,7 +273,7 @@ class TestFullRun(unittest.TestCase):
                                    MP_FILE_EXTENSION,
                                    2)
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('PDS rebin Test 1', type(e),
+            self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 1', type(e),
                                                   e))
 
     def step08a_rebinpds2(self):
@@ -282,7 +283,7 @@ class TestFullRun(unittest.TestCase):
                                                 'monol_testA_E3-50_pds') +
                                    MP_FILE_EXTENSION, 1.03)
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('PDS rebin Test 2', type(e),
+            self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 2', type(e),
                                                   e))
 
     def step09_rebincpds(self):
@@ -292,7 +293,7 @@ class TestFullRun(unittest.TestCase):
                                                 'monol_test_E3-50_cpds') +
                                    MP_FILE_EXTENSION, 2)
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('CPDS rebin Test 1.03',
+            self.fail("{0} failed ({1}: {2})".format('CPDS rebin Test 1.03',
                                                   type(e), e))
 
     def step09a_rebincpds2(self):
@@ -302,7 +303,7 @@ class TestFullRun(unittest.TestCase):
                                                 'monol_test_E3-50_cpds') +
                                    MP_FILE_EXTENSION, 1.03)
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('CPDS rebin Test 1.03',
+            self.fail("{0} failed ({1}: {2})".format('CPDS rebin Test 1.03',
                                                   type(e), e))
 
     def step10_savexspec1(self):
@@ -312,7 +313,7 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2')
                 + MP_FILE_EXTENSION)
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('MP2xspec Test 1', type(e),
+            self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 1', type(e),
                                                   e))
 
     def step11_savexspec2(self):
@@ -322,7 +323,7 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03')
                 + MP_FILE_EXTENSION)
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('MP2xspec Test 2', type(e),
+            self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 2', type(e),
                                                   e))
 
     def step12_joinlcs(self):
@@ -336,7 +337,7 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir, 'monol_test_joinlc' +
                              MP_FILE_EXTENSION))
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('Join lcs', type(e),
+            self.fail("{0} failed ({1}: {2})".format('Join lcs', type(e),
                                                   e))
 
     def step13_scrunchlcs(self):
@@ -351,7 +352,7 @@ class TestFullRun(unittest.TestCase):
                              MP_FILE_EXTENSION),
                 save_joint=False)
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('MPscrunchlc', type(e),
+            self.fail("{0} failed ({1}: {2})".format('MPscrunchlc', type(e),
                                                   e))
 
     def step14_sumpds(self):
@@ -365,7 +366,7 @@ class TestFullRun(unittest.TestCase):
                 outname=os.path.join(datadir,
                                      'monol_test_sum' + MP_FILE_EXTENSION))
         except Exception as e:
-            self.fail("{} failed ({}: {})".format('Lags production',
+            self.fail("{0} failed ({1}: {2})".format('Lags production',
                                                   type(e), e))
 
     def step15_plotpds(self):
@@ -433,7 +434,7 @@ class TestFullRun(unittest.TestCase):
                 step()
                 print('OK')
             except Exception as e:
-                self.fail("{} failed ({}: {})".format(step, type(e), e))
+                self.fail("{0} failed ({1}: {2})".format(step, type(e), e))
                 print('Failed')
         print('Cleaning up...')
 
@@ -458,17 +459,20 @@ class TestFullRun(unittest.TestCase):
             os.remove(f)
 
 
-class TestPDS(unittest.TestCase):
+# First define a class variable that determines
+# if setUp was ever run. Ugly workaround for python 2.6
+ClassIsSetup = False
 
+class TestPDS(unittest.TestCase):
     """Test PDS statistics."""
 
-    # First define a class variable that determines
-    # if setUp was ever run
-    ClassIsSetup = False
-
     @classmethod
-    def setUpClass(cls):
+    def setUp(cls):
+        global ClassIsSetup
         """Class setup, prior to tests."""
+        if ClassIsSetup:
+            return
+        ClassIsSetup = True
         print("Setting up.")
         print("This test is about the statistical properties of frequency "
               "spectra and it is based on random number generation. It might, "
@@ -513,6 +517,7 @@ class TestPDS(unittest.TestCase):
         cls.varp1 = np.var(cls.pds1[1:])
         cls.varp2 = np.var(cls.pds2[1:])
         cls.varcr = np.var(cls.cpds.real[1:])
+
 
     def test_pdsstat1(self):
         """Test that the Leahy PDS goes to 2."""

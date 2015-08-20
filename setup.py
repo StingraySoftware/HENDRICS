@@ -17,7 +17,7 @@ if 'test' in sys.argv:
 
 def generate_version_py(version):
     fname = os.path.join('maltpynt', 'version.py')
-    versionstring = "version = '{}'\n".format(version)
+    versionstring = "version = '{0}'\n".format(version)
     with open(fname, 'w') as fobj:
         fobj.write(versionstring)
 

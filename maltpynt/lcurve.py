@@ -434,11 +434,11 @@ def lcurve_from_events(f, safe_interval=0,
                           return_borders=True)
 
     if len(newgtis) == 0:
-        print("No GTIs above min_length ({}s) found.".format(min_length))
+        print("No GTIs above min_length ({0}s) found.".format(min_length))
         return
 
     assert np.all(borders == tot_borders), \
-        'Borders do not coincide: {} {}'.format(borders, tot_borders)
+        'Borders do not coincide: {0} {1}'.format(borders, tot_borders)
 
     out['source_ctrate'] = calc_countrate(time, lc, gtis=newgtis,
                                              bintime=bintime)

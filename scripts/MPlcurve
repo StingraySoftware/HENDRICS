@@ -11,7 +11,22 @@ import argparse
 import numpy as np
 import logging
 from multiprocessing import Pool
-import functools
+
+
+def _wrap_lc(args):
+    f, kwargs = args
+    return lcurve_from_events(f, **kwargs)
+
+
+def _wrap_txt(args):
+    f, kwargs = args
+    return lcurve_from_txt(f, **kwargs)
+
+
+def _wrap_fits(args):
+    f, kwargs = args
+    return lcurve_from_fits(f, **kwargs)
+
 
 description = ('Create lightcurves starting from event files. It is '
                'possible to specify energy or channel filtering options')
@@ -91,26 +106,27 @@ if __name__ == '__main__':
 
     # ------ Use functools.partial to wrap lcurve* with relevant keywords---
     if args.fits_input:
-        wrap_fun = functools.partial(lcurve_from_fits,
-                                     noclobber=args.noclobber)
+        wrap_fun = _wrap_fits
+        argdict = {"noclobber": args.noclobber}
     elif args.txt_input:
-        wrap_fun = functools.partial(lcurve_from_txt,
-                                     noclobber=args.noclobber)
+        wrap_fun = _wrap_txt
+        argdict = {"noclobber": args.noclobber}
     else:
-        wrap_fun = functools.partial(
-            lcurve_from_events, safe_interval=safe_interval,
-            pi_interval=pi_interval,
-            e_interval=e_interval,
-            min_length=args.minlen,
-            gti_split=args.gti_split,
-            ignore_gtis=args.ignore_gtis,
-            bintime=bintime, outdir=args.outdir,
-            noclobber=args.noclobber)
+        wrap_fun = _wrap_lc
+        argdict = {"noclobber": args.noclobber, "safe_interval": safe_interval,
+                   "pi_interval": pi_interval,
+                   "e_interval": e_interval,
+                   "min_length": args.minlen,
+                   "gti_split": args.gti_split,
+                   "ignore_gtis": args.ignore_gtis,
+                   "bintime": bintime, "outdir": args.outdir}
+
+    arglist = [[f, argdict] for f in args.files]
     # -------------------------------------------------------------------------
     outfiles = []
 
     pool = Pool(processes=args.nproc)
-    for i in pool.imap_unordered(wrap_fun, args.files):
+    for i in pool.imap_unordered(wrap_fun, arglist):
         outfiles.append(i)
     pool.close()
 

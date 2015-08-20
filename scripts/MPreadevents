@@ -8,7 +8,12 @@ from maltpynt.read_events import treat_event_file
 import argparse
 import logging
 from multiprocessing import Pool
-import functools
+
+
+def _wrap_fun(arglist):
+    f, kwargs = arglist
+    return treat_event_file(f, **kwargs)
+
 
 description = ('Read a cleaned event files and saves the relevant '
                'information in a standard format')
@@ -44,11 +49,10 @@ if __name__ == '__main__':
     logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
                         filemode='w')
 
-    _wrap_fun = functools.partial(treat_event_file,
-                                  noclobber=args.noclobber,
-                                  gti_split=args.gti_split)
+    argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split}
+    arglist = [[f, argdict] for f in files]
 
     pool = Pool(processes=args.nproc)
-    for i in pool.imap_unordered(_wrap_fun, files):
+    for i in pool.imap_unordered(_wrap_fun, arglist):
         pass
     pool.close()

@@ -54,8 +54,8 @@ def save_as_xspec(fname, direct_save=False):
         raise Exception('File type not recognized')
 
     if direct_save:
-        sp.check_call('flx2xsp {} {}.pha {}.rsp'.format(
-            outname, outroot, outroot).split())
+        sp.check_call('flx2xsp {0} {1}.pha {1}.rsp'.format(
+            outname, outroot).split())
 
 
 if __name__ == '__main__':  # pragma: no cover

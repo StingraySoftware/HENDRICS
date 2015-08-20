@@ -11,13 +11,18 @@ from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
 from multiprocessing import Pool
-import functools
 import os
 
 
-def _wrap_calc_cpds(arglist, **kwargs):
-    f1, f2, outname = arglist
+def _wrap_fun_cpds(arglist):
+    f1, f2, outname, kwargs = arglist
     return calc_cpds(f1, f2, outname=outname, **kwargs)
+
+
+def _wrap_fun_pds(argdict):
+    fname = argdict["fname"]
+    argdict.pop("fname")
+    return calc_pds(fname, **argdict)
 
 
 class _empty():
@@ -88,7 +93,7 @@ def leahy_pds(lc, bintime, return_freq=True):
 
 
 def welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
-                 return_all=False):
+              return_all=False):
     r"""Calculate the PDS, averaged over equal chunks of data.
 
     Calculates the Power Density Spectrum \'a la Leahy (1983), given the
@@ -256,7 +261,7 @@ def leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
 
 
 def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
-                  return_ctrate=False, return_all=False):
+               return_ctrate=False, return_all=False):
     """Calculate the CPDS, averaged over equal chunks of data.
 
     Calculates the Cross Power Density Spectrum normalized like PDS, given the
@@ -473,13 +478,13 @@ def decide_spectrum_lc_intervals(gtis, fftlen, time):
 
 
 def calc_pds(lcfile, fftlen,
-                save_dyn=False,
-                bintime=1,
-                pdsrebin=1,
-                normalization='Leahy',
-                back_ctrate=0.,
-                noclobber=False,
-                outname=None):
+             save_dyn=False,
+             bintime=1,
+             pdsrebin=1,
+             normalization='Leahy',
+             back_ctrate=0.,
+             noclobber=False,
+             outname=None):
     """Calculate the PDS from an input light curve file.
 
     Parameters
@@ -541,28 +546,28 @@ def calc_pds(lcfile, fftlen,
         ctrate = results.ctrate
     except Exception as e:
         # If it fails, exit cleanly
-        logging.error("{} failed ({}: {})".format('Problems with the PDS.',
-                                                  type(e), e))
-        raise Exception("{} failed ({}: {})".format('Problems with the PDS.',
-                                                    type(e), e))
+        logging.error("{0} failed ({1}: {2})".format('Problem with the PDS.',
+                                                     type(e), e))
+        raise Exception("{0} failed ({1}: {2})".format('Problem with the PDS.',
+                                                       type(e), e))
 
     freq, pds, epds = const_rebin(freq[1:], pds[1:], pdsrebin,
-                                     epds[1:])
+                                  epds[1:])
 
     if normalization == 'rms':
         logging.info('Applying %s normalization' % normalization)
 
         pds, epds = \
             rms_normalize_pds(pds, epds,
-                                 source_ctrate=ctrate,
-                                 back_ctrate=back_ctrate)
+                              source_ctrate=ctrate,
+                              back_ctrate=back_ctrate)
 
         for ic, pd in enumerate(results.dynpds):
             ep = results.edynpds[ic].copy()
             ct = results.dynctrate[ic].copy()
 
             pd, ep = rms_normalize_pds(pd, ep, source_ctrate=ct,
-                                          back_ctrate=back_ctrate)
+                                       back_ctrate=back_ctrate)
             results.edynpds[ic][:] = ep
             results.dynpds[ic][:] = pd
 
@@ -694,10 +699,10 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
         ctrate = results.ctrate
     except Exception as e:
         # If it fails, exit cleanly
-        logging.error("{} failed ({}: {})".format('Problems with the CPDS.',
-                                                  type(e), e))
-        raise Exception("{} failed ({}: {})".format('Problems with the CPDS.',
-                                                    type(e), e))
+        logging.error("{0} failed ({1}: {2})".format(
+            'Problem with the CPDS.', type(e), e))
+        raise Exception("{0} failed ({1}: {2})".format(
+            'Problem with the CPDS.', type(e), e))
 
     freq, cpds, ecpds = const_rebin(freq[1:], cpds[1:], pdsrebin,
                                        ecpds[1:])
@@ -749,18 +754,18 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
 
 
 def calc_fspec(files, fftlen,
-                  do_calc_pds=True,
-                  do_calc_cpds=True,
-                  do_calc_cospectrum=True,
-                  do_calc_lags=True,
-                  save_dyn=False,
-                  bintime=1,
-                  pdsrebin=1,
-                  outroot=None,
-                  normalization='Leahy',
-                  nproc=1,
-                  back_ctrate=0.,
-                  noclobber=False):
+               do_calc_pds=True,
+               do_calc_cpds=True,
+               do_calc_cospectrum=True,
+               do_calc_lags=True,
+               save_dyn=False,
+               bintime=1,
+               pdsrebin=1,
+               outroot=None,
+               normalization='Leahy',
+               nproc=1,
+               back_ctrate=0.,
+               noclobber=False):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
     Parameters
@@ -807,17 +812,20 @@ def calc_fspec(files, fftlen,
     logging.info('Using %s normalization' % normalization)
 
     if do_calc_pds:
-        wrap_fun = functools.partial(
-            calc_pds, fftlen=fftlen,
-            save_dyn=save_dyn,
-            bintime=bintime,
-            pdsrebin=pdsrebin,
-            normalization=normalization,
-            back_ctrate=back_ctrate,
-            noclobber=noclobber)
+        wrapped_file_dicts = []
+        for f in files:
+            wfd = {"fftlen": fftlen,
+                   "save_dyn": save_dyn,
+                   "bintime": bintime,
+                   "pdsrebin": pdsrebin,
+                   "normalization": normalization,
+                   "back_ctrate": back_ctrate,
+                   "noclobber": noclobber}
+            wfd["fname"] = f
+            wrapped_file_dicts.append(wfd)
 
         pool = Pool(processes=nproc)
-        for i in pool.imap_unordered(wrap_fun, files):
+        for i in pool.imap_unordered(_wrap_fun_pds, wrapped_file_dicts):
             pass
         pool.close()
 
@@ -837,14 +845,22 @@ def calc_fspec(files, fftlen,
 
     assert len(files1) == len(files2), 'An even number of files is needed'
 
-    wrap_fun = functools.partial(
-        _wrap_calc_cpds, fftlen=fftlen,
-        save_dyn=save_dyn,
-        bintime=bintime,
-        pdsrebin=pdsrebin,
-        normalization=normalization,
-        back_ctrate=back_ctrate,
-        noclobber=noclobber)
+    # wrap_fun = functools.partial(
+    #     _wrap_calc_cpds, fftlen=fftlen,
+    #     save_dyn=save_dyn,
+    #     bintime=bintime,
+    #     pdsrebin=pdsrebin,
+    #     normalization=normalization,
+    #     back_ctrate=back_ctrate,
+    #     noclobber=noclobber)
+
+    argdict = {"fftlen": fftlen,
+               "save_dyn": save_dyn,
+               "bintime": bintime,
+               "pdsrebin": pdsrebin,
+               "normalization": normalization,
+               "back_ctrate": back_ctrate,
+               "noclobber": noclobber}
 
     funcargs = []
 
@@ -864,10 +880,10 @@ def calc_fspec(files, fftlen,
                                outr.replace(MP_FILE_EXTENSION, '') +
                                '_cpds' + MP_FILE_EXTENSION)
 
-        funcargs.append([f1, f2, outname])
+        funcargs.append([f1, f2, outname, argdict])
 
     pool = Pool(processes=nproc)
-    for i in pool.imap_unordered(wrap_fun, funcargs):
+    for i in pool.imap_unordered(_wrap_fun_cpds, funcargs):
         pass
     pool.close()
 

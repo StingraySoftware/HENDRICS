@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     for fname in args.files:
         print('-----------------------------')
-        print('{}'.format(fname))
+        print('{0}'.format(fname))
         print('-----------------------------')
         if fname.endswith('.fits') or fname.endswith('.evt'):
             print('This FITS file contains:', end='\n\n')

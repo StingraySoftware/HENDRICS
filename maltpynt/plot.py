@@ -51,7 +51,7 @@ def plot_pds(fnames, figname=None):
         color = next(rainbow)
 
         p, pcov = curve_fit(baseline_fun, freq, pds, p0=[2], sigma=epds)
-        logging.info('White noise level is {}'.format(p[0]))
+        logging.info('White noise level is {0}'.format(p[0]))
         pds -= p[0]
         if isinstance(lev, collections.Iterable):
             plt.plot(freq, lev - p[0], color=color)

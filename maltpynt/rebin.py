@@ -131,7 +131,7 @@ def rebin_file(filename, rebin):
     """Rebin the contents of a file, be it a light curve or a spectrum."""
     ftype, contents = get_file_type(filename)
     do_dyn = False
-    if 'dyn{}'.format(ftype) in contents.keys():
+    if 'dyn{0}'.format(ftype) in contents.keys():
         do_dyn = True
 
     if ftype == 'lc':
@@ -157,8 +157,8 @@ def rebin_file(filename, rebin):
         if rebin == float(int(rebin)):
             logging.info('Applying a constant rebinning')
             if do_dyn:
-                old_dynspec = contents['dyn{}'.format(ftype)]
-                old_edynspec = contents['edyn{}'.format(ftype)]
+                old_dynspec = contents['dyn{0}'.format(ftype)]
+                old_edynspec = contents['edyn{0}'.format(ftype)]
 
                 dynspec = []
                 edynspec = []
@@ -170,8 +170,8 @@ def rebin_file(filename, rebin):
                     dynspec.append(sp)
                     edynspec.append(spe)
 
-                contents['dyn{}'.format(ftype)] = np.array(dynspec)
-                contents['edyn{}'.format(ftype)] = np.array(edynspec)
+                contents['dyn{0}'.format(ftype)] = np.array(dynspec)
+                contents['edyn{0}'.format(ftype)] = np.array(edynspec)
 
             x, y, ye = \
                 const_rebin(x, y, rebin, ye, normalize=True)
@@ -182,8 +182,8 @@ def rebin_file(filename, rebin):
         else:
             logging.info('Applying a geometrical rebinning')
             if do_dyn:
-                old_dynspec = contents['dyn{}'.format(ftype)]
-                old_edynspec = contents['edyn{}'.format(ftype)]
+                old_dynspec = contents['dyn{0}'.format(ftype)]
+                old_edynspec = contents['edyn{0}'.format(ftype)]
 
                 dynspec = []
                 edynspec = []
@@ -195,8 +195,8 @@ def rebin_file(filename, rebin):
                     dynspec.append(sp)
                     edynspec.append(spe)
 
-                contents['dyn{}'.format(ftype)] = np.array(dynspec)
-                contents['edyn{}'.format(ftype)] = np.array(edynspec)
+                contents['dyn{0}'.format(ftype)] = np.array(dynspec)
+                contents['edyn{0}'.format(ftype)] = np.array(edynspec)
 
             x1, x2, y, ye, nbin = \
                 geom_bin(x, y, rebin, ye, return_nbins=True)
