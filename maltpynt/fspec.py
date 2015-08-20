@@ -509,7 +509,7 @@ def calc_pds(lcfile, fftlen,
         will have the same root as the input light curve and the '_pds' suffix
     """
     root = mp_root(lcfile)
-    outname = mp_root + '_pds' + MP_FILE_EXTENSION
+    outname = root + '_pds' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
         print('File exists, and noclobber option used. Skipping')
         return
