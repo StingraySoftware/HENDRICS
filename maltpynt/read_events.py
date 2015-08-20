@@ -3,7 +3,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .base import root, read_header_key, ref_mjd
+from .base import mp_root, read_header_key, ref_mjd
 from .io import save_events
 from .io import MP_FILE_EXTENSION
 import numpy as np
@@ -176,7 +176,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
         minimum length of GTIs accepted (only if gti_split is True)
     """
     logging.info('Opening %s' % filename)
-    outfile = root(filename) + '_ev' + MP_FILE_EXTENSION
+    outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outfile) and (not gti_split):
         print('{} exists, and noclobber option used. Skipping'.format(outfile))
         return

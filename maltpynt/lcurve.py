@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-from .base import root, create_gti_mask, cross_gtis, mkdir_p
+from .base import mp_root, create_gti_mask, cross_gtis, mkdir_p
 from .base import contiguous_regions, calc_countrate, gti_len
 from .io import load_events, load_lcurve, save_lcurve
 from .io import MP_FILE_EXTENSION
@@ -415,7 +415,7 @@ def lcurve_from_events(f, safe_interval=0,
         out['Emax'] = e_interval[1]
 
     if outfile is None:
-        outfile = root(f) + tag + '_lc' + MP_FILE_EXTENSION
+        outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
     else:
         outfile = \
             outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
@@ -453,7 +453,7 @@ def lcurve_from_events(f, safe_interval=0,
         logging.debug(borders)
         for ib, b in enumerate(borders):
             local_tag = tag + '_gti%d' % ib
-            outfile = root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
+            outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
             if noclobber and os.path.exists(outfile):
                 print('File exists, and noclobber option used. Skipping')
                 outfiles.append(outfile)
@@ -562,7 +562,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     from .base import create_gti_from_condition
 
     if outfile is None:
-        outfile = root(fits_file) + '_lc'
+        outfile = mp_root(fits_file) + '_lc'
 
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
 
@@ -736,7 +736,7 @@ def lcurve_from_txt(txt_file, outfile=None,
     import numpy as np
 
     if outfile is None:
-        outfile = root(txt_file) + '_lc'
+        outfile = mp_root(txt_file) + '_lc'
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
 
     if noclobber and os.path.exists(outfile):

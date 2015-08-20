@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from maltpynt.lags import lags_from_spectra
-from maltpynt.base import root
+from maltpynt.base import mp_root
 import logging
 import argparse
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     cfile, p1file, p2file = args.files
 
     if args.outroot is None:
-        outroot = root(cfile) + '_lag'
+        outroot = mp_root(cfile) + '_lag'
     else:
         outroot = args.outroot
 

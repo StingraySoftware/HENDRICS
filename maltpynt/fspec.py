@@ -3,7 +3,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .base import root, cross_gtis, create_gti_mask
+from .base import mp_root, cross_gtis, create_gti_mask
 from .base import sort_files, common_name
 from .rebin import const_rebin
 from .io import get_file_type, load_lcurve, save_pds
@@ -508,8 +508,8 @@ def calc_pds(lcfile, fftlen,
         If speficied, output file name. If not specified or None, the new file
         will have the same root as the input light curve and the '_pds' suffix
     """
-    root = root(lcfile)
-    outname = root + '_pds' + MP_FILE_EXTENSION
+    root = mp_root(lcfile)
+    outname = mp_root + '_pds' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
         print('File exists, and noclobber option used. Skipping')
         return
@@ -749,10 +749,10 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
 
 
 def calc_fspec(files, fftlen,
-                  calc_pds=True,
-                  calc_cpds=True,
-                  calc_cospectrum=True,
-                  calc_lags=True,
+                  do_calc_pds=True,
+                  do_calc_cpds=True,
+                  do_calc_cospectrum=True,
+                  do_calc_lags=True,
                   save_dyn=False,
                   bintime=1,
                   pdsrebin=1,
@@ -806,7 +806,7 @@ def calc_fspec(files, fftlen,
 
     logging.info('Using %s normalization' % normalization)
 
-    if calc_pds:
+    if do_calc_pds:
         wrap_fun = functools.partial(
             calc_pds, fftlen=fftlen,
             save_dyn=save_dyn,
@@ -821,7 +821,7 @@ def calc_fspec(files, fftlen,
             pass
         pool.close()
 
-    if not calc_cpds or len(files) < 2:
+    if not do_calc_cpds or len(files) < 2:
         return
 
     logging.info('Sorting file list')

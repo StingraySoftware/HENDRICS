@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 import sys
-from maltpynt.base import root
+from maltpynt.base import mp_root
 from maltpynt.io import get_file_type, is_string
 import collections
 import matplotlib.pyplot as plt
@@ -60,7 +60,7 @@ def dumpdyn(fname, plot=False):
     d = dynpds.real.flatten()
     e = edynpds.real.flatten()
 
-    np.savetxt('{}_dumped_{}.txt'.format(root(fname), ftype),
+    np.savetxt('{}_dumped_{}.txt'.format(mp_root(fname), ftype),
                np.array([t, f, d, e]).T)
     size = normalize(d)
     if plot:

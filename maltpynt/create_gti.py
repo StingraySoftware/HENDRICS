@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .io import MP_FILE_EXTENSION, save_data
-from .base import create_gti_from_condition, root, create_gti_mask
+from .base import create_gti_from_condition, mp_root, create_gti_mask
 from .base import cross_gtis, get_file_type
 import logging
 
@@ -55,7 +55,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
                                         safe_interval=safe_interval)
 
     if outfile is None:
-        outfile = root(fname) + '_gti' + MP_FILE_EXTENSION
+        outfile = mp_root(fname) + '_gti' + MP_FILE_EXTENSION
     save_data({'GTI': gtis}, outfile)
 
     return gtis
