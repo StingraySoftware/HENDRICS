@@ -4,7 +4,7 @@ Installation Instructions
 Prerequisites
 -------------
 
-You'll need a recent python 2.6+ or 3.3+ installation, and the
+You'll need a recent python 2.7+ or 3.3+ installation, and the
 `Numpy <http://www.numpy.org/>`__,
 `Matplotlib <http://matplotlib.org/>`__, `Scipy <http://scipy.org/>`__
 and `Astropy <http://www.astropy.org/>`__ libraries. You should also

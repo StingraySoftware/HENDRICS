@@ -19,8 +19,9 @@ that can be fitted with
 `Isis <http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html>`__.
 Also, one can calculate in the same easy way **time lags** (still under
 testing, help is welcome). Despite its main focus on NuSTAR, the
-software can be used to make standard spectral analysis on X-ray data
-from, in principle, any other satellite (for sure XMM-Newton and RXTE).
+software can be used to make standard aperiodic timing analysis on X-ray
+data from, in principle, any other satellite (for sure XMM-Newton and
+RXTE).
 
 The **documentation** can be found
 `here <http://maltpynt.readthedocs.org>`__.
