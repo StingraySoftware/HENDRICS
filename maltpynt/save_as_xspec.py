@@ -3,13 +3,13 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .mp_io import mp_get_file_type
+from .io import get_file_type
 import numpy as np
-from .mp_io import mp_get_file_extension
+from .io import get_file_extension
 import subprocess as sp
 
 
-def mp_save_as_xspec(fname, direct_save=False):
+def save_as_xspec(fname, direct_save=False):
     """Save frequency spectra in a format readable to FTOOLS and Xspec.
 
     Parameters
@@ -25,9 +25,9 @@ def mp_save_as_xspec(fname, direct_save=False):
     Uses method described here:
     https://asd.gsfc.nasa.gov/XSPECwiki/fitting_timing_power_spectra_in_XSPEC
     """
-    ftype, contents = mp_get_file_type(fname)
+    ftype, contents = get_file_type(fname)
 
-    outroot = fname.replace(mp_get_file_extension(fname), '')
+    outroot = fname.replace(get_file_extension(fname), '')
     outname = outroot + '_xsp.dat'
 
     if 'freq' in list(contents.keys()):

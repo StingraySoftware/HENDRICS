@@ -4,8 +4,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .mp_io import mp_save_data, mp_get_file_type
-from .mp_io import MP_FILE_EXTENSION
+from .io import save_data, get_file_type
+from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
 
@@ -13,7 +13,7 @@ import logging
 def sum_fspec(files, outname=None):
     """Take a bunch of (C)PDSs and sums them."""
     # Read first file
-    ftype0, contents = mp_get_file_type(files[0])
+    ftype0, contents = get_file_type(files[0])
     pdstype = ftype0.replace('reb', '')
     freq0 = contents['freq']
     pds0 = contents[pdstype]
@@ -30,7 +30,7 @@ def sum_fspec(files, outname=None):
         outname = 'tot_' + ftype0 + MP_FILE_EXTENSION
 
     for f in files[1:]:
-        ftype, contents = mp_get_file_type(f)
+        ftype, contents = get_file_type(f)
         pdstype = ftype.replace('reb', '')
         freq = contents['freq']
         pds = contents[pdstype]
@@ -54,6 +54,6 @@ def sum_fspec(files, outname=None):
     tot_contents['n' + pdstype] = tot_npds
 
     logging.info('Saving %s to %s' % (pdstype, outname))
-    mp_save_data(tot_contents, outname)
+    save_data(tot_contents, outname)
 
     return tot_contents

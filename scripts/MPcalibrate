@@ -4,16 +4,16 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_io import mp_get_file_extension, MP_FILE_EXTENSION
-from maltpynt.mp_calibrate import mp_calibrate
+from maltpynt.io import get_file_extension, MP_FILE_EXTENSION
+from maltpynt.calibrate import calibrate
 import argparse
 import logging
 from multiprocessing import Pool
 
 
-def mp_calib_wrap(args):
+def calib_wrap(args):
     f, outname, rmf = args
-    return mp_calibrate(f, outname, rmf)
+    return calibrate(f, outname, rmf)
 
 description = ('Calibrate clean event files by associating the correct '
                'energy to each PI channel. Uses either a specified rmf file '
@@ -54,11 +54,11 @@ if __name__ == '__main__':
     for i_f, f in enumerate(files):
         outname = f
         if args.overwrite is False:
-            outname = f.replace(mp_get_file_extension(f), '_calib' +
+            outname = f.replace(get_file_extension(f), '_calib' +
                                 MP_FILE_EXTENSION)
         funcargs.append([f, outname, args.rmf])
 
     pool = Pool(processes=args.nproc)
-    for i in pool.imap_unordered(mp_calib_wrap, funcargs):
+    for i in pool.imap_unordered(calib_wrap, funcargs):
         pass
     pool.close()

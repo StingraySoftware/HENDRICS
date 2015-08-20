@@ -4,8 +4,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_lags import mp_lags_from_spectra
-from maltpynt.mp_base import mp_root
+from maltpynt.lags import lags_from_spectra
+from maltpynt.base import root
 import logging
 import argparse
 
@@ -42,9 +42,9 @@ if __name__ == '__main__':
     cfile, p1file, p2file = args.files
 
     if args.outroot is None:
-        outroot = mp_root(cfile) + '_lag'
+        outroot = root(cfile) + '_lag'
     else:
         outroot = args.outroot
 
-    f, df, l, le = mp_lags_from_spectra(cfile, p1file, p2file, outroot=outroot,
+    f, df, l, le = lags_from_spectra(cfile, p1file, p2file, outroot=outroot,
                                         noclobber=args.noclobber)

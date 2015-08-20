@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_save_as_xspec import mp_save_as_xspec
+from maltpynt.save_as_xspec import save_as_xspec
 import argparse
 import logging
 
@@ -33,4 +33,4 @@ if __name__ == '__main__':
                         filemode='w')
 
     for f in files:
-        mp_save_as_xspec(f, direct_save=args.flx2xsp)
+        save_as_xspec(f, direct_save=args.flx2xsp)

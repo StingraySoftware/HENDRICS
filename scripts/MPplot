@@ -5,8 +5,8 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import matplotlib.pyplot as plt
-from maltpynt.mp_io import mp_get_file_type
-from maltpynt.mp_plot import mp_plot_lc, mp_plot_cospectrum, mp_plot_pds
+from maltpynt.io import get_file_type
+from maltpynt.plot import plot_lc, plot_cospectrum, plot_pds
 import argparse
 
 description = \
@@ -21,12 +21,12 @@ if __name__ == '__main__':
         sys.exit(1)
     args = parser.parse_args()
     for fname in args.files:
-        ftype, contents = mp_get_file_type(fname)
+        ftype, contents = get_file_type(fname)
         if ftype == 'lc':
-            mp_plot_lc(fname)
+            plot_lc(fname)
         elif ftype[-4:] == 'cpds':
-            mp_plot_cospectrum(fname)
+            plot_cospectrum(fname)
         elif ftype[-3:] == 'pds':
-            mp_plot_pds(fname)
+            plot_pds(fname)
 
     plt.show()

@@ -3,15 +3,15 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .mp_base import mp_root, mp_read_header_key, mp_ref_mjd
-from .mp_io import mp_save_events
-from .mp_io import MP_FILE_EXTENSION
+from .base import root, read_header_key, ref_mjd
+from .io import save_events
+from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
 import os
 
 
-def mp_load_gtis(fits_file, gtistring=None):
+def load_gtis(fits_file, gtistring=None):
     """Load GTI from HDU EVENTS of file fits_file."""
     from astropy.io import fits as pf
     import numpy as np
@@ -31,7 +31,7 @@ def mp_load_gtis(fits_file, gtistring=None):
     return gti_list
 
 
-def mp_load_events_and_gtis(fits_file, return_limits=False,
+def load_events_and_gtis(fits_file, return_limits=False,
                             additional_columns=None, gtistring=None,
                             gti_file=None, hduname='EVENTS', column='TIME'):
     """Load event lists and GTIs from one or more files.
@@ -130,7 +130,7 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
             gti_list = np.array([[t_start, t_stop]],
                                 dtype=np.longdouble)
     else:
-        gti_list = mp_load_gtis(gti_file, gtistring)
+        gti_list = load_gtis(gti_file, gtistring)
 
     if additional_columns is not None:
         additional_data = {}
@@ -158,7 +158,7 @@ def mp_load_events_and_gtis(fits_file, return_limits=False,
             return ev_list, gti_list
 
 
-def mp_treat_event_file(filename, noclobber=False, gti_split=False,
+def treat_event_file(filename, noclobber=False, gti_split=False,
                         min_length=4):
     """Read data from an event file, with no external GTI information.
 
@@ -176,19 +176,19 @@ def mp_treat_event_file(filename, noclobber=False, gti_split=False,
         minimum length of GTIs accepted (only if gti_split is True)
     """
     logging.info('Opening %s' % filename)
-    outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
+    outfile = root(filename) + '_ev' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outfile) and (not gti_split):
         print('{} exists, and noclobber option used. Skipping'.format(outfile))
         return
 
-    instr = mp_read_header_key(filename, 'INSTRUME')
+    instr = read_header_key(filename, 'INSTRUME')
     additional_columns = ['PI']
     if instr == 'PCA':
         additional_columns.append('PCUID')
 
-    mjdref = mp_ref_mjd(filename)
+    mjdref = ref_mjd(filename)
     events, gtis, additional, tstart, tstop = \
-        mp_load_events_and_gtis(filename,
+        load_events_and_gtis(filename,
                                 additional_columns=additional_columns,
                                 return_limits=True)
 
@@ -229,10 +229,10 @@ def mp_treat_event_file(filename, noclobber=False, gti_split=False,
             out_local['Tstop'] = g[1]
             out_local['PI'] = pis[good]
             out_local['GTI'] = np.array([g], dtype=np.longdouble)
-            mp_save_events(out_local, outfile_local)
+            save_events(out_local, outfile_local)
         pass
     else:
-        mp_save_events(out, outfile)
+        save_events(out, outfile)
 
 
 if __name__ == "__main__":  # pragma: no cover

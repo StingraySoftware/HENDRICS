@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_rebin import mp_rebin_file
+from maltpynt.rebin import rebin_file
 import argparse
 import logging
 
@@ -38,4 +38,4 @@ if __name__ == '__main__':
                         filemode='w')
     rebin = args.rebin
     for f in files:
-        mp_rebin_file(f, rebin)
+        rebin_file(f, rebin)

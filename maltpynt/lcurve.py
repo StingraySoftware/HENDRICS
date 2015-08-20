@@ -5,15 +5,15 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-from .mp_base import mp_root, mp_create_gti_mask, mp_cross_gtis, mp_mkdir_p
-from .mp_base import mp_contiguous_regions, mp_calc_countrate, mp_gti_len
-from .mp_io import mp_load_events, mp_load_lcurve, mp_save_lcurve
-from .mp_io import MP_FILE_EXTENSION
+from .base import root, create_gti_mask, cross_gtis, mkdir_p
+from .base import contiguous_regions, calc_countrate, gti_len
+from .io import load_events, load_lcurve, save_lcurve
+from .io import MP_FILE_EXTENSION
 import os
 import logging
 
 
-def mp_lcurve(event_list,
+def lcurve(event_list,
               bin_time,
               start_time=None,
               stop_time=None,
@@ -44,12 +44,12 @@ def mp_lcurve(event_list,
         If False, time is the start of the bin. Otherwise, the center
     """
     if start_time is None:
-        logging.warning("mp_lcurve: Changing start time")
+        logging.warning("lcurve: Changing start time")
         start_time = np.floor(event_list[0])
     if stop_time is None:
-        logging.warning("mp_lcurve: Changing stop time")
+        logging.warning("lcurve: Changing stop time")
         stop_time = np.ceil(event_list[-1])
-    logging.debug("mp_lcurve: Time limits: %g -- %g" %
+    logging.debug("lcurve: Time limits: %g -- %g" %
                   (start_time, stop_time))
 
     new_event_list = event_list[event_list >= start_time]
@@ -60,7 +60,7 @@ def mp_lcurve(event_list,
     new_event_list = ((new_event_list - start_time) / bin_time).astype(int)
     times = np.arange(start_time, stop_time, bin_time)
     lc = np.bincount(new_event_list, minlength=len(times))
-    logging.debug("mp_lcurve: Length of the lightcurve: %g" % len(times))
+    logging.debug("lcurve: Length of the lightcurve: %g" % len(times))
     logging.debug("Times, kind: %s, %s" % (repr(times), type(times[0])))
     logging.debug("Lc, kind: %s, %s" % (repr(lc), type(lc[0])))
     logging.debug("bin_time, kind: %s, %s" % (repr(bin_time), type(bin_time)))
@@ -69,7 +69,7 @@ def mp_lcurve(event_list,
     return times, lc.astype(np.float)
 
 
-def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
+def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     """Join light curves from different files.
 
     Light curves from different instruments are put in different channels.
@@ -81,14 +81,14 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
 
     See Also
     --------
-        mp_scrunch_lightcurves : Create a single light curve from input light
+        scrunch_lightcurves : Create a single light curve from input light
                                  curves.
 
     """
     lcdatas = []
     for lfc in lcfilelist:
         logging.info("Loading file %s..." % lfc)
-        lcdata = mp_load_lcurve(lfc)
+        lcdata = load_lcurve(lfc)
         logging.info("Done.")
         lcdatas.append(lcdata)
         del lcdata
@@ -132,7 +132,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
         lcs[instr].extend(lc)
         gtis[instr].extend(gti)
 
-        goodlen = mp_gti_len(gti)
+        goodlen = gti_len(gti)
         outlcs[instr]['source_ctrate'] += lcdata['source_ctrate'] * goodlen
         outlcs[instr]['total_ctrate'] += lcdata['total_ctrate'] * goodlen
 
@@ -143,7 +143,7 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
         outlcs[instr]['GTI'] = gti
         outlcs[instr]['Instr'] = instr
 
-        goodlen = mp_gti_len(gti)
+        goodlen = gti_len(gti)
 
         outlcs[instr]['source_ctrate'] /= goodlen
         outlcs[instr]['total_ctrate'] /= goodlen
@@ -157,12 +157,12 @@ def mp_join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
             logging.info('Saving joined light curve to %s' % outfile)
 
             dname, fname = os.path.split(outfile)
-            mp_save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
+            save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
 
     return outlcs
 
 
-def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
+def scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
                            save_joint=False):
     """Create a single light curve from input light curves.
 
@@ -193,19 +193,19 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
 
     See Also
     --------
-        mp_join_lightcurves : Join light curves from different files
+        join_lightcurves : Join light curves from different files
     """
     if save_joint:
-        lcdata = mp_join_lightcurves(lcfilelist)
+        lcdata = join_lightcurves(lcfilelist)
     else:
-        lcdata = mp_join_lightcurves(lcfilelist, outfile=None)
+        lcdata = join_lightcurves(lcfilelist, outfile=None)
 
     instrs = list(lcdata.keys())
     gti_lists = [lcdata[inst]['GTI'] for inst in instrs]
-    gti = mp_cross_gtis(gti_lists)
+    gti = cross_gtis(gti_lists)
     # Determine limits
     time0 = lcdata[instrs[0]]['time']
-    mask = mp_create_gti_mask(time0, gti)
+    mask = create_gti_mask(time0, gti)
 
     time0 = time0[mask]
     lc0 = lcdata[instrs[0]]['lc']
@@ -213,7 +213,7 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
 
     for inst in instrs[1:]:
         time1 = lcdata[inst]['time']
-        mask = mp_create_gti_mask(time1, gti)
+        mask = create_gti_mask(time1, gti)
         time1 = time1[mask]
         assert np.all(time0 == time1), \
             'Something is not right with gti filtering'
@@ -232,12 +232,12 @@ def mp_scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
     out['total_ctrate'] = np.sum([lcdata[i]['total_ctrate'] for i in instrs])
 
     logging.info('Saving scrunched light curve to %s' % outfile)
-    mp_save_lcurve(out, outfile)
+    save_lcurve(out, outfile)
 
     return time0, lc0, gti
 
 
-def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
+def filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
                       min_length=0, return_borders=False):
     """Filter a light curve for GTIs.
 
@@ -276,7 +276,7 @@ def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
         If True, return also the indexes of the light curve corresponding to
         the borders of the GTIs
     """
-    mask, newgtis = mp_create_gti_mask(time, gti, return_new_gtis=True,
+    mask, newgtis = create_gti_mask(time, gti, return_new_gtis=True,
                                        safe_interval=safe_interval,
                                        min_length=min_length)
 
@@ -289,14 +289,14 @@ def mp_filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
         lc[nomask] = 0
 
     if return_borders:
-        mask = mp_create_gti_mask(time, newgtis)
-        borders = mp_contiguous_regions(mask)
+        mask = create_gti_mask(time, newgtis)
+        borders = contiguous_regions(mask)
         return time, lc, newgtis, borders
     else:
         return time, lc, newgtis
 
 
-def mp_lcurve_from_events(f, safe_interval=0,
+def lcurve_from_events(f, safe_interval=0,
                           pi_interval=None,
                           e_interval=None,
                           min_length=0,
@@ -331,7 +331,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         channels are used
     e_interval : [float, float]
         Energy interval to select (only works if event list is calibrated with
-        `mp_calibrate`). Default None
+        `calibrate`). Default None
     min_length : float
         GTIs below this length will be filtered out
     gti_split : bool
@@ -351,7 +351,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         raise Exception('Please specify only one between outdir and outfile')
 
     logging.info("Loading file %s..." % f)
-    evdata = mp_load_events(f)
+    evdata = load_events(f)
     logging.info("Done.")
 
     if bintime < 0:
@@ -378,17 +378,17 @@ def mp_lcurve_from_events(f, safe_interval=0,
     tstop = np.floor(tstop / bintime, dtype=np.longdouble) * bintime
 
     # First of all, calculate total count rate (no filtering applied)
-    tot_time, tot_lc = mp_lcurve(events, bintime, start_time=tstart,
+    tot_time, tot_lc = lcurve(events, bintime, start_time=tstart,
                                  stop_time=tstop)
 
     tot_time, tot_lc, newgtis, tot_borders = \
-        mp_filter_lc_gtis(tot_time, tot_lc, gtis,
+        filter_lc_gtis(tot_time, tot_lc, gtis,
                           safe_interval=safe_interval,
                           delete=False,
                           min_length=min_length,
                           return_borders=True)
 
-    out['total_ctrate'] = mp_calc_countrate(tot_time, tot_lc, bintime=bintime)
+    out['total_ctrate'] = calc_countrate(tot_time, tot_lc, bintime=bintime)
 
     # Then, apply filters
     if pi_interval is not None and np.all(np.array(pi_interval) > 0):
@@ -415,7 +415,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         out['Emax'] = e_interval[1]
 
     if outfile is None:
-        outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
+        outfile = root(f) + tag + '_lc' + MP_FILE_EXTENSION
     else:
         outfile = \
             outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
@@ -423,11 +423,11 @@ def mp_lcurve_from_events(f, safe_interval=0,
         print('File exists, and noclobber option used. Skipping')
         return [outfile]
 
-    time, lc = mp_lcurve(events, bintime, start_time=tstart,
+    time, lc = lcurve(events, bintime, start_time=tstart,
                          stop_time=tstop)
 
     time, lc, newgtis, borders = \
-        mp_filter_lc_gtis(time, lc, gtis,
+        filter_lc_gtis(time, lc, gtis,
                           safe_interval=safe_interval,
                           delete=False,
                           min_length=min_length,
@@ -440,12 +440,12 @@ def mp_lcurve_from_events(f, safe_interval=0,
     assert np.all(borders == tot_borders), \
         'Borders do not coincide: {} {}'.format(borders, tot_borders)
 
-    out['source_ctrate'] = mp_calc_countrate(time, lc, gtis=newgtis,
+    out['source_ctrate'] = calc_countrate(time, lc, gtis=newgtis,
                                              bintime=bintime)
 
     if outdir is not None:
         _, f = os.path.split(f)
-        mp_mkdir_p(outdir)
+        mkdir_p(outdir)
         f = os.path.join(outdir, f)
 
     if gti_split:
@@ -453,7 +453,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
         logging.debug(borders)
         for ib, b in enumerate(borders):
             local_tag = tag + '_gti%d' % ib
-            outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
+            outfile = root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
             if noclobber and os.path.exists(outfile):
                 print('File exists, and noclobber option used. Skipping')
                 outfiles.append(outfile)
@@ -468,17 +468,17 @@ def mp_lcurve_from_events(f, safe_interval=0,
             local_out['Tstart'] = time[b[0]]
             local_out['Tstop'] = time[b[1]-1]
             local_out['Instr'] = instr
-            local_out['source_ctrate'] = mp_calc_countrate(time[b[0]:b[1]],
+            local_out['source_ctrate'] = calc_countrate(time[b[0]:b[1]],
                                                            lc[b[0]:b[1]],
                                                            bintime=bintime)
-            local_out['total_ctrate'] = mp_calc_countrate(tot_time[b[0]:b[1]],
+            local_out['total_ctrate'] = calc_countrate(tot_time[b[0]:b[1]],
                                                           tot_lc[b[0]:b[1]],
                                                           bintime=bintime)
             if instr == 'PCA':
                 local_out['nPCUs'] = len(set(pcus))
 
             logging.info('Saving light curve to %s' % outfile)
-            mp_save_lcurve(local_out, outfile)
+            save_lcurve(local_out, outfile)
             outfiles.append(outfile)
     else:
         out['lc'] = lc
@@ -492,7 +492,7 @@ def mp_lcurve_from_events(f, safe_interval=0,
             out['nPCUs'] = len(set(pcus))
 
         logging.info('Saving light curve to %s' % outfile)
-        mp_save_lcurve(out, outfile)
+        save_lcurve(out, outfile)
         outfiles = [outfile]
 
     # For consistency in return value
@@ -511,7 +511,7 @@ def _high_precision_keyword_read(hdr, keyword):
     return value
 
 
-def mp_lcurve_from_fits(fits_file, gtistring='GTI',
+def lcurve_from_fits(fits_file, gtistring='GTI',
                         timecolumn='TIME', ratecolumn=None, ratehdu=1,
                         fracexp_limit=0.9, outfile=None,
                         noclobber=False):
@@ -531,7 +531,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     -------
     outfile : [str]
         Returned as a list with a single element for consistency with
-        `mp_lcurve_from_events`
+        `lcurve_from_events`
 
     Other Parameters
     ----------------
@@ -559,10 +559,10 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
     from astropy.io import fits as pf
     from astropy.time import Time
     import numpy as np
-    from .mp_base import mp_create_gti_from_condition
+    from .base import create_gti_from_condition
 
     if outfile is None:
-        outfile = mp_root(fits_file) + '_lc'
+        outfile = root(fits_file) + '_lc'
 
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
 
@@ -682,7 +682,7 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
                                              gtitable.field('STOP'))],
                             dtype=np.longdouble)
     except:
-        gti_list = mp_create_gti_from_condition(time, good_intervals)
+        gti_list = create_gti_from_condition(time, good_intervals)
 
     lchdulist.close()
 
@@ -698,17 +698,17 @@ def mp_lcurve_from_fits(fits_file, gtistring='GTI',
 
     out['MJDref'] = mjdref.value
 
-    out['total_ctrate'] = mp_calc_countrate(time, rate, gtis=gti_list,
+    out['total_ctrate'] = calc_countrate(time, rate, gtis=gti_list,
                                             bintime=dt)
-    out['source_ctrate'] = mp_calc_countrate(time, rate, gtis=gti_list,
+    out['source_ctrate'] = calc_countrate(time, rate, gtis=gti_list,
                                              bintime=dt)
 
     logging.info('Saving light curve to %s' % outfile)
-    mp_save_lcurve(out, outfile)
+    save_lcurve(out, outfile)
     return [outfile]
 
 
-def mp_lcurve_from_txt(txt_file, outfile=None,
+def lcurve_from_txt(txt_file, outfile=None,
                        noclobber=False):
     """
     Load a lightcurve from a text file.
@@ -724,7 +724,7 @@ def mp_lcurve_from_txt(txt_file, outfile=None,
     -------
     outfile : [str]
         Returned as a list with a single element for consistency with
-        `mp_lcurve_from_events`
+        `lcurve_from_events`
 
     Other Parameters
     ----------------
@@ -736,7 +736,7 @@ def mp_lcurve_from_txt(txt_file, outfile=None,
     import numpy as np
 
     if outfile is None:
-        outfile = mp_root(txt_file) + '_lc'
+        outfile = root(txt_file) + '_lc'
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
 
     if noclobber and os.path.exists(outfile):
@@ -758,13 +758,13 @@ def mp_lcurve_from_txt(txt_file, outfile=None,
     out['Tstop'] = time[-1] + dt / 2
     out['Instr'] = 'EXTERN'
     out['MJDref'] = np.longdouble('55197.00076601852')
-    out['total_ctrate'] = mp_calc_countrate(time, lc, gtis=gtis,
+    out['total_ctrate'] = calc_countrate(time, lc, gtis=gtis,
                                             bintime=dt)
-    out['source_ctrate'] = mp_calc_countrate(time, lc, gtis=gtis,
+    out['source_ctrate'] = calc_countrate(time, lc, gtis=gtis,
                                              bintime=dt)
 
     logging.info('Saving light curve to %s' % outfile)
-    mp_save_lcurve(out, outfile)
+    save_lcurve(out, outfile)
     return [outfile]
 
 

@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_fspec import mp_calc_fspec
+from maltpynt.fspec import calc_fspec
 import argparse
 import logging
 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
             do_lag = True
             do_cpds = True
 
-    mp_calc_fspec(args.files, fftlen,
+    calc_fspec(args.files, fftlen,
                   calc_pds=do_pds,
                   calc_cpds=do_cpds,
                   calc_cospectrum=do_cos,

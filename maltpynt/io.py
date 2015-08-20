@@ -39,14 +39,14 @@ def is_string(s):
         return isinstance(s, basestring)
 
 
-def mp_get_file_extension(fname):
+def get_file_extension(fname):
     """Get the file extension."""
     return os.path.splitext(fname)[1]
 
 
-def mp_get_file_format(fname):
+def get_file_format(fname):
     """Decide the file format of the file."""
-    ext = mp_get_file_extension(fname)
+    ext = get_file_extension(fname)
     if ext == '.p':
         return 'pickle'
     elif ext == '.nc':
@@ -56,7 +56,7 @@ def mp_get_file_format(fname):
 
 
 # ---- Base function to save NetCDF4 files
-def mp_save_as_netcdf(vars, varnames, formats, fname):
+def save_as_netcdf(vars, varnames, formats, fname):
     """Save variables in a NetCDF4 file."""
     rootgrp = nc.Dataset(fname, 'w',
                          format='NETCDF4')
@@ -101,7 +101,7 @@ def mp_save_as_netcdf(vars, varnames, formats, fname):
     rootgrp.close()
 
 
-def mp_read_from_netcdf(fname):
+def read_from_netcdf(fname):
     """Read from a netCDF4 file."""
     rootgrp = nc.Dataset(fname)
     out = {}
@@ -127,12 +127,12 @@ def mp_read_from_netcdf(fname):
 
 
 # ----- Functions to handle file types
-def mp_get_file_type(fname, specify_reb=True):
+def get_file_type(fname, specify_reb=True):
     """Return the file type and its contents.
 
     Only works for maltpynt-format pickle or netcdf files.
     """
-    contents = mp_load_data(fname)
+    contents = load_data(fname)
     """Gets file type."""
 
     keys = list(contents.keys())
@@ -161,54 +161,54 @@ def mp_get_file_type(fname, specify_reb=True):
 
 
 # ----- functions to save and load EVENT data
-def mp_save_events(eventStruct, fname):
+def save_events(eventStruct, fname):
     """Save events in a file."""
-    if mp_get_file_format(fname) == 'pickle':
+    if get_file_format(fname) == 'pickle':
         _save_data_pickle(eventStruct, fname)
-    elif mp_get_file_format(fname) == 'nc':
+    elif get_file_format(fname) == 'nc':
         _save_data_nc(eventStruct, fname)
 
 
-def mp_load_events(fname):
+def load_events(fname):
     """Load events from a file."""
-    if mp_get_file_format(fname) == 'pickle':
+    if get_file_format(fname) == 'pickle':
         return _load_data_pickle(fname)
-    elif mp_get_file_format(fname) == 'nc':
+    elif get_file_format(fname) == 'nc':
         return _load_data_nc(fname)
 
 
 # ----- functions to save and load LCURVE data
-def mp_save_lcurve(lcurveStruct, fname):
+def save_lcurve(lcurveStruct, fname):
     """Save light curve in a file."""
-    if mp_get_file_format(fname) == 'pickle':
+    if get_file_format(fname) == 'pickle':
         return _save_data_pickle(lcurveStruct, fname)
-    elif mp_get_file_format(fname) == 'nc':
+    elif get_file_format(fname) == 'nc':
         return _save_data_nc(lcurveStruct, fname)
 
 
-def mp_load_lcurve(fname):
+def load_lcurve(fname):
     """Load light curve from a file."""
-    if mp_get_file_format(fname) == 'pickle':
+    if get_file_format(fname) == 'pickle':
         return _load_data_pickle(fname)
-    elif mp_get_file_format(fname) == 'nc':
+    elif get_file_format(fname) == 'nc':
         return _load_data_nc(fname)
 
 
 # ---- Functions to save PDSs
 
-def mp_save_pds(pdsStruct, fname):
+def save_pds(pdsStruct, fname):
     """Save PDS in a file."""
-    if mp_get_file_format(fname) == 'pickle':
+    if get_file_format(fname) == 'pickle':
         return _save_data_pickle(pdsStruct, fname)
-    elif mp_get_file_format(fname) == 'nc':
+    elif get_file_format(fname) == 'nc':
         return _save_data_nc(pdsStruct, fname)
 
 
-def mp_load_pds(fname):
+def load_pds(fname):
     """Load PDS from a file."""
-    if mp_get_file_format(fname) == 'pickle':
+    if get_file_format(fname) == 'pickle':
         return _load_data_pickle(fname)
-    elif mp_get_file_format(fname) == 'nc':
+    elif get_file_format(fname) == 'nc':
         return _load_data_nc(fname)
 
 
@@ -241,7 +241,7 @@ def _save_data_pickle(struct, fname, kind="data"):
 
 def _load_data_nc(fname):
     """Load generic data in netcdf format."""
-    contents = mp_read_from_netcdf(fname)
+    contents = read_from_netcdf(fname)
     keys = list(contents.keys())
 
     keys_to_delete = []
@@ -310,22 +310,22 @@ def _save_data_nc(struct, fname, kind="data"):
             formats.append(probekind + '%d' % probesize)
             varnames.append(k)
 
-    mp_save_as_netcdf(values, varnames, formats, fname)
+    save_as_netcdf(values, varnames, formats, fname)
 
 
-def mp_save_data(struct, fname, ftype='data'):
+def save_data(struct, fname, ftype='data'):
     """Save generic data in maltpynt format."""
-    if mp_get_file_format(fname) == 'pickle':
+    if get_file_format(fname) == 'pickle':
         _save_data_pickle(struct, fname)
-    elif mp_get_file_format(fname) == 'nc':
+    elif get_file_format(fname) == 'nc':
         _save_data_nc(struct, fname)
 
 
-def mp_load_data(fname):
+def load_data(fname):
     """Load generic data in maltpynt format."""
-    if mp_get_file_format(fname) == 'pickle':
+    if get_file_format(fname) == 'pickle':
         return _load_data_pickle(fname)
-    elif mp_get_file_format(fname) == 'nc':
+    elif get_file_format(fname) == 'nc':
         return _load_data_nc(fname)
 
 
@@ -423,7 +423,7 @@ def _get_key(dict_like, key):
         return ""
 
 
-def mp_print_fits_info(fits_file, hdu=1):
+def print_fits_info(fits_file, hdu=1):
     """Print general info about an observation."""
     from astropy.io import fits as pf
 

@@ -4,9 +4,9 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_io import mp_load_data
+from maltpynt.io import load_data
 import logging
-from maltpynt.mp_create_gti import mp_apply_gti, mp_create_gti
+from maltpynt.create_gti import apply_gti, create_gti
 import argparse
 
 description = ('Create GTI files from a filter expression, or applies '
@@ -59,10 +59,10 @@ if __name__ == '__main__':
 
     for fname in files:
         if args.apply_gti is not None:
-            data = mp_load_data(args.apply_gti)
+            data = load_data(args.apply_gti)
             gtis = data['GTI']
         else:
-            gtis = mp_create_gti(fname, filter_expr,
+            gtis = create_gti(fname, filter_expr,
                                  safe_interval=args.safe_interval)
         if args.create_only:
             continue
@@ -71,4 +71,4 @@ if __name__ == '__main__':
         else:
             # Use default
             outname = None
-        mp_apply_gti(fname, gtis)
+        apply_gti(fname, gtis)

@@ -4,8 +4,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 import sys
-from maltpynt.mp_base import mp_root
-from maltpynt.mp_io import mp_get_file_type, is_string
+from maltpynt.base import root
+from maltpynt.io import get_file_type, is_string
 import collections
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,7 +35,7 @@ def usage():
 
 
 def dumpdyn(fname, plot=False):
-    ftype, pdsdata = mp_get_file_type(fname, specify_reb=False)
+    ftype, pdsdata = get_file_type(fname, specify_reb=False)
 
     dynpds = pdsdata['dyn' + ftype]
     edynpds = pdsdata['edyn' + ftype]
@@ -60,7 +60,7 @@ def dumpdyn(fname, plot=False):
     d = dynpds.real.flatten()
     e = edynpds.real.flatten()
 
-    np.savetxt('{}_dumped_{}.txt'.format(mp_root(fname), ftype),
+    np.savetxt('{}_dumped_{}.txt'.format(root(fname), ftype),
                np.array([t, f, d, e]).T)
     size = normalize(d)
     if plot:

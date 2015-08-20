@@ -70,12 +70,12 @@ class TestCommandline(unittest.TestCase):
         """Test light curves from FITS."""
         try:
             lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
-            mp.lcurve.mp_lcurve_from_events(
+            mp.lcurve.lcurve_from_events(
                 os.path.join(datadir,
                              'monol_testA_ev') + MP_FILE_EXTENSION,
                 outfile=os.path.join(datadir,
-                                     'lcurve_mp_lc'))
-            mp.lcurve.mp_lcurve_from_fits(
+                                     'lcurve_lc'))
+            mp.lcurve.lcurve_from_fits(
                 lcurve_ftools_orig,
                 outfile=os.path.join(datadir,
                                      'lcurve_ftools_lc'))
@@ -83,10 +83,10 @@ class TestCommandline(unittest.TestCase):
                                          'lcurve_ftools_lc' +
                                          MP_FILE_EXTENSION)
             lcurve_mp = os.path.join(datadir,
-                                     'lcurve_mp_lc' +
+                                     'lcurve_lc' +
                                      MP_FILE_EXTENSION)
-            lcdata_mp = mp.mp_io.mp_load_lcurve(lcurve_mp)
-            lcdata_ftools = mp.mp_io.mp_load_lcurve(lcurve_ftools)
+            lcdata_mp = mp.io.load_lcurve(lcurve_mp)
+            lcdata_ftools = mp.io.load_lcurve(lcurve_ftools)
 
             lc_mp = lcdata_mp['lc']
             lenmp = len(lc_mp)
@@ -103,9 +103,9 @@ class TestCommandline(unittest.TestCase):
         """Test light curves from txt."""
         try:
             lcurve_mp = os.path.join(datadir,
-                                     'lcurve_mp_lc' +
+                                     'lcurve_lc' +
                                      MP_FILE_EXTENSION)
-            lcdata_mp = mp.mp_io.mp_load_lcurve(lcurve_mp)
+            lcdata_mp = mp.io.load_lcurve(lcurve_mp)
             lc_mp = lcdata_mp['lc']
             time_mp = lcdata_mp['time']
 
@@ -117,9 +117,9 @@ class TestCommandline(unittest.TestCase):
             lcurve_txt = os.path.join(datadir,
                                       'lcurve_txt_lc' +
                                       MP_FILE_EXTENSION)
-            mp.lcurve.mp_lcurve_from_txt(lcurve_txt_orig,
+            mp.lcurve.lcurve_from_txt(lcurve_txt_orig,
                                          outfile=lcurve_txt)
-            lcdata_txt = mp.mp_io.mp_load_lcurve(lcurve_txt)
+            lcdata_txt = mp.io.load_lcurve(lcurve_txt)
 
             lc_txt = lcdata_txt['lc']
 
@@ -260,7 +260,7 @@ class TestCommandline(unittest.TestCase):
     def step12_joinlcs(self):
         """Test produce joined light curves."""
         try:
-            mp.mp_lcurve.mp_join_lightcurves(
+            mp.lcurve.join_lightcurves(
                 [os.path.join(datadir, 'monol_testA_E3-50_lc') +
                  MP_FILE_EXTENSION,
                  os.path.join(datadir, 'monol_testB_E3-50_lc') +

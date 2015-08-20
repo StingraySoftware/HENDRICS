@@ -8,11 +8,11 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-from .mp_io import mp_get_file_type, is_string
+from .io import get_file_type, is_string
 import logging
 
 
-def mp_mkdir_p(path):  # pragma: no cover
+def mkdir_p(path):  # pragma: no cover
     """Safe mkdir function.
 
     Parameters
@@ -35,7 +35,7 @@ def mp_mkdir_p(path):  # pragma: no cover
             raise
 
 
-def mp_read_header_key(fits_file, key, hdu=1):
+def read_header_key(fits_file, key, hdu=1):
     """Read the header key key from HDU hdu of the file fits_file.
 
     Parameters
@@ -59,7 +59,7 @@ def mp_read_header_key(fits_file, key, hdu=1):
     return value
 
 
-def mp_ref_mjd(fits_file, hdu=1):
+def ref_mjd(fits_file, hdu=1):
     """Read MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header.
 
     Parameters
@@ -83,11 +83,11 @@ def mp_ref_mjd(fits_file, hdu=1):
         logging.info("opening %s" % fits_file)
 
     try:
-        ref_mjd_int = np.long(mp_read_header_key(fits_file, 'MJDREFI'))
-        ref_mjd_float = np.longdouble(mp_read_header_key(fits_file, 'MJDREFF'))
+        ref_mjd_int = np.long(read_header_key(fits_file, 'MJDREFI'))
+        ref_mjd_float = np.longdouble(read_header_key(fits_file, 'MJDREFF'))
         ref_mjd_val = ref_mjd_int + ref_mjd_float
     except:  # pragma: no cover
-        ref_mjd_val = np.longdouble(mp_read_header_key(fits_file, 'MJDREF'))
+        ref_mjd_val = np.longdouble(read_header_key(fits_file, 'MJDREF'))
     return ref_mjd_val
 
 
@@ -115,8 +115,8 @@ def common_name(str1, str2, default='common'):
         return default
     common_str = ''
     # Extract the MP root of the name (in case they're event files)
-    str1 = mp_root(str1)
-    str2 = mp_root(str2)
+    str1 = root(str1)
+    str2 = root(str2)
     for i, letter in enumerate(str1):
         if str2[i] == letter:
             common_str += letter
@@ -129,7 +129,7 @@ def common_name(str1, str2, default='common'):
     return common_str
 
 
-def mp_root(filename):
+def root(filename):
     """Return the root file name (without _ev, _lc, etc.).
 
     Parameters
@@ -144,7 +144,7 @@ def mp_root(filename):
     return fname
 
 
-def mp_contiguous_regions(condition):
+def contiguous_regions(condition):
     """Find contiguous True regions of the boolean array "condition".
 
     Return a 2D array where the first column is the start index of the region
@@ -181,7 +181,7 @@ def mp_contiguous_regions(condition):
     return idx
 
 
-def mp_check_gtis(gti):
+def check_gtis(gti):
     """Check if GTIs are well-behaved. No start>end, no overlaps.
 
     Raises
@@ -202,7 +202,7 @@ def mp_check_gtis(gti):
     return
 
 
-def mp_create_gti_mask(time, gtis, safe_interval=0, min_length=0,
+def create_gti_mask(time, gtis, safe_interval=0, min_length=0,
                        return_new_gtis=False, dt=None):
     """Create GTI mask.
 
@@ -229,7 +229,7 @@ def mp_create_gti_mask(time, gtis, safe_interval=0, min_length=0,
     """
     import collections
 
-    mp_check_gtis(gtis)
+    check_gtis(gtis)
 
     if dt is None:
         dt = np.zeros_like(time) + (time[1] - time[0]) / 2
@@ -261,7 +261,7 @@ def mp_create_gti_mask(time, gtis, safe_interval=0, min_length=0,
     return res
 
 
-def mp_create_gti_from_condition(time, condition,
+def create_gti_from_condition(time, condition,
                                  safe_interval=0, dt=None):
     """Create a GTI list from a time array and a boolean mask ("condition").
 
@@ -290,7 +290,7 @@ def mp_create_gti_from_condition(time, condition,
 
     assert len(time) == len(condition), \
         'The length of the condition and time arrays must be the same.'
-    idxs = mp_contiguous_regions(condition)
+    idxs = contiguous_regions(condition)
 
     if not isinstance(safe_interval, collections.Iterable):
         safe_interval = [safe_interval, safe_interval]
@@ -312,12 +312,12 @@ def mp_create_gti_from_condition(time, condition,
     return np.array(gtis)
 
 
-def mp_cross_gtis_bin(gti_list, bin_time=1):
+def cross_gtis_bin(gti_list, bin_time=1):
     """From multiple GTI lists, extract the common intervals.
 
     .. note:: Deprecated
-          `mp_cross_gtis_bin` will be removed, it is replaced by
-          `mp_cross_gtis` because the latter uses a better algorithm.
+          `cross_gtis_bin` will be removed, it is replaced by
+          `cross_gtis` because the latter uses a better algorithm.
     """
     ninst = len(gti_list)
     if ninst == 1:
@@ -330,20 +330,20 @@ def mp_cross_gtis_bin(gti_list, bin_time=1):
                       stop + bin_time / 2,
                       bin_time, dtype=np.longdouble)
 
-    mask0 = mp_create_gti_mask(times, gti_list[0],
+    mask0 = create_gti_mask(times, gti_list[0],
                                safe_interval=[0, bin_time])
 
     for gti in gti_list[1:]:
-        mask = mp_create_gti_mask(times, gti,
+        mask = create_gti_mask(times, gti,
                                   safe_interval=[0, bin_time])
         mask0 = np.logical_and(mask0, mask)
 
-    gtis = mp_create_gti_from_condition(times, mask0)
+    gtis = create_gti_from_condition(times, mask0)
 
     return gtis
 
 
-def mp_cross_two_gtis(gti0, gti1):
+def cross_two_gtis(gti0, gti1):
     """Extract the common intervals from two GTI lists *EXACTLY*.
 
     Parameters
@@ -358,14 +358,14 @@ def mp_cross_two_gtis(gti0, gti1):
 
     See Also
     --------
-    mp_cross_gtis : From multiple GTI lists, extract the common intervals *EXACTLY*
+    cross_gtis : From multiple GTI lists, extract the common intervals *EXACTLY*
 
     """
     gti0 = np.array(gti0, dtype=np.longdouble)
     gti1 = np.array(gti1, dtype=np.longdouble)
     # Check GTIs
-    mp_check_gtis(gti0)
-    mp_check_gtis(gti1)
+    check_gtis(gti0)
+    check_gtis(gti1)
 
     gti0_start = gti0[:, 0]
     gti0_end = gti0[:, 1]
@@ -430,7 +430,7 @@ def mp_cross_two_gtis(gti0, gti1):
     return np.array(final_gti, dtype=np.longdouble)
 
 
-def mp_cross_gtis(gti_list):
+def cross_gtis(gti_list):
     """From multiple GTI lists, extract the common intervals *EXACTLY*.
 
     Parameters
@@ -446,7 +446,7 @@ def mp_cross_gtis(gti_list):
 
     See Also
     --------
-    mp_cross_two_gtis : Extract the common intervals from two GTI lists *EXACTLY*
+    cross_two_gtis : Extract the common intervals from two GTI lists *EXACTLY*
     """
     ninst = len(gti_list)
     if ninst == 1:
@@ -455,7 +455,7 @@ def mp_cross_gtis(gti_list):
     gti0 = gti_list[0]
 
     for gti in gti_list[1:]:
-        gti0 = mp_cross_two_gtis(gti0, gti)
+        gti0 = cross_two_gtis(gti0, gti)
 
     return gti0
 
@@ -464,7 +464,7 @@ def get_btis(gtis, start_time=None, stop_time=None):
     """From GTIs, obtain bad time intervals.
 
     GTIs have to be well-behaved, in the sense that they have to pass
-    `mp_check_gtis`.
+    `check_gtis`.
     """
     # Check GTIs
     if len(gtis) == 0:
@@ -472,7 +472,7 @@ def get_btis(gtis, start_time=None, stop_time=None):
             'Empty GTI and no valid start_time and stop_time. BAD!'
 
         return np.array([[start_time, stop_time]], dtype=np.longdouble)
-    mp_check_gtis(gtis)
+    check_gtis(gtis)
 
     if start_time is None:
         start_time = gtis[0][0]
@@ -493,7 +493,7 @@ def get_btis(gtis, start_time=None, stop_time=None):
     return np.array(btis, dtype=np.longdouble)
 
 
-def mp_optimal_bin_time(fftlen, tbin):
+def optimal_bin_time(fftlen, tbin):
     """Vary slightly the bin time to have a power of two number of bins.
 
     Given an FFT length and a proposed bin time, return a bin time
@@ -504,7 +504,7 @@ def mp_optimal_bin_time(fftlen, tbin):
     return fftlen / (2 ** np.ceil(np.log2(fftlen / tbin)))
 
 
-def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
+def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     r"""Detection level for a PDS.
 
     Return the detection level (with probability 1 - epsilon) for a Power
@@ -529,7 +529,7 @@ def mp_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     return retlev
 
 
-def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
+def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     r"""Give the probability of a given power level in PDS.
 
     Return the probability of a certain power level in a Power Density
@@ -547,14 +547,14 @@ def mp_probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     return 1 - epsilon
 
 
-def mp_sort_files(files):
+def sort_files(files):
     """Sort a list of MaLTPyNT files, looking at `Tstart` in each."""
     allfiles = {}
     ftypes = []
 
     for f in files:
         logging.info('Loading file ' + f)
-        ftype, contents = mp_get_file_type(f)
+        ftype, contents = get_file_type(f)
         instr = contents['Instr']
         ftypes.append(ftype)
         if instr not in list(allfiles.keys()):
@@ -581,7 +581,7 @@ def mp_sort_files(files):
     return allfiles
 
 
-def mp_calc_countrate(time, lc, gtis=None, bintime=None):
+def calc_countrate(time, lc, gtis=None, bintime=None):
     """Calculate the count rate from a light curve.
 
     Parameters
@@ -604,11 +604,11 @@ def mp_calc_countrate(time, lc, gtis=None, bintime=None):
     if bintime is None:
         bintime = np.min(np.diff(time))
     if gtis is not None:
-        mask = mp_create_gti_mask(time, gtis)
+        mask = create_gti_mask(time, gtis)
         lc = lc[mask]
     return np.mean(lc) / bintime
 
 
-def mp_gti_len(gti):
+def gti_len(gti):
     """Return the total good time from a list of GTIs."""
     return np.sum([g[1] - g[0] for g in gti])

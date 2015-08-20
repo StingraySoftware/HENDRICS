@@ -3,11 +3,11 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .mp_base import mp_root, mp_cross_gtis, mp_create_gti_mask
-from .mp_base import mp_sort_files, common_name
-from .mp_rebin import mp_const_rebin
-from .mp_io import mp_get_file_type, mp_load_lcurve, mp_save_pds
-from .mp_io import MP_FILE_EXTENSION
+from .base import root, cross_gtis, create_gti_mask
+from .base import sort_files, common_name
+from .rebin import const_rebin
+from .io import get_file_type, load_lcurve, save_pds
+from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
 from multiprocessing import Pool
@@ -17,7 +17,7 @@ import os
 
 def _wrap_calc_cpds(arglist, **kwargs):
     f1, f2, outname = arglist
-    return mp_calc_cpds(f1, f2, outname=outname, **kwargs)
+    return calc_cpds(f1, f2, outname=outname, **kwargs)
 
 
 class _empty():
@@ -25,7 +25,7 @@ class _empty():
         pass
 
 
-def mp_fft(lc, bintime):
+def fft(lc, bintime):
     """A wrapper for the fft function. Just numpy for now.
 
     Parameters
@@ -47,7 +47,7 @@ def mp_fft(lc, bintime):
     return freqs.astype(np.double), ft
 
 
-def mp_leahy_pds(lc, bintime, return_freq=True):
+def leahy_pds(lc, bintime, return_freq=True):
     r"""Calculate the power density spectrum.
 
     Calculates the Power Density Spectrum a la Leahy+1983, ApJ 266, 160,
@@ -73,7 +73,7 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
     # be provided
     assert (nph > 0), 'Invalid interval. Light curve is empty'
 
-    freqs, ft = mp_fft(lc, bintime)
+    freqs, ft = fft(lc, bintime)
     # I'm pretty sure there is a faster way to do this.
     pds = np.absolute(ft.conjugate() * ft) * 2. / nph
 
@@ -87,7 +87,7 @@ def mp_leahy_pds(lc, bintime, return_freq=True):
         return pds
 
 
-def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
+def welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
                  return_all=False):
     r"""Calculate the PDS, averaged over equal chunks of data.
 
@@ -136,7 +136,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
 
     start_bins, stop_bins = \
-        mp_decide_spectrum_lc_intervals(gti, fftlen, time)
+        decide_spectrum_lc_intervals(gti, fftlen, time)
 
     if return_all:
         results = _empty()
@@ -159,7 +159,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
             npds -= 1
             continue
 
-        f, p = mp_leahy_pds(l, bintime)
+        f, p = leahy_pds(l, bintime)
 
         if return_all:
             results.dynpds.append(p)
@@ -189,7 +189,7 @@ def mp_welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
         return f, pds, epds, npds
 
 
-def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
+def leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     """Calculate the cross power density spectrum.
 
     Calculates the Cross Power Density Spectrum, normalized similarly to the
@@ -219,8 +219,8 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     assert (nph1 > 0 and nph2 > 0), ('Invalid interval. At least one light '
                                      'curve is empty')
 
-    freqs, ft1 = mp_fft(lc1, bintime)
-    freqs, ft2 = mp_fft(lc2, bintime)
+    freqs, ft1 = fft(lc1, bintime)
+    freqs, ft2 = fft(lc2, bintime)
 
     pds1 = np.absolute(ft1.conjugate() * ft1) * 2. / nph1
     pds2 = np.absolute(ft2.conjugate() * ft2) * 2. / nph2
@@ -255,7 +255,7 @@ def mp_leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     return result
 
 
-def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
+def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
                   return_ctrate=False, return_all=False):
     """Calculate the CPDS, averaged over equal chunks of data.
 
@@ -306,7 +306,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
 
     start_bins, stop_bins = \
-        mp_decide_spectrum_lc_intervals(gti, fftlen, time)
+        decide_spectrum_lc_intervals(gti, fftlen, time)
 
     cpds = 0
     ecpds = 0
@@ -335,7 +335,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
             npds -= 1
             continue
 
-        f, p, pe, p1, p2 = mp_leahy_cpds(l1, l2, bintime, return_pdss=True)
+        f, p, pe, p1, p2 = leahy_cpds(l1, l2, bintime, return_pdss=True)
         cpds += p
         ecpds += pe ** 2
         if return_all:
@@ -367,7 +367,7 @@ def mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
         return f, cpds, ecpds, npds
 
 
-def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
+def rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
     """Normalize a Leahy PDS with RMS normalization ([1]_, [2]_).
 
     Parameters
@@ -401,7 +401,7 @@ def mp_rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
     return pds * factor, pds_err * factor
 
 
-def mp_decide_spectrum_intervals(gtis, fftlen):
+def decide_spectrum_intervals(gtis, fftlen):
     """Decide the start times of PDSs.
 
     Start each FFT/PDS/cospectrum from the start of a GTI, and stop before the
@@ -433,8 +433,8 @@ def mp_decide_spectrum_intervals(gtis, fftlen):
     return spectrum_start_times
 
 
-def mp_decide_spectrum_lc_intervals(gtis, fftlen, time):
-    """Similar to mp_decide_spectrum_intervals, but dedicated to light curves.
+def decide_spectrum_lc_intervals(gtis, fftlen, time):
+    """Similar to decide_spectrum_intervals, but dedicated to light curves.
 
     In this case, it is necessary to specify the time array containing the
     times of the light curve bins.
@@ -472,7 +472,7 @@ def mp_decide_spectrum_lc_intervals(gtis, fftlen, time):
     return spectrum_start_bins, spectrum_start_bins + nbin
 
 
-def mp_calc_pds(lcfile, fftlen,
+def calc_pds(lcfile, fftlen,
                 save_dyn=False,
                 bintime=1,
                 pdsrebin=1,
@@ -508,14 +508,14 @@ def mp_calc_pds(lcfile, fftlen,
         If speficied, output file name. If not specified or None, the new file
         will have the same root as the input light curve and the '_pds' suffix
     """
-    root = mp_root(lcfile)
+    root = root(lcfile)
     outname = root + '_pds' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
         print('File exists, and noclobber option used. Skipping')
         return
 
     logging.info("Loading file %s..." % lcfile)
-    lcdata = mp_load_lcurve(lcfile)
+    lcdata = load_lcurve(lcfile)
     time = lcdata['time']
     lc = lcdata['lc']
     dt = lcdata['dt']
@@ -530,10 +530,10 @@ def mp_calc_pds(lcfile, fftlen,
         bintime = lcrebin * dt
         logging.info("Rebinning lc by a factor %d" % lcrebin)
         time, lc, dum = \
-            mp_const_rebin(time, lc, lcrebin, normalize=False)
+            const_rebin(time, lc, lcrebin, normalize=False)
 
     try:
-        results = mp_welch_pds(time, lc, bintime, fftlen, gti, return_all=True)
+        results = welch_pds(time, lc, bintime, fftlen, gti, return_all=True)
         freq = results.f
         pds = results.pds
         epds = results.epds
@@ -546,14 +546,14 @@ def mp_calc_pds(lcfile, fftlen,
         raise Exception("{} failed ({}: {})".format('Problems with the PDS.',
                                                     type(e), e))
 
-    freq, pds, epds = mp_const_rebin(freq[1:], pds[1:], pdsrebin,
+    freq, pds, epds = const_rebin(freq[1:], pds[1:], pdsrebin,
                                      epds[1:])
 
     if normalization == 'rms':
         logging.info('Applying %s normalization' % normalization)
 
         pds, epds = \
-            mp_rms_normalize_pds(pds, epds,
+            rms_normalize_pds(pds, epds,
                                  source_ctrate=ctrate,
                                  back_ctrate=back_ctrate)
 
@@ -561,7 +561,7 @@ def mp_calc_pds(lcfile, fftlen,
             ep = results.edynpds[ic].copy()
             ct = results.dynctrate[ic].copy()
 
-            pd, ep = mp_rms_normalize_pds(pd, ep, source_ctrate=ct,
+            pd, ep = rms_normalize_pds(pd, ep, source_ctrate=ct,
                                           back_ctrate=back_ctrate)
             results.edynpds[ic][:] = ep
             results.dynpds[ic][:] = pd
@@ -588,10 +588,10 @@ def mp_calc_pds(lcfile, fftlen,
         outdata["dyntimes"] = np.array(results.times)
 
     logging.info('Saving PDS to %s' % outname)
-    mp_save_pds(outdata, outname)
+    save_pds(outdata, outname)
 
 
-def mp_calc_cpds(lcfile1, lcfile2, fftlen,
+def calc_cpds(lcfile1, lcfile2, fftlen,
                  save_dyn=False,
                  bintime=1,
                  pdsrebin=1,
@@ -633,9 +633,9 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
         return
 
     logging.info("Loading file %s..." % lcfile1)
-    lcdata1 = mp_load_lcurve(lcfile1)
+    lcdata1 = load_lcurve(lcfile1)
     logging.info("Loading file %s..." % lcfile2)
-    lcdata2 = mp_load_lcurve(lcfile2)
+    lcdata2 = load_lcurve(lcfile2)
 
     time1 = lcdata1['time']
     lc1 = lcdata1['lc']
@@ -666,14 +666,14 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
         dt = bintime
         logging.info("Rebinning lcs by a factor %d" % lcrebin)
         time1, lc1, dum = \
-            mp_const_rebin(time1, lc1, lcrebin, normalize=False)
+            const_rebin(time1, lc1, lcrebin, normalize=False)
         time2, lc2, dum = \
-            mp_const_rebin(time2, lc2, lcrebin, normalize=False)
+            const_rebin(time2, lc2, lcrebin, normalize=False)
 
-    gti = mp_cross_gtis([gti1, gti2])
+    gti = cross_gtis([gti1, gti2])
 
-    mask1 = mp_create_gti_mask(time1, gti)
-    mask2 = mp_create_gti_mask(time2, gti)
+    mask1 = create_gti_mask(time1, gti)
+    mask2 = create_gti_mask(time2, gti)
     time1 = time1[mask1]
     time2 = time2[mask2]
 
@@ -685,7 +685,7 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
     lc2 = lc2[mask2]
 
     try:
-        results = mp_welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
+        results = welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
                                 return_all=True)
         freq = results.f
         cpds = results.cpds
@@ -699,20 +699,20 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
         raise Exception("{} failed ({}: {})".format('Problems with the CPDS.',
                                                     type(e), e))
 
-    freq, cpds, ecpds = mp_const_rebin(freq[1:], cpds[1:], pdsrebin,
+    freq, cpds, ecpds = const_rebin(freq[1:], cpds[1:], pdsrebin,
                                        ecpds[1:])
 
     if normalization == 'rms':
         logging.info('Applying %s normalization' % normalization)
         cpds, ecpds = \
-            mp_rms_normalize_pds(cpds, ecpds,
+            rms_normalize_pds(cpds, ecpds,
                                  source_ctrate=ctrate,
                                  back_ctrate=back_ctrate)
         for ic, cp in enumerate(results.dyncpds):
             ec = results.edyncpds[ic].copy()
             ct = results.dynctrate[ic].copy()
 
-            cp, ec = mp_rms_normalize_pds(cp, ec, source_ctrate=ct,
+            cp, ec = rms_normalize_pds(cp, ec, source_ctrate=ct,
                                           back_ctrate=back_ctrate)
             results.edyncpds[ic][:] = ec
             results.dyncpds[ic][:] = cp
@@ -745,10 +745,10 @@ def mp_calc_cpds(lcfile1, lcfile2, fftlen,
         outdata["dyntimes"] = np.array(results.times)
 
     logging.info('Saving CPDS to %s' % outname)
-    mp_save_pds(outdata, outname)
+    save_pds(outdata, outname)
 
 
-def mp_calc_fspec(files, fftlen,
+def calc_fspec(files, fftlen,
                   calc_pds=True,
                   calc_cpds=True,
                   calc_cospectrum=True,
@@ -808,7 +808,7 @@ def mp_calc_fspec(files, fftlen,
 
     if calc_pds:
         wrap_fun = functools.partial(
-            mp_calc_pds, fftlen=fftlen,
+            calc_pds, fftlen=fftlen,
             save_dyn=save_dyn,
             bintime=bintime,
             pdsrebin=pdsrebin,
@@ -825,7 +825,7 @@ def mp_calc_fspec(files, fftlen,
         return
 
     logging.info('Sorting file list')
-    sorted_files = mp_sort_files(files)
+    sorted_files = sort_files(files)
 
     logging.warning('Beware! For cpds and derivatives, I assume that the'
                     'files are from only two instruments and in pairs'
@@ -872,7 +872,7 @@ def mp_calc_fspec(files, fftlen,
     pool.close()
 
 
-def mp_read_fspec(fname):
+def read_fspec(fname):
     """Read the frequency spectrum from a file.
     Parameters
     ----------
@@ -895,7 +895,7 @@ def mp_read_fspec(fname):
         Rebin factor in each bin. Might be irregular in case of geometrical
         binning
     """
-    ftype, contents = mp_get_file_type(fname)
+    ftype, contents = get_file_type(fname)
     if 'freq' in list(contents.keys()):
         freq = contents['freq']
     elif 'flo' in list(contents.keys()):

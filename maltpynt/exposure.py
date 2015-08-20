@@ -7,11 +7,11 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-from .mp_read_events import mp_load_events_and_gtis
-from .mp_io import mp_get_file_type
+from .read_events import load_events_and_gtis
+from .io import get_file_type
 
 
-def mp_get_exposure_from_uf(time, uf_file, dt=None):
+def get_exposure_from_uf(time, uf_file, dt=None):
     """Get livetime from unfiltered event file.
 
     Parameters
@@ -39,7 +39,7 @@ def mp_get_exposure_from_uf(time, uf_file, dt=None):
 
     additional_columns = ["PRIOR", "GRADE", "PI", "X", "Y"]
     events, gtis, additional, tstart, tstop = \
-        mp_load_events_and_gtis(uf_file,
+        load_events_and_gtis(uf_file,
                                 additional_columns=additional_columns,
                                 return_limits=True)
 
@@ -65,12 +65,12 @@ if __name__ == '__main__':
     uf_file = sys.argv[1]
     lc_file = sys.argv[2]
 
-    ftype, contents = mp_get_file_type(lc_file)
+    ftype, contents = get_file_type(lc_file)
 
     time = contents["time"]
     lc = contents["lc"]
     dt = contents["dt"]
-    expo = mp_get_exposure_from_uf(time, uf_file, dt=dt)
+    expo = get_exposure_from_uf(time, uf_file, dt=dt)
 
     plt.plot(time, expo / np.max(expo) * np.max(lc))
     plt.plot(time, lc)

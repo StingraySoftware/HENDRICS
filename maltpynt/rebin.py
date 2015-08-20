@@ -4,13 +4,13 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-from .mp_io import mp_get_file_type
-from .mp_io import mp_save_data
-from .mp_io import MP_FILE_EXTENSION, mp_get_file_extension
+from .io import get_file_type
+from .io import save_data
+from .io import MP_FILE_EXTENSION, get_file_extension
 import logging
 
 
-def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
+def const_rebin(x, y, factor, yerr=None, normalize=True):
     """Rebin any pair of variables.
 
     Might be time and counts, or freq and pds.
@@ -47,7 +47,7 @@ def mp_const_rebin(x, y, factor, yerr=None, normalize=True):
         return new_x, new_y, np.sqrt(new_yerr)
 
 
-def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
+def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
                 return_nbins=False):
     """Given a PDS, bin it geometrically.
 
@@ -127,9 +127,9 @@ def mp_geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     return retval
 
 
-def mp_rebin_file(filename, rebin):
+def rebin_file(filename, rebin):
     """Rebin the contents of a file, be it a light curve or a spectrum."""
-    ftype, contents = mp_get_file_type(filename)
+    ftype, contents = get_file_type(filename)
     do_dyn = False
     if 'dyn{}'.format(ftype) in contents.keys():
         do_dyn = True
@@ -140,7 +140,7 @@ def mp_rebin_file(filename, rebin):
         ye = np.sqrt(y)
         logging.info('Applying a constant rebinning')
         x, y, ye = \
-            mp_const_rebin(x, y, rebin, ye, normalize=False)
+            const_rebin(x, y, rebin, ye, normalize=False)
         contents['time'] = x
         contents['lc'] = y
         if 'rebin' in list(contents.keys()):
@@ -164,7 +164,7 @@ def mp_rebin_file(filename, rebin):
                 edynspec = []
                 for i_s, spec in enumerate(old_dynspec):
                     _, sp, spe = \
-                        mp_const_rebin(x, spec, rebin,
+                        const_rebin(x, spec, rebin,
                                        old_edynspec[i_s],
                                        normalize=True)
                     dynspec.append(sp)
@@ -174,7 +174,7 @@ def mp_rebin_file(filename, rebin):
                 contents['edyn{}'.format(ftype)] = np.array(edynspec)
 
             x, y, ye = \
-                mp_const_rebin(x, y, rebin, ye, normalize=True)
+                const_rebin(x, y, rebin, ye, normalize=True)
             contents['freq'] = x
             contents[ftype] = y
             contents['e' + ftype] = ye
@@ -189,7 +189,7 @@ def mp_rebin_file(filename, rebin):
                 edynspec = []
                 for i_s, spec in enumerate(old_dynspec):
                     _, _, sp, spe, _ = \
-                        mp_geom_bin(x, spec, rebin,
+                        geom_bin(x, spec, rebin,
                                     old_edynspec[i_s],
                                     return_nbins=True)
                     dynspec.append(sp)
@@ -199,7 +199,7 @@ def mp_rebin_file(filename, rebin):
                 contents['edyn{}'.format(ftype)] = np.array(edynspec)
 
             x1, x2, y, ye, nbin = \
-                mp_geom_bin(x, y, rebin, ye, return_nbins=True)
+                geom_bin(x, y, rebin, ye, return_nbins=True)
             del contents['freq']
             contents['flo'] = x1
             contents['fhi'] = x2
@@ -210,10 +210,10 @@ def mp_rebin_file(filename, rebin):
     else:
         raise Exception('Format was not recognized:', ftype)
 
-    outfile = filename.replace(mp_get_file_extension(filename),
+    outfile = filename.replace(get_file_extension(filename),
                                '_rebin%g' % rebin + MP_FILE_EXTENSION)
     logging.info('Saving %s to %s' % (ftype, outfile))
-    mp_save_data(contents, outfile, ftype)
+    save_data(contents, outfile, ftype)
 
 
 if __name__ == '__main__':  # pragma: no cover

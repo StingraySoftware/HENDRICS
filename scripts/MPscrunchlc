@@ -4,8 +4,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_lcurve import mp_scrunch_lightcurves
-from maltpynt.mp_io import MP_FILE_EXTENSION
+from maltpynt.lcurve import scrunch_lightcurves
+from maltpynt.io import MP_FILE_EXTENSION
 import argparse
 import logging
 
@@ -35,4 +35,4 @@ if __name__ == '__main__':
     logging.basicConfig(filename='MPscrunchlc.log', level=numeric_level,
                         filemode='w')
 
-    mp_scrunch_lightcurves(files, args.out)
+    scrunch_lightcurves(files, args.out)

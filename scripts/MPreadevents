@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_read_events import mp_treat_event_file
+from maltpynt.read_events import treat_event_file
 import argparse
 import logging
 from multiprocessing import Pool
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
                         filemode='w')
 
-    _wrap_fun = functools.partial(mp_treat_event_file,
+    _wrap_fun = functools.partial(treat_event_file,
                                   noclobber=args.noclobber,
                                   gti_split=args.gti_split)
 

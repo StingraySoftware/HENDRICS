@@ -4,13 +4,13 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .mp_io import mp_load_events, mp_save_events
+from .io import load_events, save_events
 import numpy as np
 import os
 import logging
 
 
-def mp_default_nustar_rmf():
+def default_nustar_rmf():
     """Look for the default rmf file in the CALDB.
 
     The CALDB environment variable has to point to the correct location of
@@ -27,7 +27,7 @@ def mp_default_nustar_rmf():
     return newpath
 
 
-def mp_read_rmf(rmf_file=None):
+def read_rmf(rmf_file=None):
     """Load RMF info.
 
     .. note:: Preliminary: only EBOUNDS are read.
@@ -36,7 +36,7 @@ def mp_read_rmf(rmf_file=None):
     ----------
     rmf_file : str
         The rmf file used to read the calibration. If None or not specified,
-        the one given by mp_default_nustar_rmf() is used.
+        the one given by default_nustar_rmf() is used.
 
     Returns
     -------
@@ -50,7 +50,7 @@ def mp_read_rmf(rmf_file=None):
     from astropy.io import fits as pf
 
     if rmf_file is None or rmf_file == '':
-        rmf_file = mp_default_nustar_rmf()
+        rmf_file = default_nustar_rmf()
 
     lchdulist = pf.open(rmf_file, checksum=True)
     lchdulist.verify('warn')
@@ -62,7 +62,7 @@ def mp_read_rmf(rmf_file=None):
     return pis, e_mins, e_maxs
 
 
-def mp_read_calibration(pis, rmf_file=None):
+def read_calibration(pis, rmf_file=None):
     """Read the energy channels corresponding to the given PI channels.
 
     Parameters
@@ -74,9 +74,9 @@ def mp_read_calibration(pis, rmf_file=None):
     ----------------
     rmf_file : str
         The rmf file used to read the calibration. If None or not specified,
-        the one given by mp_default_nustar_rmf() is used.
+        the one given by default_nustar_rmf() is used.
     """
-    calp, calEmin, calEmax = mp_read_rmf(rmf_file)
+    calp, calEmin, calEmax = read_rmf(rmf_file)
     es = np.zeros(len(pis), dtype=np.float)
     for ic, c in enumerate(calp):
         good = pis == c
@@ -87,7 +87,7 @@ def mp_read_calibration(pis, rmf_file=None):
     return es
 
 
-def mp_calibrate(fname, outname, rmf_file=None):
+def calibrate(fname, outname, rmf_file=None):
     """Do calibration of an event list.
 
     Parameters
@@ -101,18 +101,18 @@ def mp_calibrate(fname, outname, rmf_file=None):
     ----------------
     rmf_file : str
         The rmf file used to read the calibration. If None or not specified,
-        the one given by mp_default_nustar_rmf() is used.
+        the one given by default_nustar_rmf() is used.
     """
     # Read event file
     logging.info("Loading file %s..." % fname)
-    evdata = mp_load_events(fname)
+    evdata = load_events(fname)
     logging.info("Done.")
     pis = evdata['PI']
 
-    es = mp_read_calibration(pis, rmf_file)
+    es = read_calibration(pis, rmf_file)
     evdata['E'] = es
     logging.info('Saving calibrated data to %s' % outname)
-    mp_save_events(evdata, outname)
+    save_events(evdata, outname)
 
 
 if __name__ == '__main__':  # pragma: no cover

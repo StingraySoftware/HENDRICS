@@ -4,14 +4,14 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .mp_fspec import mp_read_fspec
-from .mp_io import MP_FILE_EXTENSION, mp_save_data, mp_load_data
+from .fspec import read_fspec
+from .io import MP_FILE_EXTENSION, save_data, load_data
 import numpy as np
 import logging
 import os
 
 
-def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
+def calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
     """Calculate time lags.
 
     Parameters
@@ -74,7 +74,7 @@ def mp_calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
     return lags, lagse
 
 
-def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
+def lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
                          noclobber=False):
     """Calculate time lags.
 
@@ -105,7 +105,7 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
     noclobber : bool
         If True, do not overwrite existing files
     """
-    warn = ("----------------- mp_lags_from_spectra -----------------\n\n"
+    warn = ("----------------- lags_from_spectra -----------------\n\n"
             "This program is still under testing and no assurance of\n"
             "validity is provided. If you'd like to help, please test\n"
             "this first on known data!\n\n"
@@ -116,16 +116,16 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
     outname = outroot + "_lag" + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
         print('File exists, and noclobber option used. Skipping')
-        contents = mp_load_data(outname)
+        contents = load_data(outname)
         return contents['freq'], contents['df'], \
             contents['lags'], contents['elags']
 
     ftype,  cfreq, cpds, ecpds, nchunks, rebin, ccontents = \
-        mp_read_fspec(cpdsfile)
+        read_fspec(cpdsfile)
     ftype, p1freq, pds1, epds1, nchunks, rebin, p1contents = \
-        mp_read_fspec(pds1file)
+        read_fspec(pds1file)
     ftype, p2freq, pds2, epds2, nchunks, rebin, p2contents = \
-        mp_read_fspec(pds2file)
+        read_fspec(pds2file)
     ctime = ccontents['time']
     fftlen = ccontents['fftlen']
     instrs = ccontents['Instrs']
@@ -150,7 +150,7 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
     assert len(cpds) == len(pds1), 'Files are not compatible'
     assert len(cpds) == len(pds2), 'Files are not compatible'
 
-    lags, elags = mp_calc_lags(freq, cpds, pds1, pds2, nchunks, rebin)
+    lags, elags = calc_lags(freq, cpds, pds1, pds2, nchunks, rebin)
 
     outdata = {'time': ctime, 'lag': lags, 'elag': elags, 'ncpds': nchunks,
                'fftlen': fftlen, 'Instrs': instrs,
@@ -158,7 +158,7 @@ def mp_lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
                'ctrate': ctrate, 'total_ctrate': tctrate}
 
     logging.info('Saving lags to %s' % outname)
-    mp_save_data(outdata, outname)
+    save_data(outdata, outname)
 
     return freq, df, lags, elags
 

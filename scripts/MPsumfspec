@@ -5,8 +5,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from maltpynt.mp_sum_fspec import sum_fspec
-from maltpynt.mp_io import MP_FILE_EXTENSION
+from maltpynt.sum_fspec import sum_fspec
+from maltpynt.io import MP_FILE_EXTENSION
 import argparse
 
 description = 'Sum (C)PDSs contained in different files'

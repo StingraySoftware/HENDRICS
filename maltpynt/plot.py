@@ -8,10 +8,10 @@ try:
 except:
     # Permit to import the module anyway if matplotlib is not present
     pass
-from .mp_io import mp_load_data
-from .mp_io import is_string
-from .mp_base import mp_create_gti_mask
-from .mp_base import mp_detection_level
+from .io import load_data
+from .io import is_string
+from .base import create_gti_mask
+from .base import detection_level
 import logging
 
 
@@ -20,7 +20,7 @@ def baseline_fun(x, a):
     return a
 
 
-def mp_plot_pds(fnames, figname=None):
+def plot_pds(fnames, figname=None):
     """Plot a list of PDSs, or a single one."""
     from scipy.optimize import curve_fit
     import collections
@@ -29,7 +29,7 @@ def mp_plot_pds(fnames, figname=None):
     ax = plt.subplot(1, 1, 1)
     rainbow = ax._get_lines.color_cycle
     for i, fname in enumerate(fnames):
-        pdsdata = mp_load_data(fname)
+        pdsdata = load_data(fname)
         try:
             freq = pdsdata['freq']
         except:
@@ -46,7 +46,7 @@ def mp_plot_pds(fnames, figname=None):
 
         nbin = len(pds[1:])
 
-        lev = mp_detection_level(nbin, n_summed_spectra=npds, n_rebin=rebin)
+        lev = detection_level(nbin, n_summed_spectra=npds, n_rebin=rebin)
 
         color = next(rainbow)
 
@@ -71,12 +71,12 @@ def mp_plot_pds(fnames, figname=None):
         plt.savefig(figname)
 
 
-def mp_plot_cospectrum(fnames, figname=None):
+def plot_cospectrum(fnames, figname=None):
     """Plot the cospectra from a list of CPDSs, or a single one."""
     if is_string(fnames):
         fnames = [fnames]
     for fname in fnames:
-        pdsdata = mp_load_data(fname)
+        pdsdata = load_data(fname)
 
         try:
             freq = pdsdata['freq']
@@ -109,14 +109,14 @@ def mp_plot_cospectrum(fnames, figname=None):
         plt.savefig(figname)
 
 
-def mp_plot_lc(lcfiles, figname=None):
+def plot_lc(lcfiles, figname=None):
     """Plot a list of light curve files, or a single one."""
     if is_string(lcfiles):
         lcfiles = [lcfiles]
 
     for lcfile in lcfiles:
         logging.info('Loading %s...' % lcfile)
-        lcdata = mp_load_data(lcfile)
+        lcdata = load_data(lcfile)
 
         time = lcdata['time']
         lc = lcdata['lc']
@@ -131,7 +131,7 @@ def mp_plot_lc(lcfiles, figname=None):
             plt.axvline(g[0], ls='-', color='red')
             plt.axvline(g[1], ls='--', color='red')
 
-        good = mp_create_gti_mask(time, gti)
+        good = create_gti_mask(time, gti)
         plt.plot(time, lc, drawstyle='steps-mid', color='grey')
         plt.plot(time[good], lc[good], drawstyle='steps-mid', color='k')
 
