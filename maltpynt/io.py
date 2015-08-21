@@ -448,4 +448,5 @@ def print_fits_info(fits_file, hdu=1):
     print('Target:        {0}\n'.format(info['Target']))
     print('N. Events:     {0}\n'.format(info['N. events']))
 
+    lchdulist.close()
     return info
