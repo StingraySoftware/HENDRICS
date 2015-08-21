@@ -37,7 +37,7 @@ class TestCommandline(unittest.TestCase):
     def step01_load_events(self):
         """Test event file reading."""
         try:
-            sp.check_call('MPreadevents {} {}'.format(
+            sp.check_call('MPreadevents {0} {1}'.format(
                 os.path.join(datadir, 'monol_testA.evt'),
                 os.path.join(datadir, 'monol_testB.evt')).split())
         except:
@@ -46,7 +46,7 @@ class TestCommandline(unittest.TestCase):
     def step02_calibrate(self):
         """Test event file calibration."""
         try:
-            sp.check_call('MPcalibrate {} {} -r {}'.format(
+            sp.check_call('MPcalibrate {0} {1} -r {2}'.format(
                 os.path.join(datadir, 'monol_testA_ev' + MP_FILE_EXTENSION),
                 os.path.join(datadir, 'monol_testB_ev' + MP_FILE_EXTENSION),
                 os.path.join(datadir, 'test.rmf')).split())
@@ -57,7 +57,7 @@ class TestCommandline(unittest.TestCase):
         """Test light curve production."""
         try:
             sp.check_call(
-                'MPlcurve {} {} -e {} {} --safe-interval {} {}'.format(
+                'MPlcurve {0} {1} -e {2} {3} --safe-interval {4} {5}'.format(
                     os.path.join(datadir, 'monol_testA_ev_calib' +
                                  MP_FILE_EXTENSION),
                     os.path.join(datadir, 'monol_testB_ev_calib' +
@@ -133,7 +133,7 @@ class TestCommandline(unittest.TestCase):
         """Test PDS production."""
         try:
             sp.check_call(
-                'MPfspec {} {} -f 128 --save-dyn -k PDS'.format(
+                'MPfspec {0} {1} -f 128 --save-dyn -k PDS'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_lc') +
                     MP_FILE_EXTENSION,
                     os.path.join(datadir, 'monol_testB_E3-50_lc') +
@@ -148,7 +148,7 @@ class TestCommandline(unittest.TestCase):
                                      MP_FILE_EXTENSION)
         try:
             sp.check_call(
-                'MPfspec {} -f 128'.format(lcurve_ftools).split())
+                'MPfspec {0} -f 128'.format(lcurve_ftools).split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('PDS LC FITS', type(e), e))
 
@@ -159,7 +159,7 @@ class TestCommandline(unittest.TestCase):
                                   MP_FILE_EXTENSION)
         try:
             sp.check_call(
-                'MPfspec {} -f 128'.format(lcurve_txt).split())
+                'MPfspec {0} -f 128'.format(lcurve_txt).split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('PDS LC txt', type(e), e))
 
@@ -167,7 +167,7 @@ class TestCommandline(unittest.TestCase):
         """Test CPDS production."""
         try:
             sp.check_call(
-                'MPfspec {} {} -f 128 --save-dyn -k CPDS -o {}'.format(
+                'MPfspec {0} {1} -f 128 --save-dyn -k CPDS -o {2}'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_lc') +
                     MP_FILE_EXTENSION,
                     os.path.join(datadir, 'monol_testB_E3-50_lc') +
@@ -180,7 +180,7 @@ class TestCommandline(unittest.TestCase):
         """Test Lag calculations."""
         try:
             sp.check_call(
-                'MPlags {} {} {} -o {}'.format(
+                'MPlags {0} {1} {2} -o {3}'.format(
                     os.path.join(datadir, 'monol_test_E3-50_cpds') +
                     MP_FILE_EXTENSION,
                     os.path.join(datadir, 'monol_testA_E3-50_pds') +
@@ -196,7 +196,7 @@ class TestCommandline(unittest.TestCase):
         """Test LC rebinning."""
         try:
             sp.check_call(
-                'MPrebin {} -r 2'.format(
+                'MPrebin {0} -r 2'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_lc') +
                     MP_FILE_EXTENSION).split())
         except Exception as e:
@@ -206,7 +206,7 @@ class TestCommandline(unittest.TestCase):
         """Test PDS rebinning 1."""
         try:
             sp.check_call(
-                'MPrebin {} -r 2'.format(
+                'MPrebin {0} -r 2'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_pds') +
                     MP_FILE_EXTENSION).split())
         except Exception as e:
@@ -217,7 +217,7 @@ class TestCommandline(unittest.TestCase):
         """Test PDS rebinning 2."""
         try:
             sp.check_call(
-                'MPrebin {} -r 1.03'.format(
+                'MPrebin {0} -r 1.03'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_pds') +
                     MP_FILE_EXTENSION).split())
         except Exception as e:
@@ -228,7 +228,7 @@ class TestCommandline(unittest.TestCase):
         """Test CPDS rebinning."""
         try:
             sp.check_call(
-                'MPrebin {} -r 1.03'.format(
+                'MPrebin {0} -r 1.03'.format(
                     os.path.join(datadir, 'monol_test_E3-50_cpds') +
                     MP_FILE_EXTENSION).split())
         except Exception as e:
@@ -239,7 +239,7 @@ class TestCommandline(unittest.TestCase):
         """Test save as Xspec 1."""
         try:
             sp.check_call(
-                'MP2xspec {}'.format(
+                'MP2xspec {0}'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2') +
                     MP_FILE_EXTENSION).split())
         except Exception as e:
@@ -250,7 +250,7 @@ class TestCommandline(unittest.TestCase):
         """Test save as Xspec 2."""
         try:
             sp.check_call(
-                'MP2xspec {}'.format(
+                'MP2xspec {0}'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') +
                     MP_FILE_EXTENSION).split())
         except Exception as e:
@@ -275,7 +275,7 @@ class TestCommandline(unittest.TestCase):
         """Test produce scrunched light curves."""
         try:
             sp.check_call(
-                'MPscrunchlc {} {} -o {}'.format(
+                'MPscrunchlc {0} {1} -o {2}'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_lc') +
                     MP_FILE_EXTENSION,
                     os.path.join(datadir, 'monol_testB_E3-50_lc') +

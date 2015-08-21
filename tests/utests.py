@@ -459,20 +459,11 @@ class TestFullRun(unittest.TestCase):
             os.remove(f)
 
 
-# First define a class variable that determines
-# if setUp was ever run. Ugly workaround for python 2.6
-ClassIsSetup = False
-
 class TestPDS(unittest.TestCase):
     """Test PDS statistics."""
 
     @classmethod
-    def setUp(cls):
-        global ClassIsSetup
-        """Class setup, prior to tests."""
-        if ClassIsSetup:
-            return
-        ClassIsSetup = True
+    def setUpClass(cls):
         print("Setting up.")
         print("This test is about the statistical properties of frequency "
               "spectra and it is based on random number generation. It might, "
@@ -518,12 +509,12 @@ class TestPDS(unittest.TestCase):
         cls.varp2 = np.var(cls.pds2[1:])
         cls.varcr = np.var(cls.cpds.real[1:])
 
-
     def test_pdsstat1(self):
         """Test that the Leahy PDS goes to 2."""
         from scipy.optimize import curve_fit
 
-        baseline_fun = lambda x, a: a
+        def baseline_fun(x, a): return a
+
         freq, pds, epds = \
             mp.rebin.const_rebin(self.freq1[1:], self.pds1[1:], 16,
                                     self.pdse1[1:])
@@ -540,19 +531,19 @@ class TestPDS(unittest.TestCase):
         """Test the statistical properties of the PDS."""
         r = _ratio(self.varp1, np.mean(self.pdse1[1:] ** 2))
         assert r < 0.1, \
-            "{} {} {}".format(self.varp1, np.mean(self.pdse1[1:] ** 2), r)
+            "{0} {1} {2}".format(self.varp1, np.mean(self.pdse1[1:] ** 2), r)
 
     def test_pdsstat3(self):
         """Test the statistical properties of the PDS."""
         r = _ratio(self.varp2, np.mean(self.pdse2[1:] ** 2))
         assert r < 0.1, \
-            "{} {} {}".format(self.varp2, np.mean(self.pdse2[1:] ** 2), r)
+            "{0} {1} {2}".format(self.varp2, np.mean(self.pdse2[1:] ** 2), r)
 
     def test_pdsstat4(self):
         """Test the statistical properties of the cospectrum."""
         r = _ratio(self.varcr, np.mean(self.ec[1:] ** 2))
         assert r < 0.1, \
-            "{} {} {}".format(self.varcr, np.mean(self.ec[1:] ** 2), r)
+            "{0} {1} {2}".format(self.varcr, np.mean(self.ec[1:] ** 2), r)
 
     def test_pdsstat5(self):
         """Test the statistical properties of the cospectrum.
@@ -563,7 +554,7 @@ class TestPDS(unittest.TestCase):
         geom_mean = np.sqrt(self.varp1 * self.varp2)
         r = _ratio(2 * self.varcr, geom_mean)
         assert r < 0.1, \
-            "{} {} {}".format(2 * self.varcr, geom_mean, r)
+            "{0} {1} {2}".format(2 * self.varcr, geom_mean, r)
 
 
 class TestAll(unittest.TestCase):
