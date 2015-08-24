@@ -46,6 +46,7 @@ install:
 
     # Install specified version of numpy and dependencies
     - "conda install -q --yes scipy %NETCDF_LIB% astropy numpy matplotlib"
+    - python setup.py install
 
 # Not a .NET project, we build SunPy in the install step instead
 build: false
