@@ -845,15 +845,6 @@ def calc_fspec(files, fftlen,
 
     assert len(files1) == len(files2), 'An even number of files is needed'
 
-    # wrap_fun = functools.partial(
-    #     _wrap_calc_cpds, fftlen=fftlen,
-    #     save_dyn=save_dyn,
-    #     bintime=bintime,
-    #     pdsrebin=pdsrebin,
-    #     normalization=normalization,
-    #     back_ctrate=back_ctrate,
-    #     noclobber=noclobber)
-
     argdict = {"fftlen": fftlen,
                "save_dyn": save_dyn,
                "bintime": bintime,

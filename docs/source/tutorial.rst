@@ -155,7 +155,7 @@ Joining, summing and "scrunching" light curves
 
 If we want a single light curve from multiple ones, either summing
 multiple instruments or multiple energy or time ranges, we can use
-``mp_scrunch_lc``:
+``MPscrunchlc``:
 
 ::
 
@@ -206,7 +206,7 @@ Calculating the cospectrum and phase/time lags
 The calculation of lags and their errors is implemented in ``MPlags``,
 and needs to be tested properly. For the cospectrum, it is sufficient to
 read the real part of the cross power spectrum as depicted in the
-relevant function in ``mp_plot.py`` (`Use the source,
+relevant function in ``plot.py`` (`Use the source,
 Luke! <http://adastraerrans.com/archivos/use-the-source-luke.png>`__).
 
 Saving the spectra in a format readable to XSpec

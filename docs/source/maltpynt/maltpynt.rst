@@ -4,98 +4,114 @@ maltpynt package
 Submodules
 ----------
 
-maltpynt.mp_base module
------------------------
+maltpynt.base module
+--------------------
 
-.. automodule:: maltpynt.mp_base
+.. automodule:: maltpynt.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.mp_calibrate module
-----------------------------
-
-.. automodule:: maltpynt.mp_calibrate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-maltpynt.mp_create_gti module
------------------------------
-
-.. automodule:: maltpynt.mp_create_gti
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-maltpynt.mp_fspec module
-------------------------
-
-.. automodule:: maltpynt.mp_fspec
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-maltpynt.mp_io module
----------------------
-
-.. automodule:: maltpynt.mp_io
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-maltpynt.mp_lags module
------------------------
-
-.. automodule:: maltpynt.mp_lags
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-maltpynt.mp_lcurve module
+maltpynt.calibrate module
 -------------------------
 
-.. automodule:: maltpynt.mp_lcurve
+.. automodule:: maltpynt.calibrate
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.mp_plot module
------------------------
+maltpynt.create_gti module
+--------------------------
 
-.. automodule:: maltpynt.mp_plot
+.. automodule:: maltpynt.create_gti
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.mp_read_events module
-------------------------------
-
-.. automodule:: maltpynt.mp_read_events
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-maltpynt.mp_rebin module
+maltpynt.exposure module
 ------------------------
 
-.. automodule:: maltpynt.mp_rebin
+.. automodule:: maltpynt.exposure
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.mp_save_as_xspec module
---------------------------------
+maltpynt.fspec module
+---------------------
 
-.. automodule:: maltpynt.mp_save_as_xspec
+.. automodule:: maltpynt.fspec
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.mp_sum_fspec module
-----------------------------
+maltpynt.io module
+------------------
 
-.. automodule:: maltpynt.mp_sum_fspec
+.. automodule:: maltpynt.io
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+maltpynt.lags module
+--------------------
+
+.. automodule:: maltpynt.lags
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+maltpynt.lcurve module
+----------------------
+
+.. automodule:: maltpynt.lcurve
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+maltpynt.plot module
+--------------------
+
+.. automodule:: maltpynt.plot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+maltpynt.read_events module
+---------------------------
+
+.. automodule:: maltpynt.read_events
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+maltpynt.rebin module
+---------------------
+
+.. automodule:: maltpynt.rebin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+maltpynt.save_as_xspec module
+-----------------------------
+
+.. automodule:: maltpynt.save_as_xspec
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+maltpynt.sum_fspec module
+-------------------------
+
+.. automodule:: maltpynt.sum_fspec
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+maltpynt.version module
+-----------------------
+
+.. automodule:: maltpynt.version
     :members:
     :undoc-members:
     :show-inheritance:

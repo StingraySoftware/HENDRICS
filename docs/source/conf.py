@@ -48,8 +48,12 @@ extensions = [
     'sphinx.ext.viewcode']
 
 if not on_rtd:
-    extensions.extend(['sphinxcontrib.autoprogram',
-                       'sphinxcontrib.restbuilder'])
+    extensions.extend(['sphinxcontrib.autoprogram'])
+
+# try:
+#     extensions.extend(['sphinxcontrib.restbuilder'])
+# except:
+#     pass
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
