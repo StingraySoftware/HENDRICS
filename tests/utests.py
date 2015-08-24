@@ -58,28 +58,30 @@ class TestFullRun(unittest.TestCase):
             mp.read_events.treat_event_file(
                 os.path.join(datadir, 'monol_testB.evt'),
                 gti_split=True, noclobber=True, min_length=0)
-        except:
-            raise(Exception('Loading event file failed'))
+        except Exception as e:
+            self.fail("{0} failed ({1}: {2})".format(
+                'Loading event file', type(e), e))
 
     def step02_calibrate(self):
         """Test event file calibration."""
         try:
             mp.calibrate.calibrate(os.path.join(datadir, 'monol_testA_ev' +
-                                      MP_FILE_EXTENSION),
-                                      os.path.join(datadir,
-                                      'monol_testA_ev_calib') +
-                                      MP_FILE_EXTENSION,
-                                      os.path.join(datadir,
-                                      'test.rmf'))
-            mp.calibrate.calibrate(os.path.join(datadir, 'monol_testB_ev') +
-                                      MP_FILE_EXTENSION,
-                                      os.path.join(datadir,
-                                      'monol_testB_ev_calib') +
-                                      MP_FILE_EXTENSION,
-                                      os.path.join(datadir,
-                                      'test.rmf'))
-        except:
-            raise(Exception('Calibrating event file failed'))
+                                                MP_FILE_EXTENSION),
+                                   os.path.join(datadir,
+                                                'monol_testA_ev_calib') +
+                                   MP_FILE_EXTENSION,
+                                   os.path.join(datadir,
+                                   'test.rmf'))
+            mp.calibrate.calibrate(os.path.join(datadir, 'monol_testB_ev' +
+                                                MP_FILE_EXTENSION),
+                                   os.path.join(datadir,
+                                                'monol_testB_ev_calib') +
+                                   MP_FILE_EXTENSION,
+                                   os.path.join(datadir,
+                                   'test.rmf'))
+        except Exception as e:
+            self.fail("{0} failed ({1}: {2})".format(
+                'Calibrating event file', type(e), e))
 
     def step03a_lcurve(self):
         """Test light curve production."""
@@ -101,8 +103,9 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir,
                              'monol_testB_ev_0') + MP_FILE_EXTENSION,
                 gti_split=True)
-        except:
-            raise(Exception('Production of light curve failed'))
+        except Exception as e:
+            self.fail("{0} failed ({1}: {2})".format(
+                'Production of light curve', type(e), e))
 
     def step03b_fits_lcurve(self):
         """Test light curves from FITS."""
@@ -160,7 +163,7 @@ class TestFullRun(unittest.TestCase):
                                       'lcurve_txt_lc' +
                                       MP_FILE_EXTENSION)
             mp.lcurve.lcurve_from_txt(lcurve_txt_orig,
-                                         outfile=lcurve_txt)
+                                      outfile=lcurve_txt)
             lcdata_txt = mp.io.load_lcurve(lcurve_txt)
 
             lc_txt = lcdata_txt['lc']
@@ -175,15 +178,16 @@ class TestFullRun(unittest.TestCase):
         """Test PDS production."""
         try:
             mp.fspec.calc_pds(os.path.join(datadir,
-                                              'monol_testA_E3-50_lc') +
-                                 MP_FILE_EXTENSION,
-                                 128, save_dyn=True, normalization='rms')
+                                           'monol_testA_E3-50_lc') +
+                              MP_FILE_EXTENSION,
+                              128, save_dyn=True, normalization='rms')
             mp.fspec.calc_pds(os.path.join(datadir,
-                                              'monol_testB_E3-50_lc') +
-                                 MP_FILE_EXTENSION,
-                                 128, save_dyn=True, normalization='rms')
-        except:
-            raise(Exception('Production of PDSs failed'))
+                                           'monol_testB_E3-50_lc') +
+                              MP_FILE_EXTENSION,
+                              128, save_dyn=True, normalization='rms')
+        except Exception as e:
+            self.fail("{0} failed ({1}: {2})".format(
+                'Production of PDS', type(e), e))
 
     def step04b_pds_fits(self):
         """Test PDS production with light curves obtained from FITS files."""
@@ -191,11 +195,10 @@ class TestFullRun(unittest.TestCase):
                                      'lcurve_ftools_lc' +
                                      MP_FILE_EXTENSION)
         try:
-            mp.fspec.calc_pds(lcurve_ftools,
-                                 128)
-
+            mp.fspec.calc_pds(lcurve_ftools, 128)
         except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('PDS LC FITS', type(e), e))
+            self.fail("{0} failed ({1}: {2})".format('PDS LC FITS',
+                                                     type(e), e))
 
     def step04c_pds_txt(self):
         """Test PDS production with light curves obtained from txt files."""
@@ -203,8 +206,7 @@ class TestFullRun(unittest.TestCase):
                                   'lcurve_txt_lc' +
                                   MP_FILE_EXTENSION)
         try:
-            mp.fspec.calc_pds(lcurve_txt,
-                                 128)
+            mp.fspec.calc_pds(lcurve_txt, 128)
 
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('PDS LC txt', type(e), e))
@@ -213,18 +215,18 @@ class TestFullRun(unittest.TestCase):
         """Test CPDS production."""
         try:
             mp.fspec.calc_cpds(os.path.join(datadir,
-                                               'monol_testA_E3-50_lc') +
-                                  MP_FILE_EXTENSION,
-                                  os.path.join(datadir,
-                                               'monol_testB_E3-50_lc') +
-                                  MP_FILE_EXTENSION,
-                                  128,
-                                  outname=os.path.join(datadir,
-                                                       'monol_test_E3-50_cpds')
-                                  + MP_FILE_EXTENSION, save_dyn=True,
-                                  normalization='rms')
-        except:
-            raise(Exception('Production of CPDS failed'))
+                                            'monol_testA_E3-50_lc') +
+                               MP_FILE_EXTENSION,
+                               os.path.join(datadir,
+                                            'monol_testB_E3-50_lc') +
+                               MP_FILE_EXTENSION,
+                               128,
+                               outname=os.path.join(datadir,
+                                                    'monol_test_E3-50_cpds')
+                               + MP_FILE_EXTENSION, save_dyn=True,
+                               normalization='rms')
+        except Exception as e:
+            self.fail("{0} failed ({1}: {2})".format('CPDS', type(e), e))
 
     def step05b_fspecs(self):
         """Test all frequency spectra production."""
@@ -234,10 +236,10 @@ class TestFullRun(unittest.TestCase):
                  MP_FILE_EXTENSION]
         outroot = os.path.join(datadir, 'monol_test_E3-50_fspecs')
         try:
-            mp.fspec.calc_fspec(files, 128,
-                                   outroot=outroot)
-        except:
-            raise(Exception('Production of frequency spectra failed'))
+            mp.fspec.calc_fspec(files, 128, outroot=outroot)
+        except Exception as e:
+            self.fail("{0} failed ({1}: {2})".format(
+                'Production of frequency spectra', type(e), e))
 
     def step06_lags(self):
         """Test Lag calculations."""
@@ -253,15 +255,15 @@ class TestFullRun(unittest.TestCase):
                                      'monol_test_lags' + MP_FILE_EXTENSION))
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('Lags production',
-                                                  type(e), e))
+                                                     type(e), e))
 
     def step07_rebinlc(self):
         """Test LC rebinning."""
         try:
             mp.rebin.rebin_file(os.path.join(datadir,
-                                                'monol_testA_E3-50_lc') +
-                                   MP_FILE_EXTENSION,
-                                   2)
+                                             'monol_testA_E3-50_lc') +
+                                MP_FILE_EXTENSION,
+                                2)
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('LC rebin', type(e), e))
 
@@ -269,42 +271,42 @@ class TestFullRun(unittest.TestCase):
         """Test PDS rebinning 1."""
         try:
             mp.rebin.rebin_file(os.path.join(datadir,
-                                                'monol_testA_E3-50_pds') +
-                                   MP_FILE_EXTENSION,
-                                   2)
+                                             'monol_testA_E3-50_pds') +
+                                MP_FILE_EXTENSION,
+                                2)
         except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 1', type(e),
-                                                  e))
+            self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 1',
+                                                     type(e), e))
 
     def step08a_rebinpds2(self):
         """Test PDS rebinning 2."""
         try:
             mp.rebin.rebin_file(os.path.join(datadir,
-                                                'monol_testA_E3-50_pds') +
-                                   MP_FILE_EXTENSION, 1.03)
+                                             'monol_testA_E3-50_pds') +
+                                MP_FILE_EXTENSION, 1.03)
         except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 2', type(e),
-                                                  e))
+            self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 2',
+                                                     type(e), e))
 
     def step09_rebincpds(self):
         """Test CPDS rebinning."""
         try:
             mp.rebin.rebin_file(os.path.join(datadir,
-                                                'monol_test_E3-50_cpds') +
-                                   MP_FILE_EXTENSION, 2)
+                                             'monol_test_E3-50_cpds') +
+                                MP_FILE_EXTENSION, 2)
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('CPDS rebin Test 1.03',
-                                                  type(e), e))
+                                                     type(e), e))
 
     def step09a_rebincpds2(self):
         """Test CPDS rebinning."""
         try:
             mp.rebin.rebin_file(os.path.join(datadir,
-                                                'monol_test_E3-50_cpds') +
-                                   MP_FILE_EXTENSION, 1.03)
+                                             'monol_test_E3-50_cpds') +
+                                MP_FILE_EXTENSION, 1.03)
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('CPDS rebin Test 1.03',
-                                                  type(e), e))
+                                                     type(e), e))
 
     def step10_savexspec1(self):
         """Test save as Xspec 1."""
@@ -313,8 +315,8 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2')
                 + MP_FILE_EXTENSION)
         except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 1', type(e),
-                                                  e))
+            self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 1',
+                                                     type(e), e))
 
     def step11_savexspec2(self):
         """Test save as Xspec 2."""
@@ -323,8 +325,8 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03')
                 + MP_FILE_EXTENSION)
         except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 2', type(e),
-                                                  e))
+            self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 2',
+                                                     type(e), e))
 
     def step12_joinlcs(self):
         """Test produce joined light curves."""
@@ -337,8 +339,7 @@ class TestFullRun(unittest.TestCase):
                 os.path.join(datadir, 'monol_test_joinlc' +
                              MP_FILE_EXTENSION))
         except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('Join lcs', type(e),
-                                                  e))
+            self.fail("{0} failed ({1}: {2})".format('Join lcs', type(e), e))
 
     def step13_scrunchlcs(self):
         """Test produce scrunched light curves."""
@@ -353,7 +354,7 @@ class TestFullRun(unittest.TestCase):
                 save_joint=False)
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('MPscrunchlc', type(e),
-                                                  e))
+                                                     e))
 
     def step14_sumpds(self):
         """Test the sum of pdss."""
@@ -367,7 +368,7 @@ class TestFullRun(unittest.TestCase):
                                      'monol_test_sum' + MP_FILE_EXTENSION))
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('Lags production',
-                                                  type(e), e))
+                                                     type(e), e))
 
     def step15_plotpds(self):
         """Test plotting a PDS"""
@@ -397,7 +398,7 @@ class TestFullRun(unittest.TestCase):
         fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
         mp.create_gti.create_gti(fname, filter_expr='lc>0',
-                                       outfile=fname.replace('_lc', '_gti'))
+                                 outfile=fname.replace('_lc', '_gti'))
 
     def step19_apply_gti(self):
         """Test applying GTIs to a light curve"""
@@ -416,8 +417,8 @@ class TestFullRun(unittest.TestCase):
         arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
         errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
         mp.io.save_as_qdp(arrays, errors,
-                             filename=os.path.join(datadir,
-                                                   "monol_test_qdp.txt"))
+                          filename=os.path.join(datadir,
+                                                "monol_test_qdp.txt"))
 
     def _all_steps(self):
 
@@ -481,17 +482,17 @@ class TestPDS(unittest.TestCase):
 
         time, cls.lc1 = \
             mp.lcurve.lcurve(events,
-                                cls.bintime,
-                                start_time=cls.tstart,
-                                stop_time=cls.tstop)
+                             cls.bintime,
+                             start_time=cls.tstart,
+                             stop_time=cls.tstop)
 
         events = ra.uniform(cls.tstart, cls.tstop, cls.nphot)
 
         time, cls.lc2 = \
             mp.lcurve.lcurve(events,
-                                cls.bintime,
-                                start_time=cls.tstart,
-                                stop_time=cls.tstop)
+                             cls.bintime,
+                             start_time=cls.tstart,
+                             stop_time=cls.tstop)
         cls.time = time
 
         cls.freq1, cls.pds1, cls.pdse1, dum = \
@@ -502,7 +503,7 @@ class TestPDS(unittest.TestCase):
 
         dum, cls.cpds, cls.ec, dum = \
             mp.fspec.welch_cpds(cls.time, cls.lc1, cls.lc2,
-                                   cls.bintime, 1024)
+                                cls.bintime, 1024)
 
         # Calculate the variance discarding the freq=0 Hz element
         cls.varp1 = np.var(cls.pds1[1:])
@@ -513,11 +514,12 @@ class TestPDS(unittest.TestCase):
         """Test that the Leahy PDS goes to 2."""
         from scipy.optimize import curve_fit
 
-        def baseline_fun(x, a): return a
+        def baseline_fun(x, a):
+            return a
 
         freq, pds, epds = \
             mp.rebin.const_rebin(self.freq1[1:], self.pds1[1:], 16,
-                                    self.pdse1[1:])
+                                 self.pdse1[1:])
 
         p, pcov = curve_fit(baseline_fun, freq, pds,
                             p0=[2], sigma=epds, absolute_sigma=True)
