@@ -22,7 +22,8 @@ def mkdir_p(path):  # pragma: no cover
 
     Notes
     -----
-    Found at http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
+    Found at
+    http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
     import os
     import errno

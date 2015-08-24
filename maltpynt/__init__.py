@@ -18,3 +18,6 @@ from . import save_as_xspec
 from . import sum_fspec
 
 from .version import version as __version__
+
+__all__ = [base, calibrate, create_gti, exposure, fspec, io, lags, lcurve,
+           plot, read_events, rebin, save_as_xspec, sum_fspec, __version__]

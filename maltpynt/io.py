@@ -34,9 +34,9 @@ def is_string(s):
     """Portable function to answer this question."""
     PY3 = sys.version_info[0] == 3
     if PY3:
-        return isinstance(s, str)
+        return isinstance(s, str)  # NOQA
     else:
-        return isinstance(s, basestring)
+        return isinstance(s, basestring)  # NOQA
 
 
 def get_file_extension(fname):

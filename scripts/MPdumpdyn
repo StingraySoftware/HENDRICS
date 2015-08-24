@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 import sys
 from maltpynt.base import mp_root
-from maltpynt.io import get_file_type, is_string
+from maltpynt.io import get_file_type
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse

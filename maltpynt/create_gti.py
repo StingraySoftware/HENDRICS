@@ -35,7 +35,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
         The output file name. If None, use a default root + '_gti' combination
     """
     # Necessary as nc variables are sometimes defined as array
-    from numpy import array
+    from numpy import array  # NOQA
 
     if filter_expr is None:
         sys.exit('Please specify a filter expression')
