@@ -11,7 +11,7 @@ env:
   - WITH_NETCDF="yes"
   - WITH_NETCDF="no"
 install:
-  - . travis_scripts/install_miniconda.sh $TRAVIS_PYTHON_VERSION $WITH_NETCDF
+  - . ci_scripts/travis/install_miniconda.sh $TRAVIS_PYTHON_VERSION $WITH_NETCDF
   - pip install coveralls
   - python setup.py install
 script:
