@@ -32,8 +32,8 @@ def load_gtis(fits_file, gtistring=None):
 
 
 def load_events_and_gtis(fits_file, return_limits=False,
-                            additional_columns=None, gtistring=None,
-                            gti_file=None, hduname='EVENTS', column='TIME'):
+                         additional_columns=None, gtistring=None,
+                         gti_file=None, hduname='EVENTS', column='TIME'):
     """Load event lists and GTIs from one or more files.
 
     Loads event list from HDU EVENTS of file fits_file, with Good Time
@@ -159,7 +159,7 @@ def load_events_and_gtis(fits_file, return_limits=False,
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,
-                        min_length=4):
+                     min_length=4):
     """Read data from an event file, with no external GTI information.
 
     Parameters
@@ -178,7 +178,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     logging.info('Opening %s' % filename)
     outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outfile) and (not gti_split):
-        print('{0} exists, and noclobber option used. Skipping'.format(outfile))
+        print(
+            '{0} exists, and noclobber option used. Skipping'.format(outfile))
         return
 
     instr = read_header_key(filename, 'INSTRUME')
@@ -189,8 +190,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     mjdref = ref_mjd(filename)
     events, gtis, additional, tstart, tstop = \
         load_events_and_gtis(filename,
-                                additional_columns=additional_columns,
-                                return_limits=True)
+                             additional_columns=additional_columns,
+                             return_limits=True)
 
     pis = additional['PI']
     out = {'time': events,

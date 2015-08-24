@@ -52,7 +52,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
     good = eval(filter_expr)
 
     gtis = create_gti_from_condition(locals()['time'], good,
-                                        safe_interval=safe_interval)
+                                     safe_interval=safe_interval)
 
     if outfile is None:
         outfile = mp_root(fname) + '_gti' + MP_FILE_EXTENSION

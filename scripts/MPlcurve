@@ -5,8 +5,8 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from maltpynt.lcurve import (lcurve_from_events, scrunch_lightcurves,
-                                join_lightcurves, lcurve_from_fits,
-                                lcurve_from_txt)
+                             join_lightcurves, lcurve_from_fits,
+                             lcurve_from_txt)
 import argparse
 import numpy as np
 import logging

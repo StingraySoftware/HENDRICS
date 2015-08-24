@@ -234,7 +234,7 @@ def _save_data_pickle(struct, fname, kind="data"):
             pickle.dump(struct, fobj)
     except Exception as e:
         raise Exception("{0} failed ({1}: {2})".format('_save_data_pickle',
-                                                    type(e), e))
+                                                       type(e), e))
         print('Failed')
     return
 
@@ -444,7 +444,7 @@ def print_fits_info(fits_file, hdu=1):
     print('ObsID:         {0}\n'.format(info['OBS_ID']))
     print('Date:          {0} -- {1}\n'.format(info['Start'], info['Stop']))
     print('Instrument:    {0}/{1}\n'.format(info['Telescope'],
-                                          info['Instrument']))
+                                            info['Instrument']))
     print('Target:        {0}\n'.format(info['Target']))
     print('N. Events:     {0}\n'.format(info['N. events']))
 

@@ -40,8 +40,8 @@ def get_exposure_from_uf(time, uf_file, dt=None):
     additional_columns = ["PRIOR", "GRADE", "PI", "X", "Y"]
     events, gtis, additional, tstart, tstop = \
         load_events_and_gtis(uf_file,
-                                additional_columns=additional_columns,
-                                return_limits=True)
+                             additional_columns=additional_columns,
+                             return_limits=True)
 
     priors = additional["PRIOR"]
     # grade = additional["GRADE"]

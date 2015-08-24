@@ -82,15 +82,15 @@ if __name__ == '__main__':
             do_cpds = True
 
     calc_fspec(args.files, fftlen,
-                  do_calc_pds=do_pds,
-                  do_calc_cpds=do_cpds,
-                  do_calc_cospectrum=do_cos,
-                  do_calc_lags=do_lag,
-                  save_dyn=args.save_dyn,
-                  bintime=bintime,
-                  pdsrebin=pdsrebin,
-                  outroot=args.outroot,
-                  normalization=normalization,
-                  nproc=args.nproc,
-                  back_ctrate=args.back,
-                  noclobber=args.noclobber)
+               do_calc_pds=do_pds,
+               do_calc_cpds=do_cpds,
+               do_calc_cospectrum=do_cos,
+               do_calc_lags=do_lag,
+               save_dyn=args.save_dyn,
+               bintime=bintime,
+               pdsrebin=pdsrebin,
+               outroot=args.outroot,
+               normalization=normalization,
+               nproc=args.nproc,
+               back_ctrate=args.back,
+               noclobber=args.noclobber)

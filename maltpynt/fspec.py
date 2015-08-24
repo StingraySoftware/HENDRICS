@@ -597,13 +597,13 @@ def calc_pds(lcfile, fftlen,
 
 
 def calc_cpds(lcfile1, lcfile2, fftlen,
-                 save_dyn=False,
-                 bintime=1,
-                 pdsrebin=1,
-                 outname='cpds' + MP_FILE_EXTENSION,
-                 normalization='Leahy',
-                 back_ctrate=0.,
-                 noclobber=False):
+              save_dyn=False,
+              bintime=1,
+              pdsrebin=1,
+              outname='cpds' + MP_FILE_EXTENSION,
+              normalization='Leahy',
+              back_ctrate=0.,
+              noclobber=False):
     """Calculate the CPDS from a pair of input light curve files.
 
     Parameters
@@ -691,7 +691,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
 
     try:
         results = welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
-                                return_all=True)
+                             return_all=True)
         freq = results.f
         cpds = results.cpds
         ecpds = results.ecpds
@@ -705,20 +705,20 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
             'Problem with the CPDS.', type(e), e))
 
     freq, cpds, ecpds = const_rebin(freq[1:], cpds[1:], pdsrebin,
-                                       ecpds[1:])
+                                    ecpds[1:])
 
     if normalization == 'rms':
         logging.info('Applying %s normalization' % normalization)
         cpds, ecpds = \
             rms_normalize_pds(cpds, ecpds,
-                                 source_ctrate=ctrate,
-                                 back_ctrate=back_ctrate)
+                              source_ctrate=ctrate,
+                              back_ctrate=back_ctrate)
         for ic, cp in enumerate(results.dyncpds):
             ec = results.edyncpds[ic].copy()
             ct = results.dynctrate[ic].copy()
 
             cp, ec = rms_normalize_pds(cp, ec, source_ctrate=ct,
-                                          back_ctrate=back_ctrate)
+                                       back_ctrate=back_ctrate)
             results.edyncpds[ic][:] = ec
             results.dyncpds[ic][:] = cp
 

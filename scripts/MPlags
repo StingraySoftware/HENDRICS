@@ -47,4 +47,4 @@ if __name__ == '__main__':
         outroot = args.outroot
 
     f, df, l, le = lags_from_spectra(cfile, p1file, p2file, outroot=outroot,
-                                        noclobber=args.noclobber)
+                                     noclobber=args.noclobber)

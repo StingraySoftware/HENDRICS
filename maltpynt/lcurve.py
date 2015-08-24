@@ -14,10 +14,10 @@ import logging
 
 
 def lcurve(event_list,
-              bin_time,
-              start_time=None,
-              stop_time=None,
-              centertime=True):
+           bin_time,
+           start_time=None,
+           stop_time=None,
+           centertime=True):
     """From a list of event times, estract a lightcurve.
 
     Parameters
@@ -163,7 +163,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
 
 
 def scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
-                           save_joint=False):
+                        save_joint=False):
     """Create a single light curve from input light curves.
 
     Light curves are appended when they cover different times, and summed when
@@ -238,7 +238,7 @@ def scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
 
 
 def filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
-                      min_length=0, return_borders=False):
+                   min_length=0, return_borders=False):
     """Filter a light curve for GTIs.
 
     Parameters
@@ -277,8 +277,8 @@ def filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
         the borders of the GTIs
     """
     mask, newgtis = create_gti_mask(time, gti, return_new_gtis=True,
-                                       safe_interval=safe_interval,
-                                       min_length=min_length)
+                                    safe_interval=safe_interval,
+                                    min_length=min_length)
 
     nomask = np.logical_not(mask)
 
@@ -297,15 +297,15 @@ def filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
 
 
 def lcurve_from_events(f, safe_interval=0,
-                          pi_interval=None,
-                          e_interval=None,
-                          min_length=0,
-                          gti_split=False,
-                          ignore_gtis=False,
-                          bintime=1.,
-                          outdir=None,
-                          outfile=None,
-                          noclobber=False):
+                       pi_interval=None,
+                       e_interval=None,
+                       min_length=0,
+                       gti_split=False,
+                       ignore_gtis=False,
+                       bintime=1.,
+                       outdir=None,
+                       outfile=None,
+                       noclobber=False):
     """Bin an event list in a light curve.
 
     Parameters
@@ -379,14 +379,14 @@ def lcurve_from_events(f, safe_interval=0,
 
     # First of all, calculate total count rate (no filtering applied)
     tot_time, tot_lc = lcurve(events, bintime, start_time=tstart,
-                                 stop_time=tstop)
+                              stop_time=tstop)
 
     tot_time, tot_lc, newgtis, tot_borders = \
         filter_lc_gtis(tot_time, tot_lc, gtis,
-                          safe_interval=safe_interval,
-                          delete=False,
-                          min_length=min_length,
-                          return_borders=True)
+                       safe_interval=safe_interval,
+                       delete=False,
+                       min_length=min_length,
+                       return_borders=True)
 
     out['total_ctrate'] = calc_countrate(tot_time, tot_lc, bintime=bintime)
 
@@ -424,14 +424,14 @@ def lcurve_from_events(f, safe_interval=0,
         return [outfile]
 
     time, lc = lcurve(events, bintime, start_time=tstart,
-                         stop_time=tstop)
+                      stop_time=tstop)
 
     time, lc, newgtis, borders = \
         filter_lc_gtis(time, lc, gtis,
-                          safe_interval=safe_interval,
-                          delete=False,
-                          min_length=min_length,
-                          return_borders=True)
+                       safe_interval=safe_interval,
+                       delete=False,
+                       min_length=min_length,
+                       return_borders=True)
 
     if len(newgtis) == 0:
         print("No GTIs above min_length ({0}s) found.".format(min_length))
@@ -441,7 +441,7 @@ def lcurve_from_events(f, safe_interval=0,
         'Borders do not coincide: {0} {1}'.format(borders, tot_borders)
 
     out['source_ctrate'] = calc_countrate(time, lc, gtis=newgtis,
-                                             bintime=bintime)
+                                          bintime=bintime)
 
     if outdir is not None:
         _, f = os.path.split(f)
@@ -469,11 +469,11 @@ def lcurve_from_events(f, safe_interval=0,
             local_out['Tstop'] = time[b[1]-1]
             local_out['Instr'] = instr
             local_out['source_ctrate'] = calc_countrate(time[b[0]:b[1]],
-                                                           lc[b[0]:b[1]],
-                                                           bintime=bintime)
+                                                        lc[b[0]:b[1]],
+                                                        bintime=bintime)
             local_out['total_ctrate'] = calc_countrate(tot_time[b[0]:b[1]],
-                                                          tot_lc[b[0]:b[1]],
-                                                          bintime=bintime)
+                                                       tot_lc[b[0]:b[1]],
+                                                       bintime=bintime)
             if instr == 'PCA':
                 local_out['nPCUs'] = len(set(pcus))
 
@@ -512,9 +512,9 @@ def _high_precision_keyword_read(hdr, keyword):
 
 
 def lcurve_from_fits(fits_file, gtistring='GTI',
-                        timecolumn='TIME', ratecolumn=None, ratehdu=1,
-                        fracexp_limit=0.9, outfile=None,
-                        noclobber=False):
+                     timecolumn='TIME', ratecolumn=None, ratehdu=1,
+                     fracexp_limit=0.9, outfile=None,
+                     noclobber=False):
     """
     Load a lightcurve from a fits file and save it in MaLTPyNT format.
 
@@ -699,9 +699,9 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     out['MJDref'] = mjdref.value
 
     out['total_ctrate'] = calc_countrate(time, rate, gtis=gti_list,
-                                            bintime=dt)
+                                         bintime=dt)
     out['source_ctrate'] = calc_countrate(time, rate, gtis=gti_list,
-                                             bintime=dt)
+                                          bintime=dt)
 
     logging.info('Saving light curve to %s' % outfile)
     save_lcurve(out, outfile)
@@ -709,7 +709,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
 
 def lcurve_from_txt(txt_file, outfile=None,
-                       noclobber=False):
+                    noclobber=False):
     """
     Load a lightcurve from a text file.
 
@@ -759,9 +759,9 @@ def lcurve_from_txt(txt_file, outfile=None,
     out['Instr'] = 'EXTERN'
     out['MJDref'] = np.longdouble('55197.00076601852')
     out['total_ctrate'] = calc_countrate(time, lc, gtis=gtis,
-                                            bintime=dt)
+                                         bintime=dt)
     out['source_ctrate'] = calc_countrate(time, lc, gtis=gtis,
-                                             bintime=dt)
+                                          bintime=dt)
 
     logging.info('Saving light curve to %s' % outfile)
     save_lcurve(out, outfile)

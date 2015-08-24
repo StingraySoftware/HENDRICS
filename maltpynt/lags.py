@@ -75,7 +75,7 @@ def calc_lags(freqs, cpds, pds1, pds2, n_chunks, rebin):
 
 
 def lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
-                         noclobber=False):
+                      noclobber=False):
     """Calculate time lags.
 
     Parameters

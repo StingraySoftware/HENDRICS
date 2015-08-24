@@ -203,7 +203,7 @@ def check_gtis(gti):
 
 
 def create_gti_mask(time, gtis, safe_interval=0, min_length=0,
-                       return_new_gtis=False, dt=None):
+                    return_new_gtis=False, dt=None):
     """Create GTI mask.
 
     Assumes that no overlaps are present between GTIs
@@ -262,7 +262,7 @@ def create_gti_mask(time, gtis, safe_interval=0, min_length=0,
 
 
 def create_gti_from_condition(time, condition,
-                                 safe_interval=0, dt=None):
+                              safe_interval=0, dt=None):
     """Create a GTI list from a time array and a boolean mask ("condition").
 
     Parameters
@@ -331,11 +331,11 @@ def cross_gtis_bin(gti_list, bin_time=1):
                       bin_time, dtype=np.longdouble)
 
     mask0 = create_gti_mask(times, gti_list[0],
-                               safe_interval=[0, bin_time])
+                            safe_interval=[0, bin_time])
 
     for gti in gti_list[1:]:
         mask = create_gti_mask(times, gti,
-                                  safe_interval=[0, bin_time])
+                               safe_interval=[0, bin_time])
         mask0 = np.logical_and(mask0, mask)
 
     gtis = create_gti_from_condition(times, mask0)
@@ -358,7 +358,7 @@ def cross_two_gtis(gti0, gti1):
 
     See Also
     --------
-    cross_gtis : From multiple GTI lists, extract the common intervals *EXACTLY*
+    cross_gtis : From multiple GTI lists, extract common intervals *EXACTLY*
 
     """
     gti0 = np.array(gti0, dtype=np.longdouble)

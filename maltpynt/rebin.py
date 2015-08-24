@@ -48,7 +48,7 @@ def const_rebin(x, y, factor, yerr=None, normalize=True):
 
 
 def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
-                return_nbins=False):
+             return_nbins=False):
     """Given a PDS, bin it geometrically.
 
     Freely taken from an algorithm in isisscripts.sl
@@ -165,8 +165,8 @@ def rebin_file(filename, rebin):
                 for i_s, spec in enumerate(old_dynspec):
                     _, sp, spe = \
                         const_rebin(x, spec, rebin,
-                                       old_edynspec[i_s],
-                                       normalize=True)
+                                    old_edynspec[i_s],
+                                    normalize=True)
                     dynspec.append(sp)
                     edynspec.append(spe)
 
@@ -190,8 +190,8 @@ def rebin_file(filename, rebin):
                 for i_s, spec in enumerate(old_dynspec):
                     _, _, sp, spe, _ = \
                         geom_bin(x, spec, rebin,
-                                    old_edynspec[i_s],
-                                    return_nbins=True)
+                                 old_edynspec[i_s],
+                                 return_nbins=True)
                     dynspec.append(sp)
                     edynspec.append(spe)
 
