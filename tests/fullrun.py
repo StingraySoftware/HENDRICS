@@ -37,9 +37,11 @@ class TestCommandline(unittest.TestCase):
     def step01_load_events(self):
         """Test event file reading."""
         try:
-            sp.check_call('MPreadevents {0} {1}'.format(
+            command = 'MPreadevents --nproc 1 {0} {1}'.format(
                 os.path.join(datadir, 'monol_testA.evt'),
-                os.path.join(datadir, 'monol_testB.evt')).split())
+                os.path.join(datadir, 'monol_testB.evt'))
+            print(command)
+            sp.check_call(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format(
                 'Loading event file ', type(e), e))
