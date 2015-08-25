@@ -269,7 +269,7 @@ def main(args=None):
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     files = args.files
 
     if args.debug:
