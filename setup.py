@@ -46,6 +46,8 @@ entry_points['console_scripts'] = [
     'MPcreategti = maltpynt.create_gti:main',
     'MPdumpdyn = maltpynt.fspec:dumpdyn_main',
     'MPfspec = maltpynt.fspec:main',
+    'MPlags = maltpynt.lags:main',
+    'MPplot = maltpynt.plot:main',
     'MP2xspec = maltpynt.save_as_xspec:main'
     ]
 

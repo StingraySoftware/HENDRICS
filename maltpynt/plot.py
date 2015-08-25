@@ -8,7 +8,7 @@ try:
 except:
     # Permit to import the module anyway if matplotlib is not present
     pass
-from .io import load_data
+from .io import load_data, get_file_type
 from .io import is_string
 from .base import create_gti_mask
 from .base import detection_level
@@ -145,12 +145,22 @@ def plot_lc(lcfiles, figname=None):
         plt.savefig(figname)
 
 
-if __name__ == "__main__":  # pragma: no cover
-    import sys
-    import subprocess as sp
+def main(args=None):
+    import argparse
 
-    print('Calling script...')
+    description = \
+        'Plot the content of MaLTPyNT light curves and frequency spectra'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("files", help="List of files", nargs='+')
 
-    args = sys.argv[1:]
+    args = parser.parse_args(args)
+    for fname in args.files:
+        ftype, contents = get_file_type(fname)
+        if ftype == 'lc':
+            plot_lc(fname)
+        elif ftype[-4:] == 'cpds':
+            plot_cospectrum(fname)
+        elif ftype[-3:] == 'pds':
+            plot_pds(fname)
 
-    sp.check_call(['MPplot'] + args)
+    plt.show()
