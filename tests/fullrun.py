@@ -37,7 +37,7 @@ class TestCommandline(unittest.TestCase):
     def step01_load_events(self):
         """Test event file reading."""
         try:
-            command = 'MPreadevents --nproc 1 {0} {1}'.format(
+            command = 'MPreadevents {0} {1}'.format(
                 os.path.join(datadir, 'monol_testA.evt'),
                 os.path.join(datadir, 'monol_testB.evt'))
             print(command)
