@@ -44,7 +44,7 @@ class TestCommandline(unittest.TestCase):
             sp.check_call(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2}); Path: {3}".format(
-                'Loading event file ', type(e), e), sys.path)
+                'Loading event file ', type(e), e, sys.path))
 
     def step02_calibrate(self):
         """Test event file calibration."""
