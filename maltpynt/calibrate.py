@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .io import load_events, save_events
+from .io import load_events, save_events, get_file_extension, MP_FILE_EXTENSION
 import numpy as np
 import os
 import logging
@@ -115,12 +115,59 @@ def calibrate(fname, outname, rmf_file=None):
     save_events(evdata, outname)
 
 
-if __name__ == '__main__':  # pragma: no cover
-    import sys
-    import subprocess as sp
+def _calib_wrap(args):
+    f, outname, rmf = args
+    return calibrate(f, outname, rmf)
 
-    print('Calling script...')
 
-    args = sys.argv[1:]
+def main(args=None):
+    import argparse
+    from multiprocessing import Pool
 
-    sp.check_call(['MPcalibrate'] + args)
+    description = ('Calibrate clean event files by associating the correct '
+                   'energy to each PI channel. Uses either a specified rmf '
+                   'file or (for NuSTAR only) an rmf file from the CALDB')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("files", help="List of files", nargs='+')
+    parser.add_argument("-r", "--rmf", help="rmf file used for calibration",
+                        default=None, type=str)
+    parser.add_argument("-o", "--overwrite",
+                        help="Overwrite; default: no",
+                        default=False,
+                        action="store_true")
+    parser.add_argument("--loglevel",
+                        help=("use given logging level (one between INFO, "
+                              "WARNING, ERROR, CRITICAL, DEBUG; "
+                              "default:WARNING)"),
+                        default='WARNING',
+                        type=str)
+    parser.add_argument("--debug", help="use DEBUG logging level",
+                        default=False, action='store_true')
+    parser.add_argument("--nproc",
+                        help=("Number of processors to use"),
+                        default=1,
+                        type=int)
+
+    args = parser.parse_args(args)
+    files = args.files
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPcalibrate.log', level=numeric_level,
+                        filemode='w')
+
+    funcargs = []
+    for i_f, f in enumerate(files):
+        outname = f
+        if args.overwrite is False:
+            outname = f.replace(get_file_extension(f), '_calib' +
+                                MP_FILE_EXTENSION)
+        funcargs.append([f, outname, args.rmf])
+
+    pool = Pool(processes=args.nproc)
+    for i in pool.imap_unordered(_calib_wrap, funcargs):
+        pass
+    pool.close()

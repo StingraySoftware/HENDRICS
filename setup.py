@@ -41,7 +41,8 @@ generate_version_py(version)
 entry_points = {}
 entry_points['console_scripts'] = [
     'MPreadevents = maltpynt.read_events:main',
-    'MPlcurve = maltpynt.lcurve:main'
+    'MPlcurve = maltpynt.lcurve:main',
+    'MPcalibrate = maltpynt.calibrate:main'
     ]
 
 setup(name='maltpynt',
