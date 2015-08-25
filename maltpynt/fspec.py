@@ -919,12 +919,170 @@ def read_fspec(fname):
     return ftype, freq, pds, epds, nchunks, rebin, contents
 
 
-if __name__ == '__main__':  # pragma: no cover
-    import sys
-    import subprocess as sp
+def _normalize(array, ref=0):
+    m = ref
+    std = np.std(array)
+    newarr = np.zeros_like(array)
+    good = array > m
+    newarr[good] = (array[good] - ref) / std
+    return newarr
 
-    print('Calling script...')
 
-    args = sys.argv[1:]
+def dumpdyn(fname, plot=False):
+    """Dump a dynamical frequency spectrum in text files.
 
-    sp.check_call(['MPfspec'] + args)
+    Parameters
+    ----------
+    fname : str
+        The file name
+
+    Other Parameters
+    ----------------
+    plot : bool
+        if True, plot the spectrum
+
+    """
+    ftype, pdsdata = get_file_type(fname, specify_reb=False)
+
+    dynpds = pdsdata['dyn' + ftype]
+    edynpds = pdsdata['edyn' + ftype]
+
+    try:
+        freq = pdsdata['freq']
+    except:
+        flo = pdsdata['flo']
+        fhi = pdsdata['fhi']
+        freq = (fhi + flo) / 2
+
+    time = pdsdata['dyntimes']
+    freqs = np.zeros_like(dynpds)
+    times = np.zeros_like(dynpds)
+
+    for i, im in enumerate(dynpds):
+        freqs[i, :] = freq
+        times[i, :] = time[i]
+
+    t = times.real.flatten()
+    f = freqs.real.flatten()
+    d = dynpds.real.flatten()
+    e = edynpds.real.flatten()
+
+    np.savetxt('{0}_dumped_{1}.txt'.format(mp_root(fname), ftype),
+               np.array([t, f, d, e]).T)
+    size = _normalize(d)
+    if plot:
+        import matplotlib.pyplot as plt
+        plt.scatter(t, f, s=size)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Freq (Hz)')
+
+        plt.show()
+
+
+def dumpdyn_main(args=None):
+    import argparse
+
+    description = ('Dump dynamical (cross) power spectra')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("files", help=("List of files in any valid MaLTPyNT "
+                                       "format for PDS or CPDS"), nargs='+')
+    parser.add_argument("--noplot", help="plot results",
+                        default=False, action='store_true')
+
+    args = parser.parse_args(args)
+
+    fnames = args.files
+
+    for f in fnames:
+        dumpdyn(f, plot=not args.noplot)
+
+
+def main(args=None):
+    import argparse
+    description = ('Create frequency spectra (PDS, CPDS, cospectrum) '
+                   'starting from well-defined input ligthcurves')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("files", help="List of light curve files", nargs='+')
+    parser.add_argument("-b", "--bintime", type=float, default=1/4096,
+                        help="Light curve bin time; if negative, interpreted" +
+                        " as negative power of 2." +
+                        " Default: 2^-10, or keep input lc bin time" +
+                        " (whatever is larger)")
+    parser.add_argument("-r", "--rebin", type=int, default=1,
+                        help="(C)PDS rebinning to apply. Default: none")
+    parser.add_argument("-f", "--fftlen", type=float, default=512,
+                        help="Length of FFTs. Default: 512 s")
+    parser.add_argument("-k", "--kind", type=str, default="PDS,CPDS,cos",
+                        help='Spectra to calculate, as comma-separated list' +
+                        ' (Accepted: PDS and CPDS;' +
+                        ' Default: "PDS,CPDS")')
+    parser.add_argument("--norm", type=str, default="Leahy",
+                        help='Normalization to use' +
+                        ' (Accepted: Leahy and rms;' +
+                        ' Default: "Leahy")')
+    parser.add_argument("--noclobber", help="Do not overwrite existing files",
+                        default=False, action='store_true')
+    parser.add_argument("-o", "--outroot", type=str, default=None,
+                        help='Root of output file names for CPDS only')
+    parser.add_argument("--loglevel",
+                        help=("use given logging level (one between INFO, "
+                              "WARNING, ERROR, CRITICAL, DEBUG; "
+                              "default:WARNING)"),
+                        default='WARNING',
+                        type=str)
+    parser.add_argument("--nproc",
+                        help=("Number of processors to use"),
+                        default=1,
+                        type=int)
+    parser.add_argument("--back",
+                        help=("Estimated background (non-source) count rate"),
+                        default=0.,
+                        type=float)
+    parser.add_argument("--debug", help="use DEBUG logging level",
+                        default=False, action='store_true')
+    parser.add_argument("--save-dyn", help="save dynamical power spectrum",
+                        default=False, action='store_true')
+
+    args = parser.parse_args(args)
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPfspec.log', level=numeric_level,
+                        filemode='w')
+
+    bintime = args.bintime
+    fftlen = args.fftlen
+    pdsrebin = args.rebin
+    normalization = args.norm
+
+    do_cpds = do_pds = do_cos = do_lag = False
+    kinds = args.kind.split(',')
+    for k in kinds:
+        if k == 'PDS':
+            do_pds = True
+        elif k == 'CPDS':
+            do_cpds = True
+        elif k == 'cos' or k == 'cospectrum':
+            do_cos = True
+            do_cpds = True
+        elif k == 'lag':
+            do_lag = True
+            do_cpds = True
+
+    calc_fspec(args.files, fftlen,
+               do_calc_pds=do_pds,
+               do_calc_cpds=do_cpds,
+               do_calc_cospectrum=do_cos,
+               do_calc_lags=do_lag,
+               save_dyn=args.save_dyn,
+               bintime=bintime,
+               pdsrebin=pdsrebin,
+               outroot=args.outroot,
+               normalization=normalization,
+               nproc=args.nproc,
+               back_ctrate=args.back,
+               noclobber=args.noclobber)
