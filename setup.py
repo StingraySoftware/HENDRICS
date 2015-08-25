@@ -49,6 +49,9 @@ entry_points['console_scripts'] = [
     'MPlags = maltpynt.lags:main',
     'MPplot = maltpynt.plot:main',
     'MPreadfile = maltpynt.io:main',
+    'MPrebin = maltpynt.rebin:main',
+    'MPscrunchlc = maltpynt.lcurve:scrunch_main',
+    'MPsumfspec = maltpynt.sum_fspec:main',
     'MP2xspec = maltpynt.save_as_xspec:main'
     ]
 
@@ -63,7 +66,6 @@ setup(name='maltpynt',
       license='3-clause BSD',
       url='https://bitbucket.org/mbachett/maltpynt',
       keywords='X-ray astronomy nustar rxte xmm timing cospectrum PDS',
-      scripts=glob.glob('scripts/*'),
       entry_points=entry_points,
       platforms='all',
       classifiers=[
