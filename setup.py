@@ -48,6 +48,7 @@ entry_points['console_scripts'] = [
     'MPfspec = maltpynt.fspec:main',
     'MPlags = maltpynt.lags:main',
     'MPplot = maltpynt.plot:main',
+    'MPreadfile = maltpynt.io:main',
     'MP2xspec = maltpynt.save_as_xspec:main'
     ]
 

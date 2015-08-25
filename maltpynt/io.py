@@ -450,3 +450,36 @@ def print_fits_info(fits_file, hdu=1):
 
     lchdulist.close()
     return info
+
+
+def main(args=None):
+    import argparse
+
+    description = \
+        'Print the content of MaLTPyNT files'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("files", help="List of files", nargs='+')
+
+    args = parser.parse_args(args)
+
+    for fname in args.files:
+        print('-----------------------------')
+        print('{0}'.format(fname))
+        print('-----------------------------')
+        if fname.endswith('.fits') or fname.endswith('.evt'):
+            print('This FITS file contains:', end='\n\n')
+            print_fits_info(fname)
+            print('-----------------------------')
+            continue
+        ftype, contents = get_file_type(fname)
+        print('This file contains:', end='\n\n')
+        for k in sorted(contents.keys()):
+            val = contents[k]
+            if isinstance(val, collections.Iterable) and not is_string(val):
+                if len(val) < 4:
+                    val = repr(list(val[:4]))
+                else:
+                    val = repr(list(val[:4])).replace(']', '') + '...]'
+            print((k + ':').ljust(15), val, end='\n\n')
+
+        print('-----------------------------')
