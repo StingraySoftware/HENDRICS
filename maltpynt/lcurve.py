@@ -882,10 +882,14 @@ def main(args=None):
     # -------------------------------------------------------------------------
     outfiles = []
 
-    pool = Pool(processes=args.nproc)
-    for i in pool.imap_unordered(wrap_fun, arglist):
-        outfiles.append(i)
-    pool.close()
+    if os.name == 'nt':
+        for a in arglist:
+            outfiles.append(wrap_fun(a))
+    else:
+        pool = Pool(processes=args.nproc)
+        for i in pool.imap_unordered(wrap_fun, arglist):
+            outfiles.append(i)
+        pool.close()
 
     logging.debug(outfiles)
 

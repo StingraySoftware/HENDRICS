@@ -824,10 +824,13 @@ def calc_fspec(files, fftlen,
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
 
-        pool = Pool(processes=nproc)
-        for i in pool.imap_unordered(_wrap_fun_pds, wrapped_file_dicts):
-            pass
-        pool.close()
+        if os.name == 'nt':
+            [_wrap_fun_pds(w) for w in wrapped_file_dicts]
+        else:
+            pool = Pool(processes=nproc)
+            for i in pool.imap_unordered(_wrap_fun_pds, wrapped_file_dicts):
+                pass
+            pool.close()
 
     if not do_calc_cpds or len(files) < 2:
         return
@@ -873,10 +876,13 @@ def calc_fspec(files, fftlen,
 
         funcargs.append([f1, f2, outname, argdict])
 
-    pool = Pool(processes=nproc)
-    for i in pool.imap_unordered(_wrap_fun_cpds, funcargs):
-        pass
-    pool.close()
+    if os.name == 'nt':
+        [_wrap_fun_cpds(fa) for fa in funcargs]
+    else:
+        pool = Pool(processes=nproc)
+        for i in pool.imap_unordered(_wrap_fun_cpds, funcargs):
+            pass
+        pool.close()
 
 
 def read_fspec(fname):

@@ -282,7 +282,10 @@ def main(args=None):
     argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split}
     arglist = [[f, argdict] for f in files]
 
-    pool = Pool(processes=args.nproc)
-    for i in pool.imap_unordered(_wrap_fun, arglist):
-        pass
-    pool.close()
+    if os.name == 'nt':
+        [_wrap_fun(a) for a in arglist]
+    else:
+        pool = Pool(processes=args.nproc)
+        for i in pool.imap_unordered(_wrap_fun, arglist):
+            pass
+        pool.close()

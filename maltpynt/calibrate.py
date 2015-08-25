@@ -167,7 +167,10 @@ def main(args=None):
                                 MP_FILE_EXTENSION)
         funcargs.append([f, outname, args.rmf])
 
-    pool = Pool(processes=args.nproc)
-    for i in pool.imap_unordered(_calib_wrap, funcargs):
-        pass
-    pool.close()
+    if os.name == 'nt':
+        [_calib_wrap(fa) for fa in funcargs]
+    else:
+        pool = Pool(processes=args.nproc)
+        for i in pool.imap_unordered(_calib_wrap, funcargs):
+            pass
+        pool.close()
