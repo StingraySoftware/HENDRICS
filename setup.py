@@ -38,6 +38,10 @@ if PY2 and PYX6:
 version = '2.0-dev0'
 
 generate_version_py(version)
+entry_points = {}
+entry_points['console_scripts'] = [
+    'MPreadevents = maltpynt.read_events:main'
+    ]
 
 setup(name='maltpynt',
       version=version,
@@ -51,6 +55,7 @@ setup(name='maltpynt',
       url='https://bitbucket.org/mbachett/maltpynt',
       keywords='X-ray astronomy nustar rxte xmm timing cospectrum PDS',
       scripts=glob.glob('scripts/*'),
+      entry_points=entry_points,
       platforms='all',
       classifiers=[
           'Intended Audience :: Science/Research',

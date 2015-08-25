@@ -236,12 +236,53 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
         save_events(out, outfile)
 
 
-if __name__ == "__main__":  # pragma: no cover
-    import sys
-    import subprocess as sp
+def _wrap_fun(arglist):
+    f, kwargs = arglist
+    return treat_event_file(f, **kwargs)
 
-    print('Calling script...')
 
-    args = sys.argv[1:]
+def main(args=None):
+    import argparse
+    from multiprocessing import Pool
 
-    sp.check_call(['MPreadevents'] + args)
+    description = ('Read a cleaned event files and saves the relevant '
+                   'information in a standard format')
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("files", help="List of files", nargs='+')
+    parser.add_argument("--loglevel",
+                        help=("use given logging level (one between INFO, "
+                              "WARNING, ERROR, CRITICAL, DEBUG; "
+                              "default:WARNING)"),
+                        default='WARNING',
+                        type=str)
+    parser.add_argument("--nproc",
+                        help=("Number of processors to use"),
+                        default=1,
+                        type=int)
+    parser.add_argument("--noclobber",
+                        help=("Do not overwrite existing event files"),
+                        default=False, action='store_true')
+    parser.add_argument("-g", "--gti-split",
+                        help="Split event list by GTI",
+                        default=False,
+                        action="store_true")
+    parser.add_argument("--debug", help="use DEBUG logging level",
+                        default=False, action='store_true')
+
+    args = parser.parse_args()
+    files = args.files
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
+                        filemode='w')
+
+    argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split}
+    arglist = [[f, argdict] for f in files]
+
+    pool = Pool(processes=args.nproc)
+    for i in pool.imap_unordered(_wrap_fun, arglist):
+        pass
+    pool.close()
