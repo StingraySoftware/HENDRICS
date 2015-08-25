@@ -42,7 +42,8 @@ entry_points = {}
 entry_points['console_scripts'] = [
     'MPreadevents = maltpynt.read_events:main',
     'MPlcurve = maltpynt.lcurve:main',
-    'MPcalibrate = maltpynt.calibrate:main'
+    'MPcalibrate = maltpynt.calibrate:main',
+    'MPcreategti = maltpynt.create_gti:main'
     ]
 
 setup(name='maltpynt',
