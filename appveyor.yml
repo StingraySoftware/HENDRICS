@@ -52,4 +52,5 @@ install:
 build: false
 
 test_script:
-  - "%CMD_IN_ENV% python setup.py test"
+  - "%CMD_IN_ENV% python test/utests.py"
+  - "%CMD_IN_ENV% python test/fullrun.py"
