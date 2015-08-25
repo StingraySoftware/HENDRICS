@@ -7,6 +7,7 @@ from .io import get_file_type
 import numpy as np
 from .io import get_file_extension
 import subprocess as sp
+import logging
 
 
 def save_as_xspec(fname, direct_save=False):
@@ -58,11 +59,32 @@ def save_as_xspec(fname, direct_save=False):
             outname, outroot).split())
 
 
-if __name__ == '__main__':  # pragma: no cover
-    import sys
+def main(args=None):
+    import argparse
+    description = ('Save a frequency spectrum in a qdp file that can be '
+                   'read by flx2xsp and produce a XSpec-compatible spectrum'
+                   'file')
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("files", help="List of files", nargs='+')
+    parser.add_argument("--loglevel",
+                        help=("use given logging level (one between INFO, "
+                              "WARNING, ERROR, CRITICAL, DEBUG; "
+                              "default:WARNING)"),
+                        default='WARNING',
+                        type=str)
+    parser.add_argument("--debug", help="use DEBUG logging level",
+                        default=False, action='store_true')
+    parser.add_argument("--flx2xsp", help="Also call flx2xsp at the end",
+                        default=False, action='store_true')
 
-    print('Calling script...')
+    args = parser.parse_args(args)
+    files = args.files
+    if args.debug:
+        args.loglevel = 'DEBUG'
 
-    args = sys.argv[1:]
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='MP2xpec.log', level=numeric_level,
+                        filemode='w')
 
-    sp.check_call(['MP2xspec'] + args)
+    for f in files:
+        save_as_xspec(f, direct_save=args.flx2xsp)

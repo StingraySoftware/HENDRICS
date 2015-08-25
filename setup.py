@@ -45,7 +45,8 @@ entry_points['console_scripts'] = [
     'MPcalibrate = maltpynt.calibrate:main',
     'MPcreategti = maltpynt.create_gti:main',
     'MPdumpdyn = maltpynt.fspec:dumpdyn_main',
-    'MPfspec = maltpynt.fspec:main'
+    'MPfspec = maltpynt.fspec:main',
+    'MP2xspec = maltpynt.save_as_xspec:main'
     ]
 
 setup(name='maltpynt',
