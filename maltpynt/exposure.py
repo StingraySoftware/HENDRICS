@@ -12,7 +12,17 @@ from .io import get_file_type
 from .base import create_gti_mask
 
 
-def plot_dead_time_from_uf(uf_file):
+def get_livetime_per_bin(time, events, priors, dt=None):
+    # This is wrong. Doesn't consider time bin borders.
+    if dt is None:
+        dt = np.median(np.diff(time))
+    tbins = np.append(time - dt / 2, [time[-1] + dt / 2])
+
+    expo, bins = np.histogram(events, bins=tbins, weights=priors)
+    return expo
+
+
+def _plot_dead_time_from_uf(uf_file):
     import matplotlib.pyplot as plt
     from numpy import histogram
 
@@ -95,11 +105,7 @@ def get_exposure_from_uf(time, uf_file, dt=None):
     #
     # filt = (grade < 32) & (pis >= 0) & (x is not None) & (y is not None)
 
-    tbins = np.append(time - dt / 2, [time[-1] + dt / 2])
-
-    # This is wrong. Doesn't consider time bin borders.
-    expo, bins = np.histogram(events, bins=tbins, weights=priors)
-
+    expo = get_livetime_per_bin(time, events, priors, dt)
     return expo
 
 
@@ -134,4 +140,4 @@ def main(args=None):
              label="Exposure-corrected Light curve")
     plt.legend()
     plt.show()
-    plot_dead_time_from_uf(uf_file)
+    _plot_dead_time_from_uf(uf_file)
