@@ -45,6 +45,7 @@ entry_points['console_scripts'] = [
     'MPcalibrate = maltpynt.calibrate:main',
     'MPcreategti = maltpynt.create_gti:main',
     'MPdumpdyn = maltpynt.fspec:dumpdyn_main',
+    'MPexposure = maltpynt.exposure:main',
     'MPfspec = maltpynt.fspec:main',
     'MPlags = maltpynt.lags:main',
     'MPplot = maltpynt.plot:main',

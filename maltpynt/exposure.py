@@ -59,12 +59,20 @@ def get_exposure_from_uf(time, uf_file, dt=None):
     return expo
 
 
-if __name__ == '__main__':
-    import sys
+def main(args=None):
+    import argparse
     import matplotlib.pyplot as plt
-    uf_file = sys.argv[1]
-    lc_file = sys.argv[2]
+    description = (
+        'Create exposure light curve based on unfiltered event files.')
+    parser = argparse.ArgumentParser(description=description)
 
+    parser.add_argument("lcfile", help="Light curve file (MaltPyNT format)")
+    parser.add_argument("uffile", help="Unfiltered event file (FITS)")
+
+    args = parser.parse_args(args)
+
+    lc_file = args.lc
+    uf_file = args.uf
     ftype, contents = get_file_type(lc_file)
 
     time = contents["time"]
