@@ -18,17 +18,6 @@ import os
 # import shlex
 import maltpynt
 # import glob
-from unittest.mock import MagicMock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
-
-MOCK_MODULES = ['numpy', 'scipy', 'scipy.interpolate', 'matplotlib', 'astropy']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = Mock()
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
