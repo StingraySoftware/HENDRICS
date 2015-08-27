@@ -121,7 +121,6 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
             "Invalid boundaries. Contact the developer: {}".format(
                 _tbins - lt_good)
 
-        print(ev_good - lt_good, pr_fl[idxs])
         # TODO: add bins in the middle if max_bin_diff > 1
         # Complete bins
         if bin_diff > 1:

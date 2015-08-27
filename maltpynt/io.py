@@ -136,7 +136,10 @@ def get_file_type(fname, specify_reb=True):
     """Gets file type."""
 
     keys = list(contents.keys())
-    if 'lc' in keys:
+
+    if 'lccorr' in keys:
+        ftype = 'lccorr'
+    elif 'lc' in keys:
         ftype = 'lc'
     elif 'cpds' in keys:
         ftype = 'cpds'

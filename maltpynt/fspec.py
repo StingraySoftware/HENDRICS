@@ -522,7 +522,10 @@ def calc_pds(lcfile, fftlen,
     logging.info("Loading file %s..." % lcfile)
     lcdata = load_lcurve(lcfile)
     time = lcdata['time']
-    lc = lcdata['lc']
+    try:
+        lc = lcdata['lccorr']
+    except:
+        lc = lcdata['lc']
     dt = lcdata['dt']
     gti = lcdata['GTI']
     instr = lcdata['Instr']
@@ -643,14 +646,20 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     lcdata2 = load_lcurve(lcfile2)
 
     time1 = lcdata1['time']
-    lc1 = lcdata1['lc']
+    try:
+        lc1 = lcdata1['lccorr']
+    except:
+        lc1 = lcdata1['lc']
     dt1 = lcdata1['dt']
     gti1 = lcdata1['GTI']
     instr1 = lcdata1['Instr']
     tctrate1 = lcdata1['total_ctrate']
 
     time2 = lcdata2['time']
-    lc2 = lcdata2['lc']
+    try:
+        lc2 = lcdata2['lccorr']
+    except:
+        lc2 = lcdata2['lc']
     dt2 = lcdata2['dt']
     gti2 = lcdata2['GTI']
     instr2 = lcdata2['Instr']
