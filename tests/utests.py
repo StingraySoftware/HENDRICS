@@ -601,5 +601,36 @@ class TestAll(unittest.TestCase):
         _ = mp.rebin.geom_bin(freq, pds, 1.3, pds_err=pds)
         _ = mp.rebin.geom_bin(freq, pds, 1.3)
 
+    def test_exposure_calculation1(self):
+        """Test if the exposure calculator works correctly."""
+        times = np.array([1.])
+        events = np.array([2.])
+        priors = np.array([2.])
+        dt = np.array([1.])
+        expo = mp.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
+                                                gti=None)
+        print(expo)
+        np.testing.assert_almost_equal(expo, np.array([1.]))
+
+    def test_exposure_calculation2(self):
+        """Test if the exposure calculator works correctly."""
+        times = np.array([1., 2.])
+        events = np.array([2.1])
+        priors = np.array([0.3])
+        dt = np.array([1., 1.])
+        expo = mp.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
+                                                gti=None)
+        np.testing.assert_almost_equal(expo, np.array([0, 0.3]))
+
+    def test_exposure_calculation3(self):
+        """Test if the exposure calculator works correctly."""
+        times = np.array([1., 2., 3.])
+        events = np.array([2.1])
+        priors = np.array([0.7])
+        dt = np.array([1., 1., 1.])
+        expo = mp.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
+                                                gti=None)
+        np.testing.assert_almost_equal(expo, np.array([0.1, 0.6, 0.]))
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
