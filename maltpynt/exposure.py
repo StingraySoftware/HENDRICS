@@ -54,6 +54,7 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
 
     ev_fl = np.array(events - events[0], dtype=np.float64)
     pr_fl = np.array(priors, dtype=np.float64)
+
     livetime_starts = ev_fl - pr_fl
 
     tbins = np.array(
@@ -62,11 +63,29 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
 
     tbin_starts = tbins[:-1]
 
+    # Filter points outside of range
+    filter = (ev_fl > tbins[0]) & (livetime_starts < tbins[-1])
+    ev_fl = ev_fl[filter]
+    pr_fl = pr_fl[filter]
+    livetime_starts = livetime_starts[filter]
+
     livetime_array = np.zeros_like(times)
 
-    # Calculate live time.
+    # Normalize priors in boundaries
+    before_start = \
+        (livetime_starts < tbin_starts[0]) & (ev_fl > tbin_starts[0])
+
+    livetime_starts[before_start] = tbins[0] + 1e-9
+    pr_fl[before_start] = ev_fl[before_start] - livetime_starts[before_start]
+
+    after_end = \
+        (livetime_starts < tbin_starts[-1]) & (ev_fl > tbin_starts[-1])
+    ev_fl[after_end] = tbins[-1] - 1e-9
+    pr_fl[after_end] = ev_fl[after_end] - livetime_starts[after_end]
+
     lts_bin = np.searchsorted(tbin_starts, livetime_starts, 'right') - 1
     ev_bin = np.searchsorted(tbin_starts, ev_fl, 'right') - 1
+
     # First of all, just consider livetimes inside bin borders.
 
     first_pass = ev_bin == lts_bin

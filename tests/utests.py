@@ -603,14 +603,13 @@ class TestAll(unittest.TestCase):
 
     def test_exposure_calculation1(self):
         """Test if the exposure calculator works correctly."""
-        times = np.array([1.])
+        times = np.array([1., 2., 3.])
         events = np.array([2.])
         priors = np.array([2.])
-        dt = np.array([1.])
+        dt = np.array([1., 1., 1.])
         expo = mp.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
                                                 gti=None)
-        print(expo)
-        np.testing.assert_almost_equal(expo, np.array([1.]))
+        np.testing.assert_almost_equal(expo, np.array([1, 0.5, 0.]))
 
     def test_exposure_calculation2(self):
         """Test if the exposure calculator works correctly."""
