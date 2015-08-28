@@ -346,13 +346,24 @@ class TestCommandline(unittest.TestCase):
         mp.io.main(command.split())
 
     def step17_exposure(self):
-        """Test reading and dumping a FITS file"""
+        """Test exposure calculations from unfiltered files"""
 
-        lcname = os.path.join(datadir, 'monol_testA_lc' + MP_FILE_EXTENSION)
+        lcname = os.path.join(datadir,
+                              'monol_testA_E3-50_lc' + MP_FILE_EXTENSION)
         ufname = os.path.join(datadir, 'monol_testA_uf.evt')
         command = "{0} {1}".format(lcname, ufname)
 
         mp.exposure.main(command.split())
+
+    def step18_plot(self):
+        """Test plotting"""
+        pname = os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        cname = os.path.join(datadir, 'monol_test_E3-50_cpds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        lname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        mp.plot.main(pname, cname, lname)
 
     def _all_steps(self):
 
