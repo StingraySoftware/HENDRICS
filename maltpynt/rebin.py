@@ -15,6 +15,29 @@ def const_rebin(x, y, factor, yerr=None, normalize=True):
 
     Might be time and counts, or freq and pds.
     Also possible to rebin the error on y.
+
+    Parameters
+    ----------
+    x : array-like
+    y : array-like
+    factor : int
+        Rebin factor
+    yerr : array-like, optional
+        Uncertainties of y values (it is assumed that the y are normally
+        distributed)
+
+    Returns
+    -------
+    new_x : array-like
+        The rebinned x array
+    new_y : array-like
+        The rebinned y array
+    new_err : array-like
+        The rebinned yerr array
+
+    Other Parameters
+    ----------------
+    normalize : bool
     """
     arr_dtype = y.dtype
     if factor <= 1:
@@ -24,7 +47,7 @@ def const_rebin(x, y, factor, yerr=None, normalize=True):
         else:
             res.append(np.zeros(len(y), dtype=arr_dtype))
         return res
-
+    factor = np.long(factor)
     nbin = len(y)
 
     new_nbins = np.int(nbin / factor)
@@ -51,7 +74,37 @@ def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
              return_nbins=False):
     """Given a PDS, bin it geometrically.
 
-    Freely taken from an algorithm in isisscripts.sl
+    Parameters
+    ----------
+    freq : array-like
+    pds : array-like
+    bin_factor : float > 1
+    pds_err : array-like
+
+    Returns
+    -------
+    newfreqlo : array-like
+        Lower boundaries of the new frequency bins
+    newfreqhi : array-like
+        Upper boundaries of the new frequency bins
+    newpds : array-like
+        The rebinned PDS
+    newpds_err : array-like
+        The uncertainties on the rebinned PDS points (be careful. Check with
+        simulations if it works in your case)
+    new_nbins : array-like, optional
+        The new number of bins averaged in each PDS point. Only returned if
+        return_nbins is True
+
+    Other Parameters
+    ----------------
+    npds : int
+    return_nbins : bool
+
+    Notes
+    -----
+    Some parts of the code are copied from an algorithm in isisscripts.sl
+
     """
     from numpy import log10
 
