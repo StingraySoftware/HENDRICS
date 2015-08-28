@@ -308,6 +308,43 @@ class TestCommandline(unittest.TestCase):
             self.fail("{0} failed ({1}: {2})".format('MPdumpdyn <cpds>',
                                                      type(e), e))
 
+    def step15_create_gti1(self):
+        """Test creating a GTI file"""
+
+        fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        command = "{0} -f lc>0 -c --debug".format(fname)
+        print(command.split())
+        mp.create_gti.main(command.split())
+
+    def step15_create_gti2(self):
+        """Test creating a GTI file"""
+
+        fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
+            MP_FILE_EXTENSION
+        lcfname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        command = "{0} -a {1} --debug".format(lcfname, fname)
+
+        mp.create_gti.main(command.split())
+
+    def step16_readfile1(self):
+        """Test reading and dumping a MaLTPyNT file"""
+
+        fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
+            MP_FILE_EXTENSION
+        command = "{0}".format(fname)
+
+        mp.io.main(command.split())
+
+    def step16_readfile2(self):
+        """Test reading and dumping a FITS file"""
+
+        fitsname = os.path.join(datadir, 'monol_testA.evt')
+        command = "{0}".format(fitsname)
+
+        mp.io.main(command.split())
+
     def _all_steps(self):
 
         for name in sorted(dir(self)):
