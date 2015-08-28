@@ -15,7 +15,7 @@ from .base import detection_level
 import logging
 
 
-def baseline_fun(x, a):
+def _baseline_fun(x, a):
     """A constant function."""
     return a
 
@@ -50,7 +50,7 @@ def plot_pds(fnames, figname=None):
 
         color = next(rainbow)
 
-        p, pcov = curve_fit(baseline_fun, freq, pds, p0=[2], sigma=epds)
+        p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
         logging.info('White noise level is {0}'.format(p[0]))
         pds -= p[0]
         if isinstance(lev, collections.Iterable):
