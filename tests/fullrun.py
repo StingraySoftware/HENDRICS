@@ -363,7 +363,7 @@ class TestCommandline(unittest.TestCase):
             MP_FILE_EXTENSION
         lname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
-        mp.plot.main(pname, cname, lname)
+        mp.plot.main([pname, cname, lname])
 
     def _all_steps(self):
 
