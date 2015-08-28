@@ -34,14 +34,18 @@ class TestCommandline(unittest.TestCase):
     to library calls (some overlap with utests.py).
     """
 
+    def step00_scripts_are_installed0(self):
+        """Test only once that command line scripts are installed."""
+        command = 'MPreadevents -h'
+        sp.check_call(command.split())
+
     def step01_load_events(self):
         """Test event file reading."""
         try:
-            command = 'MPreadevents {0} {1}'.format(
+            command = '{0} {1}'.format(
                 os.path.join(datadir, 'monol_testA.evt'),
                 os.path.join(datadir, 'monol_testB.evt'))
-            print(command)
-            sp.check_call(command.split())
+            mp.read_events.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2}); Path: {3}".format(
                 'Loading event file ', type(e), e, sys.path))
@@ -49,10 +53,11 @@ class TestCommandline(unittest.TestCase):
     def step02_calibrate(self):
         """Test event file calibration."""
         try:
-            sp.check_call('MPcalibrate {0} {1} -r {2}'.format(
+            command = '{0} {1} -r {2}'.format(
                 os.path.join(datadir, 'monol_testA_ev' + MP_FILE_EXTENSION),
                 os.path.join(datadir, 'monol_testB_ev' + MP_FILE_EXTENSION),
-                os.path.join(datadir, 'test.rmf')).split())
+                os.path.join(datadir, 'test.rmf'))
+            mp.calibrate.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format(
                 'Calibrating event file', type(e), e))
@@ -60,15 +65,17 @@ class TestCommandline(unittest.TestCase):
     def step03a_lcurve(self):
         """Test light curve production."""
         try:
-            sp.check_call(
-                'MPlcurve {0} {1} -e {2} {3} --safe-interval {4} {5}'.format(
-                    os.path.join(datadir, 'monol_testA_ev_calib' +
-                                 MP_FILE_EXTENSION),
-                    os.path.join(datadir, 'monol_testB_ev_calib' +
-                                 MP_FILE_EXTENSION),
-                    3, 50, 100, 300).split())
+            command = '{0} {1} -e {2} {3} --safe-interval {4} {5}'.format(
+                os.path.join(datadir, 'monol_testA_ev_calib' +
+                             MP_FILE_EXTENSION),
+                os.path.join(datadir, 'monol_testB_ev_calib' +
+                             MP_FILE_EXTENSION),
+                3, 50, 100, 300)
+            print(command)
+            mp.lcurve.main(command.split())
         except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('LC', type(e), e))
+            self.fail("{0} failed ({1}: {2})".format(
+                'Producing LC from event file', type(e), e))
 
     def step03b_fits_lcurve(self):
         """Test light curves from FITS."""
@@ -89,19 +96,10 @@ class TestCommandline(unittest.TestCase):
             lcurve_mp = os.path.join(datadir,
                                      'lcurve_lc' +
                                      MP_FILE_EXTENSION)
-            lcdata_mp = mp.io.load_lcurve(lcurve_mp)
-            lcdata_ftools = mp.io.load_lcurve(lcurve_ftools)
-
-            lc_mp = lcdata_mp['lc']
-            lenmp = len(lc_mp)
-            lc_ftools = lcdata_ftools['lc']
-            lenftools = len(lc_ftools)
-            goodlen = min([lenftools, lenmp])
+            mp.io.load_lcurve(lcurve_mp)
+            mp.io.load_lcurve(lcurve_ftools)
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('LC fits', type(e), e))
-
-        assert np.all(np.abs(lc_mp[:goodlen] - lc_ftools[:goodlen]) <= 1e-3), \
-            'Light curve data do not coincide between FITS and MP'
 
     def step03c_txt_lcurve(self):
         """Test light curves from txt."""
@@ -123,25 +121,19 @@ class TestCommandline(unittest.TestCase):
                                       MP_FILE_EXTENSION)
             mp.lcurve.lcurve_from_txt(lcurve_txt_orig,
                                       outfile=lcurve_txt)
-            lcdata_txt = mp.io.load_lcurve(lcurve_txt)
-
-            lc_txt = lcdata_txt['lc']
 
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('LC txt', type(e), e))
 
-        assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
-            'Light curve data do not coincide between txt and MP'
-
     def step04a_pds(self):
         """Test PDS production."""
         try:
-            sp.check_call(
-                'MPfspec {0} {1} -f 128 --save-dyn -k PDS'.format(
-                    os.path.join(datadir, 'monol_testA_E3-50_lc') +
-                    MP_FILE_EXTENSION,
-                    os.path.join(datadir, 'monol_testB_E3-50_lc') +
-                    MP_FILE_EXTENSION).split())
+            command = '{0} {1} -f 128 --save-dyn -k PDS'.format(
+                os.path.join(datadir, 'monol_testA_E3-50_lc') +
+                MP_FILE_EXTENSION,
+                os.path.join(datadir, 'monol_testB_E3-50_lc') +
+                MP_FILE_EXTENSION)
+            mp.fspec.main(command.split())
         except:
             raise(Exception('Production of PDSs failed'))
 
@@ -151,8 +143,8 @@ class TestCommandline(unittest.TestCase):
                                      'lcurve_ftools_lc' +
                                      MP_FILE_EXTENSION)
         try:
-            sp.check_call(
-                'MPfspec {0} -f 128'.format(lcurve_ftools).split())
+            command = '{0} -f 128'.format(lcurve_ftools)
+            mp.fspec.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format(
                 'PDS LC FITS', type(e), e))
@@ -163,36 +155,37 @@ class TestCommandline(unittest.TestCase):
                                   'lcurve_txt_lc' +
                                   MP_FILE_EXTENSION)
         try:
-            sp.check_call(
-                'MPfspec {0} -f 128'.format(lcurve_txt).split())
+            command = '{0} -f 128'.format(lcurve_txt)
+            mp.fspec.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('PDS LC txt', type(e), e))
 
     def step05_cpds(self):
         """Test CPDS production."""
         try:
-            sp.check_call(
-                'MPfspec {0} {1} -f 128 --save-dyn -k CPDS -o {2}'.format(
+            command = \
+                '{0} {1} -f 128 --save-dyn -k CPDS -o {2}'.format(
                     os.path.join(datadir, 'monol_testA_E3-50_lc') +
                     MP_FILE_EXTENSION,
                     os.path.join(datadir, 'monol_testB_E3-50_lc') +
                     MP_FILE_EXTENSION,
-                    os.path.join(datadir, 'monol_test_E3-50')).split())
+                    os.path.join(datadir, 'monol_test_E3-50'))
+            mp.fspec.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('CPDS', type(e), e))
 
     def step06_lags(self):
         """Test Lag calculations."""
         try:
-            sp.check_call(
-                'MPlags {0} {1} {2} -o {3}'.format(
-                    os.path.join(datadir, 'monol_test_E3-50_cpds') +
-                    MP_FILE_EXTENSION,
-                    os.path.join(datadir, 'monol_testA_E3-50_pds') +
-                    MP_FILE_EXTENSION,
-                    os.path.join(datadir, 'monol_testB_E3-50_pds') +
-                    MP_FILE_EXTENSION,
-                    os.path.join(datadir, 'monol_test')).split())
+            command = '{0} {1} {2} -o {3}'.format(
+                os.path.join(datadir, 'monol_test_E3-50_cpds') +
+                MP_FILE_EXTENSION,
+                os.path.join(datadir, 'monol_testA_E3-50_pds') +
+                MP_FILE_EXTENSION,
+                os.path.join(datadir, 'monol_testB_E3-50_pds') +
+                MP_FILE_EXTENSION,
+                os.path.join(datadir, 'monol_test'))
+            mp.lags.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('Lags production',
                                                      type(e), e))
@@ -200,20 +193,20 @@ class TestCommandline(unittest.TestCase):
     def step07_rebinlc(self):
         """Test LC rebinning."""
         try:
-            sp.check_call(
-                'MPrebin {0} -r 2'.format(
-                    os.path.join(datadir, 'monol_testA_E3-50_lc') +
-                    MP_FILE_EXTENSION).split())
+            command = '{0} -r 2'.format(
+                os.path.join(datadir, 'monol_testA_E3-50_lc') +
+                MP_FILE_EXTENSION)
+            mp.rebin.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('LC rebin', type(e), e))
 
     def step08_rebinpds1(self):
         """Test PDS rebinning 1."""
         try:
-            sp.check_call(
-                'MPrebin {0} -r 2'.format(
-                    os.path.join(datadir, 'monol_testA_E3-50_pds') +
-                    MP_FILE_EXTENSION).split())
+            command = '{0} -r 2'.format(
+                os.path.join(datadir, 'monol_testA_E3-50_pds') +
+                MP_FILE_EXTENSION)
+            mp.rebin.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 1',
                                                      type(e), e))
@@ -221,10 +214,10 @@ class TestCommandline(unittest.TestCase):
     def step08a_rebinpds2(self):
         """Test PDS rebinning 2."""
         try:
-            sp.check_call(
-                'MPrebin {0} -r 1.03'.format(
-                    os.path.join(datadir, 'monol_testA_E3-50_pds') +
-                    MP_FILE_EXTENSION).split())
+            command = '{0} -r 1.03'.format(
+                os.path.join(datadir, 'monol_testA_E3-50_pds') +
+                MP_FILE_EXTENSION)
+            mp.rebin.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 2',
                                                      type(e), e))
@@ -232,10 +225,10 @@ class TestCommandline(unittest.TestCase):
     def step09_rebincpds(self):
         """Test CPDS rebinning."""
         try:
-            sp.check_call(
-                'MPrebin {0} -r 1.03'.format(
-                    os.path.join(datadir, 'monol_test_E3-50_cpds') +
-                    MP_FILE_EXTENSION).split())
+            command = '{0} -r 1.03'.format(
+                os.path.join(datadir, 'monol_test_E3-50_cpds') +
+                MP_FILE_EXTENSION)
+            mp.rebin.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('CPDS rebin Test 1.03',
                                                      type(e), e))
@@ -243,10 +236,10 @@ class TestCommandline(unittest.TestCase):
     def step10_savexspec1(self):
         """Test save as Xspec 1."""
         try:
-            sp.check_call(
-                'MP2xspec {0}'.format(
-                    os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2') +
-                    MP_FILE_EXTENSION).split())
+            command = '{0}'.format(
+                os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2') +
+                MP_FILE_EXTENSION)
+            mp.save_as_xspec.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 1',
                                                      type(e), e))
@@ -254,10 +247,10 @@ class TestCommandline(unittest.TestCase):
     def step11_savexspec2(self):
         """Test save as Xspec 2."""
         try:
-            sp.check_call(
-                'MP2xspec {0}'.format(
-                    os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') +
-                    MP_FILE_EXTENSION).split())
+            command = '{0}'.format(
+                os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') +
+                MP_FILE_EXTENSION)
+            mp.save_as_xspec.main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 2',
                                                      type(e), e))
@@ -279,40 +272,38 @@ class TestCommandline(unittest.TestCase):
     def step13_scrunchlcs(self):
         """Test produce scrunched light curves."""
         try:
-            sp.check_call(
-                'MPscrunchlc {0} {1} -o {2}'.format(
-                    os.path.join(datadir, 'monol_testA_E3-50_lc') +
-                    MP_FILE_EXTENSION,
-                    os.path.join(datadir, 'monol_testB_E3-50_lc') +
-                    MP_FILE_EXTENSION,
-                    os.path.join(datadir, 'monol_test_scrunchlc') +
-                    MP_FILE_EXTENSION).split())
+            command = '{0} {1} -o {2}'.format(
+                os.path.join(datadir, 'monol_testA_E3-50_lc') +
+                MP_FILE_EXTENSION,
+                os.path.join(datadir, 'monol_testB_E3-50_lc') +
+                MP_FILE_EXTENSION,
+                os.path.join(datadir, 'monol_test_scrunchlc') +
+                MP_FILE_EXTENSION)
+            mp.lcurve.scrunch_main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('MPscrunchlc', type(e),
                                                      e))
 
     def step13_dumpdynpds(self):
         """Test dump dynamical PDSs."""
-        import subprocess as sp
         try:
-            command = 'MPdumpdyn --noplot ' + \
+            command = '--noplot ' + \
                 os.path.join(datadir,
                              'monol_testA_E3-50_pds_rebin1.03') + \
                 MP_FILE_EXTENSION
-            sp.check_output(command.split())
+            mp.fspec.dumpdyn_main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('MPdumpdyn <pds>',
                                                      type(e), e))
 
     def step14_dumpdyncpds(self):
         """Test produce scrunched light curves."""
-        import subprocess as sp
         try:
-            command = 'MPdumpdyn --noplot ' + \
+            command = '--noplot ' + \
                 os.path.join(datadir,
                              'monol_test_E3-50_cpds_rebin1.03') + \
                 MP_FILE_EXTENSION
-            sp.check_output(command.split())
+            mp.fspec.dumpdyn_main(command.split())
         except Exception as e:
             self.fail("{0} failed ({1}: {2})".format('MPdumpdyn <cpds>',
                                                      type(e), e))
