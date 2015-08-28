@@ -345,6 +345,15 @@ class TestCommandline(unittest.TestCase):
 
         mp.io.main(command.split())
 
+    def step17_exposure(self):
+        """Test reading and dumping a FITS file"""
+
+        lcname = os.path.join(datadir, 'monol_testA_lc' + MP_FILE_EXTENSION)
+        ufname = os.path.join(datadir, 'monol_testA_uf.evt')
+        command = "{0} {1}".format(lcname, ufname)
+
+        mp.exposure.main(command.split())
+
     def _all_steps(self):
 
         for name in sorted(dir(self)):
