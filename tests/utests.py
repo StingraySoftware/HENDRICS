@@ -420,6 +420,15 @@ class TestFullRun(unittest.TestCase):
                           filename=os.path.join(datadir,
                                                 "monol_test_qdp.txt"))
 
+    def step22_save_as_ascii(self):
+        """Test saving arrays in a ascii file"""
+        array = np.array([0, 1, 3])
+        errors = np.array([1, 1, 1])
+        mp.io.save_as_ascii(
+            [array, errors],
+            filename=os.path.join(datadir, "monol_test.txt"),
+            colnames=["array", "err"])
+
     def _all_steps(self):
 
         for name in sorted(dir(self)):
