@@ -44,7 +44,8 @@ install:
 build: false
 
 test_script:
-  - "%CMD_IN_ENV% coverage run --source=maltpynt setup.py test"
+#  - "%CMD_IN_ENV% coverage run --source=maltpynt setup.py test"
+  - "coverage run --source=maltpynt setup.py test"
 
 after_test:
   - coveralls
