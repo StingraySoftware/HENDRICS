@@ -47,4 +47,4 @@ test_script:
   - "%CMD_IN_ENV% coverage run --source=maltpynt setup.py test"
 
 after_test:
-  - COVERALLS_REPO_TOKEN=%COVERALLS_REPO_TOKEN% coveralls
+  - coveralls
