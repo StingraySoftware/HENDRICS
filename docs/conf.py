@@ -48,19 +48,25 @@ conf.optionxform = str
 conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 setup_cfg = dict(conf.items('metadata'))
 
-scripts = dict(conf.items('entry_points'))
-import subprocess as sp
-with open(os.path.join(os.getcwd(), 'scripts', 'cli_generated.rst'), 'w') as fobj:
-    for cl in sorted(scripts.keys()):
-        print(cl, file=fobj)
-        print('=' * len(cl), file=fobj)
-        print(file=fobj)
-        print('::', file=fobj)
-        print(file=fobj)
-        lines = sp.check_output([cl, '--help']).decode().split('\n')
-        for l in lines:
-            print('    ' + l, file=fobj)
-        print(file=fobj)
+#----------------- CREATE DOCS FOR SCRIPTS ---------------------
+if not on_rtd:
+    scripts = dict(conf.items('entry_points'))
+    import subprocess as sp
+    with open(os.path.join(os.getcwd(), 'scripts',
+                           'cli.rst'), 'w') as fobj:
+        print("""Command line interface""", file=fobj)
+        print("""======================\n""", file=fobj)
+
+        for cl in sorted(scripts.keys()):
+            print(cl, file=fobj)
+            print('-' * len(cl), file=fobj)
+            print(file=fobj)
+            print('::', file=fobj)
+            print(file=fobj)
+            lines = sp.check_output([cl, '--help']).decode().split('\n')
+            for l in lines:
+                print('    ' + l, file=fobj)
+            print(file=fobj)
 
 # -- General configuration ----------------------------------------------------
 
@@ -108,7 +114,7 @@ release = package.__version__
 
 # -- Options for HTML output ---------------------------------------------------
 
-# A NOTE ON HTML THEMES
+A NOTE ON HTML THEMES
 if not on_rtd:  # only import and set the theme if we're building docs locally
     html_theme_options = {
        'logotext1': 'MaLT',  # white,  semi-bold
@@ -144,12 +150,13 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 
     # The name for this set of Sphinx documents.  If None, it defaults to
     # "<project> v<release> documentation".
-    html_title = '{0} v{1}'.format(project, release)
-
-    # Output file base name for HTML help builder.
-    htmlhelp_basename = project + 'doc'
 else:
     html_theme = 'default'
+
+html_title = '{0} v{1}'.format(project, release)
+
+# Output file base name for HTML help builder.
+htmlhelp_basename = project + 'doc'
 
 # -- Options for LaTeX output --------------------------------------------------
 
