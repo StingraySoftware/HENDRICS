@@ -102,7 +102,7 @@ Command line interface
 .. toctree::
    :maxdepth: 2
 
-   cli
+   cli_generated
 
 API documentation
 -----------------

@@ -44,8 +44,23 @@ from astropy_helpers.sphinx.conf import *
 # Get configuration information from setup.cfg
 from distutils import config
 conf = config.ConfigParser()
+conf.optionxform = str
 conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 setup_cfg = dict(conf.items('metadata'))
+
+scripts = dict(conf.items('entry_points'))
+import subprocess as sp
+with open(os.path.join(os.getcwd(), 'cli_generated.rst'), 'w') as fobj:
+    for cl in sorted(scripts.keys()):
+        print(cl, file=fobj)
+        print('=' * len(cl), file=fobj)
+        print(file=fobj)
+        print('::', file=fobj)
+        print(file=fobj)
+        lines = sp.check_output([cl, '--help']).decode().split('\n')
+        for l in lines:
+            print('    ' + l, file=fobj)
+        print(file=fobj)
 
 # -- General configuration ----------------------------------------------------
 
