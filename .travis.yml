@@ -37,39 +37,36 @@ env:
 
 matrix:
     include:
+        # Check for sphinx doc build warnings - we do this first because it
+        # may run for a long time
+        - python: 2.7
+          env: SETUP_CMD='build_sphinx -w'
 
-        # # Do a coverage test in Python 2.
-        # - python: 2.7
-        #   env: SETUP_CMD='test --coverage'
-        #
-        # # Check for sphinx doc build warnings - we do this first because it
-        # # may run for a long time
-        # - python: 2.7
-        #   env: SETUP_CMD='build_sphinx -w'
-        #
-        # # Try Astropy development version
-        # - python: 2.7
-        #   env: ASTROPY_VERSION=development SETUP_CMD='test'
-        # - python: 3.3
-        #   env: ASTROPY_VERSION=development SETUP_CMD='test' USE_NETCDF=yes
-        #
-        # # Try all python versions with the latest numpy
-        # - python: 2.6
-        #   env: SETUP_CMD='test'
+        # Try Astropy development version
         - python: 2.7
-          env: SETUP_CMD='test'
-        - python: 2.7
-          env: SETUP_CMD='test' USE_NETCDF=no
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
         - python: 3.3
-          env: SETUP_CMD='test'
+          env: ASTROPY_VERSION=development SETUP_CMD='test' USE_NETCDF=yes
+
+        # Try all python versions with the latest numpy
+        - python: 2.7
+          env: SETUP_CMD='test --coverage'
+        - python: 2.7
+          env: SETUP_CMD='test --coverage' USE_NETCDF=no
+        - python: 3.3
+          env: SETUP_CMD='test --coverage'
         - python: 3.4
           env: SETUP_CMD='test'
         - python: 3.4
-          env: SETUP_CMD='test' USE_NETCDF=no
+          env: SETUP_CMD='test --coverage' USE_NETCDF=no
 
         # Try older numpy versions
         - python: 3.4
           env: NUMPY_VERSION=1.8 SETUP_CMD='test'
+
+    allow_failures:
+        - python: 2.6
+          env: SETUP_CMD='test'
         - python: 2.7
           env: NUMPY_VERSION=1.7 SETUP_CMD='test'
         - python: 2.7
