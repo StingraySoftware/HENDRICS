@@ -63,6 +63,11 @@ exclude_patterns.append('_templates')
 # This is added to the end of RST files - a good place to put substitutions to
 # be used globally.
 rst_epilog += """
+.. |minimum_numpy_version| replace:: {0.__minimum_numpy_version__}
+
+.. MaltPyNT
+.. _MaltPyNT: http://bitbucket.org/mbachett/maltpynt/
+
 """
 
 # -- Project information ------------------------------------------------------
@@ -89,6 +94,11 @@ release = package.__version__
 # -- Options for HTML output ---------------------------------------------------
 
 # A NOTE ON HTML THEMES
+html_theme_options = {
+   'logotext1': 'MaLT',  # white,  semi-bold
+   'logotext2': 'PyNT',     # orange, light
+   'logotext3': ':docs'   # white,  light
+   }
 # The global astropy configuration uses a custom theme, 'bootstrap-astropy',
 # which is installed along with astropy. A different theme can be used or
 # the options for this theme can be modified by overriding some of the
