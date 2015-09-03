@@ -794,7 +794,7 @@ def calc_fspec(files, fftlen,
     pdsrebin : int
         Rebin the PDS of this factor.
     normalization : str
-        'Leahy' [3]_ or 'rms' [4]_ [5]_. Default 'Leahy'.
+        'Leahy' [3] or 'rms' [4] [5]. Default 'Leahy'.
     back_ctrate : float
         The non-source count rate
     noclobber : bool
@@ -807,11 +807,11 @@ def calc_fspec(files, fftlen,
 
     References
     ----------
-    .. [3] Leahy et al. 1983, ApJ, 266, 160.
+    [3] Leahy et al. 1983, ApJ, 266, 160.
 
-    .. [4] Belloni & Hasinger 1990, A&A, 230, 103
+    [4] Belloni & Hasinger 1990, A&A, 230, 103
 
-    .. [5] Miyamoto et al. 1991, ApJ, 383, 784
+    [5] Miyamoto et al. 1991, ApJ, 383, 784
 
     """
     if normalization not in ['Leahy', 'rms']:
