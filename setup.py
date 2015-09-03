@@ -26,6 +26,9 @@ from distutils import config
 
 
 conf = config.ConfigParser()
+# Make it case sensitive
+conf.optionxform = str
+
 conf.read(['setup.cfg'])
 metadata = dict(conf.items('metadata'))
 
@@ -82,23 +85,8 @@ package_info['package_data'].setdefault(PACKAGENAME, [])
 package_info['package_data'][PACKAGENAME].append('tests/data/*')
 
 # Define entry points for command-line scripts
-entry_points = {}
-entry_points['console_scripts'] = [
-    'MPreadevents = maltpynt.read_events:main',
-    'MPlcurve = maltpynt.lcurve:main',
-    'MPcalibrate = maltpynt.calibrate:main',
-    'MPcreategti = maltpynt.create_gti:main',
-    'MPdumpdyn = maltpynt.fspec:dumpdyn_main',
-    'MPexposure = maltpynt.exposure:main',
-    'MPfspec = maltpynt.fspec:main',
-    'MPlags = maltpynt.lags:main',
-    'MPplot = maltpynt.plot:main',
-    'MPreadfile = maltpynt.io:main',
-    'MPrebin = maltpynt.rebin:main',
-    'MPscrunchlc = maltpynt.lcurve:scrunch_main',
-    'MPsumfspec = maltpynt.sum_fspec:main',
-    'MP2xspec = maltpynt.save_as_xspec:main'
-    ]
+entry_points = {'console_scripts': []}
+
 entry_point_list = conf.items('entry_points')
 for entry_point in entry_point_list:
     entry_points['console_scripts'].append('{0} = {1}'.format(entry_point[0],
