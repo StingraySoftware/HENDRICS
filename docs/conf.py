@@ -24,7 +24,7 @@
 # version in the build directory (if "python setup.py build_sphinx" is used).
 # Thus, any C-extensions that are needed to build the documentation will *not*
 # be accessible, and the documentation will not build correctly.
-from __future__ import print_function, unicode_strings
+from __future__ import print_function, unicode_literals
 import datetime
 import os
 import sys
