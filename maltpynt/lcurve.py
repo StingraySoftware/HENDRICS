@@ -261,6 +261,7 @@ def filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
     borders : [[i0_0, i0_1], [i1_0, i1_1], ...], optional
         The indexes of the light curve corresponding to the borders of the
         GTIs. Returned if return_borders is set to True
+
     Other Parameters
     ----------------
     safe_interval : float or [float, float]

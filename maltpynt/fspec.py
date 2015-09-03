@@ -896,6 +896,7 @@ def calc_fspec(files, fftlen,
 
 def read_fspec(fname):
     """Read the frequency spectrum from a file.
+
     Parameters
     ----------
     fname : str
@@ -916,6 +917,7 @@ def read_fspec(fname):
     rebin : array-like or int
         Rebin factor in each bin. Might be irregular in case of geometrical
         binning
+
     """
     ftype, contents = get_file_type(fname)
     if 'freq' in list(contents.keys()):
