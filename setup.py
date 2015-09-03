@@ -5,6 +5,12 @@ import glob
 import os
 import sys
 
+if 'test' in sys.argv:
+    # If running tests, use the Agg backend. This avoids DISPLAY problems in
+    # Travis CI
+    import matplotlib
+    matplotlib.use('Agg')
+
 import ah_bootstrap
 from setuptools import setup
 
@@ -23,11 +29,6 @@ from astropy_helpers.version_helpers import generate_version_py
 # Get some values from the setup.cfg
 from distutils import config
 
-if 'test' in sys.argv:
-    # If running tests, use the Agg backend. This avoids DISPLAY problems in
-    # Travis CI
-    import matplotlib
-    matplotlib.use('Agg')
 
 
 conf = config.ConfigParser()
