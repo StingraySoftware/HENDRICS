@@ -10,7 +10,6 @@ try:
 except:
     msg = "Warning! NetCDF is not available. Using pickle format."
     logging.warning(msg)
-    print(msg)
     MP_FILE_EXTENSION = '.p'
     pass
 
