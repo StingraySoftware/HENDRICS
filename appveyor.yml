@@ -45,7 +45,4 @@ build: false
 
 test_script:
 #  - "%CMD_IN_ENV% coverage run --source=maltpynt setup.py test"
-  - "python setup.py test --coveralls"
-
-after_test:
-  - coveralls --rcfile='maltpynt/tests/coveragerc'
+  - "python setup.py test"
