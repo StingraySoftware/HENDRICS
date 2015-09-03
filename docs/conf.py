@@ -93,7 +93,6 @@ release = package.__version__
 
 # -- Options for HTML output ---------------------------------------------------
 
-html_theme = 'default'
 # A NOTE ON HTML THEMES
 if not on_rtd:  # only import and set the theme if we're building docs locally
     html_theme_options = {
@@ -134,7 +133,8 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 
     # Output file base name for HTML help builder.
     htmlhelp_basename = project + 'doc'
-
+else:
+    html_theme = 'default'
 
 # -- Options for LaTeX output --------------------------------------------------
 
