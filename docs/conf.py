@@ -114,7 +114,7 @@ release = package.__version__
 
 # -- Options for HTML output ---------------------------------------------------
 
-A NOTE ON HTML THEMES
+#A NOTE ON HTML THEMES
 if not on_rtd:  # only import and set the theme if we're building docs locally
     html_theme_options = {
        'logotext1': 'MaLT',  # white,  semi-bold
