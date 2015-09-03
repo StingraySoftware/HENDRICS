@@ -152,6 +152,8 @@ def main(args=None):
         'Plot the content of MaLTPyNT light curves and frequency spectra'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
+    parser.add_argument("--noplot", help="Only create images, do not plot",
+                        default=False, action='store_true')
 
     args = parser.parse_args(args)
     for fname in args.files:
@@ -163,4 +165,5 @@ def main(args=None):
         elif ftype[-3:] == 'pds':
             plot_pds(fname)
 
-    plt.show()
+    if not args.noplot:
+        plt.show()
