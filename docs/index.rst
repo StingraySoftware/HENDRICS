@@ -51,6 +51,11 @@ curves produced by nulccorr can be converted to MaLTPyNT format using
 ``MPlcurve --fits-input <lcname>.fits``, and used for the subsequent
 steps of the timing analysis.
 
+.. Note :: Improved livetime correction in progress!
+    In the next release MaLTPyNT 2.0, ``MPexposure`` tries to push the livetime
+    correction to timescales below 1 s, allowing livetime-corrected timing
+    analysis above 1 Hz. The feature is under testing
+
 License and notes for the users
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -102,7 +107,7 @@ Command line interface
 .. toctree::
    :maxdepth: 2
 
-   scripts/cli_generated
+   scripts/cli
 
 API documentation
 -----------------
