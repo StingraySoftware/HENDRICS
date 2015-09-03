@@ -50,7 +50,7 @@ setup_cfg = dict(conf.items('metadata'))
 
 scripts = dict(conf.items('entry_points'))
 import subprocess as sp
-with open(os.path.join(os.getcwd(), 'cli_generated.rst'), 'w') as fobj:
+with open(os.path.join(os.getcwd(), 'scripts', 'cli_generated.rst'), 'w') as fobj:
     for cl in sorted(scripts.keys()):
         print(cl, file=fobj)
         print('=' * len(cl), file=fobj)
