@@ -66,6 +66,7 @@ curves produced by nulccorr can be converted to MaLTPyNT format using
 steps of the timing analysis.
 
 .. Note :: Improved livetime correction in progress!
+
     In the upcoming release MaLTPyNT 2.0, ``MPexposure`` tries to push the livetime
     correction to timescales below 1 s, allowing livetime-corrected timing
     analysis above 1 Hz. The feature is under testing
