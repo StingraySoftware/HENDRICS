@@ -29,17 +29,17 @@ The **documentation** can be found
 A **tutorial** is also available
 `here <http://maltpynt.readthedocs.org/en/stable/tutorial.html>`__
 
-.. |Build Status Master| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=2.0dev
+.. |Build Status Master| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
-.. |Coverage Status Master| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=2.0dev&service=github
-   :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=2.0dev
-.. |Documentation Status Master| image:: https://readthedocs.org/projects/maltpynt/badge/?version=2.0dev
-   :target: https://readthedocs.org/projects/maltpynt/badge/?version=2.0dev
-.. |AppVeyor status| image:: https://ci.appveyor.com/api/projects/status/op01lg1v9p4wrasv/branch/2.0dev?svg=true
-   :target: https://ci.appveyor.com/project/matteobachetti/maltpynt/branch/2.0dev
-.. |Build Status Unstable| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable
-   :target: https://travis-ci.org/matteobachetti/MaLTPyNT
-.. |Coverage Status Unstable| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github
+.. |Coverage Status Master| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github
    :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=unstable
-.. |Documentation Status| image:: https://readthedocs.org/projects/maltpynt/badge/?version=unstable
+.. |Documentation Status Master| image:: https://readthedocs.org/projects/maltpynt/badge/?version=unstable
    :target: https://readthedocs.org/projects/maltpynt/badge/?version=unstable
+.. |AppVeyor status| image:: https://ci.appveyor.com/api/projects/status/op01lg1v9p4wrasv/branch/unstable?svg=true
+   :target: https://ci.appveyor.com/project/matteobachetti/maltpynt/branch/unstable
+.. |Build Status Unstable| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=1.0_bugfix
+   :target: https://travis-ci.org/matteobachetti/MaLTPyNT
+.. |Coverage Status Unstable| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=1.0_bugfix&service=github
+   :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=1.0_bugfix
+.. |Documentation Status| image:: https://readthedocs.org/projects/maltpynt/badge/?version=1.0_bugfix
+   :target: https://readthedocs.org/projects/maltpynt/badge/?version=1.0_bugfix
