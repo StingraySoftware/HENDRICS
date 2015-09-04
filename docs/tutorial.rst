@@ -167,11 +167,12 @@ Use
     $ MPlcurve --fits-input lcurve.fits
 
 or
+
 ::
 
     $ MPlcurve --txt-input lcurve.txt
 
-respectively.    
+respectively.
 
 Joining, summing and "scrunching" light curves
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
