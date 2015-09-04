@@ -7,20 +7,26 @@ MaLTPyNT documentation
 ======================
 
 The MaLTPyNT (Matteo's Libraries and Tools in Python for NuSTAR Timing)
-suite is designed to do correctly and fairly easily a
-**quick-look timing analysis** of NuSTAR data, treating properly orbital
-gaps and exploiting the presence of two independent detectors by using
-the **cospectrum** as a proxy for the power density spectrum (for an
-explanation of why this is important, look at Bachetti et al., *ApJ*,
-800, 109 -`arXiv:1409.3248 <http://arxiv.org/abs/1409.3248>`__). The
-output of the analysis is a cospectrum, or a power density spectrum,
-that can be fitted with
-`Xspec <http://heasarc.gsfc.nasa.gov/xanadu/xspec/>`__ or
-`Isis <http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html>`__.
-Also, one can calculate in the same easy way **time lags** (still under
-testing, help is welcome). Despite its main focus on NuSTAR, the
-software can be used to make standard spectral analysis on X-ray data
+suite is designed for the **quick-look timing analysis** of NuSTAR data.
+It treats properly orbital gaps (e.g., occultation, SAA passages) and
+performs the standard aperiodic timing analysis (power density spectrum, lags,
+etc.), plus the **cospectrum**, a proxy for the power density spectrum that uses
+the signals from two detectors instead of a single one (for an
+explanation of why this is important in NuSTAR, look at Bachetti et al., *ApJ*,
+**800**, 109 -`arXiv:1409.3248 <http://arxiv.org/abs/1409.3248>`__).
+The output of the analysis, be it a cospectrum, a power density spectrum, or a
+lag spectrum, can be fitted with
+`Xspec <http://heasarc.gsfc.nasa.gov/xanadu/xspec/>`__,
+`Isis <http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html>`__ or any other
+spectral fitting program.
+
+Despite its main focus on NuSTAR, the software can be used to make standard
+spectral analysis on X-ray data
 from, in principle, any other satellite (for sure XMM-Newton and RXTE).
+Input files can be any event lists in FITS format, provided that they meet
+certain minimum standard.
+Also, light curves in FITS format or text format can be used. See the
+documentation of `MPlcurve` for more information.
 
 What's new
 ----------
