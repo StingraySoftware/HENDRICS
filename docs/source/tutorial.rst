@@ -75,7 +75,7 @@ Loading event lists
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Starting from cleaned event files, we will first save them in
-``MaLTPyNT`` format (a pickle file basically). For example, I'm starting
+``MaLTPyNT`` format (a ``pickle`` or ``netcdf4`` file). For example, I'm starting
 from two event lists called ``002A.evt`` and ``002B.evt``, containing
 the cleaned event lists from a source observed with NuSTAR's ``FPMA``
 and ``FPMB`` respectively.
@@ -93,7 +93,7 @@ don't use netCDF4), containing the event times and the energy *channel*
 (``PI``) of each event
 
 Calibrating event lists
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Use ``MPcalibrate``. You can either specify an ``rmf`` file with the
 ``-r`` option, or just let it look for it in the NuSTAR ``CALDB`` (the
@@ -121,7 +121,13 @@ environment variable has to be defined!)
 
 This will create two new files with ``_ev_calib.nc`` suffix that will
 contain energy information. Optionally, you can overwrite the original
-event lists. ### 3. Producing light curves Choose carefully the binning
+event lists.
+
+
+Producing light curves
+~~~~~~~~~~~~~~~~~~~~~~
+
+Choose carefully the binning
 time (option ``-b``). Since what we are interested in is a power
 spectrum, this binning time will limit our maximum frequency in the
 power spectrum. We are here specifying 2^-8 =0.00390625 for binning time
@@ -149,6 +155,25 @@ To check the light curve that was produced, use the ``MPplot`` program:
 ::
 
     $ MPplot 002A_E3-30_lc.nc
+
+``MPlcurve`` also accepts light curves in FITS and text format. FITS light curves
+should be produced by the ``lcurve`` FTOOL or similar, while the text light
+curves should have
+two columns: time from the NuSTAR MJDREF (55197.00076601852) and intensity in
+counts/bin.
+Use
+::
+
+    $ MPlcurve --fits-input lcurve.fits
+
+or
+
+::
+
+    $ MPlcurve --txt-input lcurve.txt
+
+respectively.
+
 
 Joining, summing and "scrunching" light curves
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
