@@ -1,19 +1,27 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""MaLTPyNT - Matteo's libraries and tools in Python for NuSTAR timing"""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
-from . import mp_base as base
-from . import mp_calibrate as calibrate
-from . import mp_create_gti as create_gti
-from . import mp_fspec as fspec
-from . import mp_io as io
-from . import mp_lags as lags
-from . import mp_lcurve as lcurve
-from . import mp_plot as plot
-from . import mp_read_events as read_events
-from . import mp_rebin as rebin
-from . import mp_save_as_xspec as save_as_xspec
-from . import mp_sum_fspec as sum_fspec
+"""
+This is an Astropy affiliated package.
+"""
 
-from .version import version as __version__
+# Affiliated packages may add whatever they like to this file, but
+# should keep this content at the top.
+# ----------------------------------------------------------------------------
+from ._astropy_init import *
+# ----------------------------------------------------------------------------
+
+# For egg_info test builds to pass, put package imports here.
+if not _ASTROPY_SETUP_:
+    from . import base
+    from . import calibrate
+    from . import create_gti
+    from . import exposure
+    from . import fspec
+    from . import io
+    from . import lags
+    from . import lcurve
+    from . import plot
+    from . import read_events
+    from . import rebin
+    from . import save_as_xspec
+    from . import sum_fspec
