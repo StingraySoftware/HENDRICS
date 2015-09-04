@@ -22,6 +22,20 @@ testing, help is welcome). Despite its main focus on NuSTAR, the
 software can be used to make standard spectral analysis on X-ray data
 from, in principle, any other satellite (for sure XMM-Newton and RXTE).
 
+What's new
+----------
+In preparation for the 2.0 release, the API has received some visible changes.
+Names do not have the `mp_` prefix anymore, as they were very redundant; the
+structure of the code base is now based on the AstroPy structure; tests have
+been moved and the documentation improved.
+
+`MPexposure` is a new livetime correction script on sub-second timescales for
+NuSTAR. It will be able to replace `nulccorr`, and get results on shorter bin
+times, in observations done with a specific observing mode, where the observer
+has explicitly requested to telemeter all events (including rejected) and the
+user has run `nupipeline` with the `CLEANCOLS = NO` option.
+This tool is under testing.
+
 Preliminary notes
 -----------------
 
@@ -44,7 +58,7 @@ MaLTPyNT does a better job than POWSPEC from several points of view:
 Clarification about dead time treatment
 +++++++++++++++++++++++++++++++++++++++
 MaLTPyNT **does not supersede**
-`nulccorr <https://heasarc.gsfc.nasa.gov/ftools/caldb/help/nulccorr.html>`__.
+`nulccorr <https://heasarc.gsfc.nasa.gov/ftools/caldb/help/nulccorr.html>`__ (yet).
 If one is only interested in frequencies below ~0.5 Hz, nulccorr treats
 robustly various dead time components and its use is recommended. Light
 curves produced by nulccorr can be converted to MaLTPyNT format using
@@ -52,7 +66,7 @@ curves produced by nulccorr can be converted to MaLTPyNT format using
 steps of the timing analysis.
 
 .. Note :: Improved livetime correction in progress!
-    In the next release MaLTPyNT 2.0, ``MPexposure`` tries to push the livetime
+    In the upcoming release MaLTPyNT 2.0, ``MPexposure`` tries to push the livetime
     correction to timescales below 1 s, allowing livetime-corrected timing
     analysis above 1 Hz. The feature is under testing
 
