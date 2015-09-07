@@ -65,7 +65,10 @@ if not on_rtd:
             print(file=fobj)
             lines = sp.check_output([cl, '--help']).decode().split('\n')
             for l in lines:
-                print('    ' + l, file=fobj)
+                if l.strip() == '':
+                    print(file=fobj)
+                else:
+                    print('    ' + l, file=fobj)
             print(file=fobj)
 
 # -- General configuration ----------------------------------------------------
