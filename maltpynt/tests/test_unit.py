@@ -37,8 +37,7 @@ class TestFullRun(unittest.TestCase):
     Usually considered bad practice, but in this
     case I need to test the full run of the codes, and files depend on each
     other.
-    Inspired by http://stackoverflow.com/questions/5387299/
-    python-unittest-testcase-execution-order
+    Inspired by http://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
     """
 
     def step00_print_info(self):

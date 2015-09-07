@@ -23,8 +23,6 @@ from astropy_helpers.version_helpers import generate_version_py
 # Get some values from the setup.cfg
 from distutils import config
 
-
-
 conf = config.ConfigParser()
 # Make it case sensitive
 conf.optionxform = str
@@ -103,8 +101,6 @@ for root, dirs, files in os.walk(PACKAGENAME):
                 os.path.join(
                     os.path.relpath(root, PACKAGENAME), filename))
 package_info['package_data'][PACKAGENAME].extend(c_files)
-
-# package_info['package_data'].setdefault('maltpynt', []).append('tests/data/*')
 
 install_requires = [
     'matplotlib',
