@@ -17,6 +17,9 @@ environment:
       - PYTHON_VERSION: "2.7"
         NETCDF_LIB: "netcdf4"
 
+      - PYTHON_VERSION: "3.4"
+        NETCDF_LIB: ""
+
 platform:
     -x64
 
