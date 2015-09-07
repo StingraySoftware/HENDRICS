@@ -6,11 +6,11 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 import maltpynt as mp
 import numpy as np
-MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 import logging
 import os
 import sys
 import glob
+MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 
 PY2 = sys.version_info[0] == 2
 PYX6 = sys.version_info[1] == 6
