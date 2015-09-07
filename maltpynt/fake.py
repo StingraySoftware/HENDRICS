@@ -1,9 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""Calculate the exposure correction for light curves. Only works for data
-   taken in specific data modes of NuSTAR, where all events are telemetered.
-
+"""Functions to simulate data and produce a fake event file.
 """
-from __future__ import (absolute_import, unicode_literals, division,
+from __future__ import (absolute_import, division,
                         print_function)
 
 import numpy as np
@@ -58,7 +56,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
             tstart = 8e+7
         if tstop is None:
             tstop = tstart + 1025
-        event_list = ra.uniform(tstart, tstop, 1000)
+        event_list = sorted(ra.uniform(tstart, tstop, 1000))
 
     if pi is None:
         pi = ra.randint(0, 1024, len(event_list))
@@ -95,6 +93,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     col1 = fits.Column(name='TIME', format='1D', array=event_list)
     col2 = fits.Column(name='PI', format='1J', array=pi)
     cols = fits.ColDefs([col1, col2])
+
     tbhdu = fits.BinTableHDU.from_columns(cols)
     tbhdu.name = 'EVENTS'
 
