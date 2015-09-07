@@ -16,6 +16,7 @@ if not _ASTROPY_SETUP_:
     from . import calibrate
     from . import create_gti
     from . import exposure
+    from . import fake
     from . import fspec
     from . import io
     from . import lags

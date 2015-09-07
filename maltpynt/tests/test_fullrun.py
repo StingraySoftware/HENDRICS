@@ -34,10 +34,15 @@ class TestCommandline(unittest.TestCase):
     to library calls (some overlap with utests.py).
     """
 
-    def step00_scripts_are_installed0(self):
+    def step00a_scripts_are_installed0(self):
         """Test only once that command line scripts are installed."""
         command = 'MPreadevents -h'
         sp.check_call(command.split())
+
+    def step00b_fake_file(self):
+        """Test produce a fake event file"""
+        fits_file = os.path.join(datadir, 'monol_test_fake.evt')
+        mp.fake.main(['-o', fits_file])
 
     def step01_load_events(self):
         """Test event file reading."""
@@ -398,7 +403,9 @@ class TestCommandline(unittest.TestCase):
             glob.glob(os.path.join(datadir,
                                    '*monol_test*.dat')) + \
             glob.glob(os.path.join(datadir,
-                                   '*monol_test*.txt'))
+                                   '*monol_test*.txt')) + \
+            glob.glob(os.path.join(datadir,
+                                   'monol_test_fake.evt'))
         for f in file_list:
             os.remove(f)
 
