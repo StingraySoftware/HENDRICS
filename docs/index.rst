@@ -42,6 +42,9 @@ has explicitly requested to telemeter all events (including rejected) and the
 user has run `nupipeline` with the `CLEANCOLS = NO` option.
 This tool is under testing.
 
+`MPfake` is a new script to create fake observation files in FITS format, for
+testing. New functions to create fake data will be added to `maltpynt.fake`.
+
 Preliminary notes
 -----------------
 
