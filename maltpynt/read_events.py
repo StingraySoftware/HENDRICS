@@ -266,6 +266,9 @@ def main(args=None):
                         help="Split event list by GTI",
                         default=False,
                         action="store_true")
+    parser.add_argument("--min-length", type=int,
+                        help="Minimum length of GTIs to consider",
+                        default=0)
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
 
@@ -279,7 +282,8 @@ def main(args=None):
     logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
                         filemode='w')
 
-    argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split}
+    argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,
+               "min_length": args.min_length}
     arglist = [[f, argdict] for f in files]
 
     if os.name == 'nt':
