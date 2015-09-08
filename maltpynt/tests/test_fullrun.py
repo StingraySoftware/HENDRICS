@@ -46,272 +46,197 @@ class TestCommandline(unittest.TestCase):
 
     def step01_load_events(self):
         """Test event file reading."""
-        try:
-            command = '{0} {1}'.format(
-                os.path.join(datadir, 'monol_testA.evt'),
-                os.path.join(datadir, 'monol_testB.evt'))
-            mp.read_events.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2}); Path: {3}".format(
-                'Loading event file ', type(e), e, sys.path))
+        command = '{0} {1}'.format(
+            os.path.join(datadir, 'monol_testA.evt'),
+            os.path.join(datadir, 'monol_testB.evt'))
+        mp.read_events.main(command.split())
 
     def step02_calibrate(self):
         """Test event file calibration."""
-        try:
-            command = '{0} {1} -r {2}'.format(
-                os.path.join(datadir, 'monol_testA_ev' + MP_FILE_EXTENSION),
-                os.path.join(datadir, 'monol_testB_ev' + MP_FILE_EXTENSION),
-                os.path.join(datadir, 'test.rmf'))
-            mp.calibrate.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format(
-                'Calibrating event file', type(e), e))
+        command = '{0} {1} -r {2}'.format(
+            os.path.join(datadir, 'monol_testA_ev' + MP_FILE_EXTENSION),
+            os.path.join(datadir, 'monol_testB_ev' + MP_FILE_EXTENSION),
+            os.path.join(datadir, 'test.rmf'))
+        mp.calibrate.main(command.split())
 
     def step03a_lcurve(self):
         """Test light curve production."""
-        try:
-            command = '{0} {1} -e {2} {3} --safe-interval {4} {5}'.format(
-                os.path.join(datadir, 'monol_testA_ev_calib' +
-                             MP_FILE_EXTENSION),
-                os.path.join(datadir, 'monol_testB_ev_calib' +
-                             MP_FILE_EXTENSION),
-                3, 50, 100, 300)
-            print(command)
-            mp.lcurve.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format(
-                'Producing LC from event file', type(e), e))
+        command = '{0} {1} -e {2} {3} --safe-interval {4} {5}'.format(
+            os.path.join(datadir, 'monol_testA_ev_calib' +
+                         MP_FILE_EXTENSION),
+            os.path.join(datadir, 'monol_testB_ev_calib' +
+                         MP_FILE_EXTENSION),
+            3, 50, 100, 300)
+        mp.lcurve.main(command.split())
 
     def step03b_fits_lcurve(self):
         """Test light curves from FITS."""
-        try:
-            lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
-            mp.lcurve.lcurve_from_events(
-                os.path.join(datadir,
-                             'monol_testA_ev') + MP_FILE_EXTENSION,
-                outfile=os.path.join(datadir,
-                                     'lcurve_lc'))
-            mp.lcurve.lcurve_from_fits(
-                lcurve_ftools_orig,
-                outfile=os.path.join(datadir,
-                                     'lcurve_ftools_lc'))
-            lcurve_ftools = os.path.join(datadir,
-                                         'lcurve_ftools_lc' +
-                                         MP_FILE_EXTENSION)
-            lcurve_mp = os.path.join(datadir,
-                                     'lcurve_lc' +
+        lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
+        mp.lcurve.lcurve_from_events(
+            os.path.join(datadir,
+                         'monol_testA_ev') + MP_FILE_EXTENSION,
+            outfile=os.path.join(datadir,
+                                 'lcurve_lc'))
+        mp.lcurve.lcurve_from_fits(
+            lcurve_ftools_orig,
+            outfile=os.path.join(datadir,
+                                 'lcurve_ftools_lc'))
+        lcurve_ftools = os.path.join(datadir,
+                                     'lcurve_ftools_lc' +
                                      MP_FILE_EXTENSION)
-            mp.io.load_lcurve(lcurve_mp)
-            mp.io.load_lcurve(lcurve_ftools)
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('LC fits', type(e), e))
+        lcurve_mp = os.path.join(datadir,
+                                 'lcurve_lc' +
+                                 MP_FILE_EXTENSION)
+        mp.io.load_lcurve(lcurve_mp)
+        mp.io.load_lcurve(lcurve_ftools)
 
     def step03c_txt_lcurve(self):
         """Test light curves from txt."""
-        try:
-            lcurve_mp = os.path.join(datadir,
-                                     'lcurve_lc' +
-                                     MP_FILE_EXTENSION)
-            lcdata_mp = mp.io.load_lcurve(lcurve_mp)
-            lc_mp = lcdata_mp['lc']
-            time_mp = lcdata_mp['time']
 
-            lcurve_txt_orig = os.path.join(datadir,
-                                           'lcurve_txt_lc.txt')
+        lcurve_mp = os.path.join(datadir,
+                                 'lcurve_lc' +
+                                 MP_FILE_EXTENSION)
+        lcdata_mp = mp.io.load_lcurve(lcurve_mp)
+        lc_mp = lcdata_mp['lc']
+        time_mp = lcdata_mp['time']
 
-            mp.io.save_as_ascii([time_mp, lc_mp], lcurve_txt_orig)
+        lcurve_txt_orig = os.path.join(datadir,
+                                       'lcurve_txt_lc.txt')
 
-            lcurve_txt = os.path.join(datadir,
-                                      'lcurve_txt_lc' +
-                                      MP_FILE_EXTENSION)
-            mp.lcurve.lcurve_from_txt(lcurve_txt_orig,
-                                      outfile=lcurve_txt)
+        mp.io.save_as_ascii([time_mp, lc_mp], lcurve_txt_orig)
 
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('LC txt', type(e), e))
+        lcurve_txt = os.path.join(datadir,
+                                  'lcurve_txt_lc' +
+                                  MP_FILE_EXTENSION)
+        mp.lcurve.lcurve_from_txt(lcurve_txt_orig,
+                                  outfile=lcurve_txt)
 
     def step04a_pds(self):
         """Test PDS production."""
-        try:
-            command = '{0} {1} -f 128 --save-dyn -k PDS'.format(
-                os.path.join(datadir, 'monol_testA_E3-50_lc') +
-                MP_FILE_EXTENSION,
-                os.path.join(datadir, 'monol_testB_E3-50_lc') +
-                MP_FILE_EXTENSION)
-            mp.fspec.main(command.split())
-        except:
-            raise(Exception('Production of PDSs failed'))
+        command = '{0} {1} -f 128 --save-dyn -k PDS'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_lc') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testB_E3-50_lc') +
+            MP_FILE_EXTENSION)
+        mp.fspec.main(command.split())
 
     def step04b_pds_fits(self):
         """Test PDS production with light curves obtained from FITS files."""
         lcurve_ftools = os.path.join(datadir,
                                      'lcurve_ftools_lc' +
                                      MP_FILE_EXTENSION)
-        try:
-            command = '{0} -f 128'.format(lcurve_ftools)
-            mp.fspec.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format(
-                'PDS LC FITS', type(e), e))
+        command = '{0} -f 128'.format(lcurve_ftools)
+        mp.fspec.main(command.split())
 
     def step04c_pds_txt(self):
         """Test PDS production with light curves obtained from txt files."""
         lcurve_txt = os.path.join(datadir,
                                   'lcurve_txt_lc' +
                                   MP_FILE_EXTENSION)
-        try:
-            command = '{0} -f 128'.format(lcurve_txt)
-            mp.fspec.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('PDS LC txt', type(e), e))
+        command = '{0} -f 128'.format(lcurve_txt)
+        mp.fspec.main(command.split())
 
     def step05_cpds(self):
         """Test CPDS production."""
-        try:
-            command = \
-                '{0} {1} -f 128 --save-dyn -k CPDS -o {2}'.format(
-                    os.path.join(datadir, 'monol_testA_E3-50_lc') +
-                    MP_FILE_EXTENSION,
-                    os.path.join(datadir, 'monol_testB_E3-50_lc') +
-                    MP_FILE_EXTENSION,
-                    os.path.join(datadir, 'monol_test_E3-50'))
-            mp.fspec.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('CPDS', type(e), e))
-
-    def step06_lags(self):
-        """Test Lag calculations."""
-        try:
-            command = '{0} {1} {2} -o {3}'.format(
-                os.path.join(datadir, 'monol_test_E3-50_cpds') +
-                MP_FILE_EXTENSION,
-                os.path.join(datadir, 'monol_testA_E3-50_pds') +
-                MP_FILE_EXTENSION,
-                os.path.join(datadir, 'monol_testB_E3-50_pds') +
-                MP_FILE_EXTENSION,
-                os.path.join(datadir, 'monol_test'))
-            mp.lags.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('Lags production',
-                                                     type(e), e))
-
-    def step07_rebinlc(self):
-        """Test LC rebinning."""
-        try:
-            command = '{0} -r 2'.format(
-                os.path.join(datadir, 'monol_testA_E3-50_lc') +
-                MP_FILE_EXTENSION)
-            mp.rebin.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('LC rebin', type(e), e))
-
-    def step08_rebinpds1(self):
-        """Test PDS rebinning 1."""
-        try:
-            command = '{0} -r 2'.format(
-                os.path.join(datadir, 'monol_testA_E3-50_pds') +
-                MP_FILE_EXTENSION)
-            mp.rebin.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 1',
-                                                     type(e), e))
-
-    def step08a_rebinpds2(self):
-        """Test PDS rebinning 2."""
-        try:
-            command = '{0} -r 1.03'.format(
-                os.path.join(datadir, 'monol_testA_E3-50_pds') +
-                MP_FILE_EXTENSION)
-            mp.rebin.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('PDS rebin Test 2',
-                                                     type(e), e))
-
-    def step09_rebincpds(self):
-        """Test CPDS rebinning."""
-        try:
-            command = '{0} -r 1.03'.format(
-                os.path.join(datadir, 'monol_test_E3-50_cpds') +
-                MP_FILE_EXTENSION)
-            mp.rebin.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('CPDS rebin Test 1.03',
-                                                     type(e), e))
-
-    def step10_savexspec1(self):
-        """Test save as Xspec 1."""
-        try:
-            command = '{0}'.format(
-                os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2') +
-                MP_FILE_EXTENSION)
-            mp.save_as_xspec.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 1',
-                                                     type(e), e))
-
-    def step11_savexspec2(self):
-        """Test save as Xspec 2."""
-        try:
-            command = '{0}'.format(
-                os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') +
-                MP_FILE_EXTENSION)
-            mp.save_as_xspec.main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('MP2xspec Test 2',
-                                                     type(e), e))
-
-    def step12_joinlcs(self):
-        """Test produce joined light curves."""
-        try:
-            mp.lcurve.join_lightcurves(
-                [os.path.join(datadir, 'monol_testA_E3-50_lc') +
-                 MP_FILE_EXTENSION,
-                 os.path.join(datadir, 'monol_testB_E3-50_lc') +
-                 MP_FILE_EXTENSION],
-                os.path.join(datadir, 'monol_test_joinlc' +
-                             MP_FILE_EXTENSION))
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('Join lcs', type(e),
-                                                     e))
-
-    def step13_scrunchlcs(self):
-        """Test produce scrunched light curves."""
-        try:
-            command = '{0} {1} -o {2}'.format(
+        command = \
+            '{0} {1} -f 128 --save-dyn -k CPDS -o {2}'.format(
                 os.path.join(datadir, 'monol_testA_E3-50_lc') +
                 MP_FILE_EXTENSION,
                 os.path.join(datadir, 'monol_testB_E3-50_lc') +
                 MP_FILE_EXTENSION,
-                os.path.join(datadir, 'monol_test_scrunchlc') +
-                MP_FILE_EXTENSION)
-            mp.lcurve.scrunch_main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('MPscrunchlc', type(e),
-                                                     e))
+                os.path.join(datadir, 'monol_test_E3-50'))
+        mp.fspec.main(command.split())
+
+    def step06_lags(self):
+        """Test Lag calculations."""
+        command = '{0} {1} {2} -o {3}'.format(
+            os.path.join(datadir, 'monol_test_E3-50_cpds') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testA_E3-50_pds') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testB_E3-50_pds') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_test'))
+        mp.lags.main(command.split())
+
+    def step07_rebinlc(self):
+        """Test LC rebinning."""
+        command = '{0} -r 2'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_lc') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step08_rebinpds1(self):
+        """Test PDS rebinning 1."""
+        command = '{0} -r 2'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_pds') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step08a_rebinpds2(self):
+        """Test PDS rebinning 2."""
+        command = '{0} -r 1.03'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_pds') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step09_rebincpds(self):
+        """Test CPDS rebinning."""
+        command = '{0} -r 1.03'.format(
+            os.path.join(datadir, 'monol_test_E3-50_cpds') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step10_savexspec1(self):
+        """Test save as Xspec 1."""
+        command = '{0}'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2') +
+            MP_FILE_EXTENSION)
+        mp.save_as_xspec.main(command.split())
+
+    def step11_savexspec2(self):
+        """Test save as Xspec 2."""
+        command = '{0}'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') +
+            MP_FILE_EXTENSION)
+        mp.save_as_xspec.main(command.split())
+
+    def step12_joinlcs(self):
+        """Test produce joined light curves."""
+        mp.lcurve.join_lightcurves(
+            [os.path.join(datadir, 'monol_testA_E3-50_lc') +
+             MP_FILE_EXTENSION,
+             os.path.join(datadir, 'monol_testB_E3-50_lc') +
+             MP_FILE_EXTENSION],
+            os.path.join(datadir, 'monol_test_joinlc' +
+                         MP_FILE_EXTENSION))
+
+    def step13_scrunchlcs(self):
+        """Test produce scrunched light curves."""
+        command = '{0} {1} -o {2}'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_lc') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testB_E3-50_lc') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_test_scrunchlc') +
+            MP_FILE_EXTENSION)
+        mp.lcurve.scrunch_main(command.split())
 
     def step13_dumpdynpds(self):
         """Test dump dynamical PDSs."""
-        try:
-            command = '--noplot ' + \
-                os.path.join(datadir,
-                             'monol_testA_E3-50_pds_rebin1.03') + \
-                MP_FILE_EXTENSION
-            mp.fspec.dumpdyn_main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('MPdumpdyn <pds>',
-                                                     type(e), e))
+        command = '--noplot ' + \
+            os.path.join(datadir,
+                         'monol_testA_E3-50_pds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        mp.fspec.dumpdyn_main(command.split())
 
     def step14_dumpdyncpds(self):
         """Test produce scrunched light curves."""
-        try:
-            command = '--noplot ' + \
-                os.path.join(datadir,
-                             'monol_test_E3-50_cpds_rebin1.03') + \
-                MP_FILE_EXTENSION
-            mp.fspec.dumpdyn_main(command.split())
-        except Exception as e:
-            self.fail("{0} failed ({1}: {2})".format('MPdumpdyn <cpds>',
-                                                     type(e), e))
+        command = '--noplot ' + \
+            os.path.join(datadir,
+                         'monol_test_E3-50_cpds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        mp.fspec.dumpdyn_main(command.split())
 
     def step15_create_gti1(self):
         """Test creating a GTI file"""
@@ -319,7 +244,6 @@ class TestCommandline(unittest.TestCase):
         fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
         command = "{0} -f lc>0 -c --debug".format(fname)
-        print(command.split())
         mp.create_gti.main(command.split())
 
     def step15_create_gti2(self):
