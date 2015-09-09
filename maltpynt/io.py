@@ -455,6 +455,8 @@ def print_fits_info(fits_file, hdu=1):
 
 
 def main(args=None):
+    from astropy.time import Time
+    import astropy.units as u
     import argparse
 
     description = \
@@ -475,8 +477,14 @@ def main(args=None):
             continue
         ftype, contents = get_file_type(fname)
         print('This file contains:', end='\n\n')
+        mjdref = Time(contents['MJDref'], format='mjd')
+
         for k in sorted(contents.keys()):
-            val = contents[k]
+            if k in ['Tstart', 'Tstop']:
+                timeval = contents[k] * u.s
+                val = '{0} (MJD {1})'.format(contents[k], mjdref + timeval)
+            else:
+                val = contents[k]
             if isinstance(val, collections.Iterable) and not is_string(val):
                 if len(val) < 4:
                     val = repr(list(val[:4]))
