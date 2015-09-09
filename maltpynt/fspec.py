@@ -833,7 +833,7 @@ def calc_fspec(files, fftlen,
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
 
-        if os.name == 'nt':
+        if os.name == 'nt' or nproc == 1:
             [_wrap_fun_pds(w) for w in wrapped_file_dicts]
         else:
             pool = Pool(processes=nproc)
@@ -885,7 +885,7 @@ def calc_fspec(files, fftlen,
 
         funcargs.append([f1, f2, outname, argdict])
 
-    if os.name == 'nt':
+    if os.name == 'nt' or nproc == 1:
         [_wrap_fun_cpds(fa) for fa in funcargs]
     else:
         pool = Pool(processes=nproc)

@@ -286,7 +286,7 @@ def main(args=None):
                "min_length": args.min_length}
     arglist = [[f, argdict] for f in files]
 
-    if os.name == 'nt':
+    if os.name == 'nt' or args.nproc == 1:
         [_wrap_fun(a) for a in arglist]
     else:
         pool = Pool(processes=args.nproc)

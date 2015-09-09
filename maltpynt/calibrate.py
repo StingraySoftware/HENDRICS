@@ -167,7 +167,7 @@ def main(args=None):
                                 MP_FILE_EXTENSION)
         funcargs.append([f, outname, args.rmf])
 
-    if os.name == 'nt':
+    if os.name == 'nt' or args.nproc == 1:
         [_calib_wrap(fa) for fa in funcargs]
     else:
         pool = Pool(processes=args.nproc)

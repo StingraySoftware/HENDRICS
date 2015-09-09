@@ -39,46 +39,61 @@ class TestFullRun(unittest.TestCase):
     When command line is missing, uses some function calls
     """
 
-    def step00_print_info(self):
-        """Test printing info about FITS file"""
+    def step00a_scripts_are_installed(self):
+        """Test only once that command line scripts are installed correctly."""
         fits_file = os.path.join(datadir, 'monol_testA.evt')
-        mp.io.print_fits_info(fits_file, hdu=1)
-
-    def step00a_scripts_are_installed0(self):
-        """Test only once that command line scripts are installed."""
-        command = 'MPreadevents -h'
+        command = 'MPreadfile {0}'.format(fits_file)
         sp.check_call(command.split())
 
-    def step00b_fake_file(self):
+    def step01_fake_file(self):
         """Test produce a fake event file"""
         fits_file = os.path.join(datadir, 'monol_test_fake.evt')
         mp.fake.main(['-o', fits_file])
 
-    def step01_load_events(self):
+    def step02a_load_events(self):
         """Test event file reading."""
-        command = '{0} {1}'.format(
+        command = '{0} {1} --nproc 2'.format(
             os.path.join(datadir, 'monol_testA.evt'),
-            os.path.join(datadir, 'monol_testB.evt'),
-            os.path.join(datadir, 'monol_testA_timezero.evt'))
+            os.path.join(datadir, 'monol_testA_timezero.evt'),
+            os.path.join(datadir, 'monol_test_fake.evt'))
         mp.read_events.main(command.split())
 
-    def step01b_load_events_split(self):
+    def step02b_load_events(self):
         """Test event file reading."""
-        command = '{0} -g --noclobber --min-length 0'.format(
+        command = '{0}'.format(
             os.path.join(datadir, 'monol_testB.evt'))
         mp.read_events.main(command.split())
 
-    def step02_calibrate(self):
+    def step02c_load_events_split(self):
+        """Test event file reading."""
+        command = \
+            '{0} -g --noclobber --min-length 0'.format(
+                os.path.join(datadir, 'monol_testB.evt'))
+        mp.read_events.main(command.split())
+
+    def step02d_load_gtis(self):
+        """Test loading of GTIs from FITS files"""
+        fits_file = os.path.join(datadir, 'monol_testA.evt')
+        mp.read_events.load_gtis(fits_file)
+
+    def step03a_calibrate(self):
         """Test event file calibration."""
-        command = '{0} {1} -r {2}'.format(
+        command = '{0} -r {1}'.format(
             os.path.join(datadir, 'monol_testA_ev' + MP_FILE_EXTENSION),
+            os.path.join(datadir, 'test.rmf'))
+        mp.calibrate.main(command.split())
+
+    def step03b_calibrate(self):
+        """Test event file calibration."""
+        command = '{0} -r {1} --nproc 2'.format(
             os.path.join(datadir, 'monol_testB_ev' + MP_FILE_EXTENSION),
             os.path.join(datadir, 'test.rmf'))
         mp.calibrate.main(command.split())
 
-    def step03a_lcurve(self):
+    def step04a_lcurve(self):
         """Test light curve production."""
-        command = '{0} {1} -e {2} {3} --safe-interval {4} {5}'.format(
+        command = ('{0} {1} -e {2} {3} --safe-interval '
+                   '{4} {5}  --nproc 2').format(
             os.path.join(datadir, 'monol_testA_ev_calib' +
                          MP_FILE_EXTENSION),
             os.path.join(datadir, 'monol_testB_ev_calib' +
@@ -86,14 +101,14 @@ class TestFullRun(unittest.TestCase):
             3, 50, 100, 300)
         mp.lcurve.main(command.split())
 
-    def step03b_lcurve_split(self):
+    def step04b_lcurve_split(self):
         """Test lc with gti-split option, and reading of split event file"""
         command = '{0} -g'.format(
             os.path.join(datadir, 'monol_testB_ev_0' +
                          MP_FILE_EXTENSION))
         mp.lcurve.main(command.split())
 
-    def step03b_fits_lcurve(self):
+    def step04c_fits_lcurve(self):
         """Test light curves from FITS."""
         lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
         mp.lcurve.lcurve_from_events(
@@ -126,7 +141,7 @@ class TestFullRun(unittest.TestCase):
         assert np.all(np.abs(diff) <= 1e-3), \
             'Light curve data do not coincide between FITS and MP'
 
-    def step03c_txt_lcurve(self):
+    def step04d_txt_lcurve(self):
         """Test light curves from txt."""
         lcurve_mp = os.path.join(datadir,
                                  'lcurve_lc' +
@@ -152,17 +167,46 @@ class TestFullRun(unittest.TestCase):
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
             'Light curve data do not coincide between txt and MP'
 
-    def step04a_pds(self):
+    def step05e_joinlcs(self):
+        """Test produce joined light curves."""
+        mp.lcurve.join_lightcurves(
+            [os.path.join(datadir, 'monol_testA_E3-50_lc') +
+             MP_FILE_EXTENSION,
+             os.path.join(datadir, 'monol_testB_E3-50_lc') +
+             MP_FILE_EXTENSION],
+            os.path.join(datadir, 'monol_test_joinlc' +
+                         MP_FILE_EXTENSION))
+
+    def step04f_scrunchlcs(self):
+        """Test produce scrunched light curves."""
+        command = '{0} {1} -o {2}'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_lc') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testB_E3-50_lc') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_test_scrunchlc') +
+            MP_FILE_EXTENSION)
+        mp.lcurve.scrunch_main(command.split())
+
+    def step05a_pds(self):
         """Test PDS production."""
         command = \
-            '{0} {1} -f 128 --save-dyn -k PDS --norm rms '.format(
+            '{0} {1} -f 128 --save-dyn -k PDS --norm rms  --nproc 2 '.format(
                 os.path.join(datadir, 'monol_testA_E3-50_lc') +
                 MP_FILE_EXTENSION,
                 os.path.join(datadir, 'monol_testB_E3-50_lc') +
                 MP_FILE_EXTENSION)
         mp.fspec.main(command.split())
 
-    def step04b_pds_fits(self):
+    def step05b_pds(self):
+        """Test PDS production."""
+        command = \
+            '{0} -f 128 --save-dyn -k PDS --norm rms'.format(
+                os.path.join(datadir, 'monol_testA_E3-50_lc') +
+                MP_FILE_EXTENSION)
+        mp.fspec.main(command.split())
+
+    def step05c_pds_fits(self):
         """Test PDS production with light curves obtained from FITS files."""
         lcurve_ftools = os.path.join(datadir,
                                      'lcurve_ftools_lc' +
@@ -170,7 +214,7 @@ class TestFullRun(unittest.TestCase):
         command = '{0} -f 128'.format(lcurve_ftools)
         mp.fspec.main(command.split())
 
-    def step04c_pds_txt(self):
+    def step05d_pds_txt(self):
         """Test PDS production with light curves obtained from txt files."""
         lcurve_txt = os.path.join(datadir,
                                   'lcurve_txt_lc' +
@@ -178,7 +222,7 @@ class TestFullRun(unittest.TestCase):
         command = '{0} -f 128'.format(lcurve_txt)
         mp.fspec.main(command.split())
 
-    def step05_cpds(self):
+    def step05e_cpds(self):
         """Test CPDS production."""
         command = \
             '{0} {1} -f 128 --save-dyn -k CPDS --norm rms -o {2}'.format(
@@ -188,6 +232,44 @@ class TestFullRun(unittest.TestCase):
                 MP_FILE_EXTENSION,
                 os.path.join(datadir, 'monol_test_E3-50'))
         mp.fspec.main(command.split())
+
+    def step05f_cpds(self):
+        """Test CPDS production."""
+        command = \
+            ('{0} {1} -f 128 --save-dyn -k '
+             'CPDS --norm rms -o {2} --nproc 2').format(
+                os.path.join(datadir, 'monol_testA_E3-50_lc') +
+                MP_FILE_EXTENSION,
+                os.path.join(datadir, 'monol_testB_E3-50_lc') +
+                MP_FILE_EXTENSION,
+                os.path.join(datadir, 'monol_test_E3-50'))
+        mp.fspec.main(command.split())
+
+    def step05g_dumpdynpds(self):
+        """Test dump dynamical PDSs."""
+        command = '--noplot ' + \
+            os.path.join(datadir,
+                         'monol_testA_E3-50_pds') + \
+            MP_FILE_EXTENSION
+        mp.fspec.dumpdyn_main(command.split())
+
+    def step05h_sumpds(self):
+        """Test the sum of pdss."""
+        mp.sum_fspec.main([
+            os.path.join(datadir,
+                         'monol_testA_E3-50_pds') + MP_FILE_EXTENSION,
+            os.path.join(datadir,
+                         'monol_testB_E3-50_pds') + MP_FILE_EXTENSION,
+            '-o', os.path.join(datadir,
+                               'monol_test_sum' + MP_FILE_EXTENSION)])
+
+    def step05i_dumpdyncpds(self):
+        """Test dumping CPDS file."""
+        command = '--noplot ' + \
+            os.path.join(datadir,
+                         'monol_test_E3-50_cpds') + \
+            MP_FILE_EXTENSION
+        mp.fspec.dumpdyn_main(command.split())
 
     def step06_lags(self):
         """Test Lag calculations."""
@@ -201,103 +283,56 @@ class TestFullRun(unittest.TestCase):
             os.path.join(datadir, 'monol_test'))
         mp.lags.main(command.split())
 
-    def step07_rebinlc(self):
+    def step07a_rebinlc(self):
         """Test LC rebinning."""
         command = '{0} -r 2'.format(
             os.path.join(datadir, 'monol_testA_E3-50_lc') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
 
-    def step08a_rebinpds(self):
+    def step07b_rebinpds(self):
         """Test PDS rebinning 1."""
         command = '{0} -r 2'.format(
             os.path.join(datadir, 'monol_testA_E3-50_pds') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
 
-    def step08b_rebinpds(self):
+    def step07c_rebinpds(self):
         """Test geometrical PDS rebinning"""
         command = '{0} -r 1.03'.format(
             os.path.join(datadir, 'monol_testA_E3-50_pds') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
 
-    def step09a_rebincpds(self):
+    def step07d_rebincpds(self):
         """Test CPDS rebinning."""
         command = '{0} -r 2'.format(
             os.path.join(datadir, 'monol_test_E3-50_cpds') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
 
-    def step09b_rebincpds(self):
+    def step07e_rebincpds(self):
         """Test CPDS geometrical rebinning."""
         command = '{0} -r 1.03'.format(
             os.path.join(datadir, 'monol_test_E3-50_cpds') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
 
-    def step10_savexspec1(self):
+    def step08a_savexspec(self):
         """Test save as Xspec 1."""
         command = '{0}'.format(
             os.path.join(datadir, 'monol_testA_E3-50_pds_rebin2') +
             MP_FILE_EXTENSION)
         mp.save_as_xspec.main(command.split())
 
-    def step11_savexspec2(self):
+    def step08b_savexspec(self):
         """Test save as Xspec 2."""
         command = '{0}'.format(
             os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') +
             MP_FILE_EXTENSION)
         mp.save_as_xspec.main(command.split())
 
-    def step12_joinlcs(self):
-        """Test produce joined light curves."""
-        mp.lcurve.join_lightcurves(
-            [os.path.join(datadir, 'monol_testA_E3-50_lc') +
-             MP_FILE_EXTENSION,
-             os.path.join(datadir, 'monol_testB_E3-50_lc') +
-             MP_FILE_EXTENSION],
-            os.path.join(datadir, 'monol_test_joinlc' +
-                         MP_FILE_EXTENSION))
-
-    def step13_scrunchlcs(self):
-        """Test produce scrunched light curves."""
-        command = '{0} {1} -o {2}'.format(
-            os.path.join(datadir, 'monol_testA_E3-50_lc') +
-            MP_FILE_EXTENSION,
-            os.path.join(datadir, 'monol_testB_E3-50_lc') +
-            MP_FILE_EXTENSION,
-            os.path.join(datadir, 'monol_test_scrunchlc') +
-            MP_FILE_EXTENSION)
-        mp.lcurve.scrunch_main(command.split())
-
-    def step13_dumpdynpds(self):
-        """Test dump dynamical PDSs."""
-        command = '--noplot ' + \
-            os.path.join(datadir,
-                         'monol_testA_E3-50_pds_rebin1.03') + \
-            MP_FILE_EXTENSION
-        mp.fspec.dumpdyn_main(command.split())
-
-    def step14_sumpds(self):
-        """Test the sum of pdss."""
-        mp.sum_fspec.main([
-            os.path.join(datadir,
-                         'monol_testA_E3-50_pds') + MP_FILE_EXTENSION,
-            os.path.join(datadir,
-                         'monol_testB_E3-50_pds') + MP_FILE_EXTENSION,
-            '-o', os.path.join(datadir,
-                               'monol_test_sum' + MP_FILE_EXTENSION)])
-
-    def step14_dumpdyncpds(self):
-        """Test produce scrunched light curves."""
-        command = '--noplot ' + \
-            os.path.join(datadir,
-                         'monol_test_E3-50_cpds_rebin1.03') + \
-            MP_FILE_EXTENSION
-        mp.fspec.dumpdyn_main(command.split())
-
-    def step15_create_gti1(self):
+    def step09a_create_gti(self):
         """Test creating a GTI file"""
 
         fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
@@ -305,7 +340,7 @@ class TestFullRun(unittest.TestCase):
         command = "{0} -f lc>0 -c --debug".format(fname)
         mp.create_gti.main(command.split())
 
-    def step15_create_gti2(self):
+    def step09b_create_gti(self):
         """Test creating a GTI file"""
 
         fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
@@ -316,7 +351,7 @@ class TestFullRun(unittest.TestCase):
 
         mp.create_gti.main(command.split())
 
-    def step16_readfile1(self):
+    def step10a_readfile(self):
         """Test reading and dumping a MaLTPyNT file"""
 
         fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
@@ -325,7 +360,7 @@ class TestFullRun(unittest.TestCase):
 
         mp.io.main(command.split())
 
-    def step16_readfile2(self):
+    def step10b_readfile(self):
         """Test reading and dumping a FITS file"""
 
         fitsname = os.path.join(datadir, 'monol_testA.evt')
@@ -333,7 +368,24 @@ class TestFullRun(unittest.TestCase):
 
         mp.io.main(command.split())
 
-    def step17_exposure(self):
+    def step10c_save_as_qdp(self):
+        """Test saving arrays in a qdp file"""
+        arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
+        errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
+        mp.io.save_as_qdp(arrays, errors,
+                          filename=os.path.join(datadir,
+                                                "monol_test_qdp.txt"))
+
+    def step10d_save_as_ascii(self):
+        """Test saving arrays in a ascii file"""
+        array = np.array([0, 1, 3])
+        errors = np.array([1, 1, 1])
+        mp.io.save_as_ascii(
+            [array, errors],
+            filename=os.path.join(datadir, "monol_test.txt"),
+            colnames=["array", "err"])
+
+    def step11_exposure(self):
         """Test exposure calculations from unfiltered files"""
 
         lcname = os.path.join(datadir,
@@ -343,7 +395,7 @@ class TestFullRun(unittest.TestCase):
 
         mp.exposure.main(command.split())
 
-    def step18_plot(self):
+    def step12_plot(self):
         """Test plotting"""
         pname = os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
             MP_FILE_EXTENSION
@@ -353,30 +405,7 @@ class TestFullRun(unittest.TestCase):
             MP_FILE_EXTENSION
         mp.plot.main([pname, cname, lname, '--noplot'])
 
-    def step20_load_gtis(self):
-        """Test loading of GTIs from FITS files"""
-        fits_file = os.path.join(datadir, 'monol_testA.evt')
-        mp.read_events.load_gtis(fits_file)
-
-    def step21_save_as_qdp(self):
-        """Test saving arrays in a qdp file"""
-        arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
-        errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
-        mp.io.save_as_qdp(arrays, errors,
-                          filename=os.path.join(datadir,
-                                                "monol_test_qdp.txt"))
-
-    def step22_save_as_ascii(self):
-        """Test saving arrays in a ascii file"""
-        array = np.array([0, 1, 3])
-        errors = np.array([1, 1, 1])
-        mp.io.save_as_ascii(
-            [array, errors],
-            filename=os.path.join(datadir, "monol_test.txt"),
-            colnames=["array", "err"])
-
     def _all_steps(self):
-
         for name in sorted(dir(self)):
             if name.startswith("step"):
                 yield name, getattr(self, name)

@@ -883,7 +883,7 @@ def main(args=None):
     # -------------------------------------------------------------------------
     outfiles = []
 
-    if os.name == 'nt':
+    if os.name == 'nt' or args.nproc == 1:
         for a in arglist:
             outfiles.append(wrap_fun(a))
     else:
