@@ -7,6 +7,7 @@ import numpy as np
 from .io import get_file_type
 from .io import save_data
 from .io import MP_FILE_EXTENSION, get_file_extension
+from .base import _empty
 import logging
 
 
@@ -70,8 +71,7 @@ def const_rebin(x, y, factor, yerr=None, normalize=True):
         return new_x, new_y, np.sqrt(new_yerr)
 
 
-def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
-             return_nbins=False):
+def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None):
     """Given a PDS, bin it geometrically.
 
     Parameters
@@ -83,23 +83,24 @@ def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
 
     Returns
     -------
-    newfreqlo : array-like
+    retval : object
+        An object containing all the following attributes
+    flo : array-like
         Lower boundaries of the new frequency bins
-    newfreqhi : array-like
+    fhi : array-like
         Upper boundaries of the new frequency bins
-    newpds : array-like
+    pds : array-like
         The rebinned PDS
-    newpds_err : array-like
+    epds : array-like
         The uncertainties on the rebinned PDS points (be careful. Check with
         simulations if it works in your case)
-    new_nbins : array-like, optional
-        The new number of bins averaged in each PDS point. Only returned if
-        return_nbins is True
+    nbins : array-like, optional
+        The new number of bins averaged in each PDS point.
 
     Other Parameters
     ----------------
     npds : int
-    return_nbins : bool
+        The number of PDSs averaged to obtain the input PDS
 
     Notes
     -----
@@ -128,9 +129,12 @@ def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
         logging.warning("Bin factor must be > 1!!")
         f0 = freq - df / 2.
         f1 = freq + df / 2.
-        retval = [f0, f1, pds, pds_err]
-        if return_nbins:
-            retval.append(np.ones(len(pds)) * npds)
+        retval = _empty()
+        retval.flo = f0
+        retval.fhi = f1
+        retval.pds = pds
+        retval.epds = pds_err
+        retval.nbins = np.ones(len(pds)) * npds
         return retval
 
     # Input frequencies are referred to the center of the bin. But from now on
@@ -173,9 +177,13 @@ def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None,
     newfreqhi = newfreqlo[1:]
     newfreqhi = np.append(newfreqhi, [fmax])
 
-    retval = [newfreqlo, newfreqhi, newpds, newpds_err]
-    if return_nbins:
-        retval.append(new_nbins)
+    retval = [newfreqlo, newfreqhi, newpds, newpds_err, new_nbins]
+    retval = _empty()
+    retval.flo = newfreqlo
+    retval.fhi = newfreqhi
+    retval.pds = newpds
+    retval.epds = newpds_err
+    retval.nbins = new_nbins
 
     return retval
 
@@ -241,25 +249,22 @@ def rebin_file(filename, rebin):
                 dynspec = []
                 edynspec = []
                 for i_s, spec in enumerate(old_dynspec):
-                    _, _, sp, spe, _ = \
-                        geom_bin(x, spec, rebin,
-                                 old_edynspec[i_s],
-                                 return_nbins=True)
-                    dynspec.append(sp)
-                    edynspec.append(spe)
+                    retval = geom_bin(x, spec, rebin, old_edynspec[i_s])
+                    dynspec.append(retval.pds)
+                    edynspec.append(retval.pdse)
 
                 contents['dyn{0}'.format(ftype)] = np.array(dynspec)
                 contents['edyn{0}'.format(ftype)] = np.array(edynspec)
 
-            x1, x2, y, ye, nbin = \
-                geom_bin(x, y, rebin, ye, return_nbins=True)
+            retval = geom_bin(x, y, rebin, ye)
+
             del contents['freq']
-            contents['flo'] = x1
-            contents['fhi'] = x2
-            contents[ftype] = y
-            contents['e' + ftype] = ye
-            contents['nbins'] = nbin
-            contents['rebin'] *= nbin
+            contents['flo'] = retval.flo
+            contents['fhi'] = retval.fhi
+            contents[ftype] = retval.pds
+            contents['e' + ftype] = retval.epds
+            contents['nbins'] = retval.nbins
+            contents['rebin'] *= retval.nbins
     else:
         raise Exception('Format was not recognized:', ftype)
 
