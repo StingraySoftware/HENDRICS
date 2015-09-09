@@ -3,12 +3,52 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .base import mp_root, read_header_key, ref_mjd
+from .base import mp_root, read_header_key, ref_mjd, _empty
+from .base import _order_list_of_arrays
 from .io import save_events
 from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
 import os
+
+
+def _get_gti_from_extension(lchdulist, accepted_gtistrings=['GTI']):
+    hdunames = [h.name for h in lchdulist]
+    gtiextn = [ix for ix, x in enumerate(hdunames)
+               if x in accepted_gtistrings][0]
+    gtiext = lchdulist[gtiextn]
+    gtitable = gtiext.data
+
+    colnames = [col.name for col in gtitable.columns.columns]
+    # Default: NuSTAR: START, STOP. Otherwise, try RXTE: Start, Stop
+    if 'START' in colnames:
+        startstr, stopstr = 'START', 'STOP'
+    else:
+        startstr, stopstr = 'Start', 'Stop'
+
+    gtistart = np.array(gtitable.field(startstr), dtype=np.longdouble)
+    gtistop = np.array(gtitable.field(stopstr), dtype=np.longdouble)
+    gti_list = np.array([[a, b]
+                         for a, b in zip(gtistart,
+                                         gtistop)],
+                        dtype=np.longdouble)
+    return gti_list
+
+
+def _get_additional_data(lctable, additional_columns):
+    additional_data = {}
+    if additional_columns is not None:
+        for a in additional_columns:
+            try:
+                additional_data[a] = np.array(lctable.field(a))
+            except:  # pragma: no cover
+                if a == 'PI':
+                    logging.warning('Column PI not found. Trying with PHA')
+                    additional_data[a] = np.array(lctable.field('PHA'))
+                else:
+                    raise Exception('Column' + a + 'not found')
+
+    return additional_data
 
 
 def load_gtis(fits_file, gtistring=None):
@@ -31,8 +71,8 @@ def load_gtis(fits_file, gtistring=None):
     return gti_list
 
 
-def load_events_and_gtis(fits_file, return_limits=False,
-                         additional_columns=None, gtistring=None,
+def load_events_and_gtis(fits_file, additional_columns=None,
+                         gtistring='GTI,STDGTI',
                          gti_file=None, hduname='EVENTS', column='TIME'):
     """Load event lists and GTIs from one or more files.
 
@@ -64,8 +104,6 @@ def load_events_and_gtis(fits_file, return_limits=False,
 
     lchdulist = pf.open(fits_file)
 
-    hdunames = [h.name for h in lchdulist]
-
     # Load data table
     try:
         lctable = lchdulist[hduname].data
@@ -80,12 +118,10 @@ def load_events_and_gtis(fits_file, return_limits=False,
     try:
         timezero = np.longdouble(lchdulist[1].header['TIMEZERO'])
     except:  # pragma: no cover
-        logging.warning("TIMEZERO is 0")
+        logging.warning("No TIMEZERO in file")
         timezero = np.longdouble(0.)
 
-    if timezero != 0.:
-        logging.warning("TIMEZERO != 0, correcting")
-        ev_list += timezero
+    ev_list += timezero
 
     # Read TSTART, TSTOP from header
     try:
@@ -97,72 +133,40 @@ def load_events_and_gtis(fits_file, return_limits=False,
         t_stop = ev_list[-1]
 
     # Read and handle GTI extension
-    if gtistring is None:
-        accepted_gtistrings = ['GTI', 'STDGTI']
-    else:
-        accepted_gtistrings = [gtistring]
+    accepted_gtistrings = gtistring.split(',')
 
     if gti_file is None:
         # Select first GTI with accepted name
         try:
-            gtiextn = [ix for ix, x in enumerate(hdunames)
-                       if x in accepted_gtistrings][0]
-            gtiext = lchdulist[gtiextn]
-            gtitable = gtiext.data
-
-            colnames = [col.name for col in gtitable.columns.columns]
-            # Default: NuSTAR: START, STOP. Otherwise, try RXTE: Start, Stop
-            if 'START' in colnames:
-                startstr, stopstr = 'START', 'STOP'
-            else:
-                startstr, stopstr = 'Start', 'Stop'
-
-            gtistart = np.array(gtitable.field(startstr), dtype=np.longdouble)
-            gtistop = np.array(gtitable.field(stopstr), dtype=np.longdouble)
-            gti_list = np.array([[a, b]
-                                 for a, b in zip(gtistart,
-                                                 gtistop)],
-                                dtype=np.longdouble)
-
+            gti_list = \
+                _get_gti_from_extension(
+                    lchdulist, accepted_gtistrings=accepted_gtistrings)
         except:  # pragma: no cover
-            logging.warning("%s Extension not found or invalid " % gtistring +
-                            "in %s!! Please check!!" % fits_file)
+            logging.warning("No extensions found with a valid name. "
+                            "Please check the `accepted_gtistrings` values.")
             gti_list = np.array([[t_start, t_stop]],
                                 dtype=np.longdouble)
     else:
         gti_list = load_gtis(gti_file, gtistring)
 
-    if additional_columns is not None:
-        additional_data = {}
-        for a in additional_columns:
-            try:
-                additional_data[a] = np.array(lctable.field(a))
-            except:  # pragma: no cover
-                if a == 'PI':
-                    logging.warning('Column PI not found. Trying with PHA')
-                    additional_data[a] = np.array(lctable.field('PHA'))
-                else:
-                    raise Exception('Column' + a + 'not found')
+    additional_data = _get_additional_data(lctable, additional_columns)
 
     lchdulist.close()
 
     # Sort event list
     order = np.argsort(ev_list)
     ev_list = ev_list[order]
-    if additional_columns is not None:
-        additional_data = dict([(k, additional_data[k][order])
-                                for k in additional_columns])
 
-    if return_limits:
-        if additional_columns is not None:
-            return ev_list, gti_list, additional_data, t_start, t_stop
-        else:
-            return ev_list, gti_list, t_start, t_stop
-    else:
-        if additional_columns is not None:
-            return ev_list, gti_list, additional_data
-        else:
-            return ev_list, gti_list
+    additional_data = _order_list_of_arrays(additional_data, order)
+
+    returns = _empty()
+    returns.ev_list = ev_list
+    returns.gti_list = gti_list
+    returns.additional_data = additional_data
+    returns.t_start = t_start
+    returns.t_stop = t_stop
+
+    return returns
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,
@@ -195,10 +199,14 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
         additional_columns.append('PCUID')
 
     mjdref = ref_mjd(filename)
-    events, gtis, additional, tstart, tstop = \
-        load_events_and_gtis(filename,
-                             additional_columns=additional_columns,
-                             return_limits=True)
+    data = load_events_and_gtis(filename,
+                                additional_columns=additional_columns)
+
+    events = data.ev_list
+    gtis = data.gti_list
+    additional = data.additional_data
+    tstart = data.t_start
+    tstop = data.t_stop
 
     pis = additional['PI']
     out = {'time': events,

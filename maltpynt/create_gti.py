@@ -47,6 +47,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
         logging.warning('RXTE/PCA data; normalizing lc per no. PCUs')
         # If RXTE, plot per PCU count rate
         data['lc'] /= data['nPCUs']
+    mjdref = data['MJDref']
     # Map all entries of data to local variables
     locals().update(data)
 
@@ -57,7 +58,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
 
     if outfile is None:
         outfile = mp_root(fname) + '_gti' + MP_FILE_EXTENSION
-    save_data({'GTI': gtis}, outfile)
+    save_data({'GTI': gtis, 'MJDref': mjdref}, outfile)
 
     return gtis
 

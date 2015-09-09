@@ -65,15 +65,15 @@ class TestPDS(unittest.TestCase):
                              stop_time=cls.tstop)
         cls.time = time
 
-        cls.freq1, cls.pds1, cls.pdse1, dum = \
-            mp.fspec.welch_pds(cls.time, cls.lc1, cls.bintime, 1024)
+        data = mp.fspec.welch_pds(cls.time, cls.lc1, cls.bintime, 1024)
+        cls.freq1, cls.pds1, cls.pdse1 = data.f, data.pds, data.epds
 
-        cls.freq2, cls.pds2, cls.pdse2, dum = \
-            mp.fspec.welch_pds(cls.time, cls.lc2, cls.bintime, 1024)
+        data = mp.fspec.welch_pds(cls.time, cls.lc2, cls.bintime, 1024)
+        cls.freq2, cls.pds2, cls.pdse2 = data.f, data.pds, data.epds
 
-        dum, cls.cpds, cls.ec, dum = \
-            mp.fspec.welch_cpds(cls.time, cls.lc1, cls.lc2,
-                                cls.bintime, 1024)
+        data = mp.fspec.welch_cpds(cls.time, cls.lc1, cls.lc2,
+                                   cls.bintime, 1024)
+        cls.cpds, cls.ec = data.cpds, data.ecpds
 
         # Calculate the variance discarding the freq=0 Hz element
         cls.varp1 = np.var(cls.pds1[1:])
