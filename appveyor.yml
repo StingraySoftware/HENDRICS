@@ -38,7 +38,7 @@ install:
     - "python --version"
 
     # Install specified version of numpy and dependencies
-    - "conda install -q --yes scipy %NETCDF_LIB% astropy numpy matplotlib"
+    - "conda install -q --yes scipy %NETCDF_LIB% astropy numpy matplotlib pyyaml"
     - pip install coveralls
 
     - python setup.py install
