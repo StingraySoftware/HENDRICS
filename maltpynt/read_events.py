@@ -146,6 +146,13 @@ def load_events_and_gtis(fits_file, return_limits=False,
 
     lchdulist.close()
 
+    # Sort event list
+    order = np.argsort(ev_list)
+    ev_list = ev_list[order]
+    if additional_columns is not None:
+        additional_data = dict([(k, additional_data[k][order])
+                                for k in additional_columns])
+
     if return_limits:
         if additional_columns is not None:
             return ev_list, gti_list, additional_data, t_start, t_stop
