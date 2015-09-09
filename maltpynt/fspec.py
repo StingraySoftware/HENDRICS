@@ -4,7 +4,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .base import mp_root, cross_gtis, create_gti_mask
-from .base import sort_files, common_name
+from .base import sort_files, common_name, _empty
 from .rebin import const_rebin
 from .io import get_file_type, load_lcurve, save_pds
 from .io import MP_FILE_EXTENSION
@@ -23,11 +23,6 @@ def _wrap_fun_pds(argdict):
     fname = argdict["fname"]
     argdict.pop("fname")
     return calc_pds(fname, **argdict)
-
-
-class _empty():
-    def __init__(self):
-        pass
 
 
 def fft(lc, bintime):
@@ -52,7 +47,7 @@ def fft(lc, bintime):
     return freqs.astype(np.double), ft
 
 
-def leahy_pds(lc, bintime, return_freq=True):
+def leahy_pds(lc, bintime):
     r"""Calculate the power density spectrum.
 
     Calculates the Power Density Spectrum a la Leahy+1983, ApJ 266, 160,
@@ -66,11 +61,12 @@ def leahy_pds(lc, bintime, return_freq=True):
     bintime : array-like
         the bin time of the light curve
 
-    Other Parameters
-    ----------------
-    return_freq : bool, default True
-        Return the frequencies corresponding to the PDS bins?
-
+    Returns
+    -------
+    freqs : array-like
+        Frequencies corresponding to PDS
+    pds : array-like
+        The power density spectrum
     """
     nph = sum(lc)
 
@@ -86,14 +82,10 @@ def leahy_pds(lc, bintime, return_freq=True):
     freqs = freqs[good]
     pds = pds[good]
 
-    if return_freq:
-        return freqs, pds
-    else:
-        return pds
+    return freqs, pds
 
 
-def welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
-              return_all=False):
+def welch_pds(time, lc, bintime, fftlen, gti=None, return_all=False):
     r"""Calculate the PDS, averaged over equal chunks of data.
 
     Calculates the Power Density Spectrum \'a la Leahy (1983), given the
@@ -117,8 +109,7 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
     Returns
     -------
     return_str : object, optional
-        An Object containing all return values below, plus the dynamical PDS.
-        This is returned if return_all is True
+        An Object containing all values below.
     freq : array-like
         array of frequencies corresponding to PDS bins
     pds : array-like
@@ -132,8 +123,6 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
 
     Other parameters
     ----------------
-    return_ctrate : bool
-        if True, return also the count rate
     return_all : bool
         if True, return everything, including the dynamical PDS
     """
@@ -143,8 +132,8 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
     start_bins, stop_bins = \
         decide_spectrum_lc_intervals(gti, fftlen, time)
 
+    results = _empty()
     if return_all:
-        results = _empty()
         results.dynpds = []
         results.edynpds = []
         results.dynctrate = []
@@ -179,22 +168,16 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_ctrate=False,
     epds = pds / np.sqrt(npds)
     ctrate = np.mean(lc[mask]) / bintime
 
-    if return_all:
-        results.f = f
-        results.pds = pds
-        results.epds = epds
-        results.npds = npds
-        results.ctrate = ctrate
+    results.f = f
+    results.pds = pds
+    results.epds = epds
+    results.npds = npds
+    results.ctrate = ctrate
 
-        return results
-
-    if return_ctrate:
-        return f, pds, epds, npds, ctrate
-    else:
-        return f, pds, epds, npds
+    return results
 
 
-def leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
+def leahy_cpds(lc1, lc2, bintime):
     """Calculate the cross power density spectrum.
 
     Calculates the Cross Power Density Spectrum, normalized similarly to the
@@ -210,10 +193,12 @@ def leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     bintime : array-like
         The bin time of the light curve
 
-    Other Parameters
-    ----------------
-    return_freq : bool, default True
-        Return the frequencies corresponding to the PDS bins?
+    Returns
+    -------
+    freqs : array-like
+        Frequencies corresponding to PDS
+    cpds : array-like
+        The cross power density spectrum
 
     """
     assert len(lc1) == len(lc2), 'Light curves MUST have the same length!'
@@ -251,17 +236,10 @@ def leahy_cpds(lc1, lc2, bintime, return_freq=True, return_pdss=False):
     cpds = cpds[good]
     cpdse = cpdse[good]
 
-    if return_freq:
-        result = [freqs, cpds, cpdse]
-    else:
-        result = [cpds, cpdse]
-    if return_pdss:
-        result.extend([pds1, pds2])
-    return result
+    return freqs, cpds, cpdse, pds1, pds2
 
 
-def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
-               return_ctrate=False, return_all=False):
+def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None, return_all=False):
     """Calculate the CPDS, averaged over equal chunks of data.
 
     Calculates the Cross Power Density Spectrum normalized like PDS, given the
@@ -287,8 +265,7 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
     Returns
     -------
     return_str : object, optional
-        An Object containing all return values below, plus the dynamical PDS.
-        This is returned if return_all is True
+        An Object containing all return values below
     freq : array-like
         array of frequencies corresponding to PDS bins
     pds : array-like
@@ -302,8 +279,6 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
 
     Other parameters
     ----------------
-    return_ctrate : bool
-        if True, return also the count rate
     return_all : bool
         if True, return everything, including the dynamical PDS
     """
@@ -318,8 +293,8 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
     npds = len(start_bins)
     mask = np.zeros(len(lc1), dtype=np.bool)
 
+    results = _empty()
     if return_all:
-        results = _empty()
         results.dyncpds = []
         results.edyncpds = []
         results.dynctrate = []
@@ -340,7 +315,7 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
             npds -= 1
             continue
 
-        f, p, pe, p1, p2 = leahy_cpds(l1, l2, bintime, return_pdss=True)
+        f, p, pe, p1, p2 = leahy_cpds(l1, l2, bintime)
         cpds += p
         ecpds += pe ** 2
         if return_all:
@@ -357,19 +332,13 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None,
 
     ctrate = np.sqrt(np.mean(lc1[mask])*np.mean(lc2[mask])) / bintime
 
-    if return_all:
-        results.f = f
-        results.cpds = cpds
-        results.ecpds = ecpds
-        results.ncpds = npds
-        results.ctrate = ctrate
+    results.f = f
+    results.cpds = cpds
+    results.ecpds = ecpds
+    results.ncpds = npds
+    results.ctrate = ctrate
 
-        return results
-
-    if return_ctrate:
-        return f, cpds, ecpds, npds, ctrate
-    else:
-        return f, cpds, ecpds, npds
+    return results
 
 
 def rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):

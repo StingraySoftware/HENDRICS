@@ -12,6 +12,21 @@ from .io import get_file_type, is_string
 import logging
 
 
+def _order_list_of_arrays(data, order):
+    if hasattr(data, 'items'):
+        data = dict([(i[0], i[1][order])
+                     for i in data.items()])
+    elif hasattr(data, 'index'):
+        data = [i[order] for i in data]
+    else:
+        data = None
+    return data
+
+class _empty():
+    def __init__(self):
+        pass
+
+
 def mkdir_p(path):  # pragma: no cover
     """Safe mkdir function.
 

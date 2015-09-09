@@ -14,11 +14,11 @@ environment:
         secure: sX1jhJ0jV5LxZPvfIfy5Y+P28oEBmcwnEiZ3HWhC3Xbt8g+cgROQ2DZodw4Ij8lu
 
   matrix:
-      - PYTHON_VERSION: "2.7"
-        NETCDF_LIB: "netcdf4"
-
       - PYTHON_VERSION: "3.4"
         NETCDF_LIB: ""
+
+      - PYTHON_VERSION: "2.7"
+        NETCDF_LIB: "netcdf4"
 
 platform:
     -x64

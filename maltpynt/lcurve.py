@@ -49,6 +49,7 @@ def lcurve(event_list,
     if stop_time is None:
         logging.warning("lcurve: Changing stop time")
         stop_time = np.ceil(event_list[-1])
+
     logging.debug("lcurve: Time limits: %g -- %g" %
                   (start_time, stop_time))
 
