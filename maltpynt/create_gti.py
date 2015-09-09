@@ -8,6 +8,7 @@ from .io import MP_FILE_EXTENSION, save_data, load_data
 from .base import create_gti_from_condition, mp_root, create_gti_mask
 from .base import cross_gtis, get_file_type
 import logging
+import sys
 
 
 def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
