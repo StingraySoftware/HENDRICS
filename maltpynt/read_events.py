@@ -209,12 +209,13 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     if gti_split:
         for ig, g in enumerate(gtis):
             length = g[1] - g[0]
-            if length < 4:
-                print("This GTI is shorter than 4s; skipping")
+            if length < min_length:
+                print("GTI shorter than {0} s; skipping".format(min_length))
                 continue
 
             outfile_local = \
-                '{0}_{1}'.format(outfile.replace(MP_FILE_EXTENSION, ''), ig) + \
+                '{0}_{1}'.format(outfile.replace(MP_FILE_EXTENSION,
+                                                 ''), ig) + \
                 MP_FILE_EXTENSION
             if noclobber and os.path.exists(outfile_local):
                 print('{0} exists, '.format(outfile_local) +
