@@ -251,7 +251,7 @@ def rebin_file(filename, rebin):
                 for i_s, spec in enumerate(old_dynspec):
                     retval = geom_bin(x, spec, rebin, old_edynspec[i_s])
                     dynspec.append(retval.pds)
-                    edynspec.append(retval.pdse)
+                    edynspec.append(retval.epds)
 
                 contents['dyn{0}'.format(ftype)] = np.array(dynspec)
                 contents['edyn{0}'.format(ftype)] = np.array(edynspec)
