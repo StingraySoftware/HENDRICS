@@ -120,8 +120,7 @@ install:
     - if [[ $SETUP_CMD != egg_info ]]; then python setup.py install; fi
 
 script:
-    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coverage run setup.py test; fi
-    - if [[ $SETUP_CMD != 'test --coverage' ]]; then python setup.py $SETUP_CMD; fi
+    - python setup.py $SETUP_CMD
 
 after_success:
     # If coveralls.io is set up for this package, uncomment the line
