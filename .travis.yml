@@ -120,7 +120,7 @@ install:
     - if [[ $SETUP_CMD != egg_info ]]; then python setup.py install; fi
 
 script:
-    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coverage run python setup.py test; fi
+    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coverage run setup.py test; fi
     - if [[ $SETUP_CMD != 'test --coverage' ]]; then python setup.py $SETUP_CMD; fi
 
 after_success:
