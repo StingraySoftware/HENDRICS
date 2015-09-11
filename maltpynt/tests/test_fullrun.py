@@ -420,6 +420,7 @@ class TestFullRun(unittest.TestCase):
             colnames=["array", "err"])
 
     def step10e_get_file_type(self):
+        """Test getting file type."""
         file_list = {'events': 'monol_testA_ev',
                      'lc': 'monol_testA_E3-50_lc',
                      'pds': 'monol_testA_E3-50_pds',
@@ -429,12 +430,9 @@ class TestFullRun(unittest.TestCase):
                      'rebpds': 'monol_testA_E3-50_pds_rebin1.03',
                      'lag': 'monol_test_lag'}
         for realtype in file_list.keys():
-            print(file_list[realtype])
             fname = os.path.join(datadir,
                                  file_list[realtype] + MP_FILE_EXTENSION)
-            print(realtype, fname, end=' ')
             ftype, _ = mp.io.get_file_type(fname)
-            print(ftype)
             assert ftype == realtype, "File types do not match"
 
     def step11_exposure(self):
