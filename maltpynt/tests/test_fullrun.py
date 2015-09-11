@@ -104,10 +104,15 @@ class TestFullRun(unittest.TestCase):
 
     def step04a_lcurve(self):
         """Test light curve production."""
-        command = ('{0} {1} -e {2} {3} --safe-interval '
-                   '{4} {5}  --nproc 2').format(
+        command = ('{0} -e {1} {2} --safe-interval '
+                   '{3} {4}  --nproc 2').format(
             os.path.join(datadir, 'monol_testA_ev_calib' +
                          MP_FILE_EXTENSION),
+            3, 50, 100, 300)
+        mp.lcurve.main(command.split())
+
+        command = ('{0} -e {1} {2} --safe-interval '
+                   '{3} {4}').format(
             os.path.join(datadir, 'monol_testB_ev_calib' +
                          MP_FILE_EXTENSION),
             3, 50, 100, 300)
@@ -342,6 +347,14 @@ class TestFullRun(unittest.TestCase):
             os.path.join(datadir, 'monol_test_E3-50_cpds') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
+
+    def step06f_dumpdyncpds_reb(self):
+        """Test dumping rebinned CPDS file."""
+        command = '--noplot ' + \
+            os.path.join(datadir,
+                         'monol_test_E3-50_cpds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        mp.fspec.dumpdyn_main(command.split())
 
     def step07a_lags(self):
         """Test Lag calculations."""
