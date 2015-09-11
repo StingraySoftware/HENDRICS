@@ -201,5 +201,18 @@ class TestAll(unittest.TestCase):
                                                 gti=None)
         np.testing.assert_almost_equal(expo, np.array([0.1, 0.6, 0.]))
 
+    def test_high_precision_keyword(self):
+        """Test high precision FITS keyword read."""
+        from maltpynt.io import high_precision_keyword_read
+        hdr = {"MJDTESTI": 100, "MJDTESTF": np.longdouble(0.5),
+               "CIAO": np.longdouble(0.)}
+        assert \
+            high_precision_keyword_read(hdr,
+                                        "MJDTEST") == np.longdouble(100.5), \
+            "Keyword MJDTEST read incorrectly"
+        assert \
+            high_precision_keyword_read(hdr, "CIAO") == np.longdouble(0.), \
+            "Keyword CIAO read incorrectly"
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
