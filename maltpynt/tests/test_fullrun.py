@@ -200,6 +200,20 @@ class TestFullRun(unittest.TestCase):
             MP_FILE_EXTENSION)
         mp.lcurve.scrunch_main(command.split())
 
+    def step04g_lcurve(self):
+        """Test light curve error from uncalibrated file."""
+        command = ('{0} -e {1} {2}').format(
+            os.path.join(datadir, 'monol_testA_ev' +
+                         MP_FILE_EXTENSION), 3, 50)
+
+        message = ""
+        try:
+            mp.lcurve.main(command.split())
+        except Exception as e:  # Capture the expected exception
+            message = str(e)
+        assert message.endswith("Did you run MPcalibrate?"), \
+            "Unexpected behavior in lcurve"
+
     def step05a_pds(self):
         """Test PDS production."""
         command = \
