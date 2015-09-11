@@ -406,8 +406,8 @@ def lcurve_from_events(f, safe_interval=0,
             es = evdata['E']
         except:
             raise \
-                ValueError("No energy information is present in the file."
-                           + " Did you run MPcalibrate?")
+                ValueError("No energy information is present in the file." +
+                           " Did you run MPcalibrate?")
 
         good = np.logical_and(es > e_interval[0],
                               es <= e_interval[1])
@@ -583,9 +583,9 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     # It's a madness...
     try:
         tstart = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                              'TSTART')
+                                             'TSTART')
         tstop = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                             'TSTOP')
+                                            'TSTOP')
     except:
         raise(Exception('TSTART and TSTOP need to be specified'))
 
