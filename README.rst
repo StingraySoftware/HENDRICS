@@ -1,11 +1,11 @@
 MaLTPyNT - Matteo's Libraries and Tools in Python for NuSTAR Timing.
 ====================================================================
 
-+------------------+---------------------------+------------------------------+---------------------------------+---------------------+
-| **Devel 2.0**    | |Build Status Master|     | |Coverage Status Master|     | |Documentation Status Master|   | |AppVeyor status|   |
-+==================+===========================+==============================+=================================+=====================+
-| **Bugfix 1.0**   | |Build Status Unstable|   | |Coverage Status Unstable|   | |Documentation Status|          |                     |
-+------------------+---------------------------+------------------------------+---------------------------------+---------------------+
++------------------+-------------------------+----------------------------+---------------------------------+---------------------+
+| **Devel 2.0**    | |Build Status Master|   | |Coverage Status Master|   | |Documentation Status Master|   | |AppVeyor status|   |
++==================+=========================+============================+=================================+=====================+
+| **Bugfix 1.0**   | |Build Status 1.0|      | |Coverage Status 1.0|      | |Documentation Status|          |                     |
++------------------+-------------------------+----------------------------+---------------------------------+---------------------+
 
 This software is designed to do correctly and fairly easily a
 **quick-look timing analysis** of NuSTAR data, treating properly orbital
@@ -29,17 +29,17 @@ The **documentation** can be found
 A **tutorial** is also available
 `here <http://maltpynt.readthedocs.org/en/stable/tutorial.html>`__
 
-.. |Build Status Master| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=unstable
+.. |Build Status Master| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=master
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
-.. |Coverage Status Master| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=unstable&service=github
-   :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=unstable
+.. |Coverage Status Master| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=master&service=github
+   :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=master
 .. |Documentation Status Master| image:: https://readthedocs.org/projects/maltpynt/badge/?version=latest
    :target: https://readthedocs.org/projects/maltpynt/badge/?version=latest
-.. |AppVeyor status| image:: https://ci.appveyor.com/api/projects/status/op01lg1v9p4wrasv/branch/unstable?svg=true
-   :target: https://ci.appveyor.com/project/matteobachetti/maltpynt/branch/unstable
-.. |Build Status Unstable| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=1.0_bugfix
+.. |AppVeyor status| image:: https://ci.appveyor.com/api/projects/status/op01lg1v9p4wrasv/branch/master?svg=true
+   :target: https://ci.appveyor.com/project/matteobachetti/maltpynt/branch/master
+.. |Build Status 1.0| image:: https://travis-ci.org/matteobachetti/MaLTPyNT.svg?branch=1.0_bugfix
    :target: https://travis-ci.org/matteobachetti/MaLTPyNT
-.. |Coverage Status Unstable| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=1.0_bugfix&service=github
+.. |Coverage Status 1.0| image:: https://coveralls.io/repos/matteobachetti/MaLTPyNT/badge.svg?branch=1.0_bugfix&service=github
    :target: https://coveralls.io/github/matteobachetti/MaLTPyNT?branch=1.0_bugfix
 .. |Documentation Status| image:: https://readthedocs.org/projects/maltpynt/badge/?version=1.0_bugfix
    :target: https://readthedocs.org/projects/maltpynt/badge/?version=1.0_bugfix

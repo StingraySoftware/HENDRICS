@@ -9,6 +9,7 @@ from .io import save_events
 from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
+import warnings
 import os
 
 
@@ -142,8 +143,8 @@ def load_events_and_gtis(fits_file, additional_columns=None,
                 _get_gti_from_extension(
                     lchdulist, accepted_gtistrings=accepted_gtistrings)
         except:  # pragma: no cover
-            logging.warning("No extensions found with a valid name. "
-                            "Please check the `accepted_gtistrings` values.")
+            warnings.warn("No extensions found with a valid name. "
+                          "Please check the `accepted_gtistrings` values.")
             gti_list = np.array([[t_start, t_stop]],
                                 dtype=np.longdouble)
     else:
@@ -189,7 +190,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     logging.info('Opening %s' % filename)
     outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outfile) and (not gti_split):
-        print(
+        warnings.warn(
             '{0} exists, and noclobber option used. Skipping'.format(outfile))
         return
 
@@ -233,8 +234,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                                                  ''), ig) + \
                 MP_FILE_EXTENSION
             if noclobber and os.path.exists(outfile_local):
-                print('{0} exists, '.format(outfile_local) +
-                      'and noclobber option used. Skipping')
+                warnings.warn('{0} exists, '.format(outfile_local) +
+                              'and noclobber option used. Skipping')
                 return
             out_local = out.copy()
             good = np.logical_and(events >= g[0], events < g[1])

@@ -328,37 +328,6 @@ def create_gti_from_condition(time, condition,
     return np.array(gtis)
 
 
-def cross_gtis_bin(gti_list, bin_time=1):
-    """From multiple GTI lists, extract the common intervals.
-
-    .. note:: Deprecated
-          `cross_gtis_bin` will be removed, it is replaced by
-          `cross_gtis` because the latter uses a better algorithm.
-    """
-    ninst = len(gti_list)
-    if ninst == 1:
-        return gti_list[0]
-
-    start = np.min([g[0][0] for g in gti_list])
-    stop = np.max([g[-1][-1] for g in gti_list])
-
-    times = np.arange(start + bin_time / 2,
-                      stop + bin_time / 2,
-                      bin_time, dtype=np.longdouble)
-
-    mask0 = create_gti_mask(times, gti_list[0],
-                            safe_interval=[0, bin_time])
-
-    for gti in gti_list[1:]:
-        mask = create_gti_mask(times, gti,
-                               safe_interval=[0, bin_time])
-        mask0 = np.logical_and(mask0, mask)
-
-    gtis = create_gti_from_condition(times, mask0)
-
-    return gtis
-
-
 def cross_two_gtis(gti0, gti1):
     """Extract the common intervals from two GTI lists *EXACTLY*.
 

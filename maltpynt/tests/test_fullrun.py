@@ -11,6 +11,7 @@ import sys
 import glob
 import subprocess as sp
 import numpy as np
+from astropy.tests.helper import catch_warnings
 
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 
@@ -65,16 +66,27 @@ class TestFullRun(unittest.TestCase):
         mp.read_events.main(command.split())
 
     def step02c_load_events_split(self):
-        """Test event file reading."""
+        """Test event file splitting."""
         command = \
-            '{0} -g --noclobber --min-length 0'.format(
-                os.path.join(datadir, 'monol_testB.evt'))
+            '{0} -g --min-length 0'.format(
+                    os.path.join(datadir, 'monol_testB.evt'))
         mp.read_events.main(command.split())
 
     def step02d_load_gtis(self):
         """Test loading of GTIs from FITS files"""
         fits_file = os.path.join(datadir, 'monol_testA.evt')
         mp.read_events.load_gtis(fits_file)
+
+    def step02e_load_events_noclobber(self):
+        """Test event file reading w. noclobber option."""
+        with catch_warnings() as w:
+            command = \
+                '{0} --noclobber'.format(
+                    os.path.join(datadir, 'monol_testB.evt'))
+            mp.read_events.main(command.split())
+        assert str(w[0].message).strip().endswith(
+            "noclobber option used. Skipping"), \
+            "Unexpected warning output"
 
     def step03a_calibrate(self):
         """Test event file calibration."""
@@ -92,10 +104,15 @@ class TestFullRun(unittest.TestCase):
 
     def step04a_lcurve(self):
         """Test light curve production."""
-        command = ('{0} {1} -e {2} {3} --safe-interval '
-                   '{4} {5}  --nproc 2').format(
+        command = ('{0} -e {1} {2} --safe-interval '
+                   '{3} {4}  --nproc 2').format(
             os.path.join(datadir, 'monol_testA_ev_calib' +
                          MP_FILE_EXTENSION),
+            3, 50, 100, 300)
+        mp.lcurve.main(command.split())
+
+        command = ('{0} -e {1} {2} --safe-interval '
+                   '{3} {4}').format(
             os.path.join(datadir, 'monol_testB_ev_calib' +
                          MP_FILE_EXTENSION),
             3, 50, 100, 300)
@@ -188,6 +205,28 @@ class TestFullRun(unittest.TestCase):
             MP_FILE_EXTENSION)
         mp.lcurve.scrunch_main(command.split())
 
+    def step04g_lcurve(self):
+        """Test light curve error from uncalibrated file."""
+        command = ('{0} -e {1} {2}').format(
+            os.path.join(datadir, 'monol_testA_ev' +
+                         MP_FILE_EXTENSION), 3, 50)
+
+        message = ""
+        try:
+            mp.lcurve.main(command.split())
+        except Exception as e:  # Capture the expected exception
+            message = str(e)
+        assert message.endswith("Did you run MPcalibrate?"), \
+            "Unexpected behavior in lcurve"
+
+    def step04h_lcurve(self):
+        """Test light curve using PI filtering."""
+        command = ('{0} --pi-interval {1} {2}').format(
+            os.path.join(datadir, 'monol_testA_ev' +
+                         MP_FILE_EXTENSION), 10, 300)
+
+        mp.lcurve.main(command.split())
+
     def step05a_pds(self):
         """Test PDS production."""
         command = \
@@ -271,7 +310,53 @@ class TestFullRun(unittest.TestCase):
             MP_FILE_EXTENSION
         mp.fspec.dumpdyn_main(command.split())
 
-    def step06_lags(self):
+    def step06a_rebinlc(self):
+        """Test LC rebinning."""
+        command = '{0} -r 2'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_lc') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step06b_rebinpds(self):
+        """Test PDS rebinning 1."""
+        command = '{0} -r 2'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_pds') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step06c_rebinpds(self):
+        """Test geometrical PDS rebinning"""
+        command = '{0} {1} -r 1.03'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_pds') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testB_E3-50_pds') +
+            MP_FILE_EXTENSION
+            )
+        mp.rebin.main(command.split())
+
+    def step06d_rebincpds(self):
+        """Test CPDS rebinning."""
+        command = '{0} -r 2'.format(
+            os.path.join(datadir, 'monol_test_E3-50_cpds') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step06e_rebincpds(self):
+        """Test CPDS geometrical rebinning."""
+        command = '{0} -r 1.03'.format(
+            os.path.join(datadir, 'monol_test_E3-50_cpds') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step06f_dumpdyncpds_reb(self):
+        """Test dumping rebinned CPDS file."""
+        command = '--noplot ' + \
+            os.path.join(datadir,
+                         'monol_test_E3-50_cpds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        mp.fspec.dumpdyn_main(command.split())
+
+    def step07a_lags(self):
         """Test Lag calculations."""
         command = '{0} {1} {2} -o {3}'.format(
             os.path.join(datadir, 'monol_test_E3-50_cpds') +
@@ -283,40 +368,17 @@ class TestFullRun(unittest.TestCase):
             os.path.join(datadir, 'monol_test'))
         mp.lags.main(command.split())
 
-    def step07a_rebinlc(self):
-        """Test LC rebinning."""
-        command = '{0} -r 2'.format(
-            os.path.join(datadir, 'monol_testA_E3-50_lc') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
-
-    def step07b_rebinpds(self):
-        """Test PDS rebinning 1."""
-        command = '{0} -r 2'.format(
-            os.path.join(datadir, 'monol_testA_E3-50_pds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
-
-    def step07c_rebinpds(self):
-        """Test geometrical PDS rebinning"""
-        command = '{0} -r 1.03'.format(
-            os.path.join(datadir, 'monol_testA_E3-50_pds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
-
-    def step07d_rebincpds(self):
-        """Test CPDS rebinning."""
-        command = '{0} -r 2'.format(
-            os.path.join(datadir, 'monol_test_E3-50_cpds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
-
-    def step07e_rebincpds(self):
-        """Test CPDS geometrical rebinning."""
-        command = '{0} -r 1.03'.format(
-            os.path.join(datadir, 'monol_test_E3-50_cpds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
+    def step07b_lags(self):
+        """Test Lag calculations in rebinned data."""
+        command = '{0} {1} {2} -o {3}'.format(
+            os.path.join(datadir, 'monol_test_E3-50_cpds_rebin1.03') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testB_E3-50_pds_rebin1.03') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_test_reb'))
+        mp.lags.main(command.split())
 
     def step08a_savexspec(self):
         """Test save as Xspec 1."""
@@ -384,6 +446,22 @@ class TestFullRun(unittest.TestCase):
             [array, errors],
             filename=os.path.join(datadir, "monol_test.txt"),
             colnames=["array", "err"])
+
+    def step10e_get_file_type(self):
+        """Test getting file type."""
+        file_list = {'events': 'monol_testA_ev',
+                     'lc': 'monol_testA_E3-50_lc',
+                     'pds': 'monol_testA_E3-50_pds',
+                     'GTI': 'monol_testA_E3-50_gti',
+                     'cpds': 'monol_test_E3-50_cpds',
+                     'rebcpds': 'monol_test_E3-50_cpds_rebin1.03',
+                     'rebpds': 'monol_testA_E3-50_pds_rebin1.03',
+                     'lag': 'monol_test_lag'}
+        for realtype in file_list.keys():
+            fname = os.path.join(datadir,
+                                 file_list[realtype] + MP_FILE_EXTENSION)
+            ftype, _ = mp.io.get_file_type(fname)
+            assert ftype == realtype, "File types do not match"
 
     def step11_exposure(self):
         """Test exposure calculations from unfiltered files"""

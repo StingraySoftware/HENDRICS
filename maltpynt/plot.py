@@ -8,7 +8,7 @@ try:
 except:
     # Permit to import the module anyway if matplotlib is not present
     pass
-from .io import load_data, get_file_type
+from .io import load_data, get_file_type, load_pds
 from .io import is_string
 from .base import create_gti_mask
 from .base import detection_level
@@ -29,7 +29,7 @@ def plot_pds(fnames, figname=None):
     ax = plt.subplot(1, 1, 1)
     rainbow = ax._get_lines.color_cycle
     for i, fname in enumerate(fnames):
-        pdsdata = load_data(fname)
+        pdsdata = load_pds(fname)
         try:
             freq = pdsdata['freq']
         except:
@@ -76,7 +76,7 @@ def plot_cospectrum(fnames, figname=None):
     if is_string(fnames):
         fnames = [fnames]
     for fname in fnames:
-        pdsdata = load_data(fname)
+        pdsdata = load_pds(fname)
 
         try:
             freq = pdsdata['freq']
