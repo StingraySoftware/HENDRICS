@@ -8,7 +8,7 @@ import numpy as np
 from .base import mp_root, create_gti_mask, cross_gtis, mkdir_p
 from .base import contiguous_regions, calc_countrate, gti_len
 from .io import load_events, load_lcurve, save_lcurve
-from .io import MP_FILE_EXTENSION
+from .io import MP_FILE_EXTENSION, high_precision_keyword_read
 import os
 import logging
 
@@ -501,18 +501,6 @@ def lcurve_from_events(f, safe_interval=0,
     return outfiles
 
 
-def _high_precision_keyword_read(hdr, keyword):
-    try:
-        value = np.longdouble(hdr[keyword])
-    except:
-        if len(keyword) == 8:
-            keyword = keyword[:7]
-        value = np.longdouble(hdr[keyword + 'I'])
-        value += np.longdouble(hdr[keyword + 'F'])
-
-    return value
-
-
 def lcurve_from_fits(fits_file, gtistring='GTI',
                      timecolumn='TIME', ratecolumn=None, ratehdu=1,
                      fracexp_limit=0.9, outfile=None,
@@ -579,8 +567,8 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     tunit = lchdulist[ratehdu].header['TIMEUNIT']
 
     try:
-        mjdref = _high_precision_keyword_read(lchdulist[ratehdu].header,
-                                              'MJDREF')
+        mjdref = high_precision_keyword_read(lchdulist[ratehdu].header,
+                                             'MJDREF')
         mjdref = Time(mjdref, scale='tdb', format='mjd')
     except:
         mjdref = None
@@ -594,16 +582,16 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     # Trying to comply with all different formats of fits light curves.
     # It's a madness...
     try:
-        tstart = _high_precision_keyword_read(lchdulist[ratehdu].header,
+        tstart = high_precision_keyword_read(lchdulist[ratehdu].header,
                                               'TSTART')
-        tstop = _high_precision_keyword_read(lchdulist[ratehdu].header,
+        tstop = high_precision_keyword_read(lchdulist[ratehdu].header,
                                              'TSTOP')
     except:
         raise(Exception('TSTART and TSTOP need to be specified'))
 
     # For nulccorr lcs this whould work
     try:
-        timezero = _high_precision_keyword_read(lchdulist[ratehdu].header,
+        timezero = high_precision_keyword_read(lchdulist[ratehdu].header,
                                                 'TIMEZERO')
         # Sometimes timezero is "from tstart", sometimes it's an absolute time.
         # This tries to detect which case is this, and always consider it
@@ -637,7 +625,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
         time += timezero
 
     try:
-        dt = _high_precision_keyword_read(lchdulist[ratehdu].header,
+        dt = high_precision_keyword_read(lchdulist[ratehdu].header,
                                           'TIMEDEL')
         if tunit == 'd':
             dt *= 86400
