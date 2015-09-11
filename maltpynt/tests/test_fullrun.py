@@ -305,7 +305,45 @@ class TestFullRun(unittest.TestCase):
             MP_FILE_EXTENSION
         mp.fspec.dumpdyn_main(command.split())
 
-    def step06_lags(self):
+    def step06a_rebinlc(self):
+        """Test LC rebinning."""
+        command = '{0} -r 2'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_lc') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step06b_rebinpds(self):
+        """Test PDS rebinning 1."""
+        command = '{0} -r 2'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_pds') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step06c_rebinpds(self):
+        """Test geometrical PDS rebinning"""
+        command = '{0} {1} -r 1.03'.format(
+            os.path.join(datadir, 'monol_testA_E3-50_pds') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testB_E3-50_pds') +
+            MP_FILE_EXTENSION
+            )
+        mp.rebin.main(command.split())
+
+    def step06d_rebincpds(self):
+        """Test CPDS rebinning."""
+        command = '{0} -r 2'.format(
+            os.path.join(datadir, 'monol_test_E3-50_cpds') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step06e_rebincpds(self):
+        """Test CPDS geometrical rebinning."""
+        command = '{0} -r 1.03'.format(
+            os.path.join(datadir, 'monol_test_E3-50_cpds') +
+            MP_FILE_EXTENSION)
+        mp.rebin.main(command.split())
+
+    def step07a_lags(self):
         """Test Lag calculations."""
         command = '{0} {1} {2} -o {3}'.format(
             os.path.join(datadir, 'monol_test_E3-50_cpds') +
@@ -317,40 +355,17 @@ class TestFullRun(unittest.TestCase):
             os.path.join(datadir, 'monol_test'))
         mp.lags.main(command.split())
 
-    def step07a_rebinlc(self):
-        """Test LC rebinning."""
-        command = '{0} -r 2'.format(
-            os.path.join(datadir, 'monol_testA_E3-50_lc') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
-
-    def step07b_rebinpds(self):
-        """Test PDS rebinning 1."""
-        command = '{0} -r 2'.format(
-            os.path.join(datadir, 'monol_testA_E3-50_pds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
-
-    def step07c_rebinpds(self):
-        """Test geometrical PDS rebinning"""
-        command = '{0} -r 1.03'.format(
-            os.path.join(datadir, 'monol_testA_E3-50_pds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
-
-    def step07d_rebincpds(self):
-        """Test CPDS rebinning."""
-        command = '{0} -r 2'.format(
-            os.path.join(datadir, 'monol_test_E3-50_cpds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
-
-    def step07e_rebincpds(self):
-        """Test CPDS geometrical rebinning."""
-        command = '{0} -r 1.03'.format(
-            os.path.join(datadir, 'monol_test_E3-50_cpds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
+    def step07b_lags(self):
+        """Test Lag calculations in rebinned data."""
+        command = '{0} {1} {2} -o {3}'.format(
+            os.path.join(datadir, 'monol_test_E3-50_cpds_rebin1.03') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_testB_E3-50_pds_rebin1.03') +
+            MP_FILE_EXTENSION,
+            os.path.join(datadir, 'monol_test_reb'))
+        mp.lags.main(command.split())
 
     def step08a_savexspec(self):
         """Test save as Xspec 1."""
