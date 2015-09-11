@@ -180,7 +180,7 @@ def get_file_type(fname, specify_reb=True):
 
     keys = list(contents.keys())
 
-    for i in 'lccorr,lc,cpds,pds,lag,time,GTI'.split(','):
+    for i in 'lccorr,lc,cpds,pds,lag'.split(','):
         if i in keys and 'fhi' in keys and specify_reb:
             ftype = 'reb' + i
             break
