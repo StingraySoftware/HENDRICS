@@ -387,6 +387,12 @@ def decide_spectrum_intervals(gtis, fftlen):
     gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
     fftlen : float
         Length of the chunks
+
+    Returns
+    -------
+    spectrum_start_times : array-like
+        List of starting times to use in the spectral calculations.
+
     """
     spectrum_start_times = np.array([], dtype=np.longdouble)
     for g in gtis:
