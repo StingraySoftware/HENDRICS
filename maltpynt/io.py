@@ -38,6 +38,51 @@ def is_string(s):
         return isinstance(s, basestring)  # NOQA
 
 
+def _get_key(dict_like, key):
+    try:
+        return dict_like[key]
+    except:
+        return ""
+
+
+def high_precision_keyword_read(hdr, keyword):
+    """Read FITS header keywords, also if split in two.
+
+    In the case where the keyword is split in two, like
+
+        MJDREF = MJDREFI + MJDREFF
+
+    in some missions, this function returns the summed value. Otherwise, the
+    content of the single keyword
+
+    Parameters
+    ----------
+    hdr : dict_like
+        The header structure, or a dictionary
+    keyword : str
+        The key to read in the header
+
+    Returns
+    -------
+    value : long double
+        The value of the key
+
+    """
+    try:
+        value = np.longdouble(hdr[keyword])
+        return value
+    except:
+        pass
+    try:
+        if len(keyword) == 8:
+            keyword = keyword[:7]
+        value = np.longdouble(hdr[keyword + 'I'])
+        value += np.longdouble(hdr[keyword + 'F'])
+        return value
+    except:
+        return None
+
+
 def get_file_extension(fname):
     """Get the file extension."""
     return os.path.splitext(fname)[1]
@@ -132,32 +177,21 @@ def get_file_type(fname, specify_reb=True):
     Only works for maltpynt-format pickle or netcdf files.
     """
     contents = load_data(fname)
-    """Gets file type."""
 
     keys = list(contents.keys())
 
-    if 'lccorr' in keys:
-        ftype = 'lccorr'
-    elif 'lc' in keys:
-        ftype = 'lc'
-    elif 'cpds' in keys:
-        ftype = 'cpds'
-        if 'fhi' in keys and specify_reb:
-            ftype = 'rebcpds'
-    elif 'pds' in keys:
-        ftype = 'pds'
-        if 'fhi' in keys and specify_reb:
-            ftype = 'rebpds'
-    elif 'lag' in keys:
-        ftype = 'lag'
-        if 'fhi' in keys and specify_reb:
-            ftype = 'reblag'
-    elif 'time' in keys:
-        # If it has not lc, pds or cpds, but has time, ...
-        ftype = 'events'
-    elif 'GTI' in keys:
-        # If nothing of the above, but has GTIs, than...
-        ftype = 'GTI'
+    for i in 'lccorr,lc,cpds,pds,lag,time,GTI'.split(','):
+        if i in keys and 'fhi' in keys and specify_reb:
+            ftype = 'reb' + i
+            break
+        elif i in keys:
+            ftype = i
+            break
+    else:  # If none of the above
+        if 'time' in keys:
+            ftype = 'events'
+        elif 'GTI' in keys:
+            ftype = 'GTI'
 
     return ftype, contents
 
@@ -225,7 +259,6 @@ def _load_data_pickle(fname, kind="data"):
     except Exception as e:
         raise Exception("{0} failed ({1}: {2})".format('_load_data_pickle',
                                                        type(e), e))
-        print('Failed')
 
 
 def _save_data_pickle(struct, fname, kind="data"):
@@ -237,7 +270,6 @@ def _save_data_pickle(struct, fname, kind="data"):
     except Exception as e:
         raise Exception("{0} failed ({1}: {2})".format('_save_data_pickle',
                                                        type(e), e))
-        print('Failed')
     return
 
 
@@ -418,16 +450,11 @@ def save_as_ascii(cols, filename="out.txt", colnames=None,
     return 0
 
 
-def _get_key(dict_like, key):
-    try:
-        return dict_like[key]
-    except:
-        return ""
-
-
 def print_fits_info(fits_file, hdu=1):
     """Print general info about an observation."""
     from astropy.io import fits as pf
+    from astropy.units import Unit
+    from astropy.time import Time
 
     lchdulist = pf.open(fits_file)
 
@@ -443,8 +470,17 @@ def print_fits_info(fits_file, hdu=1):
     info['Start'] = _get_key(header, 'DATE-OBS')
     info['Stop'] = _get_key(header, 'DATE-END')
 
+    # Give time in MJD
+    mjdref = high_precision_keyword_read(header, 'MJDREF')
+    tstart = high_precision_keyword_read(header, 'TSTART')
+    tstop = high_precision_keyword_read(header, 'TSTOP')
+    tunit = _get_key(header, 'TIMEUNIT')
+    start_mjd = Time(mjdref, format='mjd') + tstart * Unit(tunit)
+    stop_mjd = Time(mjdref, format='mjd') + tstop * Unit(tunit)
+
     print('ObsID:         {0}\n'.format(info['OBS_ID']))
     print('Date:          {0} -- {1}\n'.format(info['Start'], info['Stop']))
+    print('Date (MJD):    {0} -- {1}\n'.format(start_mjd, stop_mjd))
     print('Instrument:    {0}/{1}\n'.format(info['Telescope'],
                                             info['Instrument']))
     print('Target:        {0}\n'.format(info['Target']))
@@ -467,13 +503,14 @@ def main(args=None):
     args = parser.parse_args(args)
 
     for fname in args.files:
-        print('-----------------------------')
+        print()
+        print('-' * len(fname))
         print('{0}'.format(fname))
-        print('-----------------------------')
+        print('-' * len(fname))
         if fname.endswith('.fits') or fname.endswith('.evt'):
             print('This FITS file contains:', end='\n\n')
             print_fits_info(fname)
-            print('-----------------------------')
+            print('-' * len(fname))
             continue
         ftype, contents = get_file_type(fname)
         print('This file contains:', end='\n\n')
@@ -492,4 +529,4 @@ def main(args=None):
                     val = repr(list(val[:4])).replace(']', '') + '...]'
             print((k + ':').ljust(15), val, end='\n\n')
 
-        print('-----------------------------')
+        print('-' * len(fname))
