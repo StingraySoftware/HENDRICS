@@ -214,5 +214,12 @@ class TestAll(unittest.TestCase):
             high_precision_keyword_read(hdr, "CIAO") == np.longdouble(0.), \
             "Keyword CIAO read incorrectly"
 
+    def test_decide_spectrum_intervals(self):
+        """Test the division of start and end times to calculate spectra."""
+        start_times = \
+            mp.fspec.decide_spectrum_intervals([[0, 400], [1022, 1200]], 128)
+        assert np.all(start_times == np.array([0, 128, 256, 1022]))
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
