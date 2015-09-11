@@ -11,6 +11,7 @@ import sys
 import glob
 import subprocess as sp
 import numpy as np
+from astropy.tests.helper import catch_warnings
 
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 
@@ -66,10 +67,14 @@ class TestFullRun(unittest.TestCase):
 
     def step02c_load_events_split(self):
         """Test event file reading."""
-        command = \
-            '{0} -g --noclobber --min-length 0'.format(
-                os.path.join(datadir, 'monol_testB.evt'))
-        mp.read_events.main(command.split())
+        with catch_warnings() as w:
+            command = \
+                '{0} -g --noclobber --min-length 0'.format(
+                    os.path.join(datadir, 'monol_testB.evt'))
+            mp.read_events.main(command.split())
+        assert str(w[0].message).strip().endswith(
+            "noclobber option used. Skipping"), \
+            "Unexpected warning output"
 
     def step02d_load_gtis(self):
         """Test loading of GTIs from FITS files"""
