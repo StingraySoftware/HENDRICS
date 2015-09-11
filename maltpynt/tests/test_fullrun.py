@@ -66,20 +66,27 @@ class TestFullRun(unittest.TestCase):
         mp.read_events.main(command.split())
 
     def step02c_load_events_split(self):
-        """Test event file reading."""
-        with catch_warnings() as w:
-            command = \
-                '{0} -g --noclobber --min-length 0'.format(
+        """Test event file splitting."""
+        command = \
+            '{0} -g --min-length 0'.format(
                     os.path.join(datadir, 'monol_testB.evt'))
-            mp.read_events.main(command.split())
-        assert str(w[0].message).strip().endswith(
-            "noclobber option used. Skipping"), \
-            "Unexpected warning output"
+        mp.read_events.main(command.split())
 
     def step02d_load_gtis(self):
         """Test loading of GTIs from FITS files"""
         fits_file = os.path.join(datadir, 'monol_testA.evt')
         mp.read_events.load_gtis(fits_file)
+
+    def step02e_load_events_noclobber(self):
+        """Test event file reading w. noclobber option."""
+        with catch_warnings() as w:
+            command = \
+                '{0} --noclobber'.format(
+                    os.path.join(datadir, 'monol_testB.evt'))
+            mp.read_events.main(command.split())
+        assert str(w[0].message).strip().endswith(
+            "noclobber option used. Skipping"), \
+            "Unexpected warning output"
 
     def step03a_calibrate(self):
         """Test event file calibration."""
