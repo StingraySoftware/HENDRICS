@@ -214,6 +214,14 @@ class TestFullRun(unittest.TestCase):
         assert message.endswith("Did you run MPcalibrate?"), \
             "Unexpected behavior in lcurve"
 
+    def step04h_lcurve(self):
+        """Test light curve using PI filtering."""
+        command = ('{0} --pi-interval {1} {2}').format(
+            os.path.join(datadir, 'monol_testA_ev' +
+                         MP_FILE_EXTENSION), 10, 300)
+
+        mp.lcurve.main(command.split())
+
     def step05a_pds(self):
         """Test PDS production."""
         command = \
