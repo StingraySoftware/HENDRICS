@@ -828,6 +828,8 @@ def main(args=None):
                         action="store_true")
     parser.add_argument("-d", "--outdir", type=str, default=None,
                         help='Output directory')
+    parser.add_argument("-o", "--outfile", type=str, default=None,
+                        help='Output file name')
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
                               "WARNING, ERROR, CRITICAL, DEBUG; "
@@ -881,6 +883,14 @@ def main(args=None):
                    "bintime": bintime, "outdir": args.outdir}
 
     arglist = [[f, argdict] for f in args.files]
+    na = len(arglist)
+    outname = args.outfile
+    if outname is not None:
+        for i in range(na):
+            if na > 1:
+                outname = outname + "_{}".format(i)
+            arglist[i][1]['outfile'] = outname
+
     # -------------------------------------------------------------------------
     outfiles = []
 

@@ -128,18 +128,23 @@ class TestFullRun(unittest.TestCase):
     def step04c_fits_lcurve(self):
         """Test light curves from FITS."""
         lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
-        mp.lcurve.lcurve_from_events(
-            os.path.join(datadir,
-                         'monol_testA_ev') + MP_FILE_EXTENSION,
-            outfile=os.path.join(datadir,
-                                 'lcurve_lc'))
-        mp.lcurve.lcurve_from_fits(
-            lcurve_ftools_orig,
-            outfile=os.path.join(datadir,
-                                 'lcurve_ftools_lc'))
+
         lcurve_ftools = os.path.join(datadir,
                                      'lcurve_ftools_lc' +
                                      MP_FILE_EXTENSION)
+
+        command = "{0} --outfile {1}".format(
+            os.path.join(datadir,
+                         'monol_testA_ev') + MP_FILE_EXTENSION,
+            os.path.join(datadir,
+                         'lcurve_lc'))
+        mp.lcurve.main(command.split())
+
+        command = "--fits-input {0} --outfile {1}".format(
+            lcurve_ftools_orig,
+            lcurve_ftools)
+        mp.lcurve.main(command.split())
+
         lcurve_mp = os.path.join(datadir,
                                  'lcurve_lc' +
                                  MP_FILE_EXTENSION)
@@ -175,8 +180,8 @@ class TestFullRun(unittest.TestCase):
         lcurve_txt = os.path.join(datadir,
                                   'lcurve_txt_lc' +
                                   MP_FILE_EXTENSION)
-        mp.lcurve.lcurve_from_txt(lcurve_txt_orig,
-                                  outfile=lcurve_txt)
+        mp.lcurve.main(['--txt-input', lcurve_txt_orig,
+                        '--outfile', lcurve_txt])
         lcdata_txt = mp.io.load_lcurve(lcurve_txt)
 
         lc_txt = lcdata_txt['lc']
