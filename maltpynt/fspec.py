@@ -675,7 +675,6 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     time1 = time1[mask1]
     time2 = time2[mask2]
 
-    print(time1, time2, len(time1), len(time2))
     assert np.all(time1 == time2), "Something's not right in GTI filtering"
     time = time1
     del time2

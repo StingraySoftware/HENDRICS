@@ -184,7 +184,7 @@ class TestFullRun(unittest.TestCase):
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
             'Light curve data do not coincide between txt and MP'
 
-    def step05e_joinlcs(self):
+    def step04e_joinlcs(self):
         """Test produce joined light curves."""
         mp.lcurve.join_lightcurves(
             [os.path.join(datadir, 'monol_testA_E3-50_lc') +
@@ -212,12 +212,10 @@ class TestFullRun(unittest.TestCase):
                          MP_FILE_EXTENSION), 3, 50)
 
         with catch_warnings() as w:
-            command = \
-                '{0} --noclobber'.format(
-                    os.path.join(datadir, 'monol_testB.evt'))
             mp.lcurve.main(command.split())
-        assert str(w[0].message).strip().endswith(
-            "Did you run MPcalibrate?"), \
+
+        assert np.any([str(i.message).strip().endswith(
+            "Did you run MPcalibrate?") for i in w]), \
             "Unexpected behavior in lcurve"
 
     def step04h_lcurve(self):
