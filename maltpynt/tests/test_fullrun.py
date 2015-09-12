@@ -211,12 +211,13 @@ class TestFullRun(unittest.TestCase):
             os.path.join(datadir, 'monol_testA_ev' +
                          MP_FILE_EXTENSION), 3, 50)
 
-        message = ""
-        try:
+        with catch_warnings() as w:
+            command = \
+                '{0} --noclobber'.format(
+                    os.path.join(datadir, 'monol_testB.evt'))
             mp.lcurve.main(command.split())
-        except Exception as e:  # Capture the expected exception
-            message = str(e)
-        assert message.endswith("Did you run MPcalibrate?"), \
+        assert str(w[0].message).strip().endswith(
+            "Did you run MPcalibrate?"), \
             "Unexpected behavior in lcurve"
 
     def step04h_lcurve(self):
