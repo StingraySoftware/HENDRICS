@@ -11,6 +11,7 @@ from .io import load_events, load_lcurve, save_lcurve
 from .io import MP_FILE_EXTENSION, high_precision_keyword_read
 import os
 import logging
+import warnings
 
 
 def lcurve(event_list,
@@ -760,17 +761,28 @@ def lcurve_from_txt(txt_file, outfile=None,
 
 def _wrap_lc(args):
     f, kwargs = args
-    return lcurve_from_events(f, **kwargs)
+    try:
+        return lcurve_from_events(f, **kwargs)
+    except Exception as e:
+        warnings.warn("MPlcurve exception: {0}".format(str(e)))
+        return []
 
 
 def _wrap_txt(args):
     f, kwargs = args
-    return lcurve_from_txt(f, **kwargs)
+    try:
+        return lcurve_from_txt(f, **kwargs)
+    except Exception as e:
+        warnings.warn("MPlcurve exception: {0}".format(str(e)))
+        return []
 
 
 def _wrap_fits(args):
     f, kwargs = args
-    return lcurve_from_fits(f, **kwargs)
+    try:
+        return lcurve_from_fits(f, **kwargs)
+    except Exception as e:
+        warnings.warn("MPlcurve exception: {0}".format(str(e)))
 
 
 def main(args=None):
