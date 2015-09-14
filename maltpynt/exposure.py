@@ -7,7 +7,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-from .read_events import load_events_and_gtis
+from .io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, MP_FILE_EXTENSION
 from .base import create_gti_mask, mp_root
 import logging

@@ -46,10 +46,16 @@ class TestFullRun(unittest.TestCase):
         command = 'MPreadfile {0}'.format(fits_file)
         sp.check_call(command.split())
 
-    def step01_fake_file(self):
+    def step01a_fake_file(self):
         """Test produce a fake event file"""
         fits_file = os.path.join(datadir, 'monol_test_fake.evt')
         mp.fake.main(['-o', fits_file])
+
+    def step01b_fake_file(self):
+        """Test produce a fake event file from input light curve"""
+        lcurve_in = os.path.join(datadir, 'lcurveA.fits')
+        fits_file = os.path.join(datadir, 'monol_test_fake_lc.evt')
+        mp.fake.main(['--lc', lcurve_in, '-o', fits_file])
 
     def step02a_load_events(self):
         """Test event file reading."""
@@ -75,7 +81,7 @@ class TestFullRun(unittest.TestCase):
     def step02d_load_gtis(self):
         """Test loading of GTIs from FITS files"""
         fits_file = os.path.join(datadir, 'monol_testA.evt')
-        mp.read_events.load_gtis(fits_file)
+        mp.io.load_gtis(fits_file)
 
     def step02e_load_events_noclobber(self):
         """Test event file reading w. noclobber option."""
@@ -507,11 +513,9 @@ class TestFullRun(unittest.TestCase):
 
         file_list = \
             glob.glob(os.path.join(datadir,
-                                   '*monol_test*')
-                      + MP_FILE_EXTENSION) + \
+                                   '*monol_test*') + MP_FILE_EXTENSION) + \
             glob.glob(os.path.join(datadir,
-                                   '*lcurve*')
-                      + MP_FILE_EXTENSION) + \
+                                   '*lcurve*') + MP_FILE_EXTENSION) + \
             glob.glob(os.path.join(datadir,
                                    '*lcurve*.txt')) + \
             glob.glob(os.path.join(datadir,
@@ -521,7 +525,7 @@ class TestFullRun(unittest.TestCase):
             glob.glob(os.path.join(datadir,
                                    '*monol_test*.txt')) + \
             glob.glob(os.path.join(datadir,
-                                   'monol_test_fake.evt'))
+                                   'monol_test_fake*.evt'))
         for f in file_list:
             os.remove(f)
 

@@ -99,8 +99,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     lcdts = [lcdata['dt'] for lcdata in lcdatas]
     # Find unique elements. If multiple bin times are used, throw an exception
     lcdts = list(set(lcdts))
-    if len(lcdts) > 1:
-        raise Exception('Light curves must have same dt for scrunching')
+    assert len(lcdts) == 1, 'Light curves must have same dt for scrunching'
 
     instrs = [lcdata['Instr'] for lcdata in lcdatas]
     # Find unique elements. A lightcurve will be produced for each instrument
@@ -593,7 +592,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     # For nulccorr lcs this whould work
     try:
         timezero = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                                'TIMEZERO')
+                                               'TIMEZERO')
         # Sometimes timezero is "from tstart", sometimes it's an absolute time.
         # This tries to detect which case is this, and always consider it
         # referred to tstart
@@ -627,7 +626,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
     try:
         dt = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                          'TIMEDEL')
+                                         'TIMEDEL')
         if tunit == 'd':
             dt *= 86400
     except:

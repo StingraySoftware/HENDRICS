@@ -4,9 +4,9 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .io import MP_FILE_EXTENSION, save_data, load_data
+from .io import MP_FILE_EXTENSION, save_data, load_data, get_file_type
 from .base import create_gti_from_condition, mp_root, create_gti_mask
-from .base import cross_gtis, get_file_type
+from .base import cross_gtis
 import logging
 import sys
 
