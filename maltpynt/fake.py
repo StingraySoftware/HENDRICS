@@ -5,8 +5,200 @@ from __future__ import (absolute_import, division,
                         print_function)
 
 import numpy as np
+import numpy.random as ra
 import os
 import logging
+import warnings
+
+
+def fake_events_from_lc(
+        times, lc, use_spline=False, bin_time=None):  # pragma: no cover
+    '''
+    Create events from a light curve.
+
+    Parameters
+    ----------
+    times : array-like
+        the center time of each light curve bin
+    lc : array-like
+        light curve, in units of counts/bin
+
+    Returns
+    -------
+    event_list : array-like
+        Simulated arrival times
+    '''
+    try:
+        import scipy.interpolate as sci
+    except:
+        if use_spline:
+            warnings.warn("Scipy not available. "
+                          "use_spline option cannot be used.")
+            use_spline = False
+
+    if bin_time is None:
+        bin_time = times[1] - times[0]
+    n_bin = len(lc)
+
+    bin_start = 0
+
+    n_events_predict = np.max(lc) * n_bin
+    n_events_predict += 10 * np.sqrt(n_events_predict)
+
+    # Max number of events per chunk must be < 100000
+    events_per_bin_predict = n_events_predict / n_bin
+    if use_spline:
+        max_bin = np.max([4, 1000000 / events_per_bin_predict])
+        logging.debug("Using splines")
+    else:
+        max_bin = np.max([4, 5000000 / events_per_bin_predict])
+
+    ev_list = np.zeros(n_events_predict)
+
+    nev = 0
+
+    while bin_start < n_bin:
+        t0 = times[bin_start]
+        bin_stop = min([bin_start + max_bin, n_bin + 1])
+        lc_filt = lc[bin_start:bin_stop]
+        t_filt = times[bin_start:bin_stop]
+        logging.debug(t_filt[0] - bin_time / 2,
+                      t_filt[-1] + bin_time / 2)
+
+        length = t_filt[-1] - t_filt[0]
+        n_bin_filt = len(lc_filt)
+        n_to_simulate = n_bin_filt * max(lc_filt)
+        safety_factor = 10
+        if n_to_simulate > 1000:
+            safety_factor = 1.
+
+        n_to_simulate += safety_factor * np.sqrt(n_to_simulate)
+
+        n_predict = ra.poisson(np.sum(lc_filt))
+
+        random_ts = ra.uniform(t_filt[0] - bin_time / 2,
+                               t_filt[-1] + bin_time / 2, n_to_simulate)
+
+        logging.debug(random_ts[random_ts < 0])
+
+        random_amps = ra.uniform(0, max(lc_filt), n_to_simulate)
+        if use_spline:
+            # print("Creating spline representation")
+            lc_spl = sci.splrep(t_filt, lc_filt, s=np.longdouble(0), k=1)
+
+            pts = sci.splev(random_ts, lc_spl)
+        else:
+            rough_bins = np.rint((random_ts - t0) / bin_time)
+            rough_bins = rough_bins.astype(int)
+
+            pts = lc_filt[rough_bins]
+
+        good = random_amps < pts
+        len1 = len(random_ts)
+        random_ts = random_ts[good]
+        len2 = len(random_ts)
+        logging.debug("{0} Events generated".format(len1))
+        logging.debug("{0} Events rejected".format(len1 - len2))
+        random_ts = random_ts[:n_predict]
+        random_ts.sort()
+        new_nev = len(random_ts)
+        ev_list[nev:nev + new_nev] = random_ts[:]
+        nev += new_nev
+        logging.debug(
+            "{0} good events created ({1} ev/s)".format(new_nev,
+                                                        new_nev / length))
+        bin_start += max_bin
+
+    # Discard all zero entries at the end!
+    return ev_list[:nev]
+
+
+def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
+                        dt_sigma=None, paralyzable=False):
+    '''
+    Filter an event list for a given dead time.
+    Parameters
+    ----------
+    ev_list : array-like
+        The event list
+    deadtime: float
+        The (mean, if not constant) value of deadtime
+    bkg_ev_list : array-like, optional
+        A background event list that affects dead time
+    dt_sigma : float, optional
+        The standard deviation of a non-constant dead time around deadtime.
+
+    Returns
+    -------
+    new_ev_list : array-like
+        The filtered event list
+    new_bkg_ev : array-like
+        The filtered background event list. Only returned if background_ev_list
+        is not None)
+
+    '''
+    if deadtime <= 0.:
+        return np.copy(ev_list)
+
+    # Create the total lightcurve, and a "kind" array that keeps track
+    # of the events classified as "signal" (True) and "background" (False)
+    if bkg_ev_list is not None:
+        return_bkg = True
+        tot_ev_list = np.append(ev_list, bkg_ev_list)
+        ev_kind = np.append(np.ones(len(ev_list), dtype=bool),
+                            np.zeros(len(bkg_ev_list), dtype=bool))
+        order = np.argsort(tot_ev_list)
+        tot_ev_list = tot_ev_list[order]
+        ev_kind = ev_kind[order]
+        del order
+    else:
+        return_bkg = False
+        tot_ev_list = ev_list
+        ev_kind = np.ones(len(ev_list), dtype=bool)
+
+    mask = np.ones(len(tot_ev_list), dtype=bool)
+    nevents = len(tot_ev_list)
+
+    if dt_sigma is not None:
+        deadtime_values = ra.normal(deadtime, dt_sigma, nevents)
+    else:
+        deadtime_values = np.zeros(nevents) + deadtime
+
+    dead_time_end = tot_ev_list + deadtime_values
+
+    if paralyzable:
+        bad = dead_time_end[:-1] > tot_ev_list[1:]
+        # Easy: paralyzable case. Here, events coming during dead time produce
+        # more dead time. So...
+        mask[1:][bad] = False
+        tot_ev_list = tot_ev_list[mask]
+        ev_kind = ev_kind[mask]
+    else:
+        # Otherwise, it is a little trickier. An event is filtered if it comes
+        # during dead time AND the previous event was valid. We need to iterate
+        while True:
+            mask_2 = np.zeros_like(mask)
+
+            before_deadtime = dead_time_end[:-1] > tot_ev_list[1:]
+            mask_2[1:] = before_deadtime
+            bad = np.logical_and(mask_2[1:] == True,
+                                 mask_2[:-1] == 0)
+
+            mask[1:] = np.logical_not(bad)
+
+            if np.all(mask):
+                break
+
+            tot_ev_list = tot_ev_list[mask]
+            ev_kind = ev_kind[mask]
+            deadtime_values = deadtime_values[mask]
+            dead_time_end = tot_ev_list + deadtime_values
+            mask = mask[mask]
+
+    if return_bkg:
+        return tot_ev_list[ev_kind], tot_ev_list[np.logical_not(ev_kind)]
+    else:
+        return tot_ev_list[ev_kind]
 
 
 def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
