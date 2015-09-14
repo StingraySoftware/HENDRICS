@@ -4,9 +4,9 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .base import mp_root, cross_gtis, create_gti_mask
-from .base import sort_files, common_name, _empty
+from .base import common_name, _empty
 from .rebin import const_rebin
-from .io import get_file_type, load_lcurve, save_pds
+from .io import sort_files, get_file_type, load_lcurve, save_pds
 from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging

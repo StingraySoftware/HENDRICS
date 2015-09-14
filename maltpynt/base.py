@@ -8,8 +8,17 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-from .io import get_file_type, is_string
 import logging
+import sys
+
+
+def is_string(s):
+    """Portable function to answer this question."""
+    PY3 = sys.version_info[0] == 3
+    if PY3:
+        return isinstance(s, str)  # NOQA
+    else:
+        return isinstance(s, basestring)  # NOQA
 
 
 def _order_list_of_arrays(data, order):
@@ -531,40 +540,6 @@ def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
                                     2 * n_summed_spectra * n_rebin)
     return 1 - epsilon
-
-
-def sort_files(files):
-    """Sort a list of MaLTPyNT files, looking at `Tstart` in each."""
-    allfiles = {}
-    ftypes = []
-
-    for f in files:
-        logging.info('Loading file ' + f)
-        ftype, contents = get_file_type(f)
-        instr = contents['Instr']
-        ftypes.append(ftype)
-        if instr not in list(allfiles.keys()):
-            allfiles[instr] = []
-        # Add file name to the dictionary
-        contents['FILENAME'] = f
-        allfiles[instr].append(contents)
-
-    # Check if files are all of the same kind (lcs, PDSs, ...)
-    ftypes = list(set(ftypes))
-    assert len(ftypes) == 1, 'Files are not all of the same kind.'
-
-    instrs = list(allfiles.keys())
-    for instr in instrs:
-        contents = list(allfiles[instr])
-        tstarts = [c['Tstart'] for c in contents]
-        fnames = [c['FILENAME'] for c in contents]
-
-        fnames = [x for (y, x) in sorted(zip(tstarts, fnames))]
-
-        # Substitute dictionaries with the sorted list of files
-        allfiles[instr] = fnames
-
-    return allfiles
 
 
 def calc_countrate(time, lc, gtis=None, bintime=None):

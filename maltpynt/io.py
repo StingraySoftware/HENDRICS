@@ -24,20 +24,10 @@ except:
 import collections
 import numpy as np
 import os.path
-import sys
-from .base import _order_list_of_arrays, _empty
+from .base import _order_list_of_arrays, _empty, is_string
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
-
-
-def is_string(s):
-    """Portable function to answer this question."""
-    PY3 = sys.version_info[0] == 3
-    if PY3:
-        return isinstance(s, str)  # NOQA
-    else:
-        return isinstance(s, basestring)  # NOQA
 
 
 def _get_key(dict_like, key):
@@ -691,3 +681,37 @@ def main(args=None):
             print((k + ':').ljust(15), val, end='\n\n')
 
         print('-' * len(fname))
+
+
+def sort_files(files):
+    """Sort a list of MaLTPyNT files, looking at `Tstart` in each."""
+    allfiles = {}
+    ftypes = []
+
+    for f in files:
+        logging.info('Loading file ' + f)
+        ftype, contents = get_file_type(f)
+        instr = contents['Instr']
+        ftypes.append(ftype)
+        if instr not in list(allfiles.keys()):
+            allfiles[instr] = []
+        # Add file name to the dictionary
+        contents['FILENAME'] = f
+        allfiles[instr].append(contents)
+
+    # Check if files are all of the same kind (lcs, PDSs, ...)
+    ftypes = list(set(ftypes))
+    assert len(ftypes) == 1, 'Files are not all of the same kind.'
+
+    instrs = list(allfiles.keys())
+    for instr in instrs:
+        contents = list(allfiles[instr])
+        tstarts = [c['Tstart'] for c in contents]
+        fnames = [c['FILENAME'] for c in contents]
+
+        fnames = [x for (y, x) in sorted(zip(tstarts, fnames))]
+
+        # Substitute dictionaries with the sorted list of files
+        allfiles[instr] = fnames
+
+    return allfiles

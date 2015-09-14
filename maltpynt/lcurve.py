@@ -99,7 +99,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     lcdts = [lcdata['dt'] for lcdata in lcdatas]
     # Find unique elements. If multiple bin times are used, throw an exception
     lcdts = list(set(lcdts))
-    assert len(lcdts) > 1, 'Light curves must have same dt for scrunching'
+    assert len(lcdts) == 1, 'Light curves must have same dt for scrunching'
 
     instrs = [lcdata['Instr'] for lcdata in lcdatas]
     # Find unique elements. A lightcurve will be produced for each instrument

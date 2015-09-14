@@ -75,7 +75,7 @@ class TestFullRun(unittest.TestCase):
     def step02d_load_gtis(self):
         """Test loading of GTIs from FITS files"""
         fits_file = os.path.join(datadir, 'monol_testA.evt')
-        mp.read_events.load_gtis(fits_file)
+        mp.io.load_gtis(fits_file)
 
     def step02e_load_events_noclobber(self):
         """Test event file reading w. noclobber option."""
