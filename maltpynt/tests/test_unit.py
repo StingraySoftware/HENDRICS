@@ -220,6 +220,48 @@ class TestAll(unittest.TestCase):
             mp.fspec.decide_spectrum_intervals([[0, 400], [1022, 1200]], 128)
         assert np.all(start_times == np.array([0, 128, 256, 1022]))
 
+    def test_filter_for_deadtime_nonpar(self):
+        """Test dead time filter, non-paralyzable case."""
+        events = np.array([1, 1.1, 2, 2.2, 3, 3.1, 3.2])
+        filt_events = mp.fake.filter_for_deadtime(events, 0.11)
+        expected = np.array([1, 2, 2.2, 3, 3.2])
+        assert np.all(filt_events == expected)
+
+    def test_filter_for_deadtime_nonpar_bkg(self):
+        """Test dead time filter, non-paralyzable case, with background."""
+        events = np.array([1.1, 2, 2.2, 3, 3.2])
+        bkg_events = np.array([1, 3.1])
+        filt_events, filt_bkg = \
+            mp.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events)
+        expected_ev = np.array([2, 2.2, 3, 3.2])
+        expected_bk = np.array([1])
+        assert np.all(filt_events == expected_ev), \
+            "Wrong: {} vs {}".format(filt_events, expected_ev)
+        assert np.all(filt_bkg == expected_bk), \
+            "Wrong: {} vs {}".format(filt_bkg, expected_bk)
+
+    def test_filter_for_deadtime_par(self):
+        """Test dead time filter, paralyzable case."""
+        events = np.array([1, 1.1, 2, 2.2, 3, 3.1, 3.2])
+        assert np.all(mp.fake.filter_for_deadtime(
+            events, 0.11, paralyzable=True) == np.array([1, 2, 2.2, 3]))
+
+    def test_filter_for_deadtime_par_bkg(self):
+        """Test dead time filter, paralyzable case, with background."""
+        events = np.array([1, 1.1, 2, 2.2, 3, 3.1, 3.2])
+        events = np.array([1.1, 2, 2.2, 3, 3.2])
+        bkg_events = np.array([1, 3.1])
+        filt_events, filt_bkg = \
+            mp.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
+                                        paralyzable=True)
+        expected_ev = np.array([2, 2.2, 3])
+        expected_bk = np.array([1])
+        assert np.all(filt_events == expected_ev), \
+            "Wrong: {} vs {}".format(filt_events, expected_ev)
+        assert np.all(filt_bkg == expected_bk), \
+            "Wrong: {} vs {}".format(filt_bkg, expected_bk)
+
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
