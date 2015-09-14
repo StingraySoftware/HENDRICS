@@ -11,6 +11,7 @@ from .io import load_events, load_lcurve, save_lcurve
 from .io import MP_FILE_EXTENSION, high_precision_keyword_read
 import os
 import logging
+import warnings
 
 
 def lcurve(event_list,
@@ -98,8 +99,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     lcdts = [lcdata['dt'] for lcdata in lcdatas]
     # Find unique elements. If multiple bin times are used, throw an exception
     lcdts = list(set(lcdts))
-    if len(lcdts) > 1:
-        raise Exception('Light curves must have same dt for scrunching')
+    assert len(lcdts) == 1, 'Light curves must have same dt for scrunching'
 
     instrs = [lcdata['Instr'] for lcdata in lcdatas]
     # Find unique elements. A lightcurve will be produced for each instrument
@@ -592,7 +592,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     # For nulccorr lcs this whould work
     try:
         timezero = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                                'TIMEZERO')
+                                               'TIMEZERO')
         # Sometimes timezero is "from tstart", sometimes it's an absolute time.
         # This tries to detect which case is this, and always consider it
         # referred to tstart
@@ -626,7 +626,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
     try:
         dt = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                          'TIMEDEL')
+                                         'TIMEDEL')
         if tunit == 'd':
             dt *= 86400
     except:
@@ -760,17 +760,28 @@ def lcurve_from_txt(txt_file, outfile=None,
 
 def _wrap_lc(args):
     f, kwargs = args
-    return lcurve_from_events(f, **kwargs)
+    try:
+        return lcurve_from_events(f, **kwargs)
+    except Exception as e:
+        warnings.warn("MPlcurve exception: {0}".format(str(e)))
+        return []
 
 
 def _wrap_txt(args):
     f, kwargs = args
-    return lcurve_from_txt(f, **kwargs)
+    try:
+        return lcurve_from_txt(f, **kwargs)
+    except Exception as e:
+        warnings.warn("MPlcurve exception: {0}".format(str(e)))
+        return []
 
 
 def _wrap_fits(args):
     f, kwargs = args
-    return lcurve_from_fits(f, **kwargs)
+    try:
+        return lcurve_from_fits(f, **kwargs)
+    except Exception as e:
+        warnings.warn("MPlcurve exception: {0}".format(str(e)))
 
 
 def main(args=None):
@@ -816,6 +827,8 @@ def main(args=None):
                         action="store_true")
     parser.add_argument("-d", "--outdir", type=str, default=None,
                         help='Output directory')
+    parser.add_argument("-o", "--outfile", type=str, default=None,
+                        help='Output file name')
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
                               "WARNING, ERROR, CRITICAL, DEBUG; "
@@ -869,6 +882,14 @@ def main(args=None):
                    "bintime": bintime, "outdir": args.outdir}
 
     arglist = [[f, argdict] for f in args.files]
+    na = len(arglist)
+    outname = args.outfile
+    if outname is not None:
+        for i in range(na):
+            if na > 1:
+                outname = outname + "_{}".format(i)
+            arglist[i][1]['outfile'] = outname
+
     # -------------------------------------------------------------------------
     outfiles = []
 

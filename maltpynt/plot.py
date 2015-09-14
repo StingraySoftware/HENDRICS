@@ -13,6 +13,7 @@ from .io import is_string
 from .base import create_gti_mask
 from .base import detection_level
 import logging
+import numpy as np
 
 
 def _baseline_fun(x, a):
@@ -36,7 +37,7 @@ def plot_pds(fnames, figname=None):
             flo = pdsdata['flo']
             fhi = pdsdata['fhi']
             freq = (fhi + flo) / 2
-            plt.semilogx()
+            plt.loglog()
 
         pds = pdsdata['pds']
         epds = pdsdata['epds']
@@ -53,13 +54,17 @@ def plot_pds(fnames, figname=None):
         p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
         logging.info('White noise level is {0}'.format(p[0]))
         pds -= p[0]
-        if isinstance(lev, collections.Iterable):
-            plt.plot(freq, lev - p[0], color=color)
-        else:
-            plt.axhline(lev - p[0], color=color)
 
         plt.errorbar(freq[1:], pds[1:], yerr=epds[1:], fmt='-',
                      drawstyle='steps-mid', color=color)
+
+        if np.any(lev - p[0] < 0):
+            continue
+        if isinstance(lev, collections.Iterable):
+            plt.plot(freq, lev - p[0], ls='--', color=color)
+        else:
+            plt.axhline(lev - p[0], ls='--', color=color)
+
 
     plt.xlabel('Frequency')
     if norm == 'rms':
@@ -98,7 +103,7 @@ def plot_cospectrum(fnames, figname=None):
 
     plt.figure('Log')
     plt.xlabel('Frequency')
-    plt.ylabel('Cospectrum')
+    plt.ylabel('Cospectrum * Frequency')
 
     plt.figure('Lin')
     plt.axhline(0, lw=3, ls='--', color='k')

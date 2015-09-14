@@ -7,7 +7,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-from .read_events import load_events_and_gtis
+from .io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, MP_FILE_EXTENSION
 from .base import create_gti_mask, mp_root
 import logging
@@ -127,6 +127,7 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
             for i in range(bin_diff):
                 livetime_array[lts_bin_good + bin_diff] += \
                     dt[lts_bin_good + bin_diff]
+
     return livetime_array
 
 
@@ -279,7 +280,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None):
 
     outdata = contents.copy()
 
-    outdata["lc"] = lc / expo
+    outdata["lc"] = np.array(lc / expo, dtype=np.float64)
     outdata["expo"] = expo
 
     save_lcurve(outdata, outname)

@@ -46,10 +46,16 @@ class TestFullRun(unittest.TestCase):
         command = 'MPreadfile {0}'.format(fits_file)
         sp.check_call(command.split())
 
-    def step01_fake_file(self):
+    def step01a_fake_file(self):
         """Test produce a fake event file"""
         fits_file = os.path.join(datadir, 'monol_test_fake.evt')
         mp.fake.main(['-o', fits_file])
+
+    def step01b_fake_file(self):
+        """Test produce a fake event file from input light curve"""
+        lcurve_in = os.path.join(datadir, 'lcurveA.fits')
+        fits_file = os.path.join(datadir, 'monol_test_fake_lc.evt')
+        mp.fake.main(['--lc', lcurve_in, '-o', fits_file])
 
     def step02a_load_events(self):
         """Test event file reading."""
@@ -75,7 +81,7 @@ class TestFullRun(unittest.TestCase):
     def step02d_load_gtis(self):
         """Test loading of GTIs from FITS files"""
         fits_file = os.path.join(datadir, 'monol_testA.evt')
-        mp.read_events.load_gtis(fits_file)
+        mp.io.load_gtis(fits_file)
 
     def step02e_load_events_noclobber(self):
         """Test event file reading w. noclobber option."""
@@ -128,18 +134,23 @@ class TestFullRun(unittest.TestCase):
     def step04c_fits_lcurve(self):
         """Test light curves from FITS."""
         lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
-        mp.lcurve.lcurve_from_events(
-            os.path.join(datadir,
-                         'monol_testA_ev') + MP_FILE_EXTENSION,
-            outfile=os.path.join(datadir,
-                                 'lcurve_lc'))
-        mp.lcurve.lcurve_from_fits(
-            lcurve_ftools_orig,
-            outfile=os.path.join(datadir,
-                                 'lcurve_ftools_lc'))
+
         lcurve_ftools = os.path.join(datadir,
                                      'lcurve_ftools_lc' +
                                      MP_FILE_EXTENSION)
+
+        command = "{0} --outfile {1}".format(
+            os.path.join(datadir,
+                         'monol_testA_ev') + MP_FILE_EXTENSION,
+            os.path.join(datadir,
+                         'lcurve_lc'))
+        mp.lcurve.main(command.split())
+
+        command = "--fits-input {0} --outfile {1}".format(
+            lcurve_ftools_orig,
+            lcurve_ftools)
+        mp.lcurve.main(command.split())
+
         lcurve_mp = os.path.join(datadir,
                                  'lcurve_lc' +
                                  MP_FILE_EXTENSION)
@@ -175,8 +186,8 @@ class TestFullRun(unittest.TestCase):
         lcurve_txt = os.path.join(datadir,
                                   'lcurve_txt_lc' +
                                   MP_FILE_EXTENSION)
-        mp.lcurve.lcurve_from_txt(lcurve_txt_orig,
-                                  outfile=lcurve_txt)
+        mp.lcurve.main(['--txt-input', lcurve_txt_orig,
+                        '--outfile', lcurve_txt])
         lcdata_txt = mp.io.load_lcurve(lcurve_txt)
 
         lc_txt = lcdata_txt['lc']
@@ -184,7 +195,7 @@ class TestFullRun(unittest.TestCase):
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
             'Light curve data do not coincide between txt and MP'
 
-    def step05e_joinlcs(self):
+    def step04e_joinlcs(self):
         """Test produce joined light curves."""
         mp.lcurve.join_lightcurves(
             [os.path.join(datadir, 'monol_testA_E3-50_lc') +
@@ -211,12 +222,11 @@ class TestFullRun(unittest.TestCase):
             os.path.join(datadir, 'monol_testA_ev' +
                          MP_FILE_EXTENSION), 3, 50)
 
-        message = ""
-        try:
+        with catch_warnings() as w:
             mp.lcurve.main(command.split())
-        except Exception as e:  # Capture the expected exception
-            message = str(e)
-        assert message.endswith("Did you run MPcalibrate?"), \
+
+        assert np.any([str(i.message).strip().endswith(
+            "Did you run MPcalibrate?") for i in w]), \
             "Unexpected behavior in lcurve"
 
     def step04h_lcurve(self):
@@ -503,11 +513,9 @@ class TestFullRun(unittest.TestCase):
 
         file_list = \
             glob.glob(os.path.join(datadir,
-                                   '*monol_test*')
-                      + MP_FILE_EXTENSION) + \
+                                   '*monol_test*') + MP_FILE_EXTENSION) + \
             glob.glob(os.path.join(datadir,
-                                   '*lcurve*')
-                      + MP_FILE_EXTENSION) + \
+                                   '*lcurve*') + MP_FILE_EXTENSION) + \
             glob.glob(os.path.join(datadir,
                                    '*lcurve*.txt')) + \
             glob.glob(os.path.join(datadir,
@@ -517,7 +525,7 @@ class TestFullRun(unittest.TestCase):
             glob.glob(os.path.join(datadir,
                                    '*monol_test*.txt')) + \
             glob.glob(os.path.join(datadir,
-                                   'monol_test_fake.evt'))
+                                   'monol_test_fake*.evt'))
         for f in file_list:
             os.remove(f)
 

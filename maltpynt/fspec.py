@@ -4,12 +4,13 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .base import mp_root, cross_gtis, create_gti_mask
-from .base import sort_files, common_name, _empty
+from .base import common_name, _empty
 from .rebin import const_rebin
-from .io import get_file_type, load_lcurve, save_pds
+from .io import sort_files, get_file_type, load_lcurve, save_pds
 from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
+import warnings
 from multiprocessing import Pool
 import os
 
@@ -152,8 +153,10 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_all=False):
                             ' is bad. Check GTIs')
             npds -= 1
             continue
-
-        f, p = leahy_pds(l, bintime)
+        try:
+            f, p = leahy_pds(l, bintime)
+        except Exception as e:
+            warnings.warn(str(e))
 
         if return_all:
             results.dynpds.append(p)
@@ -315,7 +318,11 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None, return_all=False):
             npds -= 1
             continue
 
-        f, p, pe, p1, p2 = leahy_cpds(l1, l2, bintime)
+        try:
+            f, p, pe, p1, p2 = leahy_cpds(l1, l2, bintime)
+        except Exception as e:
+            warnings.warn(str(e))
+
         cpds += p
         ecpds += pe ** 2
         if return_all:
@@ -497,6 +504,7 @@ def calc_pds(lcfile, fftlen,
     logging.info("Loading file %s..." % lcfile)
     lcdata = load_lcurve(lcfile)
     time = lcdata['time']
+    mjdref = lcdata['MJDref']
     try:
         lc = lcdata['lccorr']
     except:
@@ -553,7 +561,7 @@ def calc_pds(lcfile, fftlen,
                'fftlen': fftlen, 'Instr': instr, 'freq': freq,
                'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate,
                'total_ctrate': tctrate,
-               'back_ctrate': back_ctrate}
+               'back_ctrate': back_ctrate, 'MJDref': mjdref}
     if 'Emin' in lcdata.keys():
         outdata['Emin'] = lcdata['Emin']
         outdata['Emax'] = lcdata['Emax']
@@ -629,6 +637,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     gti1 = lcdata1['GTI']
     instr1 = lcdata1['Instr']
     tctrate1 = lcdata1['total_ctrate']
+    mjdref = lcdata1['MJDref']
 
     time2 = lcdata2['time']
     try:
@@ -710,7 +719,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
                'freq': freq, 'rebin': pdsrebin, 'norm': normalization,
                'ctrate': ctrate, 'total_ctrate': tctrate,
-               'back_ctrate': back_ctrate}
+               'back_ctrate': back_ctrate, 'MJDref': mjdref}
 
     if 'Emin' in lcdata1.keys():
         outdata['Emin1'] = lcdata1['Emin']

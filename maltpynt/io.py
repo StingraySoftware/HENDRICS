@@ -4,6 +4,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import logging
+import warnings
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
@@ -23,19 +24,10 @@ except:
 import collections
 import numpy as np
 import os.path
-import sys
+from .base import _order_list_of_arrays, _empty, is_string
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
-
-
-def is_string(s):
-    """Portable function to answer this question."""
-    PY3 = sys.version_info[0] == 3
-    if PY3:
-        return isinstance(s, str)  # NOQA
-    else:
-        return isinstance(s, basestring)  # NOQA
 
 
 def _get_key(dict_like, key):
@@ -95,6 +87,8 @@ def get_file_format(fname):
         return 'pickle'
     elif ext == '.nc':
         return 'nc'
+    elif ext in ['.evt', '.fits']:
+        return 'fits'
     else:
         raise Exception("File format not recognized")
 
@@ -490,6 +484,163 @@ def print_fits_info(fits_file, hdu=1):
     return info
 
 
+def _get_gti_from_extension(lchdulist, accepted_gtistrings=['GTI']):
+    hdunames = [h.name for h in lchdulist]
+    gtiextn = [ix for ix, x in enumerate(hdunames)
+               if x in accepted_gtistrings][0]
+    gtiext = lchdulist[gtiextn]
+    gtitable = gtiext.data
+
+    colnames = [col.name for col in gtitable.columns.columns]
+    # Default: NuSTAR: START, STOP. Otherwise, try RXTE: Start, Stop
+    if 'START' in colnames:
+        startstr, stopstr = 'START', 'STOP'
+    else:
+        startstr, stopstr = 'Start', 'Stop'
+
+    gtistart = np.array(gtitable.field(startstr), dtype=np.longdouble)
+    gtistop = np.array(gtitable.field(stopstr), dtype=np.longdouble)
+    gti_list = np.array([[a, b]
+                         for a, b in zip(gtistart,
+                                         gtistop)],
+                        dtype=np.longdouble)
+    return gti_list
+
+
+def _get_additional_data(lctable, additional_columns):
+    additional_data = {}
+    if additional_columns is not None:
+        for a in additional_columns:
+            try:
+                additional_data[a] = np.array(lctable.field(a))
+            except:  # pragma: no cover
+                if a == 'PI':
+                    logging.warning('Column PI not found. Trying with PHA')
+                    additional_data[a] = np.array(lctable.field('PHA'))
+                else:
+                    raise Exception('Column' + a + 'not found')
+
+    return additional_data
+
+
+def load_gtis(fits_file, gtistring=None):
+    """Load GTI from HDU EVENTS of file fits_file."""
+    from astropy.io import fits as pf
+    import numpy as np
+
+    if gtistring is None:
+        gtistring = 'GTI'
+    logging.info("Loading GTIS from file %s" % fits_file)
+    lchdulist = pf.open(fits_file, checksum=True)
+    lchdulist.verify('warn')
+
+    gtitable = lchdulist[gtistring].data
+    gti_list = np.array([[a, b]
+                         for a, b in zip(gtitable.field('START'),
+                                         gtitable.field('STOP'))],
+                        dtype=np.longdouble)
+    lchdulist.close()
+    return gti_list
+
+
+def load_events_and_gtis(fits_file, additional_columns=None,
+                         gtistring='GTI,STDGTI',
+                         gti_file=None, hduname='EVENTS', column='TIME'):
+    """Load event lists and GTIs from one or more files.
+
+    Loads event list from HDU EVENTS of file fits_file, with Good Time
+    intervals. Optionally, returns additional columns of data from the same
+    HDU of the events.
+
+    Parameters
+    ----------
+    fits_file : str
+    return_limits: bool, optional
+        Return the TSTART and TSTOP keyword values
+    additional_columns: list of str, optional
+        A list of keys corresponding to the additional columns to extract from
+        the event HDU (ex.: ['PI', 'X'])
+
+    Returns
+    -------
+    ev_list : array-like
+    gtis: [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+    additional_data: dict
+        A dictionary, where each key is the one specified in additional_colums.
+        The data are an array with the values of the specified column in the
+        fits file.
+    t_start : float
+    t_stop : float
+    """
+    from astropy.io import fits as pf
+
+    lchdulist = pf.open(fits_file)
+
+    # Load data table
+    try:
+        lctable = lchdulist[hduname].data
+    except:  # pragma: no cover
+        logging.warning('HDU %s not found. Trying first extension' % hduname)
+        lctable = lchdulist[1].data
+
+    # Read event list
+    ev_list = np.array(lctable.field(column), dtype=np.longdouble)
+
+    # Read TIMEZERO keyword and apply it to events
+    try:
+        timezero = np.longdouble(lchdulist[1].header['TIMEZERO'])
+    except:  # pragma: no cover
+        logging.warning("No TIMEZERO in file")
+        timezero = np.longdouble(0.)
+
+    ev_list += timezero
+
+    # Read TSTART, TSTOP from header
+    try:
+        t_start = np.longdouble(lchdulist[1].header['TSTART'])
+        t_stop = np.longdouble(lchdulist[1].header['TSTOP'])
+    except:  # pragma: no cover
+        logging.warning("Tstart and Tstop error. using defaults")
+        t_start = ev_list[0]
+        t_stop = ev_list[-1]
+
+    # Read and handle GTI extension
+    accepted_gtistrings = gtistring.split(',')
+
+    if gti_file is None:
+        # Select first GTI with accepted name
+        try:
+            gti_list = \
+                _get_gti_from_extension(
+                    lchdulist, accepted_gtistrings=accepted_gtistrings)
+        except:  # pragma: no cover
+            warnings.warn("No extensions found with a valid name. "
+                          "Please check the `accepted_gtistrings` values.")
+            gti_list = np.array([[t_start, t_stop]],
+                                dtype=np.longdouble)
+    else:
+        gti_list = load_gtis(gti_file, gtistring)
+
+    additional_data = _get_additional_data(lctable, additional_columns)
+
+    lchdulist.close()
+
+    # Sort event list
+    order = np.argsort(ev_list)
+    ev_list = ev_list[order]
+
+    additional_data = _order_list_of_arrays(additional_data, order)
+
+    returns = _empty()
+    returns.ev_list = ev_list
+    returns.gti_list = gti_list
+    returns.additional_data = additional_data
+    returns.t_start = t_start
+    returns.t_stop = t_stop
+
+    return returns
+
+
 def main(args=None):
     from astropy.time import Time
     import astropy.units as u
@@ -530,3 +681,37 @@ def main(args=None):
             print((k + ':').ljust(15), val, end='\n\n')
 
         print('-' * len(fname))
+
+
+def sort_files(files):
+    """Sort a list of MaLTPyNT files, looking at `Tstart` in each."""
+    allfiles = {}
+    ftypes = []
+
+    for f in files:
+        logging.info('Loading file ' + f)
+        ftype, contents = get_file_type(f)
+        instr = contents['Instr']
+        ftypes.append(ftype)
+        if instr not in list(allfiles.keys()):
+            allfiles[instr] = []
+        # Add file name to the dictionary
+        contents['FILENAME'] = f
+        allfiles[instr].append(contents)
+
+    # Check if files are all of the same kind (lcs, PDSs, ...)
+    ftypes = list(set(ftypes))
+    assert len(ftypes) == 1, 'Files are not all of the same kind.'
+
+    instrs = list(allfiles.keys())
+    for instr in instrs:
+        contents = list(allfiles[instr])
+        tstarts = [c['Tstart'] for c in contents]
+        fnames = [c['FILENAME'] for c in contents]
+
+        fnames = [x for (y, x) in sorted(zip(tstarts, fnames))]
+
+        # Substitute dictionaries with the sorted list of files
+        allfiles[instr] = fnames
+
+    return allfiles
