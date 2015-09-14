@@ -22,6 +22,7 @@ def _order_list_of_arrays(data, order):
         data = None
     return data
 
+
 class _empty():
     def __init__(self):
         pass
@@ -508,8 +509,8 @@ def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
         retlev = stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) \
             / (n_summed_spectra * r)
     else:
-        retlev = [stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r)
-                  / (n_summed_spectra * r) for r in n_rebin]
+        retlev = [stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) /
+                  (n_summed_spectra * r) for r in n_rebin]
         retlev = np.array(retlev)
     return retlev
 
