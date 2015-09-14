@@ -1,5 +1,5 @@
-maltpynt
-========
+MaLTPyNT API
+============
 
 .. toctree::
    :maxdepth: 4

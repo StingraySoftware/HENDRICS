@@ -36,6 +36,14 @@ maltpynt.exposure module
     :undoc-members:
     :show-inheritance:
 
+maltpynt.fake module
+--------------------
+
+.. automodule:: maltpynt.fake
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 maltpynt.fspec module
 ---------------------
 
