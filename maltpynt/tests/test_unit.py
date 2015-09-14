@@ -261,6 +261,16 @@ class TestAll(unittest.TestCase):
         assert np.all(filt_bkg == expected_bk), \
             "Wrong: {} vs {}".format(filt_bkg, expected_bk)
 
+    def test_event_simulation(self):
+        times = np.array([0.5, 1.5])
+        lc = np.array([1000, 2000])
+        events = mp.fake.fake_events_from_lc(times, lc)
+        newtime, newlc = mp.lcurve.lcurve(events, 1., start_time=0,
+                                          stop_time=2)
+        assert np.all(np.abs(newlc - lc) < 3 * np.sqrt(lc))
+        np.testing.assert_almost_equal(newtime, times)
+
+
 
 
 if __name__ == '__main__':
