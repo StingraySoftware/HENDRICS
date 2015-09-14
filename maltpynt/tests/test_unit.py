@@ -9,7 +9,6 @@ import numpy as np
 import logging
 import os
 import sys
-import glob
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 
 PY2 = sys.version_info[0] == 2
