@@ -14,7 +14,7 @@ from .lcurve import lcurve_from_fits
 
 
 def fake_events_from_lc(
-        times, lc, use_spline=False, bin_time=None):  # pragma: no cover
+        times, lc, use_spline=False, bin_time=None):
     '''
     Create events from a light curve.
 
@@ -72,7 +72,7 @@ def fake_events_from_lc(
         n_to_simulate = n_bin_filt * max(lc_filt)
         safety_factor = 10
         if n_to_simulate > 1000:
-            safety_factor = 1.
+            safety_factor = 3.
 
         n_to_simulate += safety_factor * np.sqrt(n_to_simulate)
 
@@ -208,7 +208,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
                                    tstop=None,
                                    mjdref=55197.00076601852,
                                    livetime=None):
-    '''Generate fake NuSTAR data!
+    '''Generate fake NuSTAR data.
 
     Takes an event list (as a list of floats)
     All inputs are None by default, and can be set during the call.
