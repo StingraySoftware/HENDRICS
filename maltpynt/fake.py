@@ -34,7 +34,7 @@ def fake_events_from_lc(
         import scipy.interpolate as sci
     except:
         if use_spline:
-            warnings.warn("Scipy not available. "
+            warnings.warn("Scipy not available. ",
                           "use_spline option cannot be used.")
             use_spline = False
 
@@ -64,8 +64,8 @@ def fake_events_from_lc(
         bin_stop = min([bin_start + max_bin, n_bin + 1])
         lc_filt = lc[bin_start:bin_stop]
         t_filt = times[bin_start:bin_stop]
-        logging.debug(t_filt[0] - bin_time / 2,
-                      t_filt[-1] + bin_time / 2)
+        logging.debug("{} {}".format(t_filt[0] - bin_time / 2,
+                                     t_filt[-1] + bin_time / 2))
 
         length = t_filt[-1] - t_filt[0]
         n_bin_filt = len(lc_filt)
@@ -119,6 +119,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
                         dt_sigma=None, paralyzable=False):
     '''
     Filter an event list for a given dead time.
+
     Parameters
     ----------
     ev_list : array-like
@@ -168,6 +169,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
 
     dead_time_end = tot_ev_list + deadtime_values
 
+    initial_len = len(tot_ev_list)
     if paralyzable:
         bad = dead_time_end[:-1] > tot_ev_list[1:]
         # Easy: paralyzable case. Here, events coming during dead time produce
@@ -178,6 +180,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
     else:
         # Otherwise, it is a little trickier. An event is filtered if it comes
         # during dead time AND the previous event was valid. We need to iterate
+        count = 1
         while True:
             mask_2 = np.zeros_like(mask)
 
@@ -195,8 +198,20 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
             ev_kind = ev_kind[mask]
             deadtime_values = deadtime_values[mask]
             dead_time_end = tot_ev_list + deadtime_values
+            len1 = len(mask)
             mask = mask[mask]
+            len2 = len(mask)
+            logging.debug(
+                'filter_for_deadtime, pass '
+                '{0}: {1}/{2} new events rejected'.format(count, len1 - len2,
+                                                          len1))
+            count += 1
 
+    final_len = len(tot_ev_list)
+    logging.info(
+        'filter_for_deadtime: '
+        '{1}/{2} events rejected'.format(count, initial_len - final_len,
+                                         initial_len))
     if return_bkg:
         return tot_ev_list[ev_kind], tot_ev_list[np.logical_not(ev_kind)]
     else:
