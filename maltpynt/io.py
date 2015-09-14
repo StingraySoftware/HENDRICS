@@ -97,6 +97,8 @@ def get_file_format(fname):
         return 'pickle'
     elif ext == '.nc':
         return 'nc'
+    elif ext in ['.evt', '.fits']:
+        return 'fits'
     else:
         raise Exception("File format not recognized")
 
