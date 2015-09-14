@@ -9,6 +9,8 @@ import numpy.random as ra
 import os
 import logging
 import warnings
+from .io import get_file_format, load_lcurve
+from .lcurve import lcurve_from_fits
 
 
 def fake_events_from_lc(
@@ -355,6 +357,15 @@ def _read_event_list(filename):
     return None, None
 
 
+def _read_light_curve(filename):
+    file_format = get_file_format(filename)
+    if file_format == 'fits':
+        filename = lcurve_from_fits(filename)[0]
+    contents = load_lcurve(filename)
+
+    return contents['time'], contents['lc']
+
+
 def main(args=None):
     import argparse
     description = (
@@ -365,6 +376,8 @@ def main(args=None):
 
     parser.add_argument("-e", "--event-list", type=str, default=None,
                         help="File containint event list")
+    parser.add_argument("-l", "--lc", type=str, default=None,
+                        help="File containing light curve")
     parser.add_argument("-o", "--outname", type=str, default='events.evt',
                         help="Output file name")
     parser.add_argument("-i", "--instrument", type=str, default='FPMA',
@@ -374,6 +387,8 @@ def main(args=None):
     parser.add_argument("--tstop", type=float, default=None,
                         help="End time of the observation (s from MJDREF)")
     parser.add_argument("--mjdref", type=float, default=55197.00076601852,
+                        help="Reference MJD")
+    parser.add_argument("--deadtime", type=float, default=0.,
                         help="Reference MJD")
 
     parser.add_argument("--loglevel",
@@ -394,7 +409,15 @@ def main(args=None):
     logging.basicConfig(filename='MPfake.log', level=numeric_level,
                         filemode='w')
 
-    event_list, pi = _read_event_list(args.event_list)
+    if args.lc is not None:
+        t, lc = _read_light_curve(args.lc)
+        event_list = fake_events_from_lc(t, lc, use_spline=True)
+        pi = np.zeros(len(event_list), dtype=int)
+    else:
+        event_list, pi = _read_event_list(args.event_list)
+
+    event_list = filter_for_deadtime(event_list, args.deadtime)
+
     generate_fake_fits_observation(event_list=event_list,
                                    filename=args.outname, pi=pi,
                                    instr='FPMA', tstart=args.tstart,
