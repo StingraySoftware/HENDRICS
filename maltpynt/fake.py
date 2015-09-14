@@ -388,7 +388,7 @@ def main(args=None):
                         help="End time of the observation (s from MJDREF)")
     parser.add_argument("--mjdref", type=float, default=55197.00076601852,
                         help="Reference MJD")
-    parser.add_argument("--deadtime", type=float, default=0.,
+    parser.add_argument("--deadtime", type=float, default=None,
                         help="Reference MJD")
 
     parser.add_argument("--loglevel",
@@ -416,7 +416,8 @@ def main(args=None):
     else:
         event_list, pi = _read_event_list(args.event_list)
 
-    event_list = filter_for_deadtime(event_list, args.deadtime)
+    if args.deadtime is not None:
+        event_list = filter_for_deadtime(event_list, args.deadtime)
 
     generate_fake_fits_observation(event_list=event_list,
                                    filename=args.outname, pi=pi,
