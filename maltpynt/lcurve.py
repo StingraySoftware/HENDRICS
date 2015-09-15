@@ -7,6 +7,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 import numpy as np
 from .base import mp_root, create_gti_mask, cross_gtis, mkdir_p
 from .base import contiguous_regions, calc_countrate, gti_len
+from .base import _assign_value_if_none, _look_for_array_in_array
 from .io import load_events, load_lcurve, save_lcurve
 from .io import MP_FILE_EXTENSION, high_precision_keyword_read
 import os
@@ -44,12 +45,9 @@ def lcurve(event_list,
     centertime: bool
         If False, time is the start of the bin. Otherwise, the center
     """
-    if start_time is None:
-        logging.warning("lcurve: Changing start time")
-        start_time = np.floor(event_list[0])
-    if stop_time is None:
-        logging.warning("lcurve: Changing stop time")
-        stop_time = np.ceil(event_list[-1])
+
+    start_time = _assign_value_if_none(start_time, np.floor(event_list[0]))
+    stop_time = _assign_value_if_none(stop_time, np.floor(event_list[-1]))
 
     logging.debug("lcurve: Time limits: %g -- %g" %
                   (start_time, stop_time))
@@ -416,11 +414,13 @@ def lcurve_from_events(f, safe_interval=0,
         out['Emin'] = e_interval[0]
         out['Emax'] = e_interval[1]
 
-    if outfile is None:
-        outfile = mp_root(f) + tag + '_lc' + MP_FILE_EXTENSION
-    else:
-        outfile = \
-            outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+    # Assign default value if None
+    outfile = _assign_value_if_none(outfile,  mp_root(f) + tag + '_lc')
+
+    # Take out extension from name, if present, then give extension. This
+    # avoids multiple extensions
+    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+
     if noclobber and os.path.exists(outfile):
         print('File exists, and noclobber option used. Skipping')
         return [outfile]
@@ -551,9 +551,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     import numpy as np
     from .base import create_gti_from_condition
 
-    if outfile is None:
-        outfile = mp_root(fits_file) + '_lc'
-
+    outfile = _assign_value_if_none(outfile, mp_root(fits_file) + '_lc')
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
 
     if noclobber and os.path.exists(outfile):
@@ -607,10 +605,11 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
         timezero = Time(2440000.5 + timezero, scale='tdb', format='jd')
         tstart = Time(2440000.5 + tstart, scale='tdb', format='jd')
         tstop = Time(2440000.5 + tstop, scale='tdb', format='jd')
-        if mjdref is None:
-            # use NuSTAR defaulf MJDREF
-            mjdref = Time(np.longdouble('55197.00076601852'), scale='tdb',
-                          format='mjd')
+        # if None, use NuSTAR defaulf MJDREF
+        mjdref = _assign_value_if_none(
+            mjdref, Time(np.longdouble('55197.00076601852'), scale='tdb',
+                         format='mjd'))
+
         timezero = (timezero - mjdref).to('s').value
         tstart = (tstart - mjdref).to('s').value
         tstop = (tstop - mjdref).to('s').value
@@ -635,11 +634,10 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
         dt = time[1] - time[0]
 
     # ----------------------------------------------------------------
-    if ratecolumn is None:
-        for i in ['RATE', 'RATE1', 'COUNTS']:
-            if i in lctable.names:
-                ratecolumn = i
-                break
+    ratecolumn = _assign_value_if_none(
+        ratecolumn,
+        _look_for_array_in_array(['RATE', 'RATE1', 'COUNTS'], lctable.names))
+
     rate = np.array(lctable.field(ratecolumn), dtype=np.float)
 
     try:
@@ -725,8 +723,7 @@ def lcurve_from_txt(txt_file, outfile=None,
     """
     import numpy as np
 
-    if outfile is None:
-        outfile = mp_root(txt_file) + '_lc'
+    outfile = _assign_value_if_none(outfile, mp_root(txt_file) + '_lc')
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
 
     if noclobber and os.path.exists(outfile):

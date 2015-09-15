@@ -9,7 +9,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 import numpy as np
 from .io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, MP_FILE_EXTENSION
-from .base import create_gti_mask, mp_root
+from .base import create_gti_mask, mp_root, _assign_value_if_none
 import logging
 
 
@@ -45,8 +45,8 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
     assert len(events) == len(priors), \
         "`events` and `priors` must be of the same length"
 
-    if dt is None:
-        dt = np.median(np.diff(times))
+    dt = _assign_value_if_none(dt, np.median(np.diff(times)))
+
     try:
         len(dt)
     except:
@@ -209,8 +209,7 @@ def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
 
     """
 
-    if dt is None:
-        dt = np.min(np.diff(time))
+    dt = _assign_value_if_none(dt, np.median(np.diff(time)))
 
     additional_columns = ["PRIOR", "PI"]
 
@@ -265,9 +264,9 @@ def correct_lightcurve(lc_file, uf_file, outname=None):
     outname : str
         Output file name
     """
-    if outname is None:
-        outroot = mp_root(lc_file)
-        outname = outroot + "_lccorr" + MP_FILE_EXTENSION
+
+    outname = _assign_value_if_none(
+        outname, mp_root(lc_file) + "_lccorr" + MP_FILE_EXTENSION)
 
     ftype, contents = get_file_type(lc_file)
 
@@ -321,9 +320,7 @@ def main(args=None):
     lc_file = args.lcfile
     uf_file = args.uffile
 
-    outroot = args.outroot
-    if outroot is None:
-        outroot = mp_root(lc_file)
+    outroot = _assign_value_if_none(args.outroot, mp_root(lc_file))
 
     outname = outroot + "_lccorr" + MP_FILE_EXTENSION
 

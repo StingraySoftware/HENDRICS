@@ -25,6 +25,7 @@ import collections
 import numpy as np
 import os.path
 from .base import _order_list_of_arrays, _empty, is_string
+from .base import _assign_value_if_none
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
@@ -376,8 +377,8 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
         [[errm1, errp1], [errm2, errp2], [errm3, errp3], ...])
     """
     import numpy as np
-    if errors is None:
-        errors = [None for i in arrays]
+    errors = _assign_value_if_none(errors, [None for i in arrays])
+
     data_to_write = []
     list_of_errs = []
     for ia, ar in enumerate(arrays):
@@ -528,8 +529,7 @@ def load_gtis(fits_file, gtistring=None):
     from astropy.io import fits as pf
     import numpy as np
 
-    if gtistring is None:
-        gtistring = 'GTI'
+    gtistring = _assign_value_if_none(gtistring, 'GTI')
     logging.info("Loading GTIS from file %s" % fits_file)
     lchdulist = pf.open(fits_file, checksum=True)
     lchdulist.verify('warn')

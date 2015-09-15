@@ -12,6 +12,19 @@ import logging
 import sys
 
 
+def _assign_value_if_none(value, default):
+    if value is None:
+        return default
+    else:
+        return value
+
+
+def _look_for_array_in_array(array1, array2):
+    for a1 in array1:
+        if a1 in array2:
+            return a1
+
+
 def is_string(s):
     """Portable function to answer this question."""
     PY3 = sys.version_info[0] == 3
@@ -257,8 +270,8 @@ def create_gti_mask(time, gtis, safe_interval=0, min_length=0,
 
     check_gtis(gtis)
 
-    if dt is None:
-        dt = np.zeros_like(time) + (time[1] - time[0]) / 2
+    dt = _assign_value_if_none(dt,
+                               np.zeros_like(time) + (time[1] - time[0]) / 2)
 
     mask = np.zeros(len(time), dtype=bool)
 
@@ -321,8 +334,8 @@ def create_gti_from_condition(time, condition,
     if not isinstance(safe_interval, collections.Iterable):
         safe_interval = [safe_interval, safe_interval]
 
-    if dt is None:
-        dt = np.zeros_like(time) + (time[1] - time[0]) / 2
+    dt = _assign_value_if_none(dt,
+                               np.zeros_like(time) + (time[1] - time[0]) / 2)
 
     gtis = []
     for idx in idxs:
@@ -469,10 +482,9 @@ def get_btis(gtis, start_time=None, stop_time=None):
         return np.array([[start_time, stop_time]], dtype=np.longdouble)
     check_gtis(gtis)
 
-    if start_time is None:
-        start_time = gtis[0][0]
-    if stop_time is None:
-        stop_time = gtis[-1][1]
+    start_time = _assign_value_if_none(start_time, gtis[0][0])
+    stop_time = _assign_value_if_none(stop_time, gtis[-1][1])
+
     if gtis[0][0] - start_time <= 0:
         btis = []
     else:
@@ -562,8 +574,8 @@ def calc_countrate(time, lc, gtis=None, bintime=None):
         The bin time of the light curve. If not specified, the minimum
         difference between time bins is used
     """
-    if bintime is None:
-        bintime = np.min(np.diff(time))
+
+    bintime = _assign_value_if_none(bintime, np.min(np.diff(time)))
     if gtis is not None:
         mask = create_gti_mask(time, gtis)
         lc = lc[mask]
