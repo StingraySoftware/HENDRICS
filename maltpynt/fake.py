@@ -144,9 +144,15 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         The filtered event list
     additional_output : dict
         Object with all the following attributes. Only returned if
-        `return_all`=True
-    new_bkg_ev : array-like, optional
-        The filtered background event list.
+        `return_all` is True
+    uf_events : array-like
+        Unfiltered event list (events + background)
+    is_event : array-like
+        Boolean values; True if event, False if background
+    deadtime : array-like
+        Dead time values
+    bkg : array-like
+        The filtered background event list
     mask : array-like, optional
         The mask that filters the input event list and produces the output
         event list.
@@ -157,7 +163,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         A background event list that affects dead time
     dt_sigma : float
         The standard deviation of a non-constant dead time around deadtime.
-    return_mask : bool
+    return_all : bool
         If True, return the mask that filters the input event list to obtain
         the output event list.
 

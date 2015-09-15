@@ -129,9 +129,10 @@ MPfake
 
 ::
 
-    usage: MPfake [-h] [-e EVENT_LIST] [-l LC] [-o OUTNAME] [-i INSTRUMENT]
-                  [--tstart TSTART] [--tstop TSTOP] [--mjdref MJDREF]
-                  [--deadtime DEADTIME] [--loglevel LOGLEVEL] [--debug]
+    usage: MPfake [-h] [-e EVENT_LIST] [-l LC] [-c CTRATE] [-o OUTNAME]
+                  [-i INSTRUMENT] [--tstart TSTART] [--tstop TSTOP]
+                  [--mjdref MJDREF] [--deadtime DEADTIME [DEADTIME ...]]
+                  [--loglevel LOGLEVEL] [--debug]
 
     Create an event file in FITS format from an event list, or simulating it. If
     input event list is not specified, generates the events randomly
@@ -141,6 +142,8 @@ MPfake
       -e EVENT_LIST, --event-list EVENT_LIST
                             File containint event list
       -l LC, --lc LC        File containing light curve
+      -c CTRATE, --ctrate CTRATE
+                            Count rate for simulated events
       -o OUTNAME, --outname OUTNAME
                             Output file name
       -i INSTRUMENT, --instrument INSTRUMENT
@@ -148,7 +151,10 @@ MPfake
       --tstart TSTART       Start time of the observation (s from MJDREF)
       --tstop TSTOP         End time of the observation (s from MJDREF)
       --mjdref MJDREF       Reference MJD
-      --deadtime DEADTIME   Reference MJD
+      --deadtime DEADTIME [DEADTIME ...]
+                            Dead time magnitude. Can be specified as a single
+                            number, or two. In this last case, the second value is
+                            used as sigma of the dead time distribution
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               use DEBUG logging level
