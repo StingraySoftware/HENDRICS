@@ -34,7 +34,7 @@ def fake_events_from_lc(
         import scipy.interpolate as sci
     except:
         if use_spline:
-            warnings.warn("Scipy not available. "
+            warnings.warn("Scipy not available. ",
                           "use_spline option cannot be used.")
             use_spline = False
 
@@ -44,8 +44,10 @@ def fake_events_from_lc(
 
     bin_start = 0
 
-    n_events_predict = np.max(lc) * n_bin
-    n_events_predict += 10 * np.sqrt(n_events_predict)
+    maxlc = np.max(lc)
+    intlc = maxlc * n_bin
+
+    n_events_predict = int(intlc + 10 * np.sqrt(intlc))
 
     # Max number of events per chunk must be < 100000
     events_per_bin_predict = n_events_predict / n_bin
@@ -64,8 +66,8 @@ def fake_events_from_lc(
         bin_stop = min([bin_start + max_bin, n_bin + 1])
         lc_filt = lc[bin_start:bin_stop]
         t_filt = times[bin_start:bin_stop]
-        logging.debug(t_filt[0] - bin_time / 2,
-                      t_filt[-1] + bin_time / 2)
+        logging.debug("{} {}".format(t_filt[0] - bin_time / 2,
+                                     t_filt[-1] + bin_time / 2))
 
         length = t_filt[-1] - t_filt[0]
         n_bin_filt = len(lc_filt)
@@ -75,6 +77,7 @@ def fake_events_from_lc(
             safety_factor = 3.
 
         n_to_simulate += safety_factor * np.sqrt(n_to_simulate)
+        n_to_simulate = int(np.ceil(n_to_simulate))
 
         n_predict = ra.poisson(np.sum(lc_filt))
 
@@ -115,28 +118,46 @@ def fake_events_from_lc(
     return ev_list[:nev]
 
 
+def _max_dead_timed_events(ev_list, deadtime):
+    from .lcurve import lcurve
+    time, lc = lcurve(ev_list, 1)
+
+    return max(lc) * deadtime
+
+
 def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
-                        dt_sigma=None, paralyzable=False):
+                        dt_sigma=None, paralyzable=False,
+                        additional_data=None, return_mask=False):
     '''
     Filter an event list for a given dead time.
+
     Parameters
     ----------
     ev_list : array-like
         The event list
     deadtime: float
         The (mean, if not constant) value of deadtime
-    bkg_ev_list : array-like, optional
-        A background event list that affects dead time
-    dt_sigma : float, optional
-        The standard deviation of a non-constant dead time around deadtime.
 
     Returns
     -------
     new_ev_list : array-like
         The filtered event list
-    new_bkg_ev : array-like
-        The filtered background event list. Only returned if background_ev_list
+    new_bkg_ev : array-like, optional
+        The filtered background event list. Only returned if `bkg_ev_list`
         is not None)
+    mask : array-like, optional
+        The mask that filters the input event list and produces the output
+        event list. Only returned, after the event list, if return_mask is True
+
+    Other Parameters
+    ----------------
+    bkg_ev_list : array-like
+        A background event list that affects dead time
+    dt_sigma : float
+        The standard deviation of a non-constant dead time around deadtime.
+    return_mask : bool
+        If True, return the mask that filters the input event list to obtain
+        the output event list.
 
     '''
     if deadtime <= 0.:
@@ -158,6 +179,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         tot_ev_list = ev_list
         ev_kind = np.ones(len(ev_list), dtype=bool)
 
+    ev_mask = np.ones(len(tot_ev_list), dtype=bool)
     mask = np.ones(len(tot_ev_list), dtype=bool)
     nevents = len(tot_ev_list)
 
@@ -168,6 +190,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
 
     dead_time_end = tot_ev_list + deadtime_values
 
+    initial_len = len(tot_ev_list)
     if paralyzable:
         bad = dead_time_end[:-1] > tot_ev_list[1:]
         # Easy: paralyzable case. Here, events coming during dead time produce
@@ -175,32 +198,61 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         mask[1:][bad] = False
         tot_ev_list = tot_ev_list[mask]
         ev_kind = ev_kind[mask]
+        ev_mask = ev_mask[mask]
     else:
         # Otherwise, it is a little trickier. An event is filtered if it comes
         # during dead time AND the previous event was valid. We need to iterate
+        count = 1
+        max_lookback = np.ceil(
+            _max_dead_timed_events(tot_ev_list, np.max(deadtime_values)))
+        max_lookback = int(np.min([max_lookback, len(tot_ev_list) - 1]))
+
         while True:
             mask_2 = np.zeros_like(mask)
 
-            before_deadtime = dead_time_end[:-1] > tot_ev_list[1:]
-            mask_2[1:] = before_deadtime
-            bad = np.logical_and(mask_2[1:] == True,
-                                 mask_2[:-1] == 0)
+            before_deadtime = \
+                dead_time_end[:-max_lookback] > tot_ev_list[max_lookback:]
+            mask_2[max_lookback:] = before_deadtime
+            bad = np.logical_and(mask_2[max_lookback:] == True,
+                                 mask_2[:-max_lookback] == 0)
 
-            mask[1:] = np.logical_not(bad)
+            mask[max_lookback:] = np.logical_not(bad)
 
             if np.all(mask):
-                break
+                if max_lookback == 1:
+                    break
+                max_lookback -= 1
+                logging.debug(
+                    'filter_for_deadtime, lookback {}'.format(max_lookback))
+                continue
 
             tot_ev_list = tot_ev_list[mask]
             ev_kind = ev_kind[mask]
             deadtime_values = deadtime_values[mask]
+            ev_mask = ev_mask[mask]
             dead_time_end = tot_ev_list + deadtime_values
+            len1 = len(mask)
             mask = mask[mask]
+            len2 = len(mask)
+            logging.debug(
+                'filter_for_deadtime, pass '
+                '{0}: {1}/{2} new events rejected'.format(count, len1 - len2,
+                                                          len1))
+            count += 1
 
+    final_len = len(tot_ev_list)
+    logging.info(
+        'filter_for_deadtime: '
+        '{0}/{1} events rejected'.format(initial_len - final_len,
+                                         initial_len))
+    retval = tot_ev_list[ev_kind]
+    if return_bkg or return_mask:
+        retval = [retval]
     if return_bkg:
-        return tot_ev_list[ev_kind], tot_ev_list[np.logical_not(ev_kind)]
-    else:
-        return tot_ev_list[ev_kind]
+        retval.append(tot_ev_list[np.logical_not(ev_kind)])
+    if return_mask:
+        retval.append(ev_mask[ev_kind])
+    return retval
 
 
 def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
@@ -378,6 +430,8 @@ def main(args=None):
                         help="File containint event list")
     parser.add_argument("-l", "--lc", type=str, default=None,
                         help="File containing light curve")
+    parser.add_argument("-c", "--ctrate", type=float, default=None,
+                        help="Count rate for simulated events")
     parser.add_argument("-o", "--outname", type=str, default='events.evt',
                         help="Output file name")
     parser.add_argument("-i", "--instrument", type=str, default='FPMA',
@@ -413,11 +467,18 @@ def main(args=None):
         t, lc = _read_light_curve(args.lc)
         event_list = fake_events_from_lc(t, lc, use_spline=True)
         pi = np.zeros(len(event_list), dtype=int)
+    elif args.ctrate is not None:
+        t = np.arange(0., 1025.)
+        lc = args.ctrate + np.zeros_like(t)
+        event_list = fake_events_from_lc(t, lc)
+        pi = np.zeros(len(event_list), dtype=int)
     else:
         event_list, pi = _read_event_list(args.event_list)
 
-    if args.deadtime is not None:
-        event_list = filter_for_deadtime(event_list, args.deadtime)
+    if args.deadtime is not None and event_list is not None:
+        event_list, mask = filter_for_deadtime(event_list, args.deadtime,
+                                               return_mask=True)
+        pi = pi[mask]
 
     generate_fake_fits_observation(event_list=event_list,
                                    filename=args.outname, pi=pi,

@@ -43,6 +43,17 @@ from astropy_helpers.sphinx.conf import *
 
 # Get configuration information from setup.cfg
 from distutils import config
+
+import sphinx.environment
+from docutils.utils import get_source_line
+
+
+def _warn_node(self, msg, node):
+    if not msg.startswith('nonlocal image URI found:'):
+        self._warnfunc(msg, '%s:%s' % get_source_line(node))
+
+sphinx.environment.BuildEnvironment.warn_node = _warn_node
+
 conf = config.ConfigParser()
 conf.optionxform = str
 conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
@@ -175,7 +186,6 @@ latex_documents = [('index', project + '.tex', project + u' Documentation',
 # (source start file, name, description, authors, manual section).
 man_pages = [('index', project.lower(), project + u' Documentation',
               [author], 1)]
-
 
 ## -- Options for the edit_on_github extension ----------------------------------------
 
