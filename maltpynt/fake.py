@@ -234,7 +234,9 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
             tot_ev_list = tot_ev_list[mask]
             ev_kind = ev_kind[mask]
             deadtime_values = deadtime_values[mask]
-            saved_mask[saved_mask][np.logical_not(mask)] = False
+            sm = saved_mask[saved_mask]
+            sm[np.logical_not(mask)] = False
+            saved_mask[saved_mask] = sm
             dead_time_end = tot_ev_list + deadtime_values
             len1 = len(mask)
             mask = mask[mask]
@@ -266,7 +268,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
                                    instr='FPMA', gti=None, tstart=None,
                                    tstop=None,
                                    mjdref=55197.00076601852,
-                                   livetime=None):
+                                   livetime=None, additional_columns=None):
     '''Generate fake NuSTAR data.
 
     Takes an event list (as a list of floats)
@@ -345,8 +347,15 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     # Write events to table
     col1 = fits.Column(name='TIME', format='1D', array=event_list)
     col2 = fits.Column(name='PI', format='1J', array=pi)
-    cols = fits.ColDefs([col1, col2])
 
+    allcols = [col1, col2]
+    if additional_columns is not None:
+        for c in additional_columns.keys():
+            col = fits.Column(name=c, array=additional_columns[c]["data"],
+                              format=additional_columns[c]["format"])
+            allcols.append(col)
+
+    cols = fits.ColDefs(allcols)
     tbhdu = fits.BinTableHDU.from_columns(cols)
     tbhdu.name = 'EVENTS'
 
@@ -402,7 +411,8 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
 
     col1 = fits.Column(name='START', format='1D', array=start)
     col2 = fits.Column(name='STOP', format='1D', array=stop)
-    cols = fits.ColDefs([col1, col2])
+    allcols = [col1, col2]
+    cols = fits.ColDefs(allcols)
     gtihdu = fits.BinTableHDU.from_columns(cols)
     gtihdu.name = 'GTI'
 
@@ -473,6 +483,7 @@ def main(args=None):
     logging.basicConfig(filename='MPfake.log', level=numeric_level,
                         filemode='w')
 
+    additional_columns = {}
     if args.lc is not None:
         t, lc = _read_light_curve(args.lc)
         event_list = fake_events_from_lc(t, lc, use_spline=True)
@@ -490,13 +501,19 @@ def main(args=None):
         deadtime_sigma = None
         if len(args.deadtime) > 1:
             deadtime_sigma = args.deadtime[1]
-        newev_list, info = filter_for_deadtime(event_list, deadtime,
+        event_list, info = filter_for_deadtime(event_list, deadtime,
                                                dt_sigma=deadtime_sigma,
                                                return_all=True)
         pi = pi[info.mask]
+        prior = np.zeros_like(event_list)
+
+        prior[1:] = np.diff(event_list) - info.deadtime[:-1]
+        additional_columns["PRIOR"] = {"data": prior, "format": "D"}
+        additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
 
     generate_fake_fits_observation(event_list=event_list,
                                    filename=args.outname, pi=pi,
                                    instr='FPMA', tstart=args.tstart,
                                    tstop=args.tstop,
-                                   mjdref=args.mjdref)
+                                   mjdref=args.mjdref,
+                                   additional_columns=additional_columns)
