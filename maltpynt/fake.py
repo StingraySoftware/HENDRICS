@@ -484,6 +484,7 @@ def main(args=None):
                         filemode='w')
 
     additional_columns = {}
+    livetime = None
     if args.lc is not None:
         t, lc = _read_light_curve(args.lc)
         event_list = fake_events_from_lc(t, lc, use_spline=True)
@@ -510,10 +511,11 @@ def main(args=None):
         prior[1:] = np.diff(event_list) - info.deadtime[:-1]
         additional_columns["PRIOR"] = {"data": prior, "format": "D"}
         additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
+        livetime = np.sum(prior)
 
     generate_fake_fits_observation(event_list=event_list,
                                    filename=args.outname, pi=pi,
                                    instr='FPMA', tstart=args.tstart,
                                    tstop=args.tstop,
-                                   mjdref=args.mjdref,
+                                   mjdref=args.mjdref, livetime=livetime,
                                    additional_columns=additional_columns)
