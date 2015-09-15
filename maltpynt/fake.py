@@ -10,7 +10,7 @@ import os
 import logging
 import warnings
 from .io import get_file_format, load_lcurve
-from .base import _empty
+from .base import _empty, _assign_value_if_none
 from .lcurve import lcurve_from_fits
 
 
@@ -39,8 +39,7 @@ def fake_events_from_lc(
                           "use_spline option cannot be used.")
             use_spline = False
 
-    if bin_time is None:
-        bin_time = times[1] - times[0]
+    bin_time = _assign_value_if_none(bin_time, times[1] - times[0])
     n_bin = len(lc)
 
     bin_start = 0
@@ -268,7 +267,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
                                    instr='FPMA', gti=None, tstart=None,
                                    tstop=None,
                                    mjdref=55197.00076601852,
-                                   livetime=None, additional_columns=None):
+                                   livetime=None, additional_columns={}):
     '''Generate fake NuSTAR data.
 
     Takes an event list (as a list of floats)
@@ -307,32 +306,20 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     import numpy.random as ra
 
     if event_list is None:
-        if tstart is None:
-            tstart = 8e+7
-        if tstop is None:
-            tstop = tstart + 1025
+        tstart = _assign_value_if_none(tstart, 8e+7)
+        tstop = _assign_value_if_none(tstop, tstart + 1025)
         event_list = sorted(ra.uniform(tstart, tstop, 1000))
 
-    if pi is None:
-        pi = ra.randint(0, 1024, len(event_list))
+    pi = _assign_value_if_none(pi, ra.randint(0, 1024, len(event_list)))
 
     assert len(event_list) == len(pi), \
         "Event list and pi must be of the same length"
 
-    if tstart is None:
-        tstart = np.floor(event_list[0])
-
-    if tstop is None:
-        tstop = np.ceil(event_list[-1])
-
-    if gti is None:
-        gti = np.array([[tstart, tstop]])
-
-    if filename is None:
-        filename = 'events.evt'
-
-    if livetime is None:
-        livetime = tstop - tstart
+    tstart = _assign_value_if_none(tstart, np.floor(event_list[0]))
+    tstop = _assign_value_if_none(tstop, np.ceil(event_list[-1]))
+    gti = _assign_value_if_none(gti, np.array([[tstart, tstop]]))
+    filename = _assign_value_if_none(filename, 'events.evt')
+    livetime = _assign_value_if_none(livetime, tstop - tstart)
 
     assert livetime <= tstop - tstart, \
         'Livetime must be equal or smaller than tstop - tstart'
@@ -349,11 +336,11 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     col2 = fits.Column(name='PI', format='1J', array=pi)
 
     allcols = [col1, col2]
-    if additional_columns is not None:
-        for c in additional_columns.keys():
-            col = fits.Column(name=c, array=additional_columns[c]["data"],
-                              format=additional_columns[c]["format"])
-            allcols.append(col)
+
+    for c in additional_columns.keys():
+        col = fits.Column(name=c, array=additional_columns[c]["data"],
+                          format=additional_columns[c]["format"])
+        allcols.append(col)
 
     cols = fits.ColDefs(allcols)
     tbhdu = fits.BinTableHDU.from_columns(cols)
