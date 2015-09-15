@@ -57,6 +57,13 @@ class TestFullRun(unittest.TestCase):
         fits_file = os.path.join(datadir, 'monol_test_fake_lc.evt')
         mp.fake.main(['--lc', lcurve_in, '-o', fits_file])
 
+    def step01c_fake_file(self):
+        """Test produce a fake event file and apply deadtime"""
+        fits_file = os.path.join(datadir, 'monol_test_fake_lc.evt')
+        mp.fake.main(['--deadtime', '2.5e-3',
+                      '--ctrate', '2000',
+                      '-o', fits_file])
+
     def step02a_load_events(self):
         """Test event file reading."""
         command = '{0} {1} --nproc 2'.format(
