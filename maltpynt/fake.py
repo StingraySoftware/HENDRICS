@@ -10,6 +10,7 @@ import os
 import logging
 import warnings
 from .io import get_file_format, load_lcurve
+from .base import _empty
 from .lcurve import lcurve_from_fits
 
 
@@ -127,7 +128,7 @@ def _max_dead_timed_events(ev_list, deadtime):
 
 def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
                         dt_sigma=None, paralyzable=False,
-                        additional_data=None, return_mask=False):
+                        additional_data=None, return_all=False):
     '''
     Filter an event list for a given dead time.
 
@@ -142,12 +143,14 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
     -------
     new_ev_list : array-like
         The filtered event list
+    additional_output : dict
+        Object with all the following attributes. Only returned if
+        `return_all`=True
     new_bkg_ev : array-like, optional
-        The filtered background event list. Only returned if `bkg_ev_list`
-        is not None)
+        The filtered background event list.
     mask : array-like, optional
         The mask that filters the input event list and produces the output
-        event list. Only returned, after the event list, if return_mask is True
+        event list.
 
     Other Parameters
     ----------------
@@ -160,13 +163,15 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         the output event list.
 
     '''
+
+    additional_output = _empty()
+
     if deadtime <= 0.:
         return np.copy(ev_list)
 
     # Create the total lightcurve, and a "kind" array that keeps track
     # of the events classified as "signal" (True) and "background" (False)
     if bkg_ev_list is not None:
-        return_bkg = True
         tot_ev_list = np.append(ev_list, bkg_ev_list)
         ev_kind = np.append(np.ones(len(ev_list), dtype=bool),
                             np.zeros(len(bkg_ev_list), dtype=bool))
@@ -175,13 +180,12 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         ev_kind = ev_kind[order]
         del order
     else:
-        return_bkg = False
         tot_ev_list = ev_list
         ev_kind = np.ones(len(ev_list), dtype=bool)
 
-    ev_mask = np.ones(len(tot_ev_list), dtype=bool)
     mask = np.ones(len(tot_ev_list), dtype=bool)
     nevents = len(tot_ev_list)
+    all_ev_kind = ev_kind.copy()
 
     if dt_sigma is not None:
         deadtime_values = ra.normal(deadtime, dt_sigma, nevents)
@@ -191,6 +195,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
     dead_time_end = tot_ev_list + deadtime_values
 
     initial_len = len(tot_ev_list)
+    saved_mask = mask.copy()
     if paralyzable:
         bad = dead_time_end[:-1] > tot_ev_list[1:]
         # Easy: paralyzable case. Here, events coming during dead time produce
@@ -198,7 +203,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         mask[1:][bad] = False
         tot_ev_list = tot_ev_list[mask]
         ev_kind = ev_kind[mask]
-        ev_mask = ev_mask[mask]
+        saved_mask[np.logical_not(mask)] = False
     else:
         # Otherwise, it is a little trickier. An event is filtered if it comes
         # during dead time AND the previous event was valid. We need to iterate
@@ -229,7 +234,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
             tot_ev_list = tot_ev_list[mask]
             ev_kind = ev_kind[mask]
             deadtime_values = deadtime_values[mask]
-            ev_mask = ev_mask[mask]
+            saved_mask[saved_mask][np.logical_not(mask)] = False
             dead_time_end = tot_ev_list + deadtime_values
             len1 = len(mask)
             mask = mask[mask]
@@ -246,12 +251,14 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         '{0}/{1} events rejected'.format(initial_len - final_len,
                                          initial_len))
     retval = tot_ev_list[ev_kind]
-    if return_bkg or return_mask:
-        retval = [retval]
-    if return_bkg:
-        retval.append(tot_ev_list[np.logical_not(ev_kind)])
-    if return_mask:
-        retval.append(ev_mask[ev_kind])
+    if return_all:
+        additional_output.uf_events = tot_ev_list
+        additional_output.is_event = ev_kind
+        additional_output.deadtime = deadtime_values
+        additional_output.mask = saved_mask[all_ev_kind]
+        additional_output.bkg = tot_ev_list[np.logical_not(ev_kind)]
+        retval = [retval, additional_output]
+
     return retval
 
 
@@ -483,10 +490,10 @@ def main(args=None):
         deadtime_sigma = None
         if len(args.deadtime) > 1:
             deadtime_sigma = args.deadtime[1]
-        event_list, mask = filter_for_deadtime(event_list, deadtime,
+        newev_list, info = filter_for_deadtime(event_list, deadtime,
                                                dt_sigma=deadtime_sigma,
-                                               return_mask=True)
-        pi = pi[mask]
+                                               return_all=True)
+        pi = pi[info.mask]
 
     generate_fake_fits_observation(event_list=event_list,
                                    filename=args.outname, pi=pi,
