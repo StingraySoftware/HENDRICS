@@ -471,6 +471,7 @@ def main(args=None):
         t = np.arange(0., 1025.)
         lc = args.ctrate + np.zeros_like(t)
         event_list = fake_events_from_lc(t, lc)
+        pi = np.zeros(len(event_list), dtype=int)
     else:
         event_list, pi = _read_event_list(args.event_list)
 
