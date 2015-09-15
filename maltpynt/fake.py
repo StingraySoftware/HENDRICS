@@ -442,8 +442,11 @@ def main(args=None):
                         help="End time of the observation (s from MJDREF)")
     parser.add_argument("--mjdref", type=float, default=55197.00076601852,
                         help="Reference MJD")
-    parser.add_argument("--deadtime", type=float, default=None,
-                        help="Reference MJD")
+    parser.add_argument("--deadtime", type=float, default=None, nargs='+',
+                        help="Dead time magnitude. Can be specified as a "
+                             "single number, or two. In this last case, the "
+                             "second value is used as sigma of the dead time "
+                             "distribution")
 
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
@@ -476,7 +479,12 @@ def main(args=None):
         event_list, pi = _read_event_list(args.event_list)
 
     if args.deadtime is not None and event_list is not None:
-        event_list, mask = filter_for_deadtime(event_list, args.deadtime,
+        deadtime = args.deadtime[0]
+        deadtime_sigma = None
+        if len(args.deadtime) > 1:
+            deadtime_sigma = args.deadtime[1]
+        event_list, mask = filter_for_deadtime(event_list, deadtime,
+                                               dt_sigma=deadtime_sigma,
                                                return_mask=True)
         pi = pi[mask]
 
