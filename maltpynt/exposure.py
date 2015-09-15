@@ -11,6 +11,7 @@ from .io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, MP_FILE_EXTENSION
 from .base import create_gti_mask, mp_root, _assign_value_if_none
 import logging
+import warnings
 
 
 def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
@@ -331,9 +332,12 @@ def main(args=None):
     expo = outdata["expo"]
     gti = outdata["GTI"]
 
-    _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
-
-    _plot_dead_time_from_uf(uf_file, outroot)
+    try:
+        _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
+        _plot_dead_time_from_uf(uf_file, outroot)
+    except Exception as e:
+        warnings.warn(str(e))
+        pass
 
     if args.plot:
         import matplotlib.pyplot as plt
