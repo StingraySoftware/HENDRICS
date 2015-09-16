@@ -492,7 +492,9 @@ def main(args=None):
         event_list = fake_events_from_lc(t, lc, use_spline=True)
         pi = np.zeros(len(event_list), dtype=int)
     elif args.ctrate is not None:
-        t = np.arange(0., 1025.)
+        tstart = _assign_value_if_none(args.tstart, 0)
+        tstop = _assign_value_if_none(args.tstop, 1025)
+        t = np.arange(tstart, tstop)
         lc = args.ctrate + np.zeros_like(t)
         event_list = fake_events_from_lc(t, lc)
         pi = np.zeros(len(event_list), dtype=int)
