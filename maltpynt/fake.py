@@ -73,7 +73,7 @@ def fake_events_from_lc(
         n_bin_filt = len(lc_filt)
         n_to_simulate = n_bin_filt * max(lc_filt)
         safety_factor = 10
-        if n_to_simulate > 1000:
+        if n_to_simulate > 10000:
             safety_factor = 4.
 
         n_to_simulate += safety_factor * np.sqrt(n_to_simulate)
