@@ -132,8 +132,8 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
         # Complete bins
         if bin_diff > 1:
             for i in range(1, bin_diff):
-                livetime_array[lts_bin_good + bin_diff] += \
-                    dt[lts_bin_good + bin_diff]
+                livetime_array[lts_bin_good + i] += \
+                    dt[lts_bin_good + i]
 
     return livetime_array
 
