@@ -74,7 +74,7 @@ def fake_events_from_lc(
         n_to_simulate = n_bin_filt * max(lc_filt)
         safety_factor = 10
         if n_to_simulate > 1000:
-            safety_factor = 3.
+            safety_factor = 4.
 
         n_to_simulate += safety_factor * np.sqrt(n_to_simulate)
         n_to_simulate = int(np.ceil(n_to_simulate))
@@ -102,7 +102,9 @@ def fake_events_from_lc(
         len1 = len(random_ts)
         random_ts = random_ts[good]
         len2 = len(random_ts)
+        logging.debug("Max LC, nbin: {0} {1}".format(max(lc_filt), n_bin_filt))
         logging.debug("{0} Events generated".format(len1))
+        logging.debug("{0} Events predicted".format(n_predict))
         logging.debug("{0} Events rejected".format(len1 - len2))
         random_ts = random_ts[:n_predict]
         random_ts.sort()
@@ -121,8 +123,13 @@ def fake_events_from_lc(
 def _max_dead_timed_events(ev_list, deadtime):
     from .lcurve import lcurve
     time, lc = lcurve(ev_list, 1)
+    # Filter around max(lc)
+    lmax = np.argmax(lc)
+    t0 = time[np.max([lmax - 1, 0])] - 0.5
+    t1 = time[np.min([len(time) - 1, lmax + 2])] + 0.5
+    time, lc = lcurve(ev_list, deadtime * 2, start_time=t0, stop_time=t1)
 
-    return max(lc) * deadtime
+    return np.max(lc)
 
 
 def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
@@ -217,6 +224,8 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
             _max_dead_timed_events(tot_ev_list, np.max(deadtime_values)))
         max_lookback = int(np.min([max_lookback, len(tot_ev_list) - 1]))
 
+        logging.debug(
+            'filter_for_deadtime, lookback {}'.format(max_lookback))
         while True:
             mask_2 = np.zeros_like(mask)
 
@@ -502,6 +511,7 @@ def main(args=None):
         prior = np.zeros_like(event_list)
 
         prior[1:] = np.diff(event_list) - info.deadtime[:-1]
+
         additional_columns["PRIOR"] = {"data": prior, "format": "D"}
         additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
         livetime = np.sum(prior)
