@@ -6,6 +6,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 from .io import save_data, get_file_type
 from .io import MP_FILE_EXTENSION
+from .base import _assign_value_if_none
 import numpy as np
 import logging
 
@@ -26,8 +27,8 @@ def sum_fspec(files, outname=None):
     tot_epds = epds0 ** 2 * nchunks0
     tot_npds = nchunks0
     tot_contents = contents.copy()
-    if outname is None:
-        outname = 'tot_' + ftype0 + MP_FILE_EXTENSION
+    outname = _assign_value_if_none(outname,
+                                    'tot_' + ftype0 + MP_FILE_EXTENSION)
 
     for f in files[1:]:
         ftype, contents = get_file_type(f)

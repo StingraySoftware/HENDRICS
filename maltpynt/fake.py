@@ -10,6 +10,7 @@ import os
 import logging
 import warnings
 from .io import get_file_format, load_lcurve
+from .base import _empty, _assign_value_if_none
 from .lcurve import lcurve_from_fits
 
 
@@ -38,8 +39,7 @@ def fake_events_from_lc(
                           "use_spline option cannot be used.")
             use_spline = False
 
-    if bin_time is None:
-        bin_time = times[1] - times[0]
+    bin_time = _assign_value_if_none(bin_time, times[1] - times[0])
     n_bin = len(lc)
 
     bin_start = 0
@@ -127,7 +127,7 @@ def _max_dead_timed_events(ev_list, deadtime):
 
 def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
                         dt_sigma=None, paralyzable=False,
-                        additional_data=None, return_mask=False):
+                        additional_data=None, return_all=False):
     '''
     Filter an event list for a given dead time.
 
@@ -142,12 +142,20 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
     -------
     new_ev_list : array-like
         The filtered event list
-    new_bkg_ev : array-like, optional
-        The filtered background event list. Only returned if `bkg_ev_list`
-        is not None)
+    additional_output : dict
+        Object with all the following attributes. Only returned if
+        `return_all` is True
+    uf_events : array-like
+        Unfiltered event list (events + background)
+    is_event : array-like
+        Boolean values; True if event, False if background
+    deadtime : array-like
+        Dead time values
+    bkg : array-like
+        The filtered background event list
     mask : array-like, optional
         The mask that filters the input event list and produces the output
-        event list. Only returned, after the event list, if return_mask is True
+        event list.
 
     Other Parameters
     ----------------
@@ -155,18 +163,20 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         A background event list that affects dead time
     dt_sigma : float
         The standard deviation of a non-constant dead time around deadtime.
-    return_mask : bool
+    return_all : bool
         If True, return the mask that filters the input event list to obtain
         the output event list.
 
     '''
+
+    additional_output = _empty()
+
     if deadtime <= 0.:
         return np.copy(ev_list)
 
     # Create the total lightcurve, and a "kind" array that keeps track
     # of the events classified as "signal" (True) and "background" (False)
     if bkg_ev_list is not None:
-        return_bkg = True
         tot_ev_list = np.append(ev_list, bkg_ev_list)
         ev_kind = np.append(np.ones(len(ev_list), dtype=bool),
                             np.zeros(len(bkg_ev_list), dtype=bool))
@@ -175,13 +185,12 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         ev_kind = ev_kind[order]
         del order
     else:
-        return_bkg = False
         tot_ev_list = ev_list
         ev_kind = np.ones(len(ev_list), dtype=bool)
 
-    ev_mask = np.ones(len(tot_ev_list), dtype=bool)
     mask = np.ones(len(tot_ev_list), dtype=bool)
     nevents = len(tot_ev_list)
+    all_ev_kind = ev_kind.copy()
 
     if dt_sigma is not None:
         deadtime_values = ra.normal(deadtime, dt_sigma, nevents)
@@ -191,6 +200,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
     dead_time_end = tot_ev_list + deadtime_values
 
     initial_len = len(tot_ev_list)
+    saved_mask = mask.copy()
     if paralyzable:
         bad = dead_time_end[:-1] > tot_ev_list[1:]
         # Easy: paralyzable case. Here, events coming during dead time produce
@@ -198,7 +208,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         mask[1:][bad] = False
         tot_ev_list = tot_ev_list[mask]
         ev_kind = ev_kind[mask]
-        ev_mask = ev_mask[mask]
+        saved_mask[np.logical_not(mask)] = False
     else:
         # Otherwise, it is a little trickier. An event is filtered if it comes
         # during dead time AND the previous event was valid. We need to iterate
@@ -229,7 +239,9 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
             tot_ev_list = tot_ev_list[mask]
             ev_kind = ev_kind[mask]
             deadtime_values = deadtime_values[mask]
-            ev_mask = ev_mask[mask]
+            sm = saved_mask[saved_mask]
+            sm[np.logical_not(mask)] = False
+            saved_mask[saved_mask] = sm
             dead_time_end = tot_ev_list + deadtime_values
             len1 = len(mask)
             mask = mask[mask]
@@ -246,12 +258,14 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         '{0}/{1} events rejected'.format(initial_len - final_len,
                                          initial_len))
     retval = tot_ev_list[ev_kind]
-    if return_bkg or return_mask:
-        retval = [retval]
-    if return_bkg:
-        retval.append(tot_ev_list[np.logical_not(ev_kind)])
-    if return_mask:
-        retval.append(ev_mask[ev_kind])
+    if return_all:
+        additional_output.uf_events = tot_ev_list
+        additional_output.is_event = ev_kind
+        additional_output.deadtime = deadtime_values
+        additional_output.mask = saved_mask[all_ev_kind]
+        additional_output.bkg = tot_ev_list[np.logical_not(ev_kind)]
+        retval = [retval, additional_output]
+
     return retval
 
 
@@ -259,7 +273,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
                                    instr='FPMA', gti=None, tstart=None,
                                    tstop=None,
                                    mjdref=55197.00076601852,
-                                   livetime=None):
+                                   livetime=None, additional_columns={}):
     '''Generate fake NuSTAR data.
 
     Takes an event list (as a list of floats)
@@ -298,32 +312,20 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     import numpy.random as ra
 
     if event_list is None:
-        if tstart is None:
-            tstart = 8e+7
-        if tstop is None:
-            tstop = tstart + 1025
+        tstart = _assign_value_if_none(tstart, 8e+7)
+        tstop = _assign_value_if_none(tstop, tstart + 1025)
         event_list = sorted(ra.uniform(tstart, tstop, 1000))
 
-    if pi is None:
-        pi = ra.randint(0, 1024, len(event_list))
+    pi = _assign_value_if_none(pi, ra.randint(0, 1024, len(event_list)))
 
     assert len(event_list) == len(pi), \
         "Event list and pi must be of the same length"
 
-    if tstart is None:
-        tstart = np.floor(event_list[0])
-
-    if tstop is None:
-        tstop = np.ceil(event_list[-1])
-
-    if gti is None:
-        gti = np.array([[tstart, tstop]])
-
-    if filename is None:
-        filename = 'events.evt'
-
-    if livetime is None:
-        livetime = tstop - tstart
+    tstart = _assign_value_if_none(tstart, np.floor(event_list[0]))
+    tstop = _assign_value_if_none(tstop, np.ceil(event_list[-1]))
+    gti = _assign_value_if_none(gti, np.array([[tstart, tstop]]))
+    filename = _assign_value_if_none(filename, 'events.evt')
+    livetime = _assign_value_if_none(livetime, tstop - tstart)
 
     assert livetime <= tstop - tstart, \
         'Livetime must be equal or smaller than tstop - tstart'
@@ -338,8 +340,15 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     # Write events to table
     col1 = fits.Column(name='TIME', format='1D', array=event_list)
     col2 = fits.Column(name='PI', format='1J', array=pi)
-    cols = fits.ColDefs([col1, col2])
 
+    allcols = [col1, col2]
+
+    for c in additional_columns.keys():
+        col = fits.Column(name=c, array=additional_columns[c]["data"],
+                          format=additional_columns[c]["format"])
+        allcols.append(col)
+
+    cols = fits.ColDefs(allcols)
     tbhdu = fits.BinTableHDU.from_columns(cols)
     tbhdu.name = 'EVENTS'
 
@@ -395,7 +404,8 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
 
     col1 = fits.Column(name='START', format='1D', array=start)
     col2 = fits.Column(name='STOP', format='1D', array=stop)
-    cols = fits.ColDefs([col1, col2])
+    allcols = [col1, col2]
+    cols = fits.ColDefs(allcols)
     gtihdu = fits.BinTableHDU.from_columns(cols)
     gtihdu.name = 'GTI'
 
@@ -442,8 +452,11 @@ def main(args=None):
                         help="End time of the observation (s from MJDREF)")
     parser.add_argument("--mjdref", type=float, default=55197.00076601852,
                         help="Reference MJD")
-    parser.add_argument("--deadtime", type=float, default=None,
-                        help="Reference MJD")
+    parser.add_argument("--deadtime", type=float, default=None, nargs='+',
+                        help="Dead time magnitude. Can be specified as a "
+                             "single number, or two. In this last case, the "
+                             "second value is used as sigma of the dead time "
+                             "distribution")
 
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
@@ -463,6 +476,8 @@ def main(args=None):
     logging.basicConfig(filename='MPfake.log', level=numeric_level,
                         filemode='w')
 
+    additional_columns = {}
+    livetime = None
     if args.lc is not None:
         t, lc = _read_light_curve(args.lc)
         event_list = fake_events_from_lc(t, lc, use_spline=True)
@@ -476,12 +491,24 @@ def main(args=None):
         event_list, pi = _read_event_list(args.event_list)
 
     if args.deadtime is not None and event_list is not None:
-        event_list, mask = filter_for_deadtime(event_list, args.deadtime,
-                                               return_mask=True)
-        pi = pi[mask]
+        deadtime = args.deadtime[0]
+        deadtime_sigma = None
+        if len(args.deadtime) > 1:
+            deadtime_sigma = args.deadtime[1]
+        event_list, info = filter_for_deadtime(event_list, deadtime,
+                                               dt_sigma=deadtime_sigma,
+                                               return_all=True)
+        pi = pi[info.mask]
+        prior = np.zeros_like(event_list)
+
+        prior[1:] = np.diff(event_list) - info.deadtime[:-1]
+        additional_columns["PRIOR"] = {"data": prior, "format": "D"}
+        additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
+        livetime = np.sum(prior)
 
     generate_fake_fits_observation(event_list=event_list,
                                    filename=args.outname, pi=pi,
                                    instr='FPMA', tstart=args.tstart,
                                    tstop=args.tstop,
-                                   mjdref=args.mjdref)
+                                   mjdref=args.mjdref, livetime=livetime,
+                                   additional_columns=additional_columns)

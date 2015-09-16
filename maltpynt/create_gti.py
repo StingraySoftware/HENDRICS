@@ -6,9 +6,8 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 from .io import MP_FILE_EXTENSION, save_data, load_data, get_file_type
 from .base import create_gti_from_condition, mp_root, create_gti_mask
-from .base import cross_gtis
+from .base import cross_gtis, _assign_value_if_none
 import logging
-import sys
 
 
 def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
@@ -38,8 +37,6 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
     # Necessary as nc variables are sometimes defined as array
     from numpy import array  # NOQA
 
-    if filter_expr is None:
-        sys.exit('Please specify a filter expression')
     ftype, data = get_file_type(fname)
 
     instr = data['Instr']
@@ -56,8 +53,8 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None):
     gtis = create_gti_from_condition(locals()['time'], good,
                                      safe_interval=safe_interval)
 
-    if outfile is None:
-        outfile = mp_root(fname) + '_gti' + MP_FILE_EXTENSION
+    outfile = _assign_value_if_none(
+        outfile, mp_root(fname) + '_gti' + MP_FILE_EXTENSION)
     save_data({'GTI': gtis, 'MJDref': mjdref}, outfile)
 
     return gtis
@@ -87,9 +84,9 @@ def apply_gti(fname, gti, outname=None):
         if data['Instr'] == 'PCA':  # pragma: no cover
             data['PCU'] = data['PCU'][good]
 
-    if outname is None:
-        outname = fname.replace(MP_FILE_EXTENSION, '') + \
-            '_gtifilt' + MP_FILE_EXTENSION
+    outname = _assign_value_if_none(
+        outname,
+        fname.replace(MP_FILE_EXTENSION, '') + '_gtifilt' + MP_FILE_EXTENSION)
     save_data(data, outname)
 
     return newgtis

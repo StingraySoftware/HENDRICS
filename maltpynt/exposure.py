@@ -9,8 +9,9 @@ from __future__ import (absolute_import, unicode_literals, division,
 import numpy as np
 from .io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, MP_FILE_EXTENSION
-from .base import create_gti_mask, mp_root
+from .base import create_gti_mask, mp_root, _assign_value_if_none
 import logging
+import warnings
 
 
 def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
@@ -45,25 +46,29 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
     assert len(events) == len(priors), \
         "`events` and `priors` must be of the same length"
 
-    if dt is None:
-        dt = np.median(np.diff(times))
+    dt = _assign_value_if_none(dt, np.median(np.diff(times)))
+
     try:
         len(dt)
     except:
         dt = dt + np.zeros(len(times))
 
+    # Floating point events, starting from events[0]
     ev_fl = np.array(events - events[0], dtype=np.float64)
     pr_fl = np.array(priors, dtype=np.float64)
 
+    # Start of livetime
     livetime_starts = ev_fl - pr_fl
 
+    # Time bin borders: start from half a bin before tstart, end half a bin
+    # after tstop
     tbins = np.array(
         np.append(times - dt / 2, [times[-1] + dt[-1] / 2]) - events[0],
         dtype=np.float64)
 
     tbin_starts = tbins[:-1]
 
-    # Filter points outside of range
+    # Filter points outside of range of light curve
     filter = (ev_fl > tbins[0]) & (livetime_starts < tbins[-1])
     ev_fl = ev_fl[filter]
     pr_fl = pr_fl[filter]
@@ -71,7 +76,7 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
 
     livetime_array = np.zeros_like(times)
 
-    # Normalize priors in boundaries
+    # ------ Normalize priors at the start and end of light curve ----------
     before_start = \
         (livetime_starts < tbin_starts[0]) & (ev_fl > tbin_starts[0])
 
@@ -83,21 +88,24 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
     ev_fl[after_end] = tbins[-1] - 1e-9
     pr_fl[after_end] = ev_fl[after_end] - livetime_starts[after_end]
 
+    # ----------------------------------------------------------------------
+
+    # Find bins to which "livetime starts" and "events" belong
     lts_bin = np.searchsorted(tbin_starts, livetime_starts, 'right') - 1
     ev_bin = np.searchsorted(tbin_starts, ev_fl, 'right') - 1
 
-    # First of all, just consider livetimes inside bin borders.
-
+    # First of all, just consider livetimes and events inside the same bin.
     first_pass = ev_bin == lts_bin
-
     expo, bins = np.histogram(ev_fl[first_pass], bins=tbins,
                               weights=pr_fl[first_pass])
 
     assert np.all(expo) >= 0, expo
     livetime_array += expo
+
+    # Now, let's consider the case where livetime starts some bins before.
+    # We start from the most distant (max_bin_diff) and we arrive to 1.
     max_bin_diff = np.max(ev_bin - lts_bin)
 
-    # Now, overlapping
     for bin_diff in range(max_bin_diff, 0, -1):
         idxs = ev_bin == lts_bin + bin_diff
         # Filter only events relevant to this case
@@ -121,12 +129,11 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
             "Invalid boundaries. Contact the developer: {}".format(
                 _tbins - lt_good)
 
-        # TODO: add bins in the middle if max_bin_diff > 1
         # Complete bins
         if bin_diff > 1:
-            for i in range(bin_diff):
-                livetime_array[lts_bin_good + bin_diff] += \
-                    dt[lts_bin_good + bin_diff]
+            for i in range(1, bin_diff):
+                livetime_array[lts_bin_good + i] += \
+                    dt[lts_bin_good + i]
 
     return livetime_array
 
@@ -209,8 +216,7 @@ def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
 
     """
 
-    if dt is None:
-        dt = np.min(np.diff(time))
+    dt = _assign_value_if_none(dt, np.median(np.diff(time)))
 
     additional_columns = ["PRIOR", "PI"]
 
@@ -265,9 +271,9 @@ def correct_lightcurve(lc_file, uf_file, outname=None):
     outname : str
         Output file name
     """
-    if outname is None:
-        outroot = mp_root(lc_file)
-        outname = outroot + "_lccorr" + MP_FILE_EXTENSION
+
+    outname = _assign_value_if_none(
+        outname, mp_root(lc_file) + "_lccorr" + MP_FILE_EXTENSION)
 
     ftype, contents = get_file_type(lc_file)
 
@@ -321,9 +327,7 @@ def main(args=None):
     lc_file = args.lcfile
     uf_file = args.uffile
 
-    outroot = args.outroot
-    if outroot is None:
-        outroot = mp_root(lc_file)
+    outroot = _assign_value_if_none(args.outroot, mp_root(lc_file))
 
     outname = outroot + "_lccorr" + MP_FILE_EXTENSION
 
@@ -334,9 +338,12 @@ def main(args=None):
     expo = outdata["expo"]
     gti = outdata["GTI"]
 
-    _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
-
-    _plot_dead_time_from_uf(uf_file, outroot)
+    try:
+        _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
+        _plot_dead_time_from_uf(uf_file, outroot)
+    except Exception as e:
+        warnings.warn(str(e))
+        pass
 
     if args.plot:
         import matplotlib.pyplot as plt

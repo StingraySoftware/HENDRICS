@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .fspec import read_fspec
-from .base import mp_root
+from .base import mp_root, _assign_value_if_none
 from .io import MP_FILE_EXTENSION, save_data, load_data
 import numpy as np
 import logging
@@ -198,10 +198,7 @@ def main(args=None):
         raise Exception('Invalid number of arguments')
     cfile, p1file, p2file = args.files
 
-    if args.outroot is None:
-        outroot = mp_root(cfile) + '_lag'
-    else:
-        outroot = args.outroot
+    outroot = _assign_value_if_none(args.outroot, mp_root(cfile) + '_lag')
 
     f, df, l, le = lags_from_spectra(cfile, p1file, p2file, outroot=outroot,
                                      noclobber=args.noclobber)

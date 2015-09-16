@@ -4,7 +4,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .base import mp_root, cross_gtis, create_gti_mask
-from .base import common_name, _empty
+from .base import common_name, _empty, _assign_value_if_none
 from .rebin import const_rebin
 from .io import sort_files, get_file_type, load_lcurve, save_pds
 from .io import MP_FILE_EXTENSION
@@ -127,8 +127,9 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_all=False):
     return_all : bool
         if True, return everything, including the dynamical PDS
     """
-    if gti is None:
-        gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
+
+    gti = _assign_value_if_none(
+        gti, [[time[0] - bintime / 2, time[-1] + bintime / 2]])
 
     start_bins, stop_bins = \
         decide_spectrum_lc_intervals(gti, fftlen, time)
@@ -285,8 +286,9 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None, return_all=False):
     return_all : bool
         if True, return everything, including the dynamical PDS
     """
-    if gti is None:
-        gti = [[time[0] - bintime / 2, time[-1] + bintime / 2]]
+
+    gti = _assign_value_if_none(
+        gti, [[time[0] - bintime / 2, time[-1] + bintime / 2]])
 
     start_bins, stop_bins = \
         decide_spectrum_lc_intervals(gti, fftlen, time)
@@ -375,9 +377,8 @@ def rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
     .. [2] Miyamoto+1991, ApJ, 383, 784
 
     """
-    if back_ctrate is None:
-        logging.warning("Assuming background level 0")
-        back_ctrate = 0
+    back_ctrate = _assign_value_if_none(back_ctrate, 0)
+
     factor = (source_ctrate + back_ctrate) / source_ctrate ** 2
     return pds * factor, pds_err * factor
 
@@ -858,10 +859,9 @@ def calc_fspec(files, fftlen,
         if outdir == '':
             outdir = os.getcwd()
 
-        if outroot is None:
-            outr = common_name(f1, f2, default='%d' % i_f)
-        else:
-            outr = outroot
+        outr = _assign_value_if_none(
+            outroot,
+            common_name(f1, f2, default='%d' % i_f))
 
         outname = os.path.join(outdir,
                                outr.replace(MP_FILE_EXTENSION, '') +

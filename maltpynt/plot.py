@@ -56,7 +56,7 @@ def plot_pds(fnames, figname=None):
         pds -= p[0]
 
         plt.errorbar(freq[1:], pds[1:], yerr=epds[1:], fmt='-',
-                     drawstyle='steps-mid', color=color)
+                     drawstyle='steps-mid', color=color, label=fname)
 
         if np.any(lev - p[0] < 0):
             continue
@@ -65,12 +65,12 @@ def plot_pds(fnames, figname=None):
         else:
             plt.axhline(lev - p[0], ls='--', color=color)
 
-
     plt.xlabel('Frequency')
     if norm == 'rms':
         plt.ylabel('(rms/mean)^2')
     elif norm == 'Leahy':
         plt.ylabel('Leahy power')
+    plt.legend()
 
     if figname is not None:
         plt.savefig(figname)
@@ -97,18 +97,22 @@ def plot_cospectrum(fnames, figname=None):
         ax = plt.gca()
         ax.set_xscale('log', nonposx='clip')
         ax.set_yscale('log', nonposy='clip')
-        plt.plot(freq[1:], freq[1:] * cospectrum[1:], drawstyle='steps-mid')
+        plt.plot(freq[1:], freq[1:] * cospectrum[1:], drawstyle='steps-mid',
+                 label=fname)
         plt.figure('Lin')
-        plt.plot(freq[1:], cospectrum[1:], drawstyle='steps-mid')
+        plt.plot(freq[1:], cospectrum[1:], drawstyle='steps-mid',
+                 label=fname)
 
     plt.figure('Log')
     plt.xlabel('Frequency')
     plt.ylabel('Cospectrum * Frequency')
+    plt.legend()
 
     plt.figure('Lin')
     plt.axhline(0, lw=3, ls='--', color='k')
     plt.xlabel('Frequency')
     plt.ylabel('Cospectrum')
+    plt.legend()
 
     if figname is not None:
         plt.savefig(figname)
@@ -138,7 +142,7 @@ def plot_lc(lcfiles, figname=None):
 
         good = create_gti_mask(time, gti)
         plt.plot(time, lc, drawstyle='steps-mid', color='grey')
-        plt.plot(time[good], lc[good], drawstyle='steps-mid', color='k')
+        plt.plot(time[good], lc[good], drawstyle='steps-mid', label=lcfile)
 
     plt.xlabel('Time (s)')
     if instr == 'PCA':
@@ -146,6 +150,7 @@ def plot_lc(lcfiles, figname=None):
     else:
         plt.ylabel('light curve (Ct/bin)')
 
+    plt.legend()
     if figname is not None:
         plt.savefig(figname)
 

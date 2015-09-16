@@ -7,7 +7,7 @@ import numpy as np
 from .io import get_file_type
 from .io import save_data
 from .io import MP_FILE_EXTENSION, get_file_extension
-from .base import _empty
+from .base import _empty, _assign_value_if_none
 import logging
 
 
@@ -115,10 +115,8 @@ def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None):
 
     df = freq[1] - freq[0]
 
-    if npds is None:
-        npds = 1.
-    if pds_err is None:
-        pds_err = np.zeros(len(pds))
+    npds = _assign_value_if_none(npds, 1.)
+    pds_err = _assign_value_if_none(pds_err, np.zeros(len(pds)))
 
     if freq[0] < 1e-10:
         freq = freq[1:]

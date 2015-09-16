@@ -200,6 +200,17 @@ class TestAll(unittest.TestCase):
                                                 gti=None)
         np.testing.assert_almost_equal(expo, np.array([0.1, 0.6, 0.]))
 
+    def test_exposure_calculation4(self):
+        """Test if the exposure calculator works correctly."""
+        times = np.array([1., 1.5, 2., 2.5, 3.])
+        events = np.array([2.6])
+        priors = np.array([1.5])
+        dt = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+        expected_expo = np.array([0.15, 0.5, 0.5, 0.35, 0])
+        expo = mp.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
+                                                gti=None)
+        np.testing.assert_almost_equal(expo, expected_expo)
+
     def test_high_precision_keyword(self):
         """Test high precision FITS keyword read."""
         from maltpynt.io import high_precision_keyword_read
@@ -230,14 +241,15 @@ class TestAll(unittest.TestCase):
         """Test dead time filter, non-paralyzable case, with background."""
         events = np.array([1.1, 2, 2.2, 3, 3.2])
         bkg_events = np.array([1, 3.1])
-        filt_events, filt_bkg = \
-            mp.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events)
+        filt_events, info = \
+            mp.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
+                                        return_all=True)
         expected_ev = np.array([2, 2.2, 3, 3.2])
         expected_bk = np.array([1])
         assert np.all(filt_events == expected_ev), \
             "Wrong: {} vs {}".format(filt_events, expected_ev)
-        assert np.all(filt_bkg == expected_bk), \
-            "Wrong: {} vs {}".format(filt_bkg, expected_bk)
+        assert np.all(info.bkg == expected_bk), \
+            "Wrong: {} vs {}".format(info.bkg, expected_bk)
 
     def test_filter_for_deadtime_par(self):
         """Test dead time filter, paralyzable case."""
@@ -247,18 +259,17 @@ class TestAll(unittest.TestCase):
 
     def test_filter_for_deadtime_par_bkg(self):
         """Test dead time filter, paralyzable case, with background."""
-        events = np.array([1, 1.1, 2, 2.2, 3, 3.1, 3.2])
         events = np.array([1.1, 2, 2.2, 3, 3.2])
         bkg_events = np.array([1, 3.1])
-        filt_events, filt_bkg = \
+        filt_events, info = \
             mp.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
-                                        paralyzable=True)
+                                        paralyzable=True, return_all=True)
         expected_ev = np.array([2, 2.2, 3])
         expected_bk = np.array([1])
         assert np.all(filt_events == expected_ev), \
             "Wrong: {} vs {}".format(filt_events, expected_ev)
-        assert np.all(filt_bkg == expected_bk), \
-            "Wrong: {} vs {}".format(filt_bkg, expected_bk)
+        assert np.all(info.bkg == expected_bk), \
+            "Wrong: {} vs {}".format(info.bkg, expected_bk)
 
     def test_event_simulation(self):
         times = np.array([0.5, 1.5])
@@ -269,6 +280,15 @@ class TestAll(unittest.TestCase):
         assert np.all(np.abs(newlc - lc) < 3 * np.sqrt(lc))
         np.testing.assert_almost_equal(newtime, times)
 
+    def test_deadtime_mask_par(self):
+        """Test dead time filter, paralyzable case, with background."""
+        events = np.array([1.1, 2, 2.2, 3, 3.2])
+        bkg_events = np.array([1, 3.1])
+        filt_events, info = \
+            mp.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
+                                        paralyzable=True, return_all=True)
+
+        assert np.all(filt_events == events[info.mask])
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
