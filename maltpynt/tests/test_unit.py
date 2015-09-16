@@ -200,6 +200,17 @@ class TestAll(unittest.TestCase):
                                                 gti=None)
         np.testing.assert_almost_equal(expo, np.array([0.1, 0.6, 0.]))
 
+    def test_exposure_calculation4(self):
+        """Test if the exposure calculator works correctly."""
+        times = np.array([1., 1.5, 2., 2.5, 3.])
+        events = np.array([2.6])
+        priors = np.array([1.5])
+        dt = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+        expected_expo = np.array([0.15, 0.5, 0.5, 0.35, 0])
+        expo = mp.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
+                                                gti=None)
+        np.testing.assert_almost_equal(expo, expected_expo)
+
     def test_high_precision_keyword(self):
         """Test high precision FITS keyword read."""
         from maltpynt.io import high_precision_keyword_read
