@@ -220,7 +220,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
             before_deadtime = \
                 dead_time_end[:-max_lookback] > tot_ev_list[max_lookback:]
             mask_2[max_lookback:] = before_deadtime
-            bad = np.logical_and(mask_2[max_lookback:] is True,
+            bad = np.logical_and(mask_2[max_lookback:] == True,
                                  mask_2[:-max_lookback] == 0)
 
             mask[max_lookback:] = np.logical_not(bad)

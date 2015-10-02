@@ -237,7 +237,8 @@ class TestAll(unittest.TestCase):
         events = np.array([1, 1.05, 1.07, 1.08, 1.1, 2, 2.2, 3, 3.1, 3.2])
         filt_events = mp.fake.filter_for_deadtime(events, 0.11)
         expected = np.array([1, 2, 2.2, 3, 3.2])
-        assert np.all(filt_events == expected)
+        assert np.all(filt_events == expected), \
+            "Wrong: {} vs {}".format(filt_events, expected)
 
     def test_filter_for_deadtime_nonpar_bkg(self):
         """Test dead time filter, non-paralyzable case, with background."""
