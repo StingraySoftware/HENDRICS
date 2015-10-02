@@ -30,10 +30,12 @@ def _ratio(a, b):
 
 
 class TestPDS(unittest.TestCase):
+
     """Test PDS statistics."""
 
     @classmethod
     def setUpClass(cls):
+        """Produce common products for all subsequent tests."""
         print("Setting up.")
         print("This test is about the statistical properties of frequency "
               "spectra and it is based on random number generation. It might, "
@@ -235,7 +237,8 @@ class TestAll(unittest.TestCase):
         events = np.array([1, 1.05, 1.07, 1.08, 1.1, 2, 2.2, 3, 3.1, 3.2])
         filt_events = mp.fake.filter_for_deadtime(events, 0.11)
         expected = np.array([1, 2, 2.2, 3, 3.2])
-        assert np.all(filt_events == expected)
+        assert np.all(filt_events == expected), \
+            "Wrong: {} vs {}".format(filt_events, expected)
 
     def test_filter_for_deadtime_nonpar_bkg(self):
         """Test dead time filter, non-paralyzable case, with background."""
@@ -272,6 +275,7 @@ class TestAll(unittest.TestCase):
             "Wrong: {} vs {}".format(info.bkg, expected_bk)
 
     def test_event_simulation(self):
+        """Test simulation of events."""
         times = np.array([0.5, 1.5])
         lc = np.array([1000, 2000])
         events = mp.fake.fake_events_from_lc(times, lc)
