@@ -674,10 +674,12 @@ def main(args=None):
             else:
                 val = contents[k]
             if isinstance(val, collections.Iterable) and not is_string(val):
+                length = len(val)
                 if len(val) < 4:
                     val = repr(list(val[:4]))
                 else:
                     val = repr(list(val[:4])).replace(']', '') + '...]'
+                    val = '{} (len {})'.format(val, length)
             print((k + ':').ljust(15), val, end='\n\n')
 
         print('-' * len(fname))

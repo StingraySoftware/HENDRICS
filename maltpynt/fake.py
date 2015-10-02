@@ -114,14 +114,18 @@ def fake_events_from_lc(
         bin_start += max_bin
 
     # Discard all zero entries at the end!
-    return ev_list[:nev]
+    ev_list = ev_list[:nev]
+    ev_list.sort()
+    return ev_list
 
 
 def _max_dead_timed_events(ev_list, deadtime):
     from .lcurve import lcurve
-    time, lc = lcurve(ev_list, 1)
-
-    return max(lc) * deadtime
+    try:
+        time, lc = lcurve(ev_list, 1)
+        return max(lc) * deadtime
+    except:
+        return 1
 
 
 def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
@@ -220,6 +224,8 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
             before_deadtime = \
                 dead_time_end[:-max_lookback] > tot_ev_list[max_lookback:]
             mask_2[max_lookback:] = before_deadtime
+            # flakes complains, but using "is True" would compare the entire
+            # array, not the single elements, giving always false
             bad = np.logical_and(mask_2[max_lookback:] == True,
                                  mask_2[:-max_lookback] == 0)
 
@@ -413,7 +419,8 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
 
 
 def _read_event_list(filename):
-    warnings.warn('Input event lists not yet implemented')
+    if filename is not None:
+        warnings.warn('Input event lists not yet implemented')
     return None, None
 
 
@@ -480,11 +487,13 @@ def main(args=None):
         t, lc = _read_light_curve(args.lc)
         event_list = fake_events_from_lc(t, lc, use_spline=True)
         pi = np.zeros(len(event_list), dtype=int)
+        print('{} events generated'.format(len(event_list)))
     elif args.ctrate is not None:
         t = np.arange(0., 1025.)
         lc = args.ctrate + np.zeros_like(t)
         event_list = fake_events_from_lc(t, lc)
         pi = np.zeros(len(event_list), dtype=int)
+        print('{} events generated'.format(len(event_list)))
     else:
         event_list, pi = _read_event_list(args.event_list)
 
@@ -493,9 +502,11 @@ def main(args=None):
         deadtime_sigma = None
         if len(args.deadtime) > 1:
             deadtime_sigma = args.deadtime[1]
+        print(deadtime, deadtime_sigma)
         event_list, info = filter_for_deadtime(event_list, deadtime,
                                                dt_sigma=deadtime_sigma,
                                                return_all=True)
+        print('{} events after filter'.format(len(event_list)))
         pi = pi[info.mask]
         prior = np.zeros_like(event_list)
 
