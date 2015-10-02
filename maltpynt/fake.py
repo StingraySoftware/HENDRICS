@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""Functions to simulate data and produce a fake event file.
-"""
+"""Functions to simulate data and produce a fake event file."""
+
 from __future__ import (absolute_import, division,
                         print_function)
 
@@ -16,8 +16,7 @@ from .lcurve import lcurve_from_fits
 
 def fake_events_from_lc(
         times, lc, use_spline=False, bin_time=None):
-    '''
-    Create events from a light curve.
+    """Create events from a light curve.
 
     Parameters
     ----------
@@ -30,7 +29,7 @@ def fake_events_from_lc(
     -------
     event_list : array-like
         Simulated arrival times
-    '''
+    """
     try:
         import scipy.interpolate as sci
     except:
@@ -128,8 +127,7 @@ def _max_dead_timed_events(ev_list, deadtime):
 def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
                         dt_sigma=None, paralyzable=False,
                         additional_data=None, return_all=False):
-    '''
-    Filter an event list for a given dead time.
+    """Filter an event list for a given dead time.
 
     Parameters
     ----------
@@ -167,8 +165,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         If True, return the mask that filters the input event list to obtain
         the output event list.
 
-    '''
-
+    """
     additional_output = _empty()
 
     if deadtime <= 0.:
@@ -223,7 +220,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
             before_deadtime = \
                 dead_time_end[:-max_lookback] > tot_ev_list[max_lookback:]
             mask_2[max_lookback:] = before_deadtime
-            bad = np.logical_and(mask_2[max_lookback:] == True,
+            bad = np.logical_and(mask_2[max_lookback:] is True,
                                  mask_2[:-max_lookback] == 0)
 
             mask[max_lookback:] = np.logical_not(bad)
@@ -274,7 +271,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
                                    tstop=None,
                                    mjdref=55197.00076601852,
                                    livetime=None, additional_columns={}):
-    '''Generate fake NuSTAR data.
+    """Generate fake NuSTAR data.
 
     Takes an event list (as a list of floats)
     All inputs are None by default, and can be set during the call.
@@ -307,7 +304,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
         Name of the instrument. Default is 'FPMA'
     livetime : float
         Total livetime. Default is tstop - tstart
-    '''
+    """
     from astropy.io import fits
     import numpy.random as ra
 

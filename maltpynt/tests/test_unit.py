@@ -30,10 +30,12 @@ def _ratio(a, b):
 
 
 class TestPDS(unittest.TestCase):
+
     """Test PDS statistics."""
 
     @classmethod
     def setUpClass(cls):
+        """Produce common products for all subsequent tests."""
         print("Setting up.")
         print("This test is about the statistical properties of frequency "
               "spectra and it is based on random number generation. It might, "
@@ -272,6 +274,7 @@ class TestAll(unittest.TestCase):
             "Wrong: {} vs {}".format(info.bkg, expected_bk)
 
     def test_event_simulation(self):
+        """Test simulation of events."""
         times = np.array([0.5, 1.5])
         lc = np.array([1000, 2000])
         events = mp.fake.fake_events_from_lc(times, lc)
