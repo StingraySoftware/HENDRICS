@@ -416,6 +416,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
 
 
 def _read_event_list(filename):
+    warnings.warn('Input event lists not yet implemented')
     return None, None
 
 
