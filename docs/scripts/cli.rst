@@ -129,9 +129,8 @@ MPfake
 
 ::
 
-    usage: MPfake [-h] [-e EVENT_LIST] [-l LC] [-c CTRATE] [-o OUTNAME]
-                  [-i INSTRUMENT] [--tstart TSTART] [--tstop TSTOP]
-                  [--mjdref MJDREF] [--deadtime DEADTIME [DEADTIME ...]]
+    usage: MPfake [-h] [-e EVENT_LIST] [-o OUTNAME] [-i INSTRUMENT]
+                  [--tstart TSTART] [--tstop TSTOP] [--mjdref MJDREF]
                   [--loglevel LOGLEVEL] [--debug]
 
     Create an event file in FITS format from an event list, or simulating it. If
@@ -141,9 +140,6 @@ MPfake
       -h, --help            show this help message and exit
       -e EVENT_LIST, --event-list EVENT_LIST
                             File containint event list
-      -l LC, --lc LC        File containing light curve
-      -c CTRATE, --ctrate CTRATE
-                            Count rate for simulated events
       -o OUTNAME, --outname OUTNAME
                             Output file name
       -i INSTRUMENT, --instrument INSTRUMENT
@@ -151,10 +147,6 @@ MPfake
       --tstart TSTART       Start time of the observation (s from MJDREF)
       --tstop TSTOP         End time of the observation (s from MJDREF)
       --mjdref MJDREF       Reference MJD
-      --deadtime DEADTIME [DEADTIME ...]
-                            Dead time magnitude. Can be specified as a single
-                            number, or two. In this last case, the second value is
-                            used as sigma of the dead time distribution
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               use DEBUG logging level
@@ -235,7 +227,7 @@ MPlcurve
                     [--safe-interval SAFE_INTERVAL SAFE_INTERVAL]
                     [--pi-interval PI_INTERVAL PI_INTERVAL]
                     [-e E_INTERVAL E_INTERVAL] [-s] [-j] [-g] [--minlen MINLEN]
-                    [--ignore-gtis] [-d OUTDIR] [-o OUTFILE] [--loglevel LOGLEVEL]
+                    [--ignore-gtis] [-d OUTDIR] [--loglevel LOGLEVEL]
                     [--nproc NPROC] [--debug] [--noclobber] [--fits-input]
                     [--txt-input]
                     files [files ...]
@@ -263,8 +255,6 @@ MPlcurve
       --ignore-gtis         Ignore GTIs
       -d OUTDIR, --outdir OUTDIR
                             Output directory
-      -o OUTFILE, --outfile OUTFILE
-                            Output file name
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --nproc NPROC         Number of processors to use
