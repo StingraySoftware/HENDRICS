@@ -15,6 +15,8 @@ installation to produce the cleaned event files and to use
 An **optional but recommended** dependency is the `netCDF 4
 library <http://www.unidata.ucar.edu/software/netcdf/>`__ with its
 `python bindings <https://github.com/Unidata/netcdf4-python>`__.
+An additional dependency that is now used only sparsely (if installed) but will
+become important in future versions is `Numba <http://numba.pydata.org>`__.
 
 Quick Installation(stable releases)
 -----------------------------------
