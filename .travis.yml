@@ -61,11 +61,17 @@ matrix:
         - python: 3.4
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes
         - python: 3.5
-          env: SETUP_CMD='test' 
+          env: SETUP_CMD='test'
 
         # Try older numpy versions
         - python: 3.4
           env: NUMPY_VERSION=1.8 SETUP_CMD='test'
+        - python: 2.6
+          env: SETUP_CMD='test'
+        - python: 2.7
+          env: NUMPY_VERSION=1.7 SETUP_CMD='test'
+        - python: 2.7
+          env: NUMPY_VERSION=1.6 SETUP_CMD='test'
 
     allow_failures:
         - python: 2.6
@@ -74,6 +80,8 @@ matrix:
           env: NUMPY_VERSION=1.7 SETUP_CMD='test'
         - python: 2.7
           env: NUMPY_VERSION=1.6 SETUP_CMD='test'
+        - python: 3.5
+          env: SETUP_CMD='test'
 
 
 before_install:
