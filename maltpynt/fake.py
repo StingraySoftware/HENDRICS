@@ -125,15 +125,6 @@ def fake_events_from_lc(
     return ev_list
 
 
-def _max_dead_timed_events(ev_list, deadtime):
-    from .lcurve import lcurve
-    try:
-        time, lc = lcurve(ev_list, 1)
-        return max(lc) * deadtime
-    except:
-        return 1
-
-
 def _paralyzable_dead_time(event_list, dead_time):
     mask = np.ones(len(event_list), dtype=bool)
     dead_time_end = event_list + dead_time
