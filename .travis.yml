@@ -58,6 +58,8 @@ matrix:
           env: SETUP_CMD='test'
         - python: 3.4
           env: SETUP_CMD='test --coverage' USE_NETCDF=no
+        - python: 3.4
+          env: SETUP_CMD='test --coverage' USE_NUMBA=yes
 
         # Try older numpy versions
         - python: 3.4
@@ -106,6 +108,7 @@ install:
     # packages. You should leave the `numpy=$NUMPY_VERSION` in the `conda`
     # install since this ensures Numpy does not get automatically upgraded.
     - if [[ $SETUP_CMD != egg_info ]] && [[ $USE_NETCDF == yes ]]; then $CONDA_INSTALL netcdf4; fi
+    - if [[ $SETUP_CMD != egg_info ]] && [[ $USE_NUMBA == yes ]]; then $CONDA_INSTALL numba; fi
 
     # DOCUMENTATION DEPENDENCIES
     # build_sphinx needs sphinx and matplotlib (for plot_directive). Note that
