@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-
+"""Import astropy-related stuff."""
 __all__ = ['__version__', '__githash__', 'test']
 
 # this indicates whether or not we are in the package's setup.py
@@ -22,18 +22,21 @@ try:
 except ImportError:
     __githash__ = ''
 
+
 # set up the test command
 def _get_test_runner():
     import os
     from astropy.tests.helper import TestRunner
     return TestRunner(os.path.dirname(__file__))
 
+
 def test(package=None, test_path=None, args=None, plugins=None,
          verbose=False, pastebin=None, remote_data=False, pep8=False,
          pdb=False, coverage=False, open_files=False, **kwargs):
     """
-    Run the tests using `py.test <http://pytest.org/latest>`__. A proper set
-    of arguments is constructed and passed to `pytest.main`_.
+    Run the tests using `py.test <http://pytest.org/latest>`__.
+
+    A proper set of arguments is constructed and passed to `pytest.main`_.
 
     .. _py.test: http://pytest.org/latest/
     .. _pytest.main: http://pytest.org/latest/builtin.html#pytest.main
@@ -110,7 +113,7 @@ def test(package=None, test_path=None, args=None, plugins=None,
         remote_data=remote_data, pep8=pep8, pdb=pdb,
         coverage=coverage, open_files=open_files, **kwargs)
 
-if not _ASTROPY_SETUP_:
+if not _ASTROPY_SETUP_:  # NOQA
     import os
     from warnings import warn
     from astropy import config
@@ -129,10 +132,13 @@ if not _ASTROPY_SETUP_:
                 try:
                     config.configuration.update_default_config(
                         __package__, config_dir)
-                except config.configuration.ConfigurationDefaultMissingError as e:
-                    wmsg = (e.args[0] + " Cannot install default profile. If you are "
-                            "importing from source, this is expected.")
-                    warn(config.configuration.ConfigurationDefaultMissingWarning(wmsg))
+                except config.configuration.ConfigurationDefaultMissingError \
+                        as e:
+                    wmsg = (e.args[0] +
+                            " Cannot install default profile. "
+                            "If you are importing from source, "
+                            "this is expected.")
+                    warn(config.configuration.ConfigurationDefaultMissingWarning(wmsg))  # NOQA
                     del e
                 except:
                     raise orig_error
