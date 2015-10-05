@@ -61,7 +61,7 @@ matrix:
         - python: 3.4
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes
         - python: 3.5
-          env: SETUP_CMD='test'
+          env: SETUP_CMD='test' ASTROPY_VERSION=development
 
         # Try older numpy versions
         - python: 3.4
@@ -77,7 +77,7 @@ matrix:
         - python: 2.7
           env: NUMPY_VERSION=1.6 SETUP_CMD='test'
         - python: 3.5
-          env: SETUP_CMD='test'
+          env: SETUP_CMD='test' ASTROPY_VERSION=development 
 
 
 before_install:
