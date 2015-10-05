@@ -85,7 +85,7 @@ class TestPDS(unittest.TestCase):
                                  self.pdse1[1:])
 
         p, pcov = curve_fit(baseline_fun, freq, pds,
-                            p0=[2], sigma=epds, absolute_sigma=True)
+                            p0=[2], sigma=1 / epds**2)
 
         perr = np.sqrt(np.diag(pcov))
 
