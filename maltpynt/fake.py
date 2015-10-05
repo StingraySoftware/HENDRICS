@@ -12,6 +12,12 @@ import warnings
 from .io import get_file_format, load_lcurve
 from .base import _empty, _assign_value_if_none
 from .lcurve import lcurve_from_fits
+try:
+    from numba import jit
+except:
+    def jit(fun):
+        """Dummy decorator in case jit cannot be imported."""
+        return fun
 
 
 def fake_events_from_lc(
@@ -128,6 +134,33 @@ def _max_dead_timed_events(ev_list, deadtime):
         return 1
 
 
+def _paralyzable_dead_time(event_list, dead_time):
+    mask = np.ones(len(event_list), dtype=bool)
+    dead_time_end = event_list + dead_time
+    bad = dead_time_end[:-1] > event_list[1:]
+    # Easy: paralyzable case. Here, events coming during dead time produce
+    # more dead time. So...
+    mask[1:][bad] = False
+
+    return event_list[mask], mask
+
+
+@jit
+def _nonpar_core(event_list, dead_time_end, mask):
+    for i in range(1, len(event_list)):
+        if (event_list[i] < dead_time_end[i - 1]):
+            dead_time_end[i] = dead_time_end[i - 1]
+            mask[i] = False
+    return mask
+
+
+def _non_paralyzable_dead_time(event_list, dead_time):
+    dead_time_end = event_list + dead_time
+    mask = np.ones(len(event_list), dtype=bool)
+    mask = _nonpar_core(event_list, dead_time_end, mask)
+    return event_list[mask], mask
+
+
 def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
                         dt_sigma=None, paralyzable=False,
                         additional_data=None, return_all=False):
@@ -189,7 +222,6 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         tot_ev_list = ev_list
         ev_kind = np.ones(len(ev_list), dtype=bool)
 
-    mask = np.ones(len(tot_ev_list), dtype=bool)
     nevents = len(tot_ev_list)
     all_ev_kind = ev_kind.copy()
 
@@ -198,59 +230,18 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
     else:
         deadtime_values = np.zeros(nevents) + deadtime
 
-    dead_time_end = tot_ev_list + deadtime_values
-
     initial_len = len(tot_ev_list)
-    saved_mask = mask.copy()
+
     if paralyzable:
-        bad = dead_time_end[:-1] > tot_ev_list[1:]
-        # Easy: paralyzable case. Here, events coming during dead time produce
-        # more dead time. So...
-        mask[1:][bad] = False
-        tot_ev_list = tot_ev_list[mask]
-        ev_kind = ev_kind[mask]
-        saved_mask[np.logical_not(mask)] = False
+        tot_ev_list, saved_mask = \
+            _paralyzable_dead_time(tot_ev_list, deadtime_values)
+
     else:
-        # Otherwise, it is a little trickier. An event is filtered if it comes
-        # during dead time AND the previous event was valid. We need to iterate
-        count = 1
+        tot_ev_list, saved_mask = \
+            _non_paralyzable_dead_time(tot_ev_list, deadtime_values)
 
-        max_lookback = 1
-        while True:
-            mask_2 = np.zeros_like(mask)
-
-            before_deadtime = \
-                dead_time_end[:-max_lookback] > tot_ev_list[max_lookback:]
-            mask_2[max_lookback:] = before_deadtime
-            # flakes complains, but using "is True" would compare the entire
-            # array, not the single elements, giving always false
-            bad = np.logical_and(mask_2[max_lookback:] == True,
-                                 mask_2[:-max_lookback] == 0)
-
-            mask[max_lookback:] = np.logical_not(bad)
-
-            if np.all(mask):
-                break
-
-            tot_ev_list = tot_ev_list[mask]
-            ev_kind = ev_kind[mask]
-            deadtime_values = deadtime_values[mask]
-            sm = saved_mask[saved_mask]
-            sm[np.logical_not(mask)] = False
-            saved_mask[saved_mask] = sm
-            dead_time_end = tot_ev_list + deadtime_values
-            len1 = len(mask)
-            mask = mask[mask]
-            len2 = len(mask)
-            logging.debug(
-                'filter_for_deadtime, pass '
-                '{0}: {1}/{2} new events rejected'.format(count, len1 - len2,
-                                                          len1))
-            logging.debug(
-                'filter_for_deadtime, pass '
-                '{0}: {1}'.format(count, tot_ev_list[:20]))
-            count += 1
-
+    ev_kind = ev_kind[saved_mask]
+    deadtime_values = deadtime_values[saved_mask]
     final_len = len(tot_ev_list)
     logging.info(
         'filter_for_deadtime: '
