@@ -214,10 +214,8 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         # Otherwise, it is a little trickier. An event is filtered if it comes
         # during dead time AND the previous event was valid. We need to iterate
         count = 1
-        max_lookback = np.ceil(
-            _max_dead_timed_events(tot_ev_list, np.max(deadtime_values)))
-        max_lookback = int(np.min([max_lookback, len(tot_ev_list) - 1]))
 
+        max_lookback = 1
         while True:
             mask_2 = np.zeros_like(mask)
 
@@ -232,12 +230,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
             mask[max_lookback:] = np.logical_not(bad)
 
             if np.all(mask):
-                if max_lookback == 1:
-                    break
-                max_lookback -= 1
-                logging.debug(
-                    'filter_for_deadtime, lookback {}'.format(max_lookback))
-                continue
+                break
 
             tot_ev_list = tot_ev_list[mask]
             ev_kind = ev_kind[mask]
@@ -255,7 +248,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
                                                           len1))
             logging.debug(
                 'filter_for_deadtime, pass '
-                '{0}: {1} new events rejected'.format(count, tot_ev_list))
+                '{0}: {1}'.format(count, tot_ev_list[:20]))
             count += 1
 
     final_len = len(tot_ev_list)
