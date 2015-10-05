@@ -284,7 +284,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None):
 
     outdata = contents.copy()
 
-    outdata["lc"] = np.array(lc / expo, dtype=np.float64)
+    outdata["lc"] = np.array(lc / expo * dt, dtype=np.float64)
     outdata["expo"] = expo
 
     save_lcurve(outdata, outname)
