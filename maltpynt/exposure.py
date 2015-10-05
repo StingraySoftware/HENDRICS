@@ -250,7 +250,7 @@ def _plot_corrected_light_curve(time, lc, expo, gti=None, outroot="expo"):
     fig.savefig(outroot + "_corr_lc.png")
 
 
-def correct_lightcurve(lc_file, uf_file, outname=None):
+def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
     """Apply exposure correction to light curve.
 
     Parameters
@@ -284,7 +284,9 @@ def correct_lightcurve(lc_file, uf_file, outname=None):
 
     outdata = contents.copy()
 
-    outdata["lc"] = np.array(lc / expo * dt, dtype=np.float64)
+    newlc = np.array(lc / expo * dt, dtype=np.float64)
+    newlc[expo < expo_limit] = 0
+    outdata["lc"] = newlc
     outdata["expo"] = expo
 
     save_lcurve(outdata, outname)
