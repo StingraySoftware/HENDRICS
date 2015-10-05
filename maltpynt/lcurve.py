@@ -45,7 +45,6 @@ def lcurve(event_list,
     centertime: bool
         If False, time is the start of the bin. Otherwise, the center
     """
-
     start_time = _assign_value_if_none(start_time, np.floor(event_list[0]))
     stop_time = _assign_value_if_none(stop_time, np.floor(event_list[-1]))
 
@@ -701,7 +700,6 @@ def lcurve_from_txt(txt_file, outfile=None,
     """
     Load a lightcurve from a text file.
 
-
     Parameters
     ----------
     txt_file : str
@@ -782,6 +780,7 @@ def _wrap_fits(args):
 
 
 def main(args=None):
+    """Main function called by the `MPlcurve` command line script."""
     import argparse
     from multiprocessing import Pool
 
@@ -909,6 +908,7 @@ def main(args=None):
 
 
 def scrunch_main(args=None):
+    """Main function called by the `MPscrunchlc` command line script."""
     import argparse
     description = \
         'Sum lightcurves from different instruments or energy ranges'

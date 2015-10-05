@@ -60,6 +60,7 @@ def save_as_xspec(fname, direct_save=False):
 
 
 def main(args=None):
+    """Main function called by the `MP2xspec` command line script."""
     import argparse
     description = ('Save a frequency spectrum in a qdp file that can be '
                    'read by flx2xsp and produce a XSpec-compatible spectrum'

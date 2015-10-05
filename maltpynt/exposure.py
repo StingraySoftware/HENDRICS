@@ -294,6 +294,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
 
 
 def main(args=None):
+    """Main function called by the `MPexposure` command line script."""
     import argparse
     description = (
         'Create exposure light curve based on unfiltered event files.')

@@ -156,6 +156,7 @@ def plot_lc(lcfiles, figname=None):
 
 
 def main(args=None):
+    """Main function called by the `MPplot` command line script."""
     import argparse
 
     description = \

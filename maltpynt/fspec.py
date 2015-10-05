@@ -127,7 +127,6 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_all=False):
     return_all : bool
         if True, return everything, including the dynamical PDS
     """
-
     gti = _assign_value_if_none(
         gti, [[time[0] - bintime / 2, time[-1] + bintime / 2]])
 
@@ -286,7 +285,6 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None, return_all=False):
     return_all : bool
         if True, return everything, including the dynamical PDS
     """
-
     gti = _assign_value_if_none(
         gti, [[time[0] - bintime / 2, time[-1] + bintime / 2]])
 
@@ -981,6 +979,7 @@ def dumpdyn(fname, plot=False):
 
 
 def dumpdyn_main(args=None):
+    """Main function called by the `MPdumpdyn` command line script."""
     import argparse
 
     description = ('Dump dynamical (cross) power spectra')
@@ -1000,6 +999,7 @@ def dumpdyn_main(args=None):
 
 
 def main(args=None):
+    """Main function called by the `MPfspec` command line script."""
     import argparse
     description = ('Create frequency spectra (PDS, CPDS, cospectrum) '
                    'starting from well-defined input ligthcurves')

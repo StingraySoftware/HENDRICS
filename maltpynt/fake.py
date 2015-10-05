@@ -412,6 +412,7 @@ def _read_light_curve(filename):
 
 
 def main(args=None):
+    """Main function called by the `MPfake` command line script."""
     import argparse
     description = (
         'Create an event file in FITS format from an event list, or simulating'
