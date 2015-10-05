@@ -253,6 +253,9 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
                 'filter_for_deadtime, pass '
                 '{0}: {1}/{2} new events rejected'.format(count, len1 - len2,
                                                           len1))
+            logging.debug(
+                'filter_for_deadtime, pass '
+                '{0}: {1} new events rejected'.format(count, tot_ev_list))
             count += 1
 
     final_len = len(tot_ev_list)
