@@ -416,14 +416,15 @@ def lcurve_from_events(f, safe_interval=0,
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
-    outdir = _assign_value_if_none(outdir, os.path.dirname(f))
+    outdir = _assign_value_if_none(
+        outdir, os.path.dirname(os.path.abspath(f)))
 
     _, outfile = os.path.split(outfile)
     mkdir_p(outdir)
     outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
-        print('File exists, and noclobber option used. Skipping')
+        warnings.warn('File exists, and noclobber option used. Skipping')
         return [outfile]
 
     time, lc = lcurve(events, bintime, start_time=tstart,
@@ -437,7 +438,8 @@ def lcurve_from_events(f, safe_interval=0,
                        return_borders=True)
 
     if len(newgtis) == 0:
-        print("No GTIs above min_length ({0}s) found.".format(min_length))
+        warnings.warn(
+            "No GTIs above min_length ({0}s) found.".format(min_length))
         return
 
     assert np.all(borders == tot_borders), \
@@ -453,7 +455,8 @@ def lcurve_from_events(f, safe_interval=0,
             local_tag = tag + '_gti%d' % ib
             outf = mp_root(outfile) + local_tag + '_lc' + MP_FILE_EXTENSION
             if noclobber and os.path.exists(outf):
-                print('File exists, and noclobber option used. Skipping')
+                warnings.warn(
+                    'File exists, and noclobber option used. Skipping')
                 outfiles.append(outf)
 
             logging.debug(b)
@@ -549,14 +552,15 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
     outfile = _assign_value_if_none(outfile, mp_root(fits_file) + '_lc')
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
-    outdir = _assign_value_if_none(outdir, os.path.dirname(fits_file))
+    outdir = _assign_value_if_none(
+        outdir, os.path.dirname(os.path.abspath(fits_file)))
 
     _, outfile = os.path.split(outfile)
     mkdir_p(outdir)
     outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
-        print('File exists, and noclobber option used. Skipping')
+        warnings.warn('File exists, and noclobber option used. Skipping')
         return [outfile]
 
     lchdulist = pf.open(fits_file)
@@ -630,8 +634,8 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
         if tunit == 'd':
             dt *= 86400
     except:
-        print('Assuming that TIMEDEL is the difference between the first two'
-              'times of the light curve')
+        warnings.warn('Assuming that TIMEDEL is the difference between the'
+                      ' first two times of the light curve')
         dt = time[1] - time[0]
 
     # ----------------------------------------------------------------
@@ -726,14 +730,15 @@ def lcurve_from_txt(txt_file, outfile=None,
     outfile = _assign_value_if_none(outfile, mp_root(txt_file) + '_lc')
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
 
-    outdir = _assign_value_if_none(outdir, os.path.dirname(txt_file))
+    outdir = _assign_value_if_none(
+        outdir, os.path.dirname(os.path.abspath(txt_file)))
 
     _, outfile = os.path.split(outfile)
     mkdir_p(outdir)
     outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
-        print('File exists, and noclobber option used. Skipping')
+        warnings.warn('File exists, and noclobber option used. Skipping')
         return [outfile]
 
     time, lc = np.genfromtxt(txt_file, delimiter=' ', unpack=True)
@@ -900,7 +905,6 @@ def main(args=None):
 
     if os.name == 'nt' or args.nproc == 1:
         for a in arglist:
-            print(a)
             outfiles.append(wrap_fun(a))
     else:
         pool = Pool(processes=args.nproc)
