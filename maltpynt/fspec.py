@@ -17,13 +17,19 @@ import os
 
 def _wrap_fun_cpds(arglist):
     f1, f2, outname, kwargs = arglist
-    return calc_cpds(f1, f2, outname=outname, **kwargs)
+    try:
+        return calc_cpds(f1, f2, outname=outname, **kwargs)
+    except Exception as e:
+        warnings.warn(str(e))
 
 
 def _wrap_fun_pds(argdict):
     fname = argdict["fname"]
     argdict.pop("fname")
-    return calc_pds(fname, **argdict)
+    try:
+        return calc_pds(fname, **argdict)
+    except Exception as e:
+        warnings.warn(str(e))
 
 
 def fft(lc, bintime):
@@ -835,6 +841,7 @@ def calc_fspec(files, fftlen,
                     '(even in random order)')
 
     instrs = list(sorted_files.keys())
+
     files1 = sorted_files[instrs[0]]
     files2 = sorted_files[instrs[1]]
 
