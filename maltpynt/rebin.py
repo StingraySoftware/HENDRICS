@@ -273,6 +273,7 @@ def rebin_file(filename, rebin):
 
 
 def main(args=None):
+    """Main function called by the `MPrebin` command line script."""
     import argparse
     description = 'Rebin light curves and frequency spectra. '
     parser = argparse.ArgumentParser(description=description)

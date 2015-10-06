@@ -1,8 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""A miscellaneous collection of basic functions, that are likely to be used by
-the other modules.
-
-"""
+"""A miscellaneous collection of basic functions."""
 
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
@@ -202,7 +199,7 @@ def contiguous_regions(condition):
     Notes
     -----
     From http://stackoverflow.com/questions/4494404/find-large-number-of-consecutive-values-fulfilling-condition-in-a-numpy-array
-    """
+    """  # NOQA
     # Find the indicies of changes in "condition"
     diff = np.diff(condition)
     idx, = diff.nonzero()
@@ -574,7 +571,6 @@ def calc_countrate(time, lc, gtis=None, bintime=None):
         The bin time of the light curve. If not specified, the minimum
         difference between time bins is used
     """
-
     bintime = _assign_value_if_none(bintime, np.min(np.diff(time)))
     if gtis is not None:
         mask = create_gti_mask(time, gtis)

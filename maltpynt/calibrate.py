@@ -121,6 +121,7 @@ def _calib_wrap(args):
 
 
 def main(args=None):
+    """Main function called by the `MPcalibrate` command line script."""
     import argparse
     from multiprocessing import Pool
 

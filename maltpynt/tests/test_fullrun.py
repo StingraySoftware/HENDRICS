@@ -7,7 +7,6 @@ from __future__ import (absolute_import, unicode_literals, division,
 import maltpynt as mp
 import logging
 import os
-import sys
 import glob
 import subprocess as sp
 import numpy as np
@@ -15,13 +14,7 @@ from astropy.tests.helper import catch_warnings
 
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 
-PY2 = sys.version_info[0] == 2
-PYX6 = sys.version_info[1] == 6
-
-if PY2 and PYX6:
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 
 logging.basicConfig(filename='MP.log', level=logging.DEBUG, filemode='w')
 curdir = os.path.abspath(os.path.dirname(__file__))
@@ -38,7 +31,7 @@ class TestFullRun(unittest.TestCase):
     Inspired by http://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
 
     When command line is missing, uses some function calls
-    """
+    """  # NOQA
 
     def step00a_scripts_are_installed(self):
         """Test only once that command line scripts are installed correctly."""
@@ -47,18 +40,18 @@ class TestFullRun(unittest.TestCase):
         sp.check_call(command.split())
 
     def step01a_fake_file(self):
-        """Test produce a fake event file"""
+        """Test produce a fake event file."""
         fits_file = os.path.join(datadir, 'monol_test_fake.evt')
         mp.fake.main(['-o', fits_file])
 
     def step01b_fake_file(self):
-        """Test produce a fake event file from input light curve"""
+        """Test produce a fake event file from input light curve."""
         lcurve_in = os.path.join(datadir, 'lcurveA.fits')
         fits_file = os.path.join(datadir, 'monol_test_fake_lc.evt')
         mp.fake.main(['--lc', lcurve_in, '-o', fits_file])
 
     def step01c_fake_file(self):
-        """Test produce a fake event file and apply deadtime"""
+        """Test produce a fake event file and apply deadtime."""
         fits_file = os.path.join(datadir, 'monol_test_fake_lc.evt')
         mp.fake.main(['--deadtime', '2.5e-3',
                       '--ctrate', '2000',
@@ -82,11 +75,11 @@ class TestFullRun(unittest.TestCase):
         """Test event file splitting."""
         command = \
             '{0} -g --min-length 0'.format(
-                    os.path.join(datadir, 'monol_testB.evt'))
+                os.path.join(datadir, 'monol_testB.evt'))
         mp.read_events.main(command.split())
 
     def step02d_load_gtis(self):
-        """Test loading of GTIs from FITS files"""
+        """Test loading of GTIs from FITS files."""
         fits_file = os.path.join(datadir, 'monol_testA.evt')
         mp.io.load_gtis(fits_file)
 
@@ -132,7 +125,7 @@ class TestFullRun(unittest.TestCase):
         mp.lcurve.main(command.split())
 
     def step04b_lcurve_split(self):
-        """Test lc with gti-split option, and reading of split event file"""
+        """Test lc with gti-split option, and reading of split event file."""
         command = '{0} -g'.format(
             os.path.join(datadir, 'monol_testB_ev_0' +
                          MP_FILE_EXTENSION))
@@ -342,7 +335,7 @@ class TestFullRun(unittest.TestCase):
         mp.rebin.main(command.split())
 
     def step06c_rebinpds(self):
-        """Test geometrical PDS rebinning"""
+        """Test geometrical PDS rebinning."""
         command = '{0} {1} -r 1.03'.format(
             os.path.join(datadir, 'monol_testA_E3-50_pds') +
             MP_FILE_EXTENSION,
@@ -412,16 +405,14 @@ class TestFullRun(unittest.TestCase):
         mp.save_as_xspec.main(command.split())
 
     def step09a_create_gti(self):
-        """Test creating a GTI file"""
-
+        """Test creating a GTI file."""
         fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
         command = "{0} -f lc>0 -c --debug".format(fname)
         mp.create_gti.main(command.split())
 
     def step09b_create_gti(self):
-        """Test creating a GTI file"""
-
+        """Test creating a GTI file."""
         fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
             MP_FILE_EXTENSION
         lcfname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
@@ -431,8 +422,7 @@ class TestFullRun(unittest.TestCase):
         mp.create_gti.main(command.split())
 
     def step10a_readfile(self):
-        """Test reading and dumping a MaLTPyNT file"""
-
+        """Test reading and dumping a MaLTPyNT file."""
         fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
             MP_FILE_EXTENSION
         command = "{0}".format(fname)
@@ -440,15 +430,14 @@ class TestFullRun(unittest.TestCase):
         mp.io.main(command.split())
 
     def step10b_readfile(self):
-        """Test reading and dumping a FITS file"""
-
+        """Test reading and dumping a FITS file."""
         fitsname = os.path.join(datadir, 'monol_testA.evt')
         command = "{0}".format(fitsname)
 
         mp.io.main(command.split())
 
     def step10c_save_as_qdp(self):
-        """Test saving arrays in a qdp file"""
+        """Test saving arrays in a qdp file."""
         arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
         errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
         mp.io.save_as_qdp(arrays, errors,
@@ -456,7 +445,7 @@ class TestFullRun(unittest.TestCase):
                                                 "monol_test_qdp.txt"))
 
     def step10d_save_as_ascii(self):
-        """Test saving arrays in a ascii file"""
+        """Test saving arrays in a ascii file."""
         array = np.array([0, 1, 3])
         errors = np.array([1, 1, 1])
         mp.io.save_as_ascii(
@@ -481,8 +470,7 @@ class TestFullRun(unittest.TestCase):
             assert ftype == realtype, "File types do not match"
 
     def step11_exposure(self):
-        """Test exposure calculations from unfiltered files"""
-
+        """Test exposure calculations from unfiltered files."""
         lcname = os.path.join(datadir,
                               'monol_testA_E3-50_lc' + MP_FILE_EXTENSION)
         ufname = os.path.join(datadir, 'monol_testA_uf.evt')
@@ -491,7 +479,7 @@ class TestFullRun(unittest.TestCase):
         mp.exposure.main(command.split())
 
     def step12_plot(self):
-        """Test plotting"""
+        """Test plotting."""
         pname = os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
             MP_FILE_EXTENSION
         cname = os.path.join(datadir, 'monol_test_E3-50_cpds_rebin1.03') + \

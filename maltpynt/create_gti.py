@@ -93,6 +93,7 @@ def apply_gti(fname, gti, outname=None):
 
 
 def main(args=None):
+    """Main function called by the `MPcreategti` command line script."""
     import argparse
 
     description = ('Create GTI files from a filter expression, or applies '

@@ -61,6 +61,7 @@ def sum_fspec(files, outname=None):
 
 
 def main(args=None):
+    """Main function called by the `MPsumfspec` command line script."""
     import argparse
 
     description = 'Sum (C)PDSs contained in different files'

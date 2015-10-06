@@ -8,17 +8,9 @@ import maltpynt as mp
 import numpy as np
 import logging
 import os
-import sys
+import unittest
+
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
-
-PY2 = sys.version_info[0] == 2
-PYX6 = sys.version_info[1] == 6
-
-if PY2 and PYX6:
-    import unittest2 as unittest
-    print("\nunittest2!!\n")
-else:
-    import unittest
 
 logging.basicConfig(filename='MP.log', level=logging.DEBUG, filemode='w')
 curdir = os.path.abspath(os.path.dirname(__file__))
@@ -93,7 +85,7 @@ class TestPDS(unittest.TestCase):
                                  self.pdse1[1:])
 
         p, pcov = curve_fit(baseline_fun, freq, pds,
-                            p0=[2], sigma=epds, absolute_sigma=True)
+                            p0=[2], sigma=1 / epds**2)
 
         perr = np.sqrt(np.diag(pcov))
 
@@ -171,6 +163,7 @@ class TestAll(unittest.TestCase):
         pds = np.random.normal(2, 0.1, len(freq))
         _ = mp.rebin.geom_bin(freq, pds, 1.3, pds_err=pds)
         _ = mp.rebin.geom_bin(freq, pds, 1.3)
+        del _
 
     def test_exposure_calculation1(self):
         """Test if the exposure calculator works correctly."""
