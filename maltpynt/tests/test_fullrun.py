@@ -131,7 +131,7 @@ class TestFullRun(unittest.TestCase):
                          MP_FILE_EXTENSION))
         mp.lcurve.main(command.split())
 
-    def step04c_fits_lcurve(self):
+    def step04c_fits_lcurve0(self):
         """Test light curves from FITS."""
         lcurve_ftools_orig = os.path.join(datadir, 'lcurveA.fits')
 
@@ -151,9 +151,16 @@ class TestFullRun(unittest.TestCase):
             lcurve_ftools)
         mp.lcurve.main(command.split())
 
+    def step04c_fits_lcurve1(self):
+        """Test light curves from FITS."""
+        lcurve_ftools = os.path.join(datadir,
+                                     'lcurve_ftools_lc' +
+                                     MP_FILE_EXTENSION)
+
         lcurve_mp = os.path.join(datadir,
                                  'lcurve_lc' +
                                  MP_FILE_EXTENSION)
+
         lcdata_mp = mp.io.load_lcurve(lcurve_mp)
         lcdata_ftools = mp.io.load_lcurve(lcurve_ftools)
 

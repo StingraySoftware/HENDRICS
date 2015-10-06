@@ -346,9 +346,6 @@ def lcurve_from_events(f, safe_interval=0,
         If True, do not overwrite existing files
 
     """
-    if (outfile is not None) and (outdir is not None):
-        raise Exception('Please specify only one between outdir and outfile')
-
     logging.info("Loading file %s..." % f)
     evdata = load_events(f)
     logging.info("Done.")
@@ -419,6 +416,11 @@ def lcurve_from_events(f, safe_interval=0,
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+    outdir = _assign_value_if_none(outdir, os.path.dirname(f))
+
+    _, outfile = os.path.split(outfile)
+    mkdir_p(outdir)
+    outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
         print('File exists, and noclobber option used. Skipping')
@@ -444,20 +446,15 @@ def lcurve_from_events(f, safe_interval=0,
     out['source_ctrate'] = calc_countrate(time, lc, gtis=newgtis,
                                           bintime=bintime)
 
-    if outdir is not None:
-        _, f = os.path.split(f)
-        mkdir_p(outdir)
-        f = os.path.join(outdir, f)
-
     if gti_split:
         outfiles = []
         logging.debug(borders)
         for ib, b in enumerate(borders):
             local_tag = tag + '_gti%d' % ib
-            outfile = mp_root(f) + local_tag + '_lc' + MP_FILE_EXTENSION
-            if noclobber and os.path.exists(outfile):
+            outf = mp_root(outfile) + local_tag + '_lc' + MP_FILE_EXTENSION
+            if noclobber and os.path.exists(outf):
                 print('File exists, and noclobber option used. Skipping')
-                outfiles.append(outfile)
+                outfiles.append(outf)
 
             logging.debug(b)
             local_out = out.copy()
@@ -478,9 +475,9 @@ def lcurve_from_events(f, safe_interval=0,
             if instr == 'PCA':
                 local_out['nPCUs'] = len(set(pcus))
 
-            logging.info('Saving light curve to %s' % outfile)
-            save_lcurve(local_out, outfile)
-            outfiles.append(outfile)
+            logging.info('Saving light curve to %s' % outf)
+            save_lcurve(local_out, outf)
+            outfiles.append(outf)
     else:
         out['lc'] = lc
         out['time'] = time
@@ -503,7 +500,7 @@ def lcurve_from_events(f, safe_interval=0,
 def lcurve_from_fits(fits_file, gtistring='GTI',
                      timecolumn='TIME', ratecolumn=None, ratehdu=1,
                      fracexp_limit=0.9, outfile=None,
-                     noclobber=False):
+                     noclobber=False, outdir=None):
     """
     Load a lightcurve from a fits file and save it in MaLTPyNT format.
 
@@ -552,6 +549,11 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
     outfile = _assign_value_if_none(outfile, mp_root(fits_file) + '_lc')
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+    outdir = _assign_value_if_none(outdir, os.path.dirname(fits_file))
+
+    _, outfile = os.path.split(outfile)
+    mkdir_p(outdir)
+    outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
         print('File exists, and noclobber option used. Skipping')
@@ -696,7 +698,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
 
 def lcurve_from_txt(txt_file, outfile=None,
-                    noclobber=False):
+                    noclobber=False, outdir=None):
     """
     Load a lightcurve from a text file.
 
@@ -723,6 +725,12 @@ def lcurve_from_txt(txt_file, outfile=None,
 
     outfile = _assign_value_if_none(outfile, mp_root(txt_file) + '_lc')
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+
+    outdir = _assign_value_if_none(outdir, os.path.dirname(txt_file))
+
+    _, outfile = os.path.split(outfile)
+    mkdir_p(outdir)
+    outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
         print('File exists, and noclobber option used. Skipping')
@@ -877,13 +885,14 @@ def main(args=None):
                    "ignore_gtis": args.ignore_gtis,
                    "bintime": bintime, "outdir": args.outdir}
 
-    arglist = [[f, argdict] for f in args.files]
+    arglist = [[f, argdict.copy()] for f in args.files]
     na = len(arglist)
-    outname = args.outfile
-    if outname is not None:
+    outfile = args.outfile
+    if outfile is not None:
+        outname = os.path.splitext(outfile)[0]
         for i in range(na):
             if na > 1:
-                outname = outname + "_{}".format(i)
+                outname = outfile + "_{0}".format(i)
             arglist[i][1]['outfile'] = outname
 
     # -------------------------------------------------------------------------
@@ -891,6 +900,7 @@ def main(args=None):
 
     if os.name == 'nt' or args.nproc == 1:
         for a in arglist:
+            print(a)
             outfiles.append(wrap_fun(a))
     else:
         pool = Pool(processes=args.nproc)
