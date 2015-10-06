@@ -39,6 +39,8 @@ class TestPDS(unittest.TestCase):
         cls.tstop = cls.tstart + cls.length
         cls.ctrate = 100
         cls.bintime = 1
+
+        ra.seed(seed=1234)
         cls.nphot = ra.poisson(cls.length * cls.ctrate)
 
         events = ra.uniform(cls.tstart, cls.tstop, cls.nphot)
