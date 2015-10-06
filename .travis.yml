@@ -81,6 +81,8 @@ matrix:
           env: ASTROPY_VERSION=development SETUP_CMD='test'
         - python: 2.7
           env: SETUP_CMD='build_sphinx -w'
+        - python: 3.5
+          env: SETUP_CMD='test'
 
 before_install:
 
