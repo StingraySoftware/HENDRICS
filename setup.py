@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+"""Setup script."""
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 import glob
 import os
 import sys
 
-import ah_bootstrap
+import ah_bootstrap  # NOQA
 from setuptools import setup
 
 # A dirty hack to get around some early import/configurations ambiguities

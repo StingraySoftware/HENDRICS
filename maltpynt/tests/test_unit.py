@@ -29,16 +29,14 @@ class TestPDS(unittest.TestCase):
     def setUpClass(cls):
         """Produce common products for all subsequent tests."""
         print("Setting up.")
-        print("This test is about the statistical properties of frequency "
-              "spectra and it is based on random number generation. It might, "
-              "randomly, fail. Always repeat the test if it does and only "
-              "worry if it repeatedly fails.")
         import numpy.random as ra
         cls.length = 512000
         cls.tstart = 0
         cls.tstop = cls.tstart + cls.length
         cls.ctrate = 100
         cls.bintime = 1
+
+        ra.seed(seed=1234)
         cls.nphot = ra.poisson(cls.length * cls.ctrate)
 
         events = ra.uniform(cls.tstart, cls.tstop, cls.nphot)
