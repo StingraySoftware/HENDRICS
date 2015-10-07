@@ -12,6 +12,7 @@ from .io import load_data, get_file_type, load_pds
 from .io import is_string
 from .base import create_gti_mask, _assign_value_if_none
 from .base import detection_level
+from .fspec import rms_normalize_pds
 import logging
 import numpy as np
 
@@ -87,10 +88,16 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
         npds = pdsdata['npds']
         norm = pdsdata['norm']
         rebin = pdsdata['rebin']
+        ctrate = pdsdata['ctrate']
+        back_ctrate = pdsdata['back_ctrate']
 
         nbin = len(pds[1:])
 
         lev = detection_level(nbin, n_summed_spectra=npds, n_rebin=rebin)
+        if norm == "rms":
+            lev, _ = rms_normalize_pds(lev, 0,
+                                       source_ctrate=ctrate,
+                                       back_ctrate=back_ctrate)
 
         color = next(rainbow)
 
@@ -115,13 +122,14 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
             plt.errorbar(freq[1:], pds[1:] * freq[1:],
                          yerr=epds[1:] * freq[1:], fmt='-',
                          drawstyle='steps-mid', color=color, label=fname)
+            level *= freq
 
         if np.any(level < 0):
             continue
-        if isinstance(lev, collections.Iterable):
-            plt.plot(freq, lev - p[0], ls='--', color=color)
+        if isinstance(level, collections.Iterable):
+            plt.plot(freq, level, ls='--', color=color)
         else:
-            plt.axhline(lev - p[0], ls='--', color=color)
+            plt.axhline(level, ls='--', color=color)
 
     plt.xlabel('Frequency')
     if norm == 'rms':
