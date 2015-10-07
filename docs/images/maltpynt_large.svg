@@ -1,33 +1,266 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
-<svg id="svg2" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" height="210mm" viewBox="0 0 2019.6851 744.09448" width="570mm" version="1.1" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
- <defs id="defs4">
-  <marker id="Arrow1Sstart" refY="0" refX="0" orient="auto" overflow="visible">
-   <path id="path4162" d="m0 0 5-5-17.5 5 17.5 5-5-5z" fill-rule="evenodd" transform="matrix(.2 0 0 .2 1.2 0)" stroke="#fff" stroke-width="1pt" fill="#fff"/>
-  </marker>
-  <linearGradient id="linearGradient7191" x1="253.48" gradientUnits="userSpaceOnUse" y1="922.18" gradientTransform="matrix(.96591 0 0 .97348 12.685 18.04)" x2="440.58" y2="277.46">
-   <stop id="stop7187" stop-color="#000065" offset="0"/>
-   <stop id="stop7189" stop-color="#80e5ff" offset="1"/>
-  </linearGradient>
- </defs>
- <metadata id="metadata7">
-  <rdf:RDF>
-   <cc:Work rdf:about="">
-    <dc:format>image/svg+xml</dc:format>
-    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:title/>
-   </cc:Work>
-  </rdf:RDF>
- </metadata>
- <g id="layer1" transform="matrix(1.0016 0 0 1.0016 -.012687 -308.84)">
-  <ellipse id="path4140" fill-rule="evenodd" rx="364.25" ry="367.11" cy="680.31" cx="372.05" fill="url(#linearGradient7191)"/>
-  <path id="path4144" stroke-linejoin="bevel" d="m-524.01 649.36c-6.2992-127.7 100.9-233.12 226.09-237.91 144.34-5.5203 263.02 116.04 267.22 257.87 4.7645 160.99-131.18 292.93-289.65 296.53-177.63 4.0249-322.86-146.32-325.83-321.43-0.62809-37.006 4.8668-74.066 16.099-109.33" transform="matrix(-1.0164,0,0,1.0375,6.6305,-8.665)" stroke="#fff" stroke-linecap="square" stroke-width="50.188" fill="none"/>
-  <a id="a7201" transform="matrix(1.0164,0,0,1.0375,-18.054,-1.2542)">
-   <path id="path6840" stroke-linejoin="round" d="m108.57 695.22c39.048-6.9955 52.796-48.99 91.844-184.51 40.117 300.72 52.492 319.44 147.03 8.2275 34.327 286.52 34.567 283.02 142.2 304.32 10.992 5.4432 52.756-78.992 57.498-163.76" stroke="#fff" stroke-width="50.188" fill="none"/>
-  </a>
-  <path id="path7210" stroke-linejoin="round" d="m682.86 588.08-99.347-48.356 91.551-61.859z" transform="matrix(.49005 -.83889 .83236 .4939 -135.86 811.28)" stroke="#fff" stroke-linecap="square" stroke-width="35.433" fill="#fff"/>
-  <path id="path7214" marker-end="url(#Arrow1Sstart)" d="m601.34 488.36-45.92-44.76" stroke="#fff" stroke-width="24.051" fill="none"/>
- </g>
- <text id="text4153" style="word-spacing:0px;letter-spacing:0px" xml:space="preserve" font-size="47.073px" y="400.49561" x="786.52032" font-family="sans-serif" line-height="125%" fill="#000000"><tspan id="tspan4155" font-weight="500" font-size="220.65px" line-height="125%" y="400.49561" x="786.52032" font-family="&apos;Century Schoolbook L&apos;"><tspan id="tspan4381" line-height="125%">Ma<tspan id="tspan4383" fill="#0010ff">LT</tspan>Py</tspan><tspan id="tspan4226" line-height="125%" fill="#0010ff">NT</tspan></tspan></text>
- <text id="text4176" style="word-spacing:0px;letter-spacing:0px" font-family="&apos;Droid Sans&apos;" xml:space="preserve" transform="scale(1.0068 .99329)" line-height="125%" font-size="89.743px" y="505.81888" x="782.39612" fill="#000000"><g font-size="79.771px" font-family="&apos;URW Gothic L&apos;" fill="#090924"><tspan id="tspan4178" line-height="125%" y="505.81888" x="782.39612"><tspan id="tspan4271" font-weight="600" font-size="79.771px" line-height="125%" font-family="&apos;URW Gothic L&apos;" fill="#090924">Ma</tspan>tteo&apos;s <tspan id="tspan4275" font-weight="600" font-size="79.771px" line-height="125%" font-family="&apos;URW Gothic L&apos;" fill="#0010ff"/></tspan><tspan id="tspan4417" line-height="125%" y="605.61102" x="782.39612"><g fill="#0010ff"><tspan id="tspan4419" font-weight="600" font-size="79.771px" line-height="125%" font-family="&apos;URW Gothic L&apos;">        L</tspan><tspan id="tspan4397">ibrary</tspan><tspan id="tspan4257" font-size="58.361px" line-height="125%" font-family="&apos;URW Gothic L&apos;"> and</tspan><tspan id="tspan4277" font-weight="600" font-size="79.771px" line-height="125%" font-family="&apos;URW Gothic L&apos;"> T</tspan><tspan id="tspan4399">ools <tspan id="tspan4413" fill="#000000"><tspan id="tspan4415" font-size="58.361px" line-height="125%" font-family="&apos;URW Gothic L&apos;">in</tspan><tspan id="tspan4428" font-weight="600" font-size="79.771px" line-height="125%" font-family="&apos;URW Gothic L&apos;"> Py</tspan>th</tspan><tspan id="tspan4405" fill="#272a52">on</tspan></tspan></g></tspan><tspan id="tspan4186" line-height="125%" y="705.4032" x="782.39612"><g fill="#0010ff"><tspan id="tspan4261" font-size="58.361px" line-height="125%" font-family="&apos;URW Gothic L&apos;">                                  for </tspan><tspan id="tspan4281" font-weight="600" font-size="79.771px" line-height="125%" font-family="&apos;URW Gothic L&apos;">N</tspan><tspan id="tspan4291">uSTAR </tspan><tspan id="tspan4283" font-weight="600" font-size="79.771px" line-height="125%" font-family="&apos;URW Gothic L&apos;"> T</tspan><tspan id="tspan4293">iming</tspan></g></tspan></g></text>
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="svg2"
+   height="210mm"
+   viewBox="0 0 2019.6851 744.09448"
+   width="570mm"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="maltpynt_large.svg"
+   inkscape:export-filename="/home/mbachett/devel/maltpynt/docs/images/maltpynt_large.png"
+   inkscape:export-xdpi="48"
+   inkscape:export-ydpi="48">
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1280"
+     inkscape:window-height="957"
+     id="namedview4182"
+     showgrid="false"
+     inkscape:zoom="0.33668616"
+     inkscape:cx="660.00235"
+     inkscape:cy="370.56218"
+     inkscape:window-x="-6"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2" />
+  <defs
+     id="defs4">
+    <marker
+       id="Arrow1Sstart"
+       refY="0"
+       refX="0"
+       orient="auto"
+       overflow="visible">
+      <path
+         id="path4162"
+         d="m0 0 5-5-17.5 5 17.5 5-5-5z"
+         fill-rule="evenodd"
+         transform="matrix(.2 0 0 .2 1.2 0)"
+         stroke="#fff"
+         stroke-width="1pt"
+         fill="#fff" />
+    </marker>
+    <linearGradient
+       id="linearGradient7191"
+       x1="253.48"
+       gradientUnits="userSpaceOnUse"
+       y1="922.18"
+       gradientTransform="matrix(0.96591,0,0,0.97348,12.685,18.04)"
+       x2="440.58"
+       y2="277.46">
+      <stop
+         id="stop7187"
+         stop-color="#000065"
+         offset="0" />
+      <stop
+         id="stop7189"
+         stop-color="#80e5ff"
+         offset="1" />
+    </linearGradient>
+  </defs>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     transform="matrix(1.0016,0,0,1.0016,2.9574381,-308.84)">
+    <ellipse
+       id="path4140"
+       rx="364.25"
+       ry="367.10999"
+       cy="680.31"
+       cx="372.04999"
+       style="fill:url(#linearGradient7191);fill-rule:evenodd" />
+    <path
+       id="path4144"
+       d="m -524.01,649.36 c -6.2992,-127.7 100.9,-233.12 226.09,-237.91 144.34,-5.5203 263.02,116.04 267.22,257.87 4.7645,160.99 -131.18,292.93 -289.65,296.53 -177.63,4.0249 -322.86,-146.32 -325.83,-321.43 -0.62809,-37.006 4.8668,-74.066 16.099,-109.33"
+       transform="matrix(-1.0164,0,0,1.0375,6.6305,-8.665)"
+       inkscape:connector-curvature="0"
+       style="fill:none;stroke:#ffffff;stroke-width:50.18799973;stroke-linecap:square;stroke-linejoin:bevel" />
+    <a
+       id="a7201"
+       transform="matrix(1.0164,0,0,1.0375,-18.054,-1.2542)">
+      <path
+         id="path6840"
+         d="m 108.57,695.22 c 39.048,-6.9955 52.796,-48.99 91.844,-184.51 40.117,300.72 52.492,319.44 147.03,8.2275 34.327,286.52 34.567,283.02 142.2,304.32 10.992,5.4432 52.756,-78.992 57.498,-163.76"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#ffffff;stroke-width:50.18799973;stroke-linejoin:round" />
+    </a>
+    <path
+       id="path7210"
+       d="m 682.86,588.08 -99.347,-48.356 91.551,-61.859 z"
+       transform="matrix(0.49005,-0.83889,0.83236,0.4939,-135.86,811.28)"
+       inkscape:connector-curvature="0"
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:35.43299866;stroke-linecap:square;stroke-linejoin:round" />
+    <path
+       id="path7214"
+       d="M 601.34,488.36 555.42,443.6"
+       inkscape:connector-curvature="0"
+       style="fill:none;stroke:#ffffff;stroke-width:24.0510006;marker-end:url(#Arrow1Sstart)" />
+  </g>
+  <text
+     id="text4153"
+     style="word-spacing:0px;letter-spacing:0px;stroke:#ffffff;stroke-opacity:1;"
+     xml:space="preserve"
+     font-size="47.073px"
+     y="400.49561"
+     x="786.52032"
+     font-family="sans-serif"
+     line-height="125%"
+     fill="#000000"><tspan
+       id="tspan4155"
+       font-weight="500"
+       font-size="220.65px"
+       line-height="125%"
+       y="400.49561"
+       x="786.52032"
+       font-family="'Century Schoolbook L'"
+       style="stroke:#ffffff;stroke-opacity:1;"><tspan
+         id="tspan4381"
+         line-height="125%"
+         style="stroke:#ffffff;stroke-opacity:1;">Ma<tspan
+   id="tspan4383"
+   fill="#0010ff"
+   style="stroke:#ffffff;stroke-opacity:1;">LT</tspan>Py</tspan><tspan
+         id="tspan4226"
+         line-height="125%"
+         fill="#0010ff"
+         style="stroke:#ffffff;stroke-opacity:1;">NT</tspan></tspan></text>
+  <text
+     id="text4176"
+     style="word-spacing:0px;letter-spacing:0px;stroke:#ffffff;stroke-opacity:1;"
+     xml:space="preserve"
+     transform="scale(1.0068 .99329)"
+     line-height="125%"
+     font-size="89.743px"
+     y="505.81888"
+     x="782.39612"
+     font-family="'Droid Sans'"
+     fill="#000000"
+     inkscape:export-xdpi="48"
+     inkscape:export-ydpi="48"><g
+       font-size="79.771px"
+       id="g4157"
+       font-family="'URW Gothic L'"
+       fill="#090924"
+       style="stroke:#ffffff;stroke-opacity:1;"><tspan
+         id="tspan4178"
+         line-height="125%"
+         y="505.81888"
+         x="782.39612"
+         style="stroke:#ffffff;stroke-opacity:1;"><tspan
+   id="tspan4271"
+   font-weight="600"
+   font-size="79.771px"
+   line-height="125%"
+   font-family="'URW Gothic L'"
+   fill="#090924"
+   style="stroke:#ffffff;stroke-opacity:1;">Ma</tspan>tteo's <tspan
+   id="tspan4275"
+   font-weight="600"
+   font-size="79.771px"
+   line-height="125%"
+   font-family="'URW Gothic L'"
+   fill="#0010ff"
+   style="stroke:#ffffff;stroke-opacity:1;" /></tspan><tspan
+         id="tspan4417"
+         line-height="125%"
+         y="605.61102"
+         x="782.39612"
+         style="stroke:#ffffff;stroke-opacity:1;"><g
+           id="g4163"
+           fill="#0010ff"
+           style="stroke:#ffffff;stroke-opacity:1;"><tspan
+             id="tspan4419"
+             font-weight="600"
+             font-size="79.771px"
+             line-height="125%"
+             font-family="'URW Gothic L'"
+             style="stroke:#ffffff;stroke-opacity:1;">        L</tspan><tspan
+             id="tspan4397"
+             style="stroke:#ffffff;stroke-opacity:1;">ibrary</tspan><tspan
+             id="tspan4257"
+             font-size="58.361px"
+             line-height="125%"
+             font-family="'URW Gothic L'"
+             style="stroke:#ffffff;stroke-opacity:1;"> and</tspan><tspan
+             id="tspan4277"
+             font-weight="600"
+             font-size="79.771px"
+             line-height="125%"
+             font-family="'URW Gothic L'"
+             style="stroke:#ffffff;stroke-opacity:1;"> T</tspan><tspan
+             id="tspan4399"
+             style="stroke:#ffffff;stroke-opacity:1;">ools <tspan
+   id="tspan4413"
+   fill="#000000"
+   style="stroke:#ffffff;stroke-opacity:1;"><tspan
+   id="tspan4415"
+   font-size="58.361px"
+   line-height="125%"
+   font-family="'URW Gothic L'"
+   style="stroke:#ffffff;stroke-opacity:1;">in</tspan><tspan
+   id="tspan4428"
+   font-weight="600"
+   font-size="79.771px"
+   line-height="125%"
+   font-family="'URW Gothic L'"
+   style="stroke:#ffffff;stroke-opacity:1;"> Py</tspan>th</tspan><tspan
+   id="tspan4405"
+   fill="#272a52"
+   style="stroke:#ffffff;stroke-opacity:1;">on</tspan></tspan></g></tspan><tspan
+         id="tspan4186"
+         line-height="125%"
+         y="705.4032"
+         x="782.39612"
+         style="stroke:#ffffff;stroke-opacity:1;"><g
+           id="g4175"
+           fill="#0010ff"
+           style="stroke:#ffffff;stroke-opacity:1;"><tspan
+             id="tspan4261"
+             font-size="58.361px"
+             line-height="125%"
+             font-family="'URW Gothic L'"
+             style="stroke:#ffffff;stroke-opacity:1;">                                  for </tspan><tspan
+             id="tspan4281"
+             font-weight="600"
+             font-size="79.771px"
+             line-height="125%"
+             font-family="'URW Gothic L'"
+             style="stroke:#ffffff;stroke-opacity:1;">N</tspan><tspan
+             id="tspan4291"
+             style="stroke:#ffffff;stroke-opacity:1;">uSTAR </tspan><tspan
+             id="tspan4283"
+             font-weight="600"
+             font-size="79.771px"
+             line-height="125%"
+             font-family="'URW Gothic L'"
+             style="stroke:#ffffff;stroke-opacity:1;"> T</tspan><tspan
+             id="tspan4293"
+             style="stroke:#ffffff;stroke-opacity:1;">iming</tspan></g></tspan></g></text>
 </svg>
