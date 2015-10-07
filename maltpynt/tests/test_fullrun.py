@@ -485,15 +485,27 @@ class TestFullRun(unittest.TestCase):
 
         mp.exposure.main(command.split())
 
-    def step12_plot(self):
-        """Test plotting."""
+    def step12a_plot(self):
+        """Test plotting with linear axes."""
+        pname = os.path.join(datadir, 'monol_testA_E3-50_pds') + \
+            MP_FILE_EXTENSION
+        cname = os.path.join(datadir, 'monol_test_E3-50_cpds') + \
+            MP_FILE_EXTENSION
+        lname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        mp.plot.main([pname, cname, lname, '--noplot', '--xlin', '--ylin'])
+        mp.plot.main([lname, '--noplot',
+                      '--axes', 'time', 'lc', '--xlin', '--ylin'])
+
+    def step12b_plot(self):
+        """Test plotting with log axes."""
         pname = os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
             MP_FILE_EXTENSION
         cname = os.path.join(datadir, 'monol_test_E3-50_cpds_rebin1.03') + \
             MP_FILE_EXTENSION
-        lname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
-            MP_FILE_EXTENSION
-        mp.plot.main([pname, cname, lname, '--noplot'])
+        mp.plot.main([pname, cname, '--noplot', '--xlog', '--ylog'])
+        mp.plot.main([pname, '--noplot', '--axes', 'pds', 'epds',
+                      '--xlin', '--ylin'])
 
     def _all_steps(self):
         for name in sorted(dir(self)):
