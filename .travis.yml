@@ -27,7 +27,7 @@ env:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.9
+        - NUMPY_VERSION=1.10
         - ASTROPY_VERSION=stable
         - USE_NETCDF=yes
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
