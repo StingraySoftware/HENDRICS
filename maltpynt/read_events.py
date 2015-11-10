@@ -3,7 +3,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .base import mp_root, read_header_key, ref_mjd
+from .base import mp_root, read_header_key, ref_mjd, _assign_value_if_none
 from .io import save_events, load_events_and_gtis
 from .io import MP_FILE_EXTENSION
 import numpy as np
@@ -13,7 +13,7 @@ import os
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,
-                     min_length=4):
+                     min_length=4, gtistring=None):
     """Read data from an event file, with no external GTI information.
 
     Parameters
@@ -24,11 +24,14 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     ----------------
     noclobber: bool
         if a file is present, do not overwrite it
+    gtistring: str
+        comma-separated set of GTI strings to consider
     gti_split: bool
         split the file in multiple chunks, containing one GTI each
     min_length: float
         minimum length of GTIs accepted (only if gti_split is True)
     """
+    gtistring = _assign_value_if_none(gtistring, 'GTI,STDGTI')
     logging.info('Opening %s' % filename)
     outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outfile) and (not gti_split):
@@ -43,7 +46,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
 
     mjdref = ref_mjd(filename)
     data = load_events_and_gtis(filename,
-                                additional_columns=additional_columns)
+                                additional_columns=additional_columns,
+                                gtistring=gtistring)
 
     events = data.ev_list
     gtis = data.gti_list
@@ -128,6 +132,9 @@ def main(args=None):
     parser.add_argument("--min-length", type=int,
                         help="Minimum length of GTIs to consider",
                         default=0)
+    parser.add_argument("--gti-string", type=str,
+                        help="GTI string",
+                        default=None)
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
 
@@ -142,7 +149,8 @@ def main(args=None):
                         filemode='w')
 
     argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,
-               "min_length": args.min_length}
+               "min_length": args.min_length, "gtistring": args.gti_string}
+
     arglist = [[f, argdict] for f in files]
 
     if os.name == 'nt' or args.nproc == 1:

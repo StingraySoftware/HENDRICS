@@ -54,6 +54,9 @@ def plot_pds(fnames, figname=None):
         p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
         logging.info('White noise level is {0}'.format(p[0]))
         pds -= p[0]
+        ax = plt.gca()
+        ax.set_xscale('log', nonposx='clip')
+        ax.set_yscale('log', nonposy='clip')
 
         plt.errorbar(freq[1:], pds[1:], yerr=epds[1:], fmt='-',
                      drawstyle='steps-mid', color=color, label=fname)
