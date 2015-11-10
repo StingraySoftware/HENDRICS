@@ -165,6 +165,7 @@ def lags_from_spectra(cpdsfile, pds1file, pds2file, outroot='lag',
 
 
 def main(args=None):
+    """Main function called by the `MPlags` command line script."""
     import argparse
 
     description = ('Calculate time lags from the cross power spectrum and '

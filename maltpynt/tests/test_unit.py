@@ -8,17 +8,9 @@ import maltpynt as mp
 import numpy as np
 import logging
 import os
-import sys
+import unittest
+
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
-
-PY2 = sys.version_info[0] == 2
-PYX6 = sys.version_info[1] == 6
-
-if PY2 and PYX6:
-    import unittest2 as unittest
-    print("\nunittest2!!\n")
-else:
-    import unittest
 
 logging.basicConfig(filename='MP.log', level=logging.DEBUG, filemode='w')
 curdir = os.path.abspath(os.path.dirname(__file__))
@@ -30,21 +22,21 @@ def _ratio(a, b):
 
 
 class TestPDS(unittest.TestCase):
+
     """Test PDS statistics."""
 
     @classmethod
     def setUpClass(cls):
+        """Produce common products for all subsequent tests."""
         print("Setting up.")
-        print("This test is about the statistical properties of frequency "
-              "spectra and it is based on random number generation. It might, "
-              "randomly, fail. Always repeat the test if it does and only "
-              "worry if it repeatedly fails.")
         import numpy.random as ra
         cls.length = 512000
         cls.tstart = 0
         cls.tstop = cls.tstart + cls.length
         cls.ctrate = 100
         cls.bintime = 1
+
+        ra.seed(seed=1234)
         cls.nphot = ra.poisson(cls.length * cls.ctrate)
 
         events = ra.uniform(cls.tstart, cls.tstop, cls.nphot)
@@ -91,7 +83,7 @@ class TestPDS(unittest.TestCase):
                                  self.pdse1[1:])
 
         p, pcov = curve_fit(baseline_fun, freq, pds,
-                            p0=[2], sigma=epds, absolute_sigma=True)
+                            p0=[2], sigma=1 / epds**2)
 
         perr = np.sqrt(np.diag(pcov))
 
@@ -248,7 +240,8 @@ class TestAll(unittest.TestCase):
         events = np.array([1, 1.05, 1.07, 1.08, 1.1, 2, 2.2, 3, 3.1, 3.2])
         filt_events = mp.fake.filter_for_deadtime(events, 0.11)
         expected = np.array([1, 2, 2.2, 3, 3.2])
-        assert np.all(filt_events == expected)
+        assert np.all(filt_events == expected), \
+            "Wrong: {} vs {}".format(filt_events, expected)
 
     def test_filter_for_deadtime_nonpar_bkg(self):
         """Test dead time filter, non-paralyzable case, with background."""
@@ -285,6 +278,7 @@ class TestAll(unittest.TestCase):
             "Wrong: {} vs {}".format(info.bkg, expected_bk)
 
     def test_event_simulation(self):
+        """Test simulation of events."""
         times = np.array([0.5, 1.5])
         lc = np.array([1000, 2000])
         events = mp.fake.fake_events_from_lc(times, lc)

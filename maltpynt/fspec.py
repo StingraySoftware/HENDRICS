@@ -17,13 +17,19 @@ import os
 
 def _wrap_fun_cpds(arglist):
     f1, f2, outname, kwargs = arglist
-    return calc_cpds(f1, f2, outname=outname, **kwargs)
+    try:
+        return calc_cpds(f1, f2, outname=outname, **kwargs)
+    except Exception as e:
+        warnings.warn(str(e))
 
 
 def _wrap_fun_pds(argdict):
     fname = argdict["fname"]
     argdict.pop("fname")
-    return calc_pds(fname, **argdict)
+    try:
+        return calc_pds(fname, **argdict)
+    except Exception as e:
+        warnings.warn(str(e))
 
 
 def fft(lc, bintime):
@@ -127,7 +133,6 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_all=False):
     return_all : bool
         if True, return everything, including the dynamical PDS
     """
-
     gti = _assign_value_if_none(
         gti, [[time[0] - bintime / 2, time[-1] + bintime / 2]])
 
@@ -148,16 +153,16 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_all=False):
 
     for start_bin, stop_bin in zip(start_bins, stop_bins):
         l = lc[start_bin:stop_bin]
-        if np.sum(l) == 0:
-            logging.warning('Interval starting at' +
-                            ' time %.7f' % time[start_bin] +
-                            ' is bad. Check GTIs')
-            npds -= 1
-            continue
+        t0 = time[start_bin]
         try:
+            assert np.sum(l) != 0, \
+                'Interval starting at time %.7f is bad. Check GTIs' % t0
+
             f, p = leahy_pds(l, bintime)
         except Exception as e:
             warnings.warn(str(e))
+            npds -= 1
+            continue
 
         if return_all:
             results.dynpds.append(p)
@@ -286,7 +291,6 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None, return_all=False):
     return_all : bool
         if True, return everything, including the dynamical PDS
     """
-
     gti = _assign_value_if_none(
         gti, [[time[0] - bintime / 2, time[-1] + bintime / 2]])
 
@@ -313,17 +317,16 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None, return_all=False):
         l1 = lc1[start_bin:stop_bin]
         l2 = lc2[start_bin:stop_bin]
 
-        if np.sum(l1) == 0 or np.sum(l2) == 0:
-            logging.warning('Interval starting at' +
-                            ' time %.7f' % time[start_bin] +
-                            ' is bad. Check GTIs')
-            npds -= 1
-            continue
-
+        t0 = time[start_bin]
         try:
+            assert np.sum(l1) != 0 and np.sum(l2) != 0, \
+                'Interval starting at time %.7f is bad. Check GTIs' % t0
+
             f, p, pe, p1, p2 = leahy_cpds(l1, l2, bintime)
         except Exception as e:
             warnings.warn(str(e))
+            npds -= 1
+            continue
 
         cpds += p
         ecpds += pe ** 2
@@ -524,19 +527,12 @@ def calc_pds(lcfile, fftlen,
         time, lc, dum = \
             const_rebin(time, lc, lcrebin, normalize=False)
 
-    try:
-        results = welch_pds(time, lc, bintime, fftlen, gti, return_all=True)
-        freq = results.f
-        pds = results.pds
-        epds = results.epds
-        npds = results.npds
-        ctrate = results.ctrate
-    except Exception as e:
-        # If it fails, exit cleanly
-        logging.error("{0} failed ({1}: {2})".format('Problem with the PDS.',
-                                                     type(e), e))
-        raise Exception("{0} failed ({1}: {2})".format('Problem with the PDS.',
-                                                       type(e), e))
+    results = welch_pds(time, lc, bintime, fftlen, gti, return_all=True)
+    freq = results.f
+    pds = results.pds
+    epds = results.epds
+    npds = results.npds
+    ctrate = results.ctrate
 
     freq, pds, epds = const_rebin(freq[1:], pds[1:], pdsrebin,
                                   epds[1:])
@@ -683,20 +679,13 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     lc1 = lc1[mask1]
     lc2 = lc2[mask2]
 
-    try:
-        results = welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
-                             return_all=True)
-        freq = results.f
-        cpds = results.cpds
-        ecpds = results.ecpds
-        ncpds = results.ncpds
-        ctrate = results.ctrate
-    except Exception as e:
-        # If it fails, exit cleanly
-        logging.error("{0} failed ({1}: {2})".format(
-            'Problem with the CPDS.', type(e), e))
-        raise Exception("{0} failed ({1}: {2})".format(
-            'Problem with the CPDS.', type(e), e))
+    results = welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
+                         return_all=True)
+    freq = results.f
+    cpds = results.cpds
+    ecpds = results.ecpds
+    ncpds = results.ncpds
+    ctrate = results.ctrate
 
     freq, cpds, ecpds = const_rebin(freq[1:], cpds[1:], pdsrebin,
                                     ecpds[1:])
@@ -837,6 +826,7 @@ def calc_fspec(files, fftlen,
                     '(even in random order)')
 
     instrs = list(sorted_files.keys())
+
     files1 = sorted_files[instrs[0]]
     files2 = sorted_files[instrs[1]]
 
@@ -981,6 +971,7 @@ def dumpdyn(fname, plot=False):
 
 
 def dumpdyn_main(args=None):
+    """Main function called by the `MPdumpdyn` command line script."""
     import argparse
 
     description = ('Dump dynamical (cross) power spectra')
@@ -1000,6 +991,7 @@ def dumpdyn_main(args=None):
 
 
 def main(args=None):
+    """Main function called by the `MPfspec` command line script."""
     import argparse
     description = ('Create frequency spectra (PDS, CPDS, cospectrum) '
                    'starting from well-defined input ligthcurves')

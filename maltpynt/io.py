@@ -643,6 +643,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
 
 
 def main(args=None):
+    """Main function called by the `MPreadfile` command line script."""
     from astropy.time import Time
     import astropy.units as u
     import argparse
@@ -675,10 +676,12 @@ def main(args=None):
             else:
                 val = contents[k]
             if isinstance(val, collections.Iterable) and not is_string(val):
+                length = len(val)
                 if len(val) < 4:
                     val = repr(list(val[:4]))
                 else:
                     val = repr(list(val[:4])).replace(']', '') + '...]'
+                    val = '{} (len {})'.format(val, length)
             print((k + ':').ljust(15), val, end='\n\n')
 
         print('-' * len(fname))

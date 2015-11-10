@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""Functions to simulate data and produce a fake event file.
-"""
+"""Functions to simulate data and produce a fake event file."""
+
 from __future__ import (absolute_import, division,
                         print_function)
 
@@ -12,12 +12,17 @@ import warnings
 from .io import get_file_format, load_lcurve
 from .base import _empty, _assign_value_if_none
 from .lcurve import lcurve_from_fits
+try:
+    from numba import jit
+except:
+    def jit(fun):
+        """Dummy decorator in case jit cannot be imported."""
+        return fun
 
 
 def fake_events_from_lc(
         times, lc, use_spline=False, bin_time=None):
-    '''
-    Create events from a light curve.
+    """Create events from a light curve.
 
     Parameters
     ----------
@@ -30,7 +35,7 @@ def fake_events_from_lc(
     -------
     event_list : array-like
         Simulated arrival times
-    '''
+    """
     try:
         import scipy.interpolate as sci
     except:
@@ -117,26 +122,42 @@ def fake_events_from_lc(
         bin_start += max_bin
 
     # Discard all zero entries at the end!
-    return ev_list[:nev]
+    ev_list = ev_list[:nev]
+    ev_list.sort()
+    return ev_list
 
 
-def _max_dead_timed_events(ev_list, deadtime):
-    from .lcurve import lcurve
-    time, lc = lcurve(ev_list, 1)
-    # Filter around max(lc)
-    lmax = np.argmax(lc)
-    t0 = time[np.max([lmax - 1, 0])] - 0.5
-    t1 = time[np.min([len(time) - 1, lmax + 2])] + 0.5
-    time, lc = lcurve(ev_list, deadtime * 2, start_time=t0, stop_time=t1)
+def _paralyzable_dead_time(event_list, dead_time):
+    mask = np.ones(len(event_list), dtype=bool)
+    dead_time_end = event_list + dead_time
+    bad = dead_time_end[:-1] > event_list[1:]
+    # Easy: paralyzable case. Here, events coming during dead time produce
+    # more dead time. So...
+    mask[1:][bad] = False
 
-    return np.max(lc)
+    return event_list[mask], mask
+
+
+@jit
+def _nonpar_core(event_list, dead_time_end, mask):
+    for i in range(1, len(event_list)):
+        if (event_list[i] < dead_time_end[i - 1]):
+            dead_time_end[i] = dead_time_end[i - 1]
+            mask[i] = False
+    return mask
+
+
+def _non_paralyzable_dead_time(event_list, dead_time):
+    dead_time_end = event_list + dead_time
+    mask = np.ones(len(event_list), dtype=bool)
+    mask = _nonpar_core(event_list, dead_time_end, mask)
+    return event_list[mask], mask
 
 
 def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
                         dt_sigma=None, paralyzable=False,
                         additional_data=None, return_all=False):
-    '''
-    Filter an event list for a given dead time.
+    """Filter an event list for a given dead time.
 
     Parameters
     ----------
@@ -174,8 +195,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         If True, return the mask that filters the input event list to obtain
         the output event list.
 
-    '''
-
+    """
     additional_output = _empty()
 
     if deadtime <= 0.:
@@ -195,7 +215,6 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         tot_ev_list = ev_list
         ev_kind = np.ones(len(ev_list), dtype=bool)
 
-    mask = np.ones(len(tot_ev_list), dtype=bool)
     nevents = len(tot_ev_list)
     all_ev_kind = ev_kind.copy()
 
@@ -204,63 +223,18 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
     else:
         deadtime_values = np.zeros(nevents) + deadtime
 
-    dead_time_end = tot_ev_list + deadtime_values
-
     initial_len = len(tot_ev_list)
-    saved_mask = mask.copy()
+
     if paralyzable:
-        bad = dead_time_end[:-1] > tot_ev_list[1:]
-        # Easy: paralyzable case. Here, events coming during dead time produce
-        # more dead time. So...
-        mask[1:][bad] = False
-        tot_ev_list = tot_ev_list[mask]
-        ev_kind = ev_kind[mask]
-        saved_mask[np.logical_not(mask)] = False
+        tot_ev_list, saved_mask = \
+            _paralyzable_dead_time(tot_ev_list, deadtime_values)
+
     else:
-        # Otherwise, it is a little trickier. An event is filtered if it comes
-        # during dead time AND the previous event was valid. We need to iterate
-        count = 1
-        max_lookback = np.ceil(
-            _max_dead_timed_events(tot_ev_list, np.max(deadtime_values)))
-        max_lookback = int(np.min([max_lookback, len(tot_ev_list) - 1]))
+        tot_ev_list, saved_mask = \
+            _non_paralyzable_dead_time(tot_ev_list, deadtime_values)
 
-        logging.debug(
-            'filter_for_deadtime, lookback {}'.format(max_lookback))
-        while True:
-            mask_2 = np.zeros_like(mask)
-
-            before_deadtime = \
-                dead_time_end[:-max_lookback] > tot_ev_list[max_lookback:]
-            mask_2[max_lookback:] = before_deadtime
-            bad = np.logical_and(mask_2[max_lookback:] == True,
-                                 mask_2[:-max_lookback] == 0)
-
-            mask[max_lookback:] = np.logical_not(bad)
-
-            if np.all(mask):
-                if max_lookback == 1:
-                    break
-                max_lookback -= 1
-                logging.debug(
-                    'filter_for_deadtime, lookback {}'.format(max_lookback))
-                continue
-
-            tot_ev_list = tot_ev_list[mask]
-            ev_kind = ev_kind[mask]
-            deadtime_values = deadtime_values[mask]
-            sm = saved_mask[saved_mask]
-            sm[np.logical_not(mask)] = False
-            saved_mask[saved_mask] = sm
-            dead_time_end = tot_ev_list + deadtime_values
-            len1 = len(mask)
-            mask = mask[mask]
-            len2 = len(mask)
-            logging.debug(
-                'filter_for_deadtime, pass '
-                '{0}: {1}/{2} new events rejected'.format(count, len1 - len2,
-                                                          len1))
-            count += 1
-
+    ev_kind = ev_kind[saved_mask]
+    deadtime_values = deadtime_values[saved_mask]
     final_len = len(tot_ev_list)
     logging.info(
         'filter_for_deadtime: '
@@ -283,7 +257,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
                                    tstop=None,
                                    mjdref=55197.00076601852,
                                    livetime=None, additional_columns={}):
-    '''Generate fake NuSTAR data.
+    """Generate fake NuSTAR data.
 
     Takes an event list (as a list of floats)
     All inputs are None by default, and can be set during the call.
@@ -316,7 +290,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
         Name of the instrument. Default is 'FPMA'
     livetime : float
         Total livetime. Default is tstop - tstart
-    '''
+    """
     from astropy.io import fits
     import numpy.random as ra
 
@@ -425,6 +399,8 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
 
 
 def _read_event_list(filename):
+    if filename is not None:
+        warnings.warn('Input event lists not yet implemented')
     return None, None
 
 
@@ -438,6 +414,7 @@ def _read_light_curve(filename):
 
 
 def main(args=None):
+    """Main function called by the `MPfake` command line script."""
     import argparse
     description = (
         'Create an event file in FITS format from an event list, or simulating'
@@ -491,6 +468,7 @@ def main(args=None):
         t, lc = _read_light_curve(args.lc)
         event_list = fake_events_from_lc(t, lc, use_spline=True)
         pi = np.zeros(len(event_list), dtype=int)
+        print('{} events generated'.format(len(event_list)))
     elif args.ctrate is not None:
         tstart = _assign_value_if_none(args.tstart, 0)
         tstop = _assign_value_if_none(args.tstop, 1025)
@@ -498,6 +476,7 @@ def main(args=None):
         lc = args.ctrate + np.zeros_like(t)
         event_list = fake_events_from_lc(t, lc)
         pi = np.zeros(len(event_list), dtype=int)
+        print('{} events generated'.format(len(event_list)))
     else:
         event_list, pi = _read_event_list(args.event_list)
 
@@ -506,9 +485,11 @@ def main(args=None):
         deadtime_sigma = None
         if len(args.deadtime) > 1:
             deadtime_sigma = args.deadtime[1]
+        print(deadtime, deadtime_sigma)
         event_list, info = filter_for_deadtime(event_list, deadtime,
                                                dt_sigma=deadtime_sigma,
                                                return_all=True)
+        print('{} events after filter'.format(len(event_list)))
         pi = pi[info.mask]
         prior = np.zeros_like(event_list)
 

@@ -105,6 +105,7 @@ def _wrap_fun(arglist):
 
 
 def main(args=None):
+    """Main function called by the `MPreadevents` command line script."""
     import argparse
     from multiprocessing import Pool
 
