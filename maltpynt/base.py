@@ -12,13 +12,13 @@ import sys
 def r_in(td, r_0):
     """Calculate incident countrate given dead time and detected countrate."""
     tau = 1 / r_0
-    return 1. / (tau + td)
+    return 1. / (tau - td)
 
 
 def r_det(td, r_in):
     """Calculate detected countrate given dead time and incident countrate."""
     tau = 1 / r_in
-    return 1. / (tau - td)
+    return 1. / (tau + td)
 
 
 def _assign_value_if_none(value, default):

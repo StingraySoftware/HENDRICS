@@ -297,5 +297,13 @@ class TestAll(unittest.TestCase):
 
         assert np.all(filt_events == events[info.mask])
 
+    def test_deadtime_conversion(self):
+        """Test the functions for count rate conversion."""
+        original_rate = np.arange(1, 1000, 10)
+        deadtime = 2.5e-3
+        rdet = mp.base.r_det(deadtime, original_rate)
+        rin = mp.base.r_in(deadtime, rdet)
+        np.testing.assert_almost_equal(rin, original_rate)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
