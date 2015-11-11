@@ -574,6 +574,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     """
     from astropy.io import fits as pf
 
+    gtistring = _assign_value_if_none(gtistring, 'GTI,STDGTI')
     lchdulist = pf.open(fits_file)
 
     # Load data table

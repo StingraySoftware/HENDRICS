@@ -104,6 +104,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
         p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
         logging.info('White noise level is {0}'.format(p[0]))
         pds -= p[0]
+
         if xlog and ylog:
             plt.figure('PDS - Loglog')
         else:

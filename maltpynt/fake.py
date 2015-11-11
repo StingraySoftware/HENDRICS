@@ -78,8 +78,8 @@ def fake_events_from_lc(
         n_bin_filt = len(lc_filt)
         n_to_simulate = n_bin_filt * max(lc_filt)
         safety_factor = 10
-        if n_to_simulate > 1000:
-            safety_factor = 3.
+        if n_to_simulate > 10000:
+            safety_factor = 4.
 
         n_to_simulate += safety_factor * np.sqrt(n_to_simulate)
         n_to_simulate = int(np.ceil(n_to_simulate))
@@ -107,7 +107,9 @@ def fake_events_from_lc(
         len1 = len(random_ts)
         random_ts = random_ts[good]
         len2 = len(random_ts)
+        logging.debug("Max LC, nbin: {0} {1}".format(max(lc_filt), n_bin_filt))
         logging.debug("{0} Events generated".format(len1))
+        logging.debug("{0} Events predicted".format(n_predict))
         logging.debug("{0} Events rejected".format(len1 - len2))
         random_ts = random_ts[:n_predict]
         random_ts.sort()
@@ -468,7 +470,9 @@ def main(args=None):
         pi = np.zeros(len(event_list), dtype=int)
         print('{} events generated'.format(len(event_list)))
     elif args.ctrate is not None:
-        t = np.arange(0., 1025.)
+        tstart = _assign_value_if_none(args.tstart, 0)
+        tstop = _assign_value_if_none(args.tstop, 1025)
+        t = np.arange(tstart, tstop)
         lc = args.ctrate + np.zeros_like(t)
         event_list = fake_events_from_lc(t, lc)
         pi = np.zeros(len(event_list), dtype=int)
@@ -490,6 +494,7 @@ def main(args=None):
         prior = np.zeros_like(event_list)
 
         prior[1:] = np.diff(event_list) - info.deadtime[:-1]
+
         additional_columns["PRIOR"] = {"data": prior, "format": "D"}
         additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
         livetime = np.sum(prior)

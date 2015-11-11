@@ -27,7 +27,7 @@ env:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.9
+        - NUMPY_VERSION=1.10
         - ASTROPY_VERSION=stable
         - USE_NETCDF=yes
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
@@ -40,7 +40,9 @@ matrix:
         # Try Astropy development version
         - python: 2.7
           env: ASTROPY_VERSION=development SETUP_CMD='test'
-        - python: 3.3
+        - python: 3.4
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
+        - python: 3.5
           env: ASTROPY_VERSION=development SETUP_CMD='test'
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
@@ -52,7 +54,7 @@ matrix:
         - python: 2.7
           env: SETUP_CMD='test --coverage' USE_NETCDF=no
         - python: 3.3
-          env: SETUP_CMD='test'
+          env: SETUP_CMD='test' NUMPY_VERSION=1.9
         - python: 3.4
           env: SETUP_CMD='test'
         - python: 3.4
@@ -63,6 +65,8 @@ matrix:
           env: SETUP_CMD='test'
 
         # Try older numpy versions
+        - python: 3.4
+          env: NUMPY_VERSION=1.9 SETUP_CMD='test'
         - python: 3.4
           env: NUMPY_VERSION=1.8 SETUP_CMD='test'
         - python: 2.7
@@ -77,12 +81,12 @@ matrix:
           env: NUMPY_VERSION=1.6 SETUP_CMD='test'
         - python: 2.7
           env: ASTROPY_VERSION=development SETUP_CMD='test'
-        - python: 3.3
+        - python: 3.4
           env: ASTROPY_VERSION=development SETUP_CMD='test'
         - python: 2.7
           env: SETUP_CMD='build_sphinx -w'
         - python: 3.5
-          env: SETUP_CMD='test'
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
 
 before_install:
 
@@ -91,7 +95,7 @@ before_install:
     - export PYTHONIOENCODING=UTF8
     - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
     - chmod +x miniconda.sh
-    - ./miniconda.sh -b
+    - ./miniconda.sh -b -p /home/travis/miniconda
     - export PATH=/home/travis/miniconda/bin:$PATH
     - conda update --yes conda
     - export DISPLAY=:99.0

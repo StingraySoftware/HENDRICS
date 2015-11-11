@@ -204,6 +204,18 @@ class TestAll(unittest.TestCase):
                                                 gti=None)
         np.testing.assert_almost_equal(expo, expected_expo)
 
+    def test_exposure_calculation5(self):
+        """Test if the exposure calculator works correctly."""
+        times = np.array([1., 2., 3.])
+        events = np.array([1.1, 1.2, 1.4, 1.5, 1.8, 4])
+        # dead time = 0.05
+        priors = np.array([0.55, 0.05, 0.15, 0.05, 0.25, 2.15])
+        dt = np.array([1, 1, 1])
+        expected_expo = np.array([0.8, 0.9, 1])
+        expo = mp.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
+                                                gti=None)
+        np.testing.assert_almost_equal(expo, expected_expo)
+
     def test_high_precision_keyword(self):
         """Test high precision FITS keyword read."""
         from maltpynt.io import high_precision_keyword_read
@@ -284,6 +296,14 @@ class TestAll(unittest.TestCase):
                                         paralyzable=True, return_all=True)
 
         assert np.all(filt_events == events[info.mask])
+
+    def test_deadtime_conversion(self):
+        """Test the functions for count rate conversion."""
+        original_rate = np.arange(1, 1000, 10)
+        deadtime = 2.5e-3
+        rdet = mp.base.r_det(deadtime, original_rate)
+        rin = mp.base.r_in(deadtime, rdet)
+        np.testing.assert_almost_equal(rin, original_rate)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -84,7 +84,7 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
     pr_fl[before_start] = ev_fl[before_start] - livetime_starts[before_start]
 
     after_end = \
-        (livetime_starts < tbin_starts[-1]) & (ev_fl > tbin_starts[-1])
+        (livetime_starts < tbins[-1]) & (ev_fl > tbins[-1])
     ev_fl[after_end] = tbins[-1] - 1e-9
     pr_fl[after_end] = ev_fl[after_end] - livetime_starts[after_end]
 
@@ -234,6 +234,7 @@ def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
     # filt = (grade < 32) & (pis >= 0) & (x is not None) & (y is not None)
 
     expo = get_livetime_per_bin(time, events, priors, dt, gti=gti)
+
     return expo
 
 
