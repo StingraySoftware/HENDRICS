@@ -42,6 +42,8 @@ matrix:
           env: ASTROPY_VERSION=development SETUP_CMD='test'
         - python: 3.4
           env: ASTROPY_VERSION=development SETUP_CMD='test'
+        - python: 3.5
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - python: 2.7
@@ -84,7 +86,7 @@ matrix:
         - python: 2.7
           env: SETUP_CMD='build_sphinx -w'
         - python: 3.5
-          env: SETUP_CMD='test'
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
 
 before_install:
 
