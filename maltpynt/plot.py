@@ -17,6 +17,13 @@ import logging
 import numpy as np
 
 
+def _next_color(ax):
+    try:
+        return next(ax._get_lines.color_cycle)
+    except:
+        return next(ax._get_lines.prop_cycler)['color']
+
+
 def _baseline_fun(x, a):
     """A constant function."""
     return a
@@ -41,7 +48,7 @@ def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None):
         ax.set_xscale('log', nonposx='clip')
     if ylog:
         ax.set_yscale('log', nonposy='clip')
-    rainbow = ax._get_lines.color_cycle
+
     xlabel, ylabel = vars
     xlabel_err, ylabel_err = None, None
     if errs is not None:
@@ -49,7 +56,7 @@ def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None):
 
     for i, fname in enumerate(fnames):
         data = load_data(fname)
-        color = next(rainbow)
+        color = _next_color(ax)
         xdata = data[xlabel]
         ydata = data[ylabel]
         xdata_err = _value_or_none(data, xlabel_err)
@@ -69,7 +76,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
     if is_string(fnames):
         fnames = [fnames]
     ax = plt.subplot(1, 1, 1)
-    rainbow = ax._get_lines.color_cycle
+
     for i, fname in enumerate(fnames):
         pdsdata = load_pds(fname)
         try:
@@ -99,7 +106,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
                                        source_ctrate=ctrate,
                                        back_ctrate=back_ctrate)
 
-        color = next(rainbow)
+        color = _next_color(ax)
 
         p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
         logging.info('White noise level is {0}'.format(p[0]))
