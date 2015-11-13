@@ -36,8 +36,6 @@ env:
     matrix:
         # Make sure that egg_info works without dependencies
         - SETUP_CMD='egg_info'
-        # Try all python versions with the latest numpy
-        - SETUP_CMD='test'
 
 matrix:
     include:
@@ -66,7 +64,8 @@ matrix:
           env: SETUP_CMD='test --coverage' USE_NETCDF=no
         - python: 3.4
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes
-
+        - python: 3.5
+          env: SETUP_CMD='test'
         # Try older numpy versions
         - python: 3.4
           env: NUMPY_VERSION=1.9 SETUP_CMD='test'
