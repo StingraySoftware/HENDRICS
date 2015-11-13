@@ -33,7 +33,6 @@ env:
         - PIP_DEPENDENCIES=''
         - MAIN_CMD='python setup.py'
     matrix:
-
         # Make sure that egg_info works without dependencies
          - SETUP_CMD='egg_info'
         # Try all python versions with the latest numpy
