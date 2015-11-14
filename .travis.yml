@@ -29,7 +29,7 @@ env:
         # to repeat them for all configurations.
         - NUMPY_VERSION=1.10
         - ASTROPY_VERSION=stable
-        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip'
+        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip astropy'
         - PIP_DEPENDENCIES=''
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
