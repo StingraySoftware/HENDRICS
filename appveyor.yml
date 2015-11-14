@@ -30,6 +30,7 @@ install:
     - "powershell ci-helpers/appveyor/install-miniconda.ps1"
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
     - "activate test"
+    - "python setup.py install"
 
 # Not a .NET project, we build AstroPy in the install step instead
 build: false
