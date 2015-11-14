@@ -11,10 +11,9 @@ import glob
 import subprocess as sp
 import numpy as np
 from astropy.tests.helper import catch_warnings
+import unittest
 
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
-
-import unittest
 
 logging.basicConfig(filename='MP.log', level=logging.DEBUG, filemode='w')
 curdir = os.path.abspath(os.path.dirname(__file__))
