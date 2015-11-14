@@ -29,7 +29,7 @@ env:
         # to repeat them for all configurations.
         - NUMPY_VERSION=1.10
         - ASTROPY_VERSION=stable
-        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip Cython jinja2'
+        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip'
         - PIP_DEPENDENCIES=''
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
@@ -104,7 +104,7 @@ install:
     # install since this ensures Numpy does not get automatically upgraded.
     - if [[ $SETUP_CMD != egg_info ]] && [[ $USE_NETCDF == yes ]]; then $CONDA_INSTALL netcdf4; fi
     - if [[ $SETUP_CMD != egg_info ]] && [[ $USE_NUMBA == yes ]]; then $CONDA_INSTALL numba; fi
-    - python setup.py install
+    - if [[ $SETUP_CMD != egg_info ]]; then python setup.py install; fi
 
 script:
     - $MAIN_CMD $SETUP_CMD
