@@ -11,12 +11,14 @@ environment:
                         # of 32 bit and 64 bit builds are needed, move this
                         # to the matrix section.
       CONDA_DEPENDENCIES: "scipy matplotlib"
+      NUMPY_VERSION: "1.9.1"
+      ASTROPY_VERSION: "stable"
+
       COVERALLS_REPO_TOKEN:
         secure: sX1jhJ0jV5LxZPvfIfy5Y+P28oEBmcwnEiZ3HWhC3Xbt8g+cgROQ2DZodw4Ij8lu
 
   matrix:
       - PYTHON_VERSION: "3.4"
-
       - PYTHON_VERSION: "2.7"
         CONDA_DEPENDENCIES: "scipy matplotlib netcdf4"
 
