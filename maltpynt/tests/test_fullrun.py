@@ -537,6 +537,8 @@ class TestFullRun(unittest.TestCase):
             glob.glob(os.path.join(datadir,
                                    '*monol_test*.dat')) + \
             glob.glob(os.path.join(datadir,
+                                   '*monol_test*.png')) + \
+            glob.glob(os.path.join(datadir,
                                    '*monol_test*.txt')) + \
             glob.glob(os.path.join(datadir,
                                    'monol_test_fake*.evt'))
