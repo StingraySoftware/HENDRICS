@@ -11,10 +11,9 @@ import glob
 import subprocess as sp
 import numpy as np
 from astropy.tests.helper import catch_warnings
+import unittest
 
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
-
-import unittest
 
 logging.basicConfig(filename='MP.log', level=logging.DEBUG, filemode='w')
 curdir = os.path.abspath(os.path.dirname(__file__))
@@ -536,6 +535,8 @@ class TestFullRun(unittest.TestCase):
                                    '*.log')) + \
             glob.glob(os.path.join(datadir,
                                    '*monol_test*.dat')) + \
+            glob.glob(os.path.join(datadir,
+                                   '*monol_test*.png')) + \
             glob.glob(os.path.join(datadir,
                                    '*monol_test*.txt')) + \
             glob.glob(os.path.join(datadir,
