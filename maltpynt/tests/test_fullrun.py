@@ -418,13 +418,28 @@ class TestFullRun(unittest.TestCase):
         mp.create_gti.main(command.split())
 
     def step09b_create_gti(self):
-        """Test creating a GTI file."""
+        """Test applying a GTI file."""
         fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
             MP_FILE_EXTENSION
         lcfname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
         command = "{0} -a {1} --debug".format(lcfname, fname)
+        mp.create_gti.main(command.split())
 
+    def step09c_create_gti(self):
+        """Test creating a GTI file and apply minimum length."""
+        fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        command = "{0} -f lc>0 -c -l 10 --debug".format(fname)
+        mp.create_gti.main(command.split())
+
+    def step09d_create_gti(self):
+        """Test applying a GTI file and apply minimum length."""
+        fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
+            MP_FILE_EXTENSION
+        lcfname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        command = "{0} -a {1} -l 10 --debug".format(lcfname, fname)
         mp.create_gti.main(command.split())
 
     def step10a_readfile(self):
