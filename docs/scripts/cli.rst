@@ -54,7 +54,8 @@ MPcreategti
 
 ::
 
-    usage: MPcreategti [-h] [-f FILTER] [-c] [-o] [-a APPLY_GTI]
+    usage: MPcreategti [-h] [-f FILTER] [-c] [--overwrite] [-a APPLY_GTI]
+                       [-l MINIMUM_LENGTH]
                        [--safe-interval SAFE_INTERVAL SAFE_INTERVAL]
                        [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
@@ -73,9 +74,12 @@ MPcreategti
                             files
       -c, --create-only     If specified, creates GTIs withouth applyingthem to
                             files (Default: False)
-      -o, --overwrite       Overwrite original file (Default: False)
+      --overwrite           Overwrite original file (Default: False)
       -a APPLY_GTI, --apply-gti APPLY_GTI
                             Apply a GTI from this file to input files
+      -l MINIMUM_LENGTH, --minimum-length MINIMUM_LENGTH
+                            Minimum length of GTIs (below this length, they will
+                            be discarded)
       --safe-interval SAFE_INTERVAL SAFE_INTERVAL
                             Interval at start and stop of GTIs used for filtering
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -306,7 +310,8 @@ MPreadevents
 ::
 
     usage: MPreadevents [-h] [--loglevel LOGLEVEL] [--nproc NPROC] [--noclobber]
-                        [-g] [--min-length MIN_LENGTH] [--debug]
+                        [-g] [--min-length MIN_LENGTH] [--gti-string GTI_STRING]
+                        [--debug]
                         files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
@@ -324,6 +329,8 @@ MPreadevents
       -g, --gti-split       Split event list by GTI
       --min-length MIN_LENGTH
                             Minimum length of GTIs to consider
+      --gti-string GTI_STRING
+                            GTI string
       --debug               use DEBUG logging level
 
 
