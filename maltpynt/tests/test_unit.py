@@ -305,5 +305,10 @@ class TestAll(unittest.TestCase):
         rin = mp.base.r_in(deadtime, rdet)
         np.testing.assert_almost_equal(rin, original_rate)
 
+    def test_gti_filtering_by_length(self):
+        gti = [[0, 10], [0, 100], [0, 9]]
+        newgti = mp.create_gti.filter_gti_by_length(gti, 10)
+        assert np.all(newgti == [[0, 10], [0, 100]])
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
