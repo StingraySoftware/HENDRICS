@@ -310,5 +310,21 @@ class TestAll(unittest.TestCase):
         newgti = mp.create_gti.filter_gti_by_length(gti, 10)
         assert np.all(newgti == [[0, 10], [0, 100]])
 
+    def test_high_precision_split1(self):
+        C_I, C_F, C_l, k = \
+            mp.io._split_high_precision_number("C", np.double(0.01), 8)
+        assert C_I == 1
+        np.testing.assert_almost_equal(C_F, 0, 6)
+        assert C_l == -2
+        assert k == "double"
+
+    def test_high_precision_split2(self):
+        C_I, C_F, C_l, k = \
+            mp.io._split_high_precision_number("C", np.double(1.01), 8)
+        assert C_I == 1
+        np.testing.assert_almost_equal(C_F, np.double(0.01), 6)
+        assert C_l == 0
+        assert k == "double"
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
