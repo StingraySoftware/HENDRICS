@@ -110,14 +110,14 @@ class TestFullRun(unittest.TestCase):
     def step04a_lcurve(self):
         """Test light curve production."""
         command = ('{0} -e {1} {2} --safe-interval '
-                   '{3} {4}  --nproc 2').format(
+                   '{3} {4}  --nproc 2 -b 0.5').format(
             os.path.join(datadir, 'monol_testA_ev_calib' +
                          MP_FILE_EXTENSION),
             3, 50, 100, 300)
         mp.lcurve.main(command.split())
 
         command = ('{0} -e {1} {2} --safe-interval '
-                   '{3} {4}').format(
+                   '{3} {4} -b 0.5').format(
             os.path.join(datadir, 'monol_testB_ev_calib' +
                          MP_FILE_EXTENSION),
             3, 50, 100, 300)
