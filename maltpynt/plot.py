@@ -75,7 +75,6 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
     import collections
     if is_string(fnames):
         fnames = [fnames]
-    ax = plt.subplot(1, 1, 1)
 
     for i, fname in enumerate(fnames):
         pdsdata = load_pds(fname)
@@ -106,17 +105,17 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
                                        source_ctrate=ctrate,
                                        back_ctrate=back_ctrate)
 
-        color = _next_color(ax)
-
         p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
         logging.info('White noise level is {0}'.format(p[0]))
         pds -= p[0]
 
         if xlog and ylog:
-            plt.figure('PDS - Loglog')
+            plt.figure('PDS - Loglog ' + figname)
         else:
-            plt.figure('PDS')
+            plt.figure('PDS ' + figname)
         ax = plt.gca()
+        color = _next_color(ax)
+
         if xlog:
             ax.set_xscale('log', nonposx='clip')
         if ylog:
@@ -172,9 +171,9 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None):
 
         cospectrum = cpds.real
         if xlog and ylog:
-            plt.figure('Cospectrum - Loglog')
+            plt.figure('Cospectrum - Loglog ' + figname)
         else:
-            plt.figure('Cospectrum')
+            plt.figure('Cospectrum ' + figname)
         ax = plt.gca()
         if xlog:
             ax.set_xscale('log', nonposx='clip')
@@ -202,6 +201,7 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None):
     if is_string(lcfiles):
         lcfiles = [lcfiles]
 
+    plt.figure('LC ' + figname)
     for lcfile in lcfiles:
         logging.info('Loading %s...' % lcfile)
         lcdata = load_data(lcfile)
