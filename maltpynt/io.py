@@ -133,10 +133,14 @@ def save_as_netcdf(vars, varnames, formats, fname):
 
         vnc = rootgrp.createVariable(varnames[iv], formats[iv],
                                      dimspec)
-        if formats[iv] == str:
-            vnc[0] = v
-        else:
-            vnc[:] = v
+        try:
+            if formats[iv] == str:
+                vnc[0] = v
+            else:
+                vnc[:] = v
+        except:
+            print("Error:", varnames[iv], formats[iv], dimspec, v)
+            raise
     rootgrp.close()
 
 
@@ -275,18 +279,41 @@ def _load_data_nc(fname):
 
     keys_to_delete = []
     for k in keys:
-        if k[-2:] in ['_I', '_F']:
+        if k in keys_to_delete:
+            continue
+
+        if k[-2:] in ['_I', '_L', '_F', '_k']:
             kcorr = k[:-2]
 
-            if kcorr not in list(contents.keys()):
-                contents[kcorr] = np.longdouble(0)
-            dum = contents[k]
-            if isinstance(dum, collections.Iterable):
-                dum = np.array(dum, dtype=np.longdouble)
+            integer_key = kcorr + '_I'
+            float_key = kcorr + '_F'
+            kind_key = kcorr + '_k'
+            log10_key = kcorr + '_L'
+
+            if not (integer_key in keys and float_key in keys and
+                    kind_key in keys and log10_key in keys):
+                continue
+
+            keys_to_delete.extend([integer_key, float_key, kind_key,
+                                   log10_key])
+
+            if contents[kind_key] == 'longdouble':
+                dtype = np.longdouble
+            elif contents[kind_key] == 'double':
+                dtype = np.double
             else:
-                dum = np.longdouble(dum)
-            contents[kcorr] += dum
-            keys_to_delete.append(k)
+                raise ValueError(contents[kind_key] +
+                                 ": unrecognized kind string")
+
+            log10_part = contents[log10_key]
+            if isinstance(contents[integer_key], collections.Iterable):
+                integer_part = np.array(contents[integer_key], dtype=dtype)
+                float_part = np.array(contents[float_key], dtype=dtype)
+            else:
+                integer_part = dtype(contents[integer_key])
+                float_part = dtype(contents[float_key])
+
+            contents[kcorr] = (integer_part + float_part) * 10 ** log10_part
 
     for k in keys_to_delete:
         del contents[k]
@@ -319,17 +346,34 @@ def _save_data_nc(struct, fname, kind="data"):
             probekind = np.result_type(probe).kind
             probesize = np.result_type(probe).itemsize
 
-        if probesize == 16 and probekind == 'f':
-            # If a longdouble, split it in integer + floating part
+        if probesize >= 8 and probekind == 'f':
+            # If a (long)double, split it in integer + floating part.
+            # If the number is below zero, also use a logarithm of 10 before
+            # that, so that we don't lose precision
+            var_log10 = 0
+            if probesize == 8:
+                kind_str = 'double'
+            if probesize == 16:
+                kind_str = 'longdouble'
+
             if isinstance(var, collections.Iterable):
+                dum = np.min(np.abs(var))
+                if dum < 1 and dum > 0.:
+                    var_log10 = np.int(np.log10(np.min(np.abs(var))))
+
+                var /= 10 ** var_log10
                 var_I = var.astype(np.long)
                 var_F = np.array(var - var_I, dtype=np.double)
             else:
+                if np.abs(var) < 1 and np.abs(var) > 0.:
+                    var_log10 = np.int(np.log10(var))
+
+                var /= 10 ** var_log10
                 var_I = np.long(var)
                 var_F = np.double(var - var_I)
-            values.extend([var_I, var_F])
-            formats.extend(['i8', 'f8'])
-            varnames.extend([k + '_I', k + '_F'])
+            values.extend([var_I, var_log10, var_F, kind_str])
+            formats.extend(['i8', 'i8', 'f8', str])
+            varnames.extend([k + '_I', k + '_L', k + '_F', k + '_k'])
         elif probekind == str:
             values.append(var)
             formats.append(probekind)
