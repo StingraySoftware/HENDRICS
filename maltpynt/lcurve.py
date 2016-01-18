@@ -85,6 +85,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
 
     """
     lcdatas = []
+
     for lfc in lcfilelist:
         logging.info("Loading file %s..." % lfc)
         lcdata = load_lcurve(lfc)
@@ -99,6 +100,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     assert len(lcdts) == 1, 'Light curves must have same dt for scrunching'
 
     instrs = [lcdata['Instr'] for lcdata in lcdatas]
+
     # Find unique elements. A lightcurve will be produced for each instrument
     instrs = list(set(instrs))
     outlcs = {}
@@ -115,17 +117,19 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     # -------------------------------------------------------
 
     for lcdata in lcdatas:
+        instr = lcdata['Instr']
+
         tstart = lcdata['Tstart']
         tstop = lcdata['Tstop']
-        if outlcs[instr]['Tstart'] > tstart:
+        if tstart < outlcs[instr]['Tstart']:
             outlcs[instr]['Tstart'] = tstart
-        if outlcs[instr]['Tstop'] < tstop:
+        if tstop > outlcs[instr]['Tstop']:
             outlcs[instr]['Tstop'] = tstop
 
         time = lcdata['time']
         lc = lcdata['lc']
         gti = lcdata['GTI']
-        instr = lcdata['Instr']
+
         times[instr].extend(time)
         lcs[instr].extend(lc)
         gtis[instr].extend(gti)

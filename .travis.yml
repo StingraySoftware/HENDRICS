@@ -75,6 +75,13 @@ matrix:
           env: NUMPY_VERSION=1.7 SETUP_CMD='test'
         - python: 2.7
           env: NUMPY_VERSION=1.6 SETUP_CMD='test'
+        # Test Astropy LTS version
+        - python: 2.7
+          env: SETUP_CMD='test' ASTROPY_VERSION=lts
+        - python: 3.4
+          env: SETUP_CMD='test' ASTROPY_VERSION=lts
+        - python: 3.5
+          env: SETUP_CMD='test' ASTROPY_VERSION=lts
 
     allow_failures:
         - python: 2.7
@@ -89,6 +96,8 @@ matrix:
           env: SETUP_CMD='build_sphinx -w'
         - python: 3.5
           env: ASTROPY_VERSION=development SETUP_CMD='test'
+        - python: 3.5
+          env: SETUP_CMD='test' ASTROPY_VERSION=lts
 
 before_install:
     - git clone git://github.com/astropy/ci-helpers.git
