@@ -328,7 +328,7 @@ class TestFullRun(unittest.TestCase):
 
     def step06a_rebinlc(self):
         """Test LC rebinning."""
-        command = '{0} -r 2'.format(
+        command = '{0} -r 4'.format(
             os.path.join(datadir, 'monol_testA_E3-50_lc') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
@@ -412,14 +412,14 @@ class TestFullRun(unittest.TestCase):
 
     def step09a_create_gti(self):
         """Test creating a GTI file."""
-        fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+        fname = os.path.join(datadir, 'monol_testA_E3-50_lc_rebin4') + \
             MP_FILE_EXTENSION
         command = "{0} -f lc>0 -c --debug".format(fname)
         mp.create_gti.main(command.split())
 
     def step09b_create_gti(self):
         """Test applying a GTI file."""
-        fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
+        fname = os.path.join(datadir, 'monol_testA_E3-50_rebin4_gti') + \
             MP_FILE_EXTENSION
         lcfname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
@@ -428,14 +428,14 @@ class TestFullRun(unittest.TestCase):
 
     def step09c_create_gti(self):
         """Test creating a GTI file and apply minimum length."""
-        fname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
+        fname = os.path.join(datadir, 'monol_testA_E3-50_lc_rebin4') + \
             MP_FILE_EXTENSION
         command = "{0} -f lc>0 -c -l 10 --debug".format(fname)
         mp.create_gti.main(command.split())
 
     def step09d_create_gti(self):
         """Test applying a GTI file and apply minimum length."""
-        fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
+        fname = os.path.join(datadir, 'monol_testA_E3-50_rebin4_gti') + \
             MP_FILE_EXTENSION
         lcfname = os.path.join(datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
