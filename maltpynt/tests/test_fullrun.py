@@ -444,7 +444,7 @@ class TestFullRun(unittest.TestCase):
 
     def step10a_readfile(self):
         """Test reading and dumping a MaLTPyNT file."""
-        fname = os.path.join(datadir, 'monol_testA_E3-50_gti') + \
+        fname = os.path.join(datadir, 'monol_testA_E3-50_rebin4_gti') + \
             MP_FILE_EXTENSION
         command = "{0}".format(fname)
 
@@ -479,7 +479,7 @@ class TestFullRun(unittest.TestCase):
         file_list = {'events': 'monol_testA_ev',
                      'lc': 'monol_testA_E3-50_lc',
                      'pds': 'monol_testA_E3-50_pds',
-                     'GTI': 'monol_testA_E3-50_gti',
+                     'GTI': 'monol_testA_E3-50_rebin4_gti',
                      'cpds': 'monol_test_E3-50_cpds',
                      'rebcpds': 'monol_test_E3-50_cpds_rebin1.03',
                      'rebpds': 'monol_testA_E3-50_pds_rebin1.03',
@@ -557,6 +557,7 @@ class TestFullRun(unittest.TestCase):
             glob.glob(os.path.join(datadir,
                                    'monol_test_fake*.evt'))
         for f in file_list:
+            print("Removing " + f)
             os.remove(f)
 
 
