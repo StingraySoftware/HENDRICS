@@ -39,11 +39,14 @@ def sum_fspec(files, outname=None):
         nchunks = contents['n' + pdstype]
         rebin = contents['rebin']
         norm = contents['norm']
+        fftlen = contents['fftlen']
 
         assert ftype == ftype0, 'Files must all be of the same kind'
         assert np.all(rebin == rebin0), \
             'Files must be rebinned in the same way'
-        assert (np.all(freq == freq0)), 'Frequencies must coincide'
+        np.testing.assert_array_almost_equal(
+            freq, freq0, decimal=int(-np.log10(1 / fftlen) + 2),
+            err_msg='Frequencies must coincide')
         assert norm == norm0, 'Files must have the same normalization'
 
         tot_pds += pds * nchunks
