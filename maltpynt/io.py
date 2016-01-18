@@ -290,12 +290,15 @@ def _load_data_nc(fname):
             kind_key = kcorr + '_k'
             log10_key = kcorr + '_L'
 
-            if not (integer_key in keys and float_key in keys and
-                    kind_key in keys and log10_key in keys):
+            if not (integer_key in keys and float_key in keys):
                 continue
+            # Maintain compatibility with old-style files:
+            if not (kind_key in keys and log10_key in keys):
+                contents[kind_key] = "longdouble"
+                contents[log10_key] = 0
 
-            keys_to_delete.extend([integer_key, float_key, kind_key,
-                                   log10_key])
+            keys_to_delete.extend([integer_key, float_key])
+            keys_to_delete.extend([kind_key, log10_key])
 
             if contents[kind_key] == 'longdouble':
                 dtype = np.longdouble
@@ -321,6 +324,31 @@ def _load_data_nc(fname):
     return contents
 
 
+def _split_high_precision_number(varname, var, probesize):
+    var_log10 = 0
+    if probesize == 8:
+        kind_str = 'double'
+    if probesize == 16:
+        kind_str = 'longdouble'
+
+    if isinstance(var, collections.Iterable):
+        dum = np.min(np.abs(var))
+        if dum < 1 and dum > 0.:
+            var_log10 = np.floor(np.log10(dum))
+
+        var /= 10 ** var_log10
+        var_I = np.floor(var).astype(np.long)
+        var_F = np.array(var - var_I, dtype=np.double)
+    else:
+        if np.abs(var) < 1 and np.abs(var) > 0.:
+            var_log10 = np.floor(np.log10(np.abs(var)))
+
+        var /= 10 ** var_log10
+        var_I = np.long(np.floor(var))
+        var_F = np.double(var - var_I)
+    return var_I, var_F, var_log10, kind_str
+
+
 def _save_data_nc(struct, fname, kind="data"):
     """Save generic data in netcdf format."""
     logging.info('Saving %s and info to %s' % (kind, fname))
@@ -330,6 +358,7 @@ def _save_data_nc(struct, fname, kind="data"):
 
     for k in struct.keys():
         var = struct[k]
+
         probe = var
         if isinstance(var, collections.Iterable):
             try:
@@ -350,27 +379,8 @@ def _save_data_nc(struct, fname, kind="data"):
             # If a (long)double, split it in integer + floating part.
             # If the number is below zero, also use a logarithm of 10 before
             # that, so that we don't lose precision
-            var_log10 = 0
-            if probesize == 8:
-                kind_str = 'double'
-            if probesize == 16:
-                kind_str = 'longdouble'
-
-            if isinstance(var, collections.Iterable):
-                dum = np.min(np.abs(var))
-                if dum < 1 and dum > 0.:
-                    var_log10 = np.int(np.log10(np.min(np.abs(var))))
-
-                var /= 10 ** var_log10
-                var_I = var.astype(np.long)
-                var_F = np.array(var - var_I, dtype=np.double)
-            else:
-                if np.abs(var) < 1 and np.abs(var) > 0.:
-                    var_log10 = np.int(np.log10(var))
-
-                var /= 10 ** var_log10
-                var_I = np.long(var)
-                var_F = np.double(var - var_I)
+            var_I, var_F, var_log10, kind_str = \
+                _split_high_precision_number(k, var, probesize)
             values.extend([var_I, var_log10, var_F, kind_str])
             formats.extend(['i8', 'i8', 'f8', str])
             varnames.extend([k + '_I', k + '_L', k + '_F', k + '_k'])
