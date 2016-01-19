@@ -283,25 +283,26 @@ MPplot
 
 ::
 
-    usage: MPplot [-h] [--noplot] [--xlog] [--ylog] [--xlin] [--ylin]
-                  [--fromstart] [--axes AXES AXES]
+    usage: MPplot [-h] [--noplot] [--figname FIGNAME] [--xlog] [--ylog] [--xlin]
+                  [--ylin] [--fromstart] [--axes AXES AXES]
                   files [files ...]
 
     Plot the content of MaLTPyNT light curves and frequency spectra
 
     positional arguments:
-      files             List of files
+      files              List of files
 
     optional arguments:
-      -h, --help        show this help message and exit
-      --noplot          Only create images, do not plot
-      --xlog            Use logarithmic X axis
-      --ylog            Use logarithmic Y axis
-      --xlin            Use linear X axis
-      --ylin            Use linear Y axis
-      --fromstart       Times are measured from the start of the observation (only
-                        relevant for light curves)
-      --axes AXES AXES  Plot two variables contained in the file
+      -h, --help         show this help message and exit
+      --noplot           Only create images, do not plot
+      --figname FIGNAME  Figure name
+      --xlog             Use logarithmic X axis
+      --ylog             Use logarithmic Y axis
+      --xlin             Use linear X axis
+      --ylin             Use linear Y axis
+      --fromstart        Times are measured from the start of the observation
+                         (only relevant for light curves)
+      --axes AXES AXES   Plot two variables contained in the file
 
 
 MPreadevents
