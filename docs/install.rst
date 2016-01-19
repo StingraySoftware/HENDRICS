@@ -18,7 +18,17 @@ library <http://www.unidata.ucar.edu/software/netcdf/>`__ with its
 An additional dependency that is now used only sparsely (if installed) but will
 become important in future versions is `Numba <http://numba.pydata.org>`__.
 
-Quick Installation(stable releases)
+Quick Installation (release candidates+, recommended)
+-----------------------------------
+Run
+
+::
+
+    $ pip install --pre maltpynt
+
+and that's it!
+
+Quick Installation (stable releases)
 -----------------------------------
 Run
 
