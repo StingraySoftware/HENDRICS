@@ -15,6 +15,7 @@ from .base import detection_level
 from .fspec import rms_normalize_pds
 import logging
 import numpy as np
+from .io import MP_FILE_EXTENSION
 
 
 def _next_color(ax):
@@ -275,7 +276,7 @@ def main(args=None):
 
     args = parser.parse_args(args)
     if args.noplot and args.figname is None:
-        args.figname = "plot.png"
+        args.figname = args.files[0].replace(MP_FILE_EXTENSION, '.png')
 
     if args.xlin is not None:
         args.xlog = False
