@@ -75,6 +75,10 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
     import collections
     if is_string(fnames):
         fnames = [fnames]
+    if figname is None:
+        figlabel = "data"
+    else:
+        figlabel = "figname"
 
     for i, fname in enumerate(fnames):
         pdsdata = load_pds(fname)
@@ -110,9 +114,9 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
         pds -= p[0]
 
         if xlog and ylog:
-            plt.figure('PDS - Loglog ' + figname)
+            plt.figure('PDS - Loglog ' + figlabel)
         else:
-            plt.figure('PDS ' + figname)
+            plt.figure('PDS ' + figlabel)
         ax = plt.gca()
         color = _next_color(ax)
 
@@ -153,6 +157,12 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None):
     """Plot the cospectra from a list of CPDSs, or a single one."""
     if is_string(fnames):
         fnames = [fnames]
+
+    if figname is None:
+        figlabel = "data"
+    else:
+        figlabel = figname
+
     for fname in fnames:
         pdsdata = load_pds(fname)
 
@@ -171,9 +181,9 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None):
 
         cospectrum = cpds.real
         if xlog and ylog:
-            plt.figure('Cospectrum - Loglog ' + figname)
+            plt.figure('Cospectrum - Loglog ' + figlabel)
         else:
-            plt.figure('Cospectrum ' + figname)
+            plt.figure('Cospectrum ' + figlabel)
         ax = plt.gca()
         if xlog:
             ax.set_xscale('log', nonposx='clip')
@@ -201,7 +211,12 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None):
     if is_string(lcfiles):
         lcfiles = [lcfiles]
 
-    plt.figure('LC ' + figname)
+    if figname is None:
+        figlabel = "data"
+    else:
+        figlabel = figname
+
+    plt.figure('LC ' + figlabel)
     for lcfile in lcfiles:
         logging.info('Loading %s...' % lcfile)
         lcdata = load_data(lcfile)
