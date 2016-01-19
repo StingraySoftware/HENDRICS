@@ -117,16 +117,20 @@ def welch_pds(time, lc, bintime, fftlen, gti=None, return_all=False):
     -------
     return_str : object, optional
         An Object containing all values below.
-    freq : array-like
+    f : array-like
         array of frequencies corresponding to PDS bins
     pds : array-like
         the values of the PDS
-    pds_err : array-like
+    epds : array-like
         the values of the PDS
-    n_chunks : int
+    npds : int
         the number of summed PDSs (if normalize is False)
     ctrate : float
         the average count rate in the two lcs
+    dynpds : array-like, optional
+    dynepds : array-like, optional
+    dynctrate : array-like, optional
+    times : array-like, optional
 
     Other parameters
     ----------------
@@ -208,7 +212,12 @@ def leahy_cpds(lc1, lc2, bintime):
         Frequencies corresponding to PDS
     cpds : array-like
         The cross power density spectrum
-
+    cpdse : array-like
+        The error on the cross power density spectrum
+    pds1 : array-like
+        The power density spectrum of the first light curve
+    pds2 : array-like
+        The power density spectrum of the second light curve
     """
     assert len(lc1) == len(lc2), 'Light curves MUST have the same length!'
     nph1 = sum(lc1)
@@ -273,18 +282,22 @@ def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None, return_all=False):
 
     Returns
     -------
-    return_str : object, optional
+    return_str : object
         An Object containing all return values below
-    freq : array-like
+    f : array-like
         array of frequencies corresponding to PDS bins
-    pds : array-like
+    cpds : array-like
         the values of the PDS
-    pds_err : array-like
+    ecpds : array-like
         the values of the PDS
-    n_chunks : int
+    ncpds : int
         the number of summed PDSs (if normalize is False)
     ctrate : float
         the average count rate in the two lcs
+    dyncpds : array-like, optional
+    dynecpds : array-like, optional
+    dynctrate : array-like, optional
+    times : array-like, optional
 
     Other parameters
     ----------------
