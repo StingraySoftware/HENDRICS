@@ -521,6 +521,14 @@ class TestFullRun(unittest.TestCase):
         mp.plot.main([pname, '--noplot', '--axes', 'pds', 'epds',
                       '--xlin', '--ylin'])
 
+    def step12c_plot(self):
+        """Test plotting and saving figure"""
+        pname = os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        mp.plot.main([pname, '--noplot', '--figname',
+                      os.path.join(datadir,
+                                   'monol_testA_E3-50_pds_rebin1.03.png')])
+
     def _all_steps(self):
         for name in sorted(dir(self)):
             if name.startswith("step"):

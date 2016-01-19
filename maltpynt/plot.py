@@ -75,10 +75,8 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
     import collections
     if is_string(fnames):
         fnames = [fnames]
-    if figname is None:
-        figlabel = "data"
-    else:
-        figlabel = "figname"
+
+    figlabel = fnames[0]
 
     for i, fname in enumerate(fnames):
         pdsdata = load_pds(fname)
@@ -158,10 +156,7 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None):
     if is_string(fnames):
         fnames = [fnames]
 
-    if figname is None:
-        figlabel = "data"
-    else:
-        figlabel = figname
+    figlabel = fnames[0]
 
     for fname in fnames:
         pdsdata = load_pds(fname)
@@ -211,10 +206,7 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None):
     if is_string(lcfiles):
         lcfiles = [lcfiles]
 
-    if figname is None:
-        figlabel = "data"
-    else:
-        figlabel = figname
+    figlabel = lcfiles[0]
 
     plt.figure('LC ' + figlabel)
     for lcfile in lcfiles:
@@ -263,6 +255,8 @@ def main(args=None):
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument("--noplot", help="Only create images, do not plot",
                         default=False, action='store_true')
+    parser.add_argument("--figname", help="Figure name",
+                        default=None, type=str)
     parser.add_argument("--xlog", help="Use logarithmic X axis",
                         default=None, action='store_true')
     parser.add_argument("--ylog", help="Use logarithmic Y axis",
@@ -280,6 +274,9 @@ def main(args=None):
                         default=None)
 
     args = parser.parse_args(args)
+    if args.noplot and args.figname is None:
+        args.figname = "plot.png"
+
     if args.xlin is not None:
         args.xlog = False
     if args.ylin is not None:
@@ -287,15 +284,18 @@ def main(args=None):
     for fname in args.files:
         ftype, contents = get_file_type(fname)
         if args.axes is not None:
-            plot_generic(fname, args.axes, xlog=args.xlog, ylog=args.ylog)
+            plot_generic(fname, args.axes, xlog=args.xlog, ylog=args.ylog,
+                         figname=args.figname)
             continue
         if ftype == 'lc':
             plot_lc(fname, fromstart=args.fromstart, xlog=args.xlog,
-                    ylog=args.ylog)
+                    ylog=args.ylog, figname=args.figname)
         elif ftype[-4:] == 'cpds':
-            plot_cospectrum(fname, xlog=args.xlog, ylog=args.ylog)
+            plot_cospectrum(fname, xlog=args.xlog, ylog=args.ylog,
+                            figname=args.figname)
         elif ftype[-3:] == 'pds':
-            plot_pds(fname, xlog=args.xlog, ylog=args.ylog)
+            plot_pds(fname, xlog=args.xlog, ylog=args.ylog,
+                     figname=args.figname)
 
     if not args.noplot:
         plt.show()
