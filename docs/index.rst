@@ -33,6 +33,12 @@ documentation of `MPlcurve` for more information.
 
 What's new
 ----------
+.. Note ::
+
+    MaLTPyNT provisionally accepted as an
+    `Astropy affiliated package <http://www.astropy.org/affiliated/index.html>`__
+
+
 In preparation for the 2.0 release, the API has received some visible changes.
 Names do not have the `mp_` prefix anymore, as they were very redundant; the
 structure of the code base is now based on the AstroPy structure; tests have

@@ -19,7 +19,7 @@ An additional dependency that is now used only sparsely (if installed) but will
 become important in future versions is `Numba <http://numba.pydata.org>`__.
 
 Quick Installation (release candidates+, recommended)
------------------------------------
+-----------------------------------------------------
 Run
 
 ::
@@ -29,7 +29,7 @@ Run
 and that's it!
 
 Quick Installation (stable releases)
------------------------------------
+------------------------------------
 Run
 
 ::
