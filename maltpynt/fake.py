@@ -317,7 +317,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     prihdr = fits.Header()
     prihdr['OBSERVER'] = 'Edwige Bubble'
     prihdr['TELESCOP'] = ('NuSTAR  ', 'Telescope (mission) name')
-    prihdr['INSTRUME'] = ('FPMA    ', 'Instrument name')
+    prihdr['INSTRUME'] = (instr, 'Instrument name')
     prihdu = fits.PrimaryHDU(header=prihdr)
 
     # Write events to table
@@ -501,7 +501,7 @@ def main(args=None):
 
     generate_fake_fits_observation(event_list=event_list,
                                    filename=args.outname, pi=pi,
-                                   instr='FPMA', tstart=args.tstart,
+                                   instr=args.instrument, tstart=args.tstart,
                                    tstop=args.tstop,
                                    mjdref=args.mjdref, livetime=livetime,
                                    additional_columns=additional_columns)

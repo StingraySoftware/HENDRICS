@@ -21,7 +21,6 @@ datadir = os.path.join(curdir, 'data')
 
 
 class TestFullRun(unittest.TestCase):
-
     """Test how command lines work.
 
     Usually considered bad practice, but in this
@@ -41,7 +40,9 @@ class TestFullRun(unittest.TestCase):
     def step01a_fake_file(self):
         """Test produce a fake event file."""
         fits_file = os.path.join(datadir, 'monol_test_fake.evt')
-        mp.fake.main(['-o', fits_file])
+        mp.fake.main(['-o', fits_file, '--instrument', 'FPMB'])
+        info = mp.io.print_fits_info(fits_file, hdu=1)
+        assert info['Instrument'] == 'FPMB'
 
     def step01b_fake_file(self):
         """Test produce a fake event file from input light curve."""
@@ -522,7 +523,7 @@ class TestFullRun(unittest.TestCase):
                       '--xlin', '--ylin'])
 
     def step12c_plot(self):
-        """Test plotting and saving figure"""
+        """Test plotting and saving figure."""
         pname = os.path.join(datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
             MP_FILE_EXTENSION
         mp.plot.main([pname, '--noplot', '--figname',
