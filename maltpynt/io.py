@@ -15,11 +15,11 @@ except:
     pass
 
 try:
-    # Python 3
-    import pickle
-except:
     # Python 2
     import cPickle as pickle
+except:
+    # Python 3
+    import pickle
 
 import collections
 import numpy as np
