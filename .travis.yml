@@ -84,6 +84,8 @@ matrix:
           env: SETUP_CMD='test' ASTROPY_VERSION=lts
 
     allow_failures:
+        - python: 3.4
+          env: NUMPY_VERSION=1.8 SETUP_CMD='test'
         - python: 2.7
           env: NUMPY_VERSION=1.7 SETUP_CMD='test'
         - python: 2.7
