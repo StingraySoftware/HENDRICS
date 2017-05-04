@@ -243,6 +243,20 @@ class TestAll(unittest.TestCase):
         with pytest.raises(ValueError):
             a, b = mp.fspec.decide_spectrum_lc_intervals([[1000, 1400]],
                                                          128, [500, 501])
+        with pytest.raises(ValueError):
+            a, b = mp.fspec.decide_spectrum_lc_intervals(
+                np.array([[0, 5]]), 5, np.array([0, 1, 2, 3]))
+
+    def test_decide_spectrum_lc_intervals_corner_case(self):
+        a, b = mp.fspec.decide_spectrum_lc_intervals(
+            np.array([[0, 400]]), 100, np.array([200, 250, 300]))
+        assert np.allclose(a, [0])
+        assert np.allclose(b, [2])
+
+        a, b = mp.fspec.decide_spectrum_lc_intervals(
+            np.array([[0, 5]]), 5, np.array([0, 1, 2, 3, 4]))
+        assert np.allclose(a, [0])
+        assert np.allclose(b, [5])
 
     def test_filter_for_deadtime_nonpar(self):
         """Test dead time filter, non-paralyzable case."""

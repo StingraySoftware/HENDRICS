@@ -466,15 +466,25 @@ def decide_spectrum_lc_intervals(gtis, fftlen, time):
         startbin = np.argmin(np.abs(time - g[0]))
         stopbin = np.argmin(np.abs(time - g[1]))
 
-        newbins = np.arange(startbin, stopbin - nbin, nbin,
-                            dtype=np.long)
+        if time[stopbin] - time[startbin] + bintime < fftlen:
+            logging.info("T. int. at %g--%g is Too short. Skipping." %
+                         (time[startbin], time[stopbin]))
+            continue
+
+        if stopbin == nbin - 1:
+            # Corner case
+            newbins = [startbin]
+        else:
+            newbins = np.arange(startbin, stopbin - nbin + 1, nbin,
+                                dtype=np.long)
         spectrum_start_bins = \
             np.append(spectrum_start_bins,
                       newbins)
 
-    assert len(spectrum_start_bins) > 0, \
-        "No GTIs are equal to or longer than fftlen. " + \
-        "Choose shorter fftlen (MPfspec -f <fftlen> <options> <filename>)"
+    if len(spectrum_start_bins) == 0:
+        raise ValueError(
+            "No GTIs or data intervals are equal to or longer than fftlen. " + \
+            "Choose shorter fftlen (MPfspec -f <fftlen> <options> <filename>)")
     return spectrum_start_bins, spectrum_start_bins + nbin
 
 
