@@ -454,6 +454,8 @@ def decide_spectrum_lc_intervals(gtis, fftlen, time):
     """
     bintime = time[1] - time[0]
     nbin = np.long(fftlen / bintime)
+    if time[-1] < np.min(gtis) or time[0] > np.max(gtis):
+        raise ValueError("Invalid time interval for the given GTIs")
 
     spectrum_start_bins = np.array([], dtype=np.long)
     for g in gtis:

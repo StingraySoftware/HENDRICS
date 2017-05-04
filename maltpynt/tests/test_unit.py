@@ -9,6 +9,7 @@ import numpy as np
 import logging
 import os
 import unittest
+import pytest
 
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 
@@ -234,6 +235,14 @@ class TestAll(unittest.TestCase):
         start_times = \
             mp.fspec.decide_spectrum_intervals([[0, 400], [1022, 1200]], 128)
         assert np.all(start_times == np.array([0, 128, 256, 1022]))
+
+    def test_decide_spectrum_lc_intervals_invalid(self):
+        with pytest.raises(ValueError):
+            a, b = mp.fspec.decide_spectrum_lc_intervals([[0, 400]],
+                                                         128, [500, 501])
+        with pytest.raises(ValueError):
+            a, b = mp.fspec.decide_spectrum_lc_intervals([[1000, 1400]],
+                                                         128, [500, 501])
 
     def test_filter_for_deadtime_nonpar(self):
         """Test dead time filter, non-paralyzable case."""
