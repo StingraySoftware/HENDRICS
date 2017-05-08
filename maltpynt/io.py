@@ -316,7 +316,7 @@ def _load_data_nc(fname):
                 integer_part = dtype(contents[integer_key])
                 float_part = dtype(contents[float_key])
 
-            contents[kcorr] = (integer_part + float_part) * 10 ** log10_part
+            contents[kcorr] = (integer_part + float_part) * 10. ** log10_part
 
     for k in keys_to_delete:
         del contents[k]
@@ -336,14 +336,14 @@ def _split_high_precision_number(varname, var, probesize):
         if dum < 1 and dum > 0.:
             var_log10 = np.floor(np.log10(dum))
 
-        var /= 10 ** var_log10
+        var /= 10. ** var_log10
         var_I = np.floor(var).astype(np.long)
         var_F = np.array(var - var_I, dtype=np.double)
     else:
         if np.abs(var) < 1 and np.abs(var) > 0.:
             var_log10 = np.floor(np.log10(np.abs(var)))
 
-        var /= 10 ** var_log10
+        var /= 10. ** var_log10
         var_I = np.long(np.floor(var))
         var_F = np.double(var - var_I)
     return var_I, var_F, var_log10, kind_str

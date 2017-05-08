@@ -146,7 +146,7 @@ def geom_bin(freq, pds, bin_factor=None, pds_err=None, npds=None):
     nmax = np.int((log10(fmax) - log10(fmin)) / logstep + 0.5)
 
 # Low frequency grid
-    flo = fmin * 10 ** (np.arange(nmax) * logstep)
+    flo = fmin * 10. ** (np.arange(nmax) * logstep)
     flo = np.append(flo, [fmax])
 
 # Now the clever part: building a histogram of frequencies
