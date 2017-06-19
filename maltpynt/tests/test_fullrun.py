@@ -11,6 +11,7 @@ import glob
 import subprocess as sp
 import numpy as np
 from astropy.tests.helper import catch_warnings
+from astropy.io import fits
 import pytest
 
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
@@ -57,12 +58,14 @@ class TestFullRun(object):
                       '--ctrate', '2000',
                       '-o', fits_file])
 
-    def test_01d_fake_file(self):
+    def test_01d_fake_file_xmm(self):
         """Test produce a fake event file and apply deadtime."""
-        fits_file = os.path.join(datadir, 'monol_test_fake_lc.evt')
+        fits_file = os.path.join(datadir, 'monol_test_fake_lc_xmm.evt')
         mp.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
                       '--ctrate', '2000',
                       '-o', fits_file])
+        hdu_list = fits.open(fits_file)
+        assert 'STDGTI01' in [hdu.name for hdu in hdu_list]
 
     def test_02a_load_events(self):
         """Test event file reading."""
@@ -100,6 +103,12 @@ class TestFullRun(object):
         assert str(w[0].message).strip().endswith(
             "noclobber option used. Skipping"), \
             "Unexpected warning output"
+
+    def test_02b_load_events_xmm(self):
+        """Test event file reading."""
+        command = '{0}'.format(
+            os.path.join(datadir, 'monol_test_fake_lc_xmm.evt'))
+        mp.read_events.main(command.split())
 
     def test_03a_calibrate(self):
         """Test event file calibration."""

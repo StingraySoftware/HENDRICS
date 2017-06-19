@@ -241,8 +241,11 @@ def generate_fake_fits_observation(event_list=None, filename=None,
     allcols = [col1, col2]
 
     if mission.lower().strip() == 'xmm':
+        ccdnr = np.zeros(len(ev_list)) + 1
+        ccdnr[1] = 2  # Make it less trivial
+        ccdnr[10] = 7
         allcols.append(fits.Column(name='CCDNR', format='1J',
-                                   array=np.zeros(len(ev_list)) + 1))
+                                   array=ccdnr))
 
     for c in additional_columns.keys():
         col = fits.Column(name=c, array=additional_columns[c]["data"],
@@ -307,12 +310,17 @@ def generate_fake_fits_observation(event_list=None, filename=None,
     col2 = fits.Column(name='STOP', format='1D', array=stop)
     allcols = [col1, col2]
     cols = fits.ColDefs(allcols)
-    gtihdu = fits.BinTableHDU.from_columns(cols)
-    gtihdu.name = 'GTI'
+    gtinames = ['GTI']
     if mission.lower().strip() == 'xmm':
-        gtihdu.name = 'STDGTI01'
+        gtinames = ['STDGTI01', 'STDGTI02', 'STDGTI07']
 
-    thdulist = fits.HDUList([prihdu, tbhdu, gtihdu])
+    all_new_hdus = [prihdu, tbhdu]
+    for name in gtinames:
+        gtihdu = fits.BinTableHDU.from_columns(cols)
+        gtihdu.name = name
+        all_new_hdus.append(gtihdu)
+
+    thdulist = fits.HDUList(all_new_hdus)
 
     thdulist.writeto(filename, clobber=True)
     return thdulist

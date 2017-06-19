@@ -5,6 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 import logging
 import warnings
+from stingray.gti import cross_gtis
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
@@ -562,6 +563,19 @@ def _get_gti_from_extension(lchdulist, accepted_gtistrings=['GTI']):
     return gti_list
 
 
+def _get_gti_from_all_extensions(lchdulist, accepted_gtistrings=['GTI'],
+                                 det_numbers=None):
+    if det_numbers is None:
+        return _get_gti_from_extension(lchdulist, accepted_gtistrings)
+
+    gti_lists = []
+    for i in det_numbers:
+        acc_gti_str = [x + '{:02d}'.format(i) for x in accepted_gtistrings]
+        gti_lists.append(_get_gti_from_extension(lchdulist, acc_gti_str))
+
+    return cross_gtis(gti_lists)
+
+
 def _get_additional_data(lctable, additional_columns):
     additional_data = {}
     if additional_columns is not None:
@@ -637,9 +651,13 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     except:  # pragma: no cover
         logging.warning('HDU %s not found. Trying first extension' % hduname)
         lctable = lchdulist[1].data
+        hduname = 1
 
     # Read event list
     ev_list = np.array(lctable.field(column), dtype=np.longdouble)
+    det_number = None
+    if 'CCDNR' in lctable.columns.names:
+        det_number = list(set(np.array(lctable.field('CCDNR'), dtype=np.int)))
 
     # Read TIMEZERO keyword and apply it to events
     try:
@@ -666,8 +684,9 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         # Select first GTI with accepted name
         try:
             gti_list = \
-                _get_gti_from_extension(
-                    lchdulist, accepted_gtistrings=accepted_gtistrings)
+                _get_gti_from_all_extensions(
+                    lchdulist, accepted_gtistrings=accepted_gtistrings,
+                    det_numbers=det_number)
         except:  # pragma: no cover
             warnings.warn("No extensions found with a valid name. "
                           "Please check the `accepted_gtistrings` values.")
