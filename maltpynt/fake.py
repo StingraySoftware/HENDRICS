@@ -165,7 +165,7 @@ def filter_for_deadtime(event_list, deadtime, bkg_ev_list=None,
 
 def generate_fake_fits_observation(event_list=None, filename=None,
                                    instr='FPMA', gti=None, tstart=None,
-                                   tstop=None,
+                                   tstop=None, mission='NUSTAR',
                                    mjdref=55197.00076601852,
                                    livetime=None, additional_columns={}):
     """Generate fake NuSTAR data.
@@ -230,7 +230,7 @@ def generate_fake_fits_observation(event_list=None, filename=None,
     # Create primary header
     prihdr = fits.Header()
     prihdr['OBSERVER'] = 'Edwige Bubble'
-    prihdr['TELESCOP'] = ('NuSTAR  ', 'Telescope (mission) name')
+    prihdr['TELESCOP'] = (mission, 'Telescope (mission) name')
     prihdr['INSTRUME'] = (instr, 'Instrument name')
     prihdu = fits.PrimaryHDU(header=prihdr)
 
@@ -239,6 +239,10 @@ def generate_fake_fits_observation(event_list=None, filename=None,
     col2 = fits.Column(name='PI', format='1J', array=pi)
 
     allcols = [col1, col2]
+
+    if mission.lower().strip() == 'xmm':
+        allcols.append(fits.Column(name='CCDNR', format='1J',
+                                   array=np.zeros(len(ev_list)) + 1))
 
     for c in additional_columns.keys():
         col = fits.Column(name=c, array=additional_columns[c]["data"],
@@ -305,6 +309,8 @@ def generate_fake_fits_observation(event_list=None, filename=None,
     cols = fits.ColDefs(allcols)
     gtihdu = fits.BinTableHDU.from_columns(cols)
     gtihdu.name = 'GTI'
+    if mission.lower().strip() == 'xmm':
+        gtihdu.name = 'STDGTI01'
 
     thdulist = fits.HDUList([prihdu, tbhdu, gtihdu])
 
@@ -352,6 +358,8 @@ def main(args=None):
                         help="Output file name")
     parser.add_argument("-i", "--instrument", type=str, default='FPMA',
                         help="Instrument name")
+    parser.add_argument("-m", "--mission", type=str, default='NUSTAR',
+                        help="Mission name")
     parser.add_argument("--tstart", type=float, default=None,
                         help="Start time of the observation (s from MJDREF)")
     parser.add_argument("--tstop", type=float, default=None,
@@ -424,7 +432,8 @@ def main(args=None):
 
     generate_fake_fits_observation(event_list=event_list,
                                    filename=args.outname,
-                                   instr=args.instrument, tstart=args.tstart,
+                                   instr=args.instrument, mission=args.mission,
+                                   tstart=args.tstart,
                                    tstop=args.tstop,
                                    mjdref=args.mjdref, livetime=livetime,
                                    additional_columns=additional_columns)

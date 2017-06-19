@@ -57,6 +57,13 @@ class TestFullRun(object):
                       '--ctrate', '2000',
                       '-o', fits_file])
 
+    def test_01d_fake_file(self):
+        """Test produce a fake event file and apply deadtime."""
+        fits_file = os.path.join(datadir, 'monol_test_fake_lc.evt')
+        mp.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
+                      '--ctrate', '2000',
+                      '-o', fits_file])
+
     def test_02a_load_events(self):
         """Test event file reading."""
         command = '{0} {1} --nproc 2'.format(
