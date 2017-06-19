@@ -12,6 +12,11 @@ Be creative, the acronym should mention synonyms of timing/variability/spectral 
 
 Please send your ideas to matteo __at__ matteobachetti __dot__ it
 
+# Development guidelines
+
+The development will initially be towards substituting MaLTPyNT's internal application programming interface (API) with Stingray's, while maintaining the same Command Line Interface (CLI). Ideally, a user that only uses MaLTPyNT from the command line, without executing python explicitly, should not notice the difference.
+In the maltpynt/tests directory, there is a test suite called `test_fullrun.py`. These tests use the actual command line scripts, and should always pass (albeit with some adaptations). The other test suite, `test_unit.py`, tests the API, and will need to be rewritten to account for the API changes.
+
 # MaLTPyNT - Matteo's Libraries and Tools in Python for NuSTAR Timing.
 
 This software is designed to do correctly and fairly easily a **quick-look timing analysis** of NuSTAR data, treating properly orbital gaps and exploiting the presence of two independent detectors by using the **cospectrum** as a proxy for the power density spectrum (for an explanation of why this is important, look at Bachetti et al., _ApJ_, 800, 109 -[arXiv:1409.3248](http://arxiv.org/abs/1409.3248)). The output of the analysis is a cospectrum, or a power density spectrum, that can be fitted with [Xspec](http://heasarc.gsfc.nasa.gov/xanadu/xspec/) or [Isis](http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html). Also, one can calculate in the same easy way **time lags** (still under testing, help is welcome).
