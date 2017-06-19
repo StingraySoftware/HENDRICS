@@ -29,8 +29,7 @@ env:
         # to repeat them for all configurations.
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='scipy matplotlib pytest pip'
-        - PIP_DEPENDENCIES=''
-        - MAIN_CMD='python setup.py'
+        - PIP_DEPENDENCIES='git+https://github.com/stingraysoftware/stingray.git'
         - USE_NETCDF=yes
     matrix:
         # Make sure that egg_info works without dependencies
@@ -88,8 +87,6 @@ matrix:
           env: SETUP_CMD='build_sphinx -w'
 
 before_install:
-    - git clone git://github.com/stingraysoftware/stingray.git
-    - cd stingray; python setup.py install; cd -
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
     - export DISPLAY=:99.0
