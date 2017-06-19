@@ -11,9 +11,10 @@ import logging
 import warnings
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
+from stingray.utils import assign_value_if_none
 from .io import get_file_format, load_lcurve
 from .base import _empty
-from stingray.utils import assign_value_if_none
+
 from .lcurve import lcurve_from_fits
 try:
     from numba import jit
