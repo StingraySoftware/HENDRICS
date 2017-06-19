@@ -88,6 +88,8 @@ matrix:
           env: SETUP_CMD='build_sphinx -w'
 
 before_install:
+    - git clone git://github.com/stingraysoftware/stingray.git
+    - cd stingray; python setup.py install; cd -
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
     - export DISPLAY=:99.0
