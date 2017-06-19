@@ -3,7 +3,11 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .base import mp_root, read_header_key, ref_mjd, _assign_value_if_none
+from stingray.events import EventList
+from stingray.lightcurve import Lightcurve
+from stingray.utils import assign_value_if_none
+from stingray.io import load_events_and_gtis
+from .base import mp_root, read_header_key, ref_mjd
 from .io import save_events, load_events_and_gtis
 from .io import MP_FILE_EXTENSION
 import numpy as np
@@ -31,7 +35,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     min_length: float
         minimum length of GTIs accepted (only if gti_split is True)
     """
-    gtistring = _assign_value_if_none(gtistring, 'GTI,STDGTI')
+    gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
     logging.info('Opening %s' % filename)
     outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
     if noclobber and os.path.exists(outfile) and (not gti_split):
