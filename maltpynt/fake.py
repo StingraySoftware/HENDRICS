@@ -147,7 +147,8 @@ def filter_for_deadtime(event_list, deadtime, bkg_ev_list=None,
     retval = EventList(time=tot_ev_list[ev_kind], mjdref=event_list_obj.mjdref)
 
     if hasattr(event_list_obj, 'pi') and event_list_obj.pi is not None:
-        retval.pi = event_list_obj.pi[ev_kind]
+        warnings.warn("PI information is lost during dead time filtering")
+
     if not isinstance(event_list, EventList):
         retval = retval.time
 
