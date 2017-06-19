@@ -14,6 +14,7 @@ from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from .io import get_file_format, load_lcurve
 from .base import _empty
+import copy
 
 from .lcurve import lcurve_from_fits
 try:
@@ -94,10 +95,15 @@ def filter_for_deadtime(event_list, deadtime, bkg_ev_list=None,
 
     """
     additional_output = _empty()
-    ev_list = event_list.time
+    if not isinstance(event_list, EventList):
+        event_list_obj = EventList(event_list)
+    else:
+        event_list_obj = event_list
+
+    ev_list = event_list_obj.time
 
     if deadtime <= 0.:
-        return np.copy(ev_list)
+        return copy.copy(event_list)
 
     # Create the total lightcurve, and a "kind" array that keeps track
     # of the events classified as "signal" (True) and "background" (False)
@@ -138,9 +144,12 @@ def filter_for_deadtime(event_list, deadtime, bkg_ev_list=None,
         'filter_for_deadtime: '
         '{0}/{1} events rejected'.format(initial_len - final_len,
                                          initial_len))
-    retval = EventList(time=tot_ev_list[ev_kind])
-    if hasattr(event_list, 'pi'):
-        retval.pi = event_list.pi[ev_kind]
+    retval = EventList(time=tot_ev_list[ev_kind], mjdref=event_list_obj.mjdref)
+
+    if hasattr(event_list_obj, 'pi') and event_list_obj.pi is not None:
+        retval.pi = event_list_obj.pi[ev_kind]
+    if not isinstance(event_list, EventList):
+        retval = retval.time
 
     if return_all:
         additional_output.uf_events = tot_ev_list
@@ -203,7 +212,7 @@ def generate_fake_fits_observation(event_list=None, filename=None,
         ev_list = event_list.time
 
     if hasattr(event_list, 'pi'):
-        pi = ev_list.pi
+        pi = event_list.pi
     else:
         pi = ra.randint(0, 1024, len(ev_list))
 
@@ -402,7 +411,7 @@ def main(args=None):
         event_list, info = filter_for_deadtime(event_list, deadtime,
                                                dt_sigma=deadtime_sigma,
                                                return_all=True)
-        print('{} events after filter'.format(len(event_list)))
+        print('{} events after filter'.format(len(event_list.time)))
 
         prior = np.zeros_like(event_list.time)
 
