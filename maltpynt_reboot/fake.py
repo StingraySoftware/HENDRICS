@@ -9,8 +9,11 @@ import numpy.random as ra
 import os
 import logging
 import warnings
+from stingray.events import EventList
+from stingray.lightcurve import Lightcurve
 from .io import get_file_format, load_lcurve
-from .base import _empty, _assign_value_if_none
+from .base import _empty
+from stingray.utils import assign_value_if_none
 from .lcurve import lcurve_from_fits
 try:
     from numba import jit
@@ -18,113 +21,6 @@ except:
     def jit(fun):
         """Dummy decorator in case jit cannot be imported."""
         return fun
-
-
-def fake_events_from_lc(
-        times, lc, use_spline=False, bin_time=None):
-    """Create events from a light curve.
-
-    Parameters
-    ----------
-    times : array-like
-        the center time of each light curve bin
-    lc : array-like
-        light curve, in units of counts/bin
-
-    Returns
-    -------
-    event_list : array-like
-        Simulated arrival times
-    """
-    try:
-        import scipy.interpolate as sci
-    except:
-        if use_spline:
-            warnings.warn("Scipy not available. ",
-                          "use_spline option cannot be used.")
-            use_spline = False
-
-    bin_time = _assign_value_if_none(bin_time, times[1] - times[0])
-    n_bin = len(lc)
-
-    bin_start = 0
-
-    maxlc = np.max(lc)
-    intlc = maxlc * n_bin
-
-    n_events_predict = int(intlc + 10 * np.sqrt(intlc))
-
-    # Max number of events per chunk must be < 100000
-    events_per_bin_predict = n_events_predict / n_bin
-    if use_spline:
-        max_bin = np.max([4, 1000000 / events_per_bin_predict])
-        logging.debug("Using splines")
-    else:
-        max_bin = np.max([4, 5000000 / events_per_bin_predict])
-
-    ev_list = np.zeros(n_events_predict)
-
-    nev = 0
-
-    while bin_start < n_bin:
-        t0 = times[bin_start]
-        bin_stop = min([bin_start + max_bin, n_bin + 1])
-        lc_filt = lc[bin_start:bin_stop]
-        t_filt = times[bin_start:bin_stop]
-        logging.debug("{} {}".format(t_filt[0] - bin_time / 2,
-                                     t_filt[-1] + bin_time / 2))
-
-        length = t_filt[-1] - t_filt[0]
-        n_bin_filt = len(lc_filt)
-        n_to_simulate = n_bin_filt * max(lc_filt)
-        safety_factor = 10
-        if n_to_simulate > 10000:
-            safety_factor = 4.
-
-        n_to_simulate += safety_factor * np.sqrt(n_to_simulate)
-        n_to_simulate = int(np.ceil(n_to_simulate))
-
-        n_predict = ra.poisson(np.sum(lc_filt))
-
-        random_ts = ra.uniform(t_filt[0] - bin_time / 2,
-                               t_filt[-1] + bin_time / 2, n_to_simulate)
-
-        logging.debug(random_ts[random_ts < 0])
-
-        random_amps = ra.uniform(0, max(lc_filt), n_to_simulate)
-        if use_spline:
-            # print("Creating spline representation")
-            lc_spl = sci.splrep(t_filt, lc_filt, s=np.longdouble(0), k=1)
-
-            pts = sci.splev(random_ts, lc_spl)
-        else:
-            rough_bins = np.rint((random_ts - t0) / bin_time)
-            rough_bins = rough_bins.astype(int)
-
-            pts = lc_filt[rough_bins]
-
-        good = random_amps < pts
-        len1 = len(random_ts)
-        random_ts = random_ts[good]
-        len2 = len(random_ts)
-        logging.debug("Max LC, nbin: {0} {1}".format(max(lc_filt), n_bin_filt))
-        logging.debug("{0} Events generated".format(len1))
-        logging.debug("{0} Events predicted".format(n_predict))
-        logging.debug("{0} Events rejected".format(len1 - len2))
-        random_ts = random_ts[:n_predict]
-        random_ts.sort()
-        new_nev = len(random_ts)
-        ev_list[nev:nev + new_nev] = random_ts[:]
-        nev += new_nev
-        logging.debug(
-            "{0} good events created ({1} ev/s)".format(new_nev,
-                                                        new_nev / length))
-        bin_start += max_bin
-
-    # Discard all zero entries at the end!
-    ev_list = ev_list[:nev]
-    ev_list.sort()
-    return ev_list
 
 
 def _paralyzable_dead_time(event_list, dead_time):
@@ -154,7 +50,7 @@ def _non_paralyzable_dead_time(event_list, dead_time):
     return event_list[mask], mask
 
 
-def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
+def filter_for_deadtime(event_list, deadtime, bkg_ev_list=None,
                         dt_sigma=None, paralyzable=False,
                         additional_data=None, return_all=False):
     """Filter an event list for a given dead time.
@@ -197,6 +93,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
 
     """
     additional_output = _empty()
+    ev_list = event_list.time
 
     if deadtime <= 0.:
         return np.copy(ev_list)
@@ -240,7 +137,10 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
         'filter_for_deadtime: '
         '{0}/{1} events rejected'.format(initial_len - final_len,
                                          initial_len))
-    retval = tot_ev_list[ev_kind]
+    retval = EventList(time=tot_ev_list[ev_kind])
+    if hasattr(event_list, 'pi'):
+        retval.pi = event_list.pi[ev_kind]
+
     if return_all:
         additional_output.uf_events = tot_ev_list
         additional_output.is_event = ev_kind
@@ -252,7 +152,7 @@ def filter_for_deadtime(ev_list, deadtime, bkg_ev_list=None,
     return retval
 
 
-def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
+def generate_fake_fits_observation(event_list=None, filename=None,
                                    instr='FPMA', gti=None, tstart=None,
                                    tstop=None,
                                    mjdref=55197.00076601852,
@@ -265,7 +165,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     Parameters
     ----------
     event_list : list-like
-        List of event arrival times, in seconds from mjdref. If left None, 1000
+        :class:`stingray.events.Eventlist` object. If left None, 1000
         random events will be generated, for a total length of 1025 s or the
         difference between tstop and tstart.
     filename : str
@@ -295,23 +195,26 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     import numpy.random as ra
 
     if event_list is None:
-        tstart = _assign_value_if_none(tstart, 8e+7)
-        tstop = _assign_value_if_none(tstop, tstart + 1025)
-        event_list = sorted(ra.uniform(tstart, tstop, 1000))
+        tstart = assign_value_if_none(tstart, 8e+7)
+        tstop = assign_value_if_none(tstop, tstart + 1025)
+        ev_list = sorted(ra.uniform(tstart, tstop, 1000))
+    else:
+        ev_list = event_list.time
 
-    pi = _assign_value_if_none(pi, ra.randint(0, 1024, len(event_list)))
+    if hasattr(event_list, 'pi'):
+        pi = ev_list.pi
+    else:
+        pi = ra.randint(0, 1024, len(ev_list))
 
-    assert len(event_list) == len(pi), \
-        "Event list and pi must be of the same length"
+    tstart = assign_value_if_none(tstart, np.floor(ev_list[0]))
+    tstop = assign_value_if_none(tstop, np.ceil(ev_list[-1]))
+    gti = assign_value_if_none(gti, np.array([[tstart, tstop]]))
+    filename = assign_value_if_none(filename, 'events.evt')
+    livetime = assign_value_if_none(livetime, tstop - tstart)
 
-    tstart = _assign_value_if_none(tstart, np.floor(event_list[0]))
-    tstop = _assign_value_if_none(tstop, np.ceil(event_list[-1]))
-    gti = _assign_value_if_none(gti, np.array([[tstart, tstop]]))
-    filename = _assign_value_if_none(filename, 'events.evt')
-    livetime = _assign_value_if_none(livetime, tstop - tstart)
-
-    assert livetime <= tstop - tstart, \
-        'Livetime must be equal or smaller than tstop - tstart'
+    if livetime > tstop - tstart:
+        raise ValueError('Livetime must be equal or smaller than '
+                         'tstop - tstart')
 
     # Create primary header
     prihdr = fits.Header()
@@ -321,7 +224,7 @@ def generate_fake_fits_observation(event_list=None, filename=None, pi=None,
     prihdu = fits.PrimaryHDU(header=prihdr)
 
     # Write events to table
-    col1 = fits.Column(name='TIME', format='1D', array=event_list)
+    col1 = fits.Column(name='TIME', format='1D', array=ev_list)
     col2 = fits.Column(name='PI', format='1J', array=pi)
 
     allcols = [col1, col2]
@@ -408,9 +311,15 @@ def _read_light_curve(filename):
     file_format = get_file_format(filename)
     if file_format == 'fits':
         filename = lcurve_from_fits(filename)[0]
-    contents = load_lcurve(filename)
+    lcstruct = load_lcurve(filename)
 
-    return contents['time'], contents['lc']
+    return lcstruct
+
+
+def _lcstruct_to_Lightcurve(lcstruct):
+    lc = Lightcurve(lcstruct['time'], lcstruct['lc'], gti=lcstruct['GTI'])
+
+    return lc
 
 
 def main(args=None):
@@ -464,21 +373,24 @@ def main(args=None):
 
     additional_columns = {}
     livetime = None
-    if args.lc is not None:
-        t, lc = _read_light_curve(args.lc)
-        event_list = fake_events_from_lc(t, lc, use_spline=True)
-        pi = np.zeros(len(event_list), dtype=int)
-        print('{} events generated'.format(len(event_list)))
-    elif args.ctrate is not None:
-        tstart = _assign_value_if_none(args.tstart, 0)
-        tstop = _assign_value_if_none(args.tstop, 1025)
-        t = np.arange(tstart, tstop)
-        lc = args.ctrate + np.zeros_like(t)
-        event_list = fake_events_from_lc(t, lc)
-        pi = np.zeros(len(event_list), dtype=int)
-        print('{} events generated'.format(len(event_list)))
+    if args.lc is None and args.ctrate is None and args.event_list is not None:
+        event_list = _read_event_list(args.event_list)
+    elif args.lc is not None or args.ctrate is not None:
+        event_list = EventList()
+        if args.lc is not None:
+            lcstruct = _read_light_curve(args.lc)
+            lc = _lcstruct_to_Lightcurve(lcstruct)
+        elif args.ctrate is not None:
+            tstart = assign_value_if_none(args.tstart, 0)
+            tstop = assign_value_if_none(args.tstop, 1025)
+            t = np.arange(tstart, tstop)
+            lc = Lightcurve(time=t, counts=args.ctrate + np.zeros_like(t))
+        event_list.simulate_times(lc)
+        nevents = len(event_list.time)
+        event_list.pi = np.zeros(nevents, dtype=int)
+        print('{} events generated'.format(nevents))
     else:
-        event_list, pi = _read_event_list(args.event_list)
+        event_list = None
 
     if args.deadtime is not None and event_list is not None:
         deadtime = args.deadtime[0]
@@ -490,17 +402,17 @@ def main(args=None):
                                                dt_sigma=deadtime_sigma,
                                                return_all=True)
         print('{} events after filter'.format(len(event_list)))
-        pi = pi[info.mask]
-        prior = np.zeros_like(event_list)
 
-        prior[1:] = np.diff(event_list) - info.deadtime[:-1]
+        prior = np.zeros_like(event_list.time)
+
+        prior[1:] = np.diff(event_list.time) - info.deadtime[:-1]
 
         additional_columns["PRIOR"] = {"data": prior, "format": "D"}
         additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
         livetime = np.sum(prior)
 
     generate_fake_fits_observation(event_list=event_list,
-                                   filename=args.outname, pi=pi,
+                                   filename=args.outname,
                                    instr=args.instrument, tstart=args.tstart,
                                    tstop=args.tstop,
                                    mjdref=args.mjdref, livetime=livetime,
