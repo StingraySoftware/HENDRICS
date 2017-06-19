@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/StingraySoftware/MaLTPyNT_reboot.svg?branch=master)](https://travis-ci.org/StingraySoftware/MaLTPyNT_reboot)
+
 # Notice
 This repository contains a fork of MaLTPyNT. This software is being heavily rewritten in order to use Stingray's classes and functions whenever possible. To use the original MaLTPyNT, please go to [matteobachetti/MaLTPyNT](https://github.com/matteobachetti/MaLTPyNT).
 
