@@ -128,6 +128,9 @@ class TestFullRun(object):
                          'monol_testB_nustar_fpmb_ev' + MP_FILE_EXTENSION),
             os.path.join(datadir, 'test.rmf'))
         mp.calibrate.main(command.split())
+        assert os.path.exists(os.path.join(datadir,
+                                           'monol_testA_nustar_fpma_ev_calib' +
+                                           MP_FILE_EXTENSION))
 
     def test_04a_lcurve(self):
         """Test light curve production."""
