@@ -6,6 +6,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 import logging
 import warnings
 from stingray.gti import cross_gtis
+from stingray.events import EventList
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
@@ -26,7 +27,7 @@ import collections
 import numpy as np
 import os.path
 from .base import _order_list_of_arrays, _empty, is_string
-from .base import _assign_value_if_none
+from stingray.utils import assign_value_if_none
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
@@ -197,20 +198,47 @@ def get_file_type(fname, specify_reb=True):
 
 
 # ----- functions to save and load EVENT data
-def save_events(eventStruct, fname):
-    """Save events in a file."""
+def save_events(eventlist, fname):
+    """Save events in a file.
+    Parameters
+    ----------
+    eventlist: :class:`stingray.EventList` object
+        Event list to be saved
+    fname: str
+        Name of output file
+    """
+    out = {'time': eventlist.time,
+           'GTI': eventlist.gti,
+           'PI': eventlist.pi,
+           'MJDref': eventlist.mjdref,
+           'Tstart': np.min(eventlist.gti),
+           'Tstop': np.max(eventlist.gti)
+           }
+    if hasattr(eventlist, 'instr'):
+        out["Instr"] = eventlist.instr
+
     if get_file_format(fname) == 'pickle':
-        _save_data_pickle(eventStruct, fname)
+        _save_data_pickle(out, fname)
     elif get_file_format(fname) == 'nc':
-        _save_data_nc(eventStruct, fname)
+        _save_data_nc(out, fname)
 
 
 def load_events(fname):
     """Load events from a file."""
     if get_file_format(fname) == 'pickle':
-        return _load_data_pickle(fname)
+        out = _load_data_pickle(fname)
     elif get_file_format(fname) == 'nc':
-        return _load_data_nc(fname)
+        out = _load_data_nc(fname)
+
+    eventlist = EventList()
+
+    eventlist.time = out['time']
+    eventlist.gti = out['GTI']
+    eventlist.pi = out['PI']
+    eventlist.mjdref = out['MJDref']
+    if 'Instr' in list(out.keys()):
+        eventlist.instr = out["Instr"]
+    return eventlist
 
 
 # ----- functions to save and load LCURVE data
@@ -337,7 +365,7 @@ def _split_high_precision_number(varname, var, probesize):
         if dum < 1 and dum > 0.:
             var_log10 = np.floor(np.log10(dum))
 
-        var /= 10. ** var_log10
+        var = var / (10. ** var_log10)
         var_I = np.floor(var).astype(np.long)
         var_F = np.array(var - var_I, dtype=np.double)
     else:
@@ -432,7 +460,7 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
         [[errm1, errp1], [errm2, errp2], [errm3, errp3], ...])
     """
     import numpy as np
-    errors = _assign_value_if_none(errors, [None for i in arrays])
+    errors = assign_value_if_none(errors, [None for i in arrays])
 
     data_to_write = []
     list_of_errs = []
@@ -597,7 +625,7 @@ def load_gtis(fits_file, gtistring=None):
     from astropy.io import fits as pf
     import numpy as np
 
-    gtistring = _assign_value_if_none(gtistring, 'GTI')
+    gtistring = assign_value_if_none(gtistring, 'GTI')
     logging.info("Loading GTIS from file %s" % fits_file)
     lchdulist = pf.open(fits_file, checksum=True)
     lchdulist.verify('warn')
@@ -642,7 +670,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     """
     from astropy.io import fits as pf
 
-    gtistring = _assign_value_if_none(gtistring, 'GTI,STDGTI')
+    gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
     lchdulist = pf.open(fits_file)
 
     # Load data table

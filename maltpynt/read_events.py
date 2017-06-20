@@ -3,12 +3,10 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from stingray.events import EventList
-from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from stingray.io import load_events_and_gtis
 from .base import mp_root, read_header_key, ref_mjd
-from .io import save_events, load_events_and_gtis
+from .io import save_data, load_events_and_gtis
 from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
@@ -97,10 +95,10 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             out_local['Tstop'] = g[1]
             out_local['PI'] = pis[good]
             out_local['GTI'] = np.array([g], dtype=np.longdouble)
-            save_events(out_local, outfile_local)
+            save_data(out_local, outfile_local)
         pass
     else:
-        save_events(out, outfile)
+        save_data(out, outfile)
 
 
 def _wrap_fun(arglist):

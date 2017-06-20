@@ -23,7 +23,6 @@ def _ratio(a, b):
 
 
 class TestAll(unittest.TestCase):
-
     """Real unit tests."""
 
     def test_common_name(self):
@@ -158,21 +157,6 @@ class TestAll(unittest.TestCase):
         rin = mp.base.r_in(deadtime, rdet)
         np.testing.assert_almost_equal(rin, original_rate)
 
-    def test_high_precision_split1(self):
-        C_I, C_F, C_l, k = \
-            mp.io._split_high_precision_number("C", np.double(0.01), 8)
-        assert C_I == 1
-        np.testing.assert_almost_equal(C_F, 0, 6)
-        assert C_l == -2
-        assert k == "double"
-
-    def test_high_precision_split2(self):
-        C_I, C_F, C_l, k = \
-            mp.io._split_high_precision_number("C", np.double(1.01), 8)
-        assert C_I == 1
-        np.testing.assert_almost_equal(C_F, np.double(0.01), 6)
-        assert C_l == 0
-        assert k == "double"
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -65,7 +65,10 @@ class TestFullRun(object):
                       '--ctrate', '2000',
                       '-o', fits_file])
         hdu_list = fits.open(fits_file)
-        assert 'STDGTI01' in [hdu.name for hdu in hdu_list]
+        hdunames = [hdu.name for hdu in hdu_list]
+        assert 'STDGTI01' in hdunames
+        assert 'STDGTI02' in hdunames
+        assert 'STDGTI07' in hdunames
 
     def test_02a_load_events(self):
         """Test event file reading."""
