@@ -25,12 +25,14 @@ class TestIO():
     def test_load_events(self):
         events = EventList([0, 2, 3.], pi=[1, 2, 3], mjdref=54385.3254923845,
                            gti = np.longdouble([[-0.5, 3.5]]))
+        events.energy = np.array([3., 4., 5.])
         save_events(events, self.dum)
         events2 = load_events(self.dum)
         assert np.allclose(events.time, events2.time)
         assert np.allclose(events.pi, events2.pi)
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
+        assert np.allclose(events.energy, events2.energy)
 
     def test_high_precision_split1(self):
         C_I, C_F, C_l, k = \

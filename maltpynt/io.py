@@ -216,6 +216,8 @@ def save_events(eventlist, fname):
            }
     if hasattr(eventlist, 'instr'):
         out["Instr"] = eventlist.instr
+    if hasattr(eventlist, 'energy'):
+        out['energy'] = eventlist.energy
 
     if get_file_format(fname) == 'pickle':
         _save_data_pickle(out, fname)
@@ -238,6 +240,8 @@ def load_events(fname):
     eventlist.mjdref = out['MJDref']
     if 'Instr' in list(out.keys()):
         eventlist.instr = out["Instr"]
+    if 'energy' in list(out.keys()):
+        eventlist.energy = out["energy"]
     return eventlist
 
 
