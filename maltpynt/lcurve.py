@@ -364,12 +364,14 @@ def lcurve_from_events(f, safe_interval=0,
     tstart = np.min(gtis)
     tstop = np.max(gtis)
     events = evdata.time
-    instr = [instr for instr in ['fpma', 'epn', 'emos1', 'emos2', 'pcu']
-             if instr in f]
+    instr = [instr for instr in ['fpma', 'fpmb',
+                                 'epn', 'emos1',
+                                 'emos2', 'pcu']
+             if instr in f.lower()]
     if len(instr) > 0:
         instr = instr[0]
     else:
-        instr = ""
+        instr = "unknown"
     mjdref = evdata.mjdref
 
     if ignore_gtis:
@@ -395,7 +397,7 @@ def lcurve_from_events(f, safe_interval=0,
 
     # Then, apply filters
     if pi_interval is not None and np.all(np.array(pi_interval) > 0):
-        pis = evdata['PI']
+        pis = evdata.pi
         good = np.logical_and(pis > pi_interval[0],
                               pis <= pi_interval[1])
         events = events[good]
@@ -773,6 +775,7 @@ def _wrap_lc(args):
         return lcurve_from_events(f, **kwargs)
     except Exception as e:
         warnings.warn("MPlcurve exception: {0}".format(str(e)))
+        raise
         return []
 
 
@@ -787,7 +790,11 @@ def _wrap_txt(args):
 
 def _wrap_fits(args):
     f, kwargs = args
-    return lcurve_from_fits(f, **kwargs)
+    try:
+        return lcurve_from_fits(f, **kwargs)
+    except Exception as e:
+        warnings.warn("MPlcurve exception: {0}".format(str(e)))
+        return []
 
 
 def main(args=None):

@@ -143,13 +143,14 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
     from matplotlib.gridspec import GridSpec
     from numpy import histogram
 
-    additional_columns = ["PRIOR", "PI", "SHIELD",
+    additional_columns = ["PRIOR", "SHIELD",
                           "SHLD_T", "SHLD_HI"]
 
     data = load_events_and_gtis(uf_file,
                                 additional_columns=additional_columns)
 
-    events = data.ev_list
+    events_obj = data.ev_list
+    events = events_obj.time
     additional = data.additional_data
 
     priors = additional["PRIOR"]
@@ -217,12 +218,13 @@ def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
     """
     dt = _assign_value_if_none(dt, np.median(np.diff(time)))
 
-    additional_columns = ["PRIOR", "PI"]
+    additional_columns = ["PRIOR"]
 
     data = load_events_and_gtis(uf_file,
                                 additional_columns=additional_columns)
 
-    events = data.ev_list
+    events_obj = data.ev_list
+    events = events_obj.time
     additional = data.additional_data
 
     priors = additional["PRIOR"]
