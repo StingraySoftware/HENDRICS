@@ -360,15 +360,18 @@ def lcurve_from_events(f, safe_interval=0,
 
     tag = ''
     out = {}
-    tstart = evdata['Tstart']
-    tstop = evdata['Tstop']
-    events = evdata['time']
-    instr = evdata['Instr']
-    mjdref = evdata['MJDref']
+    gtis = evdata.gti
+    tstart = np.min(gtis)
+    tstop = np.max(gtis)
+    events = evdata.time
+    instr = [instr for instr in ['fpma', 'epn', 'emos1', 'emos2', 'pcu']
+             if instr in f]
+    if len(instr) > 0:
+        instr = instr[0]
+    else:
+        instr = ""
+    mjdref = evdata.mjdref
 
-    if instr == 'PCA':
-        pcus = evdata['PCU']
-    gtis = evdata['GTI']
     if ignore_gtis:
         gtis = np.array([[tstart, tstop]])
 
@@ -400,13 +403,11 @@ def lcurve_from_events(f, safe_interval=0,
         out['PImin'] = e_interval[0]
         out['PImax'] = e_interval[0]
     elif e_interval is not None and np.all(np.array(e_interval) > 0):
-        try:
-            es = evdata['E']
-        except:
+        if not hasattr(evdata, 'energy'):
             raise \
                 ValueError("No energy information is present in the file." +
                            " Did you run MPcalibrate?")
-
+        es = evdata.energy
         good = np.logical_and(es > e_interval[0],
                               es <= e_interval[1])
         events = events[good]
@@ -479,8 +480,6 @@ def lcurve_from_events(f, safe_interval=0,
             local_out['total_ctrate'] = calc_countrate(tot_time[b[0]:b[1]],
                                                        tot_lc[b[0]:b[1]],
                                                        bintime=bintime)
-            if instr == 'PCA':
-                local_out['nPCUs'] = len(set(pcus))
 
             logging.info('Saving light curve to %s' % outf)
             save_lcurve(local_out, outf)
@@ -493,8 +492,6 @@ def lcurve_from_events(f, safe_interval=0,
         out['Tstart'] = tstart
         out['Tstop'] = tstop
         out['Instr'] = instr
-        if instr == 'PCA':
-            out['nPCUs'] = len(set(pcus))
 
         logging.info('Saving light curve to %s' % outfile)
         save_lcurve(out, outfile)
@@ -790,10 +787,7 @@ def _wrap_txt(args):
 
 def _wrap_fits(args):
     f, kwargs = args
-    try:
-        return lcurve_from_fits(f, **kwargs)
-    except Exception as e:
-        warnings.warn("MPlcurve exception: {0}".format(str(e)))
+    return lcurve_from_fits(f, **kwargs)
 
 
 def main(args=None):

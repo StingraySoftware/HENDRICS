@@ -35,10 +35,6 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     """
     gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
     logging.info('Opening %s' % filename)
-    # if noclobber and os.path.exists(outfile) and (not gti_split):
-    #     warnings.warn(
-    #         '{0} exists, and noclobber option used. Skipping'.format(outfile))
-    #     return
 
     instr = read_header_key(filename, 'INSTRUME')
     mission = read_header_key(filename, 'TELESCOP')
@@ -67,6 +63,12 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             good_det = np.ones_like(events.time, dtype=bool)
             outroot_local = outfile_root
 
+        outfile = outroot_local + '_ev' + MP_FILE_EXTENSION
+        if noclobber and os.path.exists(outfile) and (not gti_split):
+            warnings.warn(
+                '{0} exists, and noclobber option used. Skipping'.format(outfile))
+            return
+
         if gti_split:
             for ig, g in enumerate(gtis):
                 length = g[1] - g[0]
@@ -82,7 +84,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                     warnings.warn('{0} exists, '.format(outfile_local) +
                                   'and noclobber option used. Skipping')
                     return
-                good = np.logical_and(events >= g[0], events < g[1])
+                good = np.logical_and(events.time >= g[0],
+                                      events.time < g[1])
                 all_good = good_det & good
                 events_filt = EventList(events.time[all_good],
                                         pi=events.pi[all_good],
@@ -94,7 +97,6 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             events_filt = EventList(events.time[good_det],
                                     pi=events.pi[good_det],
                                     gti=events.gti)
-            outfile = outroot_local + '_ev' + MP_FILE_EXTENSION
             save_events(events_filt, outfile)
 
 

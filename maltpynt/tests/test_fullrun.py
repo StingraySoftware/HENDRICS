@@ -116,14 +116,16 @@ class TestFullRun(object):
     def test_03a_calibrate(self):
         """Test event file calibration."""
         command = '{0} -r {1}'.format(
-            os.path.join(datadir, 'monol_testA_ev' + MP_FILE_EXTENSION),
+            os.path.join(datadir,
+                         'monol_testA_nustar_fpma_ev' + MP_FILE_EXTENSION),
             os.path.join(datadir, 'test.rmf'))
         mp.calibrate.main(command.split())
 
     def test_03b_calibrate(self):
         """Test event file calibration."""
         command = '{0} -r {1} --nproc 2'.format(
-            os.path.join(datadir, 'monol_testB_ev' + MP_FILE_EXTENSION),
+            os.path.join(datadir,
+                         'monol_testB_nustar_fpmb_ev' + MP_FILE_EXTENSION),
             os.path.join(datadir, 'test.rmf'))
         mp.calibrate.main(command.split())
 
@@ -131,22 +133,27 @@ class TestFullRun(object):
         """Test light curve production."""
         command = ('{0} -e {1} {2} --safe-interval '
                    '{3} {4}  --nproc 2 -b 0.5').format(
-            os.path.join(datadir, 'monol_testA_ev_calib' +
+            os.path.join(datadir, 'monol_testA_nustar_fpma_ev_calib' +
                          MP_FILE_EXTENSION),
             3, 50, 100, 300)
         mp.lcurve.main(command.split())
 
+        assert os.path.exists('monol_testA_nustar_fpma_E3-50_lc' +
+                              MP_FILE_EXTENSION)
+
         command = ('{0} -e {1} {2} --safe-interval '
                    '{3} {4} -b 0.5').format(
-            os.path.join(datadir, 'monol_testB_ev_calib' +
+            os.path.join(datadir, 'monol_testB_nustar_fpmb_ev_calib' +
                          MP_FILE_EXTENSION),
             3, 50, 100, 300)
         mp.lcurve.main(command.split())
+        assert os.path.exists('monol_testB_nustar_fpmb_E3-50_lc' +
+                              MP_FILE_EXTENSION)
 
     def test_04b_lcurve_split(self):
         """Test lc with gti-split option, and reading of split event file."""
         command = '{0} -g'.format(
-            os.path.join(datadir, 'monol_testB_ev_0' +
+            os.path.join(datadir, 'monol_testB_nustar_fpmb_ev_gti0' +
                          MP_FILE_EXTENSION))
         mp.lcurve.main(command.split())
 
@@ -160,10 +167,14 @@ class TestFullRun(object):
 
         command = "{0} --outfile {1}".format(
             os.path.join(datadir,
-                         'monol_testA_ev') + MP_FILE_EXTENSION,
+                         'monol_testA_nustar_fpma_ev') + MP_FILE_EXTENSION,
             os.path.join(datadir,
                          'lcurve_lc'))
         mp.lcurve.main(command.split())
+        print(glob.glob(os.path.join(datadir,
+                              'lcurve_lc*')))
+        assert os.path.exists(os.path.join(datadir,
+                              'lcurve_lc') + MP_FILE_EXTENSION)
 
         command = "--fits-input {0} --outfile {1}".format(
             lcurve_ftools_orig,
@@ -224,9 +235,9 @@ class TestFullRun(object):
     def test_04e_joinlcs(self):
         """Test produce joined light curves."""
         mp.lcurve.join_lightcurves(
-            [os.path.join(datadir, 'monol_testA_E3-50_lc') +
+            [os.path.join(datadir, 'monol_testA_nustar_fpma_E3-50_lc') +
              MP_FILE_EXTENSION,
-             os.path.join(datadir, 'monol_testB_E3-50_lc') +
+             os.path.join(datadir, 'monol_testB_nustar_fpmb_E3-50_lc') +
              MP_FILE_EXTENSION],
             os.path.join(datadir, 'monol_test_joinlc' +
                          MP_FILE_EXTENSION))

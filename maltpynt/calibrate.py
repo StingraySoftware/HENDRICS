@@ -107,10 +107,10 @@ def calibrate(fname, outname, rmf_file=None):
     logging.info("Loading file %s..." % fname)
     evdata = load_events(fname)
     logging.info("Done.")
-    pis = evdata['PI']
+    pis = evdata.pi
 
     es = read_calibration(pis, rmf_file)
-    evdata['E'] = es
+    evdata.energy = es
     logging.info('Saving calibrated data to %s' % outname)
     save_events(evdata, outname)
 
