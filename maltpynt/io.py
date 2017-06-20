@@ -684,8 +684,12 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     # Read event list
     ev_list = np.array(lctable.field(column), dtype=np.longdouble)
     det_number = None
+    detector_id = None
     if 'CCDNR' in lctable.columns.names:
-        det_number = list(set(np.array(lctable.field('CCDNR'), dtype=np.int)))
+        detector_id = np.array(lctable.field('CCDNR'), dtype=np.int)
+        det_number = list(set(detector_id))
+    if 'PCUID' in lctable.columns.names:
+        detector_id = np.array(lctable.field('PCUID'), dtype=np.int)
 
     # Read TIMEZERO keyword and apply it to events
     try:
@@ -723,6 +727,11 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     else:
         gti_list = load_gtis(gti_file, gtistring)
 
+    if additional_columns is None:
+        additional_columns = ['PI']
+    if 'PI' not in additional_columns:
+        additional_columns.append('PI')
+
     additional_data = _get_additional_data(lctable, additional_columns)
 
     lchdulist.close()
@@ -732,13 +741,15 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     ev_list = ev_list[order]
 
     additional_data = _order_list_of_arrays(additional_data, order)
+    pi = additional_data['PI'][order]
+    additional_data.pop('PI')
 
     returns = _empty()
-    returns.ev_list = ev_list
-    returns.gti_list = gti_list
+    returns.ev_list = EventList(ev_list, gti=gti_list, pi=pi)
     returns.additional_data = additional_data
     returns.t_start = t_start
     returns.t_stop = t_stop
+    returns.detector_id = detector_id
 
     return returns
 
