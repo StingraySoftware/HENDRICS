@@ -262,7 +262,7 @@ def generate_fake_fits_observation(event_list=None, filename=None,
     tbheader['COMMENT'] = ("FITS (Flexible Image Transport System) format is"
                            " defined in 'Astronomy and Astrophysics', volume"
                            " 376, page 359; bibcode: 2001A&A...376..359H")
-    tbheader['TELESCOP'] = ('NuSTAR  ', 'Telescope (mission) name')
+    tbheader['TELESCOP'] = (mission, 'Telescope (mission) name')
     tbheader['INSTRUME'] = (instr, 'Instrument name')
     tbheader['OBS_ID'] = ('00000000001', 'Observation ID')
     tbheader['TARG_ID'] = (0, 'Target ID')
