@@ -4,9 +4,9 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from stingray.utils import assign_value_if_none
-from stingray.io import load_events_and_gtis
-from .base import mp_root, read_header_key, ref_mjd
-from .io import save_data, load_events_and_gtis
+from stingray.events import EventList
+from .base import mp_root, read_header_key
+from .io import save_events, load_events_and_gtis
 from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
@@ -35,70 +35,67 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     """
     gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
     logging.info('Opening %s' % filename)
-    outfile = mp_root(filename) + '_ev' + MP_FILE_EXTENSION
-    if noclobber and os.path.exists(outfile) and (not gti_split):
-        warnings.warn(
-            '{0} exists, and noclobber option used. Skipping'.format(outfile))
-        return
+    # if noclobber and os.path.exists(outfile) and (not gti_split):
+    #     warnings.warn(
+    #         '{0} exists, and noclobber option used. Skipping'.format(outfile))
+    #     return
 
     instr = read_header_key(filename, 'INSTRUME')
-    additional_columns = ['PI']
-    if instr == 'PCA':
-        additional_columns.append('PCUID')
+    mission = read_header_key(filename, 'TELESCOP')
 
-    mjdref = ref_mjd(filename)
     data = load_events_and_gtis(filename,
-                                additional_columns=additional_columns,
                                 gtistring=gtistring)
 
     events = data.ev_list
-    gtis = data.gti_list
-    additional = data.additional_data
-    tstart = data.t_start
-    tstop = data.t_stop
+    gtis = events.gti
+    detector_id = data.detector_id
 
-    pis = additional['PI']
-    out = {'time': events,
-           'GTI': gtis,
-           'PI': pis,
-           'MJDref': mjdref,
-           'Tstart': tstart,
-           'Tstop': tstop,
-           'Instr': instr
-           }
-
-    if instr == "PCA":
-        out['PCU'] = np.array(additional['PCUID'], dtype=np.byte)
-
-    if gti_split:
-        for ig, g in enumerate(gtis):
-            length = g[1] - g[0]
-            if length < min_length:
-                print("GTI shorter than {0} s; skipping".format(min_length))
-                continue
-
-            outfile_local = \
-                '{0}_{1}'.format(outfile.replace(MP_FILE_EXTENSION,
-                                                 ''), ig) + \
-                MP_FILE_EXTENSION
-            if noclobber and os.path.exists(outfile_local):
-                warnings.warn('{0} exists, '.format(outfile_local) +
-                              'and noclobber option used. Skipping')
-                return
-            out_local = out.copy()
-            good = np.logical_and(events >= g[0], events < g[1])
-            if not np.any(good):
-                print("This GTI has no valid events; skipping")
-                continue
-            out_local['time'] = events[good]
-            out_local['Tstart'] = g[0]
-            out_local['Tstop'] = g[1]
-            out_local['PI'] = pis[good]
-            out_local['GTI'] = np.array([g], dtype=np.longdouble)
-            save_data(out_local, outfile_local)
-        pass
+    if detector_id is not None:
+        detectors = list(set(detector_id))
     else:
-        save_data(out, outfile)
+        detectors = [None]
+    outfile_root = \
+        mp_root(filename) + '_' + mission.lower() + '_' + instr.lower()
+
+    for d in detectors:
+        if d is not None:
+            good_det = data.detector_id
+            outroot_local = \
+                '{0}_det{1:02d}'.format(outfile_root, d)
+
+        else:
+            good_det = np.ones_like(events.time, dtype=bool)
+            outroot_local = outfile_root
+
+        if gti_split:
+            for ig, g in enumerate(gtis):
+                length = g[1] - g[0]
+                if length < min_length:
+                    print("GTI shorter than {} s; skipping".format(min_length))
+                    continue
+
+                outfile_local = \
+                    '{0}_gti{1}_ev'.format(outroot_local,
+                                           ig) + MP_FILE_EXTENSION
+
+                if noclobber and os.path.exists(outfile_local):
+                    warnings.warn('{0} exists, '.format(outfile_local) +
+                                  'and noclobber option used. Skipping')
+                    return
+                good = np.logical_and(events >= g[0], events < g[1])
+                all_good = good_det & good
+                events_filt = EventList(events.time[all_good],
+                                        pi=events.pi[all_good],
+                                        gti=np.array([g], dtype=np.longdouble))
+
+                save_events(events_filt, outfile_local)
+            pass
+        else:
+            events_filt = EventList(events.time[good_det],
+                                    pi=events.pi[good_det],
+                                    gti=events.gti)
+            outfile = outroot_local + '_ev' + MP_FILE_EXTENSION
+            save_events(events_filt, outfile)
 
 
 def _wrap_fun(arglist):
