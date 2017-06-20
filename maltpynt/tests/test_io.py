@@ -13,15 +13,14 @@ class TestIO():
 
     def test_save_data(self):
         struct = {'a': 0.1, 'b': np.longdouble('123.4567890123456789'),
-                  'c': np.longdouble([[-0.5, 3.5]]), 'd': True,
-                  'e': 1}
+                  'c': np.longdouble([[-0.5, 3.5]]),
+                  'd': 1}
         save_data(struct, self.dum)
         struct2 = load_data(self.dum)
         assert np.allclose(struct['a'], struct2['a'])
         assert np.allclose(struct['b'], struct2['b'])
         assert np.allclose(struct['c'], struct2['c'])
         assert np.allclose(struct['d'], struct2['d'])
-        assert np.allclose(struct['e'], struct2['e'])
 
     def test_load_events(self):
         events = EventList([0, 2, 3.], pi=[1, 2, 3], mjdref=54385.3254923845,
