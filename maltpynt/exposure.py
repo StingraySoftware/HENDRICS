@@ -9,7 +9,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 import numpy as np
 from .io import load_events_and_gtis
-from .io import get_file_type, save_lcurve, MP_FILE_EXTENSION
+from .io import get_file_type, save_data, MP_FILE_EXTENSION
 from .base import create_gti_mask, mp_root, _assign_value_if_none
 import logging
 import warnings
@@ -292,7 +292,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
     outdata["lc"] = newlc
     outdata["expo"] = expo
 
-    save_lcurve(outdata, outname)
+    save_data(outdata, outname)
     return outdata
 
 

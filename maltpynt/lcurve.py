@@ -8,7 +8,7 @@ import numpy as np
 from .base import mp_root, create_gti_mask, cross_gtis, mkdir_p
 from .base import contiguous_regions, calc_countrate, gti_len
 from .base import _assign_value_if_none, _look_for_array_in_array
-from .io import load_events, load_lcurve, save_lcurve
+from .io import load_events, load_data, save_data
 from .io import MP_FILE_EXTENSION, high_precision_keyword_read
 import os
 import logging
@@ -88,7 +88,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
 
     for lfc in lcfilelist:
         logging.info("Loading file %s..." % lfc)
-        lcdata = load_lcurve(lfc)
+        lcdata = load_data(lfc)
         logging.info("Done.")
         lcdatas.append(lcdata)
         del lcdata
@@ -159,7 +159,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
             logging.info('Saving joined light curve to %s' % outfile)
 
             dname, fname = os.path.split(outfile)
-            save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
+            save_data(outlcs[instr], os.path.join(dname, tag + fname))
 
     return outlcs
 
@@ -234,7 +234,7 @@ def scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
     out['total_ctrate'] = np.sum([lcdata[i]['total_ctrate'] for i in instrs])
 
     logging.info('Saving scrunched light curve to %s' % outfile)
-    save_lcurve(out, outfile)
+    save_data(out, outfile)
 
     return time0, lc0, gti
 
@@ -405,7 +405,7 @@ def lcurve_from_events(f, safe_interval=0,
         out['PImin'] = e_interval[0]
         out['PImax'] = e_interval[0]
     elif e_interval is not None and np.all(np.array(e_interval) > 0):
-        if not hasattr(evdata, 'energy'):
+        if not hasattr(evdata, 'energy') or evdata.energy is None:
             raise \
                 ValueError("No energy information is present in the file." +
                            " Did you run MPcalibrate?")
@@ -484,7 +484,7 @@ def lcurve_from_events(f, safe_interval=0,
                                                        bintime=bintime)
 
             logging.info('Saving light curve to %s' % outf)
-            save_lcurve(local_out, outf)
+            save_data(local_out, outf)
             outfiles.append(outf)
     else:
         out['lc'] = lc
@@ -496,7 +496,7 @@ def lcurve_from_events(f, safe_interval=0,
         out['Instr'] = instr
 
         logging.info('Saving light curve to %s' % outfile)
-        save_lcurve(out, outfile)
+        save_data(out, outfile)
         outfiles = [outfile]
 
     # For consistency in return value
@@ -700,7 +700,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
                                           bintime=dt)
 
     logging.info('Saving light curve to %s' % outfile)
-    save_lcurve(out, outfile)
+    save_data(out, outfile)
     return [outfile]
 
 
@@ -765,7 +765,7 @@ def lcurve_from_txt(txt_file, outfile=None,
                                           bintime=dt)
 
     logging.info('Saving light curve to %s' % outfile)
-    save_lcurve(out, outfile)
+    save_data(out, outfile)
     return [outfile]
 
 

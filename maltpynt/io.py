@@ -7,6 +7,7 @@ import logging
 import warnings
 from stingray.gti import cross_gtis
 from stingray.events import EventList
+from stingray.lightcurve import Lightcurve
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
@@ -200,6 +201,7 @@ def get_file_type(fname, specify_reb=True):
 # ----- functions to save and load EVENT data
 def save_events(eventlist, fname):
     """Save events in a file.
+
     Parameters
     ----------
     eventlist: :class:`stingray.EventList` object
@@ -208,15 +210,15 @@ def save_events(eventlist, fname):
         Name of output file
     """
     out = {'time': eventlist.time,
-           'GTI': eventlist.gti,
-           'PI': eventlist.pi,
-           'MJDref': eventlist.mjdref,
-           'Tstart': np.min(eventlist.gti),
-           'Tstop': np.max(eventlist.gti)
+           'gti': eventlist.gti,
+           'pi': eventlist.pi,
+           'mjdref': eventlist.mjdref,
+           'tstart': np.min(eventlist.gti),
+           'tstop': np.max(eventlist.gti)
            }
-    if hasattr(eventlist, 'instr'):
-        out["Instr"] = eventlist.instr
-    if hasattr(eventlist, 'energy'):
+    if hasattr(eventlist, 'instr') and eventlist.instr is not None:
+        out["instr"] = eventlist.instr
+    if hasattr(eventlist, 'energy') and eventlist.energy is not None:
         out['energy'] = eventlist.energy
 
     if get_file_format(fname) == 'pickle':
@@ -235,32 +237,57 @@ def load_events(fname):
     eventlist = EventList()
 
     eventlist.time = out['time']
-    eventlist.gti = out['GTI']
-    eventlist.pi = out['PI']
-    eventlist.mjdref = out['MJDref']
-    if 'Instr' in list(out.keys()):
-        eventlist.instr = out["Instr"]
+    eventlist.gti = out['gti']
+    eventlist.pi = out['pi']
+    eventlist.mjdref = out['mjdref']
+    if 'instr' in list(out.keys()):
+        eventlist.instr = out["instr"]
     if 'energy' in list(out.keys()):
         eventlist.energy = out["energy"]
     return eventlist
 
 
 # ----- functions to save and load LCURVE data
-def save_lcurve(lcurveStruct, fname):
-    """Save light curve in a file."""
+def save_lcurve(lcurve, fname):
+    """Save Light curve to file
+
+    Parameters
+    ----------
+    lcurve: :class:`stingray.Lightcurve` object
+        Event list to be saved
+    fname: str
+        Name of output file
+    """
+    out = {}
+
+    out['counts'] = lcurve.counts
+    out['counts_err'] = lcurve.counts_err
+    out['time'] = lcurve.time
+    out['dt'] = lcurve.dt
+    out['gti'] = lcurve.gti
+    out['err_dist'] = lcurve.err_dist
+    out['mjdref'] = lcurve.mjdref
+
+    if hasattr(lcurve, 'instr'):
+        out["instr"] = lcurve.instr
+
     if get_file_format(fname) == 'pickle':
-        return _save_data_pickle(lcurveStruct, fname)
+        return _save_data_pickle(out, fname)
     elif get_file_format(fname) == 'nc':
-        return _save_data_nc(lcurveStruct, fname)
+        return _save_data_nc(out, fname)
 
 
 def load_lcurve(fname):
     """Load light curve from a file."""
     if get_file_format(fname) == 'pickle':
-        return _load_data_pickle(fname)
+        data =  _load_data_pickle(fname)
     elif get_file_format(fname) == 'nc':
-        return _load_data_nc(fname)
+        data = _load_data_nc(fname)
 
+    lcurve = Lightcurve(data['time'], data['counts'], err=data['counts_err'],
+                        gti=data['gti'], err_dist = data['err_dist'],
+                        mjdref=data['mjdref'])
+    return lcurve
 
 # ---- Functions to save PDSs
 

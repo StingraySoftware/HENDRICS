@@ -6,7 +6,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 from .base import mp_root, cross_gtis, create_gti_mask
 from .base import common_name, _empty, _assign_value_if_none
 from .rebin import const_rebin
-from .io import sort_files, get_file_type, load_lcurve, save_pds
+from .io import sort_files, get_file_type, load_data, save_pds
 from .io import MP_FILE_EXTENSION
 import numpy as np
 import logging
@@ -531,7 +531,7 @@ def calc_pds(lcfile, fftlen,
         return
 
     logging.info("Loading file %s..." % lcfile)
-    lcdata = load_lcurve(lcfile)
+    lcdata = load_data(lcfile)
     time = lcdata['time']
     mjdref = lcdata['MJDref']
     try:
@@ -646,9 +646,9 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
         return
 
     logging.info("Loading file %s..." % lcfile1)
-    lcdata1 = load_lcurve(lcfile1)
+    lcdata1 = load_data(lcfile1)
     logging.info("Loading file %s..." % lcfile2)
-    lcdata2 = load_lcurve(lcfile2)
+    lcdata2 = load_data(lcfile2)
 
     time1 = lcdata1['time']
     try:

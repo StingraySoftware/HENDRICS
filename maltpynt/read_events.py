@@ -89,14 +89,15 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                 all_good = good_det & good
                 events_filt = EventList(events.time[all_good],
                                         pi=events.pi[all_good],
-                                        gti=np.array([g], dtype=np.longdouble))
+                                        gti=np.array([g], dtype=np.longdouble),
+                                        mjdref=events.mjdref)
 
                 save_events(events_filt, outfile_local)
             pass
         else:
             events_filt = EventList(events.time[good_det],
                                     pi=events.pi[good_det],
-                                    gti=events.gti)
+                                    gti=events.gti, mjdref=events.mjdref)
             save_events(events_filt, outfile)
 
 

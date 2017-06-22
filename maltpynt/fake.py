@@ -12,7 +12,7 @@ import warnings
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
-from .io import get_file_format, load_lcurve
+from .io import get_file_format, load_data
 from .base import _empty
 import copy
 
@@ -336,7 +336,7 @@ def _read_light_curve(filename):
     file_format = get_file_format(filename)
     if file_format == 'fits':
         filename = lcurve_from_fits(filename)[0]
-    lcstruct = load_lcurve(filename)
+    lcstruct = load_data(filename)
 
     return lcstruct
 

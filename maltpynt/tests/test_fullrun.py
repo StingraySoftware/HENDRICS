@@ -126,6 +126,9 @@ class TestFullRun(object):
                          'monol_testA_nustar_fpma_ev' + MP_FILE_EXTENSION),
             os.path.join(self.datadir, 'test.rmf'))
         mp.calibrate.main(command.split())
+        assert os.path.exists(os.path.join(self.datadir,
+                                           'monol_testA_nustar_fpma_ev_calib' +
+                                           MP_FILE_EXTENSION))
 
     def test_03b_calibrate(self):
         """Test event file calibration."""
@@ -135,9 +138,8 @@ class TestFullRun(object):
             os.path.join(self.datadir, 'test.rmf'))
         mp.calibrate.main(command.split())
         assert os.path.exists(os.path.join(self.datadir,
-                                           'monol_testA_nustar_fpma_ev_calib' +
+                                           'monol_testB_nustar_fpmb_ev_calib' +
                                            MP_FILE_EXTENSION))
-
     def test_04a_lcurve(self):
         """Test light curve production."""
         command = ('{0} -e {1} {2} --safe-interval '
@@ -153,6 +155,7 @@ class TestFullRun(object):
         assert os.path.exists(os.path.join(self.datadir,
                                            'monol_testA_E3-50_lc' +
                                            MP_FILE_EXTENSION))
+
         command = ('{0} -e {1} {2} --safe-interval '
                    '{3} {4} -b 0.5 -o {5}').format(
             os.path.join(self.datadir, 'monol_testB_nustar_fpmb_ev_calib' +
@@ -206,8 +209,8 @@ class TestFullRun(object):
                                  'lcurve_lc' +
                                  MP_FILE_EXTENSION)
 
-        lcdata_mp = mp.io.load_lcurve(lcurve_mp)
-        lcdata_ftools = mp.io.load_lcurve(lcurve_ftools)
+        lcdata_mp = mp.io.load_data(lcurve_mp)
+        lcdata_ftools = mp.io.load_data(lcurve_ftools)
 
         lc_mp = lcdata_mp['lc']
 
@@ -226,7 +229,7 @@ class TestFullRun(object):
         lcurve_mp = os.path.join(self.datadir,
                                  'lcurve_lc' +
                                  MP_FILE_EXTENSION)
-        lcdata_mp = mp.io.load_lcurve(lcurve_mp)
+        lcdata_mp = mp.io.load_data(lcurve_mp)
         lc_mp = lcdata_mp['lc']
         time_mp = lcdata_mp['time']
 
@@ -240,7 +243,7 @@ class TestFullRun(object):
                                   MP_FILE_EXTENSION)
         mp.lcurve.main(['--txt-input', lcurve_txt_orig,
                         '--outfile', lcurve_txt])
-        lcdata_txt = mp.io.load_lcurve(lcurve_txt)
+        lcdata_txt = mp.io.load_data(lcurve_txt)
 
         lc_txt = lcdata_txt['lc']
 
