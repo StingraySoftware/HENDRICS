@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/StingraySoftware/MaLTPyNT_reboot.svg?branch=master)](https://travis-ci.org/StingraySoftware/MaLTPyNT_reboot)
+[![Coverage Status](https://coveralls.io/repos/github/StingraySoftware/MaLTPyNT_reboot/badge.svg?branch=master)](https://coveralls.io/github/StingraySoftware/MaLTPyNT_reboot?branch=master)
 
 # Notice
 This repository contains a fork of MaLTPyNT. This software is being heavily rewritten in order to use Stingray's classes and functions whenever possible. To use the original MaLTPyNT, please go to [matteobachetti/MaLTPyNT](https://github.com/matteobachetti/MaLTPyNT).
