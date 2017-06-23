@@ -293,20 +293,19 @@ class TestFullRun(object):
     def test_05a_pds(self):
         """Test PDS production."""
         command = \
-            '{0} {1} -f 128 --save-dyn -k PDS --norm rms  --nproc 2 '.format(
+            '{0} {1} -f 128 --save-dyn -k PDS --norm frac --nproc 2 '.format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
                 MP_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
                 MP_FILE_EXTENSION)
         mp.fspec.main(command.split())
 
-    def test_05b_pds(self):
-        """Test PDS production."""
-        command = \
-            '{0} -f 128 --save-dyn -k PDS --norm rms'.format(
-                os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-                MP_FILE_EXTENSION)
-        mp.fspec.main(command.split())
+        assert os.path.exists(os.path.join(self.datadir,
+                                           'monol_testB_E3-50_pds')
+                              + MP_FILE_EXTENSION)
+        assert os.path.exists(os.path.join(self.datadir,
+                                           'monol_testA_E3-50_pds')
+                              + MP_FILE_EXTENSION)
 
     def test_05c_pds_fits(self):
         """Test PDS production with light curves obtained from FITS files."""
@@ -327,7 +326,7 @@ class TestFullRun(object):
     def test_05e_cpds(self):
         """Test CPDS production."""
         command = \
-            '{0} {1} -f 128 --save-dyn -k CPDS --norm rms -o {2}'.format(
+            '{0} {1} -f 128 --save-dyn -k CPDS --norm frac -o {2}'.format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
                 MP_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
@@ -339,7 +338,7 @@ class TestFullRun(object):
         """Test CPDS production."""
         command = \
             ('{0} {1} -f 128 --save-dyn -k '
-             'CPDS --norm rms -o {2} --nproc 2').format(
+             'CPDS --norm frac -o {2} --nproc 2').format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
                 MP_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
@@ -347,13 +346,13 @@ class TestFullRun(object):
                 os.path.join(self.datadir, 'monol_test_E3-50'))
         mp.fspec.main(command.split())
 
-    def test_05g_dumpdynpds(self):
-        """Test dump dynamical PDSs."""
-        command = '--noplot ' + \
-            os.path.join(self.datadir,
-                         'monol_testA_E3-50_pds') + \
-            MP_FILE_EXTENSION
-        mp.fspec.dumpdyn_main(command.split())
+    # def test_05g_dumpdynpds(self):
+    #     """Test dump dynamical PDSs."""
+    #     command = '--noplot ' + \
+    #         os.path.join(self.datadir,
+    #                      'monol_testA_E3-50_pds') + \
+    #         MP_FILE_EXTENSION
+    #     mp.fspec.dumpdyn_main(command.split())
 
     def test_05h_sumpds(self):
         """Test the sum of pdss."""
@@ -365,13 +364,13 @@ class TestFullRun(object):
             '-o', os.path.join(self.datadir,
                                'monol_test_sum' + MP_FILE_EXTENSION)])
 
-    def test_05i_dumpdyncpds(self):
-        """Test dumping CPDS file."""
-        command = '--noplot ' + \
-            os.path.join(self.datadir,
-                         'monol_test_E3-50_cpds') + \
-            MP_FILE_EXTENSION
-        mp.fspec.dumpdyn_main(command.split())
+    # def test_05i_dumpdyncpds(self):
+    #     """Test dumping CPDS file."""
+    #     command = '--noplot ' + \
+    #         os.path.join(self.datadir,
+    #                      'monol_test_E3-50_cpds') + \
+    #         MP_FILE_EXTENSION
+    #     mp.fspec.dumpdyn_main(command.split())
 
     def test_06a_rebinlc(self):
         """Test LC rebinning."""
@@ -411,13 +410,13 @@ class TestFullRun(object):
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
 
-    def test_06f_dumpdyncpds_reb(self):
-        """Test dumping rebinned CPDS file."""
-        command = '--noplot ' + \
-            os.path.join(self.datadir,
-                         'monol_test_E3-50_cpds_rebin1.03') + \
-            MP_FILE_EXTENSION
-        mp.fspec.dumpdyn_main(command.split())
+    # def test_06f_dumpdyncpds_reb(self):
+    #     """Test dumping rebinned CPDS file."""
+    #     command = '--noplot ' + \
+    #         os.path.join(self.datadir,
+    #                      'monol_test_E3-50_cpds_rebin1.03') + \
+    #         MP_FILE_EXTENSION
+    #     mp.fspec.dumpdyn_main(command.split())
 
     def test_07a_lags(self):
         """Test Lag calculations."""
@@ -461,7 +460,7 @@ class TestFullRun(object):
         """Test creating a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
             MP_FILE_EXTENSION
-        command = "{0} -f lc>0 -c --debug".format(fname)
+        command = "{0} -f counts>0 -c --debug".format(fname)
         mp.create_gti.main(command.split())
 
     def test_09b_create_gti(self):
@@ -477,7 +476,7 @@ class TestFullRun(object):
         """Test creating a GTI file and apply minimum length."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
             MP_FILE_EXTENSION
-        command = "{0} -f lc>0 -c -l 10 --debug".format(fname)
+        command = "{0} -f counts>0 -c -l 10 --debug".format(fname)
         mp.create_gti.main(command.split())
 
     def test_09d_create_gti(self):
@@ -526,7 +525,7 @@ class TestFullRun(object):
         file_list = {'events': 'monol_testA_nustar_fpma_ev',
                      'lc': 'monol_testA_E3-50_lc',
                      'pds': 'monol_testA_E3-50_pds',
-                     'GTI': 'monol_testA_E3-50_rebin4_gti',
+                     'gti': 'monol_testA_E3-50_rebin4_gti',
                      'cpds': 'monol_test_E3-50_cpds',
                      'rebcpds': 'monol_test_E3-50_cpds_rebin1.03',
                      'rebpds': 'monol_testA_E3-50_pds_rebin1.03',
@@ -556,7 +555,7 @@ class TestFullRun(object):
             MP_FILE_EXTENSION
         mp.plot.main([pname, cname, lname, '--noplot', '--xlin', '--ylin'])
         mp.plot.main([lname, '--noplot',
-                      '--axes', 'time', 'lc', '--xlin', '--ylin'])
+                      '--axes', 'time', 'counts', '--xlin', '--ylin'])
 
     def test_12b_plot(self):
         """Test plotting with log axes."""

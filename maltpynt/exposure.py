@@ -279,9 +279,9 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
     ftype, contents = get_file_type(lc_file)
 
     time = contents["time"]
-    lc = contents["lc"]
+    lc = contents['counts']
     dt = contents["dt"]
-    gti = contents["GTI"]
+    gti = contents["gti"]
 
     expo = get_exposure_from_uf(time, uf_file, dt=dt, gti=gti)
 
@@ -289,7 +289,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
 
     newlc = np.array(lc / expo * dt, dtype=np.float64)
     newlc[expo < expo_limit] = 0
-    outdata["lc"] = newlc
+    outdata['counts'] = newlc
     outdata["expo"] = expo
 
     save_data(outdata, outname)
@@ -338,9 +338,9 @@ def main(args=None):
     outdata = correct_lightcurve(lc_file, uf_file, outname)
 
     time = outdata["time"]
-    lc = outdata["lc"]
+    lc = outdata['counts']
     expo = outdata["expo"]
-    gti = outdata["GTI"]
+    gti = outdata["gti"]
 
     try:
         _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)

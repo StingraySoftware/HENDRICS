@@ -311,10 +311,9 @@ def lcurve_from_events(f, safe_interval=0,
 
     lc.instr = instr
 
-    lc, filter_lc_gtis(lc, safe_interval=safe_interval,
-                       delete=False,
-                       min_length=min_length,
-                       return_borders=True)
+    lc = filter_lc_gtis(lc, safe_interval=safe_interval,
+                        delete=False,
+                        min_length=min_length)
 
     if len(lc.gti) == 0:
         warnings.warn(

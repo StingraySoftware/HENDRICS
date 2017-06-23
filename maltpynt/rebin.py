@@ -195,13 +195,13 @@ def rebin_file(filename, rebin):
 
     if ftype == 'lc':
         x = contents['time']
-        y = contents['lc']
+        y = contents['counts']
         ye = np.sqrt(y)
         logging.info('Applying a constant rebinning')
         x, y, ye = \
             const_rebin(x, y, rebin, ye, normalize=False)
         contents['time'] = x
-        contents['lc'] = y
+        contents['counts'] = y
         if 'rebin' in list(contents.keys()):
             contents['rebin'] *= rebin
         else:

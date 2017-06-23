@@ -12,7 +12,6 @@ from .io import load_data, get_file_type, load_pds
 from .io import is_string
 from .base import create_gti_mask, _assign_value_if_none
 from .base import detection_level
-from .fspec import rms_normalize_pds
 import logging
 import numpy as np
 from .io import MP_FILE_EXTENSION
@@ -215,9 +214,9 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None):
         lcdata = load_data(lcfile)
 
         time = lcdata['time']
-        lc = lcdata['lc']
-        gti = lcdata['GTI']
-        instr = lcdata['Instr']
+        lc = lcdata['counts']
+        gti = lcdata['gti']
+        instr = lcdata['instr']
         if fromstart:
             time -= lcdata['Tstart']
             gti -= lcdata['Tstart']

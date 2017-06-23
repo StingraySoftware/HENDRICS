@@ -56,12 +56,12 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None,
 
     ftype, data = get_file_type(fname)
 
-    instr = data['Instr']
+    instr = data['instr']
     if ftype == 'lc' and instr == 'PCA':
         logging.warning('RXTE/PCA data; normalizing lc per no. PCUs')
         # If RXTE, plot per PCU count rate
-        data['lc'] /= data['nPCUs']
-    mjdref = data['MJDref']
+        data['counts'] /= data['nPCUs']
+    mjdref = data['mjdref']
     # Map all entries of data to local variables
     locals().update(data)
 
@@ -74,7 +74,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None,
 
     outfile = _assign_value_if_none(
         outfile, mp_root(fname) + '_gti' + MP_FILE_EXTENSION)
-    save_data({'GTI': gtis, 'MJDref': mjdref}, outfile)
+    save_data({'gti': gtis, 'mjdref': mjdref}, outfile)
 
     return gtis
 
@@ -88,7 +88,7 @@ def apply_gti(fname, gti, outname=None,
     ftype, data = get_file_type(fname)
 
     try:
-        datagti = data['GTI']
+        datagti = data['gti']
         newgtis = cross_gtis([gti, datagti])
     except:  # pragma: no cover
         logging.warning('Data have no GTI extension')
@@ -96,14 +96,14 @@ def apply_gti(fname, gti, outname=None,
 
     newgtis = filter_gti_by_length(newgtis, minimum_length)
 
-    data['GTI'] = newgtis
+    data['gti'] = newgtis
     good = create_gti_mask(data['time'], newgtis)
     data['time'] = data['time'][good]
     if ftype == 'lc':
-        data['lc'] = data['lc'][good]
+        data['counts'] = data['counts'][good]
     elif ftype == 'events':
         data['PI'] = data['PI'][good]
-        if data['Instr'] == 'PCA':  # pragma: no cover
+        if data['instr'] == 'PCA':  # pragma: no cover
             data['PCU'] = data['PCU'][good]
 
     outname = _assign_value_if_none(
@@ -178,7 +178,7 @@ def main(args=None):
     for fname in files:
         if args.apply_gti is not None:
             data = load_data(args.apply_gti)
-            gtis = data['GTI']
+            gtis = data['gti']
         else:
             gtis = create_gti(fname, filter_expr,
                               safe_interval=args.safe_interval,

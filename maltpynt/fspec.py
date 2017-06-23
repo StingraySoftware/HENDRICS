@@ -5,9 +5,10 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 from .base import mp_root, cross_gtis, create_gti_mask
 from .base import common_name, _empty, _assign_value_if_none
-from .rebin import const_rebin
-from .io import sort_files, get_file_type, load_data, save_pds
+from .io import sort_files, get_file_type, load_data, save_pds, load_lcurve
 from .io import MP_FILE_EXTENSION
+from stingray.crossspectrum import AveragedCrossspectrum
+from stingray.powerspectrum import AveragedPowerspectrum
 import numpy as np
 import logging
 import warnings
@@ -17,475 +18,13 @@ import os
 
 def _wrap_fun_cpds(arglist):
     f1, f2, outname, kwargs = arglist
-    try:
-        return calc_cpds(f1, f2, outname=outname, **kwargs)
-    except Exception as e:
-        warnings.warn(str(e))
+    return calc_cpds(f1, f2, outname=outname, **kwargs)
 
 
 def _wrap_fun_pds(argdict):
     fname = argdict["fname"]
     argdict.pop("fname")
-    try:
-        return calc_pds(fname, **argdict)
-    except Exception as e:
-        warnings.warn(str(e))
-
-
-def fft(lc, bintime):
-    """A wrapper for the fft function. Just numpy for now.
-
-    Parameters
-    ----------
-    lc : array-like
-    bintime : float
-
-    Returns
-    -------
-    freq : array-like
-    ft : array-like
-        the Fourier transform.
-    """
-    nbin = len(lc)
-
-    ft = np.fft.fft(lc)
-    freqs = np.fft.fftfreq(nbin, bintime)
-
-    return freqs.astype(np.double), ft
-
-
-def leahy_pds(lc, bintime):
-    r"""Calculate the power density spectrum.
-
-    Calculates the Power Density Spectrum a la Leahy+1983, ApJ 266, 160,
-    given the lightcurve and its bin time.
-    Assumes no gaps are present! Beware!
-
-    Parameters
-    ----------
-    lc : array-like
-        the light curve
-    bintime : array-like
-        the bin time of the light curve
-
-    Returns
-    -------
-    freqs : array-like
-        Frequencies corresponding to PDS
-    pds : array-like
-        The power density spectrum
-    """
-    nph = sum(lc)
-
-    # Checks must be done before. At this point, only good light curves have to
-    # be provided
-    assert (nph > 0), 'Invalid interval. Light curve is empty'
-
-    freqs, ft = fft(lc, bintime)
-    # I'm pretty sure there is a faster way to do this.
-    pds = np.absolute(ft.conjugate() * ft) * 2. / nph
-
-    good = freqs >= 0
-    freqs = freqs[good]
-    pds = pds[good]
-
-    return freqs, pds
-
-
-def welch_pds(time, lc, bintime, fftlen, gti=None, return_all=False):
-    r"""Calculate the PDS, averaged over equal chunks of data.
-
-    Calculates the Power Density Spectrum \'a la Leahy (1983), given the
-    lightcurve and its bin time, over equal chunks of length fftlen, and
-    returns the average of all PDSs, or the sum PDS and the number of chunks
-
-    Parameters
-    ----------
-    time : array-like
-        Central times of light curve bins
-    lc : array-like
-        Light curve
-    bintime : float
-        Bin time of the light curve
-    fftlen : float
-        Length of each FFT
-    gti : [[g0_0, g0_1], [g1_0, g1_1], ...]
-         Good time intervals. Defaults to
-         [[time[0] - bintime/2, time[-1] + bintime/2]]
-
-    Returns
-    -------
-    return_str : object, optional
-        An Object containing all values below.
-    f : array-like
-        array of frequencies corresponding to PDS bins
-    pds : array-like
-        the values of the PDS
-    epds : array-like
-        the values of the PDS
-    npds : int
-        the number of summed PDSs (if normalize is False)
-    ctrate : float
-        the average count rate in the two lcs
-    dynpds : array-like, optional
-    dynepds : array-like, optional
-    dynctrate : array-like, optional
-    times : array-like, optional
-
-    Other parameters
-    ----------------
-    return_all : bool
-        if True, return everything, including the dynamical PDS
-    """
-    gti = _assign_value_if_none(
-        gti, [[time[0] - bintime / 2, time[-1] + bintime / 2]])
-
-    start_bins, stop_bins = \
-        decide_spectrum_lc_intervals(gti, fftlen, time)
-
-    results = _empty()
-    if return_all:
-        results.dynpds = []
-        results.edynpds = []
-        results.dynctrate = []
-        results.times = []
-
-    pds = 0
-    npds = len(start_bins)
-
-    mask = np.zeros(len(lc), dtype=np.bool)
-
-    for start_bin, stop_bin in zip(start_bins, stop_bins):
-        l = lc[start_bin:stop_bin]
-        t0 = time[start_bin]
-        try:
-            assert np.sum(l) != 0, \
-                'Interval starting at time %.7f is bad. Check GTIs' % t0
-
-            f, p = leahy_pds(l, bintime)
-        except Exception as e:
-            warnings.warn(str(e))
-            npds -= 1
-            continue
-
-        if return_all:
-            results.dynpds.append(p)
-            results.edynpds.append(p)
-            results.dynctrate.append(np.mean(l) / bintime)
-            results.times.append(time[start_bin])
-
-        pds += p
-        mask[start_bin:stop_bin] = True
-
-    pds /= npds
-    epds = pds / np.sqrt(npds)
-    ctrate = np.mean(lc[mask]) / bintime
-
-    results.f = f
-    results.pds = pds
-    results.epds = epds
-    results.npds = npds
-    results.ctrate = ctrate
-
-    return results
-
-
-def leahy_cpds(lc1, lc2, bintime):
-    """Calculate the cross power density spectrum.
-
-    Calculates the Cross Power Density Spectrum, normalized similarly to the
-    PDS in Leahy+1983, ApJ 266, 160., given the lightcurve and its bin time.
-    Assumes no gaps are present! Beware!
-
-    Parameters
-    ----------
-    lc1 : array-like
-        The first light curve
-    lc2 : array-like
-        The light curve
-    bintime : array-like
-        The bin time of the light curve
-
-    Returns
-    -------
-    freqs : array-like
-        Frequencies corresponding to PDS
-    cpds : array-like
-        The cross power density spectrum
-    cpdse : array-like
-        The error on the cross power density spectrum
-    pds1 : array-like
-        The power density spectrum of the first light curve
-    pds2 : array-like
-        The power density spectrum of the second light curve
-    """
-    assert len(lc1) == len(lc2), 'Light curves MUST have the same length!'
-    nph1 = sum(lc1)
-    nph2 = sum(lc2)
-    # Checks must be done before. At this point, only good light curves have to
-    # be provided
-    assert (nph1 > 0 and nph2 > 0), ('Invalid interval. At least one light '
-                                     'curve is empty')
-
-    freqs, ft1 = fft(lc1, bintime)
-    freqs, ft2 = fft(lc2, bintime)
-
-    pds1 = np.absolute(ft1.conjugate() * ft1) * 2. / nph1
-    pds2 = np.absolute(ft2.conjugate() * ft2) * 2. / nph2
-    pds1e = np.copy(pds1)
-    pds2e = np.copy(pds2)
-
-    # The "effective" count rate is the geometrical mean of the count rates
-    # of the two light curves
-    nph = np.sqrt(nph1 * nph2)
-    # I'm pretty sure there is a faster way to do this.
-    if nph != 0:
-        cpds = ft1.conjugate() * ft2 * 2. / nph
-    else:
-        cpds = np.zeros(len(freqs))
-
-    # Justification in timing paper! (Bachetti et al. arXiv:1409.3248)
-    # This only works for cospectrum. For the cross spectrum, I *think*
-    # it's irrelevant
-    cpdse = np.sqrt(pds1e * pds2e) / np.sqrt(2.)
-
-    good = freqs >= 0
-    freqs = freqs[good]
-    cpds = cpds[good]
-    cpdse = cpdse[good]
-
-    return freqs, cpds, cpdse, pds1, pds2
-
-
-def welch_cpds(time, lc1, lc2, bintime, fftlen, gti=None, return_all=False):
-    """Calculate the CPDS, averaged over equal chunks of data.
-
-    Calculates the Cross Power Density Spectrum normalized like PDS, given the
-    lightcurve and its bin time, over equal chunks of length fftlen, and
-    returns the average of all PDSs, or the sum PDS and the number of chunks
-
-    Parameters
-    ----------
-    time : array-like
-        Central times of light curve bins
-    lc1 : array-like
-        Light curve 1
-    lc2 : array-like
-        Light curve 2
-    bintime : float
-        Bin time of the light curve
-    fftlen : float
-        Length of each FFT
-    gti : [[g0_0, g0_1], [g1_0, g1_1], ...]
-         Good time intervals. Defaults to
-         [[time[0] - bintime/2, time[-1] + bintime/2]]
-
-    Returns
-    -------
-    return_str : object
-        An Object containing all return values below
-    f : array-like
-        array of frequencies corresponding to PDS bins
-    cpds : array-like
-        the values of the PDS
-    ecpds : array-like
-        the values of the PDS
-    ncpds : int
-        the number of summed PDSs (if normalize is False)
-    ctrate : float
-        the average count rate in the two lcs
-    dyncpds : array-like, optional
-    dynecpds : array-like, optional
-    dynctrate : array-like, optional
-    times : array-like, optional
-
-    Other parameters
-    ----------------
-    return_all : bool
-        if True, return everything, including the dynamical PDS
-    """
-    gti = _assign_value_if_none(
-        gti, [[time[0] - bintime / 2, time[-1] + bintime / 2]])
-
-    start_bins, stop_bins = \
-        decide_spectrum_lc_intervals(gti, fftlen, time)
-
-    cpds = 0
-    ecpds = 0
-    npds = len(start_bins)
-    mask = np.zeros(len(lc1), dtype=np.bool)
-
-    results = _empty()
-    if return_all:
-        results.dyncpds = []
-        results.edyncpds = []
-        results.dynctrate = []
-        results.times = []
-
-    cpds = 0
-    ecpds = 0
-    npds = len(start_bins)
-
-    for start_bin, stop_bin in zip(start_bins, stop_bins):
-        l1 = lc1[start_bin:stop_bin]
-        l2 = lc2[start_bin:stop_bin]
-
-        t0 = time[start_bin]
-        try:
-            assert np.sum(l1) != 0 and np.sum(l2) != 0, \
-                'Interval starting at time %.7f is bad. Check GTIs' % t0
-
-            f, p, pe, p1, p2 = leahy_cpds(l1, l2, bintime)
-        except Exception as e:
-            warnings.warn(str(e))
-            npds -= 1
-            continue
-
-        cpds += p
-        ecpds += pe ** 2
-        if return_all:
-            results.dyncpds.append(p)
-            results.edyncpds.append(pe)
-            results.dynctrate.append(
-                np.sqrt(np.mean(l1)*np.mean(l2)) / bintime)
-            results.times.append(time[start_bin])
-
-        mask[start_bin:stop_bin] = True
-
-    cpds /= npds
-    ecpds = np.sqrt(ecpds) / npds
-
-    ctrate = np.sqrt(np.mean(lc1[mask])*np.mean(lc2[mask])) / bintime
-
-    results.f = f
-    results.cpds = cpds
-    results.ecpds = ecpds
-    results.ncpds = npds
-    results.ctrate = ctrate
-
-    return results
-
-
-def rms_normalize_pds(pds, pds_err, source_ctrate, back_ctrate=None):
-    """Normalize a Leahy PDS with RMS normalization ([1]_, [2]_).
-
-    Parameters
-    ----------
-    pds : array-like
-        The Leahy-normalized PDS
-    pds_err : array-like
-        The uncertainties on the PDS values
-    source_ctrate : float
-        The source count rate
-    back_ctrate: float, optional
-        The background count rate
-
-    Returns
-    -------
-    pds : array-like
-        the RMS-normalized PDS
-    pds_err : array-like
-        the uncertainties on the PDS values
-
-    References
-    ----------
-    .. [1] Belloni & Hasinger 1990, A&A, 230, 103
-    .. [2] Miyamoto+1991, ApJ, 383, 784
-
-    """
-    back_ctrate = _assign_value_if_none(back_ctrate, 0)
-
-    factor = (source_ctrate + back_ctrate) / source_ctrate ** 2
-    return pds * factor, pds_err * factor
-
-
-def decide_spectrum_intervals(gtis, fftlen):
-    """Decide the start times of PDSs.
-
-    Start each FFT/PDS/cospectrum from the start of a GTI, and stop before the
-    next gap.
-    Only use for events! This will give problems with binned light curves.
-
-    Parameters
-    ----------
-    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
-    fftlen : float
-        Length of the chunks
-
-    Returns
-    -------
-    spectrum_start_times : array-like
-        List of starting times to use in the spectral calculations.
-
-    """
-    spectrum_start_times = np.array([], dtype=np.longdouble)
-    for g in gtis:
-        if g[1] - g[0] < fftlen:
-            logging.info("GTI at %g--%g is Too short. Skipping." %
-                         (g[0], g[1]))
-            continue
-
-        newtimes = np.arange(g[0], g[1] - fftlen, np.longdouble(fftlen),
-                             dtype=np.longdouble)
-        spectrum_start_times = \
-            np.append(spectrum_start_times,
-                      newtimes)
-
-    assert len(spectrum_start_times) > 0, \
-        "No GTIs are equal to or longer than fftlen. " + \
-        "Choose shorter fftlen (MPfspec -f <fftlen> <options> <filename>)"
-    return spectrum_start_times
-
-
-def decide_spectrum_lc_intervals(gtis, fftlen, time):
-    """Similar to decide_spectrum_intervals, but dedicated to light curves.
-
-    In this case, it is necessary to specify the time array containing the
-    times of the light curve bins.
-    Returns start and stop bins of the intervals to use for the PDS
-
-    Parameters
-    ----------
-    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
-    fftlen : float
-        Length of the chunks
-    time : array-like
-        Times of light curve bins
-    """
-    bintime = time[1] - time[0]
-    nbin = np.long(fftlen / bintime)
-    if time[-1] < np.min(gtis) or time[0] > np.max(gtis):
-        raise ValueError("Invalid time interval for the given GTIs")
-
-    spectrum_start_bins = np.array([], dtype=np.long)
-    for g in gtis:
-        if g[1] - g[0] < fftlen:
-            logging.info("GTI at %g--%g is Too short. Skipping." %
-                         (g[0], g[1]))
-            continue
-        startbin = np.argmin(np.abs(time - g[0]))
-        stopbin = np.argmin(np.abs(time - g[1]))
-
-        if time[stopbin] - time[startbin] + bintime < fftlen:
-            logging.info("T. int. at %g--%g is Too short. Skipping." %
-                         (time[startbin], time[stopbin]))
-            continue
-
-        if stopbin == nbin - 1:
-            # Corner case
-            newbins = [startbin]
-        else:
-            newbins = np.arange(startbin, stopbin - nbin + 1, nbin,
-                                dtype=np.long)
-        spectrum_start_bins = \
-            np.append(spectrum_start_bins,
-                      newbins)
-
-    if len(spectrum_start_bins) == 0:
-        raise ValueError(
-            "No GTIs or data intervals are equal to or longer than fftlen. " + \
-            "Choose shorter fftlen (MPfspec -f <fftlen> <options> <filename>)")
-    return spectrum_start_bins, spectrum_start_bins + nbin
+    return calc_pds(fname, **argdict)
 
 
 def calc_pds(lcfile, fftlen,
@@ -531,74 +70,27 @@ def calc_pds(lcfile, fftlen,
         return
 
     logging.info("Loading file %s..." % lcfile)
-    lcdata = load_data(lcfile)
-    time = lcdata['time']
-    mjdref = lcdata['MJDref']
-    try:
-        lc = lcdata['lccorr']
-    except:
-        lc = lcdata['lc']
-    dt = lcdata['dt']
-    gti = lcdata['GTI']
-    instr = lcdata['Instr']
-    tctrate = lcdata['total_ctrate']
+    lc = load_lcurve(lcfile)
+    instr = lc.instr
 
-    if bintime <= dt:
-        bintime = dt
-    else:
-        lcrebin = np.rint(bintime / dt)
-        bintime = lcrebin * dt
-        logging.info("Rebinning lc by a factor %d" % lcrebin)
-        time, lc, dum = \
-            const_rebin(time, lc, lcrebin, normalize=False)
+    if bintime > lc.dt:
+        lcrebin = np.rint(bintime / lc.dt)
+        logging.info("Rebinning lcs by a factor %d" % lcrebin)
+        lc = lc.rebin(lcrebin)
+        lc.instr = instr
 
-    results = welch_pds(time, lc, bintime, fftlen, gti, return_all=True)
-    freq = results.f
-    pds = results.pds
-    epds = results.epds
-    npds = results.npds
-    ctrate = results.ctrate
+    pds = AveragedPowerspectrum(lc, segment_size=fftlen,
+                                norm=normalization.lower())
 
-    freq, pds, epds = const_rebin(freq[1:], pds[1:], pdsrebin,
-                                  epds[1:])
+    if pdsrebin is not None and pdsrebin != 1:
+        pds = pds.rebin(pdsrebin)
 
-    if normalization == 'rms':
-        logging.info('Applying %s normalization' % normalization)
-
-        pds, epds = \
-            rms_normalize_pds(pds, epds,
-                              source_ctrate=ctrate,
-                              back_ctrate=back_ctrate)
-
-        for ic, pd in enumerate(results.dynpds):
-            ep = results.edynpds[ic].copy()
-            ct = results.dynctrate[ic].copy()
-
-            pd, ep = rms_normalize_pds(pd, ep, source_ctrate=ct,
-                                       back_ctrate=back_ctrate)
-            results.edynpds[ic][:] = ep
-            results.dynpds[ic][:] = pd
-
-    outdata = {'time': time[0], 'pds': pds, 'epds': epds, 'npds': npds,
-               'fftlen': fftlen, 'Instr': instr, 'freq': freq,
-               'rebin': pdsrebin, 'norm': normalization, 'ctrate': ctrate,
-               'total_ctrate': tctrate,
-               'back_ctrate': back_ctrate, 'MJDref': mjdref}
-    if 'Emin' in lcdata.keys():
-        outdata['Emin'] = lcdata['Emin']
-        outdata['Emax'] = lcdata['Emax']
-    if 'PImin' in lcdata.keys():
-        outdata['PImin'] = lcdata['PImin']
-        outdata['PImax'] = lcdata['PImax']
-
-    logging.debug(repr(results.dynpds))
-
-    if save_dyn:
-        outdata["dynpds"] = np.array(results.dynpds)[:, 1:]
-        outdata["edynpds"] = np.array(results.edynpds)[:, 1:]
-        outdata["dynctrate"] = np.array(results.dynctrate)
-
-        outdata["dyntimes"] = np.array(results.times)
+    outdata = {'time': pds.gti[0][0], 'pds': pds.power,
+               'epds': pds.power_err, 'npds': pds.m,
+               'fftlen': fftlen, 'Instr': instr,
+               'freq': pds.freq, 'rebin': pdsrebin, 'norm': normalization,
+               'ctrate': lc.meanrate, 'total_ctrate': lc.meanrate,
+               'back_ctrate': back_ctrate, 'mjdref': lc.mjdref}
 
     logging.info('Saving PDS to %s' % outname)
     save_pds(outdata, outname)
@@ -646,116 +138,40 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
         return
 
     logging.info("Loading file %s..." % lcfile1)
-    lcdata1 = load_data(lcfile1)
+    lc1 = load_lcurve(lcfile1)
     logging.info("Loading file %s..." % lcfile2)
-    lcdata2 = load_data(lcfile2)
+    lc2 = load_lcurve(lcfile2)
+    instr1 = lc1.instr
+    instr2 = lc2.instr
 
-    time1 = lcdata1['time']
-    try:
-        lc1 = lcdata1['lccorr']
-    except:
-        lc1 = lcdata1['lc']
-    dt1 = lcdata1['dt']
-    gti1 = lcdata1['GTI']
-    instr1 = lcdata1['Instr']
-    tctrate1 = lcdata1['total_ctrate']
-    mjdref = lcdata1['MJDref']
+    assert lc1.dt == lc2.dt, 'Light curves are sampled differently'
+    dt = lc1.dt
 
-    time2 = lcdata2['time']
-    try:
-        lc2 = lcdata2['lccorr']
-    except:
-        lc2 = lcdata2['lc']
-    dt2 = lcdata2['dt']
-    gti2 = lcdata2['GTI']
-    instr2 = lcdata2['Instr']
-    tctrate2 = lcdata2['total_ctrate']
-
-    tctrate = np.sqrt(tctrate1 * tctrate2)
-
-    assert instr1 != instr2, ('Did you check the ordering of files? '
-                              'These are both ' + instr1)
-
-    assert dt1 == dt2, 'Light curves are sampled differently'
-    dt = dt1
-
-    if bintime <= dt:
-        bintime = dt
-    else:
+    if bintime > dt:
         lcrebin = np.rint(bintime / dt)
-        dt = bintime
         logging.info("Rebinning lcs by a factor %d" % lcrebin)
-        time1, lc1, dum = \
-            const_rebin(time1, lc1, lcrebin, normalize=False)
-        time2, lc2, dum = \
-            const_rebin(time2, lc2, lcrebin, normalize=False)
+        lc1 = lc1.rebin(lcrebin)
+        lc1.instr = instr1
+        lc2 = lc2.rebin(lcrebin)
+        lc2.instr = instr2
 
-    gti = cross_gtis([gti1, gti2])
+    if lc1.mjdref != lc2.mjdref:
+        lc2 = lc2.change_mjdref(lc1.mjdref)
 
-    mask1 = create_gti_mask(time1, gti)
-    mask2 = create_gti_mask(time2, gti)
-    time1 = time1[mask1]
-    time2 = time2[mask2]
+    ctrate = np.sqrt(lc1.meanrate * lc2.meanrate)
 
-    assert np.all(time1 == time2), "Something's not right in GTI filtering"
-    time = time1
-    del time2
+    cpds = AveragedCrossspectrum(lc1, lc2, segment_size=fftlen,
+                                 norm=normalization.lower())
 
-    lc1 = lc1[mask1]
-    lc2 = lc2[mask2]
+    if pdsrebin is not None and pdsrebin != 1:
+        cpds = cpds.rebin(pdsrebin)
 
-    results = welch_cpds(time, lc1, lc2, bintime, fftlen, gti,
-                         return_all=True)
-    freq = results.f
-    cpds = results.cpds
-    ecpds = results.ecpds
-    ncpds = results.ncpds
-    ctrate = results.ctrate
-
-    freq, cpds, ecpds = const_rebin(freq[1:], cpds[1:], pdsrebin,
-                                    ecpds[1:])
-
-    if normalization == 'rms':
-        logging.info('Applying %s normalization' % normalization)
-        cpds, ecpds = \
-            rms_normalize_pds(cpds, ecpds,
-                              source_ctrate=ctrate,
-                              back_ctrate=back_ctrate)
-        for ic, cp in enumerate(results.dyncpds):
-            ec = results.edyncpds[ic].copy()
-            ct = results.dynctrate[ic].copy()
-
-            cp, ec = rms_normalize_pds(cp, ec, source_ctrate=ct,
-                                       back_ctrate=back_ctrate)
-            results.edyncpds[ic][:] = ec
-            results.dyncpds[ic][:] = cp
-
-    outdata = {'time': gti[0][0], 'cpds': cpds, 'ecpds': ecpds, 'ncpds': ncpds,
+    outdata = {'time': cpds.gti[0][0], 'cpds': cpds.power,
+               'ecpds': cpds.power_err, 'ncpds': cpds.m,
                'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
-               'freq': freq, 'rebin': pdsrebin, 'norm': normalization,
-               'ctrate': ctrate, 'total_ctrate': tctrate,
-               'back_ctrate': back_ctrate, 'MJDref': mjdref}
-
-    if 'Emin' in lcdata1.keys():
-        outdata['Emin1'] = lcdata1['Emin']
-        outdata['Emax1'] = lcdata1['Emax']
-    if 'Emin' in lcdata2.keys():
-        outdata['Emin2'] = lcdata2['Emin']
-        outdata['Emax2'] = lcdata2['Emax']
-
-    if 'PImin' in lcdata1.keys():
-        outdata['PImin1'] = lcdata1['PImin']
-        outdata['PImax1'] = lcdata1['PImax']
-    if 'PImin' in lcdata2.keys():
-        outdata['PImin2'] = lcdata2['PImin']
-        outdata['PImax2'] = lcdata2['PImax']
-
-    logging.debug(repr(results.dyncpds))
-    if save_dyn:
-        outdata["dyncpds"] = np.array(results.dyncpds)[:, 1:]
-        outdata["edyncpds"] = np.array(results.edyncpds)[:, 1:]
-        outdata["dynctrate"] = np.array(results.dynctrate)
-        outdata["dyntimes"] = np.array(results.times)
+               'freq': cpds.freq, 'rebin': pdsrebin, 'norm': normalization,
+               'ctrate': ctrate, 'total_ctrate': ctrate,
+               'back_ctrate': back_ctrate, 'mjdref': lc1.mjdref}
 
     logging.info('Saving CPDS to %s' % outname)
     save_pds(outdata, outname)

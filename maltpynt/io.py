@@ -182,7 +182,7 @@ def get_file_type(fname, specify_reb=True):
 
     keys = list(contents.keys())
 
-    for i in 'lccorr,lc,cpds,pds,lag'.split(','):
+    for i in 'lccorr,cpds,pds,lag'.split(','):
         if i in keys and 'fhi' in keys and specify_reb:
             ftype = 'reb' + i
             break
@@ -190,7 +190,9 @@ def get_file_type(fname, specify_reb=True):
             ftype = i
             break
     else:  # If none of the above
-        if 'time' in keys:
+        if 'counts' in keys:
+            ftype='lc'
+        elif 'time' in keys:
             ftype = 'events'
         elif 'gti' in keys:
             ftype = 'gti'
@@ -820,7 +822,7 @@ def main(args=None):
             continue
         ftype, contents = get_file_type(fname)
         print('This file contains:', end='\n\n')
-        mjdref = Time(contents['MJDref'], format='mjd')
+        mjdref = Time(contents['mjdref'], format='mjd')
 
         for k in sorted(contents.keys()):
             if k in ['Tstart', 'Tstop']:
