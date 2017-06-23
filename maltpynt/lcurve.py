@@ -5,67 +5,17 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
+from stingray.lightcurve import Lightcurve
+from stingray.utils import assign_value_if_none
 from .base import mp_root, create_gti_mask, cross_gtis, mkdir_p
 from .base import contiguous_regions, calc_countrate, gti_len
-from .base import _assign_value_if_none, _look_for_array_in_array
-from .io import load_events, load_data, save_data
+from .base import _look_for_array_in_array
+from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
 from .io import MP_FILE_EXTENSION, high_precision_keyword_read
 import os
 import logging
 import warnings
-
-
-def lcurve(event_list,
-           bin_time,
-           start_time=None,
-           stop_time=None,
-           centertime=True):
-    """From a list of event times, estract a lightcurve.
-
-    Parameters
-    ----------
-    event_list : array-like
-        Times of arrival of events
-    bin_time : float
-        Binning time of the light curve
-
-    Returns
-    -------
-    time : array-like
-        The time bins of the light curve
-    lc : array-like
-        The light curve
-
-    Other Parameters
-    ----------------
-    start_time : float
-        Initial time of the light curve
-    stop_time : float
-        Stop time of the light curve
-    centertime: bool
-        If False, time is the start of the bin. Otherwise, the center
-    """
-    start_time = _assign_value_if_none(start_time, np.floor(event_list[0]))
-    stop_time = _assign_value_if_none(stop_time, np.floor(event_list[-1]))
-
-    logging.debug("lcurve: Time limits: %g -- %g" %
-                  (start_time, stop_time))
-
-    new_event_list = event_list[event_list >= start_time]
-    new_event_list = new_event_list[new_event_list <= stop_time]
-    # To compute the histogram, the times array must specify the bin edges.
-    # therefore, if nbin is the length of the lightcurve, times will have
-    # nbin + 1 elements
-    new_event_list = ((new_event_list - start_time) / bin_time).astype(int)
-    times = np.arange(start_time, stop_time, bin_time)
-    lc = np.bincount(new_event_list, minlength=len(times))
-    logging.debug("lcurve: Length of the lightcurve: %g" % len(times))
-    logging.debug("Times, kind: %s, %s" % (repr(times), type(times[0])))
-    logging.debug("Lc, kind: %s, %s" % (repr(lc), type(lc[0])))
-    logging.debug("bin_time, kind: %s, %s" % (repr(bin_time), type(bin_time)))
-    if centertime:
-        times = times + bin_time / 2.
-    return times, lc.astype(np.float)
+import copy
 
 
 def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
@@ -88,67 +38,35 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
 
     for lfc in lcfilelist:
         logging.info("Loading file %s..." % lfc)
-        lcdata = load_data(lfc)
+        lcdata = load_lcurve(lfc)
         logging.info("Done.")
         lcdatas.append(lcdata)
         del lcdata
 
     # --------------- Check consistency of data --------------
-    lcdts = [lcdata['dt'] for lcdata in lcdatas]
+    lcdts = [lcdata.dt for lcdata in lcdatas]
     # Find unique elements. If multiple bin times are used, throw an exception
     lcdts = list(set(lcdts))
     assert len(lcdts) == 1, 'Light curves must have same dt for scrunching'
 
-    instrs = [lcdata['Instr'] for lcdata in lcdatas]
+    instrs = [lcdata.instr for lcdata in lcdatas if hasattr(lcdata, 'instr')]
 
     # Find unique elements. A lightcurve will be produced for each instrument
     instrs = list(set(instrs))
+    if instrs == []:
+        instrs = ['unknown']
+
     outlcs = {}
-    times = {}
-    lcs = {}
-    gtis = {}
     for instr in instrs:
-        outlcs[instr] = {'dt': lcdts[0], 'Tstart': 1e32, 'Tstop': -11,
-                         'MJDref': lcdatas[0]['MJDref'], 'source_ctrate': 0,
-                         'total_ctrate': 0}
-        times[instr] = []
-        lcs[instr] = []
-        gtis[instr] = []
+        outlcs[instr] = None
     # -------------------------------------------------------
 
     for lcdata in lcdatas:
-        instr = lcdata['Instr']
-
-        tstart = lcdata['Tstart']
-        tstop = lcdata['Tstop']
-        if tstart < outlcs[instr]['Tstart']:
-            outlcs[instr]['Tstart'] = tstart
-        if tstop > outlcs[instr]['Tstop']:
-            outlcs[instr]['Tstop'] = tstop
-
-        time = lcdata['time']
-        lc = lcdata['lc']
-        gti = lcdata['GTI']
-
-        times[instr].extend(time)
-        lcs[instr].extend(lc)
-        gtis[instr].extend(gti)
-
-        goodlen = gti_len(gti)
-        outlcs[instr]['source_ctrate'] += lcdata['source_ctrate'] * goodlen
-        outlcs[instr]['total_ctrate'] += lcdata['total_ctrate'] * goodlen
-
-    for instr in instrs:
-        gti = np.array(gtis[instr])
-        outlcs[instr]['time'] = np.array(times[instr])
-        outlcs[instr]['lc'] = np.array(lcs[instr])
-        outlcs[instr]['GTI'] = gti
-        outlcs[instr]['Instr'] = instr
-
-        goodlen = gti_len(gti)
-
-        outlcs[instr]['source_ctrate'] /= goodlen
-        outlcs[instr]['total_ctrate'] /= goodlen
+        instr = assign_value_if_none(lcdata.instr, 'unknown')
+        if outlcs[instr] is None:
+            outlcs[instr] = lcdata
+        else:
+            outlcs[instr] = outlcs[instr].join(lcdata)
 
     if outfile is not None:
         for instr in instrs:
@@ -159,7 +77,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
             logging.info('Saving joined light curve to %s' % outfile)
 
             dname, fname = os.path.split(outfile)
-            save_data(outlcs[instr], os.path.join(dname, tag + fname))
+            save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
 
     return outlcs
 
@@ -203,63 +121,36 @@ def scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
         lcdata = join_lightcurves(lcfilelist, outfile=None)
 
     instrs = list(lcdata.keys())
-    gti_lists = [lcdata[inst]['GTI'] for inst in instrs]
+    gti_lists = [lcdata[inst].gti for inst in instrs]
     gti = cross_gtis(gti_lists)
     # Determine limits
-    time0 = lcdata[instrs[0]]['time']
-    mask = create_gti_mask(time0, gti)
 
-    time0 = time0[mask]
-    lc0 = lcdata[instrs[0]]['lc']
-    lc0 = lc0[mask]
+    lc0 = lcdata[instrs[0]]
 
     for inst in instrs[1:]:
-        time1 = lcdata[inst]['time']
-        mask = create_gti_mask(time1, gti)
-        time1 = time1[mask]
-        assert np.all(time0 == time1), \
-            'Something is not right with gti filtering'
-        lc = lcdata[inst]['lc']
-        lc0 += lc[mask]
+        lc0 = lc0 + lcdata[inst]
 
-    out = lcdata[instrs[0]].copy()
-    out['lc'] = lc0
-    out['time'] = time0
-    out['dt'] = lcdata[instrs[0]]['dt']
-    out['GTI'] = gti
-
-    out['Instr'] = ",".join(instrs)
-
-    out['source_ctrate'] = np.sum([lcdata[i]['source_ctrate'] for i in instrs])
-    out['total_ctrate'] = np.sum([lcdata[i]['total_ctrate'] for i in instrs])
+    lc0.instr = ",".join(instrs)
 
     logging.info('Saving scrunched light curve to %s' % outfile)
-    save_data(out, outfile)
+    save_lcurve(lc0, outfile)
 
-    return time0, lc0, gti
+    return lc0
 
 
-def filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
+def filter_lc_gtis(lc, safe_interval=None, delete=False,
                    min_length=0, return_borders=False):
     """Filter a light curve for GTIs.
 
     Parameters
     ----------
-    time : array-like
-        The time bins of the light curve
-    lc : array-like
-        The light curve
-    gti : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
-        Good Time Intervals
+    lc : :class:`Lightcurve` object
+        The input light curve
 
     Returns
     -------
-    time : array-like
-        The time bins of the light curve
-    lc : array-like
+    newlc : :class:`Lightcurve` object
         The output light curve
-    newgtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
-        The output Good Time Intervals
     borders : [[i0_0, i0_1], [i1_0, i1_1], ...], optional
         The indexes of the light curve corresponding to the borders of the
         GTIs. Returned if return_borders is set to True
@@ -279,24 +170,23 @@ def filter_lc_gtis(time, lc, gti, safe_interval=None, delete=False,
         If True, return also the indexes of the light curve corresponding to
         the borders of the GTIs
     """
-    mask, newgtis = create_gti_mask(time, gti, return_new_gtis=True,
+    mask, newgtis = create_gti_mask(lc.time, lc.gti,
+                                    return_new_gtis=True,
                                     safe_interval=safe_interval,
                                     min_length=min_length)
 
     nomask = np.logical_not(mask)
 
-    if delete:
-        time = time[mask]
-        lc = lc[mask]
-    else:
-        lc[nomask] = 0
+    newlc = copy.copy(lc)
+    newlc.counts[nomask] = 0
+    newlc.gti = newgtis
 
     if return_borders:
-        mask = create_gti_mask(time, newgtis)
+        mask = create_gti_mask(lc.time, newgtis)
         borders = contiguous_regions(mask)
-        return time, lc, newgtis, borders
+        return newlc, borders
     else:
-        return time, lc, newgtis
+        return newlc
 
 
 def lcurve_from_events(f, safe_interval=0,
@@ -359,41 +249,22 @@ def lcurve_from_events(f, safe_interval=0,
     bintime = np.longdouble(bintime)
 
     tag = ''
-    out = {}
+
     gtis = evdata.gti
     tstart = np.min(gtis)
     tstop = np.max(gtis)
     events = evdata.time
-    instr = [instr for instr in ['fpma', 'fpmb',
-                                 'epn', 'emos1',
-                                 'emos2', 'pcu']
-             if instr in f.lower()]
-    if len(instr) > 0:
-        instr = instr[0]
+    if hasattr(evdata, 'instr') and evdata.instr is not None:
+        instr = evdata.instr
     else:
         instr = "unknown"
-    mjdref = evdata.mjdref
 
     if ignore_gtis:
         gtis = np.array([[tstart, tstop]])
+        evdata.gtis = gtis
 
-    out['MJDref'] = mjdref
-    # make tstart and tstop multiples of bin times since MJDref
-    tstart = np.ceil(tstart / bintime, dtype=np.longdouble) * bintime
-    tstop = np.floor(tstop / bintime, dtype=np.longdouble) * bintime
-
-    # First of all, calculate total count rate (no filtering applied)
-    tot_time, tot_lc = lcurve(events, bintime, start_time=tstart,
-                              stop_time=tstop)
-
-    tot_time, tot_lc, newgtis, tot_borders = \
-        filter_lc_gtis(tot_time, tot_lc, gtis,
-                       safe_interval=safe_interval,
-                       delete=False,
-                       min_length=min_length,
-                       return_borders=True)
-
-    out['total_ctrate'] = calc_countrate(tot_time, tot_lc, bintime=bintime)
+    total_lc = evdata.to_lc(100)
+    total_lc.instr = instr
 
     # Then, apply filters
     if pi_interval is not None and np.all(np.array(pi_interval) > 0):
@@ -402,8 +273,6 @@ def lcurve_from_events(f, safe_interval=0,
                               pis <= pi_interval[1])
         events = events[good]
         tag = '_PI%g-%g' % (pi_interval[0], pi_interval[1])
-        out['PImin'] = e_interval[0]
-        out['PImax'] = e_interval[0]
     elif e_interval is not None and np.all(np.array(e_interval) > 0):
         if not hasattr(evdata, 'energy') or evdata.energy is None:
             raise \
@@ -414,16 +283,19 @@ def lcurve_from_events(f, safe_interval=0,
                               es <= e_interval[1])
         events = events[good]
         tag = '_E%g-%g' % (e_interval[0], e_interval[1])
-        out['Emin'] = e_interval[0]
-        out['Emax'] = e_interval[1]
+    else:
+        pass
+
+    if tag != "":
+        save_lcurve(total_lc, mp_root(f) + '_std_lc' + MP_FILE_EXTENSION)
 
     # Assign default value if None
-    outfile = _assign_value_if_none(outfile,  mp_root(f) + tag + '_lc')
+    outfile = assign_value_if_none(outfile,  mp_root(f) + tag + '_lc')
 
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
-    outdir = _assign_value_if_none(
+    outdir = assign_value_if_none(
         outdir, os.path.dirname(os.path.abspath(f)))
 
     _, outfile = os.path.split(outfile)
@@ -434,69 +306,38 @@ def lcurve_from_events(f, safe_interval=0,
         warnings.warn('File exists, and noclobber option used. Skipping')
         return [outfile]
 
-    time, lc = lcurve(events, bintime, start_time=tstart,
-                      stop_time=tstop)
+    lc = Lightcurve.make_lightcurve(events, bintime, tstart=tstart,
+                                    tseg=tstop-tstart, mjdref=evdata.mjdref)
 
-    time, lc, newgtis, borders = \
-        filter_lc_gtis(time, lc, gtis,
-                       safe_interval=safe_interval,
+    lc.instr = instr
+
+    lc, filter_lc_gtis(lc, safe_interval=safe_interval,
                        delete=False,
                        min_length=min_length,
                        return_borders=True)
 
-    if len(newgtis) == 0:
+    if len(lc.gti) == 0:
         warnings.warn(
             "No GTIs above min_length ({0}s) found.".format(min_length))
         return
 
-    assert np.all(borders == tot_borders), \
-        'Borders do not coincide: {0} {1}'.format(borders, tot_borders)
-
-    out['source_ctrate'] = calc_countrate(time, lc, gtis=newgtis,
-                                          bintime=bintime)
-
     if gti_split:
+        lcs = lc.split_by_gti()
         outfiles = []
-        logging.debug(borders)
-        for ib, b in enumerate(borders):
+
+        for ib, l0 in enumerate(lcs):
             local_tag = tag + '_gti%d' % ib
             outf = mp_root(outfile) + local_tag + '_lc' + MP_FILE_EXTENSION
             if noclobber and os.path.exists(outf):
                 warnings.warn(
                     'File exists, and noclobber option used. Skipping')
                 outfiles.append(outf)
-
-            logging.debug(b)
-            local_out = out.copy()
-            local_out['lc'] = lc[b[0]:b[1]]
-            local_out['time'] = time[b[0]:b[1]]
-            local_out['dt'] = bintime
-            local_gti = np.array([[time[b[0]], time[b[1]-1]]])
-            local_out['GTI'] = local_gti
-            local_out['Tstart'] = time[b[0]]
-            local_out['Tstop'] = time[b[1]-1]
-            local_out['Instr'] = instr
-            local_out['source_ctrate'] = calc_countrate(time[b[0]:b[1]],
-                                                        lc[b[0]:b[1]],
-                                                        bintime=bintime)
-            local_out['total_ctrate'] = calc_countrate(tot_time[b[0]:b[1]],
-                                                       tot_lc[b[0]:b[1]],
-                                                       bintime=bintime)
-
-            logging.info('Saving light curve to %s' % outf)
-            save_data(local_out, outf)
+            l0.instr = lc.instr
+            save_lcurve(l0, outf)
             outfiles.append(outf)
     else:
-        out['lc'] = lc
-        out['time'] = time
-        out['dt'] = bintime
-        out['GTI'] = newgtis
-        out['Tstart'] = tstart
-        out['Tstop'] = tstop
-        out['Instr'] = instr
-
         logging.info('Saving light curve to %s' % outfile)
-        save_data(out, outfile)
+        save_lcurve(lc, outfile)
         outfiles = [outfile]
 
     # For consistency in return value
@@ -553,9 +394,9 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     import numpy as np
     from .base import create_gti_from_condition
 
-    outfile = _assign_value_if_none(outfile, mp_root(fits_file) + '_lc')
+    outfile = assign_value_if_none(outfile, mp_root(fits_file) + '_lc')
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
-    outdir = _assign_value_if_none(
+    outdir = assign_value_if_none(
         outdir, os.path.dirname(os.path.abspath(fits_file)))
 
     _, outfile = os.path.split(outfile)
@@ -614,7 +455,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
         tstart = Time(2440000.5 + tstart, scale='tdb', format='jd')
         tstop = Time(2440000.5 + tstop, scale='tdb', format='jd')
         # if None, use NuSTAR defaulf MJDREF
-        mjdref = _assign_value_if_none(
+        mjdref = assign_value_if_none(
             mjdref, Time(np.longdouble('55197.00076601852'), scale='tdb',
                          format='mjd'))
 
@@ -642,7 +483,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
         dt = time[1] - time[0]
 
     # ----------------------------------------------------------------
-    ratecolumn = _assign_value_if_none(
+    ratecolumn = assign_value_if_none(
         ratecolumn,
         _look_for_array_in_array(['RATE', 'RATE1', 'COUNTS'], lctable.names))
 
@@ -662,7 +503,6 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     except:
         fracexp = np.ones_like(rate)
 
-    good_intervals = np.logical_and(fracexp >= fracexp_limit, fracexp <= 1)
     good_intervals = (rate == rate) * (fracexp >= fracexp_limit) * \
         (fracexp <= 1)
 
@@ -682,30 +522,19 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
     lchdulist.close()
 
-    out = {}
-    out['lc'] = rate
-    out['elc'] = rate_e
-    out['time'] = time
-    out['dt'] = dt
-    out['GTI'] = gti_list
-    out['Tstart'] = tstart
-    out['Tstop'] = tstop
-    out['Instr'] = instr
+    lc = Lightcurve(time=time, counts=rate, err=rate_e, gti=gti_list,
+                    mjdref=mjdref.mjd)
 
-    out['MJDref'] = mjdref.value
-
-    out['total_ctrate'] = calc_countrate(time, rate, gtis=gti_list,
-                                         bintime=dt)
-    out['source_ctrate'] = calc_countrate(time, rate, gtis=gti_list,
-                                          bintime=dt)
+    lc.instr = instr
 
     logging.info('Saving light curve to %s' % outfile)
-    save_data(out, outfile)
+    save_lcurve(lc, outfile)
     return [outfile]
 
 
 def lcurve_from_txt(txt_file, outfile=None,
-                    noclobber=False, outdir=None):
+                    noclobber=False, outdir=None,
+                    mjdref=None, gti=None):
     """
     Load a lightcurve from a text file.
 
@@ -713,7 +542,8 @@ def lcurve_from_txt(txt_file, outfile=None,
     ----------
     txt_file : str
         File name of the input light curve in text format. Assumes two columns:
-        time, counts. Times are seconds from MJDREF 55197.00076601852 (NuSTAR).
+        time, counts. Times are seconds from MJDREF 55197.00076601852 (NuSTAR)
+        if not otherwise specified.
 
     Returns
     -------
@@ -727,13 +557,19 @@ def lcurve_from_txt(txt_file, outfile=None,
         Output file name
     noclobber : bool
         If True, do not overwrite existing files
+    mjdref : float, default 55197.00076601852
+        the MJD time reference
+    gti : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+        Good Time Intervals
     """
     import numpy as np
+    if mjdref is None:
+        mjdref = np.longdouble('55197.00076601852')
 
-    outfile = _assign_value_if_none(outfile, mp_root(txt_file) + '_lc')
+    outfile = assign_value_if_none(outfile, mp_root(txt_file) + '_lc')
     outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
 
-    outdir = _assign_value_if_none(
+    outdir = assign_value_if_none(
         outdir, os.path.dirname(os.path.abspath(txt_file)))
 
     _, outfile = os.path.split(outfile)
@@ -744,28 +580,17 @@ def lcurve_from_txt(txt_file, outfile=None,
         warnings.warn('File exists, and noclobber option used. Skipping')
         return [outfile]
 
-    time, lc = np.genfromtxt(txt_file, delimiter=' ', unpack=True)
+    time, counts = np.genfromtxt(txt_file, delimiter=' ', unpack=True)
     time = np.array(time, dtype=np.longdouble)
-    lc = np.array(lc, dtype=np.float)
-    dt = time[1] - time[0]
-    out = {}
+    counts = np.array(counts, dtype=np.float)
 
-    out['lc'] = lc
-    out['time'] = time
-    out['dt'] = dt
-    gtis = np.array([[time[0] - dt / 2, time[-1] + dt / 2]])
-    out['GTI'] = gtis
-    out['Tstart'] = time[0] - dt / 2
-    out['Tstop'] = time[-1] + dt / 2
-    out['Instr'] = 'EXTERN'
-    out['MJDref'] = np.longdouble('55197.00076601852')
-    out['total_ctrate'] = calc_countrate(time, lc, gtis=gtis,
-                                         bintime=dt)
-    out['source_ctrate'] = calc_countrate(time, lc, gtis=gtis,
-                                          bintime=dt)
+    lc = Lightcurve(time=time, counts=counts, gti=gti,
+                    mjdref=mjdref)
+
+    lc.instr = 'EXTERN'
 
     logging.info('Saving light curve to %s' % outfile)
-    save_data(out, outfile)
+    save_lcurve(lc, outfile)
     return [outfile]
 
 

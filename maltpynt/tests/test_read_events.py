@@ -2,7 +2,7 @@ from stingray.events import EventList
 import numpy as np
 import os
 from maltpynt.read_events import treat_event_file
-from maltpynt.io import MP_FILE_EXTENSION
+from maltpynt.io import MP_FILE_EXTENSION, load_data
 import maltpynt as mp
 
 class TestReadEvents():
@@ -18,6 +18,8 @@ class TestReadEvents():
         new_filename = 'monol_testA_nustar_fpma_ev' + MP_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir,
                                            new_filename))
+        data = load_data(os.path.join(self.datadir, new_filename))
+        assert 'instr' in data
 
     def test_treat_event_file_xmm(self):
         fits_file = os.path.join(self.datadir, 'monol_test_fake.evt')

@@ -212,10 +212,10 @@ class TestFullRun(object):
         lcdata_mp = mp.io.load_data(lcurve_mp)
         lcdata_ftools = mp.io.load_data(lcurve_ftools)
 
-        lc_mp = lcdata_mp['lc']
+        lc_mp = lcdata_mp['counts']
 
         lenmp = len(lc_mp)
-        lc_ftools = lcdata_ftools['lc']
+        lc_ftools = lcdata_ftools['counts']
         lenftools = len(lc_ftools)
         goodlen = min([lenftools, lenmp])
 
@@ -230,7 +230,7 @@ class TestFullRun(object):
                                  'lcurve_lc' +
                                  MP_FILE_EXTENSION)
         lcdata_mp = mp.io.load_data(lcurve_mp)
-        lc_mp = lcdata_mp['lc']
+        lc_mp = lcdata_mp['counts']
         time_mp = lcdata_mp['time']
 
         lcurve_txt_orig = os.path.join(self.datadir,
@@ -245,7 +245,7 @@ class TestFullRun(object):
                         '--outfile', lcurve_txt])
         lcdata_txt = mp.io.load_data(lcurve_txt)
 
-        lc_txt = lcdata_txt['lc']
+        lc_txt = lcdata_txt['counts']
 
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
             'Light curve data do not coincide between txt and MP'

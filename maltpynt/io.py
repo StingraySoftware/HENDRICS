@@ -192,8 +192,8 @@ def get_file_type(fname, specify_reb=True):
     else:  # If none of the above
         if 'time' in keys:
             ftype = 'events'
-        elif 'GTI' in keys:
-            ftype = 'GTI'
+        elif 'gti' in keys:
+            ftype = 'gti'
 
     return ftype, contents
 
@@ -218,6 +218,8 @@ def save_events(eventlist, fname):
            }
     if hasattr(eventlist, 'instr') and eventlist.instr is not None:
         out["instr"] = eventlist.instr
+    else:
+        out["instr"] = 'unknown'
     if hasattr(eventlist, 'energy') and eventlist.energy is not None:
         out['energy'] = eventlist.energy
 
@@ -270,6 +272,8 @@ def save_lcurve(lcurve, fname):
 
     if hasattr(lcurve, 'instr'):
         out["instr"] = lcurve.instr
+    else:
+        out["instr"] = 'unknown'
 
     if get_file_format(fname) == 'pickle':
         return _save_data_pickle(out, fname)
@@ -287,6 +291,9 @@ def load_lcurve(fname):
     lcurve = Lightcurve(data['time'], data['counts'], err=data['counts_err'],
                         gti=data['gti'], err_dist = data['err_dist'],
                         mjdref=data['mjdref'])
+    if 'instr' in list(data.keys()):
+        lcurve.instr = data["instr"]
+
     return lcurve
 
 # ---- Functions to save PDSs
@@ -729,6 +736,8 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         logging.warning("No TIMEZERO in file")
         timezero = np.longdouble(0.)
 
+    instr = lchdulist[1].header['INSTRUME']
+
     ev_list += timezero
 
     # Read TSTART, TSTOP from header
@@ -777,6 +786,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
 
     returns = _empty()
     returns.ev_list = EventList(ev_list, gti=gti_list, pi=pi)
+    returns.ev_list.instr = instr
     returns.additional_data = additional_data
     returns.t_start = t_start
     returns.t_stop = t_stop
@@ -838,7 +848,7 @@ def sort_files(files):
     for f in files:
         logging.info('Loading file ' + f)
         ftype, contents = get_file_type(f)
-        instr = contents['Instr']
+        instr = contents['instr']
         ftypes.append(ftype)
         if instr not in list(allfiles.keys()):
             allfiles[instr] = []
@@ -853,7 +863,7 @@ def sort_files(files):
     instrs = list(allfiles.keys())
     for instr in instrs:
         contents = list(allfiles[instr])
-        tstarts = [c['Tstart'] for c in contents]
+        tstarts = [np.min(c['gti']) for c in contents]
         fnames = [c['FILENAME'] for c in contents]
 
         fnames = [x for (y, x) in sorted(zip(tstarts, fnames))]

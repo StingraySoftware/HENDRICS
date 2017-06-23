@@ -12,7 +12,7 @@ import warnings
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
-from .io import get_file_format, load_data
+from .io import get_file_format, load_data, load_lcurve
 from .base import _empty
 import copy
 
@@ -336,13 +336,7 @@ def _read_light_curve(filename):
     file_format = get_file_format(filename)
     if file_format == 'fits':
         filename = lcurve_from_fits(filename)[0]
-    lcstruct = load_data(filename)
-
-    return lcstruct
-
-
-def _lcstruct_to_Lightcurve(lcstruct):
-    lc = Lightcurve(lcstruct['time'], lcstruct['lc'], gti=lcstruct['GTI'])
+    lc = load_lcurve(filename)
 
     return lc
 
@@ -405,8 +399,7 @@ def main(args=None):
     elif args.lc is not None or args.ctrate is not None:
         event_list = EventList()
         if args.lc is not None:
-            lcstruct = _read_light_curve(args.lc)
-            lc = _lcstruct_to_Lightcurve(lcstruct)
+            lc = _read_light_curve(args.lc)
         elif args.ctrate is not None:
             tstart = assign_value_if_none(args.tstart, 0)
             tstop = assign_value_if_none(args.tstop, 1025)
