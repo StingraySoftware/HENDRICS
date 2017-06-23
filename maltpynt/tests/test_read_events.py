@@ -15,7 +15,7 @@ class TestReadEvents():
 
     def test_treat_event_file_nustar(self):
         treat_event_file(self.fits_fileA)
-        new_filename = 'monol_testA_NUSTAR_FPMA_ev' + MP_FILE_EXTENSION
+        new_filename = 'monol_testA_nustar_fpma_ev' + MP_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir,
                                            new_filename))
 
