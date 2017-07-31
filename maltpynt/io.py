@@ -650,12 +650,9 @@ def _get_additional_data(lctable, additional_columns):
         for a in additional_columns:
             try:
                 additional_data[a] = np.array(lctable.field(a))
-            except:  # pragma: no cover
-                if a == 'PI':
-                    logging.warning('Column PI not found. Trying with PHA')
-                    additional_data[a] = np.array(lctable.field('PHA'))
-                else:
-                    raise Exception('Column' + a + 'not found')
+            except KeyError:
+                warnings.warn("Column {} not found".format(a))
+                additional_data[a] = np.zeros(len(lctable))
 
     return additional_data
 
