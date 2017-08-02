@@ -436,14 +436,13 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
         raise(Exception('TSTART and TSTOP need to be specified'))
 
     # For nulccorr lcs this whould work
-    try:
-        timezero = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                               'TIMEZERO')
-        # Sometimes timezero is "from tstart", sometimes it's an absolute time.
-        # This tries to detect which case is this, and always consider it
-        # referred to tstart
-    except:
-        timezero = 0
+
+    timezero = high_precision_keyword_read(lchdulist[ratehdu].header,
+                                           'TIMEZERO')
+    # Sometimes timezero is "from tstart", sometimes it's an absolute time.
+    # This tries to detect which case is this, and always consider it
+    # referred to tstart
+    timezero = assign_value_if_none(timezero, 0)
 
     # for lcurve light curves this should instead work
     if tunit == 'd':

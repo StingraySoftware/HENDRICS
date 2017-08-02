@@ -61,7 +61,7 @@ def high_precision_keyword_read(hdr, keyword):
     Returns
     -------
     value : long double
-        The value of the key
+        The value of the key, or None if keyword not present
 
     """
     try:
