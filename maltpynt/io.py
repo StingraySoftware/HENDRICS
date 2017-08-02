@@ -224,6 +224,8 @@ def save_events(eventlist, fname):
         out["instr"] = 'unknown'
     if hasattr(eventlist, 'energy') and eventlist.energy is not None:
         out['energy'] = eventlist.energy
+    if hasattr(eventlist, 'header') and eventlist.header is not None:
+        out["header"] = eventlist.header
 
     if get_file_format(fname) == 'pickle':
         _save_data_pickle(out, fname)
@@ -248,6 +250,8 @@ def load_events(fname):
         eventlist.instr = out["instr"]
     if 'energy' in list(out.keys()):
         eventlist.energy = out["energy"]
+    if 'header' in list(out.keys()):
+        eventlist.header = out["header"]
     return eventlist
 
 
@@ -732,21 +736,22 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     if 'PCUID' in lctable.columns.names:
         detector_id = np.array(lctable.field('PCUID'), dtype=np.int)
 
+    header = lchdulist[1].header
     # Read TIMEZERO keyword and apply it to events
     try:
-        timezero = np.longdouble(lchdulist[1].header['TIMEZERO'])
+        timezero = np.longdouble(header['TIMEZERO'])
     except:  # pragma: no cover
         logging.warning("No TIMEZERO in file")
         timezero = np.longdouble(0.)
 
-    instr = lchdulist[1].header['INSTRUME']
+    instr = header['INSTRUME']
 
     ev_list += timezero
 
     # Read TSTART, TSTOP from header
     try:
-        t_start = np.longdouble(lchdulist[1].header['TSTART'])
-        t_stop = np.longdouble(lchdulist[1].header['TSTOP'])
+        t_start = np.longdouble(header['TSTART'])
+        t_stop = np.longdouble(header['TSTOP'])
     except:  # pragma: no cover
         logging.warning("Tstart and Tstop error. using defaults")
         t_start = ev_list[0]
@@ -790,6 +795,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     returns = _empty()
     returns.ev_list = EventList(ev_list, gti=gti_list, pi=pi)
     returns.ev_list.instr = instr
+    returns.ev_list.header = header.tostring()
     returns.additional_data = additional_data
     returns.t_start = t_start
     returns.t_stop = t_stop

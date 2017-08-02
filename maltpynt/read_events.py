@@ -92,6 +92,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                                         gti=np.array([g], dtype=np.longdouble),
                                         mjdref=events.mjdref)
                 events_filt.instr = events.instr
+                events_filt.header = events.header
                 save_events(events_filt, outfile_local)
             pass
         else:
@@ -99,6 +100,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                                     pi=events.pi[good_det],
                                     gti=events.gti, mjdref=events.mjdref)
             events_filt.instr = events.instr
+            events_filt.header = events.header
+
             save_events(events_filt, outfile)
 
 
