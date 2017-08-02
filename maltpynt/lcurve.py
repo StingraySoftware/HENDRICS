@@ -524,6 +524,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
                     mjdref=mjdref.mjd)
 
     lc.instr = instr
+    lc.header = lchdulist[ratehdu].header.tostring()
 
     logging.info('Saving light curve to %s' % outfile)
     save_lcurve(lc, outfile)
