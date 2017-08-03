@@ -17,7 +17,6 @@ if not _ASTROPY_SETUP_:
     from . import fake
     from . import fspec
     from . import io
-    from . import lags
     from . import lcurve
     from . import plot
     from . import read_events
