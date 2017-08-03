@@ -1,9 +1,11 @@
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
+from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
+from stingray.powerspectrum import Crossspectrum, AveragedCrossspectrum
 import numpy as np
 import os
 from maltpynt.io import load_events, save_events, save_lcurve, load_lcurve
-from maltpynt.io import save_data, load_data
+from maltpynt.io import save_data, load_data, save_pds, load_pds
 from maltpynt.io import MP_FILE_EXTENSION, _split_high_precision_number
 
 class TestIO():
@@ -46,6 +48,20 @@ class TestIO():
         assert np.allclose(lcurve.mjdref, lcurve2.mjdref)
         assert np.allclose(lcurve.gti, lcurve2.gti)
         assert lcurve.err_dist == lcurve2.err_dist
+
+    def test_load_and_save_pds(self):
+        pds = Powerspectrum()
+        pds.freq = np.linspace(0, 10, 15)
+        pds.power = np.random.poisson(30, 15)
+        pds.mjdref = 54385.3254923845
+        pds.gti = np.longdouble([[-0.5, 3.5]])
+
+        save_pds(pds, self.dum)
+        pds2 = load_pds(self.dum)
+        assert np.allclose(pds.gti, pds2.gti)
+        assert np.allclose(pds.mjdref, pds2.mjdref)
+        assert np.allclose(pds.gti, pds2.gti)
+        assert pds.m == pds2.m
 
     def test_high_precision_split1(self):
         C_I, C_F, C_l, k = \
