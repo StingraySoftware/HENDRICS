@@ -85,15 +85,13 @@ def calc_pds(lcfile, fftlen,
     if pdsrebin is not None and pdsrebin != 1:
         pds = pds.rebin(pdsrebin)
 
-    outdata = {'time': pds.gti[0][0], 'pds': pds.power,
-               'epds': pds.power_err, 'npds': pds.m,
-               'fftlen': fftlen, 'Instr': instr,
-               'freq': pds.freq, 'rebin': pdsrebin, 'norm': normalization,
-               'ctrate': lc.meanrate, 'total_ctrate': lc.meanrate,
-               'back_ctrate': back_ctrate, 'mjdref': lc.mjdref}
+    pds.instr = instr
+    pds.fftlen = fftlen
+    pds.back_phots = back_ctrate * fftlen
+    pds.mjdref = lc.mjdref
 
     logging.info('Saving PDS to %s' % outname)
-    save_pds(outdata, outname)
+    save_pds(pds, outname)
 
 
 def calc_cpds(lcfile1, lcfile2, fftlen,
@@ -166,15 +164,13 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     if pdsrebin is not None and pdsrebin != 1:
         cpds = cpds.rebin(pdsrebin)
 
-    outdata = {'time': cpds.gti[0][0], 'cpds': cpds.power,
-               'ecpds': cpds.power_err, 'ncpds': cpds.m,
-               'fftlen': fftlen, 'Instrs': instr1 + ',' + instr2,
-               'freq': cpds.freq, 'rebin': pdsrebin, 'norm': normalization,
-               'ctrate': ctrate, 'total_ctrate': ctrate,
-               'back_ctrate': back_ctrate, 'mjdref': lc1.mjdref}
+    cpds.instrs = instr1 + ',' + instr2
+    cpds.fftlen = fftlen
+    cpds.back_phots = back_ctrate * fftlen
+    cpds.mjdref = lc1.mjdref
 
     logging.info('Saving CPDS to %s' % outname)
-    save_pds(outdata, outname)
+    save_pds(cpds, outname)
 
 
 def calc_fspec(files, fftlen,
