@@ -305,48 +305,6 @@ def calc_fspec(files, fftlen,
         pool.close()
 
 
-def read_fspec(fname):
-    """Read the frequency spectrum from a file.
-
-    Parameters
-    ----------
-    fname : str
-        The input file name
-
-    Returns
-    -------
-    ftype : str
-        File type
-    freq : array-like
-        Frequency array
-    fspec : array-like
-        Frequency spectrum array
-    efspec : array-like
-        Errors on spectral bins
-    nchunks : int
-        Number of spectra that have been summed to obtain fspec
-    rebin : array-like or int
-        Rebin factor in each bin. Might be irregular in case of geometrical
-        binning
-
-    """
-    ftype, contents = get_file_type(fname)
-    if 'freq' in list(contents.keys()):
-        freq = contents['freq']
-    elif 'flo' in list(contents.keys()):
-        flo = contents['flo']
-        fhi = contents['fhi']
-        freq = [flo, fhi]
-
-    ft = ftype.replace('reb', '')
-    pds = contents[ft]
-    epds = contents['e' + ft]
-    nchunks = contents['n' + ft]
-    rebin = contents['rebin']
-
-    return ftype, freq, pds, epds, nchunks, rebin, contents
-
-
 def _normalize(array, ref=0):
     m = ref
     std = np.std(array)
