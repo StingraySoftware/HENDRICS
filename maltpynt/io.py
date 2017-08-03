@@ -790,7 +790,10 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         logging.warning("No TIMEZERO in file")
         timezero = np.longdouble(0.)
 
-    instr = header['INSTRUME']
+    try:
+        instr = header['INSTRUME']
+    except:
+        instr = 'unknown'
 
     ev_list += timezero
 
