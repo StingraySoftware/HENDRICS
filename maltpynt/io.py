@@ -8,6 +8,8 @@ import warnings
 from stingray.gti import cross_gtis
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
+from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
+from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
@@ -173,7 +175,7 @@ def read_from_netcdf(fname):
 
 
 # ----- Functions to handle file types
-def get_file_type(fname, specify_reb=True):
+def get_file_type(fname):
     """Return the file type and its contents.
 
     Only works for maltpynt-format pickle or netcdf files.
@@ -182,20 +184,23 @@ def get_file_type(fname, specify_reb=True):
 
     keys = list(contents.keys())
 
-    for i in 'lccorr,cpds,pds,lag'.split(','):
-        if i in keys and 'fhi' in keys and specify_reb:
-            ftype = 'reb' + i
-            break
-        elif i in keys:
-            ftype = i
-            break
-    else:  # If none of the above
-        if 'counts' in keys:
-            ftype='lc'
-        elif 'time' in keys:
-            ftype = 'events'
-        elif 'gti' in keys:
-            ftype = 'gti'
+    ftype_raw = contents['__sr__class__type__']
+    if 'Lightcurve' in ftype_raw:
+        ftype = 'lc'
+        fun = load_lcurve
+    elif 'Eventlist' in ftype_raw:
+        ftype = 'events'
+        fun = load_events
+    elif 'Crossspectrum' in ftype_raw:
+        ftype = 'cpds'
+        fun = load_pds
+    elif 'Powerspectrum' in ftype_raw:
+        ftype = 'pds'
+        fun = load_pds
+    else:
+        raise ValueError('File format not understood')
+
+    contents = fun(fname)
 
     return ftype, contents
 
@@ -218,6 +223,9 @@ def save_events(eventlist, fname):
            'tstart': np.min(eventlist.gti),
            'tstop': np.max(eventlist.gti)
            }
+
+    out['__sr__class__type__'] = str(type(EventList))
+
     if hasattr(eventlist, 'instr') and eventlist.instr is not None:
         out["instr"] = eventlist.instr
     else:
@@ -268,6 +276,8 @@ def save_lcurve(lcurve, fname):
     """
     out = {}
 
+    out['__sr__class__type__'] = str(type(Lightcurve))
+
     out['counts'] = lcurve.counts
     out['counts_err'] = lcurve.counts_err
     out['time'] = lcurve.time
@@ -308,21 +318,47 @@ def load_lcurve(fname):
 
 # ---- Functions to save PDSs
 
-def save_pds(pdsStruct, fname):
+def save_pds(cpds, fname):
     """Save PDS in a file."""
+
+    outdata = cpds.__dict__
+    outdata['__sr__class__type__'] = str(type(cpds))
+
+    for key in ['lc1', 'lc2', 'cs_all']:
+        if key in outdata:
+            outdata.pop(key)
+
+    print(outdata)
     if get_file_format(fname) == 'pickle':
-        return _save_data_pickle(pdsStruct, fname)
+        return _save_data_pickle(outdata, fname)
     elif get_file_format(fname) == 'nc':
-        return _save_data_nc(pdsStruct, fname)
+        return _save_data_nc(outdata, fname)
 
 
 def load_pds(fname):
     """Load PDS from a file."""
     if get_file_format(fname) == 'pickle':
-        return _load_data_pickle(fname)
+        data = _load_data_pickle(fname)
     elif get_file_format(fname) == 'nc':
-        return _load_data_nc(fname)
+        data = _load_data_nc(fname)
 
+    type_string = data['__sr__class__type__']
+    if 'AveragedPowerspectrum' in type_string:
+        cpds = AveragedPowerspectrum()
+    elif 'Powerspectrum' in type_string:
+        cpds = Powerspectrum()
+    elif 'AveragedCrossspectrum' in type_string:
+        cpds = AveragedCrossspectrum()
+    elif 'Crossspectrum' in type_string:
+        cpds = Crossspectrum()
+    else:
+        raise ValueError('Unrecognized data type in file')
+
+    data.pop('__sr__class__type__')
+    for key in data.keys():
+        setattr(cpds, key, data[key])
+
+    return cpds
 
 # ---- GENERIC function to save stuff.
 def _load_data_pickle(fname, kind="data"):
@@ -358,6 +394,9 @@ def _load_data_nc(fname):
     for k in keys:
         if k in keys_to_delete:
             continue
+
+        if contents[k] == '__mp__None__type__':
+            contents[k] = None
 
         if k[-2:] in ['_I', '_L', '_F', '_k']:
             kcorr = k[:-2]
@@ -448,6 +487,8 @@ def _save_data_nc(struct, fname, kind="data"):
         if is_string(var):
             probekind = str
             probesize = -1
+        elif var is None:
+            probekind = None
         else:
             probekind = np.result_type(probe).kind
             probesize = np.result_type(probe).itemsize
@@ -464,6 +505,10 @@ def _save_data_nc(struct, fname, kind="data"):
         elif probekind == str:
             values.append(var)
             formats.append(probekind)
+            varnames.append(k)
+        elif probekind is None:
+            values.append('__mp__None__type__')
+            formats.append(str)
             varnames.append(k)
         else:
             values.append(var)
