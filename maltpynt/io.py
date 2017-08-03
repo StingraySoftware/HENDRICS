@@ -31,6 +31,9 @@ import numpy as np
 import os.path
 from .base import _order_list_of_arrays, _empty, is_string
 from stingray.utils import assign_value_if_none
+import os
+import glob
+import copy
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
@@ -321,14 +324,26 @@ def load_lcurve(fname):
 def save_pds(cpds, fname):
     """Save PDS in a file."""
 
-    outdata = cpds.__dict__
+    outdata = copy.copy(cpds.__dict__)
     outdata['__sr__class__type__'] = str(type(cpds))
 
-    for key in ['lc1', 'lc2', 'cs_all']:
-        if key in outdata:
-            outdata.pop(key)
     if not hasattr(cpds, 'instr'):
         outdata["instr"] = 'unknown'
+
+    if 'lc1' in outdata:
+        save_lcurve(cpds.lc1, fname.replace(MP_FILE_EXTENSION,
+                                            '__lc1__' + MP_FILE_EXTENSION))
+        outdata.pop('lc1')
+    if 'lc2' in outdata:
+        save_lcurve(cpds.lc2, fname.replace(MP_FILE_EXTENSION,
+                                            '__lc2__' + MP_FILE_EXTENSION))
+        outdata.pop('lc2')
+    if 'cs_all' in outdata:
+        for i, c in enumerate(cpds.cs_all):
+            save_pds(c,
+                     fname.replace(MP_FILE_EXTENSION,
+                                   '__cs__{}__'.format(i) + MP_FILE_EXTENSION))
+        outdata.pop('cs_all')
 
     if get_file_format(fname) == 'pickle':
         return _save_data_pickle(outdata, fname)
@@ -358,6 +373,22 @@ def load_pds(fname):
     data.pop('__sr__class__type__')
     for key in data.keys():
         setattr(cpds, key, data[key])
+
+    lc1_name = fname.replace(MP_FILE_EXTENSION, '__lc1__' + MP_FILE_EXTENSION)
+    lc2_name = fname.replace(MP_FILE_EXTENSION, '__lc1__' + MP_FILE_EXTENSION)
+    cs_all_names = glob.glob(
+        fname.replace(MP_FILE_EXTENSION, '__cs__[0-9]__' + MP_FILE_EXTENSION))
+
+    if os.path.exists(lc1_name):
+        cpds.lc1 = load_lcurve(lc1_name)
+    if os.path.exists(lc2_name):
+        cpds.lc2 = load_lcurve(lc2_name)
+    if len(cs_all_names) > 0:
+        cs_all = []
+        for c in cs_all_names:
+            print('Loading', c)
+            cs_all.append(load_pds(c))
+        cpds.cs_all = cs_all
 
     return cpds
 

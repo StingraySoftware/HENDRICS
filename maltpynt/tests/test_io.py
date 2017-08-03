@@ -60,8 +60,28 @@ class TestIO():
         pds2 = load_pds(self.dum)
         assert np.allclose(pds.gti, pds2.gti)
         assert np.allclose(pds.mjdref, pds2.mjdref)
-        assert np.allclose(pds.gti, pds2.gti)
         assert pds.m == pds2.m
+
+    def test_load_and_save_xps(self):
+        lcurve1 = Lightcurve(np.linspace(0, 10, 150),
+                             np.random.poisson(30, 150),
+                             mjdref=54385.3254923845,
+                             gti = np.longdouble([[-0.5, 3.5]]))
+        lcurve2 = Lightcurve(np.linspace(0, 10, 150),
+                             np.random.poisson(30, 150),
+                            mjdref=54385.3254923845,
+                            gti = np.longdouble([[-0.5, 3.5]]))
+
+        xps = AveragedCrossspectrum(lcurve1, lcurve2, 1)
+
+        save_pds(xps, self.dum)
+        xps2 = load_pds(self.dum)
+        assert np.allclose(xps.gti, xps2.gti)
+        assert xps.m == xps2.m
+        lag, lag_err = xps.time_lag()
+        lag2, lag2_err = xps2.time_lag()
+        assert np.allclose(lag, lag2)
+
 
     def test_high_precision_split1(self):
         C_I, C_F, C_l, k = \
