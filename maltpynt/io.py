@@ -188,7 +188,7 @@ def get_file_type(fname):
     if 'Lightcurve' in ftype_raw:
         ftype = 'lc'
         fun = load_lcurve
-    elif 'Eventlist' in ftype_raw:
+    elif 'EventList' in ftype_raw:
         ftype = 'events'
         fun = load_events
     elif 'Crossspectrum' in ftype_raw:
