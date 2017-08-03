@@ -79,33 +79,29 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
     figlabel = fnames[0]
 
     for i, fname in enumerate(fnames):
-        pdsdata = load_pds(fname)
-        try:
-            freq = pdsdata['freq']
+        pds_obj = load_pds(fname)
+        if np.allclose(pds_obj.freq, pds.df):
+            freq = pds_obj.freq
             xlog = _assign_value_if_none(xlog, False)
             ylog = _assign_value_if_none(ylog, False)
-        except:
-            flo = pdsdata['flo']
-            fhi = pdsdata['fhi']
+        else:
+            flo = pds_obj.freq - pds_obj.df / 2
+            fhi = pds.freq + pds.df / 2
             freq = (fhi + flo) / 2
             xlog = _assign_value_if_none(xlog, True)
             ylog = _assign_value_if_none(ylog, True)
 
-        pds = pdsdata['pds']
-        epds = pdsdata['epds']
-        npds = pdsdata['npds']
-        norm = pdsdata['norm']
-        rebin = pdsdata['rebin']
-        ctrate = pdsdata['ctrate']
-        back_ctrate = pdsdata['back_ctrate']
+        pds = pds_obj.power
+        epds = pds_obj.power_err
+        npds = pds_obj.m
+        norm = pds_obj.norm
 
         nbin = len(pds[1:])
 
-        lev = detection_level(nbin, n_summed_spectra=npds, n_rebin=rebin)
+        # we need the unnormalized power
+        lev = detection_level(nbin, n_summed_spectra=npds) / 2 * pds_obj.nphot1
         if norm == "rms":
-            lev, _ = rms_normalize_pds(lev, 0,
-                                       source_ctrate=ctrate,
-                                       back_ctrate=back_ctrate)
+            lev, _ = pds_obj._normalize_crossspectrum(lev, pds_obj.fftlen)
 
         p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
         logging.info('White noise level is {0}'.format(p[0]))
@@ -158,21 +154,20 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None):
 
     figlabel = fnames[0]
 
-    for fname in fnames:
-        pdsdata = load_pds(fname)
-
-        try:
-            freq = pdsdata['freq']
+    for i, fname in enumerate(fnames):
+        pds_obj = load_pds(fname)
+        if np.allclose(pds_obj.freq, pds.df):
+            freq = pds_obj.freq
             xlog = _assign_value_if_none(xlog, False)
             ylog = _assign_value_if_none(ylog, False)
-        except:
-            flo = pdsdata['flo']
-            fhi = pdsdata['fhi']
+        else:
+            flo = pds_obj.freq - pds_obj.df / 2
+            fhi = pds.freq + pds.df / 2
             freq = (fhi + flo) / 2
             xlog = _assign_value_if_none(xlog, True)
             ylog = _assign_value_if_none(ylog, True)
 
-        cpds = pdsdata['cpds']
+        cpds = pds_obj.power
 
         cospectrum = cpds.real
         if xlog and ylog:
