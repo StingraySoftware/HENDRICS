@@ -386,7 +386,6 @@ def load_pds(fname):
     if len(cs_all_names) > 0:
         cs_all = []
         for c in cs_all_names:
-            print('Loading', c)
             cs_all.append(load_pds(c))
         cpds.cs_all = cs_all
 

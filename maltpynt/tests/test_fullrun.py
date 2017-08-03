@@ -418,30 +418,6 @@ class TestFullRun(object):
     #         MP_FILE_EXTENSION
     #     mp.fspec.dumpdyn_main(command.split())
 
-    def test_07a_lags(self):
-        """Test Lag calculations."""
-        command = '{0} {1} {2} -o {3}'.format(
-            os.path.join(self.datadir, 'monol_test_E3-50_cpds') +
-            MP_FILE_EXTENSION,
-            os.path.join(self.datadir, 'monol_testA_E3-50_pds') +
-            MP_FILE_EXTENSION,
-            os.path.join(self.datadir, 'monol_testB_E3-50_pds') +
-            MP_FILE_EXTENSION,
-            os.path.join(self.datadir, 'monol_test'))
-        mp.lags.main(command.split())
-
-    def test_07b_lags(self):
-        """Test Lag calculations in rebinned data."""
-        command = '{0} {1} {2} -o {3}'.format(
-            os.path.join(self.datadir, 'monol_test_E3-50_cpds_rebin1.03') +
-            MP_FILE_EXTENSION,
-            os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') +
-            MP_FILE_EXTENSION,
-            os.path.join(self.datadir, 'monol_testB_E3-50_pds_rebin1.03') +
-            MP_FILE_EXTENSION,
-            os.path.join(self.datadir, 'monol_test_reb'))
-        mp.lags.main(command.split())
-
     def test_08a_savexspec(self):
         """Test save as Xspec 1."""
         command = '{0}'.format(

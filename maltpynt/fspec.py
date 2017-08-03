@@ -168,6 +168,9 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     cpds.fftlen = fftlen
     cpds.back_phots = back_ctrate * fftlen
     cpds.mjdref = lc1.mjdref
+    lags, lags_err = cpds.time_lag()
+    cpds.lag = lags
+    cpds.lag_err = lags
 
     logging.info('Saving CPDS to %s' % outname)
     save_pds(cpds, outname)
