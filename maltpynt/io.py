@@ -330,7 +330,6 @@ def save_pds(cpds, fname):
     if not hasattr(cpds, 'instr'):
         outdata["instr"] = 'unknown'
 
-    print(outdata)
     if get_file_format(fname) == 'pickle':
         return _save_data_pickle(outdata, fname)
     elif get_file_format(fname) == 'nc':

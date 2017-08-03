@@ -26,8 +26,6 @@ def rebin_file(filename, rebin):
     if ftype == 'lc':
         func = save_lcurve
     elif ftype in ['pds', 'cpds']:
-        print(contents.freq)
-        print(contents.power)
         func = save_pds
 
     outfile = filename.replace(get_file_extension(filename),

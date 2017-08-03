@@ -4,11 +4,12 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .io import save_data, get_file_type
+from .io import save_pds, get_file_type
 from .io import MP_FILE_EXTENSION
 from .base import _assign_value_if_none
 import numpy as np
 import logging
+import copy
 
 
 def sum_fspec(files, outname=None):
@@ -16,30 +17,32 @@ def sum_fspec(files, outname=None):
     # Read first file
     ftype0, contents = get_file_type(files[0])
     pdstype = ftype0.replace('reb', '')
-    freq0 = contents['freq']
-    pds0 = contents[pdstype]
-    epds0 = contents['e' + pdstype]
-    nchunks0 = contents['n' + pdstype]
-    rebin0 = contents['rebin']
-    norm0 = contents['norm']
+
+    freq0 = contents.freq
+    pds0 = contents.power
+    epds0 = contents.power_err
+    nchunks0 = contents.m
+    rebin0 = 1
+    norm0 = contents.norm
 
     tot_pds = pds0 * nchunks0
     tot_epds = epds0 ** 2 * nchunks0
     tot_npds = nchunks0
-    tot_contents = contents.copy()
+    tot_contents = copy.copy(contents)
     outname = _assign_value_if_none(outname,
                                     'tot_' + ftype0 + MP_FILE_EXTENSION)
 
     for f in files[1:]:
         ftype, contents = get_file_type(f)
         pdstype = ftype.replace('reb', '')
-        freq = contents['freq']
-        pds = contents[pdstype]
-        epds = contents['e' + pdstype]
-        nchunks = contents['n' + pdstype]
-        rebin = contents['rebin']
-        norm = contents['norm']
-        fftlen = contents['fftlen']
+
+        freq = contents.freq
+        pds = contents.power
+        epds = contents.power_err
+        nchunks = contents.m
+        rebin = 1
+        norm = contents.norm
+        fftlen = contents.fftlen
 
         assert ftype == ftype0, 'Files must all be of the same kind'
         assert np.all(rebin == rebin0), \
@@ -53,12 +56,12 @@ def sum_fspec(files, outname=None):
         tot_epds += epds ** 2 * nchunks ** 2
         tot_npds += nchunks
 
-    tot_contents[pdstype] = tot_pds / tot_npds
-    tot_contents['e' + pdstype] = np.sqrt(tot_epds) / tot_npds
-    tot_contents['n' + pdstype] = tot_npds
+    tot_contents.power = tot_pds / tot_npds
+    tot_contents.power_err = np.sqrt(tot_epds) / tot_npds
+    tot_contents.m = tot_npds
 
     logging.info('Saving %s to %s' % (pdstype, outname))
-    save_data(tot_contents, outname)
+    save_pds(tot_contents, outname)
 
     return tot_contents
 
