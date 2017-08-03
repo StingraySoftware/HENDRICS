@@ -224,7 +224,7 @@ def save_events(eventlist, fname):
            'tstop': np.max(eventlist.gti)
            }
 
-    out['__sr__class__type__'] = str(type(EventList))
+    out['__sr__class__type__'] = str(type(eventlist))
 
     if hasattr(eventlist, 'instr') and eventlist.instr is not None:
         out["instr"] = eventlist.instr
@@ -276,7 +276,7 @@ def save_lcurve(lcurve, fname):
     """
     out = {}
 
-    out['__sr__class__type__'] = str(type(Lightcurve))
+    out['__sr__class__type__'] = str(type(lcurve))
 
     out['counts'] = lcurve.counts
     out['counts_err'] = lcurve.counts_err
@@ -327,6 +327,8 @@ def save_pds(cpds, fname):
     for key in ['lc1', 'lc2', 'cs_all']:
         if key in outdata:
             outdata.pop(key)
+    if not hasattr(cpds, 'instr'):
+        outdata["instr"] = 'unknown'
 
     print(outdata)
     if get_file_format(fname) == 'pickle':
@@ -902,12 +904,12 @@ def sort_files(files):
     for f in files:
         logging.info('Loading file ' + f)
         ftype, contents = get_file_type(f)
-        instr = contents['instr']
+        instr = contents.instr
         ftypes.append(ftype)
         if instr not in list(allfiles.keys()):
             allfiles[instr] = []
         # Add file name to the dictionary
-        contents['FILENAME'] = f
+        contents.__sort__filename__ = f
         allfiles[instr].append(contents)
 
     # Check if files are all of the same kind (lcs, PDSs, ...)
@@ -917,8 +919,8 @@ def sort_files(files):
     instrs = list(allfiles.keys())
     for instr in instrs:
         contents = list(allfiles[instr])
-        tstarts = [np.min(c['gti']) for c in contents]
-        fnames = [c['FILENAME'] for c in contents]
+        tstarts = [np.min(c.gti) for c in contents]
+        fnames = [c.__sort__filename__ for c in contents]
 
         fnames = [x for (y, x) in sorted(zip(tstarts, fnames))]
 
