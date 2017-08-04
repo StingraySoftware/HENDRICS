@@ -10,7 +10,7 @@ import subprocess as sp
 import logging
 
 
-def save_as_xspec(fname, direct_save=False):
+def save_as_xspec(fname, direct_save=False, save_lags=True):
     """Save frequency spectra in a format readable to FTOOLS and Xspec.
 
     Parameters
@@ -30,33 +30,30 @@ def save_as_xspec(fname, direct_save=False):
 
     outroot = fname.replace(get_file_extension(fname), '')
     outname = outroot + '_xsp.dat'
+    outroot_lags = outroot + '_lags'
+    outname_lags = outroot_lags + '_xsp.dat'
 
-    if 'freq' in list(contents.keys()):
-        freq = contents['freq']
-        pds = contents[ftype]
-        epds = contents['e' + ftype]
-        df = freq[1] - freq[0]
-
-        np.savetxt(outname, np.transpose([freq - df / 2,
-                                          freq + df / 2,
-                                          pds.real * df,
-                                          epds * df]))
-    elif 'flo' in list(contents.keys()):
-        ftype = ftype.replace('reb', '')
-        flo = contents['flo']
-        fhi = contents['fhi']
-        pds = contents[ftype]
-        epds = contents['e' + ftype]
-        df = fhi - flo
-        np.savetxt(outname, np.transpose([flo, fhi,
-                                          pds.real * df,
-                                          epds * df]))
+    if ftype.endswith('pds'):
+        flo = contents.freq - contents.df / 2
+        fhi = contents.freq + contents.df / 2
+        power = contents.power.real * contents.df
+        power_err = contents.power_err.real * contents.df
     else:
-        raise Exception('File type not recognized')
+        raise ValueError("Data type not supported for Xspec")
 
+    np.savetxt(outname, np.transpose([flo, fhi, power, power_err]))
     if direct_save:
         sp.check_call('flx2xsp {0} {1}.pha {1}.rsp'.format(
             outname, outroot).split())
+
+    if save_lags and ftype == 'cpds':
+        lags, lags_err = contents.time_lag()
+        np.savetxt(outname_lags, np.transpose([flo, fhi,
+                                               lags * contents.df,
+                                               lags_err * contents.df]))
+        if direct_save:
+            sp.check_call('flx2xsp {0} {1}.pha {1}.rsp'.format(
+                outname_lags, outroot_lags).split())
 
 
 def main(args=None):
