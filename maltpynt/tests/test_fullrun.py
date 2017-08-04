@@ -402,6 +402,9 @@ class TestFullRun(object):
             os.path.join(self.datadir, 'monol_test_E3-50_cpds') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
+        os.path.exists(os.path.join(self.datadir,
+                                    'monol_test_E3-50_cpds_rebin2' +
+                                    MP_FILE_EXTENSION))
 
     def test_06e_rebincpds(self):
         """Test CPDS geometrical rebinning."""
@@ -409,6 +412,9 @@ class TestFullRun(object):
             os.path.join(self.datadir, 'monol_test_E3-50_cpds') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
+        os.path.exists(os.path.join(self.datadir,
+                                    'monol_test_E3-50_cpds_rebin1.03' +
+                                    MP_FILE_EXTENSION))
 
     # def test_06f_dumpdyncpds_reb(self):
     #     """Test dumping rebinned CPDS file."""
@@ -424,13 +430,21 @@ class TestFullRun(object):
             os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin2') +
             MP_FILE_EXTENSION)
         mp.save_as_xspec.main(command.split())
+        os.path.exists(os.path.join(self.datadir,
+                                    'monol_testA_E3-50_pds_rebin2.pha'))
 
-    # def test_08b_savexspec(self):
-    #     """Test save as Xspec 2."""
-    #     command = '{0}'.format(
-    #         os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') +
-    #         MP_FILE_EXTENSION)
-    #     mp.save_as_xspec.main(command.split())
+    def test_08b_savexspec(self):
+        """Test save as Xspec 2."""
+        command = '{0}'.format(
+            os.path.join(self.datadir, 'monol_test_E3-50_cpds_rebin1.03') +
+            MP_FILE_EXTENSION)
+        mp.save_as_xspec.main(command.split())
+
+        os.path.exists(os.path.join(self.datadir,
+                                    'monol_test_E3-50_cpds_rebin1.03.pha'))
+        os.path.exists(os.path.join(self.datadir,
+                                    'monol_test_E3-50_cpds_rebin1.03_lags.pha'))
+
     #
     # def test_09a_create_gti(self):
     #     """Test creating a GTI file."""
