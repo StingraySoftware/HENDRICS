@@ -300,6 +300,8 @@ def save_lcurve(lcurve, fname):
     out['gti'] = lcurve.gti
     out['err_dist'] = lcurve.err_dist
     out['mjdref'] = lcurve.mjdref
+    out['tstart'] = lcurve.tstart
+    out['tseg'] = lcurve.tseg
     if hasattr(lcurve, 'header'):
         out['header'] = lcurve.header
 
@@ -324,6 +326,7 @@ def load_lcurve(fname):
     lcurve = Lightcurve(data['time'], data['counts'], err=data['counts_err'],
                         gti=data['gti'], err_dist = data['err_dist'],
                         mjdref=data['mjdref'])
+
     if 'instr' in list(data.keys()):
         lcurve.instr = data["instr"]
     if 'header' in list(data.keys()):
