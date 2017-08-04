@@ -37,6 +37,8 @@ import copy
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
+cpl256 = np.dtype([(str('real'), np.longdouble),
+                   (str('imag'), np.longdouble)])
 
 
 def _get_key(dict_like, key):
@@ -113,14 +115,18 @@ def save_as_netcdf(vars, varnames, formats, fname):
         dimname = varnames[iv]+"dim"
         dimspec = (varnames[iv]+"dim", )
 
+        if formats[iv] == 'c32':
+            # Too complicated. Let's decrease precision
+            warnings.warn("complex256 yet unsuported")
+            formats[iv] = 'c16'
+
         if formats[iv] == 'c16':
             # unicode_literals breaks something, I need to specify str.
-
             if 'cpl128' not in rootgrp.cmptypes.keys():
                 complex128_t = rootgrp.createCompoundType(cpl128, 'cpl128')
             vcomp = np.empty(v.shape, dtype=cpl128)
-            vcomp['real'] = v.real
-            vcomp['imag'] = v.imag
+            vcomp['real'] = v.real.astype(np.float64)
+            vcomp['imag'] = v.imag.astype(np.float64)
             v = vcomp
             formats[iv] = complex128_t
 
@@ -162,6 +168,12 @@ def read_from_netcdf(fname):
         # Handle special case of complex
         if dum.dtype == cpl128:
             arr = np.empty(values.shape, dtype=np.complex128)
+            arr.real = values[str('real')]
+            arr.imag = values[str('imag')]
+            values = arr
+        # Handle special case of complex
+        if dum.dtype == cpl256:
+            arr = np.empty(values.shape, dtype=np.complex256)
             arr.real = values[str('real')]
             arr.imag = values[str('imag')]
             values = arr
@@ -338,6 +350,14 @@ def save_pds(cpds, fname):
         save_lcurve(cpds.lc2, fname.replace(MP_FILE_EXTENSION,
                                             '__lc2__' + MP_FILE_EXTENSION))
         outdata.pop('lc2')
+    if 'pds1' in outdata:
+        save_pds(cpds.pds1, fname.replace(MP_FILE_EXTENSION,
+                                            '__pds1__' + MP_FILE_EXTENSION))
+        outdata.pop('pds1')
+    if 'pds2' in outdata:
+        save_pds(cpds.pds2, fname.replace(MP_FILE_EXTENSION,
+                                            '__pds2__' + MP_FILE_EXTENSION))
+        outdata.pop('pds2')
     if 'cs_all' in outdata:
         for i, c in enumerate(cpds.cs_all):
             save_pds(c,
@@ -375,7 +395,9 @@ def load_pds(fname):
         setattr(cpds, key, data[key])
 
     lc1_name = fname.replace(MP_FILE_EXTENSION, '__lc1__' + MP_FILE_EXTENSION)
-    lc2_name = fname.replace(MP_FILE_EXTENSION, '__lc1__' + MP_FILE_EXTENSION)
+    lc2_name = fname.replace(MP_FILE_EXTENSION, '__lc2__' + MP_FILE_EXTENSION)
+    pds1_name = fname.replace(MP_FILE_EXTENSION, '__pds1__' + MP_FILE_EXTENSION)
+    pds2_name = fname.replace(MP_FILE_EXTENSION, '__pds2__' + MP_FILE_EXTENSION)
     cs_all_names = glob.glob(
         fname.replace(MP_FILE_EXTENSION, '__cs__[0-9]__' + MP_FILE_EXTENSION))
 
@@ -383,6 +405,10 @@ def load_pds(fname):
         cpds.lc1 = load_lcurve(lc1_name)
     if os.path.exists(lc2_name):
         cpds.lc2 = load_lcurve(lc2_name)
+    if os.path.exists(pds1_name):
+        cpds.pds1 = load_pds(pds1_name)
+    if os.path.exists(pds2_name):
+        cpds.pds2 = load_pds(pds2_name)
     if len(cs_all_names) > 0:
         cs_all = []
         for c in cs_all_names:
