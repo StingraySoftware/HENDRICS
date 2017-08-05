@@ -1044,17 +1044,20 @@ def load_model(modelstring):
         logging.debug('Loading model from Python source')
         _model = importlib.import_module(modelstring.replace('.py', ''))
         model = _model.model
+        constraints = None
+        if hasattr(_model, 'constraints'):
+            constraints = _model.constraints
     else:
         raise TypeError('Unknown file type')
 
     if isinstance(model, Model):
-        return model, 'Astropy', None
+        return model, 'Astropy', constraints
     elif callable(model):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
             raise TypeError("Accepted callable models have only one "
                             "non-keyword argument")
-        return model, 'callable', None
+        return model, 'callable', constraints
 
 

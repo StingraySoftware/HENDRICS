@@ -163,14 +163,17 @@ class TestIOModel():
         modelstring = '''
 def model(x, a=2, b=4):
     return x * a + b
+
+constraints = {'fixed': {'a': True}}
 '''
         print(modelstring, file=open('bubu__model__.py', 'w'))
-        b, kind, _ = load_model('bubu__model__.py')
+        b, kind, constraints = load_model('bubu__model__.py')
         assert kind == 'callable'
         assert callable(b)
         assert b.__code__.co_argcount == 3
         assert b.__defaults__[0] == 2
         assert b.__defaults__[1] == 4
+        assert np.all(constraints == {'fixed': {'a': True}})
 
     def test_load_model_input_not_string(self):
         '''Input is not a string'''
