@@ -36,6 +36,7 @@ import glob
 import copy
 from astropy.modeling.core import Model
 import collections
+import importlib
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
@@ -1026,6 +1027,34 @@ def save_model(model, fname='model.p', constraints=None):
     pickle.dump(modeldata, open(fname, 'wb'))
 
 
-def load_model(fname):
-    modeldata = pickle.load(open(fname, 'rb'))
-    return modeldata['model'], modeldata['kind'], modeldata['constraints']
+def load_model(modelstring):
+
+    if not is_string(modelstring):
+        raise TypeError('modelstring has to be an existing file name')
+    if not os.path.exists(modelstring):
+        raise FileNotFoundError('Model file not found')
+
+    # modelstring is a pickle file
+    if modelstring.endswith('.p'):
+        logging.debug('Loading model from pickle file')
+        modeldata = pickle.load(open(modelstring, 'rb'))
+        return modeldata['model'], modeldata['kind'], modeldata['constraints']
+    # modelstring is a python file
+    elif modelstring.endswith('.py'):
+        logging.debug('Loading model from Python source')
+        _model = importlib.import_module(modelstring.replace('.py', ''))
+        model = _model.model
+    else:
+        raise TypeError('Unknown file type')
+
+    if isinstance(model, Model):
+        return model, 'Astropy', None
+    elif callable(model):
+        nargs = model.__code__.co_argcount
+        nkwargs = len(model.__defaults__)
+        if not nargs - nkwargs == 1:
+            raise TypeError("Accepted callable models have only one "
+                            "non-keyword argument")
+        return model, 'callable', None
+
+
