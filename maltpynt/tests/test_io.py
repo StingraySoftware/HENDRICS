@@ -7,6 +7,18 @@ import os
 from maltpynt.io import load_events, save_events, save_lcurve, load_lcurve
 from maltpynt.io import save_data, load_data, save_pds, load_pds
 from maltpynt.io import MP_FILE_EXTENSION, _split_high_precision_number
+from maltpynt.io import save_model, load_model
+import pytest
+import glob
+
+
+def _dummy_bad(x, z, y=0):
+    return
+
+
+def _dummy(x, y=0):
+    return
+
 
 class TestIO():
     """Real unit tests."""
@@ -82,7 +94,6 @@ class TestIO():
         lag2, lag2_err = xps2.time_lag()
         assert np.allclose(lag, lag2)
 
-
     def test_high_precision_split1(self):
         C_I, C_F, C_l, k = \
             _split_high_precision_number("C", np.double(0.01), 8)
@@ -99,6 +110,49 @@ class TestIO():
         assert C_l == 0
         assert k == "double"
 
+    def test_load_and_save_Astropy_model(self):
+        from astropy.modeling import models
+        from astropy.modeling.core import Model
+        a = models.Gaussian1D() + models.Const1D(amplitude=2)
+        save_model(a, 'model.p')
+        b, kind, _ = load_model('model.p')
+        assert kind == 'Astropy'
+        assert isinstance(b, Model)
+        assert np.all(a.parameters == b.parameters)
+        assert np.all(a.bounds == b.bounds)
+        assert np.all(a.fixed == b.fixed)
+
+    def test_load_and_save_callable_model(self):
+        from astropy.modeling import models
+        from astropy.modeling.core import Model
+
+        constraints0 = {'bounds': ()}
+        save_model(_dummy, 'model.p', constraints=constraints0)
+        b, kind, constraints = load_model('model.p')
+        assert kind == 'callable'
+        assert callable(b)
+        assert np.all(_dummy.__code__.co_argcount == b.__code__.co_argcount)
+        assert np.all(_dummy.__defaults__ == b.__defaults__)
+        assert np.all(constraints == constraints0)
+
+    def test_load_and_save_callable_model_wrong(self):
+        from astropy.modeling import models
+        from astropy.modeling.core import Model
+
+        with pytest.raises(TypeError) as record:
+            save_model(_dummy_bad, 'model.p')
+        assert 'Accepted callable models have only' in str(record.value)
+
+    def test_load_and_save_junk_model(self):
+        from astropy.modeling import models
+        from astropy.modeling.core import Model
+        a = 'g'
+        with pytest.raises(TypeError) as record:
+            save_model(a, 'model.p', constraints={'bounds': ()})
+        assert 'The model has to be an Astropy model or a callable' \
+               in str(record.value)
+
     @classmethod
     def teardown_class(cls):
-        os.unlink(cls.dum)
+        for dum in glob.glob('bubu*'):
+            os.unlink(dum)

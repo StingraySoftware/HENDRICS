@@ -34,6 +34,8 @@ from stingray.utils import assign_value_if_none
 import os
 import glob
 import copy
+from astropy.modeling.core import Model
+import collections
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
@@ -989,3 +991,41 @@ def sort_files(files):
         allfiles[instr] = fnames
 
     return allfiles
+
+
+def save_model(model, fname='model.p', constraints=None):
+    """Save best-fit models to data.
+
+    Parameters
+    ----------
+    model : func or `astropy.modeling.core.Model` object
+        The model to be saved
+    fname : str, default 'models.p'
+        The output file name
+
+    Other parameters
+    ----------------
+    constraints: dict
+        Additional model constraints. Ignored for astropy models.
+    """
+    modeldata = {'model': model, 'constraints': None}
+    if isinstance(model, Model):
+        modeldata['kind'] = 'Astropy'
+    elif callable(model):
+        nargs = model.__code__.co_argcount
+        nkwargs = len(model.__defaults__)
+        if not nargs - nkwargs == 1:
+            raise TypeError("Accepted callable models have only one "
+                            "non-keyword argument")
+        modeldata['kind'] = 'callable'
+        modeldata['constraints'] = constraints
+    else:
+        raise TypeError("The model has to be an Astropy model or a callable"
+                        " with only one non-keyword argument")
+
+    pickle.dump(modeldata, open(fname, 'wb'))
+
+
+def load_model(fname):
+    modeldata = pickle.load(open(fname, 'rb'))
+    return modeldata['model'], modeldata['kind'], modeldata['constraints']
