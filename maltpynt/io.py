@@ -10,6 +10,7 @@ from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
+import sys
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
@@ -34,6 +35,9 @@ from stingray.utils import assign_value_if_none
 import os
 import glob
 import copy
+from astropy.modeling.core import Model
+import collections
+import importlib
 
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
@@ -989,3 +993,85 @@ def sort_files(files):
         allfiles[instr] = fnames
 
     return allfiles
+
+
+def save_model(model, fname='model.p', constraints=None):
+    """Save best-fit models to data.
+
+    Parameters
+    ----------
+    model : func or `astropy.modeling.core.Model` object
+        The model to be saved
+    fname : str, default 'models.p'
+        The output file name
+
+    Other parameters
+    ----------------
+    constraints: dict
+        Additional model constraints. Ignored for astropy models.
+    """
+    modeldata = {'model': model, 'constraints': None}
+    if isinstance(model, Model):
+        modeldata['kind'] = 'Astropy'
+    elif callable(model):
+        nargs = model.__code__.co_argcount
+        nkwargs = len(model.__defaults__)
+        if not nargs - nkwargs == 1:
+            raise TypeError("Accepted callable models have only one "
+                            "non-keyword argument")
+        modeldata['kind'] = 'callable'
+        modeldata['constraints'] = constraints
+    else:
+        raise TypeError("The model has to be an Astropy model or a callable"
+                        " with only one non-keyword argument")
+
+    pickle.dump(modeldata, open(fname, 'wb'))
+
+
+def load_model(modelstring):
+
+    if not is_string(modelstring):
+        raise TypeError('modelstring has to be an existing file name')
+    if not os.path.exists(modelstring):
+        raise FileNotFoundError('Model file not found')
+
+    # modelstring is a pickle file
+    if modelstring.endswith('.p'):
+        logging.debug('Loading model from pickle file')
+        modeldata = pickle.load(open(modelstring, 'rb'))
+        return modeldata['model'], modeldata['kind'], modeldata['constraints']
+    # modelstring is a python file
+    elif modelstring.endswith('.py'):
+        logging.debug('Loading model from Python source')
+        modulename = modelstring.replace('.py', '')
+        sys.path.append(os.getcwd())
+        # If a module with the same name was already imported, unload it!
+        # This is because the user might be using the same file name but
+        # different models inside, just like we do in test_io.py
+        if modulename in sys.modules:
+            del sys.modules[modulename]
+
+        # This invalidate_caches() is called to account for the case when
+        # the model file does not exist the first time we call
+        # importlib.import_module(). In this case, the second time we call it,
+        # even if the file exists it will not exist for importlib.
+        importlib.invalidate_caches()
+        _model = importlib.import_module(modulename)
+        model = _model.model
+        constraints = None
+        if hasattr(_model, 'constraints'):
+            constraints = _model.constraints
+    else:
+        raise TypeError('Unknown file type')
+
+    if isinstance(model, Model):
+        return model, 'Astropy', constraints
+    elif callable(model):
+        nargs = model.__code__.co_argcount
+        nkwargs = len(model.__defaults__)
+        if not nargs - nkwargs == 1:
+            raise TypeError("Accepted callable models have only one "
+                            "non-keyword argument")
+        return model, 'callable', constraints
+
+

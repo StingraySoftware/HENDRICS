@@ -7,6 +7,20 @@ import os
 from maltpynt.io import load_events, save_events, save_lcurve, load_lcurve
 from maltpynt.io import save_data, load_data, save_pds, load_pds
 from maltpynt.io import MP_FILE_EXTENSION, _split_high_precision_number
+from maltpynt.io import save_model, load_model
+import pytest
+import glob
+from astropy.modeling import models
+from astropy.modeling.core import Model
+
+
+def _dummy_bad(x, z, y=0):
+    return
+
+
+def _dummy(x, y=0):
+    return
+
 
 class TestIO():
     """Real unit tests."""
@@ -82,7 +96,6 @@ class TestIO():
         lag2, lag2_err = xps2.time_lag()
         assert np.allclose(lag, lag2)
 
-
     def test_high_precision_split1(self):
         C_I, C_F, C_l, k = \
             _split_high_precision_number("C", np.double(0.01), 8)
@@ -101,4 +114,97 @@ class TestIO():
 
     @classmethod
     def teardown_class(cls):
-        os.unlink(cls.dum)
+        for dum in glob.glob('bubu*'):
+            os.unlink(dum)
+
+
+class TestIOModel():
+    """Real unit tests."""
+
+    @classmethod
+    def setup_class(cls):
+        cls.dum = 'bubu' + MP_FILE_EXTENSION
+        cls.model = models.Gaussian1D() + models.Const1D(amplitude=2)
+
+    def test_save_and_load_Astropy_model(self):
+        save_model(self.model, 'bubu_model.p')
+        b, kind, _ = load_model('bubu_model.p')
+        assert kind == 'Astropy'
+        assert isinstance(b, Model)
+        assert np.all(self.model.parameters == b.parameters)
+        assert np.all(self.model.bounds == b.bounds)
+        assert np.all(self.model.fixed == b.fixed)
+
+    def test_save_and_load_callable_model(self):
+        constraints0 = {'bounds': ()}
+        save_model(_dummy, 'bubu_callable.p', constraints=constraints0)
+        b, kind, constraints = load_model('bubu_callable.p')
+        assert kind == 'callable'
+        assert callable(b)
+        assert np.all(_dummy.__code__.co_argcount == b.__code__.co_argcount)
+        assert np.all(_dummy.__defaults__ == b.__defaults__)
+        assert np.all(constraints == constraints0)
+
+    def test_save_callable_model_wrong(self):
+        with pytest.raises(TypeError) as record:
+            save_model(_dummy_bad, 'callable_bad.p')
+        assert 'Accepted callable models have only' in str(record.value)
+        assert not os.path.exists('callable_bad.p')
+
+    def test_save_junk_model(self):
+        a = 'g'
+        with pytest.raises(TypeError) as record:
+            save_model(a, 'bad.p', constraints={'bounds': ()})
+        assert 'The model has to be an Astropy model or a callable' \
+               in str(record.value)
+        assert not os.path.exists('bad.p')
+
+    def test_load_python_model_callable(self):
+        modelstring = '''
+def model(x, a=2, b=4):
+    return x * a + b
+
+constraints = {'fixed': {'a': True}}
+'''
+        print(modelstring, file=open('bubu__model__.py', 'w'))
+        b, kind, constraints = load_model('bubu__model__.py')
+        assert kind == 'callable'
+        assert callable(b)
+        assert b.__code__.co_argcount == 3
+        assert b.__defaults__[0] == 2
+        assert b.__defaults__[1] == 4
+        assert np.all(constraints == {'fixed': {'a': True}})
+
+    def test_load_python_model_Astropy(self):
+        modelstring = '''
+from astropy.modeling import models
+model = models.Const1D()
+'''
+        print(modelstring, file=open('bubu__model__.py', 'w'))
+        b, kind, constraints = load_model('bubu__model__.py')
+        assert isinstance(b, Model)
+        assert kind == 'Astropy'
+        assert b.amplitude == 1
+
+    def test_load_model_input_not_string(self):
+        '''Input is not a string'''
+        with pytest.raises(TypeError) as record:
+            b, kind, _ = load_model(1)
+        assert 'modelstring has to be an existing file name' \
+               in str(record.value)
+
+    def test_load_model_input_file_doesnt_exist(self):
+        with pytest.raises(FileNotFoundError) as record:
+            b, kind, _ = load_model('dfasjkdaslfj')
+        assert 'Model file not found' in str(record.value)
+
+    def test_load_model_input_invalid_file_format(self):
+        print(1, file=open('bubu.txt', 'w'))
+        with pytest.raises(TypeError) as record:
+            b, kind, _ = load_model('bubu.txt')
+        assert 'Unknown file type' in str(record.value)
+
+    @classmethod
+    def teardown_class(cls):
+        for dum in glob.glob('bubu*'):
+            os.unlink(dum)
