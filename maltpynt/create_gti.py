@@ -54,10 +54,10 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None,
     # Necessary as nc variables are sometimes defined as array
     from numpy import array  # NOQA
 
-    ftype, data = get_file_type(fname)
+    ftype, data = get_file_type(fname, raw_data=True)
 
     instr = data['instr']
-    if ftype == 'lc' and instr == 'PCA':
+    if ftype == 'lc' and instr.lower() == 'pca':
         logging.warning('RXTE/PCA data; normalizing lc per no. PCUs')
         # If RXTE, plot per PCU count rate
         data['counts'] /= data['nPCUs']
@@ -74,7 +74,8 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None,
 
     outfile = _assign_value_if_none(
         outfile, mp_root(fname) + '_gti' + MP_FILE_EXTENSION)
-    save_data({'gti': gtis, 'mjdref': mjdref}, outfile)
+    save_data({'gti': gtis, 'mjdref': mjdref, '__sr__class__type__': 'gti'},
+              outfile)
 
     return gtis
 
@@ -85,7 +86,7 @@ def apply_gti(fname, gti, outname=None,
 
     File MUST have a GTI extension already, and an extension called `time`.
     """
-    ftype, data = get_file_type(fname)
+    ftype, data = get_file_type(fname, raw_data=True)
 
     try:
         datagti = data['gti']
@@ -96,6 +97,7 @@ def apply_gti(fname, gti, outname=None,
 
     newgtis = filter_gti_by_length(newgtis, minimum_length)
 
+    data['__sr__class__type__'] = 'gti'
     data['gti'] = newgtis
     good = create_gti_mask(data['time'], newgtis)
     data['time'] = data['time'][good]
