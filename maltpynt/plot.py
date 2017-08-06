@@ -80,13 +80,13 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
 
     for i, fname in enumerate(fnames):
         pds_obj = load_pds(fname)
-        if np.allclose(pds_obj.freq, pds.df):
+        if np.allclose(pds_obj.freq, pds_obj.df):
             freq = pds_obj.freq
             xlog = _assign_value_if_none(xlog, False)
             ylog = _assign_value_if_none(ylog, False)
         else:
             flo = pds_obj.freq - pds_obj.df / 2
-            fhi = pds.freq + pds.df / 2
+            fhi = pds_obj.freq + pds_obj.df / 2
             freq = (fhi + flo) / 2
             xlog = _assign_value_if_none(xlog, True)
             ylog = _assign_value_if_none(ylog, True)
@@ -98,9 +98,10 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
 
         nbin = len(pds[1:])
 
-        # we need the unnormalized power
-        lev = detection_level(nbin, n_summed_spectra=npds) / 2 * pds_obj.nphot1
+        lev = detection_level(nbin, n_summed_spectra=npds)
         if norm == "rms":
+            # we need the unnormalized power
+            lev = lev / 2 * pds_obj.nphots
             lev, _ = pds_obj._normalize_crossspectrum(lev, pds_obj.fftlen)
 
         p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
@@ -156,13 +157,13 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None):
 
     for i, fname in enumerate(fnames):
         pds_obj = load_pds(fname)
-        if np.allclose(pds_obj.freq, pds.df):
+        if np.allclose(pds_obj.freq, pds_obj.df):
             freq = pds_obj.freq
             xlog = _assign_value_if_none(xlog, False)
             ylog = _assign_value_if_none(ylog, False)
         else:
             flo = pds_obj.freq - pds_obj.df / 2
-            fhi = pds.freq + pds.df / 2
+            fhi = pds_obj.freq + pds_obj.df / 2
             freq = (fhi + flo) / 2
             xlog = _assign_value_if_none(xlog, True)
             ylog = _assign_value_if_none(ylog, True)
