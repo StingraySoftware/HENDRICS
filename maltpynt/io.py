@@ -193,8 +193,12 @@ def read_from_netcdf(fname):
     return out
 
 
+def _dum(x):
+    return x
+
+
 # ----- Functions to handle file types
-def get_file_type(fname):
+def get_file_type(fname, raw_data=False):
     """Return the file type and its contents.
 
     Only works for maltpynt-format pickle or netcdf files.
@@ -216,10 +220,14 @@ def get_file_type(fname):
     elif 'Powerspectrum' in ftype_raw:
         ftype = 'pds'
         fun = load_pds
+    elif 'gti' in ftype_raw:
+        ftype = 'gti'
+        fun = _dum
     else:
         raise ValueError('File format not understood')
 
-    contents = fun(fname)
+    if not raw_data:
+        contents = fun(fname)
 
     return ftype, contents
 
@@ -308,6 +316,8 @@ def save_lcurve(lcurve, fname):
     out['tseg'] = lcurve.tseg
     if hasattr(lcurve, 'header'):
         out['header'] = lcurve.header
+    if hasattr(lcurve, 'expo'):
+        out['expo'] = lcurve.expo
 
     if hasattr(lcurve, 'instr'):
         out["instr"] = lcurve.instr
@@ -333,6 +343,8 @@ def load_lcurve(fname):
 
     if 'instr' in list(data.keys()):
         lcurve.instr = data["instr"]
+    if 'expo' in list(data.keys()):
+        lcurve.expo = data["expo"]
     if 'header' in list(data.keys()):
         lcurve.header = data["header"]
 
@@ -939,14 +951,16 @@ def main(args=None):
             print_fits_info(fname)
             print('-' * len(fname))
             continue
-        ftype, contents = get_file_type(fname)
+        ftype, contents = get_file_type(fname, raw_data=True)
         print('This file contains:', end='\n\n')
         mjdref = Time(contents['mjdref'], format='mjd')
 
         for k in sorted(contents.keys()):
-            if k in ['Tstart', 'Tstop']:
+            if k == 'tstart':
                 timeval = contents[k] * u.s
                 val = '{0} (MJD {1})'.format(contents[k], mjdref + timeval)
+            if k == 'tseg':
+                val = '{0} s'.format(contents[k])
             else:
                 val = contents[k]
             if isinstance(val, collections.Iterable) and not is_string(val):
