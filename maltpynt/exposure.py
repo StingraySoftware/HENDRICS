@@ -9,10 +9,11 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 import numpy as np
 from .io import load_events_and_gtis
-from .io import get_file_type, save_data, MP_FILE_EXTENSION
+from .io import get_file_type, save_lcurve, MP_FILE_EXTENSION, load_data
 from .base import create_gti_mask, mp_root, _assign_value_if_none
 import logging
 import warnings
+from stingray import Lightcurve
 
 
 def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
@@ -278,22 +279,27 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
 
     ftype, contents = get_file_type(lc_file)
 
-    time = contents["time"]
-    lc = contents['counts']
-    dt = contents["dt"]
-    gti = contents["gti"]
+    time = contents.time
+    lc = contents.counts
+    dt = contents.dt
+    gti = contents.gti
 
     expo = get_exposure_from_uf(time, uf_file, dt=dt, gti=gti)
 
-    outdata = contents.copy()
-
     newlc = np.array(lc / expo * dt, dtype=np.float64)
     newlc[expo < expo_limit] = 0
-    outdata['counts'] = newlc
-    outdata["expo"] = expo
 
-    save_data(outdata, outname)
-    return outdata
+    newlc_err = np.array(contents.counts_err / expo * dt, dtype=np.float64)
+    newlc_err[expo < expo_limit] = 0
+
+    lcurve = Lightcurve(time, newlc, err=newlc_err,
+                        gti=gti, err_dist ='gauss',
+                        mjdref=contents.mjdref)
+
+    lcurve.expo = expo
+
+    save_lcurve(lcurve, outname)
+    return outname
 
 
 def main(args=None):
@@ -335,8 +341,9 @@ def main(args=None):
 
     outname = outroot + "_lccorr" + MP_FILE_EXTENSION
 
-    outdata = correct_lightcurve(lc_file, uf_file, outname)
+    outfile = correct_lightcurve(lc_file, uf_file, outname)
 
+    outdata = load_data(outfile)
     time = outdata["time"]
     lc = outdata['counts']
     expo = outdata["expo"]
