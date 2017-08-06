@@ -13,6 +13,7 @@ import numpy as np
 from astropy.tests.helper import catch_warnings
 from astropy.io import fits
 import pytest
+from stingray import Lightcurve
 
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 
@@ -482,125 +483,129 @@ model = models.Const1D()
         os.path.exists(os.path.join(self.datadir,
                                     'monol_test_E3-50_cpds_rebin1.03_lags.pha'))
 
-    #
-    # def test_09a_create_gti(self):
-    #     """Test creating a GTI file."""
-    #     fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
-    #         MP_FILE_EXTENSION
-    #     command = "{0} -f counts>0 -c --debug".format(fname)
-    #     mp.create_gti.main(command.split())
-    #
-    # def test_09b_create_gti(self):
-    #     """Test applying a GTI file."""
-    #     fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
-    #         MP_FILE_EXTENSION
-    #     lcfname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
-    #         MP_FILE_EXTENSION
-    #     command = "{0} -a {1} --debug".format(lcfname, fname)
-    #     mp.create_gti.main(command.split())
-    #
-    # def test_09c_create_gti(self):
-    #     """Test creating a GTI file and apply minimum length."""
-    #     fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
-    #         MP_FILE_EXTENSION
-    #     command = "{0} -f counts>0 -c -l 10 --debug".format(fname)
-    #     mp.create_gti.main(command.split())
-    #
-    # def test_09d_create_gti(self):
-    #     """Test applying a GTI file and apply minimum length."""
-    #     fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
-    #         MP_FILE_EXTENSION
-    #     lcfname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
-    #         MP_FILE_EXTENSION
-    #     command = "{0} -a {1} -l 10 --debug".format(lcfname, fname)
-    #     mp.create_gti.main(command.split())
-    #
-    # def test_10a_readfile(self):
-    #     """Test reading and dumping a MaLTPyNT file."""
-    #     fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
-    #         MP_FILE_EXTENSION
-    #     command = "{0}".format(fname)
-    #
-    #     mp.io.main(command.split())
-    #
-    # def test_10b_readfile(self):
-    #     """Test reading and dumping a FITS file."""
-    #     fitsname = os.path.join(self.datadir, 'monol_testA.evt')
-    #     command = "{0}".format(fitsname)
-    #
-    #     mp.io.main(command.split())
-    #
-    # def test_10c_save_as_qdp(self):
-    #     """Test saving arrays in a qdp file."""
-    #     arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
-    #     errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
-    #     mp.io.save_as_qdp(arrays, errors,
-    #                       filename=os.path.join(self.datadir,
-    #                                             "monol_test_qdp.txt"))
-    #
-    # def test_10d_save_as_ascii(self):
-    #     """Test saving arrays in a ascii file."""
-    #     array = np.array([0, 1, 3])
-    #     errors = np.array([1, 1, 1])
-    #     mp.io.save_as_ascii(
-    #         [array, errors],
-    #         filename=os.path.join(self.datadir, "monol_test.txt"),
-    #         colnames=["array", "err"])
-    #
-    # def test_10e_get_file_type(self):
-    #     """Test getting file type."""
-    #     file_list = {'events': 'monol_testA_nustar_fpma_ev',
-    #                  'lc': 'monol_testA_E3-50_lc',
-    #                  'pds': 'monol_testA_E3-50_pds',
-    #                  'gti': 'monol_testA_E3-50_rebin4_gti',
-    #                  'cpds': 'monol_test_E3-50_cpds',
-    #                  'rebcpds': 'monol_test_E3-50_cpds_rebin1.03',
-    #                  'rebpds': 'monol_testA_E3-50_pds_rebin1.03',
-    #                  'lag': 'monol_test_lag'}
-    #     for realtype in file_list.keys():
-    #         fname = os.path.join(self.datadir,
-    #                              file_list[realtype] + MP_FILE_EXTENSION)
-    #         ftype, _ = mp.io.get_file_type(fname)
-    #         assert ftype == realtype, "File types do not match"
-    #
-    # def test_11_exposure(self):
-    #     """Test exposure calculations from unfiltered files."""
-    #     lcname = os.path.join(self.datadir,
-    #                           'monol_testA_E3-50_lc' + MP_FILE_EXTENSION)
-    #     ufname = os.path.join(self.datadir, 'monol_testA_uf.evt')
-    #     command = "{0} {1}".format(lcname, ufname)
-    #
-    #     mp.exposure.main(command.split())
-    #
-    # def test_12a_plot(self):
-    #     """Test plotting with linear axes."""
-    #     pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds') + \
-    #         MP_FILE_EXTENSION
-    #     cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds') + \
-    #         MP_FILE_EXTENSION
-    #     lname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
-    #         MP_FILE_EXTENSION
-    #     mp.plot.main([pname, cname, lname, '--noplot', '--xlin', '--ylin'])
-    #     mp.plot.main([lname, '--noplot',
-    #                   '--axes', 'time', 'counts', '--xlin', '--ylin'])
-    #
-    # def test_12b_plot(self):
-    #     """Test plotting with log axes."""
-    #     pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
-    #         MP_FILE_EXTENSION
-    #     cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds_rebin1.03') + \
-    #         MP_FILE_EXTENSION
-    #     mp.plot.main([pname, cname, '--noplot', '--xlog', '--ylog'])
-    #     mp.plot.main([pname, '--noplot', '--axes', 'pds', 'epds',
-    #                   '--xlin', '--ylin'])
-    #
-    # def test_12c_plot(self):
-    #     """Test plotting and saving figure."""
-    #     pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
-    #         MP_FILE_EXTENSION
-    #     mp.plot.main([pname, '--noplot', '--figname',
-    #                   os.path.join(self.datadir,
-    #                                'monol_testA_E3-50_pds_rebin1.03.png')])
+
+    def test_09a_create_gti(self):
+        """Test creating a GTI file."""
+        fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
+            MP_FILE_EXTENSION
+        command = "{0} -f counts>0 -c --debug".format(fname)
+        mp.create_gti.main(command.split())
+
+    def test_09b_create_gti(self):
+        """Test applying a GTI file."""
+        fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
+            MP_FILE_EXTENSION
+        lcfname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        command = "{0} -a {1} --debug".format(lcfname, fname)
+        mp.create_gti.main(command.split())
+
+    def test_09c_create_gti(self):
+        """Test creating a GTI file and apply minimum length."""
+        fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
+            MP_FILE_EXTENSION
+        command = "{0} -f counts>0 -c -l 10 --debug".format(fname)
+        mp.create_gti.main(command.split())
+
+    def test_09d_create_gti(self):
+        """Test applying a GTI file and apply minimum length."""
+        fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
+            MP_FILE_EXTENSION
+        lcfname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        command = "{0} -a {1} -l 10 --debug".format(lcfname, fname)
+        mp.create_gti.main(command.split())
+
+    def test_10a_readfile(self):
+        """Test reading and dumping a MaLTPyNT file."""
+        fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
+            MP_FILE_EXTENSION
+        command = "{0}".format(fname)
+
+        mp.io.main(command.split())
+
+    def test_10b_readfile(self):
+        """Test reading and dumping a FITS file."""
+        fitsname = os.path.join(self.datadir, 'monol_testA.evt')
+        command = "{0}".format(fitsname)
+
+        mp.io.main(command.split())
+
+    def test_10c_save_as_qdp(self):
+        """Test saving arrays in a qdp file."""
+        arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
+        errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
+        mp.io.save_as_qdp(arrays, errors,
+                          filename=os.path.join(self.datadir,
+                                                "monol_test_qdp.txt"))
+
+    def test_10d_save_as_ascii(self):
+        """Test saving arrays in a ascii file."""
+        array = np.array([0, 1, 3])
+        errors = np.array([1, 1, 1])
+        mp.io.save_as_ascii(
+            [array, errors],
+            filename=os.path.join(self.datadir, "monol_test.txt"),
+            colnames=["array", "err"])
+
+    def test_10e_get_file_type(self):
+        """Test getting file type."""
+        file_list = {'events': 'monol_testA_nustar_fpma_ev',
+                     'lc': 'monol_testA_E3-50_lc',
+                     'pds': 'monol_testA_E3-50_pds',
+                     'gti': 'monol_testA_E3-50_rebin4_gti',
+                     'cpds': 'monol_test_E3-50_cpds'}
+        for realtype in file_list.keys():
+            fname = os.path.join(self.datadir,
+                                 file_list[realtype] + MP_FILE_EXTENSION)
+            ftype, _ = mp.io.get_file_type(fname)
+            assert ftype == realtype, "File types do not match"
+
+    def test_11_exposure(self):
+        """Test exposure calculations from unfiltered files."""
+        lcname = os.path.join(self.datadir,
+                              'monol_testA_E3-50_lc' + MP_FILE_EXTENSION)
+        ufname = os.path.join(self.datadir, 'monol_testA_uf.evt')
+        command = "{0} {1}".format(lcname, ufname)
+
+        mp.exposure.main(command.split())
+        fname = os.path.join(self.datadir,
+                             'monol_testA_E3-50_lccorr'  + MP_FILE_EXTENSION)
+        assert os.path.exists(fname)
+        ftype, contents = mp.io.get_file_type(fname)
+
+        assert isinstance(contents, Lightcurve)
+        assert hasattr(contents, 'expo')
+
+    def test_12a_plot(self):
+        """Test plotting with linear axes."""
+        pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds') + \
+            MP_FILE_EXTENSION
+        cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds') + \
+            MP_FILE_EXTENSION
+        lname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
+            MP_FILE_EXTENSION
+        mp.plot.main([pname, cname, lname, '--noplot', '--xlin', '--ylin'])
+        mp.plot.main([lname, '--noplot',
+                      '--axes', 'time', 'counts', '--xlin', '--ylin'])
+
+    def test_12b_plot(self):
+        """Test plotting with log axes."""
+        pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        mp.plot.main([pname, cname, '--noplot', '--xlog', '--ylog'])
+        mp.plot.main([pname, '--noplot', '--axes', 'power', 'power_err',
+                      '--xlin', '--ylin'])
+
+    def test_12c_plot(self):
+        """Test plotting and saving figure."""
+        pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
+            MP_FILE_EXTENSION
+        mp.plot.main([pname, '--noplot', '--figname',
+                      os.path.join(self.datadir,
+                                   'monol_testA_E3-50_pds_rebin1.03.png')])
 
     @classmethod
     def teardown_class(self):
