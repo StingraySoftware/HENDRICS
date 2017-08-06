@@ -261,8 +261,8 @@ def calc_fspec(files, fftlen,
     logging.info('Sorting file list')
     sorted_files = sort_files(files)
 
-    logging.warning('Beware! For cpds and derivatives, I assume that the'
-                    'files are from only two instruments and in pairs'
+    logging.warning('Beware! For cpds and derivatives, I assume that the '
+                    'files are from only two instruments and in pairs '
                     '(even in random order)')
 
     instrs = list(sorted_files.keys())

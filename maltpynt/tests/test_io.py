@@ -159,7 +159,7 @@ class TestIOModel():
                in str(record.value)
         assert not os.path.exists('bad.p')
 
-    def test_load_model(self):
+    def test_load_python_model_callable(self):
         modelstring = '''
 def model(x, a=2, b=4):
     return x * a + b
@@ -174,6 +174,17 @@ constraints = {'fixed': {'a': True}}
         assert b.__defaults__[0] == 2
         assert b.__defaults__[1] == 4
         assert np.all(constraints == {'fixed': {'a': True}})
+
+    def test_load_python_model_Astropy(self):
+        modelstring = '''
+from astropy.modeling import models
+model = models.Const1D()
+'''
+        print(modelstring, file=open('bubu__model__.py', 'w'))
+        b, kind, constraints = load_model('bubu__model__.py')
+        assert isinstance(b, Model)
+        assert kind == 'Astropy'
+        assert b.amplitude == 1
 
     def test_load_model_input_not_string(self):
         '''Input is not a string'''

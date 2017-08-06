@@ -385,6 +385,9 @@ class TestFullRun(object):
             os.path.join(self.datadir, 'monol_testA_E3-50_pds') +
             MP_FILE_EXTENSION)
         mp.rebin.main(command.split())
+        os.path.exists(os.path.join(self.datadir,
+                                    'monol_testA_E3-50_pds_rebin2' +
+                                    MP_FILE_EXTENSION))
 
     def test_06c_rebinpds(self):
         """Test geometrical PDS rebinning."""
@@ -395,6 +398,12 @@ class TestFullRun(object):
             MP_FILE_EXTENSION
             )
         mp.rebin.main(command.split())
+        os.path.exists(os.path.join(self.datadir,
+                                    'monol_testA_E3-50_pds_rebin1.03' +
+                                    MP_FILE_EXTENSION))
+        os.path.exists(os.path.join(self.datadir,
+                                    'monol_testB_E3-50_pds_rebin1.03' +
+                                    MP_FILE_EXTENSION))
 
     def test_06d_rebincpds(self):
         """Test CPDS rebinning."""
@@ -416,6 +425,34 @@ class TestFullRun(object):
                                     'monol_test_E3-50_cpds_rebin1.03' +
                                     MP_FILE_EXTENSION))
 
+    def test_07a_fit_pds(self):
+        modelstring = '''
+from astropy.modeling import models
+model = models.Const1D()
+        '''
+        modelfile = 'bubu__model__.py'
+        print(modelstring, file=open(modelfile, 'w'))
+        pdsfile1 = \
+            os.path.join(self.datadir,
+                         'monol_testA_E3-50_pds' + MP_FILE_EXTENSION)
+        pdsfile2 = \
+            os.path.join(self.datadir,
+                         'monol_testB_E3-50_pds' + MP_FILE_EXTENSION)
+
+        command = '{0} {1} -m {2}'.format(pdsfile1, pdsfile2, modelfile)
+        mp.modeling.main(command.split())
+
+        assert os.path.exists(
+            os.path.join(self.datadir,
+                         'monol_testA_E3-50_pds_bestfit.p'))
+        assert os.path.exists(
+            os.path.join(self.datadir,
+                         'monol_testB_E3-50_pds_bestfit.p'))
+
+        m, k, c = mp.io.load_model(
+            os.path.join(self.datadir,
+                         'monol_testB_E3-50_pds_bestfit.p'))
+        assert hasattr(m, 'amplitude')
     # def test_06f_dumpdyncpds_reb(self):
     #     """Test dumping rebinned CPDS file."""
     #     command = '--noplot ' + \
@@ -585,7 +622,9 @@ class TestFullRun(object):
             glob.glob(os.path.join(self.datadir,
                                    '*monol_test*.txt')) + \
             glob.glob(os.path.join(self.datadir,
-                                   'monol_test_fake*.evt'))
+                                   'monol_test_fake*.evt')) + \
+            glob.glob(os.path.join(self.datadir,
+                                   'bubu*'))
         for f in file_list:
             print("Removing " + f)
             os.remove(f)

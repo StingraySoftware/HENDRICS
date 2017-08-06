@@ -10,6 +10,7 @@ from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
+import sys
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
@@ -1042,7 +1043,20 @@ def load_model(modelstring):
     # modelstring is a python file
     elif modelstring.endswith('.py'):
         logging.debug('Loading model from Python source')
-        _model = importlib.import_module(modelstring.replace('.py', ''))
+        modulename = modelstring.replace('.py', '')
+        sys.path.append(os.getcwd())
+        # If a module with the same name was already imported, unload it!
+        # This is because the user might be using the same file name but
+        # different models inside, just like we do in test_io.py
+        if modulename in sys.modules:
+            del sys.modules[modulename]
+
+        # This invalidate_caches() is called to account for the case when
+        # the model file does not exist the first time we call
+        # importlib.import_module(). In this case, the second time we call it,
+        # even if the file exists it will not exist for importlib.
+        importlib.invalidate_caches()
+        _model = importlib.import_module(modulename)
         model = _model.model
         constraints = None
         if hasattr(_model, 'constraints'):

@@ -6,7 +6,7 @@ from .io import load_model, load_pds, save_model
 import numpy as np
 from stingray.modeling import fit_powerspectrum
 
-def main(args):
+def main(args=None):
     """Main function called by the `MPfspec` command line script."""
     import argparse
     description = ('Fit frequency spectra (PDS, CPDS, cospectrum) '
@@ -42,21 +42,18 @@ def main(args):
         raise TypeError('At the moment, only Astropy models are accepted')
 
     for f in args.files:
-        root = os.splitext(f)[0]
+        root = os.path.splitext(f)[0]
         spectrum = load_pds(f)
 
         priors = None
         max_post = False
 
-        if 'priors' in constraints:
+        if constraints is not None and 'priors' in constraints:
             priors = constraints['priors']
             max_post = True
 
         parest, res = fit_powerspectrum(spectrum, model, model.parameters,
                                         max_post=max_post, priors=priors,
                                         fitmethod=args.fitmethod)
-
-        logging.info('\n\nFile {}:\n'.format(f))
-        res.print_summary()
 
         save_model(res.model, root + '_bestfit.p')

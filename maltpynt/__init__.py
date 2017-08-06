@@ -18,6 +18,7 @@ if not _ASTROPY_SETUP_:
     from . import fspec
     from . import io
     from . import lcurve
+    from . import modeling
     from . import plot
     from . import read_events
     from . import rebin
