@@ -14,6 +14,10 @@ from astropy.tests.helper import catch_warnings
 from astropy.io import fits
 import pytest
 from stingray import Lightcurve
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
 
 MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
 

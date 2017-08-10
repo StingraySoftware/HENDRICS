@@ -28,7 +28,7 @@ def main(args):
                         type=str, default=None,
                         help="The energy boundaries in keV used to calculate "
                              "the color. E.g. -e 2 3 4 6 means that the "
-                             "color will be calculated as 4.–6./2.–3. keV. "
+                             "color will be calculated as 4.-6./2.-3. keV. "
                              "If --use-pi is specified, these are interpreted "
                              "as PI channels")
     parser.add_argument("-b", "--bintime", type=str, default='100',

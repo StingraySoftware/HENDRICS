@@ -14,7 +14,7 @@ import sys
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
-except:
+except ImportError:
     msg = "Warning! NetCDF is not available. Using pickle format."
     logging.warning(msg)
     MP_FILE_EXTENSION = '.p'
@@ -23,9 +23,14 @@ except:
 try:
     # Python 2
     import cPickle as pickle
-except:
+except ImportError:
     # Python 3
     import pickle
+
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
 
 import collections
 import numpy as np
@@ -1065,11 +1070,6 @@ def load_model(modelstring):
         if modulename in sys.modules:
             del sys.modules[modulename]
 
-        # This invalidate_caches() is called to account for the case when
-        # the model file does not exist the first time we call
-        # importlib.import_module(). In this case, the second time we call it,
-        # even if the file exists it will not exist for importlib.
-        importlib.invalidate_caches()
         _model = importlib.import_module(modulename)
         model = _model.model
         constraints = None
