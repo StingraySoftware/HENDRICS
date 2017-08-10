@@ -88,4 +88,6 @@ def main(args):
                 label = '_PI_'
             label += '{3}-{2}_over_{1}-{0}'.format(*args.energies)
             args.out = mp_root(f) + label + MP_FILE_EXTENSION
-        save_lcurve(scolor, args.out)
+        scolor.e_intervals = np.asarray([float(k) for k in args.energies])
+        scolor.use_pi = args.use_pi
+        save_lcurve(scolor, args.out, lctype='Color')

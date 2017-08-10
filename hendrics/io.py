@@ -216,6 +216,9 @@ def get_file_type(fname, raw_data=False):
     if 'Lightcurve' in ftype_raw:
         ftype = 'lc'
         fun = load_lcurve
+    elif 'Color' in ftype_raw:
+        ftype = 'color'
+        fun = load_lcurve
     elif 'EventList' in ftype_raw:
         ftype = 'events'
         fun = load_events
@@ -296,7 +299,7 @@ def load_events(fname):
 
 
 # ----- functions to save and load LCURVE data
-def save_lcurve(lcurve, fname):
+def save_lcurve(lcurve, fname, lctype='Lightcurve'):
     """Save Light curve to file
 
     Parameters
@@ -308,7 +311,7 @@ def save_lcurve(lcurve, fname):
     """
     out = {}
 
-    out['__sr__class__type__'] = str(type(lcurve))
+    out['__sr__class__type__'] = str(lctype)
 
     out['counts'] = lcurve.counts
     out['counts_err'] = lcurve.counts_err
@@ -323,6 +326,9 @@ def save_lcurve(lcurve, fname):
         out['header'] = lcurve.header
     if hasattr(lcurve, 'expo'):
         out['expo'] = lcurve.expo
+    if lctype == 'Color':
+        out['e_intervals'] = lcurve.e_intervals
+        out['use_pi'] = int(lcurve.use_pi)
 
     if hasattr(lcurve, 'instr'):
         out["instr"] = lcurve.instr
@@ -350,6 +356,10 @@ def load_lcurve(fname):
         lcurve.instr = data["instr"]
     if 'expo' in list(data.keys()):
         lcurve.expo = data["expo"]
+    if 'e_intervals' in list(data.keys()):
+        lcurve.e_intervals = data["e_intervals"]
+    if 'use_pi' in list(data.keys()):
+        lcurve.use_pi = bool(data["use_pi"])
     if 'header' in list(data.keys()):
         lcurve.header = data["header"]
 
