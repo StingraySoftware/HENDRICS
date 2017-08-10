@@ -41,6 +41,12 @@ class TestFullRun(object):
         command = 'MPreadfile {0}'.format(fits_file)
         sp.check_call(command.split())
 
+    def test_00b_scripts_are_installed(self):
+        """Test only once that command line scripts are installed correctly."""
+        fits_file = os.path.join(self.datadir, 'monol_testA.evt')
+        command = 'HENreadfile {0}'.format(fits_file)
+        sp.check_call(command.split())
+
     def test_01a_fake_file(self):
         """Test produce a fake event file."""
         fits_file = os.path.join(self.datadir, 'monol_test_fake.evt')
