@@ -12,6 +12,7 @@ from ._astropy_init import *
 if not _ASTROPY_SETUP_:
     from . import base
     from . import calibrate
+    from . import colors
     from . import create_gti
     from . import exposure
     from . import fake

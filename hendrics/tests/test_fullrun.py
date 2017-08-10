@@ -297,6 +297,29 @@ class TestFullRun(object):
 
         mp.lcurve.main(command.split())
 
+    def test_colors_fail_uncalibrated(self):
+        """Test light curve using PI filtering."""
+        command = ('{0} -b 100 -e {1} {2} {2} {3}').format(
+            os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
+                         MP_FILE_EXTENSION), 3, 5, 10)
+        with pytest.raises(ValueError) as excinfo:
+            mp.colors.main(command.split())
+
+        assert "No energy information is present " in str(excinfo.value)
+
+    def test_colors(self):
+        """Test light curve using PI filtering."""
+        command = ('{0} -b 100 -e {1} {2} {2} {3}').format(
+            os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
+                         MP_FILE_EXTENSION), 3, 5, 10)
+        mp.colors.main(command.split())
+
+        assert os.path.exists(
+            os.path.join(self.datadir,
+                         'monol_testA_nustar_fpma_E_10-5_over_5-3')
+                              + MP_FILE_EXTENSION)
+
+
     def test_05a_pds(self):
         """Test PDS production."""
         command = \
