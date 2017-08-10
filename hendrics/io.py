@@ -584,7 +584,7 @@ def _save_data_nc(struct, fname, kind="data"):
             probekind = np.result_type(probe).kind
             probesize = np.result_type(probe).itemsize
 
-        if probesize >= 8 and probekind == 'f':
+        if probekind == 'f' and probesize >= 8:
             # If a (long)double, split it in integer + floating part.
             # If the number is below zero, also use a logarithm of 10 before
             # that, so that we don't lose precision
@@ -1079,6 +1079,17 @@ def load_model(modelstring):
         # different models inside, just like we do in test_io.py
         if modulename in sys.modules:
             del sys.modules[modulename]
+
+        # This invalidate_caches() is called to account for the case when
+        # the model file does not exist the first time we call
+        # importlib.import_module(). In this case, the second time we call it,
+        # even if the file exists it will not exist for importlib.
+        # Unfortunately, this does not work in Python 2.
+        try:
+            importlib.invalidate_caches()
+        except AttributeError:
+            logging.warning("importlib.invalidate_caches() is not implemented "
+                            "in Python 2")
 
         _model = importlib.import_module(modulename)
         model = _model.model

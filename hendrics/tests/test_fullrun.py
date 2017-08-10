@@ -151,7 +151,7 @@ class TestFullRun(object):
         assert os.path.exists(os.path.join(self.datadir,
                                            'monol_testB_nustar_fpmb_ev_calib' +
                                            MP_FILE_EXTENSION))
-    def test_04a_lcurve(self):
+    def test_lcurve(self):
         """Test light curve production."""
         command = ('{0} -e {1} {2} --safe-interval '
                    '{3} {4}  --nproc 2 -b 0.5 -o {5}').format(
@@ -179,14 +179,14 @@ class TestFullRun(object):
                                            'monol_testB_E3-50_lc' +
                                            MP_FILE_EXTENSION))
 
-    def test_04b_lcurve_split(self):
+    def test_lcurve_split(self):
         """Test lc with gti-split option, and reading of split event file."""
         command = '{0} -g'.format(
             os.path.join(self.datadir, 'monol_testB_nustar_fpmb_gti0_ev' +
                          MP_FILE_EXTENSION))
         mp.lcurve.main(command.split())
 
-    def test_04c_fits_lcurve0(self):
+    def test_fits_lcurve0(self):
         """Test light curves from FITS."""
         lcurve_ftools_orig = os.path.join(self.datadir, 'lcurveA.fits')
 
@@ -210,7 +210,7 @@ class TestFullRun(object):
             lcurve_ftools)
         mp.lcurve.main(command.split())
 
-    def test_04c_fits_lcurve1(self):
+    def test_fits_lcurve1(self):
         """Test light curves from FITS."""
         lcurve_ftools = os.path.join(self.datadir,
                                      'lcurve_ftools_lc' +
@@ -235,7 +235,7 @@ class TestFullRun(object):
         assert np.all(np.abs(diff) <= 1e-3), \
             'Light curve data do not coincide between FITS and MP'
 
-    def test_04d_txt_lcurve(self):
+    def test_txt_lcurve(self):
         """Test light curves from txt."""
         lcurve_mp = os.path.join(self.datadir,
                                  'lcurve_lc' +
@@ -261,7 +261,7 @@ class TestFullRun(object):
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
             'Light curve data do not coincide between txt and MP'
 
-    def test_04e_joinlcs(self):
+    def test_joinlcs(self):
         """Test produce joined light curves."""
         mp.lcurve.join_lightcurves(
             [os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
@@ -271,7 +271,7 @@ class TestFullRun(object):
             os.path.join(self.datadir, 'monol_test_joinlc' +
                          MP_FILE_EXTENSION))
 
-    def test_04f_scrunchlcs(self):
+    def test_scrunchlcs(self):
         """Test produce scrunched light curves."""
         command = '{0} {1} -o {2}'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
@@ -282,7 +282,7 @@ class TestFullRun(object):
             MP_FILE_EXTENSION)
         mp.lcurve.scrunch_main(command.split())
 
-    def test_04g_lcurve(self):
+    def test_lcurve_error_uncalibrated(self):
         """Test light curve error from uncalibrated file."""
         command = ('{0} -e {1} {2}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
@@ -293,7 +293,7 @@ class TestFullRun(object):
         message = str(excinfo.value)
         assert str(message).strip().endswith("Did you run MPcalibrate?")
 
-    def test_04h_lcurve(self):
+    def test_lcurve_pi_filtering(self):
         """Test light curve using PI filtering."""
         command = ('{0} --pi-interval {1} {2}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
@@ -313,6 +313,7 @@ class TestFullRun(object):
 
     def test_colors(self):
         """Test light curve using PI filtering."""
+        # calculate colors
         command = ('{0} -b 100 -e {1} {2} {2} {3}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
                          MP_FILE_EXTENSION), 3, 5, 10)
@@ -639,6 +640,33 @@ model = models.Const1D()
         mp.plot.main([pname, '--noplot', '--figname',
                       os.path.join(self.datadir,
                                    'monol_testA_E3-50_pds_rebin1.03.png')])
+
+    def test_plot_color(self):
+        """Test plotting with linear axes."""
+        lname = os.path.join(self.datadir,
+                             'monol_testA_nustar_fpma_E_10-5_over_5-3') + \
+            MP_FILE_EXTENSION
+        cname = os.path.join(self.datadir,
+                             'monol_testA_nustar_fpma_E_10-5_over_5-3') + \
+            MP_FILE_EXTENSION
+        mp.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--CCD'])
+
+    def test_plot_hid(self):
+        """Test plotting with linear axes."""
+        # also produce a light curve with the same binning
+        command = ('{0} -b 100 --e-interval {1} {2}').format(
+            os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
+                         MP_FILE_EXTENSION), 3, 10)
+
+        mp.lcurve.main(command.split())
+        lname = os.path.join(self.datadir,
+                             'monol_testA_nustar_fpma_E3-10_lc') + \
+            MP_FILE_EXTENSION
+        os.path.exists(lname)
+        cname = os.path.join(self.datadir,
+                             'monol_testA_nustar_fpma_E_10-5_over_5-3') + \
+            MP_FILE_EXTENSION
+        mp.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--HID'])
 
     @classmethod
     def teardown_class(self):

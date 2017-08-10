@@ -15,6 +15,11 @@ import glob
 from astropy.modeling import models
 from astropy.modeling.core import Model
 
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 
 def _dummy_bad(x, z, y=0):
     return
@@ -182,8 +187,8 @@ constraints = {'fixed': {'a': True}}
 from astropy.modeling import models
 model = models.Const1D()
 '''
-        print(modelstring, file=open('bubu__model__.py', 'w'))
-        b, kind, constraints = load_model('bubu__model__.py')
+        print(modelstring, file=open('bubu__model__2__.py', 'w'))
+        b, kind, constraints = load_model('bubu__model__2__.py')
         assert isinstance(b, Model)
         assert kind == 'Astropy'
         assert b.amplitude == 1

@@ -8,7 +8,7 @@ try:
 except:
     # Permit to import the module anyway if matplotlib is not present
     pass
-from .io import load_data, get_file_type, load_pds
+from .io import load_data, get_file_type, load_pds, load_lcurve
 from .io import is_string
 from .base import create_gti_mask, _assign_value_if_none
 from .base import detection_level
@@ -197,6 +197,26 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None):
         plt.savefig(figname)
 
 
+def plot_color(file0, file1, xlog=None, ylog=None, figname=None):
+    type0, lc0 = get_file_type(file0)
+    type1, lc1 = get_file_type(file1)
+    xlabel, ylabel = 'Count rate', 'Count rate'
+    if type0 == 'color':
+        xlabel = '{3}-{2}/{1}-{0}'.format(*lc0.e_intervals)
+    if type1 == 'color':
+        ylabel = '{3}-{2}/{1}-{0}'.format(*lc1.e_intervals)
+    plt.errorbar(lc0.counts, lc1.counts,
+                 xerr=lc0.counts_err, yerr=lc1.counts_err, fmt='o')
+
+    ax = plt.gca()
+    if xlog:
+        ax.set_xscale('log', nonposx='clip')
+    if ylog:
+        ax.set_yscale('log', nonposy='clip')
+    if figname is not None:
+        plt.savefig(figname)
+
+
 def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None):
     """Plot a list of light curve files, or a single one."""
     if is_string(lcfiles):
@@ -251,6 +271,17 @@ def main(args=None):
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument("--noplot", help="Only create images, do not plot",
                         default=False, action='store_true')
+    parser.add_argument("--CCD",
+                        help="This is a color-color diagram. In this case, the"
+                             " list of files is expected to be given as "
+                             "soft0.nc, hard0.nc, soft1.nc, hard1.nc, ...",
+                        default=False, action='store_true')
+    parser.add_argument("--HID",
+                        help="This is a hardness-intensity diagram. In this "
+                             "case, the list of files is expected to be given "
+                             "as color0.nc, intensity0.nc, color1.nc, "
+                             "intensity1.nc, ...",
+                        default=False, action='store_true')
     parser.add_argument("--figname", help="Figure name",
                         default=None, type=str)
     parser.add_argument("--xlog", help="Use logarithmic X axis",
@@ -277,7 +308,15 @@ def main(args=None):
         args.xlog = False
     if args.ylin is not None:
         args.ylog = False
+
+    if args.CCD or args.HID:
+        args.files = zip(args.files[:-1:2], args.files[1::2])
+
     for fname in args.files:
+        if args.CCD or args.HID:
+            plot_color(fname[0], fname[1], xlog=args.xlog, ylog=args.ylog,
+                       figname=args.figname)
+            continue
         ftype, contents = get_file_type(fname)
         if args.axes is not None:
             plot_generic(fname, args.axes, xlog=args.xlog, ylog=args.ylog,
