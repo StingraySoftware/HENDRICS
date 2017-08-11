@@ -6,7 +6,7 @@ import os
 from maltpynt.read_events import treat_event_file
 from maltpynt.io import MP_FILE_EXTENSION
 from maltpynt.lcurve import lcurve_from_events
-import maltpynt as mp
+import hendrics as mp
 import glob
 
 

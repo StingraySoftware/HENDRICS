@@ -5,7 +5,7 @@ import numpy as np
 import os
 from maltpynt.read_events import treat_event_file
 from maltpynt.io import MP_FILE_EXTENSION, load_data
-import maltpynt as mp
+import hendrics as mp
 
 class TestReadEvents():
     """Real unit tests."""

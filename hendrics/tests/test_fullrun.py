@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-import maltpynt as mp
+import hendrics as mp
 import logging
 import os
 import glob
