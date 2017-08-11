@@ -626,7 +626,7 @@ def load_data(fname):
 
 
 # QDP format is often used in FTOOLS
-def save_as_qdp(arrays, errors=None, filename="out.qdp"):
+def save_as_qdp(arrays, errors=None, filename="out.qdp", mode='w'):
     """Save arrays in a QDP file.
 
     Saves an array of variables, and possibly their errors, to a QDP file.
@@ -642,7 +642,13 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
         - an array of same length of variable for symmetric errors
         - an array of len-2 lists for non-symmetric errors (e.g.
         [[errm1, errp1], [errm2, errp2], [errm3, errp3], ...])
-    """
+
+    Other parameters
+    ----------------
+    mode : str
+        the file access mode, to be passed to the open() function. Can be 'w'
+        or 'a'
+     """
     import numpy as np
     errors = assign_value_if_none(errors, [None for i in arrays])
 
@@ -664,10 +670,15 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp"):
             maxe = [k[1] for k in errors[ia]]
             data_to_write.append(mine)
             data_to_write.append(maxe)
-    outfile = open(filename, 'w')
-    for l in list_of_errs:
-        i, kind = l
-        print('READ %s' % kind + 'ERR %d' % (i + 1), file=outfile)
+
+    print_header = True
+    if os.path.exists(filename) and mode == 'a':
+        print_header = False
+    outfile = open(filename, mode)
+    if print_header:
+        for l in list_of_errs:
+            i, kind = l
+            print('READ %s' % kind + 'ERR %d' % (i + 1), file=outfile)
 
     length = len(data_to_write[0])
     for i in range(length):

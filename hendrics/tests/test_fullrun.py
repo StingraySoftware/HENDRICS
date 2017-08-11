@@ -596,6 +596,10 @@ model = models.Const1D()
         mp.io.save_as_qdp(arrays, errors,
                           filename=os.path.join(self.datadir,
                                                 "monol_test_qdp.txt"))
+        mp.io.save_as_qdp(arrays, errors,
+                          filename=os.path.join(self.datadir,
+                                                "monol_test_qdp.txt"),
+                          mode='a')
 
     def test_10d_save_as_ascii(self):
         """Test saving arrays in a ascii file."""
