@@ -8,5 +8,6 @@ dependencies:
     - Cython
     - matplotlib
     - numpy
+    - scipy
     - pip:
        - git+https://github.com/stingraysoftware/stingray.git
