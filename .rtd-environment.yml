@@ -1,0 +1,12 @@
+name: hendrics
+
+channels:
+    - astropy
+
+dependencies:
+    - astropy
+    - Cython
+    - matplotlib
+    - numpy
+    - pip:
+       - git+https://github.com/stingraysoftware/stingray.git

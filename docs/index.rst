@@ -152,6 +152,7 @@ API documentation
    :maxdepth: 2
 
    hendrics/modules
+   hendrics/index
 
 
 Indices and tables

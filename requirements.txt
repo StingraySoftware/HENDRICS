@@ -2,3 +2,4 @@ numpy
 scipy
 astropy
 matplotlib
+git+https://github.com/stingraysoftware/stingray.git
