@@ -43,11 +43,13 @@ except ImportError:
 from astropy_helpers.sphinx.conf import *  # NOQA
 
 # Get configuration information from setup.cfg
-from distutils import config
+try:
+    from ConfigParser import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
 
 import sphinx.environment
 from docutils.utils import get_source_line
-
 
 def _warn_node(self, msg, node):
     if not msg.startswith('nonlocal image URI found:'):
@@ -55,7 +57,7 @@ def _warn_node(self, msg, node):
 
 sphinx.environment.BuildEnvironment.warn_node = _warn_node
 
-conf = config.ConfigParser()
+conf = ConfigParser()
 conf.optionxform = str
 conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 setup_cfg = dict(conf.items('metadata'))
