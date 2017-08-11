@@ -50,6 +50,19 @@ cpl256 = np.dtype([(str('real'), np.longdouble),
                    (str('imag'), np.longdouble)])
 
 
+class EFPeriodogram(object):
+    def __init__(self, freq=None, stat=None, kind=None, nbin=None, N=None,
+                 peaks=None, peak_stat=None, best_fits=None):
+        self.freq = freq
+        self.stat = stat
+        self.kind = kind
+        self.nbin = nbin
+        self.N = N
+        self.peaks = peaks
+        self.peak_stat = peak_stat
+        self.best_fits = best_fits
+
+
 def _get_key(dict_like, key):
     try:
         return dict_like[key]
@@ -365,6 +378,36 @@ def load_lcurve(fname):
 
     return lcurve
 
+# ---- Functions to save epoch folding results
+
+def save_folding(efperiodogram, fname):
+    """Save PDS in a file."""
+
+    outdata = copy.copy(efperiodogram.__dict__)
+    outdata['__sr__class__type__'] = 'EFPeriodogram'
+    if get_file_format(fname) == 'pickle':
+        return _save_data_pickle(outdata, fname)
+    elif get_file_format(fname) == 'nc':
+        return _save_data_nc(outdata, fname)
+
+def load_folding(fname):
+    """Load PDS from a file."""
+    if get_file_format(fname) == 'pickle':
+        data = _load_data_pickle(fname)
+    elif get_file_format(fname) == 'nc':
+        data = _load_data_nc(fname)
+
+    data.pop('__sr__class__type__')
+
+    ef = EFPeriodogram()
+
+    for key in data.keys():
+        setattr(ef, key, data[key])
+    if len(np.asarray(ef.peaks).shape) == 0:
+        ef.peaks = [ef.peaks]
+    return ef
+
+
 # ---- Functions to save PDSs
 
 def save_pds(cpds, fname):
@@ -543,14 +586,14 @@ def _split_high_precision_number(varname, var, probesize):
         if dum < 1 and dum > 0.:
             var_log10 = np.floor(np.log10(dum))
 
-        var = var / (10. ** var_log10)
+        var = np.asarray(var) / (10. ** var_log10)
         var_I = np.floor(var).astype(np.long)
         var_F = np.array(var - var_I, dtype=np.double)
     else:
         if np.abs(var) < 1 and np.abs(var) > 0.:
             var_log10 = np.floor(np.log10(np.abs(var)))
 
-        var = var / 10. ** var_log10
+        var = np.asarray(var) / 10. ** var_log10
         var_I = np.long(np.floor(var))
         var_F = np.double(var - var_I)
     return var_I, var_F, var_log10, kind_str
