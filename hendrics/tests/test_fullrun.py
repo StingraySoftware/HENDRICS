@@ -460,7 +460,7 @@ class TestFullRun(object):
                                     'monol_test_E3-50_cpds_rebin1.03' +
                                     MP_FILE_EXTENSION))
 
-    def test_07a_fit_pds(self):
+    def test_fit_pds(self):
         modelstring = '''
 from astropy.modeling import models
 model = models.Const1D()
@@ -474,20 +474,44 @@ model = models.Const1D()
             os.path.join(self.datadir,
                          'monol_testB_E3-50_pds' + MP_FILE_EXTENSION)
 
-        command = '{0} {1} -m {2}'.format(pdsfile1, pdsfile2, modelfile)
-        mp.modeling.main(command.split())
+        command = '{0} {1} -m {2} --frequency-interval 0 10'.format(pdsfile1,
+                                                                    pdsfile2,
+                                                                    modelfile)
+        mp.modeling.main_model(command.split())
 
-        assert os.path.exists(
-            os.path.join(self.datadir,
-                         'monol_testA_E3-50_pds_bestfit.p'))
-        assert os.path.exists(
-            os.path.join(self.datadir,
-                         'monol_testB_E3-50_pds_bestfit.p'))
-
+        out0 = os.path.join(self.datadir, 'monol_testA_E3-50_pds_bestfit.p')
+        out1 = os.path.join(self.datadir, 'monol_testB_E3-50_pds_bestfit.p')
+        assert os.path.exists(out0)
+        assert os.path.exists(out1)
         m, k, c = mp.io.load_model(
             os.path.join(self.datadir,
                          'monol_testB_E3-50_pds_bestfit.p'))
         assert hasattr(m, 'amplitude')
+        os.unlink(out0)
+        os.unlink(out1)
+
+    def test_fit_pds_f_no_of_intervals_invalid(self):
+        modelstring = '''
+from astropy.modeling import models
+model = models.Const1D()
+        '''
+        modelfile = 'bubu__model__.py'
+        print(modelstring, file=open(modelfile, 'w'))
+        pdsfile1 = \
+            os.path.join(self.datadir,
+                         'monol_testA_E3-50_pds' + MP_FILE_EXTENSION)
+        pdsfile2 = \
+            os.path.join(self.datadir,
+                         'monol_testB_E3-50_pds' + MP_FILE_EXTENSION)
+
+        command = '{0} {1} -m {2} --frequency-interval 0 1 9'.format(pdsfile1,
+                                                                     pdsfile2,
+                                                                     modelfile)
+        with pytest.raises(ValueError) as excinfo:
+            mp.modeling.main_model(command.split())
+
+        assert "Invalid number of frequencies specified" in str(excinfo.value)
+
     # def test_06f_dumpdyncpds_reb(self):
     #     """Test dumping rebinned CPDS file."""
     #     command = '--noplot ' + \
