@@ -27,7 +27,7 @@ env:
         # to repeat them for all configurations.
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='scipy matplotlib pytest pip'
-        - PIP_DEPENDENCIES='git+https://github.com/stingraysoftware/stingray.git'
+        - PIP_DEPENDENCIES='git+https://github.com/stingraysoftware/stingray.git sphinx=1.3.1'
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
     matrix:
