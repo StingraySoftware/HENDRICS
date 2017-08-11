@@ -104,6 +104,53 @@ HENdumpdyn
       --noplot    plot results
 
 
+HENefsearch
+-----------
+
+::
+
+    usage: HENefsearch [-h] [--loglevel LOGLEVEL] --fmin FMIN --fmax FMAX
+                       [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
+                       [--oversample OVERSAMPLE] [--expocorr] [--find-candidates]
+                       [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+                       [--debug] [-N N]
+                       files [files ...]
+
+    Search for pulsars using the epoch folding or the Z_n^2 algorithm
+
+    positional arguments:
+      files                 List of files
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --fmin FMIN           Minimum frequency to fold
+      --fmax FMAX           Maximum frequency to fold
+      -n NBIN, --nbin NBIN  Kind of curve to use (sinc or Gaussian)
+      --segment-size SEGMENT_SIZE
+                            Size of the event list segment to use (default None,
+                            implying the whole observation)
+      --step STEP           Step size of the frequency axis. Defaults to
+                            1/oversample/observ.length.
+      --oversample OVERSAMPLE
+                            Oversampling factor - frequency resolution improvement
+                            w.r.t. the standard FFT's 1/observ.length.
+      --expocorr            Correct for the exposure of the profile bins. This
+                            method is *much* slower, but it is useful for very
+                            slow pulsars, where data gaps due to occultation or
+                            SAA passages can significantly alter the exposure of
+                            different profile bins.
+      --find-candidates     Find pulsation candidates using thresholding
+      --conflevel CONFLEVEL
+                            Confidence level for thresholding.
+      --fit-candidates      Fit the candidate peaks in the periodogram
+      --curve CURVE         Kind of curve to use (sinc or Gaussian)
+      --debug               use DEBUG logging level
+      -N N                  The number of harmonics to use in the search (the 'N'
+                            in Z^2_N; only relevant to Z search!)
+
+
 HENexposure
 -----------
 
@@ -261,6 +308,7 @@ HENmodel
 ::
 
     usage: HENmodel [-h] [-m MODELFILE] [--fitmethod FITMETHOD]
+                    [--frequency-interval FREQUENCY_INTERVAL [FREQUENCY_INTERVAL ...]]
                     [--loglevel LOGLEVEL] [--debug]
                     files [files ...]
 
@@ -276,6 +324,12 @@ HENmodel
                             constraints
       --fitmethod FITMETHOD
                             Any scipy-compatible fit method
+      --frequency-interval FREQUENCY_INTERVAL [FREQUENCY_INTERVAL ...]
+                            Select frequency interval(s) to fit. Must be an even
+                            number of frequencies in Hz, like "--frequency-
+                            interval 0 2" or "--frequency-interval 0 2 5 10",
+                            meaning that the spectrum will be fitted between 0 and
+                            2 Hz, or using the intervals 0-2 Hz and 5-10 Hz.
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               use DEBUG logging level
@@ -286,26 +340,36 @@ HENplot
 
 ::
 
-    usage: HENplot [-h] [--noplot] [--figname FIGNAME] [--xlog] [--ylog] [--xlin]
-                   [--ylin] [--fromstart] [--axes AXES AXES]
+    usage: HENplot [-h] [--noplot] [--CCD] [--HID] [--figname FIGNAME]
+                   [-o OUTFILE] [--xlog] [--ylog] [--xlin] [--ylin] [--fromstart]
+                   [--axes AXES AXES]
                    files [files ...]
 
     Plot the content of MaLTPyNT light curves and frequency spectra
 
     positional arguments:
-      files              List of files
+      files                 List of files
 
     optional arguments:
-      -h, --help         show this help message and exit
-      --noplot           Only create images, do not plot
-      --figname FIGNAME  Figure name
-      --xlog             Use logarithmic X axis
-      --ylog             Use logarithmic Y axis
-      --xlin             Use linear X axis
-      --ylin             Use linear Y axis
-      --fromstart        Times are measured from the start of the observation
-                         (only relevant for light curves)
-      --axes AXES AXES   Plot two variables contained in the file
+      -h, --help            show this help message and exit
+      --noplot              Only create images, do not plot
+      --CCD                 This is a color-color diagram. In this case, the list
+                            of files is expected to be given as soft0.nc,
+                            hard0.nc, soft1.nc, hard1.nc, ...
+      --HID                 This is a hardness-intensity diagram. In this case,
+                            the list of files is expected to be given as
+                            color0.nc, intensity0.nc, color1.nc, intensity1.nc,
+                            ...
+      --figname FIGNAME     Figure name
+      -o OUTFILE, --outfile OUTFILE
+                            Output data file in QDP format
+      --xlog                Use logarithmic X axis
+      --ylog                Use logarithmic Y axis
+      --xlin                Use linear X axis
+      --ylin                Use linear Y axis
+      --fromstart           Times are measured from the start of the observation
+                            (only relevant for light curves)
+      --axes AXES AXES      Plot two variables contained in the file
 
 
 HENreadevents
@@ -417,5 +481,52 @@ HENsumfspec
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
                             tot_(c)pds.nc
+
+
+HENzsearch
+----------
+
+::
+
+    usage: HENzsearch [-h] [--loglevel LOGLEVEL] --fmin FMIN --fmax FMAX [-n NBIN]
+                      [--segment-size SEGMENT_SIZE] [--step STEP]
+                      [--oversample OVERSAMPLE] [--expocorr] [--find-candidates]
+                      [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+                      [--debug] [-N N]
+                      files [files ...]
+
+    Search for pulsars using the epoch folding or the Z_n^2 algorithm
+
+    positional arguments:
+      files                 List of files
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --fmin FMIN           Minimum frequency to fold
+      --fmax FMAX           Maximum frequency to fold
+      -n NBIN, --nbin NBIN  Kind of curve to use (sinc or Gaussian)
+      --segment-size SEGMENT_SIZE
+                            Size of the event list segment to use (default None,
+                            implying the whole observation)
+      --step STEP           Step size of the frequency axis. Defaults to
+                            1/oversample/observ.length.
+      --oversample OVERSAMPLE
+                            Oversampling factor - frequency resolution improvement
+                            w.r.t. the standard FFT's 1/observ.length.
+      --expocorr            Correct for the exposure of the profile bins. This
+                            method is *much* slower, but it is useful for very
+                            slow pulsars, where data gaps due to occultation or
+                            SAA passages can significantly alter the exposure of
+                            different profile bins.
+      --find-candidates     Find pulsation candidates using thresholding
+      --conflevel CONFLEVEL
+                            Confidence level for thresholding.
+      --fit-candidates      Fit the candidate peaks in the periodogram
+      --curve CURVE         Kind of curve to use (sinc or Gaussian)
+      --debug               use DEBUG logging level
+      -N N                  The number of harmonics to use in the search (the 'N'
+                            in Z^2_N; only relevant to Z search!)
 
 
