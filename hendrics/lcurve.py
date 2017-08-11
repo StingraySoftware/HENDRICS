@@ -277,7 +277,7 @@ def lcurve_from_events(f, safe_interval=0,
         if not hasattr(evdata, 'energy') or evdata.energy is None:
             raise \
                 ValueError("No energy information is present in the file." +
-                           " Did you run MPcalibrate?")
+                           " Did you run HENcalibrate?")
         es = evdata.energy
         good = np.logical_and(es > e_interval[0],
                               es <= e_interval[1])
@@ -598,7 +598,7 @@ def _wrap_lc(args):
     try:
         return lcurve_from_events(f, **kwargs)
     except Exception as e:
-        warnings.warn("MPlcurve exception: {0}".format(str(e)))
+        warnings.warn("HENlcurve exception: {0}".format(str(e)))
         raise
         return []
 
@@ -608,7 +608,7 @@ def _wrap_txt(args):
     try:
         return lcurve_from_txt(f, **kwargs)
     except Exception as e:
-        warnings.warn("MPlcurve exception: {0}".format(str(e)))
+        warnings.warn("HENlcurve exception: {0}".format(str(e)))
         return []
 
 
@@ -617,12 +617,12 @@ def _wrap_fits(args):
     try:
         return lcurve_from_fits(f, **kwargs)
     except Exception as e:
-        warnings.warn("MPlcurve exception: {0}".format(str(e)))
+        warnings.warn("HENlcurve exception: {0}".format(str(e)))
         return []
 
 
 def main(args=None):
-    """Main function called by the `MPlcurve` command line script."""
+    """Main function called by the `HENlcurve` command line script."""
     import argparse
     from multiprocessing import Pool
 
@@ -695,7 +695,7 @@ def main(args=None):
     bintime = args.bintime
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPlcurve.log', level=numeric_level,
+    logging.basicConfig(filename='HENlcurve.log', level=numeric_level,
                         filemode='w')
 
     safe_interval = args.safe_interval
@@ -751,7 +751,7 @@ def main(args=None):
 
 
 def scrunch_main(args=None):
-    """Main function called by the `MPscrunchlc` command line script."""
+    """Main function called by the `HENscrunchlc` command line script."""
     import argparse
     description = \
         'Sum lightcurves from different instruments or energy ranges'
@@ -776,7 +776,7 @@ def scrunch_main(args=None):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPscrunchlc.log', level=numeric_level,
+    logging.basicConfig(filename='HENscrunchlc.log', level=numeric_level,
                         filemode='w')
 
     scrunch_lightcurves(files, args.out)

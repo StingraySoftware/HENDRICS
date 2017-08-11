@@ -342,7 +342,7 @@ def _read_light_curve(filename):
 
 
 def main(args=None):
-    """Main function called by the `MPfake` command line script."""
+    """Main function called by the `HENfake` command line script."""
     import argparse
     description = (
         'Create an event file in FITS format from an event list, or simulating'
@@ -389,7 +389,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPfake.log', level=numeric_level,
+    logging.basicConfig(filename='HENfake.log', level=numeric_level,
                         filemode='w')
 
     additional_columns = {}

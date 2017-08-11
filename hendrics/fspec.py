@@ -369,7 +369,7 @@ def dumpdyn(fname, plot=False):
 
 
 def dumpdyn_main(args=None):
-    """Main function called by the `MPdumpdyn` command line script."""
+    """Main function called by the `HENdumpdyn` command line script."""
     import argparse
 
     description = ('Dump dynamical (cross) power spectra')
@@ -389,7 +389,7 @@ def dumpdyn_main(args=None):
 
 
 def main(args=None):
-    """Main function called by the `MPfspec` command line script."""
+    """Main function called by the `HENfspec` command line script."""
     import argparse
     description = ('Create frequency spectra (PDS, CPDS, cospectrum) '
                    'starting from well-defined input ligthcurves')
@@ -442,7 +442,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPfspec.log', level=numeric_level,
+    logging.basicConfig(filename='HENfspec.log', level=numeric_level,
                         filemode='w')
 
     bintime = args.bintime

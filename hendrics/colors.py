@@ -54,7 +54,7 @@ def main(args):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPscrunchlc.log', level=numeric_level,
+    logging.basicConfig(filename='HENscrunchlc.log', level=numeric_level,
                         filemode='w')
 
     option = '--e-interval'

@@ -303,7 +303,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
 
 
 def main(args=None):
-    """Main function called by the `MPexposure` command line script."""
+    """Main function called by the `HENexposure` command line script."""
     import argparse
     description = (
         'Create exposure light curve based on unfiltered event files.')
@@ -331,7 +331,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPexposure.log', level=numeric_level,
+    logging.basicConfig(filename='HENexposure.log', level=numeric_level,
                         filemode='w')
 
     lc_file = args.lcfile

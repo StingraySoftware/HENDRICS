@@ -117,7 +117,7 @@ def apply_gti(fname, gti, outname=None,
 
 
 def main(args=None):
-    """Main function called by the `MPcreategti` command line script."""
+    """Main function called by the `HENcreategti` command line script."""
     import argparse
 
     description = ('Create GTI files from a filter expression, or applies '
@@ -169,7 +169,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPcreategti.log', level=numeric_level,
+    logging.basicConfig(filename='HENcreategti.log', level=numeric_level,
                         filemode='w')
 
     filter_expr = args.filter

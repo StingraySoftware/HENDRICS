@@ -35,7 +35,7 @@ def rebin_file(filename, rebin):
 
 
 def main(args=None):
-    """Main function called by the `MPrebin` command line script."""
+    """Main function called by the `HENrebin` command line script."""
     import argparse
     description = 'Rebin light curves and frequency spectra. '
     parser = argparse.ArgumentParser(description=description)
@@ -63,7 +63,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPrebin.log', level=numeric_level,
+    logging.basicConfig(filename='HENrebin.log', level=numeric_level,
                         filemode='w')
     rebin = args.rebin
     for f in files:

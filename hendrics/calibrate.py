@@ -121,7 +121,7 @@ def _calib_wrap(args):
 
 
 def main(args=None):
-    """Main function called by the `MPcalibrate` command line script."""
+    """Main function called by the `HENcalibrate` command line script."""
     import argparse
     from multiprocessing import Pool
 
@@ -157,7 +157,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPcalibrate.log', level=numeric_level,
+    logging.basicConfig(filename='HENcalibrate.log', level=numeric_level,
                         filemode='w')
 
     funcargs = []

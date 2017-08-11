@@ -42,7 +42,7 @@ class TestFullRun(object):
     def test_00a_scripts_are_installed(self):
         """Test only once that command line scripts are installed correctly."""
         fits_file = os.path.join(self.datadir, 'monol_testA.evt')
-        command = 'MPreadfile {0}'.format(fits_file)
+        command = 'HENreadfile {0}'.format(fits_file)
         sp.check_call(command.split())
 
     def test_00b_scripts_are_installed(self):
@@ -291,7 +291,7 @@ class TestFullRun(object):
         with pytest.raises(ValueError) as excinfo:
             mp.lcurve.main(command.split())
         message = str(excinfo.value)
-        assert str(message).strip().endswith("Did you run MPcalibrate?")
+        assert str(message).strip().endswith("Did you run HENcalibrate?")
 
     def test_lcurve_pi_filtering(self):
         """Test light curve using PI filtering."""

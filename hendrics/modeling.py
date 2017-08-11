@@ -8,7 +8,7 @@ import numpy as np
 from stingray.modeling import fit_powerspectrum
 
 def main_model(args=None):
-    """Main function called by the `MPfspec` command line script."""
+    """Main function called by the `HENfspec` command line script."""
     import argparse
     description = ('Fit frequency spectra (PDS, CPDS, cospectrum) '
                    'with user-defined models')
@@ -47,7 +47,7 @@ def main_model(args=None):
         raise ValueError("Invalid number of frequencies specified")
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPmodel.log', level=numeric_level,
+    logging.basicConfig(filename='HENmodel.log', level=numeric_level,
                         filemode='w')
 
     model, kind, constraints = load_model(args.modelfile)

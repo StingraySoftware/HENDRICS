@@ -111,7 +111,7 @@ def _wrap_fun(arglist):
 
 
 def main(args=None):
-    """Main function called by the `MPreadevents` command line script."""
+    """Main function called by the `HENreadevents` command line script."""
     import argparse
     from multiprocessing import Pool
 
@@ -152,7 +152,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MPreadevents.log', level=numeric_level,
+    logging.basicConfig(filename='HENreadevents.log', level=numeric_level,
                         filemode='w')
 
     argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,

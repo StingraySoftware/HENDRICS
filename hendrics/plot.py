@@ -292,7 +292,7 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
 
 
 def main(args=None):
-    """Main function called by the `MPplot` command line script."""
+    """Main function called by the `HENplot` command line script."""
     import argparse
 
     description = \

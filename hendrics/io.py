@@ -955,7 +955,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
 
 
 def main(args=None):
-    """Main function called by the `MPreadfile` command line script."""
+    """Main function called by the `HENreadfile` command line script."""
     from astropy.time import Time
     import astropy.units as u
     import argparse
