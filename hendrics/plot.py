@@ -9,7 +9,7 @@ except:
     # Permit to import the module anyway if matplotlib is not present
     pass
 from .io import load_data, get_file_type, load_pds, load_lcurve
-from .io import is_string
+from .io import is_string, save_as_qdp
 from .base import create_gti_mask, _assign_value_if_none
 from .base import detection_level
 import logging
@@ -36,7 +36,8 @@ def _value_or_none(dict_like, key):
         return None
 
 
-def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None):
+def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None,
+                 output_data_file=None):
     """Generic plotting function."""
     if is_string(fnames):
         fnames = [fnames]
@@ -64,12 +65,17 @@ def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None):
         plt.errorbar(xdata, ydata, yerr=ydata_err, xerr=xdata_err, fmt='-',
                      drawstyle='steps-mid', color=color, label=fname)
 
+        if output_data_file is not None:
+            save_as_qdp([xdata, ydata], errors=[xdata_err, ydata_err],
+                        filename=output_data_file, mode='a')
+
     plt.xlabel(vars[0])
     plt.ylabel(vars[1])
     plt.legend()
 
 
-def plot_pds(fnames, figname=None, xlog=None, ylog=None):
+def plot_pds(fnames, figname=None, xlog=None, ylog=None,
+             output_data_file=None):
     """Plot a list of PDSs, or a single one."""
     from scipy.optimize import curve_fit
     import collections
@@ -121,12 +127,16 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
             ax.set_yscale('log', nonposy='clip')
 
         level = lev - p[0]
+        y = pds[1:]
+        yerr = epds[1:]
         if norm == 'Leahy' or (norm == 'rms' and (not xlog or not ylog)):
-            plt.errorbar(freq[1:], pds[1:], yerr=epds[1:], fmt='-',
+            plt.errorbar(freq[1:], y, yerr=yerr, fmt='-',
                          drawstyle='steps-mid', color=color, label=fname)
         elif norm == 'rms' and xlog and ylog:
-            plt.errorbar(freq[1:], pds[1:] * freq[1:],
-                         yerr=epds[1:] * freq[1:], fmt='-',
+            y = pds[1:] * freq[1:]
+            yerr = epds[1:] * freq[1:]
+            plt.errorbar(freq[1:], y,
+                         yerr=yerr, fmt='-',
                          drawstyle='steps-mid', color=color, label=fname)
             level *= freq
 
@@ -136,6 +146,9 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
             plt.plot(freq, level, ls='--', color=color)
         else:
             plt.axhline(level, ls='--', color=color)
+        if output_data_file is not None:
+            save_as_qdp([freq[1:], y], errors=[None, yerr],
+                        filename=output_data_file, mode='a')
 
     plt.xlabel('Frequency')
     if norm == 'rms':
@@ -148,7 +161,8 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None):
         plt.savefig(figname)
 
 
-def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None):
+def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
+                    output_data_file=None):
     """Plot the cospectra from a list of CPDSs, or a single one."""
     if is_string(fnames):
         fnames = [fnames]
@@ -183,21 +197,26 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None):
 
         plt.xlabel('Frequency')
         if xlog and ylog:
-            plt.plot(freq[1:], freq[1:] * cospectrum[1:],
+            y = freq[1:] * cospectrum[1:]
+            plt.plot(freq[1:], y,
                      drawstyle='steps-mid', label=fname)
             plt.ylabel('Cospectrum * Frequency')
         else:
+            y = cospectrum[1:]
             plt.plot(freq[1:], cospectrum[1:], drawstyle='steps-mid',
                      label=fname)
 
             plt.ylabel('Cospectrum')
+        if output_data_file is not None:
+            save_as_qdp([freq[1:], y], filename=output_data_file, mode='a')
     plt.legend()
 
     if figname is not None:
         plt.savefig(figname)
 
 
-def plot_color(file0, file1, xlog=None, ylog=None, figname=None):
+def plot_color(file0, file1, xlog=None, ylog=None, figname=None,
+               output_data_file=None):
     type0, lc0 = get_file_type(file0)
     type1, lc1 = get_file_type(file1)
     xlabel, ylabel = 'Count rate', 'Count rate'
@@ -208,6 +227,12 @@ def plot_color(file0, file1, xlog=None, ylog=None, figname=None):
     plt.errorbar(lc0.counts, lc1.counts,
                  xerr=lc0.counts_err, yerr=lc1.counts_err, fmt='o')
 
+    if output_data_file is not None:
+        save_as_qdp([lc0.counts, lc1.counts],
+                    errors=[lc0.counts_err, lc1.counts_err],
+                    filename=output_data_file,
+                    mode='a')
+
     ax = plt.gca()
     if xlog:
         ax.set_xscale('log', nonposx='clip')
@@ -217,7 +242,8 @@ def plot_color(file0, file1, xlog=None, ylog=None, figname=None):
         plt.savefig(figname)
 
 
-def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None):
+def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
+            output_data_file=None):
     """Plot a list of light curve files, or a single one."""
     if is_string(lcfiles):
         lcfiles = [lcfiles]
@@ -249,6 +275,10 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None):
         good = create_gti_mask(time, gti)
         plt.plot(time, lc, drawstyle='steps-mid', color='grey')
         plt.plot(time[good], lc[good], drawstyle='steps-mid', label=lcfile)
+
+        if output_data_file is not None:
+            save_as_qdp([time[good], lc[good]], filename=output_data_file,
+                        mode='a')
 
     plt.xlabel('Time (s)')
     if instr == 'PCA':
@@ -284,6 +314,9 @@ def main(args=None):
                         default=False, action='store_true')
     parser.add_argument("--figname", help="Figure name",
                         default=None, type=str)
+    parser.add_argument('-o', "--outfile",
+                        help="Output data file in QDP format",
+                        default=None, type=str)
     parser.add_argument("--xlog", help="Use logarithmic X axis",
                         default=None, action='store_true')
     parser.add_argument("--ylog", help="Use logarithmic Y axis",
@@ -315,22 +348,24 @@ def main(args=None):
     for fname in args.files:
         if args.CCD or args.HID:
             plot_color(fname[0], fname[1], xlog=args.xlog, ylog=args.ylog,
-                       figname=args.figname)
+                       figname=args.figname, output_data_file=args.outfile)
             continue
         ftype, contents = get_file_type(fname)
         if args.axes is not None:
             plot_generic(fname, args.axes, xlog=args.xlog, ylog=args.ylog,
-                         figname=args.figname)
+                         figname=args.figname, output_data_file=args.outfile)
             continue
         if ftype == 'lc':
             plot_lc(fname, fromstart=args.fromstart, xlog=args.xlog,
-                    ylog=args.ylog, figname=args.figname)
+                    ylog=args.ylog, figname=args.figname,
+                    output_data_file=args.outfile)
         elif ftype[-4:] == 'cpds':
             plot_cospectrum(fname, xlog=args.xlog, ylog=args.ylog,
-                            figname=args.figname)
+                            figname=args.figname,
+                            output_data_file=args.outfile)
         elif ftype[-3:] == 'pds':
             plot_pds(fname, xlog=args.xlog, ylog=args.ylog,
-                     figname=args.figname)
+                     figname=args.figname, output_data_file=args.outfile)
 
     if not args.noplot:
         plt.show()

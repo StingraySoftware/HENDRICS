@@ -589,7 +589,7 @@ model = models.Const1D()
 
         mp.io.main(command.split())
 
-    def test_10c_save_as_qdp(self):
+    def test_save_as_qdp(self):
         """Test saving arrays in a qdp file."""
         arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
         errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
@@ -601,7 +601,7 @@ model = models.Const1D()
                                                 "monol_test_qdp.txt"),
                           mode='a')
 
-    def test_10d_save_as_ascii(self):
+    def test_save_as_ascii(self):
         """Test saving arrays in a ascii file."""
         array = np.array([0, 1, 3])
         errors = np.array([1, 1, 1])
@@ -639,7 +639,7 @@ model = models.Const1D()
         assert isinstance(contents, Lightcurve)
         assert hasattr(contents, 'expo')
 
-    def test_12a_plot(self):
+    def test_plot_lin(self):
         """Test plotting with linear axes."""
         pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds') + \
             MP_FILE_EXTENSION
@@ -647,27 +647,32 @@ model = models.Const1D()
             MP_FILE_EXTENSION
         lname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
             MP_FILE_EXTENSION
-        mp.plot.main([pname, cname, lname, '--noplot', '--xlin', '--ylin'])
+        mp.plot.main([pname, cname, lname, '--noplot', '--xlin', '--ylin',
+                      '-o', 'dummy.qdp'])
         mp.plot.main([lname, '--noplot',
-                      '--axes', 'time', 'counts', '--xlin', '--ylin'])
+                      '--axes', 'time', 'counts', '--xlin', '--ylin',
+                      '-o', 'dummy.qdp'])
 
-    def test_12b_plot(self):
+    def test_plot_log(self):
         """Test plotting with log axes."""
         pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
             MP_FILE_EXTENSION
         cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds_rebin1.03') + \
             MP_FILE_EXTENSION
-        mp.plot.main([pname, cname, '--noplot', '--xlog', '--ylog'])
+        mp.plot.main([pname, cname, '--noplot', '--xlog', '--ylog',
+                      '-o', 'dummy.qdp'])
         mp.plot.main([pname, '--noplot', '--axes', 'power', 'power_err',
-                      '--xlin', '--ylin'])
+                      '--xlin', '--ylin',
+                      '-o', 'dummy.qdp'])
 
-    def test_12c_plot(self):
+    def test_plot_save_figure(self):
         """Test plotting and saving figure."""
         pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
             MP_FILE_EXTENSION
         mp.plot.main([pname, '--noplot', '--figname',
                       os.path.join(self.datadir,
-                                   'monol_testA_E3-50_pds_rebin1.03.png')])
+                                   'monol_testA_E3-50_pds_rebin1.03.png'),
+                      '-o', 'dummy.qdp'])
 
     def test_plot_color(self):
         """Test plotting with linear axes."""
@@ -677,7 +682,8 @@ model = models.Const1D()
         cname = os.path.join(self.datadir,
                              'monol_testA_nustar_fpma_E_10-5_over_5-3') + \
             MP_FILE_EXTENSION
-        mp.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--CCD'])
+        mp.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--CCD',
+                      '-o', 'dummy.qdp'])
 
     def test_plot_hid(self):
         """Test plotting with linear axes."""
@@ -694,7 +700,8 @@ model = models.Const1D()
         cname = os.path.join(self.datadir,
                              'monol_testA_nustar_fpma_E_10-5_over_5-3') + \
             MP_FILE_EXTENSION
-        mp.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--HID'])
+        mp.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--HID',
+                      '-o', 'dummy.qdp'])
 
     @classmethod
     def teardown_class(self):
