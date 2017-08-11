@@ -46,8 +46,8 @@ the name of the command plus -h or --help:
 
 ::
 
-    $ MPcalibrate -h
-    usage: MPcalibrate [-h] [-r RMF] [-o] files [files ...]
+    $ HENcalibrate -h
+    usage: HENcalibrate [-h] [-r RMF] [-o] files [files ...]
 
     Calibrates clean event files by associating the correct energy to each PI
     channel. Uses either a specified rmf file or (for NuSTAR only) an rmf file
@@ -61,7 +61,7 @@ the name of the command plus -h or --help:
       -r RMF, --rmf RMF  rmf file used for calibration
       -o, --overwrite    Overwrite; default: no
 
-Some scripts (e.g. ``MPreadevents``, ``MPlcurve``, ``MPfspec``) have a
+Some scripts (e.g. ``HENreadevents``, ``HENlcurve``, ``HENfspec``) have a
 ``--nproc`` option, useful when one needs to treat multiple files at a
 time. The load is divided among ``nproc`` processors, that work in
 parallel cutting down considerably the execution time.
@@ -85,7 +85,7 @@ and ``FPMB`` respectively.
 
 ::
 
-    $ MPreadevents 002A.evt 002B.evt
+    $ HENreadevents 002A.evt 002B.evt
     Opening 002A.evt
     Saving events and info to 002A_ev.nc
     Opening 002B.evt
@@ -98,13 +98,13 @@ don't use netCDF4), containing the event times and the energy *channel*
 Calibrating event lists
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Use ``MPcalibrate``. You can either specify an ``rmf`` file with the
+Use ``HENcalibrate``. You can either specify an ``rmf`` file with the
 ``-r`` option, or just let it look for it in the NuSTAR ``CALDB`` (the
 environment variable has to be defined!)
 
 ::
 
-    $ MPcalibrate 002A_ev.nc 002B_ev.nc
+    $ HENcalibrate 002A_ev.nc 002B_ev.nc
     Loading file 002A_ev.nc...
     Done.
     ###############ATTENTION!!#####################
@@ -145,7 +145,7 @@ each GTI.
 
 ::
 
-    $ MPlcurve 002A_ev_calib.nc 002B_ev_calib.nc -b -8 -e 3 30 --safe-interval 100 300
+    $ HENlcurve 002A_ev_calib.nc 002B_ev_calib.nc -b -8 -e 3 30 --safe-interval 100 300
     Loading file 002A_ev_calib.nc...
     Done.
     Saving light curve to 002A_E3-30_lc.nc
@@ -153,13 +153,13 @@ each GTI.
     Done.
     Saving light curve to 002B_E3-30_lc.nc
 
-To check the light curve that was produced, use the ``MPplot`` program:
+To check the light curve that was produced, use the ``HENplot`` program:
 
 ::
 
-    $ MPplot 002A_E3-30_lc.nc
+    $ HENplot 002A_E3-30_lc.nc
 
-``MPlcurve`` also accepts light curves in FITS and text format. FITS light curves
+``HENlcurve`` also accepts light curves in FITS and text format. FITS light curves
 should be produced by the ``lcurve`` FTOOL or similar, while the text light
 curves should have
 two columns: time from the NuSTAR MJDREF (55197.00076601852) and intensity in
@@ -167,13 +167,13 @@ counts/bin.
 Use
 ::
 
-    $ MPlcurve --fits-input lcurve.fits
+    $ HENlcurve --fits-input lcurve.fits
 
 or
 
 ::
 
-    $ MPlcurve --txt-input lcurve.txt
+    $ HENlcurve --txt-input lcurve.txt
 
 respectively.
 
@@ -182,11 +182,11 @@ Joining, summing and "scrunching" light curves
 
 If we want a single light curve from multiple ones, either summing
 multiple instruments or multiple energy or time ranges, we can use
-``MPscrunchlc``:
+``HENscrunchlc``:
 
 ::
 
-    $ MPscrunchlc 002A_E3-30_lc.nc 002B_E3-30_lc.nc -o 002scrunch_3-30_lc.nc
+    $ HENscrunchlc 002A_E3-30_lc.nc 002B_E3-30_lc.nc -o 002scrunch_3-30_lc.nc
     Loading file 002A_E3-30_lc.nc...
     Done.
     Loading file 002B_E3-30_lc.nc...
@@ -208,7 +208,7 @@ would be Leahy normalization.
 
 ::
 
-    $ MPfspec 002A_E3-30_lc.nc 002B_E3-30_lc.nc -k CPDS -o cpds_002_3-30 --norm rms
+    $ HENfspec 002A_E3-30_lc.nc 002B_E3-30_lc.nc -k CPDS -o cpds_002_3-30 --norm rms
     Beware! For cpds and derivatives, I assume that the files are
     ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...
     Loading file 002A_E3-30_lc.nc...
@@ -224,13 +224,13 @@ interpreted as a geometric binning.
 
 ::
 
-    $ MPrebin cpds_002_3-30_0.nc -r 1.03
+    $ HENrebin cpds_002_3-30_0.nc -r 1.03
     Saving cpds to cpds_002_3-30_0_rebin1.03.nc
 
 Calculating the cospectrum and phase/time lags
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The calculation of lags and their errors is implemented in ``MPlags``,
+The calculation of lags and their errors is implemented in ``HENlags``,
 and needs to be tested properly. For the cospectrum, it is sufficient to
 read the real part of the cross power spectrum as depicted in the
 relevant function in ``plot.py`` (`Use the source,
@@ -261,46 +261,42 @@ Open and fit in XSpec!
 
 etc. |screenshot.png|
 
-(NOTE: `I know, Mike, it's unfolded... but for a flat response it
-shouldn't matter,
-right? <http://space.mit.edu/home/mnowak/isis_vs_xspec/plots.html>`__ ;)
-)
 
-.. |screenshot.png| image:: https://bitbucket.org/repo/XA95dR/images/3911632225-screenshot.png
+.. |screenshot.png| image:: images/3911632225-screenshot.png
 
 
 Data simulation
 ---------------
 
-To simulate datasets, `MaLTPyNT` includes the `MPfake` script. It can simulate
+To simulate datasets, `MaLTPyNT` includes the `HENfake` script. It can simulate
 event lists with a fixed count rate or from an input light curve. Also, it is able
 to apply a dead time filter to the simulated event lists.
 
 Basic operations
 ~~~~~~~~~~~~~~~~
 To simulate a short observation (1025 s) at a given count rate (e.g., 150 ct/s),
-it is sufficient to call `MPfake -c <countrate>`
+it is sufficient to call `HENfake -c <countrate>`
 
 ::
 
-    $ MPfake -c 150
+    $ HENfake -c 150
     $ ls
     events.evt
 
 To simulate an event list from an input light curve, use the `-l` (or `--lc`)
 option. The light curve can be in FITS or MaLTPyNT native format (or one can use
-MPlcurve for the conversion from text format):
+HENlcurve for the conversion from text format):
 
 ::
 
-    $ MPfake -l lightcurve.fits
+    $ HENfake -l lightcurve.fits
 
 To apply dead time to the generated events, use the `--deadtime` option. deadtime
 can be supplied as a single number, meaning a constant dead time
 
 ::
 
-    $ MPfake -l lightcurve.fits --deadtime 2.5e-3
+    $ HENfake -l lightcurve.fits --deadtime 2.5e-3
 
 or as two numbers (`mean`, `sigma`), meaning a Gaussian distribution of dead
 times with the specified mean and sigma.

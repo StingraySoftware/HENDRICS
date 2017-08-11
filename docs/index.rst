@@ -32,7 +32,7 @@ from, in principle, any other satellite (for sure XMM-Newton and RXTE).
 Input files can be any event lists in FITS format, provided that they meet
 certain minimum standard.
 Also, light curves in FITS format or text format can be used. See the
-documentation of `MPlcurve` for more information.
+documentation of `HENlcurve` for more information.
 
 What's new
 ----------
@@ -47,26 +47,26 @@ Names do not have the `mp_` prefix anymore, as they were very redundant; the
 structure of the code base is now based on the AstroPy structure; tests have
 been moved and the documentation improved.
 
-`MPexposure` is a new livetime correction script on sub-second timescales for
+`HENexposure` is a new livetime correction script on sub-second timescales for
 NuSTAR. It will be able to replace `nulccorr`, and get results on shorter bin
 times, in observations done with a specific observing mode, where the observer
 has explicitly requested to telemeter all events (including rejected) and the
 user has run `nupipeline` with the `CLEANCOLS = NO` option.
 This tool is under testing.
 
-`MPfake` is a new script to create fake observation files in FITS format, for
-testing. New functions to create fake data will be added to `maltpynt.fake`.
+`HENfake` is a new script to create fake observation files in FITS format, for
+testing. New functions to create fake data will be added to `hendrics.fake`.
 
 Preliminary notes
 -----------------
 
-MaLTPyNT vs FTOOLS (and together with FTOOLS)
+HENDRICS vs FTOOLS (and together with FTOOLS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 vs POWSPEC
 ++++++++++
 
-MaLTPyNT does a better job than POWSPEC from several points of view:
+HENDRICS does a better job than POWSPEC from several points of view:
 
 - **Good time intervals** (GTIs) are completely avoided in the
   computation. No gaps dirtying up the power spectrum! (This is
@@ -78,17 +78,17 @@ MaLTPyNT does a better job than POWSPEC from several points of view:
 
 Clarification about dead time treatment
 +++++++++++++++++++++++++++++++++++++++
-MaLTPyNT **does not supersede**
+HENDRICS **does not supersede**
 `nulccorr <https://heasarc.gsfc.nasa.gov/ftools/caldb/help/nulccorr.html>`__ (yet).
 If one is only interested in frequencies below ~0.5 Hz, nulccorr treats
 robustly various dead time components and its use is recommended. Light
-curves produced by nulccorr can be converted to MaLTPyNT format using
-``MPlcurve --fits-input <lcname>.fits``, and used for the subsequent
+curves produced by nulccorr can be converted to HENDRICS format using
+``HENlcurve --fits-input <lcname>.fits``, and used for the subsequent
 steps of the timing analysis.
 
 .. Note :: Improved livetime correction in progress!
 
-    In the upcoming release MaLTPyNT 2.0, ``MPexposure`` tries to push the livetime
+    ``HENexposure`` tries to push the livetime
     correction to timescales below 1 s, allowing livetime-corrected timing
     analysis above 1 Hz. The feature is under testing
 
@@ -108,7 +108,7 @@ In particular, **if you use the cospectrum**, please also refer to:
 2. Bachetti et al. 2015, `ApJ <http://iopscience.iop.org/0004-637X/800/2/109/>`__ , **800**, 109.
 
 I listed a number of **open issues** in the
-`Issues <https://bitbucket.org/mbachett/maltpynt/issues?status=new&status=open>`__
+`Issues <https://bitbucket.org/mbachett/hendics/issues?status=new&status=open>`__
 page. Feel free to **comment** on them and **propose more**. Please
 choose carefully the category: bugs, enhancements, etc.
 

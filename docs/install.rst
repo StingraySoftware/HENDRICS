@@ -4,7 +4,7 @@ Installation Instructions
 Prerequisites
 -------------
 
-You'll need a recent python 2.7+ or 3.3+ installation, and the
+You'll need a recent python 2.7+ or 3.4+ installation, and the
 `Numpy <http://www.numpy.org/>`__,
 `Matplotlib <http://matplotlib.org/>`__, `Scipy <http://scipy.org/>`__
 and `Astropy <http://www.astropy.org/>`__ libraries. You should also
@@ -18,26 +18,6 @@ library <http://www.unidata.ucar.edu/software/netcdf/>`__ with its
 An additional dependency that is now used only sparsely (if installed) but will
 become important in future versions is `Numba <http://numba.pydata.org>`__.
 
-Quick Installation (release candidates+, recommended)
------------------------------------------------------
-Run
-
-::
-
-    $ pip install --pre maltpynt
-
-and that's it!
-
-Quick Installation (stable releases)
-------------------------------------
-Run
-
-::
-
-    $ pip install maltpynt
-
-and that's it!
-
 Installing the Development version
 ----------------------------------
 
@@ -48,15 +28,12 @@ Download the distribution directory:
 
 ::
 
-    $ git clone git@bitbucket.org:mbachett/maltpynt.git
+    $ git clone git@github.com/StingraySoftware/HENDRICS
 
-To use this command you will probably need to setup an SSH key for your
-account (in Manage Account, recommended!). Otherwise, you can use the
-command
-
+Or
 ::
 
-    $ git clone https://<yourusername>@bitbucket.org/mbachett/maltpynt.git
+    $ git clone https://github.com/StingraySoftware/HENDRICS
 
 To update the software, just run
 
@@ -83,4 +60,4 @@ usual
 
 .. code-block :: python
 
-    import maltpynt
+    import hendrics
