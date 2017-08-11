@@ -1,7 +1,7 @@
-MaLTPyNT API
+HENDRICS API
 ============
 
 .. toctree::
    :maxdepth: 4
 
-   maltpynt
+   hendrics

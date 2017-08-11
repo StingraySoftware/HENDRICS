@@ -1,13 +1,13 @@
 Command line interface
 ======================
 
-MP2xspec
---------
+HEN2xspec
+---------
 
 ::
 
-    usage: MP2xspec [-h] [--loglevel LOGLEVEL] [--debug] [--flx2xsp]
-                    files [files ...]
+    usage: HEN2xspec [-h] [--loglevel LOGLEVEL] [--debug] [--flx2xsp]
+                     files [files ...]
 
     Save a frequency spectrum in a qdp file that can be read by flx2xsp and
     produce a XSpec-compatible spectrumfile
@@ -23,14 +23,14 @@ MP2xspec
       --flx2xsp            Also call flx2xsp at the end
 
 
-MPcalibrate
------------
+HENcalibrate
+------------
 
 ::
 
-    usage: MPcalibrate [-h] [-r RMF] [-o] [--loglevel LOGLEVEL] [--debug]
-                       [--nproc NPROC]
-                       files [files ...]
+    usage: HENcalibrate [-h] [-r RMF] [-o] [--loglevel LOGLEVEL] [--debug]
+                        [--nproc NPROC]
+                        files [files ...]
 
     Calibrate clean event files by associating the correct energy to each PI
     channel. Uses either a specified rmf file or (for NuSTAR only) an rmf file
@@ -49,16 +49,16 @@ MPcalibrate
       --nproc NPROC        Number of processors to use
 
 
-MPcreategti
------------
+HENcreategti
+------------
 
 ::
 
-    usage: MPcreategti [-h] [-f FILTER] [-c] [--overwrite] [-a APPLY_GTI]
-                       [-l MINIMUM_LENGTH]
-                       [--safe-interval SAFE_INTERVAL SAFE_INTERVAL]
-                       [--loglevel LOGLEVEL] [--debug]
-                       files [files ...]
+    usage: HENcreategti [-h] [-f FILTER] [-c] [--overwrite] [-a APPLY_GTI]
+                        [-l MINIMUM_LENGTH]
+                        [--safe-interval SAFE_INTERVAL SAFE_INTERVAL]
+                        [--loglevel LOGLEVEL] [--debug]
+                        files [files ...]
 
     Create GTI files from a filter expression, or applies previously created GTIs
     to a file
@@ -87,12 +87,12 @@ MPcreategti
       --debug               use DEBUG logging level
 
 
-MPdumpdyn
----------
+HENdumpdyn
+----------
 
 ::
 
-    usage: MPdumpdyn [-h] [--noplot] files [files ...]
+    usage: HENdumpdyn [-h] [--noplot] files [files ...]
 
     Dump dynamical (cross) power spectra
 
@@ -104,13 +104,13 @@ MPdumpdyn
       --noplot    plot results
 
 
-MPexposure
-----------
+HENexposure
+-----------
 
 ::
 
-    usage: MPexposure [-h] [-o OUTROOT] [--loglevel LOGLEVEL] [--debug] [--plot]
-                      lcfile uffile
+    usage: HENexposure [-h] [-o OUTROOT] [--loglevel LOGLEVEL] [--debug] [--plot]
+                       lcfile uffile
 
     Create exposure light curve based on unfiltered event files.
 
@@ -128,15 +128,15 @@ MPexposure
       --plot                Plot on window
 
 
-MPfake
-------
+HENfake
+-------
 
 ::
 
-    usage: MPfake [-h] [-e EVENT_LIST] [-l LC] [-c CTRATE] [-o OUTNAME]
-                  [-i INSTRUMENT] [--tstart TSTART] [--tstop TSTOP]
-                  [--mjdref MJDREF] [--deadtime DEADTIME [DEADTIME ...]]
-                  [--loglevel LOGLEVEL] [--debug]
+    usage: HENfake [-h] [-e EVENT_LIST] [-l LC] [-c CTRATE] [-o OUTNAME]
+                   [-i INSTRUMENT] [-m MISSION] [--tstart TSTART] [--tstop TSTOP]
+                   [--mjdref MJDREF] [--deadtime DEADTIME [DEADTIME ...]]
+                   [--loglevel LOGLEVEL] [--debug]
 
     Create an event file in FITS format from an event list, or simulating it. If
     input event list is not specified, generates the events randomly
@@ -152,6 +152,8 @@ MPfake
                             Output file name
       -i INSTRUMENT, --instrument INSTRUMENT
                             Instrument name
+      -m MISSION, --mission MISSION
+                            Mission name
       --tstart TSTART       Start time of the observation (s from MJDREF)
       --tstop TSTOP         End time of the observation (s from MJDREF)
       --mjdref MJDREF       Reference MJD
@@ -164,15 +166,15 @@ MPfake
       --debug               use DEBUG logging level
 
 
-MPfspec
--------
+HENfspec
+--------
 
 ::
 
-    usage: MPfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
-                   [--norm NORM] [--noclobber] [-o OUTROOT] [--loglevel LOGLEVEL]
-                   [--nproc NPROC] [--back BACK] [--debug] [--save-dyn]
-                   files [files ...]
+    usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
+                    [--norm NORM] [--noclobber] [-o OUTROOT] [--loglevel LOGLEVEL]
+                    [--nproc NPROC] [--back BACK] [--debug] [--save-dyn]
+                    files [files ...]
 
     Create frequency spectra (PDS, CPDS, cospectrum) starting from well-defined
     input ligthcurves
@@ -205,44 +207,19 @@ MPfspec
       --save-dyn            save dynamical power spectrum
 
 
-MPlags
-------
+HENlcurve
+---------
 
 ::
 
-    usage: MPlags [-h] [-o OUTROOT] [--loglevel LOGLEVEL] [--noclobber] [--debug]
-                  files [files ...]
-
-    Calculate time lags from the cross power spectrum and the power spectra of the
-    two channels
-
-    positional arguments:
-      files                 Three files: the cross spectrum and the two power
-                            spectra
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -o OUTROOT, --outroot OUTROOT
-                            Root of output file names
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG;default:WARNING)
-      --noclobber           Do not overwrite existing files
-      --debug               use DEBUG logging level
-
-
-MPlcurve
---------
-
-::
-
-    usage: MPlcurve [-h] [-b BINTIME]
-                    [--safe-interval SAFE_INTERVAL SAFE_INTERVAL]
-                    [--pi-interval PI_INTERVAL PI_INTERVAL]
-                    [-e E_INTERVAL E_INTERVAL] [-s] [-j] [-g] [--minlen MINLEN]
-                    [--ignore-gtis] [-d OUTDIR] [-o OUTFILE] [--loglevel LOGLEVEL]
-                    [--nproc NPROC] [--debug] [--noclobber] [--fits-input]
-                    [--txt-input]
-                    files [files ...]
+    usage: HENlcurve [-h] [-b BINTIME]
+                     [--safe-interval SAFE_INTERVAL SAFE_INTERVAL]
+                     [--pi-interval PI_INTERVAL PI_INTERVAL]
+                     [-e E_INTERVAL E_INTERVAL] [-s] [-j] [-g] [--minlen MINLEN]
+                     [--ignore-gtis] [-d OUTDIR] [-o OUTFILE]
+                     [--loglevel LOGLEVEL] [--nproc NPROC] [--debug] [--noclobber]
+                     [--fits-input] [--txt-input]
+                     files [files ...]
 
     Create lightcurves starting from event files. It is possible to specify energy
     or channel filtering options
@@ -278,14 +255,40 @@ MPlcurve
       --txt-input           Input files are light curves in txt format
 
 
-MPplot
-------
+HENmodel
+--------
 
 ::
 
-    usage: MPplot [-h] [--noplot] [--figname FIGNAME] [--xlog] [--ylog] [--xlin]
-                  [--ylin] [--fromstart] [--axes AXES AXES]
-                  files [files ...]
+    usage: HENmodel [-h] [-m MODELFILE] [--fitmethod FITMETHOD]
+                    [--loglevel LOGLEVEL] [--debug]
+                    files [files ...]
+
+    Fit frequency spectra (PDS, CPDS, cospectrum) with user-defined models
+
+    positional arguments:
+      files                 List of light curve files
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -m MODELFILE, --modelfile MODELFILE
+                            File containing an Astropy model with or without
+                            constraints
+      --fitmethod FITMETHOD
+                            Any scipy-compatible fit method
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               use DEBUG logging level
+
+
+HENplot
+-------
+
+::
+
+    usage: HENplot [-h] [--noplot] [--figname FIGNAME] [--xlog] [--ylog] [--xlin]
+                   [--ylin] [--fromstart] [--axes AXES AXES]
+                   files [files ...]
 
     Plot the content of MaLTPyNT light curves and frequency spectra
 
@@ -305,15 +308,15 @@ MPplot
       --axes AXES AXES   Plot two variables contained in the file
 
 
-MPreadevents
-------------
+HENreadevents
+-------------
 
 ::
 
-    usage: MPreadevents [-h] [--loglevel LOGLEVEL] [--nproc NPROC] [--noclobber]
-                        [-g] [--min-length MIN_LENGTH] [--gti-string GTI_STRING]
-                        [--debug]
-                        files [files ...]
+    usage: HENreadevents [-h] [--loglevel LOGLEVEL] [--nproc NPROC] [--noclobber]
+                         [-g] [--min-length MIN_LENGTH] [--gti-string GTI_STRING]
+                         [--debug]
+                         files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
     format
@@ -335,12 +338,12 @@ MPreadevents
       --debug               use DEBUG logging level
 
 
-MPreadfile
-----------
+HENreadfile
+-----------
 
 ::
 
-    usage: MPreadfile [-h] files [files ...]
+    usage: HENreadfile [-h] files [files ...]
 
     Print the content of MaLTPyNT files
 
@@ -351,13 +354,13 @@ MPreadfile
       -h, --help  show this help message and exit
 
 
-MPrebin
--------
+HENrebin
+--------
 
 ::
 
-    usage: MPrebin [-h] [-r REBIN] [--loglevel LOGLEVEL] [--debug]
-                   files [files ...]
+    usage: HENrebin [-h] [-r REBIN] [--loglevel LOGLEVEL] [--debug]
+                    files [files ...]
 
     Rebin light curves and frequency spectra.
 
@@ -376,13 +379,13 @@ MPrebin
       --debug               use DEBUG logging level
 
 
-MPscrunchlc
------------
+HENscrunchlc
+------------
 
 ::
 
-    usage: MPscrunchlc [-h] [-o OUT] [--loglevel LOGLEVEL] [--debug]
-                       files [files ...]
+    usage: HENscrunchlc [-h] [-o OUT] [--loglevel LOGLEVEL] [--debug]
+                        files [files ...]
 
     Sum lightcurves from different instruments or energy ranges
 
@@ -397,12 +400,12 @@ MPscrunchlc
       --debug              use DEBUG logging level
 
 
-MPsumfspec
-----------
+HENsumfspec
+-----------
 
 ::
 
-    usage: MPsumfspec [-h] [-o OUTNAME] files [files ...]
+    usage: HENsumfspec [-h] [-o OUTNAME] files [files ...]
 
     Sum (C)PDSs contained in different files
 

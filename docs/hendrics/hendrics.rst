@@ -1,125 +1,117 @@
-maltpynt package
+hendrics package
 ================
 
 Submodules
 ----------
 
-maltpynt.base module
+hendrics.base module
 --------------------
 
-.. automodule:: maltpynt.base
+.. automodule:: hendrics.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.calibrate module
+hendrics.calibrate module
 -------------------------
 
-.. automodule:: maltpynt.calibrate
+.. automodule:: hendrics.calibrate
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.create_gti module
+hendrics.create_gti module
 --------------------------
 
-.. automodule:: maltpynt.create_gti
+.. automodule:: hendrics.create_gti
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.exposure module
+hendrics.exposure module
 ------------------------
 
-.. automodule:: maltpynt.exposure
+.. automodule:: hendrics.exposure
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.fake module
+hendrics.fake module
 --------------------
 
-.. automodule:: maltpynt.fake
+.. automodule:: hendrics.fake
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.fspec module
+hendrics.fspec module
 ---------------------
 
-.. automodule:: maltpynt.fspec
+.. automodule:: hendrics.fspec
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.io module
+hendrics.io module
 ------------------
 
-.. automodule:: maltpynt.io
+.. automodule:: hendrics.io
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.lags module
---------------------
-
-.. automodule:: maltpynt.lags
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-maltpynt.lcurve module
+hendrics.lcurve module
 ----------------------
 
-.. automodule:: maltpynt.lcurve
+.. automodule:: hendrics.lcurve
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.plot module
+hendrics.plot module
 --------------------
 
-.. automodule:: maltpynt.plot
+.. automodule:: hendrics.plot
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.read_events module
+hendrics.read_events module
 ---------------------------
 
-.. automodule:: maltpynt.read_events
+.. automodule:: hendrics.read_events
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.rebin module
+hendrics.rebin module
 ---------------------
 
-.. automodule:: maltpynt.rebin
+.. automodule:: hendrics.rebin
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.save_as_xspec module
+hendrics.save_as_xspec module
 -----------------------------
 
-.. automodule:: maltpynt.save_as_xspec
+.. automodule:: hendrics.save_as_xspec
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.sum_fspec module
+hendrics.sum_fspec module
 -------------------------
 
-.. automodule:: maltpynt.sum_fspec
+.. automodule:: hendrics.sum_fspec
     :members:
     :undoc-members:
     :show-inheritance:
 
-maltpynt.version module
+hendrics.version module
 -----------------------
 
-.. automodule:: maltpynt.version
+.. automodule:: hendrics.version
     :members:
     :undoc-members:
     :show-inheritance:
@@ -128,7 +120,7 @@ maltpynt.version module
 Module contents
 ---------------
 
-.. automodule:: maltpynt
+.. automodule:: hendrics
     :members:
     :undoc-members:
     :show-inheritance:

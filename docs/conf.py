@@ -70,6 +70,8 @@ if not on_rtd:
         print("""======================\n""", file=fobj)
 
         for cl in sorted(scripts.keys()):
+            if cl.startswith('MP'):
+                continue
             print(cl, file=fobj)
             print('-' * len(cl), file=fobj)
             print(file=fobj)

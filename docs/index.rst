@@ -6,8 +6,11 @@
 .. image:: images/maltpynt_large.png
     :width: 400px
 
-MaLTPyNT documentation
+HENDRICS documentation
 ======================
+
+HENDRICS (High-ENergy Data Reduction Interface from the Command Shell)
+is an in-development set of scripts, derived from MaLTPyNT.
 
 The MaLTPyNT (Matteo's Libraries and Tools in Python for NuSTAR Timing)
 suite is designed for the **quick-look timing analysis** of NuSTAR data.
@@ -148,7 +151,7 @@ API documentation
 .. toctree::
    :maxdepth: 2
 
-   maltpynt/modules
+   hendrics/modules
 
 
 Indices and tables
