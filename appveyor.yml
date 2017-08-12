@@ -11,7 +11,7 @@ environment:
                         # of 32 bit and 64 bit builds are needed, move this
                         # to the matrix section.
       CONDA_DEPENDENCIES: "scipy matplotlib numpy astropy numba"
-      NUMPY_VERSION: "1.9.1"
+      NUMPY_VERSION: stable
       ASTROPY_VERSION: stable
 
       COVERALLS_REPO_TOKEN:
