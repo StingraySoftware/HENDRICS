@@ -195,7 +195,7 @@ def read_from_netcdf(fname):
             values = arr
         # Handle special case of complex
         if dum.dtype == cpl256:
-            arr = np.empty(values.shape, dtype=np.complex256)
+            arr = np.empty(values.shape, dtype=np.longcomplex)
             arr.real = values[str('real')]
             arr.imag = values[str('imag')]
             values = arr
