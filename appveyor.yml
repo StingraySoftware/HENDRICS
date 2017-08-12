@@ -10,7 +10,7 @@ environment:
       PYTHON_ARCH: "64" # needs to be set for CMD_IN_ENV to succeed. If a mix
                         # of 32 bit and 64 bit builds are needed, move this
                         # to the matrix section.
-      CONDA_DEPENDENCIES: "scipy matplotlib numpy astropy numba"
+      CONDA_DEPENDENCIES: "scipy matplotlib numpy astropy numba netcdf4"
       NUMPY_VERSION: stable
       ASTROPY_VERSION: stable
       PIP_DEPENDENCIES: "git+https://github.com/stingraysoftware/stingray.git"
@@ -19,8 +19,8 @@ environment:
 
   matrix:
       - PYTHON_VERSION: "3.6"
+      - PYTHON_VERSION: "3.4"
       - PYTHON_VERSION: "2.7"
-        CONDA_DEPENDENCIES: "scipy matplotlib netcdf4 astropy numba numoy"
 
 platform:
     -x64
