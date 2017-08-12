@@ -20,7 +20,7 @@ environment:
   matrix:
       - PYTHON_VERSION: "3.6"
       - PYTHON_VERSION: "2.7"
-        CONDA_DEPENDENCIES: "scipy matplotlib netcdf4"
+        CONDA_DEPENDENCIES: "scipy matplotlib netcdf4 astropy numba numoy"
 
 platform:
     -x64
