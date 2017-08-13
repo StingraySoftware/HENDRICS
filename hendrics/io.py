@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to perform input/output operations."""
-from __future__ import (absolute_import, unicode_literals, division,
+from __future__ import (absolute_import, division,
                         print_function)
 
 import logging
@@ -44,10 +44,17 @@ from astropy.modeling.core import Model
 import collections
 import importlib
 
+try:
+    _ = np.complex256
+    HAS_C256 = True
+except:
+    HAS_C256 = False
+
 cpl128 = np.dtype([(str('real'), np.double),
                    (str('imag'), np.double)])
-cpl256 = np.dtype([(str('real'), np.longdouble),
-                   (str('imag'), np.longdouble)])
+if HAS_C256:
+    cpl256 = np.dtype([(str('real'), np.longdouble),
+                       (str('imag'), np.longdouble)])
 
 
 class EFPeriodogram(object):
@@ -152,7 +159,14 @@ def save_as_netcdf(vars, varnames, formats, fname):
             v = vcomp
             formats[iv] = complex128_t
 
-        if isinstance(v, collections.Iterable) and formats[iv] != str:
+        unsized = False
+        try:
+            len(v)
+        except TypeError:
+            unsized = True
+
+        if isinstance(v, collections.Iterable) and formats[iv] != str \
+                and not unsized:
             dim = len(v)
             dims[dimname] = dim
 
@@ -193,9 +207,10 @@ def read_from_netcdf(fname):
             arr.real = values[str('real')]
             arr.imag = values[str('imag')]
             values = arr
+
         # Handle special case of complex
-        if dum.dtype == cpl256:
-            arr = np.empty(values.shape, dtype=np.longcomplex)
+        if HAS_C256 and dum.dtype == cpl256:
+            arr = np.empty(values.shape, dtype=np.complex256)
             arr.real = values[str('real')]
             arr.imag = values[str('imag')]
             values = arr

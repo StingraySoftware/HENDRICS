@@ -9,7 +9,8 @@ import os
 from maltpynt.io import load_events, save_events, save_lcurve, load_lcurve
 from maltpynt.io import save_data, load_data, save_pds, load_pds
 from maltpynt.io import MP_FILE_EXTENSION, _split_high_precision_number
-from maltpynt.io import save_model, load_model
+from maltpynt.io import save_model, load_model, HAS_C256
+
 import pytest
 import glob
 from astropy.modeling import models
@@ -118,6 +119,25 @@ class TestIO():
         np.testing.assert_almost_equal(C_F, np.double(0.01), 6)
         assert C_l == 0
         assert k == "double"
+
+    def test_save_longcomplex(self):
+        val = np.longcomplex(1.01 +2.3j)
+        data = {'val': val}
+        save_data(data, 'bubu' + MP_FILE_EXTENSION)
+        data_out = load_data('bubu' + MP_FILE_EXTENSION)
+
+        assert np.allclose(data['val'], data_out['val'])
+
+    @pytest.mark.skipif('not HAS_C256')
+    def test_save_longcomplex(self):
+        val = np.longcomplex(1.01 +2.3j)
+        data = {'val': val}
+        with pytest.warns(UserWarning) as record:
+            save_data(data, 'bubu' + MP_FILE_EXTENSION)
+        assert "complex256 yet unsupported" in record[0].message.args[0]
+        data_out = load_data('bubu' + MP_FILE_EXTENSION)
+
+        assert np.allclose(data['val'], data_out['val'])
 
     @classmethod
     def teardown_class(cls):
