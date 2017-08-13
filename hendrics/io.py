@@ -139,7 +139,7 @@ def save_as_netcdf(vars, varnames, formats, fname):
 
         if formats[iv] == 'c32':
             # Too complicated. Let's decrease precision
-            warnings.warn("complex256 yet unsuported")
+            warnings.warn("complex256 yet unsupported")
             formats[iv] = 'c16'
 
         if formats[iv] == 'c16':
