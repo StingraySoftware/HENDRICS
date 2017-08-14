@@ -74,7 +74,9 @@ All MPxxx scripts are renamed to HENxxx.
 Functionality additions:
 
 + Epoch folding search
++ Z-squared search
 + Color-Color Diagrams and Hardness-Intensity Diagrams
++ Power spectral fitting
 
 What's new - (MaLTPyNT) 2.0
 ---------------------------
