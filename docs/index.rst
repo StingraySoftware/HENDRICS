@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: images/maltpynt_large.png
-    :width: 400px
+.. image:: images/hendrics_large.png
+    :width: 100%
 
 HENDRICS documentation
 ======================
