@@ -128,7 +128,7 @@ class TestIO():
 
         assert np.allclose(data['val'], data_out['val'])
 
-    @pytest.mark.skipif('not HAS_C256 and HAS_NETCDF')
+    @pytest.mark.skipif('HAS_C256 or not HAS_NETCDF')
     def test_save_longcomplex(self):
         val = np.longcomplex(1.01 +2.3j)
         data = {'val': val}
