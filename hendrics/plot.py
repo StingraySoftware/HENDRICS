@@ -14,7 +14,7 @@ from .base import create_gti_mask, _assign_value_if_none
 from .base import detection_level
 import logging
 import numpy as np
-from .io import MP_FILE_EXTENSION
+from .io import HEN_FILE_EXTENSION
 
 
 def _next_color(ax):
@@ -296,7 +296,7 @@ def main(args=None):
     import argparse
 
     description = \
-        'Plot the content of MaLTPyNT light curves and frequency spectra'
+        'Plot the content of HENDRICS light curves and frequency spectra'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument("--noplot", help="Only create images, do not plot",
@@ -335,7 +335,7 @@ def main(args=None):
 
     args = parser.parse_args(args)
     if args.noplot and args.figname is None:
-        args.figname = args.files[0].replace(MP_FILE_EXTENSION, '.png')
+        args.figname = args.files[0].replace(HEN_FILE_EXTENSION, '.png')
 
     if args.xlin is not None:
         args.xlog = False

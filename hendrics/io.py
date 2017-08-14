@@ -13,12 +13,12 @@ from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
 import sys
 try:
     import netCDF4 as nc
-    MP_FILE_EXTENSION = '.nc'
+    HEN_FILE_EXTENSION = '.nc'
     HAS_NETCDF = True
 except ImportError:
     msg = "Warning! NetCDF is not available. Using pickle format."
     logging.warning(msg)
-    MP_FILE_EXTENSION = '.p'
+    HEN_FILE_EXTENSION = '.p'
     HAS_NETCDF = False
     pass
 
@@ -236,7 +236,7 @@ def _dum(x):
 def get_file_type(fname, raw_data=False):
     """Return the file type and its contents.
 
-    Only works for maltpynt-format pickle or netcdf files.
+    Only works for hendrics-format pickle or netcdf files.
     """
     contents = load_data(fname)
 
@@ -437,26 +437,26 @@ def save_pds(cpds, fname):
         outdata["instr"] = 'unknown'
 
     if 'lc1' in outdata:
-        save_lcurve(cpds.lc1, fname.replace(MP_FILE_EXTENSION,
-                                            '__lc1__' + MP_FILE_EXTENSION))
+        save_lcurve(cpds.lc1, fname.replace(HEN_FILE_EXTENSION,
+                                            '__lc1__' + HEN_FILE_EXTENSION))
         outdata.pop('lc1')
     if 'lc2' in outdata:
-        save_lcurve(cpds.lc2, fname.replace(MP_FILE_EXTENSION,
-                                            '__lc2__' + MP_FILE_EXTENSION))
+        save_lcurve(cpds.lc2, fname.replace(HEN_FILE_EXTENSION,
+                                            '__lc2__' + HEN_FILE_EXTENSION))
         outdata.pop('lc2')
     if 'pds1' in outdata:
-        save_pds(cpds.pds1, fname.replace(MP_FILE_EXTENSION,
-                                            '__pds1__' + MP_FILE_EXTENSION))
+        save_pds(cpds.pds1, fname.replace(HEN_FILE_EXTENSION,
+                                            '__pds1__' + HEN_FILE_EXTENSION))
         outdata.pop('pds1')
     if 'pds2' in outdata:
-        save_pds(cpds.pds2, fname.replace(MP_FILE_EXTENSION,
-                                            '__pds2__' + MP_FILE_EXTENSION))
+        save_pds(cpds.pds2, fname.replace(HEN_FILE_EXTENSION,
+                                            '__pds2__' + HEN_FILE_EXTENSION))
         outdata.pop('pds2')
     if 'cs_all' in outdata:
         for i, c in enumerate(cpds.cs_all):
             save_pds(c,
-                     fname.replace(MP_FILE_EXTENSION,
-                                   '__cs__{}__'.format(i) + MP_FILE_EXTENSION))
+                     fname.replace(HEN_FILE_EXTENSION,
+                                   '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
         outdata.pop('cs_all')
 
     if get_file_format(fname) == 'pickle':
@@ -488,12 +488,12 @@ def load_pds(fname):
     for key in data.keys():
         setattr(cpds, key, data[key])
 
-    lc1_name = fname.replace(MP_FILE_EXTENSION, '__lc1__' + MP_FILE_EXTENSION)
-    lc2_name = fname.replace(MP_FILE_EXTENSION, '__lc2__' + MP_FILE_EXTENSION)
-    pds1_name = fname.replace(MP_FILE_EXTENSION, '__pds1__' + MP_FILE_EXTENSION)
-    pds2_name = fname.replace(MP_FILE_EXTENSION, '__pds2__' + MP_FILE_EXTENSION)
+    lc1_name = fname.replace(HEN_FILE_EXTENSION, '__lc1__' + HEN_FILE_EXTENSION)
+    lc2_name = fname.replace(HEN_FILE_EXTENSION, '__lc2__' + HEN_FILE_EXTENSION)
+    pds1_name = fname.replace(HEN_FILE_EXTENSION, '__pds1__' + HEN_FILE_EXTENSION)
+    pds2_name = fname.replace(HEN_FILE_EXTENSION, '__pds2__' + HEN_FILE_EXTENSION)
     cs_all_names = glob.glob(
-        fname.replace(MP_FILE_EXTENSION, '__cs__[0-9]__' + MP_FILE_EXTENSION))
+        fname.replace(HEN_FILE_EXTENSION, '__cs__[0-9]__' + HEN_FILE_EXTENSION))
 
     if os.path.exists(lc1_name):
         cpds.lc1 = load_lcurve(lc1_name)
@@ -546,7 +546,7 @@ def _load_data_nc(fname):
         if k in keys_to_delete:
             continue
 
-        if contents[k] == '__mp__None__type__':
+        if contents[k] == '__hen__None__type__':
             contents[k] = None
 
         if k[-2:] in ['_I', '_L', '_F', '_k']:
@@ -658,7 +658,7 @@ def _save_data_nc(struct, fname, kind="data"):
             formats.append(probekind)
             varnames.append(k)
         elif probekind is None:
-            values.append('__mp__None__type__')
+            values.append('__hen__None__type__')
             formats.append(str)
             varnames.append(k)
         else:
@@ -670,7 +670,7 @@ def _save_data_nc(struct, fname, kind="data"):
 
 
 def save_data(struct, fname, ftype='data'):
-    """Save generic data in maltpynt format."""
+    """Save generic data in hendrics format."""
     if get_file_format(fname) == 'pickle':
         _save_data_pickle(struct, fname)
     elif get_file_format(fname) == 'nc':
@@ -678,7 +678,7 @@ def save_data(struct, fname, ftype='data'):
 
 
 def load_data(fname):
-    """Load generic data in maltpynt format."""
+    """Load generic data in hendrics format."""
     if get_file_format(fname) == 'pickle':
         return _load_data_pickle(fname)
     elif get_file_format(fname) == 'nc':
@@ -1021,7 +1021,7 @@ def main(args=None):
     import argparse
 
     description = \
-        'Print the content of MaLTPyNT files'
+        'Print the content of HENDRICS files'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
 
@@ -1062,7 +1062,7 @@ def main(args=None):
 
 
 def sort_files(files):
-    """Sort a list of MaLTPyNT files, looking at `Tstart` in each."""
+    """Sort a list of HENDRICS files, looking at `Tstart` in each."""
     allfiles = {}
     ftypes = []
 

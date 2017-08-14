@@ -4,8 +4,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .io import MP_FILE_EXTENSION, save_data, load_data, get_file_type
-from .base import create_gti_from_condition, mp_root, create_gti_mask
+from .io import HEN_FILE_EXTENSION, save_data, load_data, get_file_type
+from .base import create_gti_from_condition, hen_root, create_gti_mask
 from .base import cross_gtis, _assign_value_if_none
 import logging
 import numpy as np
@@ -33,7 +33,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None,
     Parameters
     ----------
     fname : str
-        File name. The file must be in MaLTPyNT format.
+        File name. The file must be in HENDRICS format.
     filter_expr : str
         A boolean condition on one or more of the arrays contained in the data.
         E.g. '(lc > 10) & (lc < 20)'
@@ -73,7 +73,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None,
     gtis = filter_gti_by_length(gtis, minimum_length)
 
     outfile = _assign_value_if_none(
-        outfile, mp_root(fname) + '_gti' + MP_FILE_EXTENSION)
+        outfile, hen_root(fname) + '_gti' + HEN_FILE_EXTENSION)
     save_data({'gti': gtis, 'mjdref': mjdref, '__sr__class__type__': 'gti'},
               outfile)
 
@@ -110,7 +110,7 @@ def apply_gti(fname, gti, outname=None,
 
     outname = _assign_value_if_none(
         outname,
-        fname.replace(MP_FILE_EXTENSION, '') + '_gtifilt' + MP_FILE_EXTENSION)
+        fname.replace(HEN_FILE_EXTENSION, '') + '_gtifilt' + HEN_FILE_EXTENSION)
     save_data(data, outname)
 
     return newgtis

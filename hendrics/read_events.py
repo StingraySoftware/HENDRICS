@@ -5,9 +5,9 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 from stingray.utils import assign_value_if_none
 from stingray.events import EventList
-from .base import mp_root, read_header_key
+from .base import hen_root, read_header_key
 from .io import save_events, load_events_and_gtis
-from .io import MP_FILE_EXTENSION
+from .io import HEN_FILE_EXTENSION
 import numpy as np
 import logging
 import warnings
@@ -51,7 +51,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     else:
         detectors = [None]
     outfile_root = \
-        mp_root(filename) + '_' + mission.lower() + '_' + instr.lower()
+        hen_root(filename) + '_' + mission.lower() + '_' + instr.lower()
 
     for d in detectors:
         if d is not None:
@@ -63,7 +63,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             good_det = np.ones_like(events.time, dtype=bool)
             outroot_local = outfile_root
 
-        outfile = outroot_local + '_ev' + MP_FILE_EXTENSION
+        outfile = outroot_local + '_ev' + HEN_FILE_EXTENSION
         if noclobber and os.path.exists(outfile) and (not gti_split):
             warnings.warn(
                 '{0} exists, and noclobber option used. Skipping'.format(outfile))
@@ -78,7 +78,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
 
                 outfile_local = \
                     '{0}_gti{1}_ev'.format(outroot_local,
-                                           ig) + MP_FILE_EXTENSION
+                                           ig) + HEN_FILE_EXTENSION
 
                 if noclobber and os.path.exists(outfile_local):
                     warnings.warn('{0} exists, '.format(outfile_local) +

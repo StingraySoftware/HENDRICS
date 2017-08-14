@@ -1,7 +1,7 @@
 from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
-from hendrics.io import save_events, MP_FILE_EXTENSION, load_folding
+from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
 from hendrics.efsearch import main_efsearch, main_zsearch
 import os
 
@@ -20,14 +20,14 @@ class TestEFsearch():
         events = EventList()
         events.simulate_times(lc)
         cls.event_times = events.time
-        cls.dum = 'events' + MP_FILE_EXTENSION
+        cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
 
     def test_efsearch(self):
         evfile = self.dum
         main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                        '--fit-candidates'])
-        outfile = 'events_EF' + MP_FILE_EXTENSION
+        outfile = 'events_EF' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         efperiod = load_folding(outfile)
         assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
@@ -39,7 +39,7 @@ class TestEFsearch():
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fit-candidates', '--fit-frequency',
                       str(self.pulse_frequency)])
-        outfile = 'events_Z2n' + MP_FILE_EXTENSION
+        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         efperiod = load_folding(outfile)
         assert np.isclose(efperiod.peaks[0], self.pulse_frequency,

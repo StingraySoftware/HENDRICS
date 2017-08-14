@@ -6,10 +6,10 @@ from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.powerspectrum import Crossspectrum, AveragedCrossspectrum
 import numpy as np
 import os
-from maltpynt.io import load_events, save_events, save_lcurve, load_lcurve
-from maltpynt.io import save_data, load_data, save_pds, load_pds
-from maltpynt.io import MP_FILE_EXTENSION, _split_high_precision_number
-from maltpynt.io import save_model, load_model, HAS_C256, HAS_NETCDF
+from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
+from hendrics.io import save_data, load_data, save_pds, load_pds
+from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
+from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
 
 import pytest
 import glob
@@ -34,7 +34,7 @@ class TestIO():
     """Real unit tests."""
     @classmethod
     def setup_class(cls):
-        cls.dum = 'bubu' + MP_FILE_EXTENSION
+        cls.dum = 'bubu' + HEN_FILE_EXTENSION
 
     def test_save_data(self):
         struct = {'a': 0.1, 'b': np.longdouble('123.4567890123456789'),
@@ -123,8 +123,8 @@ class TestIO():
     def test_save_longcomplex(self):
         val = np.longcomplex(1.01 +2.3j)
         data = {'val': val}
-        save_data(data, 'bubu' + MP_FILE_EXTENSION)
-        data_out = load_data('bubu' + MP_FILE_EXTENSION)
+        save_data(data, 'bubu' + HEN_FILE_EXTENSION)
+        data_out = load_data('bubu' + HEN_FILE_EXTENSION)
 
         assert np.allclose(data['val'], data_out['val'])
 
@@ -133,9 +133,9 @@ class TestIO():
         val = np.complex256(1.01 +2.3j)
         data = {'val': val}
         with pytest.warns(UserWarning) as record:
-            save_data(data, 'bubu' + MP_FILE_EXTENSION)
+            save_data(data, 'bubu' + HEN_FILE_EXTENSION)
         assert "complex256 yet unsupported" in record[0].message.args[0]
-        data_out = load_data('bubu' + MP_FILE_EXTENSION)
+        data_out = load_data('bubu' + HEN_FILE_EXTENSION)
 
         assert np.allclose(data['val'], data_out['val'])
 
@@ -150,7 +150,7 @@ class TestIOModel():
 
     @classmethod
     def setup_class(cls):
-        cls.dum = 'bubu' + MP_FILE_EXTENSION
+        cls.dum = 'bubu' + HEN_FILE_EXTENSION
         cls.model = models.Gaussian1D() + models.Const1D(amplitude=2)
 
     def test_save_and_load_Astropy_model(self):

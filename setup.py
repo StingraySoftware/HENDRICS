@@ -39,7 +39,7 @@ DESCRIPTION = metadata.get('description', 'Astropy affiliated package')
 AUTHOR = metadata.get('author', '')
 AUTHOR_EMAIL = metadata.get('author_email', '')
 LICENSE = metadata.get('license', 'unknown')
-URL = metadata.get('url', 'https://bitbucket.org/mbachett/maltpynt')
+URL = metadata.get('url', 'hendrics.readthedocs.io')
 
 # Get the long description from the package's docstring
 __import__(PACKAGENAME)

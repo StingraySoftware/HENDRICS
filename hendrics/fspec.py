@@ -3,10 +3,10 @@
 from __future__ import (absolute_import, division,
                         print_function)
 
-from .base import mp_root, cross_gtis, create_gti_mask
+from .base import hen_root, cross_gtis, create_gti_mask
 from .base import common_name, _empty, _assign_value_if_none
 from .io import sort_files, get_file_type, load_data, save_pds, load_lcurve
-from .io import MP_FILE_EXTENSION
+from .io import HEN_FILE_EXTENSION
 from stingray.crossspectrum import AveragedCrossspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
 import numpy as np
@@ -63,8 +63,8 @@ def calc_pds(lcfile, fftlen,
         If speficied, output file name. If not specified or None, the new file
         will have the same root as the input light curve and the '_pds' suffix
     """
-    root = mp_root(lcfile)
-    outname = root + '_pds' + MP_FILE_EXTENSION
+    root = hen_root(lcfile)
+    outname = root + '_pds' + HEN_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
         print('File exists, and noclobber option used. Skipping')
         return
@@ -98,7 +98,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
               save_dyn=False,
               bintime=1,
               pdsrebin=1,
-              outname='cpds' + MP_FILE_EXTENSION,
+              outname='cpds' + HEN_FILE_EXTENSION,
               normalization='Leahy',
               back_ctrate=0.,
               noclobber=False):
@@ -294,8 +294,8 @@ def calc_fspec(files, fftlen,
             common_name(f1, f2, default='%d' % i_f))
 
         outname = os.path.join(outdir,
-                               outr.replace(MP_FILE_EXTENSION, '') +
-                               '_cpds' + MP_FILE_EXTENSION)
+                               outr.replace(HEN_FILE_EXTENSION, '') +
+                               '_cpds' + HEN_FILE_EXTENSION)
 
         funcargs.append([f1, f2, outname, argdict])
 
@@ -356,7 +356,7 @@ def dumpdyn(fname, plot=False):
     d = dynpds.real.flatten()
     e = edynpds.real.flatten()
 
-    np.savetxt('{0}_dumped_{1}.txt'.format(mp_root(fname), ftype),
+    np.savetxt('{0}_dumped_{1}.txt'.format(hen_root(fname), ftype),
                np.array([t, f, d, e]).T)
     size = _normalize(d)
     if plot:
@@ -375,7 +375,7 @@ def dumpdyn_main(args=None):
     description = ('Dump dynamical (cross) power spectra')
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("files", help=("List of files in any valid MaLTPyNT "
+    parser.add_argument("files", help=("List of files in any valid HENDRICS "
                                        "format for PDS or CPDS"), nargs='+')
     parser.add_argument("--noplot", help="plot results",
                         default=False, action='store_true')
