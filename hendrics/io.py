@@ -14,10 +14,12 @@ import sys
 try:
     import netCDF4 as nc
     MP_FILE_EXTENSION = '.nc'
+    HAS_NETCDF = True
 except ImportError:
     msg = "Warning! NetCDF is not available. Using pickle format."
     logging.warning(msg)
     MP_FILE_EXTENSION = '.p'
+    HAS_NETCDF = False
     pass
 
 try:

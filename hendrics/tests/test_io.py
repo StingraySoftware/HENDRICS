@@ -9,7 +9,7 @@ import os
 from maltpynt.io import load_events, save_events, save_lcurve, load_lcurve
 from maltpynt.io import save_data, load_data, save_pds, load_pds
 from maltpynt.io import MP_FILE_EXTENSION, _split_high_precision_number
-from maltpynt.io import save_model, load_model, HAS_C256
+from maltpynt.io import save_model, load_model, HAS_C256, HAS_NETCDF
 
 import pytest
 import glob
@@ -128,7 +128,7 @@ class TestIO():
 
         assert np.allclose(data['val'], data_out['val'])
 
-    @pytest.mark.skipif('not HAS_C256')
+    @pytest.mark.skipif('not HAS_C256 and HAS_NETCDF')
     def test_save_longcomplex(self):
         val = np.longcomplex(1.01 +2.3j)
         data = {'val': val}
