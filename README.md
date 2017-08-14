@@ -1,6 +1,8 @@
 [![Build Status](https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=master)](https://travis-ci.org/StingraySoftware/HENDRICS)
+[![Build status](https://ci.appveyor.com/api/projects/status/ifm0iydpu6gd7vwk/branch/master?svg=true)](https://ci.appveyor.com/project/matteobachetti/hendrics/branch/master)
 [![Coverage Status](https://coveralls.io/repos/github/StingraySoftware/HENDRICS/badge.svg?branch=master&cache-control=no-cache)](https://coveralls.io/github/StingraySoftware/HENDRICS?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/hendrics/badge/?version=master)](http://hendrics.readthedocs.io/en/master/?badge=master)
+
 
 # HENDRICS - High ENergy Data Reduction Interface from the Command Shell
 ### Notice
