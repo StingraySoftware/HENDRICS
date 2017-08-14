@@ -9,8 +9,8 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 import numpy as np
 from .io import load_events_and_gtis
-from .io import get_file_type, save_lcurve, MP_FILE_EXTENSION, load_data
-from .base import create_gti_mask, mp_root, _assign_value_if_none
+from .io import get_file_type, save_lcurve, HEN_FILE_EXTENSION, load_data
+from .base import create_gti_mask, hen_root, _assign_value_if_none
 import logging
 import warnings
 from stingray import Lightcurve
@@ -260,7 +260,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
     Parameters
     ----------
     lc_file : str
-        The light curve file, in MaLTPyNT format
+        The light curve file, in HENDRICS format
     uf_file : str
         The unfiltered event file, in FITS format
 
@@ -275,7 +275,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
         Output file name
     """
     outname = _assign_value_if_none(
-        outname, mp_root(lc_file) + "_lccorr" + MP_FILE_EXTENSION)
+        outname, hen_root(lc_file) + "_lccorr" + HEN_FILE_EXTENSION)
 
     ftype, contents = get_file_type(lc_file)
 
@@ -309,7 +309,7 @@ def main(args=None):
         'Create exposure light curve based on unfiltered event files.')
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("lcfile", help="Light curve file (MaltPyNT format)")
+    parser.add_argument("lcfile", help="Light curve file (HENDRICS format)")
     parser.add_argument("uffile", help="Unfiltered event file (FITS)")
     parser.add_argument("-o", "--outroot", type=str, default=None,
                         help='Root of output file names')
@@ -337,9 +337,9 @@ def main(args=None):
     lc_file = args.lcfile
     uf_file = args.uffile
 
-    outroot = _assign_value_if_none(args.outroot, mp_root(lc_file))
+    outroot = _assign_value_if_none(args.outroot, hen_root(lc_file))
 
-    outname = outroot + "_lccorr" + MP_FILE_EXTENSION
+    outname = outroot + "_lccorr" + HEN_FILE_EXTENSION
 
     outfile = correct_lightcurve(lc_file, uf_file, outname)
 

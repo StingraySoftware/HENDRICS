@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .io import load_events, save_events, get_file_extension, MP_FILE_EXTENSION
+from .io import load_events, save_events, get_file_extension, HEN_FILE_EXTENSION
 import numpy as np
 import os
 import logging
@@ -93,7 +93,7 @@ def calibrate(fname, outname, rmf_file=None):
     Parameters
     ----------
     fname : str
-        The MaLTPyNT file containing the events
+        The HENDRICS file containing the events
     outname : str
         The output file
 
@@ -165,7 +165,7 @@ def main(args=None):
         outname = f
         if args.overwrite is False:
             outname = f.replace(get_file_extension(f), '_calib' +
-                                MP_FILE_EXTENSION)
+                                HEN_FILE_EXTENSION)
         funcargs.append([f, outname, args.rmf])
 
     if os.name == 'nt' or args.nproc == 1:

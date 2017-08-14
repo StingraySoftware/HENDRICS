@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .io import save_pds, get_file_type
-from .io import MP_FILE_EXTENSION
+from .io import HEN_FILE_EXTENSION
 from .base import _assign_value_if_none
 import numpy as np
 import logging
@@ -30,7 +30,7 @@ def sum_fspec(files, outname=None):
     tot_npds = nchunks0
     tot_contents = copy.copy(contents)
     outname = _assign_value_if_none(outname,
-                                    'tot_' + ftype0 + MP_FILE_EXTENSION)
+                                    'tot_' + ftype0 + HEN_FILE_EXTENSION)
 
     for f in files[1:]:
         ftype, contents = get_file_type(f)
@@ -77,7 +77,7 @@ def main(args=None):
 
     parser.add_argument("-o", "--outname", type=str, default=None,
                         help='Output file name for summed (C)PDS. Default:' +
-                        ' tot_(c)pds' + MP_FILE_EXTENSION)
+                        ' tot_(c)pds' + HEN_FILE_EXTENSION)
 
     args = parser.parse_args(args)
 

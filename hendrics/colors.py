@@ -4,8 +4,8 @@
 from __future__ import (absolute_import, division,
                         print_function)
 
-from .io import MP_FILE_EXTENSION, load_lcurve, save_lcurve
-from .base import mp_root
+from .io import HEN_FILE_EXTENSION, load_lcurve, save_lcurve
+from .base import hen_root
 import logging
 from .lcurve import main as henlcurve
 from stingray import Lightcurve
@@ -64,12 +64,12 @@ def main(args):
     for f in files:
         henlcurve([f] + [option] + args.energies[:2] +
                   ['-b', args.bintime, '-d', '.', '-o',
-                   'lc0' + MP_FILE_EXTENSION])
-        lc0 = load_lcurve('lc0' + MP_FILE_EXTENSION)
+                   'lc0' + HEN_FILE_EXTENSION])
+        lc0 = load_lcurve('lc0' + HEN_FILE_EXTENSION)
         henlcurve([f] + [option] + args.energies[2:] +
                   ['-b', args.bintime, '-d', '.', '-o',
-                   'lc1' + MP_FILE_EXTENSION])
-        lc1 = load_lcurve('lc1' + MP_FILE_EXTENSION)
+                   'lc1' + HEN_FILE_EXTENSION])
+        lc1 = load_lcurve('lc1' + HEN_FILE_EXTENSION)
 
         time = lc0.time
         counts = lc1.counts / lc0.counts
@@ -79,15 +79,15 @@ def main(args):
                             gti=lc0.gti)
         del lc0
         del lc1
-        os.unlink('lc0' + MP_FILE_EXTENSION)
-        os.unlink('lc1' + MP_FILE_EXTENSION)
+        os.unlink('lc0' + HEN_FILE_EXTENSION)
+        os.unlink('lc1' + HEN_FILE_EXTENSION)
 
         if args.out is None:
             label = '_E_'
             if args.use_pi:
                 label = '_PI_'
             label += '{3}-{2}_over_{1}-{0}'.format(*args.energies)
-            args.out = mp_root(f) + label + MP_FILE_EXTENSION
+            args.out = hen_root(f) + label + HEN_FILE_EXTENSION
         scolor.e_intervals = np.asarray([float(k) for k in args.energies])
         scolor.use_pi = args.use_pi
         save_lcurve(scolor, args.out, lctype='Color')

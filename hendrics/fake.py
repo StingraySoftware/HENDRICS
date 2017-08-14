@@ -297,7 +297,7 @@ def generate_fake_fits_observation(event_list=None, filename=None,
     tbheader['LIVETIME'] = (livetime, 'On-source time')
     tbheader['TIMEZERO'] = (0.000000E+00, 'Time Zero')
     tbheader['COMMENT'] = (
-        "Generated with MaLTPyNT by {0}".format(os.getenv('USER')))
+        "Generated with HENDRICS by {0}".format(os.getenv('USER')))
 
     # ---- END Fake lots of information ----
 

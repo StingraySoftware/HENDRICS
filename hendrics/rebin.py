@@ -6,7 +6,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 import numpy as np
 from .io import get_file_type
 from .io import save_lcurve, save_pds
-from .io import MP_FILE_EXTENSION, get_file_extension
+from .io import HEN_FILE_EXTENSION, get_file_extension
 from .base import _empty, _assign_value_if_none
 import logging
 
@@ -29,7 +29,7 @@ def rebin_file(filename, rebin):
         func = save_pds
 
     outfile = filename.replace(get_file_extension(filename),
-                               '_rebin%g' % rebin + MP_FILE_EXTENSION)
+                               '_rebin%g' % rebin + HEN_FILE_EXTENSION)
     logging.info('Saving %s to %s' % (ftype, outfile))
     func(contents, outfile)
 

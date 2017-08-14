@@ -163,9 +163,9 @@ def common_name(str1, str2, default='common'):
     if not len(str1) == len(str2):
         return default
     common_str = ''
-    # Extract the MP root of the name (in case they're event files)
-    str1 = mp_root(str1)
-    str2 = mp_root(str2)
+    # Extract the HEN root of the name (in case they're event files)
+    str1 = hen_root(str1)
+    str2 = hen_root(str2)
     for i, letter in enumerate(str1):
         if str2[i] == letter:
             common_str += letter
@@ -178,7 +178,7 @@ def common_name(str1, str2, default='common'):
     return common_str
 
 
-def mp_root(filename):
+def hen_root(filename):
     """Return the root file name (without _ev, _lc, etc.).
 
     Parameters

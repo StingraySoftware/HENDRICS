@@ -16,7 +16,7 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
     Parameters
     ----------
     fname : str
-        Input MaLTPyNT frequency spectrum file name
+        Input HENDRICS frequency spectrum file name
     direct_save : bool
         If True, also call `flx2xsp` to produce the output .pha and .rsp files.
         If False (default), flx2xsp has to be called from the user
@@ -57,7 +57,7 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
 
 
 def main(args=None):
-    """Main function called by the `MP2xspec` command line script."""
+    """Main function called by the `HEN2xspec` command line script."""
     import argparse
     description = ('Save a frequency spectrum in a qdp file that can be '
                    'read by flx2xsp and produce a XSpec-compatible spectrum'
@@ -81,7 +81,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='MP2xpec.log', level=numeric_level,
+    logging.basicConfig(filename='HEN2xpec.log', level=numeric_level,
                         filemode='w')
 
     for f in files:

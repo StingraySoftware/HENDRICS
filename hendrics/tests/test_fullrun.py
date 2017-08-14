@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-import hendrics as mp
+import hendrics as hen
 import logging
 import os
 import glob
@@ -19,9 +19,9 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-MP_FILE_EXTENSION = mp.io.MP_FILE_EXTENSION
+HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
-logging.basicConfig(filename='MP.log', level=logging.DEBUG, filemode='w')
+logging.basicConfig(filename='HEN.log', level=logging.DEBUG, filemode='w')
 
 
 class TestFullRun(object):
@@ -54,27 +54,27 @@ class TestFullRun(object):
     def test_01a_fake_file(self):
         """Test produce a fake event file."""
         fits_file = os.path.join(self.datadir, 'monol_test_fake.evt')
-        mp.fake.main(['-o', fits_file, '--instrument', 'FPMB'])
-        info = mp.io.print_fits_info(fits_file, hdu=1)
+        hen.fake.main(['-o', fits_file, '--instrument', 'FPMB'])
+        info = hen.io.print_fits_info(fits_file, hdu=1)
         assert info['Instrument'] == 'FPMB'
 
     def test_01b_fake_file(self):
         """Test produce a fake event file from input light curve."""
         lcurve_in = os.path.join(self.datadir, 'lcurveA.fits')
         fits_file = os.path.join(self.datadir, 'monol_test_fake_lc.evt')
-        mp.fake.main(['--lc', lcurve_in, '-o', fits_file])
+        hen.fake.main(['--lc', lcurve_in, '-o', fits_file])
 
     def test_01c_fake_file(self):
         """Test produce a fake event file and apply deadtime."""
         fits_file = os.path.join(self.datadir, 'monol_test_fake_lc.evt')
-        mp.fake.main(['--deadtime', '2.5e-3',
+        hen.fake.main(['--deadtime', '2.5e-3',
                       '--ctrate', '2000',
                       '-o', fits_file])
 
     def test_01d_fake_file_xmm(self):
         """Test produce a fake event file and apply deadtime."""
         fits_file = os.path.join(self.datadir, 'monol_test_fake_lc_xmm.evt')
-        mp.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
+        hen.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
                       '--ctrate', '2000',
                       '-o', fits_file])
         hdu_list = fits.open(fits_file)
@@ -89,29 +89,29 @@ class TestFullRun(object):
             os.path.join(self.datadir, 'monol_testA.evt'),
             os.path.join(self.datadir, 'monol_testA_timezero.evt'),
             os.path.join(self.datadir, 'monol_test_fake.evt'))
-        mp.read_events.main(command.split())
+        hen.read_events.main(command.split())
 
     def test_02b_load_events(self):
         """Test event file reading."""
         command = '{0}'.format(
             os.path.join(self.datadir, 'monol_testB.evt'))
-        mp.read_events.main(command.split())
+        hen.read_events.main(command.split())
 
     def test_02c_load_events_split(self):
         """Test event file splitting."""
         command = \
             '{0} -g --min-length 0'.format(
                 os.path.join(self.datadir, 'monol_testB.evt'))
-        mp.read_events.main(command.split())
+        hen.read_events.main(command.split())
         new_filename = os.path.join(self.datadir,
                                     'monol_testB_nustar_fpmb_gti0_ev' +
-                                    MP_FILE_EXTENSION)
+                                    HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
 
     def test_02d_load_gtis(self):
         """Test loading of GTIs from FITS files."""
         fits_file = os.path.join(self.datadir, 'monol_testA.evt')
-        mp.io.load_gtis(fits_file)
+        hen.io.load_gtis(fits_file)
 
     def test_02e_load_events_noclobber(self):
         """Test event file reading w. noclobber option."""
@@ -119,7 +119,7 @@ class TestFullRun(object):
             command = \
                 '{0} --noclobber'.format(
                     os.path.join(self.datadir, 'monol_testB.evt'))
-            mp.read_events.main(command.split())
+            hen.read_events.main(command.split())
         assert str(w[0].message).strip().endswith(
             "noclobber option used. Skipping"), \
             "Unexpected warning output"
@@ -128,63 +128,63 @@ class TestFullRun(object):
         """Test event file reading."""
         command = '{0}'.format(
             os.path.join(self.datadir, 'monol_test_fake_lc_xmm.evt'))
-        mp.read_events.main(command.split())
+        hen.read_events.main(command.split())
 
     def test_03a_calibrate(self):
         """Test event file calibration."""
         command = '{0} -r {1}'.format(
             os.path.join(self.datadir,
-                         'monol_testA_nustar_fpma_ev' + MP_FILE_EXTENSION),
+                         'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION),
             os.path.join(self.datadir, 'test.rmf'))
-        mp.calibrate.main(command.split())
+        hen.calibrate.main(command.split())
         assert os.path.exists(os.path.join(self.datadir,
                                            'monol_testA_nustar_fpma_ev_calib' +
-                                           MP_FILE_EXTENSION))
+                                           HEN_FILE_EXTENSION))
 
     def test_03b_calibrate(self):
         """Test event file calibration."""
         command = '{0} -r {1} --nproc 2'.format(
             os.path.join(self.datadir,
-                         'monol_testB_nustar_fpmb_ev' + MP_FILE_EXTENSION),
+                         'monol_testB_nustar_fpmb_ev' + HEN_FILE_EXTENSION),
             os.path.join(self.datadir, 'test.rmf'))
-        mp.calibrate.main(command.split())
+        hen.calibrate.main(command.split())
         assert os.path.exists(os.path.join(self.datadir,
                                            'monol_testB_nustar_fpmb_ev_calib' +
-                                           MP_FILE_EXTENSION))
+                                           HEN_FILE_EXTENSION))
     def test_lcurve(self):
         """Test light curve production."""
         command = ('{0} -e {1} {2} --safe-interval '
                    '{3} {4}  --nproc 2 -b 0.5 -o {5}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
-                         MP_FILE_EXTENSION),
+                         HEN_FILE_EXTENSION),
             3, 50, 100, 300,
             os.path.join(self.datadir, 'monol_testA_E3-50_lc' +
-                         MP_FILE_EXTENSION)
+                         HEN_FILE_EXTENSION)
         )
-        mp.lcurve.main(command.split())
+        hen.lcurve.main(command.split())
 
         assert os.path.exists(os.path.join(self.datadir,
                                            'monol_testA_E3-50_lc' +
-                                           MP_FILE_EXTENSION))
+                                           HEN_FILE_EXTENSION))
 
         command = ('{0} -e {1} {2} --safe-interval '
                    '{3} {4} -b 0.5 -o {5}').format(
             os.path.join(self.datadir, 'monol_testB_nustar_fpmb_ev_calib' +
-                         MP_FILE_EXTENSION),
+                         HEN_FILE_EXTENSION),
             3, 50, 100, 300,
             os.path.join(self.datadir, 'monol_testB_E3-50_lc' +
-                         MP_FILE_EXTENSION))
-        mp.lcurve.main(command.split())
+                         HEN_FILE_EXTENSION))
+        hen.lcurve.main(command.split())
         assert os.path.exists(os.path.join(self.datadir,
                                            'monol_testB_E3-50_lc' +
-                                           MP_FILE_EXTENSION))
+                                           HEN_FILE_EXTENSION))
 
     def test_lcurve_split(self):
         """Test lc with gti-split option, and reading of split event file."""
         command = '{0} -g'.format(
             os.path.join(self.datadir, 'monol_testB_nustar_fpmb_gti0_ev' +
-                         MP_FILE_EXTENSION))
-        mp.lcurve.main(command.split())
+                         HEN_FILE_EXTENSION))
+        hen.lcurve.main(command.split())
 
     def test_fits_lcurve0(self):
         """Test light curves from FITS."""
@@ -192,36 +192,36 @@ class TestFullRun(object):
 
         lcurve_ftools = os.path.join(self.datadir,
                                      'lcurve_ftools_lc' +
-                                     MP_FILE_EXTENSION)
+                                     HEN_FILE_EXTENSION)
 
         command = "{0} --outfile {1}".format(
             os.path.join(self.datadir,
-                         'monol_testA_nustar_fpma_ev') + MP_FILE_EXTENSION,
+                         'monol_testA_nustar_fpma_ev') + HEN_FILE_EXTENSION,
             os.path.join(self.datadir,
                          'lcurve_lc'))
-        mp.lcurve.main(command.split())
+        hen.lcurve.main(command.split())
         print(glob.glob(os.path.join(self.datadir,
                               'lcurve_lc*')))
         assert os.path.exists(os.path.join(self.datadir,
-                              'lcurve_lc') + MP_FILE_EXTENSION)
+                              'lcurve_lc') + HEN_FILE_EXTENSION)
 
         command = "--fits-input {0} --outfile {1}".format(
             lcurve_ftools_orig,
             lcurve_ftools)
-        mp.lcurve.main(command.split())
+        hen.lcurve.main(command.split())
 
     def test_fits_lcurve1(self):
         """Test light curves from FITS."""
         lcurve_ftools = os.path.join(self.datadir,
                                      'lcurve_ftools_lc' +
-                                     MP_FILE_EXTENSION)
+                                     HEN_FILE_EXTENSION)
 
         lcurve_mp = os.path.join(self.datadir,
                                  'lcurve_lc' +
-                                 MP_FILE_EXTENSION)
+                                 HEN_FILE_EXTENSION)
 
-        lcdata_mp = mp.io.load_data(lcurve_mp)
-        lcdata_ftools = mp.io.load_data(lcurve_ftools)
+        lcdata_mp = hen.io.load_data(lcurve_mp)
+        lcdata_ftools = hen.io.load_data(lcurve_ftools)
 
         lc_mp = lcdata_mp['counts']
 
@@ -233,63 +233,63 @@ class TestFullRun(object):
         diff = lc_mp[:goodlen] - lc_ftools[:goodlen]
 
         assert np.all(np.abs(diff) <= 1e-3), \
-            'Light curve data do not coincide between FITS and MP'
+            'Light curve data do not coincide between FITS and HEN'
 
     def test_txt_lcurve(self):
         """Test light curves from txt."""
         lcurve_mp = os.path.join(self.datadir,
                                  'lcurve_lc' +
-                                 MP_FILE_EXTENSION)
-        lcdata_mp = mp.io.load_data(lcurve_mp)
+                                 HEN_FILE_EXTENSION)
+        lcdata_mp = hen.io.load_data(lcurve_mp)
         lc_mp = lcdata_mp['counts']
         time_mp = lcdata_mp['time']
 
         lcurve_txt_orig = os.path.join(self.datadir,
                                        'lcurve_txt_lc.txt')
 
-        mp.io.save_as_ascii([time_mp, lc_mp], lcurve_txt_orig)
+        hen.io.save_as_ascii([time_mp, lc_mp], lcurve_txt_orig)
 
         lcurve_txt = os.path.join(self.datadir,
                                   'lcurve_txt_lc' +
-                                  MP_FILE_EXTENSION)
-        mp.lcurve.main(['--txt-input', lcurve_txt_orig,
+                                  HEN_FILE_EXTENSION)
+        hen.lcurve.main(['--txt-input', lcurve_txt_orig,
                         '--outfile', lcurve_txt])
-        lcdata_txt = mp.io.load_data(lcurve_txt)
+        lcdata_txt = hen.io.load_data(lcurve_txt)
 
         lc_txt = lcdata_txt['counts']
 
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
-            'Light curve data do not coincide between txt and MP'
+            'Light curve data do not coincide between txt and HEN'
 
     def test_joinlcs(self):
         """Test produce joined light curves."""
-        mp.lcurve.join_lightcurves(
+        hen.lcurve.join_lightcurves(
             [os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-             MP_FILE_EXTENSION,
+             HEN_FILE_EXTENSION,
              os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-             MP_FILE_EXTENSION],
+             HEN_FILE_EXTENSION],
             os.path.join(self.datadir, 'monol_test_joinlc' +
-                         MP_FILE_EXTENSION))
+                         HEN_FILE_EXTENSION))
 
     def test_scrunchlcs(self):
         """Test produce scrunched light curves."""
         command = '{0} {1} -o {2}'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-            MP_FILE_EXTENSION,
+            HEN_FILE_EXTENSION,
             os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-            MP_FILE_EXTENSION,
+            HEN_FILE_EXTENSION,
             os.path.join(self.datadir, 'monol_test_scrunchlc') +
-            MP_FILE_EXTENSION)
-        mp.lcurve.scrunch_main(command.split())
+            HEN_FILE_EXTENSION)
+        hen.lcurve.scrunch_main(command.split())
 
     def test_lcurve_error_uncalibrated(self):
         """Test light curve error from uncalibrated file."""
         command = ('{0} -e {1} {2}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
-                         MP_FILE_EXTENSION), 3, 50)
+                         HEN_FILE_EXTENSION), 3, 50)
 
         with pytest.raises(ValueError) as excinfo:
-            mp.lcurve.main(command.split())
+            hen.lcurve.main(command.split())
         message = str(excinfo.value)
         assert str(message).strip().endswith("Did you run HENcalibrate?")
 
@@ -297,17 +297,17 @@ class TestFullRun(object):
         """Test light curve using PI filtering."""
         command = ('{0} --pi-interval {1} {2}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
-                         MP_FILE_EXTENSION), 10, 300)
+                         HEN_FILE_EXTENSION), 10, 300)
 
-        mp.lcurve.main(command.split())
+        hen.lcurve.main(command.split())
 
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
         command = ('{0} -b 100 -e {1} {2} {2} {3}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
-                         MP_FILE_EXTENSION), 3, 5, 10)
+                         HEN_FILE_EXTENSION), 3, 5, 10)
         with pytest.raises(ValueError) as excinfo:
-            mp.colors.main(command.split())
+            hen.colors.main(command.split())
 
         assert "No energy information is present " in str(excinfo.value)
 
@@ -316,13 +316,13 @@ class TestFullRun(object):
         # calculate colors
         command = ('{0} -b 100 -e {1} {2} {2} {3}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
-                         MP_FILE_EXTENSION), 3, 5, 10)
-        mp.colors.main(command.split())
+                         HEN_FILE_EXTENSION), 3, 5, 10)
+        hen.colors.main(command.split())
 
         assert os.path.exists(
             os.path.join(self.datadir,
                          'monol_testA_nustar_fpma_E_10-5_over_5-3')
-                              + MP_FILE_EXTENSION)
+                              + HEN_FILE_EXTENSION)
 
 
     def test_05a_pds(self):
@@ -330,44 +330,44 @@ class TestFullRun(object):
         command = \
             '{0} {1} -f 128 --save-dyn -k PDS --norm frac --nproc 2 '.format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-                MP_FILE_EXTENSION,
+                HEN_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-                MP_FILE_EXTENSION)
-        mp.fspec.main(command.split())
+                HEN_FILE_EXTENSION)
+        hen.fspec.main(command.split())
 
         assert os.path.exists(os.path.join(self.datadir,
                                            'monol_testB_E3-50_pds')
-                              + MP_FILE_EXTENSION)
+                              + HEN_FILE_EXTENSION)
         assert os.path.exists(os.path.join(self.datadir,
                                            'monol_testA_E3-50_pds')
-                              + MP_FILE_EXTENSION)
+                              + HEN_FILE_EXTENSION)
 
     def test_05c_pds_fits(self):
         """Test PDS production with light curves obtained from FITS files."""
         lcurve_ftools = os.path.join(self.datadir,
                                      'lcurve_ftools_lc' +
-                                     MP_FILE_EXTENSION)
+                                     HEN_FILE_EXTENSION)
         command = '{0} -f 128'.format(lcurve_ftools)
-        mp.fspec.main(command.split())
+        hen.fspec.main(command.split())
 
     def test_05d_pds_txt(self):
         """Test PDS production with light curves obtained from txt files."""
         lcurve_txt = os.path.join(self.datadir,
                                   'lcurve_txt_lc' +
-                                  MP_FILE_EXTENSION)
+                                  HEN_FILE_EXTENSION)
         command = '{0} -f 128'.format(lcurve_txt)
-        mp.fspec.main(command.split())
+        hen.fspec.main(command.split())
 
     def test_05e_cpds(self):
         """Test CPDS production."""
         command = \
             '{0} {1} -f 128 --save-dyn -k CPDS --norm frac -o {2}'.format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-                MP_FILE_EXTENSION,
+                HEN_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-                MP_FILE_EXTENSION,
+                HEN_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_test_E3-50'))
-        mp.fspec.main(command.split())
+        hen.fspec.main(command.split())
 
     def test_05f_cpds(self):
         """Test CPDS production."""
@@ -375,90 +375,90 @@ class TestFullRun(object):
             ('{0} {1} -f 128 --save-dyn -k '
              'CPDS --norm frac -o {2} --nproc 2').format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-                MP_FILE_EXTENSION,
+                HEN_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-                MP_FILE_EXTENSION,
+                HEN_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_test_E3-50'))
-        mp.fspec.main(command.split())
+        hen.fspec.main(command.split())
 
     # def test_05g_dumpdynpds(self):
     #     """Test dump dynamical PDSs."""
     #     command = '--noplot ' + \
     #         os.path.join(self.datadir,
     #                      'monol_testA_E3-50_pds') + \
-    #         MP_FILE_EXTENSION
-    #     mp.fspec.dumpdyn_main(command.split())
+    #         HEN_FILE_EXTENSION
+    #     hen.fspec.dumpdyn_main(command.split())
 
     def test_05h_sumpds(self):
         """Test the sum of pdss."""
-        mp.sum_fspec.main([
+        hen.sum_fspec.main([
             os.path.join(self.datadir,
-                         'monol_testA_E3-50_pds') + MP_FILE_EXTENSION,
+                         'monol_testA_E3-50_pds') + HEN_FILE_EXTENSION,
             os.path.join(self.datadir,
-                         'monol_testB_E3-50_pds') + MP_FILE_EXTENSION,
+                         'monol_testB_E3-50_pds') + HEN_FILE_EXTENSION,
             '-o', os.path.join(self.datadir,
-                               'monol_test_sum' + MP_FILE_EXTENSION)])
+                               'monol_test_sum' + HEN_FILE_EXTENSION)])
 
     # def test_05i_dumpdyncpds(self):
     #     """Test dumping CPDS file."""
     #     command = '--noplot ' + \
     #         os.path.join(self.datadir,
     #                      'monol_test_E3-50_cpds') + \
-    #         MP_FILE_EXTENSION
-    #     mp.fspec.dumpdyn_main(command.split())
+    #         HEN_FILE_EXTENSION
+    #     hen.fspec.dumpdyn_main(command.split())
 
     def test_06a_rebinlc(self):
         """Test LC rebinning."""
         command = '{0} -r 4'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
+            HEN_FILE_EXTENSION)
+        hen.rebin.main(command.split())
 
     def test_06b_rebinpds(self):
         """Test PDS rebinning 1."""
         command = '{0} -r 2'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_pds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
+            HEN_FILE_EXTENSION)
+        hen.rebin.main(command.split())
         os.path.exists(os.path.join(self.datadir,
                                     'monol_testA_E3-50_pds_rebin2' +
-                                    MP_FILE_EXTENSION))
+                                    HEN_FILE_EXTENSION))
 
     def test_06c_rebinpds(self):
         """Test geometrical PDS rebinning."""
         command = '{0} {1} -r 1.03'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_pds') +
-            MP_FILE_EXTENSION,
+            HEN_FILE_EXTENSION,
             os.path.join(self.datadir, 'monol_testB_E3-50_pds') +
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
             )
-        mp.rebin.main(command.split())
+        hen.rebin.main(command.split())
         os.path.exists(os.path.join(self.datadir,
                                     'monol_testA_E3-50_pds_rebin1.03' +
-                                    MP_FILE_EXTENSION))
+                                    HEN_FILE_EXTENSION))
         os.path.exists(os.path.join(self.datadir,
                                     'monol_testB_E3-50_pds_rebin1.03' +
-                                    MP_FILE_EXTENSION))
+                                    HEN_FILE_EXTENSION))
 
     def test_06d_rebincpds(self):
         """Test CPDS rebinning."""
         command = '{0} -r 2'.format(
             os.path.join(self.datadir, 'monol_test_E3-50_cpds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
+            HEN_FILE_EXTENSION)
+        hen.rebin.main(command.split())
         os.path.exists(os.path.join(self.datadir,
                                     'monol_test_E3-50_cpds_rebin2' +
-                                    MP_FILE_EXTENSION))
+                                    HEN_FILE_EXTENSION))
 
     def test_06e_rebincpds(self):
         """Test CPDS geometrical rebinning."""
         command = '{0} -r 1.03'.format(
             os.path.join(self.datadir, 'monol_test_E3-50_cpds') +
-            MP_FILE_EXTENSION)
-        mp.rebin.main(command.split())
+            HEN_FILE_EXTENSION)
+        hen.rebin.main(command.split())
         os.path.exists(os.path.join(self.datadir,
                                     'monol_test_E3-50_cpds_rebin1.03' +
-                                    MP_FILE_EXTENSION))
+                                    HEN_FILE_EXTENSION))
 
     def test_fit_pds(self):
         modelstring = '''
@@ -469,21 +469,21 @@ model = models.Const1D()
         print(modelstring, file=open(modelfile, 'w'))
         pdsfile1 = \
             os.path.join(self.datadir,
-                         'monol_testA_E3-50_pds' + MP_FILE_EXTENSION)
+                         'monol_testA_E3-50_pds' + HEN_FILE_EXTENSION)
         pdsfile2 = \
             os.path.join(self.datadir,
-                         'monol_testB_E3-50_pds' + MP_FILE_EXTENSION)
+                         'monol_testB_E3-50_pds' + HEN_FILE_EXTENSION)
 
         command = '{0} {1} -m {2} --frequency-interval 0 10'.format(pdsfile1,
                                                                     pdsfile2,
                                                                     modelfile)
-        mp.modeling.main_model(command.split())
+        hen.modeling.main_model(command.split())
 
         out0 = os.path.join(self.datadir, 'monol_testA_E3-50_pds_bestfit.p')
         out1 = os.path.join(self.datadir, 'monol_testB_E3-50_pds_bestfit.p')
         assert os.path.exists(out0)
         assert os.path.exists(out1)
-        m, k, c = mp.io.load_model(
+        m, k, c = hen.io.load_model(
             os.path.join(self.datadir,
                          'monol_testB_E3-50_pds_bestfit.p'))
         assert hasattr(m, 'amplitude')
@@ -499,16 +499,16 @@ model = models.Const1D()
         print(modelstring, file=open(modelfile, 'w'))
         pdsfile1 = \
             os.path.join(self.datadir,
-                         'monol_testA_E3-50_pds' + MP_FILE_EXTENSION)
+                         'monol_testA_E3-50_pds' + HEN_FILE_EXTENSION)
         pdsfile2 = \
             os.path.join(self.datadir,
-                         'monol_testB_E3-50_pds' + MP_FILE_EXTENSION)
+                         'monol_testB_E3-50_pds' + HEN_FILE_EXTENSION)
 
         command = '{0} {1} -m {2} --frequency-interval 0 1 9'.format(pdsfile1,
                                                                      pdsfile2,
                                                                      modelfile)
         with pytest.raises(ValueError) as excinfo:
-            mp.modeling.main_model(command.split())
+            hen.modeling.main_model(command.split())
 
         assert "Invalid number of frequencies specified" in str(excinfo.value)
 
@@ -517,15 +517,15 @@ model = models.Const1D()
     #     command = '--noplot ' + \
     #         os.path.join(self.datadir,
     #                      'monol_test_E3-50_cpds_rebin1.03') + \
-    #         MP_FILE_EXTENSION
-    #     mp.fspec.dumpdyn_main(command.split())
+    #         HEN_FILE_EXTENSION
+    #     hen.fspec.dumpdyn_main(command.split())
 
     def test_08a_savexspec(self):
         """Test save as Xspec 1."""
         command = '{0}'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin2') +
-            MP_FILE_EXTENSION)
-        mp.save_as_xspec.main(command.split())
+            HEN_FILE_EXTENSION)
+        hen.save_as_xspec.main(command.split())
         os.path.exists(os.path.join(self.datadir,
                                     'monol_testA_E3-50_pds_rebin2.pha'))
 
@@ -533,8 +533,8 @@ model = models.Const1D()
         """Test save as Xspec 2."""
         command = '{0}'.format(
             os.path.join(self.datadir, 'monol_test_E3-50_cpds_rebin1.03') +
-            MP_FILE_EXTENSION)
-        mp.save_as_xspec.main(command.split())
+            HEN_FILE_EXTENSION)
+        hen.save_as_xspec.main(command.split())
 
         os.path.exists(os.path.join(self.datadir,
                                     'monol_test_E3-50_cpds_rebin1.03.pha'))
@@ -545,58 +545,58 @@ model = models.Const1D()
     def test_09a_create_gti(self):
         """Test creating a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         command = "{0} -f counts>0 -c --debug".format(fname)
-        mp.create_gti.main(command.split())
+        hen.create_gti.main(command.split())
 
     def test_09b_create_gti(self):
         """Test applying a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         lcfname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         command = "{0} -a {1} --debug".format(lcfname, fname)
-        mp.create_gti.main(command.split())
+        hen.create_gti.main(command.split())
 
     def test_09c_create_gti(self):
         """Test creating a GTI file and apply minimum length."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         command = "{0} -f counts>0 -c -l 10 --debug".format(fname)
-        mp.create_gti.main(command.split())
+        hen.create_gti.main(command.split())
 
     def test_09d_create_gti(self):
         """Test applying a GTI file and apply minimum length."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         lcfname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         command = "{0} -a {1} -l 10 --debug".format(lcfname, fname)
-        mp.create_gti.main(command.split())
+        hen.create_gti.main(command.split())
 
     def test_10a_readfile(self):
-        """Test reading and dumping a MaLTPyNT file."""
+        """Test reading and dumping a HENDRICS file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         command = "{0}".format(fname)
 
-        mp.io.main(command.split())
+        hen.io.main(command.split())
 
     def test_10b_readfile(self):
         """Test reading and dumping a FITS file."""
         fitsname = os.path.join(self.datadir, 'monol_testA.evt')
         command = "{0}".format(fitsname)
 
-        mp.io.main(command.split())
+        hen.io.main(command.split())
 
     def test_save_as_qdp(self):
         """Test saving arrays in a qdp file."""
         arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
         errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
-        mp.io.save_as_qdp(arrays, errors,
+        hen.io.save_as_qdp(arrays, errors,
                           filename=os.path.join(self.datadir,
                                                 "monol_test_qdp.txt"))
-        mp.io.save_as_qdp(arrays, errors,
+        hen.io.save_as_qdp(arrays, errors,
                           filename=os.path.join(self.datadir,
                                                 "monol_test_qdp.txt"),
                           mode='a')
@@ -605,7 +605,7 @@ model = models.Const1D()
         """Test saving arrays in a ascii file."""
         array = np.array([0, 1, 3])
         errors = np.array([1, 1, 1])
-        mp.io.save_as_ascii(
+        hen.io.save_as_ascii(
             [array, errors],
             filename=os.path.join(self.datadir, "monol_test.txt"),
             colnames=["array", "err"])
@@ -619,22 +619,22 @@ model = models.Const1D()
                      'cpds': 'monol_test_E3-50_cpds'}
         for realtype in file_list.keys():
             fname = os.path.join(self.datadir,
-                                 file_list[realtype] + MP_FILE_EXTENSION)
-            ftype, _ = mp.io.get_file_type(fname)
+                                 file_list[realtype] + HEN_FILE_EXTENSION)
+            ftype, _ = hen.io.get_file_type(fname)
             assert ftype == realtype, "File types do not match"
 
     def test_11_exposure(self):
         """Test exposure calculations from unfiltered files."""
         lcname = os.path.join(self.datadir,
-                              'monol_testA_E3-50_lc' + MP_FILE_EXTENSION)
+                              'monol_testA_E3-50_lc' + HEN_FILE_EXTENSION)
         ufname = os.path.join(self.datadir, 'monol_testA_uf.evt')
         command = "{0} {1}".format(lcname, ufname)
 
-        mp.exposure.main(command.split())
+        hen.exposure.main(command.split())
         fname = os.path.join(self.datadir,
-                             'monol_testA_E3-50_lccorr'  + MP_FILE_EXTENSION)
+                             'monol_testA_E3-50_lccorr'  + HEN_FILE_EXTENSION)
         assert os.path.exists(fname)
-        ftype, contents = mp.io.get_file_type(fname)
+        ftype, contents = hen.io.get_file_type(fname)
 
         assert isinstance(contents, Lightcurve)
         assert hasattr(contents, 'expo')
@@ -642,34 +642,34 @@ model = models.Const1D()
     def test_plot_lin(self):
         """Test plotting with linear axes."""
         pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         lname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
-            MP_FILE_EXTENSION
-        mp.plot.main([pname, cname, lname, '--noplot', '--xlin', '--ylin',
+            HEN_FILE_EXTENSION
+        hen.plot.main([pname, cname, lname, '--noplot', '--xlin', '--ylin',
                       '-o', 'dummy.qdp'])
-        mp.plot.main([lname, '--noplot',
+        hen.plot.main([lname, '--noplot',
                       '--axes', 'time', 'counts', '--xlin', '--ylin',
                       '-o', 'dummy.qdp'])
 
     def test_plot_log(self):
         """Test plotting with log axes."""
         pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds_rebin1.03') + \
-            MP_FILE_EXTENSION
-        mp.plot.main([pname, cname, '--noplot', '--xlog', '--ylog',
+            HEN_FILE_EXTENSION
+        hen.plot.main([pname, cname, '--noplot', '--xlog', '--ylog',
                       '-o', 'dummy.qdp'])
-        mp.plot.main([pname, '--noplot', '--axes', 'power', 'power_err',
+        hen.plot.main([pname, '--noplot', '--axes', 'power', 'power_err',
                       '--xlin', '--ylin',
                       '-o', 'dummy.qdp'])
 
     def test_plot_save_figure(self):
         """Test plotting and saving figure."""
         pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
-            MP_FILE_EXTENSION
-        mp.plot.main([pname, '--noplot', '--figname',
+            HEN_FILE_EXTENSION
+        hen.plot.main([pname, '--noplot', '--figname',
                       os.path.join(self.datadir,
                                    'monol_testA_E3-50_pds_rebin1.03.png'),
                       '-o', 'dummy.qdp'])
@@ -678,11 +678,11 @@ model = models.Const1D()
         """Test plotting with linear axes."""
         lname = os.path.join(self.datadir,
                              'monol_testA_nustar_fpma_E_10-5_over_5-3') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         cname = os.path.join(self.datadir,
                              'monol_testA_nustar_fpma_E_10-5_over_5-3') + \
-            MP_FILE_EXTENSION
-        mp.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--CCD',
+            HEN_FILE_EXTENSION
+        hen.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--CCD',
                       '-o', 'dummy.qdp'])
 
     def test_plot_hid(self):
@@ -690,17 +690,17 @@ model = models.Const1D()
         # also produce a light curve with the same binning
         command = ('{0} -b 100 --e-interval {1} {2}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
-                         MP_FILE_EXTENSION), 3, 10)
+                         HEN_FILE_EXTENSION), 3, 10)
 
-        mp.lcurve.main(command.split())
+        hen.lcurve.main(command.split())
         lname = os.path.join(self.datadir,
                              'monol_testA_nustar_fpma_E3-10_lc') + \
-            MP_FILE_EXTENSION
+            HEN_FILE_EXTENSION
         os.path.exists(lname)
         cname = os.path.join(self.datadir,
                              'monol_testA_nustar_fpma_E_10-5_over_5-3') + \
-            MP_FILE_EXTENSION
-        mp.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--HID',
+            HEN_FILE_EXTENSION
+        hen.plot.main([cname, lname, '--noplot', '--xlog', '--ylog', '--HID',
                       '-o', 'dummy.qdp'])
 
     @classmethod
@@ -709,9 +709,9 @@ model = models.Const1D()
 
         file_list = \
             glob.glob(os.path.join(self.datadir,
-                                   '*monol_test*') + MP_FILE_EXTENSION) + \
+                                   '*monol_test*') + HEN_FILE_EXTENSION) + \
             glob.glob(os.path.join(self.datadir,
-                                   '*lcurve*') + MP_FILE_EXTENSION) + \
+                                   '*lcurve*') + HEN_FILE_EXTENSION) + \
             glob.glob(os.path.join(self.datadir,
                                    '*lcurve*.txt')) + \
             glob.glob(os.path.join(self.datadir,

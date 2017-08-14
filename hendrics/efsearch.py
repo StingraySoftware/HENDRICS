@@ -3,8 +3,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .io import load_events, EFPeriodogram, save_folding, MP_FILE_EXTENSION
-from .base import mp_root
+from .io import load_events, EFPeriodogram, save_folding, HEN_FILE_EXTENSION
+from .base import hen_root
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
     search_best_peaks
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
@@ -166,7 +166,7 @@ def _common_main(args, func):
                                    baseline=baseline)
                 best_models.append(best_fun)
         save_folding(efperiodogram,
-                     mp_root(fname) + '_{}'.format(kind) + MP_FILE_EXTENSION)
+                     hen_root(fname) + '_{}'.format(kind) + HEN_FILE_EXTENSION)
 
 
 def main_efsearch(args=None):

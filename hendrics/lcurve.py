@@ -7,18 +7,18 @@ from __future__ import (absolute_import, unicode_literals, division,
 import numpy as np
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
-from .base import mp_root, create_gti_mask, cross_gtis, mkdir_p
+from .base import hen_root, create_gti_mask, cross_gtis, mkdir_p
 from .base import contiguous_regions, calc_countrate, gti_len
 from .base import _look_for_array_in_array
 from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
-from .io import MP_FILE_EXTENSION, high_precision_keyword_read
+from .io import HEN_FILE_EXTENSION, high_precision_keyword_read
 import os
 import logging
 import warnings
 import copy
 
 
-def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
+def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
     """Join light curves from different files.
 
     Light curves from different instruments are put in different channels.
@@ -82,7 +82,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + MP_FILE_EXTENSION):
     return outlcs
 
 
-def scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+MP_FILE_EXTENSION,
+def scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+HEN_FILE_EXTENSION,
                         save_joint=False):
     """Create a single light curve from input light curves.
 
@@ -287,14 +287,14 @@ def lcurve_from_events(f, safe_interval=0,
         pass
 
     if tag != "":
-        save_lcurve(total_lc, mp_root(f) + '_std_lc' + MP_FILE_EXTENSION)
+        save_lcurve(total_lc, hen_root(f) + '_std_lc' + HEN_FILE_EXTENSION)
 
     # Assign default value if None
-    outfile = assign_value_if_none(outfile,  mp_root(f) + tag + '_lc')
+    outfile = assign_value_if_none(outfile,  hen_root(f) + tag + '_lc')
 
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
-    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+    outfile = outfile.replace(HEN_FILE_EXTENSION, '') + HEN_FILE_EXTENSION
     outdir = assign_value_if_none(
         outdir, os.path.dirname(os.path.abspath(f)))
 
@@ -326,7 +326,7 @@ def lcurve_from_events(f, safe_interval=0,
 
         for ib, l0 in enumerate(lcs):
             local_tag = tag + '_gti%d' % ib
-            outf = mp_root(outfile) + local_tag + '_lc' + MP_FILE_EXTENSION
+            outf = hen_root(outfile) + local_tag + '_lc' + HEN_FILE_EXTENSION
             if noclobber and os.path.exists(outf):
                 warnings.warn(
                     'File exists, and noclobber option used. Skipping')
@@ -348,7 +348,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
                      fracexp_limit=0.9, outfile=None,
                      noclobber=False, outdir=None):
     """
-    Load a lightcurve from a fits file and save it in MaLTPyNT format.
+    Load a lightcurve from a fits file and save it in HENDRICS format.
 
     .. note ::
         FITS light curve handling is still under testing.
@@ -393,8 +393,8 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     import numpy as np
     from .base import create_gti_from_condition
 
-    outfile = assign_value_if_none(outfile, mp_root(fits_file) + '_lc')
-    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+    outfile = assign_value_if_none(outfile, hen_root(fits_file) + '_lc')
+    outfile = outfile.replace(HEN_FILE_EXTENSION, '') + HEN_FILE_EXTENSION
     outdir = assign_value_if_none(
         outdir, os.path.dirname(os.path.abspath(fits_file)))
 
@@ -565,8 +565,8 @@ def lcurve_from_txt(txt_file, outfile=None,
     if mjdref is None:
         mjdref = np.longdouble('55197.00076601852')
 
-    outfile = assign_value_if_none(outfile, mp_root(txt_file) + '_lc')
-    outfile = outfile.replace(MP_FILE_EXTENSION, '') + MP_FILE_EXTENSION
+    outfile = assign_value_if_none(outfile, hen_root(txt_file) + '_lc')
+    outfile = outfile.replace(HEN_FILE_EXTENSION, '') + HEN_FILE_EXTENSION
 
     outdir = assign_value_if_none(
         outdir, os.path.dirname(os.path.abspath(txt_file)))
@@ -758,7 +758,7 @@ def scrunch_main(args=None):
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument("-o", "--out", type=str,
-                        default="out_scrlc" + MP_FILE_EXTENSION,
+                        default="out_scrlc" + HEN_FILE_EXTENSION,
                         help='Output file')
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
