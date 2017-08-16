@@ -1,11 +1,8 @@
-Tutorials
-=========
-
-Quick-look analysis
--------------------
+Quick-look analysis (Outdated)
+------------------------------
 
 Preliminary info
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 This tutorial assumes that you have previous knowledge of timing
 techniques, so that I don't repeat concepts as Nyquist frequency, the
@@ -75,7 +72,7 @@ use netCDF4, you'll notice that file names will have the ``.p``
 extension instead of the ``.nc`` below. The rest is the same.
 
 Loading event lists
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 Starting from cleaned event files, we will first save them in
 ``MaLTPyNT`` format (a ``pickle`` or ``netcdf4`` file). For example, I'm starting
@@ -178,7 +175,7 @@ or
 respectively.
 
 Joining, summing and "scrunching" light curves
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If we want a single light curve from multiple ones, either summing
 multiple instruments or multiple energy or time ranges, we can use
@@ -199,7 +196,7 @@ have consistent time and energy ranges), so it might give inconsistent
 results or crash in untested situations. Please report any problems!
 
 Producing power spectra and cross power spectra
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let us just produce the cross power spectrum for now. To produce also
 the power spectra corresponding to each light curve, substitute
@@ -216,7 +213,7 @@ would be Leahy normalization.
     Saving CPDS to ./cpds_002_3-30_0.nc
 
 Rebinning the spectrum
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Now let's rebin the spectrum. If the rebin factor is an integer, it is
 interpreted as a constant rebinning. Otherwise (only if >1), it is
@@ -228,7 +225,7 @@ interpreted as a geometric binning.
     Saving cpds to cpds_002_3-30_0_rebin1.03.nc
 
 Calculating the cospectrum and phase/time lags
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The calculation of lags and their errors is implemented in ``HENlags``,
 and needs to be tested properly. For the cospectrum, it is sufficient to
@@ -237,7 +234,7 @@ relevant function in ``plot.py`` (`Use the source,
 Luke! <http://adastraerrans.com/archivos/use-the-source-luke.png>`__).
 
 Saving the spectra in a format readable to XSpec
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To save the cospectrum in a format readable to XSpec it is sufficient to
 give the command
@@ -247,7 +244,7 @@ give the command
     $ MP2xspec cpds_002_3-30_0_rebin1.03.nc --flx2xsp
 
 Open and fit in XSpec!
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -262,7 +259,7 @@ Open and fit in XSpec!
 etc. |screenshot.png|
 
 
-.. |screenshot.png| image:: images/3911632225-screenshot.png
+.. |screenshot.png| image:: ../images/3911632225-screenshot.png
 
 
 Data simulation
