@@ -262,6 +262,9 @@ def get_file_type(fname, raw_data=False):
     elif 'gti' in ftype_raw:
         ftype = 'gti'
         fun = _dum
+    elif 'EFPeriodogram' in ftype_raw:
+        ftype = 'folding'
+        fun = load_folding
     else:
         raise ValueError('File format not understood')
 
