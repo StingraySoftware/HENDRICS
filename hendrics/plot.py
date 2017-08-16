@@ -9,7 +9,7 @@ except:
     # Permit to import the module anyway if matplotlib is not present
     pass
 from .io import load_data, get_file_type, load_pds, load_lcurve
-from .io import is_string, save_as_qdp
+from .io import is_string, save_as_qdp, load_folding
 from .base import create_gti_mask, _assign_value_if_none
 from .base import detection_level
 import logging
@@ -215,6 +215,43 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
         plt.savefig(figname)
 
 
+def plot_folding(fnames, figname=None, xlog=None, ylog=None,
+                 output_data_file=None):
+    for fname in fnames:
+        ef = load_folding(fname)
+
+        plt.plot(ef.freq, ef.stat, drawstyle='steps-mid', label=fname)
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel(ef.kind + ' stat')
+
+        if hasattr(ef, 'best_fits') and ef.best_fits is not None:
+
+            for f in ef.best_fits:
+                xs = np.linspace(np.min(ef.freq), np.max(ef.freq),
+                                 len(ef.freq)*2)
+                plt.plot(xs, f(xs))
+
+        if output_data_file is not None:
+            out = [ef.freq, ef.stat]
+            out_err = [None, None]
+
+            if hasattr(ef, 'best_fits') and ef.best_fits is not None:
+                for f in ef.best_fits:
+                    out.append(f(ef.freq))
+                    out_err.append(None)
+
+            save_as_qdp(out, out_err, filename=output_data_file, mode='a')
+    ax = plt.gca()
+    if xlog:
+        ax.set_xscale('log', nonposx='clip')
+    if ylog:
+        ax.set_yscale('log', nonposy='clip')
+    plt.legend()
+
+    if figname is not None:
+        plt.savefig(figname)
+
+
 def plot_color(file0, file1, xlog=None, ylog=None, figname=None,
                output_data_file=None):
     type0, lc0 = get_file_type(file0)
@@ -359,6 +396,9 @@ def main(args=None):
             plot_lc(fname, fromstart=args.fromstart, xlog=args.xlog,
                     ylog=args.ylog, figname=args.figname,
                     output_data_file=args.outfile)
+        elif ftype == 'folding':
+            plot_folding(fname, xlog=args.xlog, ylog=args.ylog,
+                         figname=args.figname, output_data_file=args.outfile)
         elif ftype[-4:] == 'cpds':
             plot_cospectrum(fname, xlog=args.xlog, ylog=args.ylog,
                             figname=args.figname,
