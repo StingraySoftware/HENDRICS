@@ -273,14 +273,19 @@ class TestFullRun(object):
 
     def test_scrunchlcs(self):
         """Test produce scrunched light curves."""
-        command = '{0} {1} -o {2}'.format(
-            os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-            HEN_FILE_EXTENSION,
-            os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-            HEN_FILE_EXTENSION,
-            os.path.join(self.datadir, 'monol_test_scrunchlc') +
+        a_in = os.path.join(self.datadir, 'monol_testA_E3-50_lc' + \
             HEN_FILE_EXTENSION)
+        b_in = os.path.join(self.datadir, 'monol_testB_E3-50_lc' + \
+            HEN_FILE_EXTENSION)
+        out = os.path.join(self.datadir, 'monol_test_scrunchlc' + \
+            HEN_FILE_EXTENSION)
+        command = '{0} {1} -o {2}'.format(a_in, b_in, out)
+
         hen.lcurve.scrunch_main(command.split())
+        a_lc = hen.io.load_lcurve(a_in)
+        b_lc = hen.io.load_lcurve(b_in)
+        out_lc = hen.io.load_lcurve(out)
+        assert np.all(out_lc.counts == a_lc.counts + b_lc.counts)
 
     def test_lcurve_error_uncalibrated(self):
         """Test light curve error from uncalibrated file."""
