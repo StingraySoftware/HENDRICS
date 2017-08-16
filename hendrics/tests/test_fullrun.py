@@ -469,7 +469,7 @@ class TestFullRun(object):
         fname = os.path.join(self.datadir,
                              'monol_test_E3-50_cpds_rebin2' +
                              HEN_FILE_EXTENSION)
-        hen.timelags.main(fname)
+        hen.timelags.main([fname])
         out = hen.base.hen_root(fname) + '_lags.qdp' 
         os.path.exists(out)       
         
