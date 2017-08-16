@@ -465,6 +465,14 @@ class TestFullRun(object):
                                     'monol_test_E3-50_cpds_rebin1.03' +
                                     HEN_FILE_EXTENSION))
 
+    def test_save_lags(self): 
+        fname = os.path.join(self.datadir,
+                             'monol_test_E3-50_cpds_rebin2' +
+                             HEN_FILE_EXTENSION)
+        hen.timelags.main([fname])
+        out = hen.base.hen_root(fname) + '_lags.qdp' 
+        os.path.exists(out)       
+        
     def test_fit_pds(self):
         modelstring = '''
 from astropy.modeling import models
