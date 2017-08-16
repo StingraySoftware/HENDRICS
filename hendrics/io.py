@@ -1131,8 +1131,7 @@ def save_model(model, fname='model.p', constraints=None):
         Additional model constraints. Ignored for astropy models.
     """
     modeldata = {'model': model, 'constraints': None}
-    if isinstance(model, Model) or isinstance(model, SincSquareModel) or \
-            isinstance(model, sinc_square_model):
+    if isinstance(model, (Model, SincSquareModel)):
         modeldata['kind'] = 'Astropy'
     elif callable(model):
         nargs = model.__code__.co_argcount
