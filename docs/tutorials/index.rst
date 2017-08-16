@@ -6,3 +6,8 @@ Tutorials
 
    quicklook
    simulation
+   data_exploration
+   variability
+   agn
+   pulsars
+   reverberation
