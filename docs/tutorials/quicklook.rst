@@ -1,5 +1,5 @@
-Quick-look analysis (Outdated)
-------------------------------
+Introductory concepts and example analysis
+------------------------------------------
 
 Preliminary info
 ~~~~~~~~~~~~~~~~
@@ -9,22 +9,30 @@ techniques, so that I don't repeat concepts as Nyquist frequency, the
 importance of choosing carefully the binning time and the FFT length,
 and so on. If you are not familiar with these concepts, `this paper by
 Michiel is a very good place to
-start <http://dare.uva.nl/document/2/47104>`__. Why in the example below
-I use the cospectrum instead of the PDS, is written in our `timing
-paper <http://arxiv.org/abs/1409.3248>`__.
+start <http://dare.uva.nl/document/2/47104>`__.
+In this tutorial we will show an example based on _NuSTAR_ data. For this
+satellite, it is advisable to use the cospectrum (real part of the cross
+spectrum) of the data from the two separated detectors instead of the
+power spectrum of the full light curve, to work around the effect of
+dead time. See our `timing paper <http://arxiv.org/abs/1409.3248>`__ for
+details.
 
-This software has a modular structure. One starts from cleaned event
+This software works in separated steps. One starts from cleaned event
 files (such as those produced by tools like ``nupipeline`` and possibly
-barycentered with ``barycorr`` or equivalent), and produces a series of
-products with subsequent steps:
+barycentered with ``barycorr`` or equivalent), and produces a cascade
+of intermediate products until the final result. For example:
 
-1. **event lists** containing event arrival times and PI channel
-   information
+1. Read the **event list** and save it to an intermediate file containing
+   event arrival times and PI channel information
 
-2. (optional) **calibrated event lists**, where PI values have been
+2. (optional) Produce **calibrated event lists**, where PI values have been
    converted to energy
 
-3. **light curves**, choosing the energy band and the bin time
+3. Use calibrated or uncalibrated event lists to produce **light curves**
+   with a given bin time.
+   Only if starting from a calibrated event list, the light curve can be
+   obtained by specifying an energy range, otherwise only the PI channel
+   filtering is avaiable.
 
 4. (optional) **summed light curves** if we want to join events from
    multiple instruments, or just from different observing times
