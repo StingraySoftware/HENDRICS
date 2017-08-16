@@ -39,39 +39,33 @@ class TestFullRun(object):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, 'data')
 
-    def test_00a_scripts_are_installed(self):
+    def test_scripts_are_installed(self):
         """Test only once that command line scripts are installed correctly."""
         fits_file = os.path.join(self.datadir, 'monol_testA.evt')
         command = 'HENreadfile {0}'.format(fits_file)
         sp.check_call(command.split())
 
-    def test_00b_scripts_are_installed(self):
-        """Test only once that command line scripts are installed correctly."""
-        fits_file = os.path.join(self.datadir, 'monol_testA.evt')
-        command = 'HENreadfile {0}'.format(fits_file)
-        sp.check_call(command.split())
-
-    def test_01a_fake_file(self):
+    def test_fake_file(self):
         """Test produce a fake event file."""
         fits_file = os.path.join(self.datadir, 'monol_test_fake.evt')
         hen.fake.main(['-o', fits_file, '--instrument', 'FPMB'])
         info = hen.io.print_fits_info(fits_file, hdu=1)
         assert info['Instrument'] == 'FPMB'
 
-    def test_01b_fake_file(self):
+    def test_fake_file_from_input_lc(self):
         """Test produce a fake event file from input light curve."""
         lcurve_in = os.path.join(self.datadir, 'lcurveA.fits')
         fits_file = os.path.join(self.datadir, 'monol_test_fake_lc.evt')
         hen.fake.main(['--lc', lcurve_in, '-o', fits_file])
 
-    def test_01c_fake_file(self):
+    def test_fake_file_with_deadtime(self):
         """Test produce a fake event file and apply deadtime."""
         fits_file = os.path.join(self.datadir, 'monol_test_fake_lc.evt')
         hen.fake.main(['--deadtime', '2.5e-3',
                       '--ctrate', '2000',
                       '-o', fits_file])
 
-    def test_01d_fake_file_xmm(self):
+    def test_fake_file_xmm(self):
         """Test produce a fake event file and apply deadtime."""
         fits_file = os.path.join(self.datadir, 'monol_test_fake_lc_xmm.evt')
         hen.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
@@ -83,7 +77,7 @@ class TestFullRun(object):
         assert 'STDGTI02' in hdunames
         assert 'STDGTI07' in hdunames
 
-    def test_02a_load_events(self):
+    def test_load_events_with_2_cpus(self):
         """Test event file reading."""
         command = '{0} {1} --nproc 2'.format(
             os.path.join(self.datadir, 'monol_testA.evt'),
@@ -91,13 +85,13 @@ class TestFullRun(object):
             os.path.join(self.datadir, 'monol_test_fake.evt'))
         hen.read_events.main(command.split())
 
-    def test_02b_load_events(self):
+    def test_load_events(self):
         """Test event file reading."""
         command = '{0}'.format(
             os.path.join(self.datadir, 'monol_testB.evt'))
         hen.read_events.main(command.split())
 
-    def test_02c_load_events_split(self):
+    def test_load_events_split(self):
         """Test event file splitting."""
         command = \
             '{0} -g --min-length 0'.format(
@@ -108,12 +102,12 @@ class TestFullRun(object):
                                     HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
 
-    def test_02d_load_gtis(self):
+    def test_load_gtis(self):
         """Test loading of GTIs from FITS files."""
         fits_file = os.path.join(self.datadir, 'monol_testA.evt')
         hen.io.load_gtis(fits_file)
 
-    def test_02e_load_events_noclobber(self):
+    def test_load_events_noclobber(self):
         """Test event file reading w. noclobber option."""
         with catch_warnings() as w:
             command = \
@@ -124,13 +118,13 @@ class TestFullRun(object):
             "noclobber option used. Skipping"), \
             "Unexpected warning output"
 
-    def test_02b_load_events_xmm(self):
+    def test_load_events_xmm(self):
         """Test event file reading."""
         command = '{0}'.format(
             os.path.join(self.datadir, 'monol_test_fake_lc_xmm.evt'))
         hen.read_events.main(command.split())
 
-    def test_03a_calibrate(self):
+    def test_calibrate(self):
         """Test event file calibration."""
         command = '{0} -r {1}'.format(
             os.path.join(self.datadir,
@@ -141,7 +135,7 @@ class TestFullRun(object):
                                            'monol_testA_nustar_fpma_ev_calib' +
                                            HEN_FILE_EXTENSION))
 
-    def test_03b_calibrate(self):
+    def test_calibrate_2_cpus(self):
         """Test event file calibration."""
         command = '{0} -r {1} --nproc 2'.format(
             os.path.join(self.datadir,
