@@ -1,33 +1,38 @@
-Tutorials
-=========
-
-Quick-look analysis
--------------------
+Introductory concepts and example analysis
+------------------------------------------
 
 Preliminary info
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 This tutorial assumes that you have previous knowledge of timing
 techniques, so that I don't repeat concepts as Nyquist frequency, the
 importance of choosing carefully the binning time and the FFT length,
 and so on. If you are not familiar with these concepts, `this paper by
 Michiel is a very good place to
-start <http://dare.uva.nl/document/2/47104>`__. Why in the example below
-I use the cospectrum instead of the PDS, is written in our `timing
-paper <http://arxiv.org/abs/1409.3248>`__.
+start <http://dare.uva.nl/document/2/47104>`__.
+In this tutorial we will show an example based on _NuSTAR_ data. For this
+satellite, it is advisable to use the cospectrum (real part of the cross
+spectrum) of the data from the two separated detectors instead of the
+power spectrum of the full light curve, to work around the effect of
+dead time. See our `timing paper <http://arxiv.org/abs/1409.3248>`__ for
+details.
 
-This software has a modular structure. One starts from cleaned event
+This software works in separated steps. One starts from cleaned event
 files (such as those produced by tools like ``nupipeline`` and possibly
-barycentered with ``barycorr`` or equivalent), and produces a series of
-products with subsequent steps:
+barycentered with ``barycorr`` or equivalent), and produces a cascade
+of intermediate products until the final result. For example:
 
-1. **event lists** containing event arrival times and PI channel
-   information
+1. Read the **event list** and save it to an intermediate file containing
+   event arrival times and PI channel information
 
-2. (optional) **calibrated event lists**, where PI values have been
+2. (optional) Produce **calibrated event lists**, where PI values have been
    converted to energy
 
-3. **light curves**, choosing the energy band and the bin time
+3. Use calibrated or uncalibrated event lists to produce **light curves**
+   with a given bin time.
+   Only if starting from a calibrated event list, the light curve can be
+   obtained by specifying an energy range, otherwise only the PI channel
+   filtering is avaiable.
 
 4. (optional) **summed light curves** if we want to join events from
    multiple instruments, or just from different observing times
@@ -75,7 +80,7 @@ use netCDF4, you'll notice that file names will have the ``.p``
 extension instead of the ``.nc`` below. The rest is the same.
 
 Loading event lists
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 Starting from cleaned event files, we will first save them in
 ``MaLTPyNT`` format (a ``pickle`` or ``netcdf4`` file). For example, I'm starting
@@ -178,7 +183,7 @@ or
 respectively.
 
 Joining, summing and "scrunching" light curves
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If we want a single light curve from multiple ones, either summing
 multiple instruments or multiple energy or time ranges, we can use
@@ -199,7 +204,7 @@ have consistent time and energy ranges), so it might give inconsistent
 results or crash in untested situations. Please report any problems!
 
 Producing power spectra and cross power spectra
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let us just produce the cross power spectrum for now. To produce also
 the power spectra corresponding to each light curve, substitute
@@ -216,7 +221,7 @@ would be Leahy normalization.
     Saving CPDS to ./cpds_002_3-30_0.nc
 
 Rebinning the spectrum
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Now let's rebin the spectrum. If the rebin factor is an integer, it is
 interpreted as a constant rebinning. Otherwise (only if >1), it is
@@ -228,7 +233,7 @@ interpreted as a geometric binning.
     Saving cpds to cpds_002_3-30_0_rebin1.03.nc
 
 Calculating the cospectrum and phase/time lags
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The calculation of lags and their errors is implemented in ``HENlags``,
 and needs to be tested properly. For the cospectrum, it is sufficient to
@@ -237,7 +242,7 @@ relevant function in ``plot.py`` (`Use the source,
 Luke! <http://adastraerrans.com/archivos/use-the-source-luke.png>`__).
 
 Saving the spectra in a format readable to XSpec
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To save the cospectrum in a format readable to XSpec it is sufficient to
 give the command
@@ -247,7 +252,7 @@ give the command
     $ MP2xspec cpds_002_3-30_0_rebin1.03.nc --flx2xsp
 
 Open and fit in XSpec!
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -262,43 +267,4 @@ Open and fit in XSpec!
 etc. |screenshot.png|
 
 
-.. |screenshot.png| image:: images/3911632225-screenshot.png
-
-
-Data simulation
----------------
-
-To simulate datasets, `MaLTPyNT` includes the `HENfake` script. It can simulate
-event lists with a fixed count rate or from an input light curve. Also, it is able
-to apply a dead time filter to the simulated event lists.
-
-Basic operations
-~~~~~~~~~~~~~~~~
-To simulate a short observation (1025 s) at a given count rate (e.g., 150 ct/s),
-it is sufficient to call `HENfake -c <countrate>`
-
-::
-
-    $ HENfake -c 150
-    $ ls
-    events.evt
-
-To simulate an event list from an input light curve, use the `-l` (or `--lc`)
-option. The light curve can be in FITS or MaLTPyNT native format (or one can use
-HENlcurve for the conversion from text format):
-
-::
-
-    $ HENfake -l lightcurve.fits
-
-To apply dead time to the generated events, use the `--deadtime` option. deadtime
-can be supplied as a single number, meaning a constant dead time
-
-::
-
-    $ HENfake -l lightcurve.fits --deadtime 2.5e-3
-
-or as two numbers (`mean`, `sigma`), meaning a Gaussian distribution of dead
-times with the specified mean and sigma.
-
-More advanced options are available using the functions in `maltpynt.fake`.
+.. |screenshot.png| image:: ../images/3911632225-screenshot.png

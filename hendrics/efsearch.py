@@ -164,7 +164,11 @@ def _common_main(args, func):
                 elif args.curve.lower() == 'gaussian':
                     best_fun = fit(frequencies[good], stats[good], f,
                                    baseline=baseline)
+                else:
+                    raise ValueError('`--curve` arg must be sinc or gaussian')
+
                 best_models.append(best_fun)
+        efperiodogram.best_fits = best_models
         save_folding(efperiodogram,
                      hen_root(fname) + '_{}'.format(kind) + HEN_FILE_EXTENSION)
 

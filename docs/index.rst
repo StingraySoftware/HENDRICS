@@ -179,7 +179,7 @@ Getting started
    :maxdepth: 2
 
    install
-   tutorial
+   tutorials/index
 
 Command line interface
 ----------------------

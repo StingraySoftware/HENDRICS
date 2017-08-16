@@ -3,6 +3,7 @@ from stingray.events import EventList
 import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
 from hendrics.efsearch import main_efsearch, main_zsearch
+from hendrics.plot import plot_folding
 import os
 
 
@@ -29,6 +30,7 @@ class TestEFsearch():
                        '--fit-candidates'])
         outfile = 'events_EF' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
         assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
                           atol=1/25.25)
@@ -41,6 +43,7 @@ class TestEFsearch():
                       str(self.pulse_frequency)])
         outfile = 'events_Z2n' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
         assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
                           atol=1/25.25)

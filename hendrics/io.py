@@ -11,6 +11,7 @@ from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
 import sys
+from stingray.pulse.modeling import SincSquareModel, sinc_square_model
 try:
     import netCDF4 as nc
     HEN_FILE_EXTENSION = '.nc'
@@ -261,6 +262,9 @@ def get_file_type(fname, raw_data=False):
     elif 'gti' in ftype_raw:
         ftype = 'gti'
         fun = _dum
+    elif 'EFPeriodogram' in ftype_raw:
+        ftype = 'folding'
+        fun = load_folding
     else:
         raise ValueError('File format not understood')
 
@@ -402,6 +406,14 @@ def save_folding(efperiodogram, fname):
 
     outdata = copy.copy(efperiodogram.__dict__)
     outdata['__sr__class__type__'] = 'EFPeriodogram'
+    if 'best_fits' in outdata:
+        model_files = []
+        for i, b in enumerate(efperiodogram.best_fits):
+            mfile = fname.replace(HEN_FILE_EXTENSION, '__mod{}__.p'.format(i))
+            save_model(b, mfile)
+            model_files.append(mfile)
+        outdata.pop('best_fits')
+
     if get_file_format(fname) == 'pickle':
         return _save_data_pickle(outdata, fname)
     elif get_file_format(fname) == 'nc':
@@ -420,6 +432,13 @@ def load_folding(fname):
 
     for key in data.keys():
         setattr(ef, key, data[key])
+    modelfiles = glob.glob(fname.replace(HEN_FILE_EXTENSION, '__mod*__.p'))
+    if len(modelfiles) > 1:
+        bmodels = []
+        for mfile in modelfiles:
+            if os.path.exists(mfile):
+                bmodels.append(load_model(mfile))
+        ef.best_fits = bmodels
     if len(np.asarray(ef.peaks).shape) == 0:
         ef.peaks = [ef.peaks]
     return ef
@@ -635,6 +654,7 @@ def _save_data_nc(struct, fname, kind="data"):
                               (k, repr(var), fname))
                 raise Exception('This failed: %s %s in file %s' %
                                 (k, repr(var), fname))
+
         if is_string(var):
             probekind = str
             probesize = -1
@@ -1111,7 +1131,7 @@ def save_model(model, fname='model.p', constraints=None):
         Additional model constraints. Ignored for astropy models.
     """
     modeldata = {'model': model, 'constraints': None}
-    if isinstance(model, Model):
+    if isinstance(model, (Model, SincSquareModel)):
         modeldata['kind'] = 'Astropy'
     elif callable(model):
         nargs = model.__code__.co_argcount
