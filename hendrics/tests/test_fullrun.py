@@ -330,7 +330,7 @@ class TestFullRun(object):
                               + HEN_FILE_EXTENSION)
 
 
-    def test_05a_pds(self):
+    def test_pds(self):
         """Test PDS production."""
         command = \
             '{0} {1} -f 128 --save-dyn -k PDS --norm frac --nproc 2 '.format(
@@ -347,7 +347,7 @@ class TestFullRun(object):
                                            'monol_testA_E3-50_pds')
                               + HEN_FILE_EXTENSION)
 
-    def test_05c_pds_fits(self):
+    def test_pds_fits(self):
         """Test PDS production with light curves obtained from FITS files."""
         lcurve_ftools = os.path.join(self.datadir,
                                      'lcurve_ftools_lc' +
@@ -355,7 +355,7 @@ class TestFullRun(object):
         command = '{0} -f 128'.format(lcurve_ftools)
         hen.fspec.main(command.split())
 
-    def test_05d_pds_txt(self):
+    def test_pds_txt(self):
         """Test PDS production with light curves obtained from txt files."""
         lcurve_txt = os.path.join(self.datadir,
                                   'lcurve_txt_lc' +
@@ -363,7 +363,7 @@ class TestFullRun(object):
         command = '{0} -f 128'.format(lcurve_txt)
         hen.fspec.main(command.split())
 
-    def test_05e_cpds(self):
+    def test_cpds(self):
         """Test CPDS production."""
         command = \
             '{0} {1} -f 128 --save-dyn -k CPDS --norm frac -o {2}'.format(
@@ -374,7 +374,7 @@ class TestFullRun(object):
                 os.path.join(self.datadir, 'monol_test_E3-50'))
         hen.fspec.main(command.split())
 
-    def test_05f_cpds(self):
+    def test_cpds_2cpus(self):
         """Test CPDS production."""
         command = \
             ('{0} {1} -f 128 --save-dyn -k '
@@ -386,7 +386,7 @@ class TestFullRun(object):
                 os.path.join(self.datadir, 'monol_test_E3-50'))
         hen.fspec.main(command.split())
 
-    # def test_05g_dumpdynpds(self):
+    # def test_dumpdynpds(self):
     #     """Test dump dynamical PDSs."""
     #     command = '--noplot ' + \
     #         os.path.join(self.datadir,
@@ -394,7 +394,7 @@ class TestFullRun(object):
     #         HEN_FILE_EXTENSION
     #     hen.fspec.dumpdyn_main(command.split())
 
-    def test_05h_sumpds(self):
+    def test_sumpds(self):
         """Test the sum of pdss."""
         hen.sum_fspec.main([
             os.path.join(self.datadir,
@@ -404,7 +404,7 @@ class TestFullRun(object):
             '-o', os.path.join(self.datadir,
                                'monol_test_sum' + HEN_FILE_EXTENSION)])
 
-    # def test_05i_dumpdyncpds(self):
+    # def test_dumpdyncpds(self):
     #     """Test dumping CPDS file."""
     #     command = '--noplot ' + \
     #         os.path.join(self.datadir,
@@ -412,14 +412,14 @@ class TestFullRun(object):
     #         HEN_FILE_EXTENSION
     #     hen.fspec.dumpdyn_main(command.split())
 
-    def test_06a_rebinlc(self):
+    def test_rebinlc(self):
         """Test LC rebinning."""
         command = '{0} -r 4'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
             HEN_FILE_EXTENSION)
         hen.rebin.main(command.split())
 
-    def test_06b_rebinpds(self):
+    def test_rebinpds(self):
         """Test PDS rebinning 1."""
         command = '{0} -r 2'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_pds') +
@@ -429,7 +429,7 @@ class TestFullRun(object):
                                     'monol_testA_E3-50_pds_rebin2' +
                                     HEN_FILE_EXTENSION))
 
-    def test_06c_rebinpds(self):
+    def test_rebinpds_geom(self):
         """Test geometrical PDS rebinning."""
         command = '{0} {1} -r 1.03'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_pds') +
@@ -445,7 +445,7 @@ class TestFullRun(object):
                                     'monol_testB_E3-50_pds_rebin1.03' +
                                     HEN_FILE_EXTENSION))
 
-    def test_06d_rebincpds(self):
+    def test_rebincpds(self):
         """Test CPDS rebinning."""
         command = '{0} -r 2'.format(
             os.path.join(self.datadir, 'monol_test_E3-50_cpds') +
@@ -455,7 +455,7 @@ class TestFullRun(object):
                                     'monol_test_E3-50_cpds_rebin2' +
                                     HEN_FILE_EXTENSION))
 
-    def test_06e_rebincpds(self):
+    def test_rebincpds_geom(self):
         """Test CPDS geometrical rebinning."""
         command = '{0} -r 1.03'.format(
             os.path.join(self.datadir, 'monol_test_E3-50_cpds') +
@@ -517,7 +517,7 @@ model = models.Const1D()
 
         assert "Invalid number of frequencies specified" in str(excinfo.value)
 
-    # def test_06f_dumpdyncpds_reb(self):
+    # def test_dumpdyncpds_reb(self):
     #     """Test dumping rebinned CPDS file."""
     #     command = '--noplot ' + \
     #         os.path.join(self.datadir,
@@ -525,7 +525,7 @@ model = models.Const1D()
     #         HEN_FILE_EXTENSION
     #     hen.fspec.dumpdyn_main(command.split())
 
-    def test_08a_savexspec(self):
+    def test_savexspec(self):
         """Test save as Xspec 1."""
         command = '{0}'.format(
             os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin2') +
@@ -534,7 +534,7 @@ model = models.Const1D()
         os.path.exists(os.path.join(self.datadir,
                                     'monol_testA_E3-50_pds_rebin2.pha'))
 
-    def test_08b_savexspec(self):
+    def test_savexspec_geom(self):
         """Test save as Xspec 2."""
         command = '{0}'.format(
             os.path.join(self.datadir, 'monol_test_E3-50_cpds_rebin1.03') +
@@ -547,14 +547,14 @@ model = models.Const1D()
                                     'monol_test_E3-50_cpds_rebin1.03_lags.pha'))
 
 
-    def test_09a_create_gti(self):
+    def test_create_gti(self):
         """Test creating a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
             HEN_FILE_EXTENSION
         command = "{0} -f counts>0 -c --debug".format(fname)
         hen.create_gti.main(command.split())
 
-    def test_09b_create_gti(self):
+    def test_apply_gti(self):
         """Test applying a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
             HEN_FILE_EXTENSION
@@ -563,14 +563,14 @@ model = models.Const1D()
         command = "{0} -a {1} --debug".format(lcfname, fname)
         hen.create_gti.main(command.split())
 
-    def test_09c_create_gti(self):
+    def test_create_gti_and_minlen(self):
         """Test creating a GTI file and apply minimum length."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
             HEN_FILE_EXTENSION
         command = "{0} -f counts>0 -c -l 10 --debug".format(fname)
         hen.create_gti.main(command.split())
 
-    def test_09d_create_gti(self):
+    def test_create_gti_and_apply(self):
         """Test applying a GTI file and apply minimum length."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
             HEN_FILE_EXTENSION
@@ -579,7 +579,7 @@ model = models.Const1D()
         command = "{0} -a {1} -l 10 --debug".format(lcfname, fname)
         hen.create_gti.main(command.split())
 
-    def test_10a_readfile(self):
+    def test_readfile(self):
         """Test reading and dumping a HENDRICS file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
             HEN_FILE_EXTENSION
@@ -587,7 +587,7 @@ model = models.Const1D()
 
         hen.io.main(command.split())
 
-    def test_10b_readfile(self):
+    def test_readfile_fits(self):
         """Test reading and dumping a FITS file."""
         fitsname = os.path.join(self.datadir, 'monol_testA.evt')
         command = "{0}".format(fitsname)
@@ -615,7 +615,7 @@ model = models.Const1D()
             filename=os.path.join(self.datadir, "monol_test.txt"),
             colnames=["array", "err"])
 
-    def test_10e_get_file_type(self):
+    def test_get_file_type(self):
         """Test getting file type."""
         file_list = {'events': 'monol_testA_nustar_fpma_ev',
                      'lc': 'monol_testA_E3-50_lc',
@@ -628,7 +628,7 @@ model = models.Const1D()
             ftype, _ = hen.io.get_file_type(fname)
             assert ftype == realtype, "File types do not match"
 
-    def test_11_exposure(self):
+    def test_exposure(self):
         """Test exposure calculations from unfiltered files."""
         lcname = os.path.join(self.datadir,
                               'monol_testA_E3-50_lc' + HEN_FILE_EXTENSION)
