@@ -465,14 +465,39 @@ class TestFullRun(object):
                                     'monol_test_E3-50_cpds_rebin1.03' +
                                     HEN_FILE_EXTENSION))
 
-    def test_save_lags(self): 
+    def test_save_lags(self):
         fname = os.path.join(self.datadir,
                              'monol_test_E3-50_cpds_rebin2' +
                              HEN_FILE_EXTENSION)
         hen.timelags.main([fname])
-        out = hen.base.hen_root(fname) + '_lags.qdp' 
-        os.path.exists(out)       
-        
+        out = hen.base.hen_root(fname) + '_lags.qdp'
+        os.path.exists(out)
+
+    def test_save_fvar(self):
+        fname = os.path.join(self.datadir,
+                             'monol_testA_E3-50_lc' +
+                             HEN_FILE_EXTENSION)
+        hen.exvar.main([fname,"-c", "10", "--fraction-step", "0.6",
+                        "--norm", "fvar"])
+        out = hen.base.hen_root(fname) + "_fvar" + '.qdp'
+        os.path.exists(out)
+
+    def test_save_excvar(self):
+        fname = os.path.join(self.datadir,
+                             'monol_testA_E3-50_lc' +
+                             HEN_FILE_EXTENSION)
+        hen.exvar.main([fname])
+        out = hen.base.hen_root(fname) + "_excvar" + '.qdp'
+        os.path.exists(out)
+
+    def test_save_excvar_wrong_norm(self):
+        fname = os.path.join(self.datadir,
+                             'monol_testA_E3-50_lc' +
+                             HEN_FILE_EXTENSION)
+        with pytest.raises(ValueError) as excinfo:
+            hen.exvar.main([fname, '--norm', 'cicciput'])
+        assert 'Normalization must be fvar or excvar' in str(excinfo.value)
+
     def test_fit_pds(self):
         modelstring = '''
 from astropy.modeling import models
