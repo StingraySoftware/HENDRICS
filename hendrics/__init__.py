@@ -14,8 +14,9 @@ if not _ASTROPY_SETUP_:
     from . import calibrate
     from . import colors
     from . import create_gti
-    from . import exposure
     from . import efsearch
+    from . import exposure
+    from . import exvar
     from . import fake
     from . import fspec
     from . import io
