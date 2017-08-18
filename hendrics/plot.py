@@ -129,7 +129,8 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
         level = lev - p[0]
         y = pds[1:]
         yerr = epds[1:]
-        if norm == 'Leahy' or (norm == 'rms' and (not xlog or not ylog)):
+        if norm.lower() == 'leahy' or (norm.lower() == 'rms' and
+                                       (not xlog or not ylog)):
             plt.errorbar(freq[1:], y, yerr=yerr, fmt='-',
                          drawstyle='steps-mid', color=color, label=fname)
         elif norm == 'rms' and xlog and ylog:
@@ -383,6 +384,7 @@ def main(args=None):
         args.files = zip(args.files[:-1:2], args.files[1::2])
 
     for fname in args.files:
+
         if args.CCD or args.HID:
             plot_color(fname[0], fname[1], xlog=args.xlog, ylog=args.ylog,
                        figname=args.figname, output_data_file=args.outfile)
