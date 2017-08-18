@@ -307,7 +307,8 @@ def lcurve_from_events(f, safe_interval=0,
         return [outfile]
 
     lc = Lightcurve.make_lightcurve(events, bintime, tstart=tstart,
-                                    tseg=tstop-tstart, mjdref=evdata.mjdref)
+                                    tseg=tstop-tstart, mjdref=evdata.mjdref,
+                                    gti=gtis)
 
     lc.instr = instr
 
