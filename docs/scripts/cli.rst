@@ -97,7 +97,7 @@ HENdumpdyn
     Dump dynamical (cross) power spectra
 
     positional arguments:
-      files       List of files in any valid MaLTPyNT format for PDS or CPDS
+      files       List of files in any valid HENDRICS format for PDS or CPDS
 
     optional arguments:
       -h, --help  show this help message and exit
@@ -109,11 +109,12 @@ HENefsearch
 
 ::
 
-    usage: HENefsearch [-h] [--loglevel LOGLEVEL] --fmin FMIN --fmax FMAX
-                       [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
+    usage: HENefsearch [-h] -f FMIN -F FMAX [-n NBIN]
+                       [--segment-size SEGMENT_SIZE] [--step STEP]
                        [--oversample OVERSAMPLE] [--expocorr] [--find-candidates]
                        [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
-                       [--debug] [-N N]
+                       [--fit-frequency FIT_FREQUENCY] [--debug]
+                       [--loglevel LOGLEVEL] [-N N]
                        files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -123,10 +124,8 @@ HENefsearch
 
     optional arguments:
       -h, --help            show this help message and exit
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --fmin FMIN           Minimum frequency to fold
-      --fmax FMAX           Maximum frequency to fold
+      -f FMIN, --fmin FMIN  Minimum frequency to fold
+      -F FMAX, --fmax FMAX  Maximum frequency to fold
       -n NBIN, --nbin NBIN  Kind of curve to use (sinc or Gaussian)
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
@@ -143,12 +142,44 @@ HENefsearch
                             different profile bins.
       --find-candidates     Find pulsation candidates using thresholding
       --conflevel CONFLEVEL
-                            Confidence level for thresholding.
+                            percent confidence level for thresholding [0-100).
       --fit-candidates      Fit the candidate peaks in the periodogram
       --curve CURVE         Kind of curve to use (sinc or Gaussian)
+      --fit-frequency FIT_FREQUENCY
+                            Force the candidate frequency to FIT_FREQUENCY
       --debug               use DEBUG logging level
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
+
+
+HENexcvar
+---------
+
+::
+
+    usage: HENexcvar [-h] [-c CHUNK_LENGTH] [--fraction-step FRACTION_STEP]
+                     [--norm NORM] [--loglevel LOGLEVEL] [--debug]
+                     files [files ...]
+
+    Calculate excess variance in light curve chunks
+
+    positional arguments:
+      files                 List of files
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -c CHUNK_LENGTH, --chunk-length CHUNK_LENGTH
+                            Length in seconds of the light curve chunks
+      --fraction-step FRACTION_STEP
+                            If the step is not a full chunk_length but less,this
+                            indicates the ratio between step step and
+                            `chunk_length`
+      --norm NORM           Choose between fvar and excvar normalization
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               use DEBUG logging level
 
 
 HENexposure
@@ -162,7 +193,7 @@ HENexposure
     Create exposure light curve based on unfiltered event files.
 
     positional arguments:
-      lcfile                Light curve file (MaltPyNT format)
+      lcfile                Light curve file (HENDRICS format)
       uffile                Unfiltered event file (FITS)
 
     optional arguments:
@@ -252,6 +283,25 @@ HENfspec
       --back BACK           Estimated background (non-source) count rate
       --debug               use DEBUG logging level
       --save-dyn            save dynamical power spectrum
+
+
+HENlags
+-------
+
+::
+
+    usage: HENlags [-h] [--loglevel LOGLEVEL] [--debug] files [files ...]
+
+    Read timelags from cross spectrum results and save them to a qdp file
+
+    positional arguments:
+      files                List of files
+
+    optional arguments:
+      -h, --help           show this help message and exit
+      --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
+                           ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug              use DEBUG logging level
 
 
 HENlcurve
@@ -345,7 +395,7 @@ HENplot
                    [--axes AXES AXES]
                    files [files ...]
 
-    Plot the content of MaLTPyNT light curves and frequency spectra
+    Plot the content of HENDRICS light curves and frequency spectra
 
     positional arguments:
       files                 List of files
@@ -409,7 +459,7 @@ HENreadfile
 
     usage: HENreadfile [-h] files [files ...]
 
-    Print the content of MaLTPyNT files
+    Print the content of HENDRICS files
 
     positional arguments:
       files       List of files
@@ -488,11 +538,12 @@ HENzsearch
 
 ::
 
-    usage: HENzsearch [-h] [--loglevel LOGLEVEL] --fmin FMIN --fmax FMAX [-n NBIN]
-                      [--segment-size SEGMENT_SIZE] [--step STEP]
-                      [--oversample OVERSAMPLE] [--expocorr] [--find-candidates]
-                      [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
-                      [--debug] [-N N]
+    usage: HENzsearch [-h] -f FMIN -F FMAX [-n NBIN] [--segment-size SEGMENT_SIZE]
+                      [--step STEP] [--oversample OVERSAMPLE] [--expocorr]
+                      [--find-candidates] [--conflevel CONFLEVEL]
+                      [--fit-candidates] [--curve CURVE]
+                      [--fit-frequency FIT_FREQUENCY] [--debug]
+                      [--loglevel LOGLEVEL] [-N N]
                       files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -502,10 +553,8 @@ HENzsearch
 
     optional arguments:
       -h, --help            show this help message and exit
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --fmin FMIN           Minimum frequency to fold
-      --fmax FMAX           Maximum frequency to fold
+      -f FMIN, --fmin FMIN  Minimum frequency to fold
+      -F FMAX, --fmax FMAX  Maximum frequency to fold
       -n NBIN, --nbin NBIN  Kind of curve to use (sinc or Gaussian)
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
@@ -522,10 +571,14 @@ HENzsearch
                             different profile bins.
       --find-candidates     Find pulsation candidates using thresholding
       --conflevel CONFLEVEL
-                            Confidence level for thresholding.
+                            percent confidence level for thresholding [0-100).
       --fit-candidates      Fit the candidate peaks in the periodogram
       --curve CURVE         Kind of curve to use (sinc or Gaussian)
+      --fit-frequency FIT_FREQUENCY
+                            Force the candidate frequency to FIT_FREQUENCY
       --debug               use DEBUG logging level
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
 
