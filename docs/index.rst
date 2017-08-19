@@ -65,8 +65,10 @@ main focus on NuSTAR, the software can be used to make standard
 aperiodic timing analysis on X-ray data from, in principle, any other
 satellite (for sure XMM-Newton and RXTE).
 
-What's new - HENDRICS 3.0
--------------------------
+What's new
+----------
+HENDRICS 3.0
+~~~~~~~~~~~~
 The API is now rewritten to use
 `Stingray <https://github.com/StingraySoftware/stingray>`__ where possible.
 All MPxxx scripts are renamed to HENxxx.
@@ -78,8 +80,8 @@ Functionality additions:
 + Color-Color Diagrams and Hardness-Intensity Diagrams
 + Power spectral fitting
 
-What's new - (MaLTPyNT) 2.0
----------------------------
+(MaLTPyNT) 2.0
+~~~~~~~~~~~~~~
 .. Note ::
 
     MaLTPyNT provisionally accepted as an
@@ -157,8 +159,13 @@ page. Feel free to **comment** on them and **propose more**. Please
 choose carefully the category: bugs, enhancements, etc.
 
 Acknowledgements
-~~~~~~~~~~~~~~~~
+----------------
+HENDRICS 2.0
+~~~~~~~~~~~~
+TBW
 
+(MaLTPyNT) 2.0
+~~~~~~~~~~~~~~
 I would like to thank all the co-authors of `the NuSTAR timing
 paper <http://arxiv.org/abs/1409.3248>`__ and the NuSTAR X-ray binaries
 working group. This software would not exist without the interesting
