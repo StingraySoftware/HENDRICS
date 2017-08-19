@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: images/hendrics_large.png
+.. image:: images/hendrics_large.jpg
     :width: 100%
 
 HENDRICS documentation
@@ -31,7 +31,7 @@ Description
 
 This set of command-line scripts based on
 `Stingray <https://github.com/StingraySoftware/stingray>`__ is designed
-to do correctly and fairly easily a **quick-look (spectral-)timing
+to do correctly and fairly easily a **quick-look (spectral-) timing
 analysis** of X-ray data, treating properly the gaps in the data due,
 e.g., to occultation from the Earth or passages through the SAA.
 
