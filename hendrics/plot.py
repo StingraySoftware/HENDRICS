@@ -217,6 +217,9 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
 
 def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                  output_data_file=None):
+    if is_string(fnames):
+        fnames = [fnames]
+
     for fname in fnames:
         ef = load_folding(fname)
 
