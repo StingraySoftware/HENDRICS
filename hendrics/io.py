@@ -433,11 +433,11 @@ def load_folding(fname):
     for key in data.keys():
         setattr(ef, key, data[key])
     modelfiles = glob.glob(fname.replace(HEN_FILE_EXTENSION, '__mod*__.p'))
-    if len(modelfiles) > 1:
+    if len(modelfiles) >= 1:
         bmodels = []
         for mfile in modelfiles:
             if os.path.exists(mfile):
-                bmodels.append(load_model(mfile))
+                bmodels.append(load_model(mfile)[0])
         ef.best_fits = bmodels
     if len(np.asarray(ef.peaks).shape) == 0:
         ef.peaks = [ef.peaks]
