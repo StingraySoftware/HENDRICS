@@ -20,6 +20,10 @@ addons:
             - texlive-latex-extra
             - dvipng
 
+branches:
+  only:
+    - "master"
+
 env:
     global:
         # The following versions are the 'default' for tests, unless

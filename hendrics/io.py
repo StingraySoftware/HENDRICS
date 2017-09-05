@@ -360,6 +360,8 @@ def save_lcurve(lcurve, fname, lctype='Lightcurve'):
         out['header'] = lcurve.header
     if hasattr(lcurve, 'expo'):
         out['expo'] = lcurve.expo
+    if hasattr(lcurve, 'base'):
+        out['base'] = lcurve.base
     if lctype == 'Color':
         out['e_intervals'] = lcurve.e_intervals
         out['use_pi'] = int(lcurve.use_pi)
@@ -396,6 +398,8 @@ def load_lcurve(fname):
         lcurve.use_pi = bool(data["use_pi"])
     if 'header' in list(data.keys()):
         lcurve.header = data["header"]
+    if 'base' in list(data.keys()):
+        lcurve.base = data["base"]
 
     return lcurve
 
@@ -1199,5 +1203,3 @@ def load_model(modelstring):
             raise TypeError("Accepted callable models have only one "
                             "non-keyword argument")
         return model, 'callable', constraints
-
-

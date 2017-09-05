@@ -23,6 +23,36 @@ HEN2xspec
       --flx2xsp            Also call flx2xsp at the end
 
 
+HENbaseline
+-----------
+
+::
+
+    usage: HENbaseline [-h] [-o OUT] [--loglevel LOGLEVEL] [--debug]
+                       [-p ASYMMETRY] [-l LAM]
+                       files [files ...]
+
+    Subtract a baseline from the lightcurve using the Asymmetric Least Squares
+    algorithm. The two parameters p and lambda control the asymmetry and
+    smoothness of the baseline. See below for details.
+
+    positional arguments:
+      files                 List of files
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -o OUT, --out OUT     Output file
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               use DEBUG logging level
+      -p ASYMMETRY, --asymmetry ASYMMETRY
+                            "asymmetry" parameter. Smaller values make the
+                            baseline more "horizontal". Typically 0.001 < p < 0.1,
+                            but not necessarily.
+      -l LAM, --lam LAM     lambda, or "smoothness", parameter. Larger values make
+                            the baseline stiffer. Typically 1e2 < lam < 1e9
+
+
 HENcalibrate
 ------------
 
