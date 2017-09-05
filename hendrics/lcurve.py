@@ -9,9 +9,9 @@ from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from .base import hen_root, create_gti_mask, cross_gtis, mkdir_p
 from .base import contiguous_regions, calc_countrate, gti_len
-from .base import _look_for_array_in_array
+from .base import _look_for_array_in_array, hen_root
 from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
-from .io import HEN_FILE_EXTENSION, high_precision_keyword_read
+from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
 import os
 import logging
 import warnings
@@ -593,6 +593,19 @@ def lcurve_from_txt(txt_file, outfile=None,
     return [outfile]
 
 
+def _baseline_lightcurves(lcurves, outroot, p, lam):
+    outroot_save = outroot
+    for i, f in enumerate(lcurves):
+        if outroot is None:
+            outroot = hen_root(f) + '_lc_baseline'
+        else:
+            outroot = outroot_save + '_{}'.format(i)
+        ftype, lc = get_file_type(f)
+        baseline = lc.baseline(p, lam)
+        lc.base = baseline
+        save_lcurve(lc, outroot + HEN_FILE_EXTENSION)
+
+
 def _wrap_lc(args):
     f, kwargs = args
     try:
@@ -780,3 +793,46 @@ def scrunch_main(args=None):
                         filemode='w')
 
     scrunch_lightcurves(files, args.out)
+
+
+def baseline_main(args=None):
+    """Main function called by the `HENbaselinesub` command line script."""
+    import argparse
+    description = \
+        'Subtract a baseline from the lightcurve using the Asymmetric Least '
+        'Squares algorithm. The two parameters p and lambda control the '
+        'asymmetry and smoothness of the baseline. See below for details.'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("files", help="List of files", nargs='+')
+    parser.add_argument("-o", "--out", type=str, default=None,
+                        help='Output file')
+    parser.add_argument("--loglevel",
+                        help=("use given logging level (one between INFO, "
+                              "WARNING, ERROR, CRITICAL, DEBUG; "
+                              "default:WARNING)"),
+                        default='WARNING',
+                        type=str)
+    parser.add_argument("--debug", help="use DEBUG logging level",
+                        default=False, action='store_true')
+    parser.add_argument("-p", '--asymmetry', type=float,
+                        help='"asymmetry" parameter. Smaller values make the '
+                             'baseline more "horizontal". Typically '
+                             '0.001 < p < 0.1, but not necessarily.',
+                        default=0.01)
+    parser.add_argument("-l", "--lam", type=float,
+                        help='lambda, or "smoothness", parameter. Larger'
+                        ' values make the baseline stiffer. Typically '
+                        '1e2 < lam < 1e9',
+                        default=1e5)
+
+    args = parser.parse_args(args)
+    files = args.files
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    logging.basicConfig(filename='HENscrunchlc.log', level=numeric_level,
+                        filemode='w')
+
+    _baseline_lightcurves(files, args.out, args.asymmetry, args.lam)

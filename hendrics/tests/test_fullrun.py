@@ -281,6 +281,28 @@ class TestFullRun(object):
         out_lc = hen.io.load_lcurve(out)
         assert np.all(out_lc.counts == a_lc.counts + b_lc.counts)
 
+    def testbaselinelc(self):
+        """Test produce scrunched light curves."""
+        a_in = os.path.join(self.datadir, 'monol_testA_E3-50_lc' + \
+            HEN_FILE_EXTENSION)
+        out = os.path.join(self.datadir, 'monol_test_baselc')
+        command = '{0} -o {1} -p 0.001 --lam 1e5'.format(a_in, out)
+
+        hen.lcurve.baseline_main(command.split())
+        out_lc = hen.io.load_lcurve(out + '_0' + HEN_FILE_EXTENSION)
+        assert hasattr(out_lc, 'base')
+
+    def testbaselinelc_nooutroot(self):
+        """Test produce scrunched light curves."""
+        a_in = os.path.join(self.datadir, 'monol_testA_E3-50_lc' + \
+            HEN_FILE_EXTENSION)
+        command = '{0} -p 0.001 --lam 1e5'.format(a_in)
+
+        hen.lcurve.baseline_main(command.split())
+        out_lc = hen.io.load_lcurve(hen.base.hen_root(a_in) + '_lc_baseline' +
+                                    HEN_FILE_EXTENSION)
+        assert hasattr(out_lc, 'base')
+
     def test_lcurve_error_uncalibrated(self):
         """Test light curve error from uncalibrated file."""
         command = ('{0} -e {1} {2}').format(
@@ -322,7 +344,6 @@ class TestFullRun(object):
             os.path.join(self.datadir,
                          'monol_testA_nustar_fpma_E_10-5_over_5-3')
                               + HEN_FILE_EXTENSION)
-
 
     def test_pds(self):
         """Test PDS production."""
@@ -684,6 +705,16 @@ model = models.Const1D()
         hen.plot.main([lname, '--noplot',
                       '--axes', 'time', 'counts', '--xlin', '--ylin',
                       '-o', 'dummy.qdp'])
+
+    def test_plot_lcurve_baseline(self):
+        a_in = os.path.join(self.datadir, 'monol_testA_E3-50_lc' + \
+            HEN_FILE_EXTENSION)
+        base_file = hen.base.hen_root(a_in) + '_lc_baseline' + \
+            HEN_FILE_EXTENSION
+        hen.plot.main([base_file, '--noplot', '-o', 'dummy_base.qdp'])
+        filedata = np.genfromtxt('dummy_base.qdp')
+
+        assert filedata.shape[1] == 3
 
     def test_plot_log(self):
         """Test plotting with log axes."""

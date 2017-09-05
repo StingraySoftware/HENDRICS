@@ -299,6 +299,7 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
         lc = lcdata['counts']
         gti = lcdata['gti']
         instr = lcdata['instr']
+
         if fromstart:
             time -= lcdata['Tstart']
             gti -= lcdata['Tstart']
@@ -315,9 +316,14 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
         good = create_gti_mask(time, gti)
         plt.plot(time, lc, drawstyle='steps-mid', color='grey')
         plt.plot(time[good], lc[good], drawstyle='steps-mid', label=lcfile)
+        if 'base' in lcdata:
+            plt.plot(time, lcdata['base'], color='r')
 
         if output_data_file is not None:
-            save_as_qdp([time[good], lc[good]], filename=output_data_file,
+            outqdpdata = [time[good], lc[good]]
+            if 'base' in lcdata:
+                outqdpdata.append(lcdata['base'][good])
+            save_as_qdp(outqdpdata, filename=output_data_file,
                         mode='a')
 
     plt.xlabel('Time (s)')
