@@ -799,9 +799,9 @@ def baseline_main(args=None):
     """Main function called by the `HENbaselinesub` command line script."""
     import argparse
     description = \
-        'Subtract a baseline from the lightcurve using the Asymmetric Least '
-        'Squares algorithm. The two parameters p and lambda control the '
-        'asymmetry and smoothness of the baseline. See below for details.'
+        ('Subtract a baseline from the lightcurve using the Asymmetric Least '
+         'Squares algorithm. The two parameters p and lambda control the '
+         'asymmetry and smoothness of the baseline. See below for details.')
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument("-o", "--out", type=str, default=None,
