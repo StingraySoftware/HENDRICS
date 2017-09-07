@@ -25,9 +25,10 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
 
     Parameters
     ----------
-    lcfilelist :
+    lcfilelist : list of str
+        List of input file names
     outfile :
-
+        Output light curve
     See Also
     --------
         scrunch_lightcurves : Create a single light curve from input light
@@ -47,7 +48,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
     lcdts = [lcdata.dt for lcdata in lcdatas]
     # Find unique elements. If multiple bin times are used, throw an exception
     lcdts = list(set(lcdts))
-    assert len(lcdts) == 1, 'Light curves must have same dt for scrunching'
+    assert len(lcdts) == 1, 'Light curves must have same dt for joining'
 
     instrs = [lcdata.instr for lcdata in lcdatas if hasattr(lcdata, 'instr')]
 
@@ -320,6 +321,10 @@ def lcurve_from_events(f, safe_interval=0,
             "No GTIs above min_length ({0}s) found.".format(min_length))
         return
 
+    lc.header = None
+    if hasattr(events, 'header'):
+        lc.header = events.header
+
     if gti_split:
         lcs = lc.split_by_gti()
         outfiles = []
@@ -332,6 +337,8 @@ def lcurve_from_events(f, safe_interval=0,
                     'File exists, and noclobber option used. Skipping')
                 outfiles.append(outf)
             l0.instr = lc.instr
+            l0.header = lc.header
+
             save_lcurve(l0, outf)
             outfiles.append(outf)
     else:

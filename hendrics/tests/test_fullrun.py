@@ -38,6 +38,9 @@ class TestFullRun(object):
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, 'data')
+        cls.first_event_file = os.path.join(cls.datadir,
+                                            'monol_testA_nustar_fpma_ev' +
+                                            HEN_FILE_EXTENSION)
 
     def test_scripts_are_installed(self):
         """Test only once that command line scripts are installed correctly."""
@@ -77,18 +80,22 @@ class TestFullRun(object):
         assert 'STDGTI02' in hdunames
         assert 'STDGTI07' in hdunames
 
-    def test_load_events_with_2_cpus(self):
-        """Test event file reading."""
-        command = '{0} {1} --nproc 2'.format(
-            os.path.join(self.datadir, 'monol_testA.evt'),
-            os.path.join(self.datadir, 'monol_testA_timezero.evt'),
-            os.path.join(self.datadir, 'monol_test_fake.evt'))
-        hen.read_events.main(command.split())
-
     def test_load_events(self):
         """Test event file reading."""
         command = '{0}'.format(
-            os.path.join(self.datadir, 'monol_testB.evt'))
+            os.path.join(self.datadir, 'monol_testA.evt'))
+        hen.read_events.main(command.split())
+        new_filename = self.first_event_file
+        ev = hen.io.load_events(new_filename)
+        assert hasattr(ev, 'header')
+        assert hasattr(ev, 'gti')
+
+    def test_load_events_with_2_cpus(self):
+        """Test event file reading."""
+        command = '{0} {1} --nproc 2'.format(
+            os.path.join(self.datadir, 'monol_testB.evt'),
+            os.path.join(self.datadir, 'monol_testA_timezero.evt'),
+            os.path.join(self.datadir, 'monol_test_fake.evt'))
         hen.read_events.main(command.split())
 
     def test_load_events_split(self):
@@ -131,9 +138,15 @@ class TestFullRun(object):
                          'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION),
             os.path.join(self.datadir, 'test.rmf'))
         hen.calibrate.main(command.split())
-        assert os.path.exists(os.path.join(self.datadir,
-                                           'monol_testA_nustar_fpma_ev_calib' +
-                                           HEN_FILE_EXTENSION))
+        new_filename = os.path.join(self.datadir,
+                                    'monol_testA_nustar_fpma_ev_calib' +
+                                    HEN_FILE_EXTENSION)
+        assert os.path.exists(new_filename)
+        ev = hen.io.load_events(new_filename)
+        assert hasattr(ev, 'header')
+        assert hasattr(ev, 'gti')
+        gti_to_test = hen.io.load_events(self.first_event_file).gti
+        assert np.allclose(gti_to_test, ev.gti)
 
     def test_calibrate_2_cpus(self):
         """Test event file calibration."""
@@ -157,10 +170,18 @@ class TestFullRun(object):
         )
         hen.lcurve.main(command.split())
 
-        assert os.path.exists(os.path.join(self.datadir,
-                                           'monol_testA_E3-50_lc' +
-                                           HEN_FILE_EXTENSION))
+        new_filename = \
+            os.path.join(os.path.join(self.datadir,
+                                      'monol_testA_E3-50_lc' +
+                                      HEN_FILE_EXTENSION))
+        assert os.path.exists(new_filename)
+        lc = hen.io.load_lcurve(new_filename)
+        assert hasattr(lc, 'header')
+        assert hasattr(lc, 'gti')
+        gti_to_test = hen.io.load_events(self.first_event_file).gti
+        assert np.allclose(gti_to_test, lc.gti)
 
+    def test_lcurve_B(self):
         command = ('{0} -e {1} {2} --safe-interval '
                    '{3} {4} -b 0.5 -o {5}').format(
             os.path.join(self.datadir, 'monol_testB_nustar_fpmb_ev_calib' +
@@ -173,12 +194,36 @@ class TestFullRun(object):
                                            'monol_testB_E3-50_lc' +
                                            HEN_FILE_EXTENSION))
 
-    def test_lcurve_split(self):
-        """Test lc with gti-split option, and reading of split event file."""
-        command = '{0} -g'.format(
+    def test_lcurve_from_split_event(self):
+        """Test lc reading of split event file."""
+        command = '{0}'.format(
             os.path.join(self.datadir, 'monol_testB_nustar_fpmb_gti0_ev' +
                          HEN_FILE_EXTENSION))
         hen.lcurve.main(command.split())
+        new_filename = os.path.join(self.datadir,
+                                    'monol_testB_nustar_fpmb_gti0_lc' +
+                                    HEN_FILE_EXTENSION)
+        assert os.path.exists(new_filename)
+        lc = hen.io.load_lcurve(new_filename)
+        gti_to_test = hen.io.load_events(self.first_event_file).gti[0]
+        assert np.allclose(gti_to_test, lc.gti)
+
+
+    def test_lcurve_split(self):
+        """Test lc with gti-split option."""
+        command = '{0} {1} -g'.format(
+            os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
+                         HEN_FILE_EXTENSION),
+            os.path.join(self.datadir, 'monol_testB_nustar_fpmb_ev' +
+                         HEN_FILE_EXTENSION))
+        hen.lcurve.main(command.split())
+        new_filename = os.path.join(self.datadir,
+                                    'monol_testA_nustar_fpma_gti0_lc' +
+                                    HEN_FILE_EXTENSION)
+        assert os.path.exists(new_filename)
+        lc = hen.io.load_lcurve(new_filename)
+        gti_to_test = hen.io.load_events(self.first_event_file).gti[0]
+        assert np.allclose(gti_to_test, lc.gti)
 
     def test_fits_lcurve0(self):
         """Test light curves from FITS."""
@@ -194,8 +239,6 @@ class TestFullRun(object):
             os.path.join(self.datadir,
                          'lcurve_lc'))
         hen.lcurve.main(command.split())
-        print(glob.glob(os.path.join(self.datadir,
-                              'lcurve_lc*')))
         assert os.path.exists(os.path.join(self.datadir,
                               'lcurve_lc') + HEN_FILE_EXTENSION)
 
@@ -257,13 +300,22 @@ class TestFullRun(object):
 
     def test_joinlcs(self):
         """Test produce joined light curves."""
+        new_filename = os.path.join(
+            self.datadir, 'monol_test_joinlc' + HEN_FILE_EXTENSION)
+        #because join_lightcurves separates by instrument
+        new_actual_filename = os.path.join(
+            self.datadir, 'FPMAmonol_test_joinlc' + HEN_FILE_EXTENSION)
         hen.lcurve.join_lightcurves(
-            [os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-             HEN_FILE_EXTENSION,
-             os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-             HEN_FILE_EXTENSION],
-            os.path.join(self.datadir, 'monol_test_joinlc' +
-                         HEN_FILE_EXTENSION))
+            glob.glob(os.path.join(self.datadir,
+                                   'monol_testA_nustar_fpma_gti[0-9]_lc*')) +
+            glob.glob(os.path.join(self.datadir,
+                                   'monol_testB_nustar_fpmb_gti[0-9]_lc*')),
+            new_filename)
+
+        lc = hen.io.load_lcurve(new_actual_filename)
+        assert hasattr(lc, 'gti')
+        gti_to_test = hen.io.load_events(self.first_event_file).gti
+        assert np.allclose(gti_to_test, lc.gti)
 
     def test_scrunchlcs(self):
         """Test produce scrunched light curves."""
@@ -280,6 +332,8 @@ class TestFullRun(object):
         b_lc = hen.io.load_lcurve(b_in)
         out_lc = hen.io.load_lcurve(out)
         assert np.all(out_lc.counts == a_lc.counts + b_lc.counts)
+        gti_to_test = hen.io.load_events(self.first_event_file).gti
+        assert np.allclose(gti_to_test, out_lc.gti)
 
     def testbaselinelc(self):
         """Test produce scrunched light curves."""
@@ -291,6 +345,8 @@ class TestFullRun(object):
         hen.lcurve.baseline_main(command.split())
         out_lc = hen.io.load_lcurve(out + '_0' + HEN_FILE_EXTENSION)
         assert hasattr(out_lc, 'base')
+        gti_to_test = hen.io.load_events(self.first_event_file).gti
+        assert np.allclose(gti_to_test, out_lc.gti)
 
     def testbaselinelc_nooutroot(self):
         """Test produce scrunched light curves."""
@@ -302,6 +358,8 @@ class TestFullRun(object):
         out_lc = hen.io.load_lcurve(hen.base.hen_root(a_in) + '_lc_baseline' +
                                     HEN_FILE_EXTENSION)
         assert hasattr(out_lc, 'base')
+        gti_to_test = hen.io.load_events(self.first_event_file).gti
+        assert np.allclose(gti_to_test, out_lc.gti)
 
     def test_lcurve_error_uncalibrated(self):
         """Test light curve error from uncalibrated file."""
@@ -340,10 +398,15 @@ class TestFullRun(object):
                          HEN_FILE_EXTENSION), 3, 5, 10)
         hen.colors.main(command.split())
 
-        assert os.path.exists(
+        new_filename = \
             os.path.join(self.datadir,
-                         'monol_testA_nustar_fpma_E_10-5_over_5-3')
-                              + HEN_FILE_EXTENSION)
+                         'monol_testA_nustar_fpma_E_10-5_over_5-3' +
+                         HEN_FILE_EXTENSION)
+        assert os.path.exists(new_filename)
+        out_lc = hen.io.load_lcurve(new_filename)
+        gti_to_test = hen.io.load_events(self.first_event_file).gti
+        assert np.allclose(gti_to_test, out_lc.gti)
+
 
     def test_pds(self):
         """Test PDS production."""
