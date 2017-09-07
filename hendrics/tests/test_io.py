@@ -193,7 +193,8 @@ def model(x, a=2, b=4):
 
 constraints = {'fixed': {'a': True}}
 '''
-        print(modelstring, file=open('bubu__model__.py', 'w'))
+        with open('bubu__model__.py', 'w') as fobj:
+            print(modelstring, file=fobj)
         b, kind, constraints = load_model('bubu__model__.py')
         assert kind == 'callable'
         assert callable(b)
@@ -207,7 +208,8 @@ constraints = {'fixed': {'a': True}}
 from astropy.modeling import models
 model = models.Const1D()
 '''
-        print(modelstring, file=open('bubu__model__2__.py', 'w'))
+        with open('bubu__model__2__.py', 'w') as fobj:
+            print(modelstring, file=fobj)
         b, kind, constraints = load_model('bubu__model__2__.py')
         assert isinstance(b, Model)
         assert kind == 'Astropy'
@@ -226,7 +228,8 @@ model = models.Const1D()
         assert 'Model file not found' in str(record.value)
 
     def test_load_model_input_invalid_file_format(self):
-        print(1, file=open('bubu.txt', 'w'))
+        with open('bubu.txt', 'w') as fobj:
+            print(1, file=fobj)
         with pytest.raises(TypeError) as record:
             b, kind, _ = load_model('bubu.txt')
         assert 'Unknown file type' in str(record.value)

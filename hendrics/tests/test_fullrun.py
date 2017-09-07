@@ -582,7 +582,8 @@ from astropy.modeling import models
 model = models.Const1D()
         '''
         modelfile = 'bubu__model__.py'
-        print(modelstring, file=open(modelfile, 'w'))
+        with open(modelfile, 'w') as fobj:
+            print(modelstring, file=fobj)
         pdsfile1 = \
             os.path.join(self.datadir,
                          'monol_testA_E3-50_pds' + HEN_FILE_EXTENSION)
@@ -612,7 +613,8 @@ from astropy.modeling import models
 model = models.Const1D()
         '''
         modelfile = 'bubu__model__.py'
-        print(modelstring, file=open(modelfile, 'w'))
+        with open(modelfile, 'w') as fobj:
+            print(modelstring, file=fobj)
         pdsfile1 = \
             os.path.join(self.datadir,
                          'monol_testA_E3-50_pds' + HEN_FILE_EXTENSION)

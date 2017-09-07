@@ -1149,7 +1149,8 @@ def save_model(model, fname='model.p', constraints=None):
         raise TypeError("The model has to be an Astropy model or a callable"
                         " with only one non-keyword argument")
 
-    pickle.dump(modeldata, open(fname, 'wb'))
+    with open(fname, 'wb') as fobj:
+        pickle.dump(modeldata, fobj)
 
 
 def load_model(modelstring):
@@ -1162,7 +1163,8 @@ def load_model(modelstring):
     # modelstring is a pickle file
     if modelstring.endswith('.p'):
         logging.debug('Loading model from pickle file')
-        modeldata = pickle.load(open(modelstring, 'rb'))
+        with open(modelstring, 'rb') as fobj:
+            modeldata = pickle.load(fobj)
         return modeldata['model'], modeldata['kind'], modeldata['constraints']
     # modelstring is a python file
     elif modelstring.endswith('.py'):
