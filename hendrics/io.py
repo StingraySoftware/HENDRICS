@@ -495,7 +495,7 @@ def save_pds(cpds, fname):
         return _save_data_nc(outdata, fname)
 
 
-def load_pds(fname):
+def load_pds(fname, nosub=False):
     """Load PDS from a file."""
     if get_file_format(fname) == 'pickle':
         data = _load_data_pickle(fname)
@@ -518,12 +518,16 @@ def load_pds(fname):
     for key in data.keys():
         setattr(cpds, key, data[key])
 
-    lc1_name = fname.replace(HEN_FILE_EXTENSION, '__lc1__' + HEN_FILE_EXTENSION)
-    lc2_name = fname.replace(HEN_FILE_EXTENSION, '__lc2__' + HEN_FILE_EXTENSION)
-    pds1_name = fname.replace(HEN_FILE_EXTENSION, '__pds1__' + HEN_FILE_EXTENSION)
-    pds2_name = fname.replace(HEN_FILE_EXTENSION, '__pds2__' + HEN_FILE_EXTENSION)
+    if nosub:
+        return cpds
+
+    outdir = fname.replace(HEN_FILE_EXTENSION, "")
+    lc1_name = os.path.join(outdir, '__lc1__' + HEN_FILE_EXTENSION)
+    lc2_name = os.path.join(outdir, '__lc2__' + HEN_FILE_EXTENSION)
+    pds1_name = os.path.join(outdir, '__pds1__' + HEN_FILE_EXTENSION)
+    pds2_name = os.path.join(outdir, '__pds2__' + HEN_FILE_EXTENSION)
     cs_all_names = glob.glob(
-        fname.replace(HEN_FILE_EXTENSION, '__cs__[0-9]__' + HEN_FILE_EXTENSION))
+        os.path.join(outdir, '__cs__[0-9]__' + HEN_FILE_EXTENSION))
 
     if os.path.exists(lc1_name):
         cpds.lc1 = load_lcurve(lc1_name)
