@@ -452,34 +452,41 @@ def load_folding(fname):
 
 def save_pds(cpds, fname):
     """Save PDS in a file."""
+    from .base import mkdir_p
 
     outdata = copy.copy(cpds.__dict__)
     outdata['__sr__class__type__'] = str(type(cpds))
 
+    outdir = fname.replace(HEN_FILE_EXTENSION, "")
+    mkdir_p(outdir)
     if not hasattr(cpds, 'instr'):
         outdata["instr"] = 'unknown'
 
     if 'lc1' in outdata:
-        save_lcurve(cpds.lc1, fname.replace(HEN_FILE_EXTENSION,
-                                            '__lc1__' + HEN_FILE_EXTENSION))
+        save_lcurve(cpds.lc1,
+                    os.path.join(outdir,
+                                 '__lc1__' + HEN_FILE_EXTENSION))
         outdata.pop('lc1')
     if 'lc2' in outdata:
-        save_lcurve(cpds.lc2, fname.replace(HEN_FILE_EXTENSION,
-                                            '__lc2__' + HEN_FILE_EXTENSION))
+        save_lcurve(cpds.lc2,
+                    os.path.join(outdir,
+                                 '__lc2__' + HEN_FILE_EXTENSION))
         outdata.pop('lc2')
     if 'pds1' in outdata:
-        save_pds(cpds.pds1, fname.replace(HEN_FILE_EXTENSION,
-                                            '__pds1__' + HEN_FILE_EXTENSION))
+        save_pds(cpds.pds1,
+                 os.path.join(outdir,
+                              '__pds1__' + HEN_FILE_EXTENSION))
         outdata.pop('pds1')
     if 'pds2' in outdata:
-        save_pds(cpds.pds2, fname.replace(HEN_FILE_EXTENSION,
-                                            '__pds2__' + HEN_FILE_EXTENSION))
+        save_pds(cpds.pds2,
+                 os.path.join(outdir,
+                              '__pds2__' + HEN_FILE_EXTENSION))
         outdata.pop('pds2')
     if 'cs_all' in outdata:
         for i, c in enumerate(cpds.cs_all):
             save_pds(c,
-                     fname.replace(HEN_FILE_EXTENSION,
-                                   '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
+                     os.path.join(outdir,
+                                  '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
         outdata.pop('cs_all')
 
     if get_file_format(fname) == 'pickle':
