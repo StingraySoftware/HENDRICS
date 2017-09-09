@@ -153,11 +153,10 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
             save_as_qdp([freq[1:], y], errors=[None, yerr],
                         filename=output_data_file, mode='a')
 
-
     plt.xlabel('Frequency')
-    if norm == 'rms':
+    if norm.lower() == 'rms':
         plt.ylabel('(rms/mean)^2')
-    elif norm == 'Leahy':
+    elif norm.lower() == 'leahy':
         plt.ylabel('Leahy power')
     plt.legend()
 

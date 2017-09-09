@@ -659,7 +659,6 @@ model = models.Const1D()
         os.path.exists(os.path.join(self.datadir,
                                     'monol_test_E3-50_cpds_rebin1.03_lags.pha'))
 
-
     def test_create_gti(self):
         """Test creating a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \

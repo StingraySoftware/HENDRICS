@@ -31,7 +31,7 @@ def calc_pds(lcfile, fftlen,
              save_dyn=False,
              bintime=1,
              pdsrebin=1,
-             normalization='Leahy',
+             normalization='leahy',
              back_ctrate=0.,
              noclobber=False,
              outname=None):
@@ -99,7 +99,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
               bintime=1,
               pdsrebin=1,
               outname='cpds' + HEN_FILE_EXTENSION,
-              normalization='Leahy',
+              normalization='leahy',
               back_ctrate=0.,
               noclobber=False):
     """Calculate the CPDS from a pair of input light curve files.
@@ -185,7 +185,7 @@ def calc_fspec(files, fftlen,
                bintime=1,
                pdsrebin=1,
                outroot=None,
-               normalization='Leahy',
+               normalization='leahy',
                nproc=1,
                back_ctrate=0.,
                noclobber=False):
@@ -228,9 +228,9 @@ def calc_fspec(files, fftlen,
     [5] Miyamoto et al. 1991, ApJ, 383, 784
 
     """
-    if normalization not in ['Leahy', 'rms']:
+    if normalization.lower() not in ['leahy', 'rms']:
         logging.warning('Beware! Unknown normalization!')
-        normalization = 'Leahy'
+        normalization = 'leahy'
 
     logging.info('Using %s normalization' % normalization)
 
@@ -241,7 +241,7 @@ def calc_fspec(files, fftlen,
                    "save_dyn": save_dyn,
                    "bintime": bintime,
                    "pdsrebin": pdsrebin,
-                   "normalization": normalization,
+                   "normalization": normalization.lower(),
                    "back_ctrate": back_ctrate,
                    "noclobber": noclobber}
             wfd["fname"] = f
@@ -276,7 +276,7 @@ def calc_fspec(files, fftlen,
                "save_dyn": save_dyn,
                "bintime": bintime,
                "pdsrebin": pdsrebin,
-               "normalization": normalization,
+               "normalization": normalization.lower(),
                "back_ctrate": back_ctrate,
                "noclobber": noclobber}
 
@@ -409,10 +409,10 @@ def main(args=None):
                         help='Spectra to calculate, as comma-separated list' +
                         ' (Accepted: PDS and CPDS;' +
                         ' Default: "PDS,CPDS")')
-    parser.add_argument("--norm", type=str, default="Leahy",
+    parser.add_argument("--norm", type=str, default="leahy",
                         help='Normalization to use' +
-                        ' (Accepted: Leahy and rms;' +
-                        ' Default: "Leahy")')
+                        ' (Accepted: leahy and rms;' +
+                        ' Default: "leahy")')
     parser.add_argument("--noclobber", help="Do not overwrite existing files",
                         default=False, action='store_true')
     parser.add_argument("-o", "--outroot", type=str, default=None,
