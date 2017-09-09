@@ -580,7 +580,7 @@ def _load_data_nc(fname):
         if k in keys_to_delete:
             continue
 
-        if contents[k] == '__hen__None__type__':
+        if str(contents[k]) == str('__hen__None__type__'):
             contents[k] = None
 
         if k[-2:] in ['_I', '_L', '_F', '_k']:
