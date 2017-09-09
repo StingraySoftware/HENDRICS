@@ -452,34 +452,41 @@ def load_folding(fname):
 
 def save_pds(cpds, fname):
     """Save PDS in a file."""
+    from .base import mkdir_p
 
     outdata = copy.copy(cpds.__dict__)
     outdata['__sr__class__type__'] = str(type(cpds))
 
+    outdir = fname.replace(HEN_FILE_EXTENSION, "")
+    mkdir_p(outdir)
     if not hasattr(cpds, 'instr'):
         outdata["instr"] = 'unknown'
 
     if 'lc1' in outdata:
-        save_lcurve(cpds.lc1, fname.replace(HEN_FILE_EXTENSION,
-                                            '__lc1__' + HEN_FILE_EXTENSION))
+        save_lcurve(cpds.lc1,
+                    os.path.join(outdir,
+                                 '__lc1__' + HEN_FILE_EXTENSION))
         outdata.pop('lc1')
     if 'lc2' in outdata:
-        save_lcurve(cpds.lc2, fname.replace(HEN_FILE_EXTENSION,
-                                            '__lc2__' + HEN_FILE_EXTENSION))
+        save_lcurve(cpds.lc2,
+                    os.path.join(outdir,
+                                 '__lc2__' + HEN_FILE_EXTENSION))
         outdata.pop('lc2')
     if 'pds1' in outdata:
-        save_pds(cpds.pds1, fname.replace(HEN_FILE_EXTENSION,
-                                            '__pds1__' + HEN_FILE_EXTENSION))
+        save_pds(cpds.pds1,
+                 os.path.join(outdir,
+                              '__pds1__' + HEN_FILE_EXTENSION))
         outdata.pop('pds1')
     if 'pds2' in outdata:
-        save_pds(cpds.pds2, fname.replace(HEN_FILE_EXTENSION,
-                                            '__pds2__' + HEN_FILE_EXTENSION))
+        save_pds(cpds.pds2,
+                 os.path.join(outdir,
+                              '__pds2__' + HEN_FILE_EXTENSION))
         outdata.pop('pds2')
     if 'cs_all' in outdata:
         for i, c in enumerate(cpds.cs_all):
             save_pds(c,
-                     fname.replace(HEN_FILE_EXTENSION,
-                                   '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
+                     os.path.join(outdir,
+                                  '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
         outdata.pop('cs_all')
 
     if get_file_format(fname) == 'pickle':
@@ -488,7 +495,7 @@ def save_pds(cpds, fname):
         return _save_data_nc(outdata, fname)
 
 
-def load_pds(fname):
+def load_pds(fname, nosub=False):
     """Load PDS from a file."""
     if get_file_format(fname) == 'pickle':
         data = _load_data_pickle(fname)
@@ -511,12 +518,16 @@ def load_pds(fname):
     for key in data.keys():
         setattr(cpds, key, data[key])
 
-    lc1_name = fname.replace(HEN_FILE_EXTENSION, '__lc1__' + HEN_FILE_EXTENSION)
-    lc2_name = fname.replace(HEN_FILE_EXTENSION, '__lc2__' + HEN_FILE_EXTENSION)
-    pds1_name = fname.replace(HEN_FILE_EXTENSION, '__pds1__' + HEN_FILE_EXTENSION)
-    pds2_name = fname.replace(HEN_FILE_EXTENSION, '__pds2__' + HEN_FILE_EXTENSION)
+    if nosub:
+        return cpds
+
+    outdir = fname.replace(HEN_FILE_EXTENSION, "")
+    lc1_name = os.path.join(outdir, '__lc1__' + HEN_FILE_EXTENSION)
+    lc2_name = os.path.join(outdir, '__lc2__' + HEN_FILE_EXTENSION)
+    pds1_name = os.path.join(outdir, '__pds1__' + HEN_FILE_EXTENSION)
+    pds2_name = os.path.join(outdir, '__pds2__' + HEN_FILE_EXTENSION)
     cs_all_names = glob.glob(
-        fname.replace(HEN_FILE_EXTENSION, '__cs__[0-9]__' + HEN_FILE_EXTENSION))
+        os.path.join(outdir, '__cs__[0-9]__' + HEN_FILE_EXTENSION))
 
     if os.path.exists(lc1_name):
         cpds.lc1 = load_lcurve(lc1_name)
@@ -569,7 +580,7 @@ def _load_data_nc(fname):
         if k in keys_to_delete:
             continue
 
-        if contents[k] == '__hen__None__type__':
+        if str(contents[k]) == str('__hen__None__type__'):
             contents[k] = None
 
         if k[-2:] in ['_I', '_L', '_F', '_k']:

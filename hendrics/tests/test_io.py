@@ -103,6 +103,26 @@ class TestIO():
         lag, lag_err = xps.time_lag()
         lag2, lag2_err = xps2.time_lag()
         assert np.allclose(lag, lag2)
+        assert hasattr(xps2, 'pds1')
+
+    def test_load_and_save_xps_quick(self):
+        lcurve1 = Lightcurve(np.linspace(0, 10, 150),
+                             np.random.poisson(30, 150),
+                             mjdref=54385.3254923845,
+                             gti = np.longdouble([[-0.5, 3.5]]))
+        lcurve2 = Lightcurve(np.linspace(0, 10, 150),
+                             np.random.poisson(30, 150),
+                            mjdref=54385.3254923845,
+                            gti = np.longdouble([[-0.5, 3.5]]))
+
+        xps = AveragedCrossspectrum(lcurve1, lcurve2, 1)
+
+        save_pds(xps, self.dum)
+        xps2 = load_pds(self.dum, nosub=True)
+        assert np.allclose(xps.gti, xps2.gti)
+        assert xps.m == xps2.m
+
+        assert not hasattr(xps2, 'pds1')
 
     def test_high_precision_split1(self):
         C_I, C_F, C_l, k = \
@@ -141,8 +161,10 @@ class TestIO():
 
     @classmethod
     def teardown_class(cls):
-        for dum in glob.glob('bubu*'):
+        import shutil
+        for dum in glob.glob('bubu*.*'):
             os.unlink(dum)
+        shutil.rmtree('bubu')
 
 
 class TestIOModel():
@@ -236,5 +258,6 @@ model = models.Const1D()
 
     @classmethod
     def teardown_class(cls):
-        for dum in glob.glob('bubu*'):
+        import shutil
+        for dum in glob.glob('bubu*.*'):
             os.unlink(dum)
