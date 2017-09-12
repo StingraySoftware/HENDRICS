@@ -1,3 +1,5 @@
+.. _quicklook-tutorial:
+
 Introductory concepts and example analysis
 ------------------------------------------
 

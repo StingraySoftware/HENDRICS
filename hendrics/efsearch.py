@@ -81,7 +81,8 @@ def _common_parser(args=None):
                         help="Find pulsation candidates using thresholding",
                         default=False, action='store_true')
     parser.add_argument("--conflevel", default=99, type=float,
-                        help="% confidence level for thresholding.")
+                        help="percent confidence level for thresholding "
+                             "[0-100).")
 
     parser.add_argument("--fit-candidates",
                         help="Fit the candidate peaks in the periodogram",

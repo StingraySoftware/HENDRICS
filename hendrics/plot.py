@@ -75,7 +75,7 @@ def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None,
 
 
 def plot_pds(fnames, figname=None, xlog=None, ylog=None,
-             output_data_file=None):
+             output_data_file=None, white_sub=False):
     """Plot a list of PDSs, or a single one."""
     from scipy.optimize import curve_fit
     import collections
@@ -85,8 +85,8 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
     figlabel = fnames[0]
 
     for i, fname in enumerate(fnames):
-        pds_obj = load_pds(fname)
-        if np.allclose(pds_obj.freq, pds_obj.df):
+        pds_obj = load_pds(fname, nosub=True)
+        if np.allclose(np.diff(pds_obj.freq), pds_obj.df):
             freq = pds_obj.freq
             xlog = _assign_value_if_none(xlog, False)
             ylog = _assign_value_if_none(ylog, False)
@@ -110,10 +110,6 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
             lev = lev / 2 * pds_obj.nphots
             lev, _ = pds_obj._normalize_crossspectrum(lev, pds_obj.fftlen)
 
-        p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
-        logging.info('White noise level is {0}'.format(p[0]))
-        pds -= p[0]
-
         if xlog and ylog:
             plt.figure('PDS - Loglog ' + figlabel)
         else:
@@ -126,7 +122,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
         if ylog:
             ax.set_yscale('log', nonposy='clip')
 
-        level = lev - p[0]
+        level = lev  # Can be modified below
         y = pds[1:]
         yerr = epds[1:]
         if norm.lower() == 'leahy' or (norm.lower() == 'rms' and
@@ -134,6 +130,13 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
             plt.errorbar(freq[1:], y, yerr=yerr, fmt='-',
                          drawstyle='steps-mid', color=color, label=fname)
         elif norm == 'rms' and xlog and ylog:
+            # TODO: Very rough! Use new machinery
+            p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
+            logging.info('White noise level is {0}'.format(p[0]))
+
+            pds -= p[0]
+            level = lev - p[0]
+
             y = pds[1:] * freq[1:]
             yerr = epds[1:] * freq[1:]
             plt.errorbar(freq[1:], y,
@@ -152,9 +155,9 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
                         filename=output_data_file, mode='a')
 
     plt.xlabel('Frequency')
-    if norm == 'rms':
+    if norm.lower() == 'rms':
         plt.ylabel('(rms/mean)^2')
-    elif norm == 'Leahy':
+    elif norm.lower() == 'leahy':
         plt.ylabel('Leahy power')
     plt.legend()
 
@@ -171,8 +174,8 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
     figlabel = fnames[0]
 
     for i, fname in enumerate(fnames):
-        pds_obj = load_pds(fname)
-        if np.allclose(pds_obj.freq, pds_obj.df):
+        pds_obj = load_pds(fname, nosub=True)
+        if np.allclose(np.diff(pds_obj.freq), pds_obj.df):
             freq = pds_obj.freq
             xlog = _assign_value_if_none(xlog, False)
             ylog = _assign_value_if_none(ylog, False)
@@ -218,6 +221,9 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
 
 def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                  output_data_file=None):
+    if is_string(fnames):
+        fnames = [fnames]
+
     for fname in fnames:
         ef = load_folding(fname)
 
@@ -297,6 +303,7 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
         lc = lcdata['counts']
         gti = lcdata['gti']
         instr = lcdata['instr']
+
         if fromstart:
             time -= lcdata['Tstart']
             gti -= lcdata['Tstart']
@@ -313,9 +320,14 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
         good = create_gti_mask(time, gti)
         plt.plot(time, lc, drawstyle='steps-mid', color='grey')
         plt.plot(time[good], lc[good], drawstyle='steps-mid', label=lcfile)
+        if 'base' in lcdata:
+            plt.plot(time, lcdata['base'], color='r')
 
         if output_data_file is not None:
-            save_as_qdp([time[good], lc[good]], filename=output_data_file,
+            outqdpdata = [time[good], lc[good]]
+            if 'base' in lcdata:
+                outqdpdata.append(lcdata['base'][good])
+            save_as_qdp(outqdpdata, filename=output_data_file,
                         mode='a')
 
     plt.xlabel('Time (s)')

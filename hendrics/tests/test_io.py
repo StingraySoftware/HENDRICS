@@ -103,6 +103,26 @@ class TestIO():
         lag, lag_err = xps.time_lag()
         lag2, lag2_err = xps2.time_lag()
         assert np.allclose(lag, lag2)
+        assert hasattr(xps2, 'pds1')
+
+    def test_load_and_save_xps_quick(self):
+        lcurve1 = Lightcurve(np.linspace(0, 10, 150),
+                             np.random.poisson(30, 150),
+                             mjdref=54385.3254923845,
+                             gti = np.longdouble([[-0.5, 3.5]]))
+        lcurve2 = Lightcurve(np.linspace(0, 10, 150),
+                             np.random.poisson(30, 150),
+                            mjdref=54385.3254923845,
+                            gti = np.longdouble([[-0.5, 3.5]]))
+
+        xps = AveragedCrossspectrum(lcurve1, lcurve2, 1)
+
+        save_pds(xps, self.dum)
+        xps2 = load_pds(self.dum, nosub=True)
+        assert np.allclose(xps.gti, xps2.gti)
+        assert xps.m == xps2.m
+
+        assert not hasattr(xps2, 'pds1')
 
     def test_high_precision_split1(self):
         C_I, C_F, C_l, k = \
@@ -141,8 +161,10 @@ class TestIO():
 
     @classmethod
     def teardown_class(cls):
-        for dum in glob.glob('bubu*'):
+        import shutil
+        for dum in glob.glob('bubu*.*'):
             os.unlink(dum)
+        shutil.rmtree('bubu')
 
 
 class TestIOModel():
@@ -193,7 +215,8 @@ def model(x, a=2, b=4):
 
 constraints = {'fixed': {'a': True}}
 '''
-        print(modelstring, file=open('bubu__model__.py', 'w'))
+        with open('bubu__model__.py', 'w') as fobj:
+            print(modelstring, file=fobj)
         b, kind, constraints = load_model('bubu__model__.py')
         assert kind == 'callable'
         assert callable(b)
@@ -207,7 +230,8 @@ constraints = {'fixed': {'a': True}}
 from astropy.modeling import models
 model = models.Const1D()
 '''
-        print(modelstring, file=open('bubu__model__2__.py', 'w'))
+        with open('bubu__model__2__.py', 'w') as fobj:
+            print(modelstring, file=fobj)
         b, kind, constraints = load_model('bubu__model__2__.py')
         assert isinstance(b, Model)
         assert kind == 'Astropy'
@@ -226,12 +250,14 @@ model = models.Const1D()
         assert 'Model file not found' in str(record.value)
 
     def test_load_model_input_invalid_file_format(self):
-        print(1, file=open('bubu.txt', 'w'))
+        with open('bubu.txt', 'w') as fobj:
+            print(1, file=fobj)
         with pytest.raises(TypeError) as record:
             b, kind, _ = load_model('bubu.txt')
         assert 'Unknown file type' in str(record.value)
 
     @classmethod
     def teardown_class(cls):
-        for dum in glob.glob('bubu*'):
+        import shutil
+        for dum in glob.glob('bubu*.*'):
             os.unlink(dum)

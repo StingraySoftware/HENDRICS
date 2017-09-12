@@ -322,7 +322,7 @@ def generate_fake_fits_observation(event_list=None, filename=None,
 
     thdulist = fits.HDUList(all_new_hdus)
 
-    thdulist.writeto(filename, clobber=True)
+    thdulist.writeto(filename, overwrite=True)
     return thdulist
 
 

@@ -360,6 +360,8 @@ def save_lcurve(lcurve, fname, lctype='Lightcurve'):
         out['header'] = lcurve.header
     if hasattr(lcurve, 'expo'):
         out['expo'] = lcurve.expo
+    if hasattr(lcurve, 'base'):
+        out['base'] = lcurve.base
     if lctype == 'Color':
         out['e_intervals'] = lcurve.e_intervals
         out['use_pi'] = int(lcurve.use_pi)
@@ -396,6 +398,8 @@ def load_lcurve(fname):
         lcurve.use_pi = bool(data["use_pi"])
     if 'header' in list(data.keys()):
         lcurve.header = data["header"]
+    if 'base' in list(data.keys()):
+        lcurve.base = data["base"]
 
     return lcurve
 
@@ -433,11 +437,11 @@ def load_folding(fname):
     for key in data.keys():
         setattr(ef, key, data[key])
     modelfiles = glob.glob(fname.replace(HEN_FILE_EXTENSION, '__mod*__.p'))
-    if len(modelfiles) > 1:
+    if len(modelfiles) >= 1:
         bmodels = []
         for mfile in modelfiles:
             if os.path.exists(mfile):
-                bmodels.append(load_model(mfile))
+                bmodels.append(load_model(mfile)[0])
         ef.best_fits = bmodels
     if len(np.asarray(ef.peaks).shape) == 0:
         ef.peaks = [ef.peaks]
@@ -448,34 +452,41 @@ def load_folding(fname):
 
 def save_pds(cpds, fname):
     """Save PDS in a file."""
+    from .base import mkdir_p
 
     outdata = copy.copy(cpds.__dict__)
     outdata['__sr__class__type__'] = str(type(cpds))
 
+    outdir = fname.replace(HEN_FILE_EXTENSION, "")
+    mkdir_p(outdir)
     if not hasattr(cpds, 'instr'):
         outdata["instr"] = 'unknown'
 
     if 'lc1' in outdata:
-        save_lcurve(cpds.lc1, fname.replace(HEN_FILE_EXTENSION,
-                                            '__lc1__' + HEN_FILE_EXTENSION))
+        save_lcurve(cpds.lc1,
+                    os.path.join(outdir,
+                                 '__lc1__' + HEN_FILE_EXTENSION))
         outdata.pop('lc1')
     if 'lc2' in outdata:
-        save_lcurve(cpds.lc2, fname.replace(HEN_FILE_EXTENSION,
-                                            '__lc2__' + HEN_FILE_EXTENSION))
+        save_lcurve(cpds.lc2,
+                    os.path.join(outdir,
+                                 '__lc2__' + HEN_FILE_EXTENSION))
         outdata.pop('lc2')
     if 'pds1' in outdata:
-        save_pds(cpds.pds1, fname.replace(HEN_FILE_EXTENSION,
-                                            '__pds1__' + HEN_FILE_EXTENSION))
+        save_pds(cpds.pds1,
+                 os.path.join(outdir,
+                              '__pds1__' + HEN_FILE_EXTENSION))
         outdata.pop('pds1')
     if 'pds2' in outdata:
-        save_pds(cpds.pds2, fname.replace(HEN_FILE_EXTENSION,
-                                            '__pds2__' + HEN_FILE_EXTENSION))
+        save_pds(cpds.pds2,
+                 os.path.join(outdir,
+                              '__pds2__' + HEN_FILE_EXTENSION))
         outdata.pop('pds2')
     if 'cs_all' in outdata:
         for i, c in enumerate(cpds.cs_all):
             save_pds(c,
-                     fname.replace(HEN_FILE_EXTENSION,
-                                   '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
+                     os.path.join(outdir,
+                                  '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
         outdata.pop('cs_all')
 
     if get_file_format(fname) == 'pickle':
@@ -484,7 +495,7 @@ def save_pds(cpds, fname):
         return _save_data_nc(outdata, fname)
 
 
-def load_pds(fname):
+def load_pds(fname, nosub=False):
     """Load PDS from a file."""
     if get_file_format(fname) == 'pickle':
         data = _load_data_pickle(fname)
@@ -507,12 +518,16 @@ def load_pds(fname):
     for key in data.keys():
         setattr(cpds, key, data[key])
 
-    lc1_name = fname.replace(HEN_FILE_EXTENSION, '__lc1__' + HEN_FILE_EXTENSION)
-    lc2_name = fname.replace(HEN_FILE_EXTENSION, '__lc2__' + HEN_FILE_EXTENSION)
-    pds1_name = fname.replace(HEN_FILE_EXTENSION, '__pds1__' + HEN_FILE_EXTENSION)
-    pds2_name = fname.replace(HEN_FILE_EXTENSION, '__pds2__' + HEN_FILE_EXTENSION)
+    if nosub:
+        return cpds
+
+    outdir = fname.replace(HEN_FILE_EXTENSION, "")
+    lc1_name = os.path.join(outdir, '__lc1__' + HEN_FILE_EXTENSION)
+    lc2_name = os.path.join(outdir, '__lc2__' + HEN_FILE_EXTENSION)
+    pds1_name = os.path.join(outdir, '__pds1__' + HEN_FILE_EXTENSION)
+    pds2_name = os.path.join(outdir, '__pds2__' + HEN_FILE_EXTENSION)
     cs_all_names = glob.glob(
-        fname.replace(HEN_FILE_EXTENSION, '__cs__[0-9]__' + HEN_FILE_EXTENSION))
+        os.path.join(outdir, '__cs__[0-9]__' + HEN_FILE_EXTENSION))
 
     if os.path.exists(lc1_name):
         cpds.lc1 = load_lcurve(lc1_name)
@@ -565,7 +580,7 @@ def _load_data_nc(fname):
         if k in keys_to_delete:
             continue
 
-        if contents[k] == '__hen__None__type__':
+        if str(contents[k]) == str('__hen__None__type__'):
             contents[k] = None
 
         if k[-2:] in ['_I', '_L', '_F', '_k']:
@@ -1148,7 +1163,8 @@ def save_model(model, fname='model.p', constraints=None):
         raise TypeError("The model has to be an Astropy model or a callable"
                         " with only one non-keyword argument")
 
-    pickle.dump(modeldata, open(fname, 'wb'))
+    with open(fname, 'wb') as fobj:
+        pickle.dump(modeldata, fobj)
 
 
 def load_model(modelstring):
@@ -1161,7 +1177,8 @@ def load_model(modelstring):
     # modelstring is a pickle file
     if modelstring.endswith('.p'):
         logging.debug('Loading model from pickle file')
-        modeldata = pickle.load(open(modelstring, 'rb'))
+        with open(modelstring, 'rb') as fobj:
+            modeldata = pickle.load(fobj)
         return modeldata['model'], modeldata['kind'], modeldata['constraints']
     # modelstring is a python file
     elif modelstring.endswith('.py'):
@@ -1202,5 +1219,3 @@ def load_model(modelstring):
             raise TypeError("Accepted callable models have only one "
                             "non-keyword argument")
         return model, 'callable', constraints
-
-

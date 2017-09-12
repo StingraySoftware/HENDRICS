@@ -53,6 +53,11 @@ except ImportError:
 import sphinx.environment
 from docutils.utils import get_source_line
 
+def _warn_node(self, msg, node, **kwargs):
+    if not msg.startswith('nonlocal image URI found:'):
+        self._warnfunc(msg, '%s:%s' % get_source_line(node), **kwargs)
+
+
 # def _warn_node(self, msg, node):
 #     if not msg.startswith('nonlocal image URI found:'):
 #         self._warnfunc(msg, '%s:%s' % get_source_line(node))
@@ -118,7 +123,7 @@ release = package.__version__
 
 # Add any paths that contain custom themes here, relative to this directory.
 # To use a different custom theme, add the directory containing the theme.
-#html_theme_path = []
+html_theme_path = ['themes']
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes. To override the custom theme, set this to the
@@ -215,4 +220,3 @@ if not ON_RTD and not ON_TRAVIS:
                 else:
                     print('    ' + l, file=fobj)
             print(file=fobj)
-

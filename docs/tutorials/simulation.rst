@@ -1,5 +1,12 @@
+.. _data-simulation-tutorial:
+
 Data simulation
 ---------------
+
+.. Note ::
+
+    For a general introduction to HENDRICS's workflow, please read the
+    :ref:`quicklook-tutorial` tutorial
 
 To simulate datasets, `MaLTPyNT` includes the `HENfake` script. It can simulate
 event lists with a fixed count rate or from an input light curve. Also, it is able
@@ -34,4 +41,5 @@ can be supplied as a single number, meaning a constant dead time
 or as two numbers (`mean`, `sigma`), meaning a Gaussian distribution of dead
 times with the specified mean and sigma.
 
-More advanced options are available using the functions in `maltpynt.fake`.
+More advanced options are available using the functions in `hendrics.fake` and,
+of course, the powerful API in `stingray.simulate`.
