@@ -17,7 +17,7 @@ def colors():
     pass
 
 
-def main(args):
+def main(args=None):
     """Main function called by the `HENcolors` command line script."""
     import argparse
     description = \
@@ -54,7 +54,7 @@ def main(args):
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENscrunchlc.log', level=numeric_level,
+    logging.basicConfig(filename='HENcolors.log', level=numeric_level,
                         filemode='w')
 
     option = '--e-interval'
@@ -72,8 +72,8 @@ def main(args):
         lc1 = load_lcurve('lc1' + HEN_FILE_EXTENSION)
 
         time = lc0.time
-        counts = lc1.counts / lc0.counts
-        counts_err = np.sqrt(lc1.counts_err ** 2 + lc0.counts_err ** 2)
+        counts = lc1.countrate / lc0.countrate
+        counts_err = np.sqrt(lc1.countrate_err ** 2 + lc0.countrate_err ** 2)
         scolor = Lightcurve(time=time, counts=counts, err=counts_err,
                             input_counts=False, err_dist='gauss',
                             gti=lc0.gti)
