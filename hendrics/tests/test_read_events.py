@@ -22,6 +22,8 @@ class TestReadEvents():
                                            new_filename))
         data = load_data(os.path.join(self.datadir, new_filename))
         assert 'instr' in data
+        assert 'gti' in data
+        assert 'mjdref' in data
 
     def test_treat_event_file_xmm(self):
         fits_file = os.path.join(self.datadir, 'monol_test_fake.evt')
@@ -33,8 +35,16 @@ class TestReadEvents():
         new_filename = 'monol_test_fake_xmm_epn_det01_ev' + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir,
                                            new_filename))
+        data = load_data(os.path.join(self.datadir, new_filename))
+        assert 'instr' in data
+        assert 'gti' in data
+        assert 'mjdref' in data
         treat_event_file(fits_file, gti_split=True)
         new_filename = \
             'monol_test_fake_xmm_epn_det01_gti0_ev' + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir,
                                            new_filename))
+        data = load_data(os.path.join(self.datadir, new_filename))
+        assert 'instr' in data
+        assert 'gti' in data
+        assert 'mjdref' in data

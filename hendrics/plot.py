@@ -125,7 +125,8 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
         level = lev  # Can be modified below
         y = pds[1:]
         yerr = epds[1:]
-        if norm.lower() == 'leahy' or (norm == 'rms' and (not xlog or not ylog)):
+        if norm.lower() == 'leahy' or (norm.lower() == 'rms' and
+                                       (not xlog or not ylog)):
             plt.errorbar(freq[1:], y, yerr=yerr, fmt='-',
                          drawstyle='steps-mid', color=color, label=fname)
         elif norm == 'rms' and xlog and ylog:
@@ -268,7 +269,9 @@ def plot_color(file0, file1, xlog=None, ylog=None, figname=None,
     if type1 == 'color':
         ylabel = '{3}-{2}/{1}-{0}'.format(*lc1.e_intervals)
     plt.errorbar(lc0.counts, lc1.counts,
-                 xerr=lc0.counts_err, yerr=lc1.counts_err, fmt='o')
+                 xerr=lc0.counts_err, yerr=lc1.counts_err, fmt='o',
+                 color='k', alpha=0.5)
+    plt.scatter(lc0.counts, lc1.counts, zorder=10)
 
     if output_data_file is not None:
         save_as_qdp([lc0.counts, lc1.counts],
@@ -395,6 +398,7 @@ def main(args=None):
         args.files = zip(args.files[:-1:2], args.files[1::2])
 
     for fname in args.files:
+
         if args.CCD or args.HID:
             plot_color(fname[0], fname[1], xlog=args.xlog, ylog=args.ylog,
                        figname=args.figname, output_data_file=args.outfile)

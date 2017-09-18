@@ -1002,6 +1002,8 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         t_start = ev_list[0]
         t_stop = ev_list[-1]
 
+    mjdref = np.longdouble(high_precision_keyword_read(header, 'MJDREF'))
+
     # Read and handle GTI extension
     accepted_gtistrings = gtistring.split(',')
 
@@ -1040,6 +1042,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     returns = _empty()
     returns.ev_list = EventList(ev_list, gti=gti_list, pi=pi)
     returns.ev_list.instr = instr
+    returns.ev_list.mjdref = mjdref
     returns.ev_list.header = header.tostring()
     returns.additional_data = additional_data
     returns.t_start = t_start
