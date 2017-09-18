@@ -279,6 +279,8 @@ def plot_color(file0, file1, xlog=None, ylog=None, figname=None,
                     filename=output_data_file,
                     mode='a')
 
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     ax = plt.gca()
     if xlog:
         ax.set_xscale('log', nonposx='clip')
