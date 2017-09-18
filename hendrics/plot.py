@@ -269,7 +269,9 @@ def plot_color(file0, file1, xlog=None, ylog=None, figname=None,
     if type1 == 'color':
         ylabel = '{3}-{2}/{1}-{0}'.format(*lc1.e_intervals)
     plt.errorbar(lc0.counts, lc1.counts,
-                 xerr=lc0.counts_err, yerr=lc1.counts_err, fmt='o')
+                 xerr=lc0.counts_err, yerr=lc1.counts_err, fmt='o',
+                 color='k', alpha=0.5)
+    plt.scatter(lc0.counts, lc1.counts, zorder=10)
 
     if output_data_file is not None:
         save_as_qdp([lc0.counts, lc1.counts],
