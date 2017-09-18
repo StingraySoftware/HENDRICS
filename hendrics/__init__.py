@@ -28,3 +28,4 @@ if not _ASTROPY_SETUP_:
     from . import save_as_xspec
     from . import sum_fspec
     from . import timelags
+    from . import varenergy
