@@ -158,6 +158,28 @@ class TestFullRun(object):
         assert os.path.exists(os.path.join(self.datadir,
                                            'monol_testB_nustar_fpmb_ev_calib' +
                                            HEN_FILE_EXTENSION))
+
+    def test_save_varen_rms(self):
+        fname = os.path.join(self.datadir,
+                             'monol_testA_nustar_fpma_ev_calib' +
+                             HEN_FILE_EXTENSION)
+        hen.varenergy.main([fname,"-f", "0", "100", "--energy-values",
+                            "0.3", "12", "5", "lin", "--rms", "-b", "0.5",
+                            "--segment-size", "128"])
+        out = hen.base.hen_root(fname) + "_rms" + '.qdp'
+        os.path.exists(out)
+
+    def test_save_varen_lag(self):
+        fname = os.path.join(self.datadir,
+                             'monol_testA_nustar_fpma_ev_calib' +
+                             HEN_FILE_EXTENSION)
+        hen.varenergy.main([fname,"-f", "0", "100", "--energy-values",
+                            "0.3", "12", "5", "lin", "--lag", "-b", "0.5",
+                            "--segment-size", "128"])
+        out = hen.base.hen_root(fname) + "_lag" + '.qdp'
+        os.path.exists(out)
+
+
     def test_lcurve(self):
         """Test light curve production."""
         command = ('{0} -e {1} {2} --safe-interval '
