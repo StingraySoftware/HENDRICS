@@ -2,7 +2,8 @@ from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
-from hendrics.efsearch import main_efsearch, main_zsearch, main_phaseogram
+from hendrics.efsearch import main_efsearch, main_zsearch, main_phaseogram, \
+    run_interactive_phaseogram
 from hendrics.plot import plot_folding
 import os
 import pytest
@@ -60,6 +61,17 @@ class TestEFsearch():
     def test_phaseogram_input_f(self):
         evfile = self.dum
         main_phaseogram([evfile, '-f', '9.9', '--test'])
+
+    def test_phaseogram_input_f_change(self):
+        evfile = self.dum
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True)
+        ip.update(1)
+        ip.recalculate(1)
+        ip.reset(1)
+        ip.fdot = 2
+        f, fdot = ip.get_values()
+        assert fdot == 2
+        assert f == 9.9
 
     def test_phaseogram_raises(self):
         evfile = self.dum

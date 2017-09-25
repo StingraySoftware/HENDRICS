@@ -184,6 +184,8 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, nbin=64, nt=32,
     ip = InteractivePhaseogram(times, freq, nph=nbin, nt=nt, fdot=fdot,
                                test=test)
 
+    return ip
+
 
 def _common_parser(args=None):
     description = ('Search for pulsars using the epoch folding or the Z_n^2 '
