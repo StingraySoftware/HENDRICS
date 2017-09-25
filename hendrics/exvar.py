@@ -17,8 +17,12 @@ def fvar(lc):
     return excess_variance(lc, normalization='fvar')
 
 
-def excvar(lc):
-    return excess_variance(lc)    
+def excvar_none(lc):
+    return excess_variance(lc, normalization='none')
+
+
+def excvar_norm(lc):
+    return excess_variance(lc, normalization='norm_xs')
 
 
 def main(args=None):
@@ -34,7 +38,10 @@ def main(args=None):
                         "this indicates the ratio between step step and"
                         " `chunk_length`")
     parser.add_argument("--norm", type=str, default="excvar",
-                        help="Choose between fvar and excvar normalization")
+                        help="Choose between fvar, excvar and norm_excvar "
+                             "normalization, referring to Fvar, excess variance"
+                             " and normalized excess variance respectively (see"
+                             " Vaughan et al. 2003 for details).")
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
                               "WARNING, ERROR, CRITICAL, DEBUG; "
@@ -54,11 +61,16 @@ def main(args=None):
     for fname in args.files:
         lcurve = load_lcurve(fname)
         if args.norm == "fvar":
-            start, stop, res = lcurve.analyze_lc_chunks(args.chunk_length,fvar, 
+            start, stop, res = lcurve.analyze_lc_chunks(args.chunk_length, fvar,
                                                         args.fraction_step)
         elif args.norm == "excvar":
-            start, stop, res = lcurve.analyze_lc_chunks(args.chunk_length,excvar, 
-                                                        args.fraction_step) 
+            start, stop, res = \
+                lcurve.analyze_lc_chunks(args.chunk_length, excvar_none,
+                                         args.fraction_step)
+        elif args.norm == "norm_excvar":
+            start, stop, res = lcurve.analyze_lc_chunks(args.chunk_length,
+                                                        excvar_norm,
+                                                        args.fraction_step)
         else:
             raise ValueError("Normalization must be fvar or excvar")
         var, var_err = res

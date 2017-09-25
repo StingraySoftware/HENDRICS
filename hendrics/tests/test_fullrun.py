@@ -590,6 +590,14 @@ class TestFullRun(object):
         out = hen.base.hen_root(fname) + "_excvar" + '.qdp'
         os.path.exists(out)
 
+    def test_save_excvar_norm(self):
+        fname = os.path.join(self.datadir,
+                             'monol_testA_E3-50_lc' +
+                             HEN_FILE_EXTENSION)
+        hen.exvar.main([fname, "--norm", "norm_excvar"])
+        out = hen.base.hen_root(fname) + "_norm_excvar" + '.qdp'
+        os.path.exists(out)
+
     def test_save_excvar_wrong_norm(self):
         fname = os.path.join(self.datadir,
                              'monol_testA_E3-50_lc' +
