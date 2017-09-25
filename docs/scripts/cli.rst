@@ -79,6 +79,36 @@ HENcalibrate
       --nproc NPROC        Number of processors to use
 
 
+HENcolors
+---------
+
+::
+
+    usage: HENcolors [-h] -e ENERGIES ENERGIES ENERGIES ENERGIES [-b BINTIME]
+                     [-o OUT] [--use-pi USE_PI] [--loglevel LOGLEVEL] [--debug]
+                     files [files ...]
+
+    Calculate color light curves
+
+    positional arguments:
+      files                 List of files
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -e ENERGIES ENERGIES ENERGIES ENERGIES, --energies ENERGIES ENERGIES ENERGIES ENERGIES
+                            The energy boundaries in keV used to calculate the
+                            color. E.g. -e 2 3 4 6 means that the color will be
+                            calculated as 4.-6./2.-3. keV. If --use-pi is
+                            specified, these are interpreted as PI channels
+      -b BINTIME, --bintime BINTIME
+                            Bin time; if negative, negative power of 2
+      -o OUT, --out OUT     Output file
+      --use-pi USE_PI       Use the PI channel instead of energies
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               use DEBUG logging level
+
+
 HENcreategti
 ------------
 
@@ -302,8 +332,8 @@ HENfspec
                             Length of FFTs. Default: 512 s
       -k KIND, --kind KIND  Spectra to calculate, as comma-separated list
                             (Accepted: PDS and CPDS; Default: "PDS,CPDS")
-      --norm NORM           Normalization to use (Accepted: Leahy and rms;
-                            Default: "Leahy")
+      --norm NORM           Normalization to use (Accepted: leahy and rms;
+                            Default: "leahy")
       --noclobber           Do not overwrite existing files
       -o OUTROOT, --outroot OUTROOT
                             Root of output file names for CPDS only
@@ -560,7 +590,7 @@ HENsumfspec
       -h, --help            show this help message and exit
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_(c)pds.p
+                            tot_(c)pds.nc
 
 
 HENzsearch
