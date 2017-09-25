@@ -2,9 +2,10 @@ from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
-from hendrics.efsearch import main_efsearch, main_zsearch
+from hendrics.efsearch import main_efsearch, main_zsearch, main_phaseogram
 from hendrics.plot import plot_folding
 import os
+import pytest
 
 
 class TestEFsearch():
@@ -49,7 +50,21 @@ class TestEFsearch():
                           atol=1/25.25)
         # Defaults to 2 harmonics
         assert efperiod.N == 2
-        os.unlink(outfile)
+        # os.unlink(outfile)
+
+    def test_phaseogram_input_periodogram(self):
+        evfile = self.dum
+        main_phaseogram([evfile, '--periodogram',
+                         'events_Z2n' + HEN_FILE_EXTENSION, '--test'])
+
+    def test_phaseogram_input_f(self):
+        evfile = self.dum
+        main_phaseogram([evfile, '-f', '9.9', '--test'])
+
+    def test_phaseogram_raises(self):
+        evfile = self.dum
+        with pytest.raises(ValueError):
+            main_phaseogram([evfile, '--test'])
 
     @classmethod
     def teardown_class(cls):
