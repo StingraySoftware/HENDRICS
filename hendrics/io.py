@@ -1049,6 +1049,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
 
     returns = _empty()
     returns.ev_list = EventList(ev_list, gti=gti_list, pi=pi)
+
     returns.ev_list.instr = instr
     returns.ev_list.mjdref = mjdref
     returns.ev_list.header = header.tostring()

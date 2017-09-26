@@ -27,6 +27,7 @@ class InteractivePhaseogram(object):
 
         self.freq = freq
         self.fdot = fdot
+        self.fddot = fddot
         self.nt = nt
         self.nph = nph
         self.ev_times = ev_times
@@ -114,7 +115,8 @@ class InteractivePhaseogram(object):
 
         self.phaseogr, _, _, _ = \
             phaseogram(self.ev_times, self.freq, fdot=self.fdot, plot=False,
-                       nph=self.nph, nt=self.nt, pepoch=pepoch)
+                       nph=self.nph, nt=self.nt, pepoch=pepoch,
+                       fddot=self.fddot)
 
         self.l1.set_xdata(0.5)
         self.l2.set_xdata(1)
@@ -182,7 +184,7 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, nbin=64, nt=32,
     times = (events.time - events.gti[0, 0]).astype(np.float64)
     length = times[-1]
     ip = InteractivePhaseogram(times, freq, nph=nbin, nt=nt, fdot=fdot,
-                               test=test)
+                               test=test, fddot=0)
 
     return ip
 
@@ -294,9 +296,10 @@ def _common_main(args, func):
             efperiodogram.peaks = best_peaks
             efperiodogram.peak_stat = [0]
 
+        best_models = []
+
         if args.fit_candidates:
             search_width = 5 * args.oversample * step
-            best_models = []
             for f in best_peaks:
                 good = np.abs(frequencies - f) < search_width
                 if args.curve.lower() == 'sinc':
@@ -309,7 +312,8 @@ def _common_main(args, func):
                     raise ValueError('`--curve` arg must be sinc or gaussian')
 
                 best_models.append(best_fun)
-            efperiodogram.best_fits = best_models
+
+        efperiodogram.best_fits = best_models
 
         save_folding(efperiodogram,
                      hen_root(fname) + '_{}'.format(kind) + HEN_FILE_EXTENSION)
@@ -366,7 +370,7 @@ def main_phaseogram(args=None):
                          'specified')
     elif args.periodogram is not None:
         periodogram = load_folding(args.periodogram)
-        frequency = periodogram.peaks[0]
+        frequency = float(periodogram.peaks[0])
         fdot = 0
     else:
         frequency = args.freq

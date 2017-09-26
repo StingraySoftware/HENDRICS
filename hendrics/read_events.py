@@ -55,7 +55,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
 
     for d in detectors:
         if d is not None:
-            good_det = data.detector_id
+            good_det = detectors == data.detector_id
             outroot_local = \
                 '{0}_det{1:02d}'.format(outfile_root, d)
 
