@@ -163,7 +163,8 @@ def fit(frequencies, stats, center_freq, width=None, obs_length=None,
 
 
 def folding_search(event_file, fmin, fmax, step=None,
-                   func=epoch_folding_search, oversample=2, **kwargs):
+                   func=epoch_folding_search, oversample=2, fdotmin=0,
+                   fdotmax=0, fdotstep=None, **kwargs):
     events = load_events(event_file)
 
     times = (events.time - events.gti[0, 0]).astype(np.float64)
@@ -171,10 +172,21 @@ def folding_search(event_file, fmin, fmax, step=None,
 
     if step is None:
         step = 1 / oversample / length
+    if fdotstep is None:
+        fdotstep = 1 / oversample / length ** 2
 
-    trial_freqs = np.arange(fmin, fmax, step)
-    frequencies, stats = func(times, trial_freqs, **kwargs)
-    return frequencies, stats, step, length
+    # epsilon is needed if fmin == fmax
+    epsilon = 1e-8 * step
+    trial_freqs = np.arange(fmin, fmax + epsilon, step)
+    trial_fdots = np.arange(fdotmin, fdotmax + epsilon, fdotstep)
+    results = func(times, trial_freqs, fdots=trial_fdots, **kwargs)
+    if len(results) == 2:
+        frequencies, stats = results
+        return frequencies, stats, step, length
+    elif len(results) == 3:
+        frequencies, fdots, stats = results
+        return frequencies, fdots, stats, step, fdotstep, length
+
 
 
 def run_interactive_phaseogram(event_file, freq, fdot=0, nbin=64, nt=32,
@@ -199,9 +211,13 @@ def _common_parser(args=None):
                         help="Minimum frequency to fold")
     parser.add_argument("-F", "--fmax", type=float, required=True,
                         help="Maximum frequency to fold")
+    parser.add_argument("--fdotmin", type=float, required=False,
+                        help="Minimum fdot to fold", default=0)
+    parser.add_argument("--fdotmax", type=float, required=False,
+                        help="Maximum fdot to fold", default=0)
     parser.add_argument('-n', "--nbin", default=128, type=int,
                         help="Number of phase bins of the profile")
-    parser.add_argument("--segment-size", default=5000, type=float,
+    parser.add_argument("--segment-size", default=1e32, type=float,
                         help="Size of the event list segment to use (default "
                              "None, implying the whole observation)")
     parser.add_argument("--step", default=None, type=float,
@@ -277,15 +293,22 @@ def _common_main(args, func):
             kwargs = {'nharm': args.N}
             baseline = args.N
             kind = 'Z2n'
-        frequencies, stats, step, length = \
+        results = \
             folding_search(fname, args.fmin, args.fmax, step=args.step,
                            func=func,
                            oversample=args.oversample, nbin=args.nbin,
-                           expocorr=args.expocorr,
+                           expocorr=args.expocorr, fdotmin=args.fdotmin,
+                           fdotmax=args.fdotmax,
                            segment_size=args.segment_size, **kwargs)
 
+        fdots = 0
+        if len(results) == 4:
+            frequencies, stats, step, length = results
+        elif len(results) == 6:
+            frequencies, fdots, stats, step, fdotsteps, length = results
+
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
-                                      args.N)
+                                      args.N, fdots=fdots)
         if args.find_candidates:
             threshold = 1 - args.conflevel / 100
             best_peaks, best_stat = \

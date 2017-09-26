@@ -227,11 +227,19 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
     for fname in fnames:
         ef = load_folding(fname)
 
-        plt.plot(ef.freq, ef.stat, drawstyle='steps-mid', label=fname)
-        plt.xlabel('Frequency (Hz)')
-        plt.ylabel(ef.kind + ' stat')
+        if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+            plt.figure(fname)
+            plt.pcolormesh(ef.freq, np.asarray(ef.fdots), ef.stat)
+            plt.colorbar()
+            plt.xlabel('Frequency (Hz)')
+            plt.ylabel('Fdot (Hz/s)')
+        else:
+            plt.plot(ef.freq, ef.stat, drawstyle='steps-mid', label=fname)
+            plt.xlabel('Frequency (Hz)')
+            plt.ylabel(ef.kind + ' stat')
 
-        if hasattr(ef, 'best_fits') and ef.best_fits is not None:
+        if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
+                not len(ef.stat.shape) > 1:
 
             for f in ef.best_fits:
                 xs = np.linspace(np.min(ef.freq), np.max(ef.freq),
@@ -239,12 +247,13 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                 plt.plot(xs, f(xs))
 
         if output_data_file is not None:
-            out = [ef.freq, ef.stat]
-            out_err = [None, None]
+            out = [ef.freq.flatten(), ef.fdots.flatten(), ef.stat.flatten()]
+            out_err = [None, None, None]
 
-            if hasattr(ef, 'best_fits') and ef.best_fits is not None:
+            if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
+                not len(ef.stat.shape) > 1:
                 for f in ef.best_fits:
-                    out.append(f(ef.freq))
+                    out.append(f(ef.freq.flatten()))
                     out_err.append(None)
 
             save_as_qdp(out, out_err, filename=output_data_file, mode='a')
