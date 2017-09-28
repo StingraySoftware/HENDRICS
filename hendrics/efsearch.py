@@ -179,6 +179,9 @@ def folding_search(event_file, fmin, fmax, step=None,
     epsilon = 1e-8 * step
     trial_freqs = np.arange(fmin, fmax + epsilon, step)
     trial_fdots = np.arange(fdotmin, fdotmax + epsilon, fdotstep)
+    if len(trial_fdots) > 1:
+        print("Searching {} frequencies and {} fdots".format(len(trial_freqs),
+                                                             len(trial_fdots)))
     results = func(times, trial_freqs, fdots=trial_fdots, **kwargs)
     if len(results) == 2:
         frequencies, stats = results

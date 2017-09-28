@@ -1087,7 +1087,8 @@ def main(args=None):
             continue
         ftype, contents = get_file_type(fname, raw_data=True)
         print('This file contains:', end='\n\n')
-        mjdref = Time(contents['mjdref'], format='mjd')
+        if 'mjdref' in contents:
+            mjdref = Time(contents['mjdref'], format='mjd')
 
         for k in sorted(contents.keys()):
             if k == 'tstart':
