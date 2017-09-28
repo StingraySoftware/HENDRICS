@@ -164,7 +164,7 @@ def fit(frequencies, stats, center_freq, width=None, obs_length=None,
 
 def folding_search(event_file, fmin, fmax, step=None,
                    func=epoch_folding_search, oversample=2, fdotmin=0,
-                   fdotmax=0, fdotstep=None, **kwargs):
+                   fdotmax=0, fdotstep=None, expocorr=False, **kwargs):
     events = load_events(event_file)
 
     times = (events.time - events.gti[0, 0]).astype(np.float64)
@@ -174,6 +174,9 @@ def folding_search(event_file, fmin, fmax, step=None,
         step = 1 / oversample / length
     if fdotstep is None:
         fdotstep = 1 / oversample / length ** 2
+    gti = None
+    if expocorr:
+        gti = events.gti
 
     # epsilon is needed if fmin == fmax
     epsilon = 1e-8 * step
@@ -182,7 +185,8 @@ def folding_search(event_file, fmin, fmax, step=None,
     if len(trial_fdots) > 1:
         print("Searching {} frequencies and {} fdots".format(len(trial_freqs),
                                                              len(trial_fdots)))
-    results = func(times, trial_freqs, fdots=trial_fdots, **kwargs)
+    results = func(times, trial_freqs, fdots=trial_fdots,
+                   expocorr=expocorr, gti=gti, **kwargs)
     if len(results) == 2:
         frequencies, stats = results
         return frequencies, stats, step, length
