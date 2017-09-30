@@ -1,7 +1,7 @@
 .. _variability-tutorial:
 
-Low- and high-frequency variability quicklook
----------------------------------------------
+Low- and high-frequency variability quicklook (TBC)
+---------------------------------------------------
 
 .. Note ::
 

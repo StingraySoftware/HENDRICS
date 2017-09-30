@@ -1,7 +1,7 @@
 .. _reverberation-tutorial:
 
-Reverberation and variability-energy spectra
---------------------------------------------
+Reverberation and variability-energy spectra (TBC)
+--------------------------------------------------
 
 .. Note ::
 
