@@ -75,6 +75,8 @@ We can plot the results of this search with `HENplot`, as such:
 Pulsar search and frequency derivative measurement with HENphaseogram
 ---------------------------------------------------------------------
 
+``HENphaseogram`` is an interactive phaseogram to adjust the values of the frequency and frequency derivatives of pulsars.
+
 
 .. raw:: html
 

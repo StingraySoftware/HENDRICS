@@ -8,6 +8,7 @@ from .io import load_events, EFPeriodogram, save_folding, load_folding, \
 from .base import hen_root
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
     search_best_peaks, phaseogram
+from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
 
 import numpy as np
@@ -18,35 +19,42 @@ import argparse
 
 class InteractivePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, fdot=0, fddot=0,
-                 test=False):
+                 test=False, pepoch=None):
         import matplotlib.pyplot as plt
         from matplotlib.widgets import Slider, Button, RadioButtons
 
         self.df = 0
         self.dfdot = 0
+        self.dfddot = 0
 
         self.freq = freq
         self.fdot = fdot
         self.fddot = fddot
         self.nt = nt
         self.nph = nph
+
+        self.pepoch = assign_value_if_none(pepoch, ev_times[0])
         self.ev_times = ev_times
 
         self.phaseogr, phases, times, additional_info = \
             phaseogram(ev_times, freq, return_plot=True, nph=nph, nt=nt,
-                       fdot=fdot, fddot=fddot, plot=False)
+                       fdot=fdot, fddot=fddot, plot=False, pepoch=pepoch)
         self.phases, self.times = phases, times
         self.fig, ax = plt.subplots()
         plt.subplots_adjust(left=0.25, bottom=0.30)
         tseg = np.median(np.diff(times))
         tobs = tseg * nt
-        delta_df_start = 8 / tobs
+        delta_df_start = 4 / tobs
         self.df_order_of_mag = np.int(np.log10(delta_df_start))
         delta_df = delta_df_start / 10 ** self.df_order_of_mag
 
         delta_dfdot_start = 8 / tobs ** 2
         self.dfdot_order_of_mag = np.int(np.log10(delta_dfdot_start))
         delta_dfdot = delta_dfdot_start / 10 ** self.dfdot_order_of_mag
+
+        delta_dfddot_start = 16 / tobs ** 3
+        self.dfddot_order_of_mag = np.int(np.log10(delta_dfddot_start))
+        delta_dfddot = delta_dfddot_start / 10 ** self.dfddot_order_of_mag
 
         self.pcolor = plt.pcolormesh(phases, times, self.phaseogr.T,
                                      cmap='magma')
@@ -64,7 +72,8 @@ class InteractivePhaseogram(object):
         axcolor = 'lightgoldenrodyellow'
         self.axfreq = plt.axes([0.25, 0.1, 0.5, 0.03], facecolor=axcolor)
         self.axfdot = plt.axes([0.25, 0.15, 0.5, 0.03], facecolor=axcolor)
-        self.axpepoch = plt.axes([0.25, 0.2, 0.5, 0.03], facecolor=axcolor)
+        self.axfddot = plt.axes([0.25, 0.2, 0.5, 0.03], facecolor=axcolor)
+        # self.axpepoch = plt.axes([0.25, 0.25, 0.5, 0.03], facecolor=axcolor)
 
         self.sfreq = Slider(self.axfreq,
                             'Delta freq x$10^{}$'.format(self.df_order_of_mag),
@@ -72,12 +81,16 @@ class InteractivePhaseogram(object):
         self.sfdot = Slider(self.axfdot, 'Delta fdot x$10^{}$'.format(
             self.dfdot_order_of_mag),
                             -delta_dfdot, delta_dfdot, valinit=self.dfdot)
-        self.spepoch = Slider(self.axpepoch, 'Delta pepoch',
-                              0, times[-1] - times[0], valinit=0)
+        self.sfddot = Slider(self.axfddot, 'Delta fddot x$10^{}$'.format(
+            self.dfddot_order_of_mag),
+                            -delta_dfddot, delta_dfddot, valinit=self.dfddot)
+        # self.spepoch = Slider(self.axpepoch, 'Delta pepoch',
+        #                       0, times[-1] - times[0], valinit=0)
 
         self.sfreq.on_changed(self.update)
         self.sfdot.on_changed(self.update)
-        self.spepoch.on_changed(self.update)
+        self.sfddot.on_changed(self.update)
+        # self.spepoch.on_changed(self.update)
 
         self.resetax = plt.axes([0.8, 0.020, 0.1, 0.04])
         self.button = Button(self.resetax, 'Reset', color=axcolor,
@@ -94,22 +107,26 @@ class InteractivePhaseogram(object):
             plt.show()
 
     def update(self, val):
+        fddot = self.sfddot.val * 10 ** self.dfddot_order_of_mag
         fdot = self.sfdot.val * 10 ** self.dfdot_order_of_mag
         freq = self.sfreq.val * 10 ** self.df_order_of_mag
-        pepoch = self.spepoch.val + self.times[0]
-        delay_fun = lambda times: (times - pepoch) * freq + \
-                                  0.5 * (times - pepoch) ** 2 * fdot
-        self.l1.set_xdata(0.5 + delay_fun(self.times - self.times[0]))
-        self.l2.set_xdata(1 + delay_fun(self.times - self.times[0]))
-        self.l3.set_xdata(1.5 + delay_fun(self.times - self.times[0]))
+        pepoch = self.pepoch
+        delay_fun = lambda times: (times - pepoch).astype(np.float64) * freq + \
+                                   0.5 * (times - pepoch) ** 2 * fdot + \
+                                   1/6 * (times - pepoch) ** 3 * fddot
+        self.l1.set_xdata(0.5 + delay_fun(self.times))
+        self.l2.set_xdata(1 + delay_fun(self.times))
+        self.l3.set_xdata(1.5 + delay_fun(self.times))
 
         self.fig.canvas.draw_idle()
 
     def recalculate(self, event):
+        dfddot = self.sfddot.val * 10 ** self.dfddot_order_of_mag
         dfdot = self.sfdot.val * 10 ** self.dfdot_order_of_mag
         dfreq = self.sfreq.val * 10 ** self.df_order_of_mag
-        pepoch = self.spepoch.val + self.times[0]
+        pepoch = self.pepoch
 
+        self.fddot = self.fddot - dfddot
         self.fdot = self.fdot - dfdot
         self.freq = self.freq - dfreq
 
@@ -124,25 +141,29 @@ class InteractivePhaseogram(object):
 
         self.sfreq.reset()
         self.sfdot.reset()
-        self.spepoch.reset()
+        self.sfddot.reset()
+        # self.spepoch.reset()
 
         self.pcolor.set_array(self.phaseogr.T.ravel())
 
         self.fig.canvas.draw()
-        print("Frequency is now: {}".format(self.freq))
-        print("Fdot is now: {}".format(self.fdot))
+        print("PEPOCH    {} + MJDREF".format(self.pepoch / 86400))
+        print("F0        {}".format(self.freq))
+        print("F1        {}".format(self.fdot))
+        print("F2        {}".format(self.fddot))
 
     def reset(self, event):
         self.sfreq.reset()
         self.sfdot.reset()
-        self.spepoch.reset()
+        self.sfddot.reset()
+        # self.spepoch.reset()
         self.pcolor.set_array(self.phaseogr.T.ravel())
         self.l1.set_xdata(0.5)
         self.l2.set_xdata(1)
         self.l3.set_xdata(1.5)
 
     def get_values(self):
-        return self.freq, self.fdot
+        return self.freq, self.fdot, self.fddot
 
 
 def fit(frequencies, stats, center_freq, width=None, obs_length=None,
@@ -196,14 +217,12 @@ def folding_search(event_file, fmin, fmax, step=None,
 
 
 
-def run_interactive_phaseogram(event_file, freq, fdot=0, nbin=64, nt=32,
-                               test=False):
+def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
+                               nt=32, test=False):
     events = load_events(event_file)
 
-    times = (events.time - events.gti[0, 0]).astype(np.float64)
-    length = times[-1]
-    ip = InteractivePhaseogram(times, freq, nph=nbin, nt=nt, fdot=fdot,
-                               test=test, fddot=0)
+    ip = InteractivePhaseogram(events.time, freq, nph=nbin, nt=nt, fdot=fdot,
+                               test=test, fddot=fddot, pepoch=events.gti[0, 0])
 
     return ip
 
@@ -368,6 +387,8 @@ def main_phaseogram(args=None):
                         help="Initial frequency to fold", default=None)
     parser.add_argument("--fdot", type=float, required=False,
                         help="Initial fdot", default=0)
+    parser.add_argument("--fddot", type=float, required=False,
+                        help="Initial fddot", default=0)
     parser.add_argument("--periodogram", type=str, required=False,
                         help="Periodogram file", default=None)
     parser.add_argument('-n', "--nbin", default=128, type=int,

@@ -456,9 +456,9 @@ HENphaseogram
 
 ::
 
-    usage: HENphaseogram [-h] [-f FREQ] [--fdot FDOT] [--periodogram PERIODOGRAM]
-                         [-n NBIN] [--ntimes NTIMES] [--debug] [--test]
-                         [--loglevel LOGLEVEL]
+    usage: HENphaseogram [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT]
+                         [--periodogram PERIODOGRAM] [-n NBIN] [--ntimes NTIMES]
+                         [--debug] [--test] [--loglevel LOGLEVEL]
                          file
 
     Plot an interactive phaseogram
@@ -470,6 +470,7 @@ HENphaseogram
       -h, --help            show this help message and exit
       -f FREQ, --freq FREQ  Initial frequency to fold
       --fdot FDOT           Initial fdot
+      --fddot FDDOT         Initial fddot
       --periodogram PERIODOGRAM
                             Periodogram file
       -n NBIN, --nbin NBIN  Number of phase bins (X axis) of the profile

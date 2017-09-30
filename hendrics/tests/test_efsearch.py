@@ -86,7 +86,7 @@ class TestEFsearch():
         ip.recalculate(1)
         ip.reset(1)
         ip.fdot = 2
-        f, fdot = ip.get_values()
+        f, fdot, fddot = ip.get_values()
         assert fdot == 2
         assert f == 9.9
 
