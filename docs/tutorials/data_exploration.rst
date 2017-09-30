@@ -8,6 +8,12 @@ Data exploration
     For a general introduction to HENDRICS's workflow, please read the
     :ref:`quicklook-tutorial` tutorial
 
+.. raw:: html
+
+    <div style="max-width: 100%; height: auto;">
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/pMericAWmLU" frameborder="0" allowfullscreen></iframe>
+    </div>
+
 In this tutorial, we will explore a NuSTAR dataset and try to get a general view
 of the observed source.
 
