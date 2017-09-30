@@ -8,7 +8,7 @@ Pulsation searches
     For a general introduction to HENDRICS's workflow, please read the
     :ref:`quicklook-tutorial` tutorial
 
-We have a pulsar observation with, e.g., *XMM-Newton* and we want to find pulsations on it.
+We have a pulsar observation with, e.g., *NuSTAR* and we want to find pulsations on it.
 The general procedure is looking for pulsations using a power density spectrum
 (see :ref:`quicklook-tutorial`) or similar methods, and if we do find a promising
 candidate frequency, investigate more with the Epoch Folding or the Z search.
@@ -70,3 +70,15 @@ We can plot the results of this search with `HENplot`, as such:
 
 
 .. |zn_search.png| image:: ../images/zn_search.png
+
+
+Pulsar search and frequency derivative measurement with HENphaseogram
+---------------------------------------------------------------------
+
+
+.. raw:: html
+
+    <div style="max-width: 100%; height: auto;">
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/irm_S5rlqL8" frameborder="0" allowfullscreen></iframe>
+    </div>
+

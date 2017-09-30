@@ -40,11 +40,11 @@ class InteractivePhaseogram(object):
         plt.subplots_adjust(left=0.25, bottom=0.30)
         tseg = np.median(np.diff(times))
         tobs = tseg * nt
-        delta_df_start = 2 / tobs
+        delta_df_start = 8 / tobs
         self.df_order_of_mag = np.int(np.log10(delta_df_start))
         delta_df = delta_df_start / 10 ** self.df_order_of_mag
 
-        delta_dfdot_start = 2 / tobs ** 2
+        delta_dfdot_start = 8 / tobs ** 2
         self.dfdot_order_of_mag = np.int(np.log10(delta_dfdot_start))
         delta_dfdot = delta_dfdot_start / 10 ** self.dfdot_order_of_mag
 
@@ -156,7 +156,7 @@ def fit(frequencies, stats, center_freq, width=None, obs_length=None,
         df = frequencies[1] - frequencies[0]
         if width is None:
             width = 2 * df
-        s = fit_gaussian(frequencies, stats - baseline, width=width,
+        s = fit_gaussian(frequencies, stats - baseline, stddev=width,
                          amplitude=estimated_amp, mean=center_freq)
 
     return s
