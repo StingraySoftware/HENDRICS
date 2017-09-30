@@ -77,6 +77,16 @@ Pulsar search and frequency derivative measurement with HENphaseogram
 
 ``HENphaseogram`` is an interactive phaseogram to adjust the values of the frequency and frequency derivatives of pulsars.
 
+|phaseogram1.png|
+
+
+.. |phaseogram1.png| image:: ../images/phaseogram-1.png
+
+|phaseogram2.png|
+
+
+.. |phaseogram2.png| image:: ../images/phaseogram-2.png
+
 
 .. raw:: html
 

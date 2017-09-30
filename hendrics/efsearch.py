@@ -15,12 +15,12 @@ import numpy as np
 import os
 import logging
 import argparse
+import matplotlib.pyplot as plt
 
 
 class InteractivePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, fdot=0, fddot=0,
                  test=False, pepoch=None):
-        import matplotlib.pyplot as plt
         from matplotlib.widgets import Slider, Button, RadioButtons
 
         self.df = 0
@@ -92,16 +92,21 @@ class InteractivePhaseogram(object):
         self.sfddot.on_changed(self.update)
         # self.spepoch.on_changed(self.update)
 
-        self.resetax = plt.axes([0.8, 0.020, 0.1, 0.04])
-        self.button = Button(self.resetax, 'Reset', color=axcolor,
-                             hovercolor='0.975')
-
-        self.recalcax = plt.axes([0.6, 0.020, 0.1, 0.04])
+        self.recalcax = plt.axes([0.4, 0.020, 0.2, 0.04])
         self.button_recalc = Button(self.recalcax, 'Recalculate', color=axcolor,
                                     hovercolor='0.975')
 
+        self.closeax = plt.axes([0.2, 0.020, 0.2, 0.04])
+        self.button_close = Button(self.closeax, 'Quit', color=axcolor,
+                                    hovercolor='0.8')
+
+        self.resetax = plt.axes([0.6, 0.020, 0.2, 0.04])
+        self.button = Button(self.resetax, 'Reset', color=axcolor,
+                             hovercolor='0.975')
+
         self.button.on_clicked(self.reset)
         self.button_recalc.on_clicked(self.recalculate)
+        self.button_close.on_clicked(self.quit)
 
         if not test:
             plt.show()
@@ -147,10 +152,12 @@ class InteractivePhaseogram(object):
         self.pcolor.set_array(self.phaseogr.T.ravel())
 
         self.fig.canvas.draw()
+        print("------------------------")
         print("PEPOCH    {} + MJDREF".format(self.pepoch / 86400))
         print("F0        {}".format(self.freq))
         print("F1        {}".format(self.fdot))
         print("F2        {}".format(self.fddot))
+        print("------------------------")
 
     def reset(self, event):
         self.sfreq.reset()
@@ -161,6 +168,9 @@ class InteractivePhaseogram(object):
         self.l1.set_xdata(0.5)
         self.l2.set_xdata(1)
         self.l3.set_xdata(1.5)
+
+    def quit(self, event):
+        plt.close(self.fig)
 
     def get_values(self):
         return self.freq, self.fdot, self.fddot
