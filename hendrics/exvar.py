@@ -72,7 +72,8 @@ def main(args=None):
                                                         excvar_norm,
                                                         args.fraction_step)
         else:
-            raise ValueError("Normalization must be fvar or excvar")
+            raise ValueError("Normalization must be fvar, norm_excvar "
+                             "or excvar")
         var, var_err = res
         out = hen_root(fname) + "_" + args.norm + '.qdp'
         save_as_qdp([(start+stop)/2, var],[(stop-start)/2, var_err],
@@ -80,5 +81,3 @@ def main(args=None):
         filelist.append(out)
     
     return filelist
-        
-        

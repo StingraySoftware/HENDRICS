@@ -188,7 +188,8 @@ def calc_fspec(files, fftlen,
                normalization='leahy',
                nproc=1,
                back_ctrate=0.,
-               noclobber=False):
+               noclobber=False,
+               ignore_instr=False):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
     Parameters
@@ -218,6 +219,8 @@ def calc_fspec(files, fftlen,
     nproc : int
         Number of processors to use to parallelize the processing of multiple
         files
+    ignore_instr : bool
+        Ignore instruments; files are alternated in the two channels
 
     References
     ----------
@@ -258,17 +261,21 @@ def calc_fspec(files, fftlen,
     if not do_calc_cpds or len(files) < 2:
         return
 
-    logging.info('Sorting file list')
-    sorted_files = sort_files(files)
+    if ignore_instr:
+        files1 = files[0::2]
+        files2 = files[1::2]
+    else:
+        logging.info('Sorting file list')
+        sorted_files = sort_files(files)
 
-    logging.warning('Beware! For cpds and derivatives, I assume that the '
-                    'files are from only two instruments and in pairs '
-                    '(even in random order)')
+        logging.warning('Beware! For cpds and derivatives, I assume that the '
+                        'files are from only two instruments and in pairs '
+                        '(even in random order)')
 
-    instrs = list(sorted_files.keys())
+        instrs = list(sorted_files.keys())
 
-    files1 = sorted_files[instrs[0]]
-    files2 = sorted_files[instrs[1]]
+        files1 = sorted_files[instrs[0]]
+        files2 = sorted_files[instrs[1]]
 
     assert len(files1) == len(files2), 'An even number of files is needed'
 
@@ -435,6 +442,9 @@ def main(args=None):
                         default=False, action='store_true')
     parser.add_argument("--save-dyn", help="save dynamical power spectrum",
                         default=False, action='store_true')
+    parser.add_argument("--ignore-instr",
+                        help="Ignore instrument names in channels",
+                        default=False, action='store_true')
 
     args = parser.parse_args(args)
 
@@ -476,4 +486,5 @@ def main(args=None):
                normalization=normalization,
                nproc=args.nproc,
                back_ctrate=args.back,
-               noclobber=args.noclobber)
+               noclobber=args.noclobber,
+               ignore_instr=args.ignore_instr)

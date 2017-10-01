@@ -32,9 +32,11 @@ def main(args=None):
     filelist=[]  
     for fname in args.files:
         cross = load_pds(fname)
-        lag,lag_err = cross.time_lag()
+
+        lag, lag_err = cross.time_lag()
         out = hen_root(fname) + '_lags.qdp'
         save_as_qdp([cross.freq, lag], [None, lag_err], filename=out)
         filelist.append(out)
     
     return filelist
+
