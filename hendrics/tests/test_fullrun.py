@@ -604,7 +604,7 @@ class TestFullRun(object):
                              HEN_FILE_EXTENSION)
         with pytest.raises(ValueError) as excinfo:
             hen.exvar.main([fname, '--norm', 'cicciput'])
-        assert 'Normalization must be fvar or excvar' in str(excinfo.value)
+        assert 'Normalization must be fvar, ' in str(excinfo.value)
 
     def test_fit_pds(self):
         modelstring = '''

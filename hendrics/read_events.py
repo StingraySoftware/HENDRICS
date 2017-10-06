@@ -47,7 +47,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     detector_id = data.detector_id
 
     if detector_id is not None:
-        detectors = list(set(detector_id))
+        detectors = np.array(list(set(detector_id)))
     else:
         detectors = [None]
     outfile_root = \
@@ -55,7 +55,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
 
     for d in detectors:
         if d is not None:
-            good_det = detectors == data.detector_id
+            good_det = d == data.detector_id
             outroot_local = \
                 '{0}_det{1:02d}'.format(outfile_root, d)
 
