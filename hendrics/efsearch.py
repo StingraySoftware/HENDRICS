@@ -8,6 +8,7 @@ from .io import load_events, EFPeriodogram, save_folding, load_folding, \
 from .base import hen_root
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
     search_best_peaks, phaseogram
+from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
 
@@ -193,10 +194,9 @@ def fit(frequencies, stats, center_freq, width=None, obs_length=None,
     return s
 
 
-def folding_search(event_file, fmin, fmax, step=None,
+def folding_search(events, fmin, fmax, step=None,
                    func=epoch_folding_search, oversample=2, fdotmin=0,
                    fdotmax=0, fdotstep=None, expocorr=False, **kwargs):
-    events = load_events(event_file)
 
     times = (events.time - events.gti[0, 0]).astype(np.float64)
     length = times[-1]
@@ -225,6 +225,28 @@ def folding_search(event_file, fmin, fmax, step=None,
         frequencies, fdots, stats = results
         return frequencies, fdots, stats, step, fdotstep, length
 
+
+def dyn_folding_search(events, fmin, fmax, step=None,
+                       func=epoch_folding_search, oversample=2,
+                       time_step=128, **kwargs):
+
+    if step is None:
+        step = 1 / oversample / time_step
+
+    start, stop = time_intervals_from_gtis(events.gti, time_step)
+
+    stats = []
+
+    for st, sp in zip(start, stop):
+        times_filt = events.time[(events.time >= st)&(events.time < sp)]
+
+        trial_freqs = np.arange(fmin, fmax, step)
+
+        results = func(times_filt, trial_freqs, **kwargs)
+        frequencies, stat = results
+        stats.append(stat)
+
+    return (start + stop) / 2, frequencies, np.array(stats)
 
 
 def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
@@ -329,8 +351,10 @@ def _common_main(args, func):
             kwargs = {'nharm': args.N}
             baseline = args.N
             kind = 'Z2n'
+        events = load_events(fname)
+
         results = \
-            folding_search(fname, args.fmin, args.fmax, step=args.step,
+            folding_search(events, args.fmin, args.fmax, step=args.step,
                            func=func,
                            oversample=args.oversample, nbin=args.nbin,
                            expocorr=args.expocorr, fdotmin=args.fdotmin,
