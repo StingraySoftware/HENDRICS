@@ -10,10 +10,11 @@ from __future__ import (absolute_import, unicode_literals, division,
 import numpy as np
 from .io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, HEN_FILE_EXTENSION, load_data
-from .base import create_gti_mask, hen_root, _assign_value_if_none
+from .base import hen_root, _assign_value_if_none
 import logging
 import warnings
 from stingray import Lightcurve
+from stingray.gti import create_gti_mask
 
 
 def get_livetime_per_bin(times, events, priors, dt=None, gti=None):

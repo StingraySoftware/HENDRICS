@@ -109,6 +109,13 @@ class TestFullRun(object):
                                     HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
 
+    def test_save_binary_events(self):
+        f = self.first_event_file
+        with pytest.raises(ValueError) as excinfo:
+            hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
+
+        assert 'Energy filtering requested' in str(excinfo)
+
     def test_load_gtis(self):
         """Test loading of GTIs from FITS files."""
         fits_file = os.path.join(self.datadir, 'monol_testA.evt')
@@ -133,6 +140,7 @@ class TestFullRun(object):
 
     def test_calibrate(self):
         """Test event file calibration."""
+        from astropy.io.fits import Header
         command = '{0} -r {1}'.format(
             os.path.join(self.datadir,
                          'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION),
@@ -144,9 +152,17 @@ class TestFullRun(object):
         assert os.path.exists(new_filename)
         ev = hen.io.load_events(new_filename)
         assert hasattr(ev, 'header')
+
+        Header.fromstring(ev.header)
         assert hasattr(ev, 'gti')
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, ev.gti)
+
+    def test_save_binary_calibrated_events(self):
+        f = os.path.join(self.datadir,
+                         'monol_testA_nustar_fpma_ev_calib' +
+                         HEN_FILE_EXTENSION)
+        hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
 
     def test_calibrate_2_cpus(self):
         """Test event file calibration."""
@@ -182,6 +198,7 @@ class TestFullRun(object):
 
     def test_lcurve(self):
         """Test light curve production."""
+        from astropy.io.fits import Header
         command = ('{0} -e {1} {2} --safe-interval '
                    '{3} {4}  --nproc 2 -b 0.5 -o {5}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
@@ -199,9 +216,18 @@ class TestFullRun(object):
         assert os.path.exists(new_filename)
         lc = hen.io.load_lcurve(new_filename)
         assert hasattr(lc, 'header')
+        # Test that the header is correctly conserved
+        Header.fromstring(lc.header)
         assert hasattr(lc, 'gti')
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, lc.gti)
+
+    def test_save_binary_lc(self):
+        f = \
+            os.path.join(os.path.join(self.datadir,
+                                      'monol_testA_E3-50_lc' +
+                                      HEN_FILE_EXTENSION))
+        hen.binary.main_presto("{}".format(f).split())
 
     def test_lcurve_B(self):
         command = ('{0} -e {1} {2} --safe-interval '

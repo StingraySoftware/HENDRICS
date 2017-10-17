@@ -5,17 +5,17 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-from stingray.lightcurve import Lightcurve
-from stingray.utils import assign_value_if_none
-from .base import hen_root, create_gti_mask, cross_gtis, mkdir_p
-from .base import contiguous_regions, calc_countrate, gti_len
-from .base import _look_for_array_in_array, hen_root
-from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
-from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
 import os
 import logging
 import warnings
 import copy
+
+from stingray.lightcurve import Lightcurve
+from stingray.utils import assign_value_if_none
+from stingray.gti import  create_gti_mask, cross_gtis, contiguous_regions
+from .base import _look_for_array_in_array, hen_root, mkdir_p
+from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
+from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
 
 
 def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
@@ -323,8 +323,8 @@ def lcurve_from_events(f, safe_interval=0,
         return
 
     lc.header = None
-    if hasattr(events, 'header'):
-        lc.header = events.header
+    if hasattr(evdata, 'header'):
+        lc.header = evdata.header
 
     if gti_split:
         lcs = lc.split_by_gti()
@@ -399,7 +399,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     from astropy.io import fits as pf
     from astropy.time import Time
     import numpy as np
-    from .base import create_gti_from_condition
+    from stingray.gti import create_gti_from_condition
 
     outfile = assign_value_if_none(outfile, hen_root(fits_file) + '_lc')
     outfile = outfile.replace(HEN_FILE_EXTENSION, '') + HEN_FILE_EXTENSION

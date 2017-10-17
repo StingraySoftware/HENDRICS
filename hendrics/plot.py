@@ -10,7 +10,8 @@ except:
     pass
 from .io import load_data, get_file_type, load_pds, load_lcurve
 from .io import is_string, save_as_qdp, load_folding
-from .base import create_gti_mask, _assign_value_if_none
+from stingray.gti import create_gti_mask
+from .base import _assign_value_if_none
 from .base import detection_level
 import logging
 import numpy as np

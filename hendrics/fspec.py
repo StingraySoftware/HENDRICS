@@ -3,10 +3,10 @@
 from __future__ import (absolute_import, division,
                         print_function)
 
-from .base import hen_root, cross_gtis, create_gti_mask
-from .base import common_name, _empty, _assign_value_if_none
+from .base import hen_root, common_name, _empty, _assign_value_if_none
 from .io import sort_files, get_file_type, load_data, save_pds, load_lcurve
 from .io import HEN_FILE_EXTENSION
+from stingray.gti import cross_gtis, create_gti_mask
 from stingray.crossspectrum import AveragedCrossspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
 import numpy as np

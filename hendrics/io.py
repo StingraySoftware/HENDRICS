@@ -133,6 +133,8 @@ def get_file_format(fname):
         return 'nc'
     elif ext in ['.evt', '.fits']:
         return 'fits'
+    elif ext in ['.txt', '.qdp', '.csv']:
+        return 'text'
     else:
         raise Exception("File format not recognized")
 
@@ -366,6 +368,9 @@ def save_lcurve(lcurve, fname, lctype='Lightcurve'):
     if lctype == 'Color':
         out['e_intervals'] = lcurve.e_intervals
         out['use_pi'] = int(lcurve.use_pi)
+    elif hasattr(lcurve, 'e_interval'):
+        out['e_interval'] = lcurve.e_interval
+        out['use_pi'] = int(lcurve.use_pi)
 
     if hasattr(lcurve, 'instr'):
         out["instr"] = lcurve.instr
@@ -395,6 +400,8 @@ def load_lcurve(fname):
         lcurve.expo = data["expo"]
     if 'e_intervals' in list(data.keys()):
         lcurve.e_intervals = data["e_intervals"]
+    if 'e_interval' in list(data.keys()):
+        lcurve.e_interval = data["e_interval"]
     if 'use_pi' in list(data.keys()):
         lcurve.use_pi = bool(data["use_pi"])
     if 'header' in list(data.keys()):
