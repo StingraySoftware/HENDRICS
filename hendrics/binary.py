@@ -15,8 +15,12 @@ def get_header_info(obj):
     info.telescope = header['TELESCOP']
     info.instrument = header['INSTRUME']
     info.source = header['OBJECT']
-    info.observer = header['USER']
-    info.user = header['USER']
+    try:
+        user = header['USER']
+    except:
+        user = 'Unknown'
+    info.observer = user
+    info.user = user
     info.tstart = header['TSTART']
     info.tstop = header['TSTOP']
     ra = header['RA_OBJ']
@@ -70,6 +74,10 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
     if tstart is None:
         tstart = events.gti[0, 0]
 
+    if emin is not None and emax is not None and not hasattr(events, 'energy'):
+        raise ValueError('Energy filtering requested for uncalibrated event '
+                         'list')
+
     if emin is not None and emax is not None:
         good = (events.energy >= emin)&(events.energy < emax)
         events.time = events.time[good]
@@ -77,10 +85,7 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
     tstop = events.gti[-1, 1]
     nbin = (tstop - tstart) / bin_time
 
-    print(nbin, nbin/MAXBIN)
-
     lclen = 0
-    print("Saving")
     file = open(filename, 'wb')
     nphot = 0
     for i in np.arange(0, nbin, MAXBIN):
@@ -101,7 +106,6 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
         nphot += len(goodev)
     file.close()
 
-    print(tstart, tstop, MAXBIN, bin_time, nbin)
     lcinfo = type('', (), {})()
     lcinfo.bin_intervals_start = np.floor((events.gti[:, 0] - tstart) / bin_time)
     lcinfo.bin_intervals_stop = np.floor((events.gti[:, 1] - tstart) / bin_time)
@@ -211,12 +215,12 @@ def main_presto(args=None):
         outfile = f.replace(HEN_FILE_EXTENSION, '.dat')
         ftype, contents = get_file_type(f)
         if ftype == 'lc':
-            lcinfo = save_lc_to_binary(contents)
+            lcinfo = save_lc_to_binary(contents, outfile)
         elif ftype == 'events':
             lcinfo = save_events_to_binary(contents, outfile,
-                                           args.bin_time,
-                                           args.energy_interval[0],
-                                           args.energy_interval[1])
+                                           bin_time=args.bin_time,
+                                           emin=args.energy_interval[0],
+                                           emax=args.energy_interval[1])
         else:
             raise ValueError('File type not recognized')
 

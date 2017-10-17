@@ -111,7 +111,10 @@ class TestFullRun(object):
 
     def test_save_binary_events(self):
         f = self.first_event_file
-        hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
+        with pytest.raises(ValueError) as excinfo:
+            hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
+
+        assert 'Energy filtering requested' in str(excinfo)
 
     def test_load_gtis(self):
         """Test loading of GTIs from FITS files."""
@@ -151,6 +154,12 @@ class TestFullRun(object):
         assert hasattr(ev, 'gti')
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, ev.gti)
+
+    def test_save_binary_events(self):
+        f = os.path.join(self.datadir,
+                         'monol_testA_nustar_fpma_ev_calib' +
+                         HEN_FILE_EXTENSION)
+        hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
 
     def test_calibrate_2_cpus(self):
         """Test event file calibration."""
