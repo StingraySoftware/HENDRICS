@@ -5,6 +5,11 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
+import os
+import logging
+import warnings
+import copy
+
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from .base import hen_root, create_gti_mask, cross_gtis, mkdir_p
@@ -12,10 +17,6 @@ from .base import contiguous_regions, calc_countrate, gti_len
 from .base import _look_for_array_in_array, hen_root
 from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
-import os
-import logging
-import warnings
-import copy
 
 
 def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
