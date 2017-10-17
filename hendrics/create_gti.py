@@ -5,8 +5,8 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .io import HEN_FILE_EXTENSION, save_data, load_data, get_file_type
-from .base import create_gti_from_condition, hen_root, create_gti_mask
-from .base import cross_gtis, _assign_value_if_none
+from stingray.gti import cross_gtis, create_gti_from_condition, create_gti_mask
+from .base import hen_root, _assign_value_if_none
 import logging
 import numpy as np
 import sys

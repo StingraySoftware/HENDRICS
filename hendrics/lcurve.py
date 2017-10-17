@@ -12,9 +12,8 @@ import copy
 
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
-from .base import hen_root, create_gti_mask, cross_gtis, mkdir_p
-from .base import contiguous_regions, calc_countrate, gti_len
-from .base import _look_for_array_in_array, hen_root
+from stingray.gti import  create_gti_mask, cross_gtis, contiguous_regions
+from .base import _look_for_array_in_array, hen_root, mkdir_p
 from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
 
