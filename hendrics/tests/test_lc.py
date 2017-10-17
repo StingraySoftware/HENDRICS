@@ -26,6 +26,7 @@ class TestLcurve():
 
 
     def test_treat_event_file_nustar(self):
+        from astropy.io.fits import Header
         treat_event_file(self.fits_fileA)
         lcurve_from_events(self.new_filename)
         newfile = \
@@ -35,6 +36,7 @@ class TestLcurve():
         type, data = get_file_type(newfile)
         assert type == 'lc'
         assert isinstance(data, Lightcurve)
+        Header.fromstring(data.header)
         assert hasattr(data, 'mjdref')
         assert data.mjdref > 0
 

@@ -64,6 +64,7 @@ def save_lc_to_binary(lc, filename):
     lcinfo.tstart = tstart
     lcinfo.dt = bin_time
     lcinfo.tseg = tstop - tstart
+    lcinfo.nphot = np.sum(lc.counts)
     return lcinfo
 
 
@@ -74,11 +75,12 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
     if tstart is None:
         tstart = events.gti[0, 0]
 
-    if emin is not None and emax is not None and not hasattr(events, 'energy'):
-        raise ValueError('Energy filtering requested for uncalibrated event '
-                         'list')
-
     if emin is not None and emax is not None:
+        if not hasattr(events, 'energy') or events.energy is None:
+            raise ValueError(
+                'Energy filtering requested for uncalibrated event '
+                'list')
+
         good = (events.energy >= emin)&(events.energy < emax)
         events.time = events.time[good]
 

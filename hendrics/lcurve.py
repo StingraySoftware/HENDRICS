@@ -324,8 +324,8 @@ def lcurve_from_events(f, safe_interval=0,
         return
 
     lc.header = None
-    if hasattr(events, 'header'):
-        lc.header = events.header
+    if hasattr(evdata, 'header'):
+        lc.header = evdata.header
 
     if gti_split:
         lcs = lc.split_by_gti()
