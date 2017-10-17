@@ -1,10 +1,10 @@
 """Save different input files in PRESTO-readable format."""
 from __future__ import print_function, division
-import argparse
+
 import logging
 from astropy.coordinates import SkyCoord
 import numpy as np
-from .io import high_precision_keyword_read, load_lcurve
+from .io import high_precision_keyword_read, get_file_type, HEN_FILE_EXTENSION
 
 
 def get_header_info(obj):
@@ -64,8 +64,15 @@ def save_lc_to_binary(lc, filename):
 
 
 MAXBIN = 100000000
-def save_events_to_binary(events, filename, tstart, bin_time):
+def save_events_to_binary(events, filename, bin_time, tstart=None,
+                          emin=None, emax=None):
     import struct
+    if tstart is None:
+        tstart = events.gti[0, 0]
+
+    if emin is not None and emax is not None:
+        good = (events.energy >= emin)&(events.energy < emax)
+        events.time = events.time[good]
 
     tstop = events.gti[-1, 1]
     nbin = (tstop - tstart) / bin_time
@@ -106,6 +113,63 @@ def save_events_to_binary(events, filename, tstart, bin_time):
     return lcinfo
 
 
+def save_inf(lcinfo, info, filename):
+    """Save information file."""
+
+    lclen = lcinfo.lclen
+    bin_intervals_start, bin_intervals_stop = lcinfo.bin_intervals_start, lcinfo.bin_intervals_stop
+
+    epoch = info.mjdref + lcinfo.tstart / 86400
+
+    with open(filename, 'w') as f:
+        print(" Data file name without suffix         "
+              " =  {}".format(filename.replace('.inf', '')), file=f)
+        print(" Telescope used                        "
+              " =  {}".format(info.telescope), file=f)
+        print(" Instrument used                       "
+              " =  {}".format(info.instrument), file=f)
+        print(" Object being observed                 "
+              " =  {}".format(info.source), file=f)
+        print(" J2000 Right Ascension (hh:mm:ss.ssss) "
+              " =  {}".format(info.raj), file=f)
+        print(" J2000 Declination     (dd:mm:ss.ssss) "
+              " =  {}".format(info.decj), file=f)
+        print(" Data observed by                      "
+              " =  {}".format(info.observer), file=f)
+        print(" Epoch of observation (MJD)            "
+              " =  {:05.15f}".format(epoch), file=f)
+        print(" Barycentered?           (1=yes, 0=no) "
+              " =  1", file=f)
+        print(" Number of bins in the time series     "
+              " =  {lclen}".format(lclen=lclen), file=f)
+        print(" Width of each time series bin (sec)   "
+              " =  {bintime}".format(bintime=lcinfo.dt), file=f)
+        print(" Any breaks in the data? (1 yes, 0 no) "
+              " =  1", file=f)
+        for i, st in enumerate(bin_intervals_start):
+            print(" On/Off bin pair # {ngti:>2}                  "
+                  " =  {binstart:<11}, "
+                  "{binstop:<11}".format(ngti=i + 1, binstart=st,
+                                         binstop=bin_intervals_stop[i]),
+                  file=f)
+            # print("{:.2f} {:.2f}".format(st / lclen, bin_intervals_stop[i] / lclen), end=" ")
+        print(" Type of observation (EM band)         "
+              " =  X-ray", file=f)
+        print(" Field-of-view diameter (arcsec)       "
+              " =  400", file=f)
+        print(" Central energy (kev)                  "
+              " =  {}".format(info.centralE), file=f)
+        print(" Energy bandpass (kev)                 "
+              " =  {}".format(info.bandpass), file=f)
+        print(" Data analyzed by                      "
+              " =  {}".format(info.user), file=f)
+        print(" Any additional notes:", file=f)
+        print("       T = {length}, Nphot={nphot}".format(length=lcinfo.tseg,
+                                                          nphot=lcinfo.nphot),
+              file=f)
+
+    return
+
 def main_presto(args=None):
     import argparse
     from multiprocessing import Pool
@@ -114,6 +178,11 @@ def main_presto(args=None):
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of input light curves", nargs='+')
+
+    parser.add_argument("-b", "--bin-time", help="Bin time",
+                        type=np.longdouble, default=1)
+    parser.add_argument("-e", "--energy-interval", help="Energy interval",
+                        nargs=2, type=float, default=None)
 
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
@@ -137,3 +206,19 @@ def main_presto(args=None):
     logging.basicConfig(filename='HENbinary.log', level=numeric_level,
                         filemode='w')
 
+    for f in args.files:
+        print(f)
+        outfile = f.replace(HEN_FILE_EXTENSION, '.dat')
+        ftype, contents = get_file_type(f)
+        if ftype == 'lc':
+            lcinfo = save_lc_to_binary(contents)
+        elif ftype == 'events':
+            lcinfo = save_events_to_binary(contents, outfile,
+                                           args.bin_time,
+                                           args.energy_interval[0],
+                                           args.energy_interval[1])
+        else:
+            raise ValueError('File type not recognized')
+
+        info = get_header_info(contents)
+        save_inf(lcinfo, info, f.replace(HEN_FILE_EXTENSION, '.inf'))

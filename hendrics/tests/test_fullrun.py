@@ -109,6 +109,10 @@ class TestFullRun(object):
                                     HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
 
+    def test_save_binary_events(self):
+        f = self.first_event_file
+        hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
+
     def test_load_gtis(self):
         """Test loading of GTIs from FITS files."""
         fits_file = os.path.join(self.datadir, 'monol_testA.evt')
@@ -202,6 +206,13 @@ class TestFullRun(object):
         assert hasattr(lc, 'gti')
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, lc.gti)
+
+    def test_save_binary_lc(self):
+        f = \
+            os.path.join(os.path.join(self.datadir,
+                                      'monol_testA_E3-50_lc' +
+                                      HEN_FILE_EXTENSION))
+        hen.binary.main_presto("{}".format(f).split())
 
     def test_lcurve_B(self):
         command = ('{0} -e {1} {2} --safe-interval '
