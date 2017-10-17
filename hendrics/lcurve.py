@@ -399,7 +399,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     from astropy.io import fits as pf
     from astropy.time import Time
     import numpy as np
-    from .base import create_gti_from_condition
+    from stingray.gti import create_gti_from_condition
 
     outfile = assign_value_if_none(outfile, hen_root(fits_file) + '_lc')
     outfile = outfile.replace(HEN_FILE_EXTENSION, '') + HEN_FILE_EXTENSION

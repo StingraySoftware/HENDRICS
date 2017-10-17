@@ -126,7 +126,7 @@ def ref_mjd(fits_file, hdu=1):
     import collections
 
     if isinstance(fits_file, collections.Iterable) and\
-            not is_string(fits_file):  # pragma: no cover
+            not is_string(fits_file):
         fits_file = fits_file[0]
         logging.info("opening %s" % fits_file)
 
@@ -134,7 +134,7 @@ def ref_mjd(fits_file, hdu=1):
         ref_mjd_int = np.long(read_header_key(fits_file, 'MJDREFI'))
         ref_mjd_float = np.longdouble(read_header_key(fits_file, 'MJDREFF'))
         ref_mjd_val = ref_mjd_int + ref_mjd_float
-    except:  # pragma: no cover
+    except:
         ref_mjd_val = np.longdouble(read_header_key(fits_file, 'MJDREF'))
     return ref_mjd_val
 

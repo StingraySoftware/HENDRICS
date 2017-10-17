@@ -26,7 +26,7 @@ class TestReadEvents():
         assert 'instr' in data
         assert 'gti' in data
         assert 'mjdref' in data
-        assert np.isclose(data.mjdref, ref_mjd(self.fits_fileA))
+        assert np.isclose(data['mjdref'], ref_mjd(self.fits_fileA))
 
     def test_treat_event_file_xmm(self):
         fits_file = os.path.join(self.datadir, 'monol_test_fake.evt')
