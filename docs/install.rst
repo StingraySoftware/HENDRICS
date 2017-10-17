@@ -18,6 +18,16 @@ library <http://www.unidata.ucar.edu/software/netcdf/>`__ with its
 An additional dependency that is now used only sparsely (if installed) but will
 become important in future versions is `Numba <http://numba.pydata.org>`__.
 
+Installing releases
+-------------------
+
+The usual:
+
+::
+
+    $ pip install hendrics
+
+
 Installing the Development version
 ----------------------------------
 
@@ -31,6 +41,7 @@ Download the distribution directory:
     $ git clone git@github.com/StingraySoftware/HENDRICS
 
 Or
+
 ::
 
     $ git clone https://github.com/StingraySoftware/HENDRICS
