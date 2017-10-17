@@ -53,6 +53,32 @@ HENbaseline
                             the baseline stiffer. Typically 1e2 < lam < 1e9
 
 
+HENbinary
+---------
+
+::
+
+    usage: HENbinary [-h] [-b BIN_TIME] [-e ENERGY_INTERVAL ENERGY_INTERVAL]
+                     [--loglevel LOGLEVEL] [--nproc NPROC] [--debug]
+                     files [files ...]
+
+    Save light curves in a format readable to PRESTO
+
+    positional arguments:
+      files                 List of input light curves
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -b BIN_TIME, --bin-time BIN_TIME
+                            Bin time
+      -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
+                            Energy interval
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --nproc NPROC         Number of processors to use
+      --debug               use DEBUG logging level
+
+
 HENcalibrate
 ------------
 
@@ -318,6 +344,7 @@ HENfspec
     usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
                     [--norm NORM] [--noclobber] [-o OUTROOT] [--loglevel LOGLEVEL]
                     [--nproc NPROC] [--back BACK] [--debug] [--save-dyn]
+                    [--ignore-instr]
                     files [files ...]
 
     Create frequency spectra (PDS, CPDS, cospectrum) starting from well-defined
@@ -349,6 +376,7 @@ HENfspec
       --back BACK           Estimated background (non-source) count rate
       --debug               use DEBUG logging level
       --save-dyn            save dynamical power spectrum
+      --ignore-instr        Ignore instrument names in channels
 
 
 HENlags
@@ -627,6 +655,49 @@ HENsumfspec
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
                             tot_(c)pds.nc
+
+
+HENvarenergy
+------------
+
+::
+
+    usage: HENvarenergy [-h] [-f FREQ_INTERVAL FREQ_INTERVAL]
+                        [--energy-values ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES]
+                        [--segment-size SEGMENT_SIZE] [-b BIN_TIME]
+                        [--ref-band REF_BAND REF_BAND] [--rms] [--covariance]
+                        [--use-pi] [--cross-instr] [--lag] [--loglevel LOGLEVEL]
+                        [--debug]
+                        files [files ...]
+
+    Calculates variability-energy spectra
+
+    positional arguments:
+      files                 List of files
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -f FREQ_INTERVAL FREQ_INTERVAL, --freq-interval FREQ_INTERVAL FREQ_INTERVAL
+                            Frequence interval
+      --energy-values ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES
+                            Choose Emin, Emax, number of intervals,interval
+                            spacing, lin or log
+      --segment-size SEGMENT_SIZE
+                            Length of the light curve intervals to be averaged
+      -b BIN_TIME, --bin-time BIN_TIME
+                            Bin time for the light curve
+      --ref-band REF_BAND REF_BAND
+                            Reference band when relevant
+      --rms                 Calculate rms
+      --covariance          Calculate covariance spectrum
+      --use-pi              Energy intervals are specified as PI channels
+      --cross-instr         Use data files in pairs, for example with thereference
+                            band from one and the subbands from the other (useful
+                            in NuSTAR and multiple-detector missions)
+      --lag                 Calculate lag-energy
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               use DEBUG logging level
 
 
 HENzsearch

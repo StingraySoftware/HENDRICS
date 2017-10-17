@@ -12,6 +12,14 @@ hendrics.base module
     :undoc-members:
     :show-inheritance:
 
+hendrics.binary module
+----------------------
+
+.. automodule:: hendrics.binary
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hendrics.calibrate module
 -------------------------
 
@@ -20,10 +28,34 @@ hendrics.calibrate module
     :undoc-members:
     :show-inheritance:
 
+hendrics.colors module
+----------------------
+
+.. automodule:: hendrics.colors
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hendrics.create_gti module
 --------------------------
 
 .. automodule:: hendrics.create_gti
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hendrics.efsearch module
+------------------------
+
+.. automodule:: hendrics.efsearch
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hendrics.exvar module
+---------------------
+
+.. automodule:: hendrics.exvar
     :members:
     :undoc-members:
     :show-inheritance:
@@ -68,6 +100,14 @@ hendrics.lcurve module
     :undoc-members:
     :show-inheritance:
 
+hendrics.modeling module
+------------------------
+
+.. automodule:: hendrics.modeling
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hendrics.plot module
 --------------------
 
@@ -104,6 +144,14 @@ hendrics.sum_fspec module
 -------------------------
 
 .. automodule:: hendrics.sum_fspec
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hendrics.timelags module
+------------------------
+
+.. automodule:: hendrics.timelags
     :members:
     :undoc-members:
     :show-inheritance:

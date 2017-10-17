@@ -8,6 +8,7 @@ from .io import high_precision_keyword_read, get_file_type, HEN_FILE_EXTENSION
 
 
 def get_header_info(obj):
+    """Get header info from a Stingray object."""
     from astropy.io.fits import Header
     header = Header.fromstring(obj.header)
     info = type('', (), {})()
@@ -51,6 +52,19 @@ def _save_to_binary(lc, filename):
 
 
 def save_lc_to_binary(lc, filename):
+    """Save a light curve to binary format.
+
+    Parameters
+    ----------
+    lc : `:class:stingray.Lightcurve`
+        Input light curve
+    filename : str
+        Output file name
+    Returns
+    -------
+    lcinfo : object
+        light curve info
+    """
     tstart = lc.tstart
     tstop = lc.tstart + lc.tseg
     nbin = lc.n
@@ -71,6 +85,31 @@ def save_lc_to_binary(lc, filename):
 MAXBIN = 100000000
 def save_events_to_binary(events, filename, bin_time, tstart=None,
                           emin=None, emax=None):
+    """Save an event list to binary format.
+
+    Parameters
+    ----------
+    events : `:class:stingray.Eventlist`
+        Input event list
+    filename : str
+        Output file name
+    bin_time : float
+        Bin time of the output light curve
+
+    Other parameters
+    ----------------
+    tstart : float
+        Starting time
+    emin : float
+        Minimum energy of the photons
+    emax : float
+        Maximum energy of the photons
+
+    Returns
+    -------
+    lcinfo : object
+        light curve info
+    """
     import struct
     if tstart is None:
         tstart = events.gti[0, 0]
