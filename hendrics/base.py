@@ -246,33 +246,6 @@ def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     return 1 - epsilon
 
 
-def calc_countrate(time, lc, gtis=None, bintime=None):
-    """Calculate the count rate from a light curve.
-
-    Parameters
-    ----------
-    time : array-like
-    lc : array-like
-
-    Returns
-    -------
-    countrate : float
-        The mean count rate
-
-    Other Parameters
-    ----------------
-    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
-    bintime : float
-        The bin time of the light curve. If not specified, the minimum
-        difference between time bins is used
-    """
-    bintime = _assign_value_if_none(bintime, np.min(np.diff(time)))
-    if gtis is not None:
-        mask = create_gti_mask(time, gtis)
-        lc = lc[mask]
-    return np.mean(lc) / bintime
-
-
 def gti_len(gti):
     """Return the total good time from a list of GTIs."""
     return np.sum([g[1] - g[0] for g in gti])
