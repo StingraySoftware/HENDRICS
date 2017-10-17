@@ -163,6 +163,8 @@ class TestFullRun(object):
                          'monol_testA_nustar_fpma_ev_calib' +
                          HEN_FILE_EXTENSION)
         hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
+        assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.dat'))
+        assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.inf'))
 
     def test_calibrate_2_cpus(self):
         """Test event file calibration."""
@@ -228,6 +230,8 @@ class TestFullRun(object):
                                       'monol_testA_E3-50_lc' +
                                       HEN_FILE_EXTENSION))
         hen.binary.main_presto("{}".format(f).split())
+        assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.dat'))
+        assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.inf'))
 
     def test_lcurve_B(self):
         command = ('{0} -e {1} {2} --safe-interval '
