@@ -133,6 +133,8 @@ def get_file_format(fname):
         return 'nc'
     elif ext in ['.evt', '.fits']:
         return 'fits'
+    elif ext in ['.txt', '.qdp', '.csv']:
+        return 'text'
     else:
         raise Exception("File format not recognized")
 
