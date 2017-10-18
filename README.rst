@@ -3,13 +3,12 @@
 HENDRICS - High ENergy Data Reduction Interface from the Command Shell
 ======================================================================
 
-Notice
-~~~~~~
+.. Note ::
 
-This repository contains an evolution of MaLTPyNT. This software is
-being heavily rewritten in order to use Stingray's classes and functions
-whenever possible. To use the original MaLTPyNT, please go to
-`matteobachetti/MaLTPyNT <https://github.com/matteobachetti/MaLTPyNT>`__.
+    This repository contains an evolution of MaLTPyNT. This software is
+    being heavily rewritten in order to use Stingray's classes and functions
+    whenever possible. To use the original MaLTPyNT, please go to
+    `matteobachetti/MaLTPyNT <https://github.com/matteobachetti/MaLTPyNT>`__.
 
 Description
 -----------
