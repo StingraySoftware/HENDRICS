@@ -4,19 +4,36 @@ Installation Instructions
 Prerequisites
 -------------
 
-You'll need a recent python 2.7+ or 3.4+ installation, and the
-`Numpy <http://www.numpy.org/>`__,
-`Matplotlib <http://matplotlib.org/>`__, `Scipy <http://scipy.org/>`__
-and `Astropy <http://www.astropy.org/>`__ libraries. You should also
+You'll need a recent python 2.7+ or 3.4+ installation.
+The main dependency is
+
+1. `Stingray <http://github.com/stingraysoftware/stingray>`__,
+
+which in turn depends on
+
+2. `Numpy <http://www.numpy.org/>`__;
+
+3. `Matplotlib <http://matplotlib.org/>`__;
+
+4. `Scipy <http://scipy.org/>`__;
+
+5. `Astropy <http://www.astropy.org/>`__
+
+**Optional but recommended** dependencies are:
+
+6. the `netCDF 4 library <http://www.unidata.ucar.edu/software/netcdf/>`__ with its
+`python bindings <https://github.com/Unidata/netcdf4-python>`__;
+
+7. `Numba <http://numba.pydata.org>`__;
+
+8. `statsmodels <http://www.statsmodels.org/stable/index.html>`__
+
+9. `emcee <http://dfm.io/emcee/current/>`__
+
+You should also
 have a working `HEASoft <http://heasarc.nasa.gov/lheasoft/>`__
 installation to produce the cleaned event files and to use
 `XSpec <http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html>`__.
-
-An **optional but recommended** dependency is the `netCDF 4
-library <http://www.unidata.ucar.edu/software/netcdf/>`__ with its
-`python bindings <https://github.com/Unidata/netcdf4-python>`__.
-An additional dependency that is now used only sparsely (if installed) but will
-become important in future versions is `Numba <http://numba.pydata.org>`__.
 
 Installing releases
 -------------------

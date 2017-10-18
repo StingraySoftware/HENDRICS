@@ -111,6 +111,7 @@ install_requires = [
     'scipy',
     'numpy',
     'astropy'
+    'stingray'
     ]
 
 # Note that requires and provides should not be included in the call to
