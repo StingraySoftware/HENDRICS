@@ -110,7 +110,7 @@ install_requires = [
     'matplotlib',
     'scipy',
     'numpy',
-    'astropy'
+    'astropy',
     'stingray'
     ]
 
