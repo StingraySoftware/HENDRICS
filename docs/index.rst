@@ -160,7 +160,7 @@ choose carefully the category: bugs, enhancements, etc.
 
 Acknowledgements
 ----------------
-HENDRICS 2.0
+HENDRICS 3.0
 ~~~~~~~~~~~~
 TBW
 
