@@ -162,7 +162,8 @@ def save_inf(lcinfo, info, filename):
     """Save information file."""
 
     lclen = lcinfo.lclen
-    bin_intervals_start, bin_intervals_stop = lcinfo.bin_intervals_start, lcinfo.bin_intervals_stop
+    bin_intervals_start, bin_intervals_stop = \
+        lcinfo.bin_intervals_start, lcinfo.bin_intervals_stop
 
     epoch = info.mjdref + lcinfo.tstart / 86400
 
@@ -227,7 +228,7 @@ def main_presto(args=None):
     parser.add_argument("-b", "--bin-time", help="Bin time",
                         type=np.longdouble, default=1)
     parser.add_argument("-e", "--energy-interval", help="Energy interval",
-                        nargs=2, type=float, default=None)
+                        nargs=2, type=float, default=[None, None])
 
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
