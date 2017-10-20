@@ -909,6 +909,7 @@ def _get_gti_from_all_extensions(lchdulist, accepted_gtistrings=['GTI'],
     gti_lists = []
     for i in det_numbers:
         acc_gti_str = [x + '{:02d}'.format(i) for x in accepted_gtistrings]
+        acc_gti_str += [x + '{:d}'.format(i) for x in accepted_gtistrings]
         gti_lists.append(_get_gti_from_extension(lchdulist, acc_gti_str))
 
     return cross_gtis(gti_lists)
