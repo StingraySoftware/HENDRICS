@@ -946,6 +946,36 @@ def load_gtis(fits_file, gtistring=None):
     return gti_list
 
 
+def _get_detector_id(lctable):
+    """Multi-mission detector id finder
+
+    Examples
+    --------
+    >>> from astropy.io import fits
+    >>> import numpy as np
+    >>> a = fits.Column(name='CCDNR', array=np.array([1, 2]), format='K')
+    >>> t = fits.TableHDU.from_columns([a])
+    >>> det_id1 = _get_detector_id(t.data)
+    >>> a = fits.Column(name='pcuid', array=np.array([1, 2]), format='K')
+    >>> t = fits.TableHDU.from_columns([a])
+    >>> det_id2 = _get_detector_id(t.data)
+    >>> np.all(det_id1 == det_id2)
+    True
+    >>> a = fits.Column(name='asdfasdf', array=np.array([1, 2]), format='K')
+    >>> t = fits.TableHDU.from_columns([a])
+    >>> _get_detector_id(t.data) is None
+    True
+    """
+    for column in ['CCDNR',  # XMM
+                   'ccd_id',  # Chandra
+                   'PCUID']:  # XTE
+        for name in lctable.columns.names:
+            if column.lower() == name.lower():
+                return np.array(lctable.field(name), dtype=np.int)
+
+    return None
+
+
 def load_events_and_gtis(fits_file, additional_columns=None,
                          gtistring='GTI,STDGTI',
                          gti_file=None, hduname='EVENTS', column='TIME'):
@@ -990,14 +1020,8 @@ def load_events_and_gtis(fits_file, additional_columns=None,
 
     # Read event list
     ev_list = np.array(lctable.field(column), dtype=np.longdouble)
-    det_number = None
-    detector_id = None
-    if 'CCDNR' in lctable.columns.names:
-        detector_id = np.array(lctable.field('CCDNR'), dtype=np.int)
-        det_number = list(set(detector_id))
-    if 'PCUID' in lctable.columns.names:
-        detector_id = np.array(lctable.field('PCUID'), dtype=np.int)
-
+    detector_id = _get_detector_id(lctable)
+    det_number = None if detector_id is None else list(set(detector_id))
     header = lchdulist[1].header
     # Read TIMEZERO keyword and apply it to events
     try:
