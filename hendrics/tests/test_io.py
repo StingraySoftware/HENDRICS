@@ -275,6 +275,11 @@ model = models.Const1D()
             b, kind, _ = load_model('bubu.txt')
         assert 'Unknown file type' in str(record.value)
 
+    def test_load_data_fails(self):
+        with pytest.raises(TypeError) as record:
+            load_data('afile.fits')
+        assert "The file type is not recognized" in str(record.value)
+
     @classmethod
     def teardown_class(cls):
         import shutil

@@ -734,6 +734,10 @@ def load_data(fname):
         return _load_data_pickle(fname)
     elif get_file_format(fname) == 'nc':
         return _load_data_nc(fname)
+    else:
+        raise TypeError('The file type is not recognized. Did you convert the'
+                        ' original files into HENDRICS format (e.g. with '
+                        'HENreadevents or HENlcurve)?')
 
 
 # QDP format is often used in FTOOLS
