@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import six
 from abc import ABCMeta, abstractmethod
 from matplotlib.widgets import Slider, Button
+import astropy.units as u
 
 
 @six.add_metaclass(ABCMeta)
@@ -224,7 +225,7 @@ class InteractivePhaseogram(BasePhaseogram):
 
 
 class BinaryPhaseogram(BasePhaseogram):
-    def __init__(self, *args, orbital_period=1, asini=0, t0=0, **kwargs):
+    def __init__(self, *args, orbital_period=None, asini=0, t0=None, **kwargs):
         self.orbital_period = orbital_period
         self.asini = asini
         self.t0 = t0
@@ -244,14 +245,20 @@ class BinaryPhaseogram(BasePhaseogram):
 
         self.speriod = \
             Slider(self.slider_axes[0],
-                   'Delta Orb. PEr.', 0, delta_period, valinit=self.dperiod)
+                   'Orb. PEr. (s)',
+                   np.max([0, self.orbital_period - delta_period]),
+                   self.orbital_period + delta_period,
+                   valinit=self.orbital_period)
+
         self.sasini = \
             Slider(self.slider_axes[1],
-                   'Delta a sin i / c', 0, delta_asini, valinit=self.dasini)
+                   'a sin i / c (l-sec)', 0, self.asini + delta_asini,
+                   valinit=self.asini)
 
         self.st0 = \
             Slider(self.slider_axes[2],
-                   'Delta T0', -delta_t0, delta_t0, valinit=self.dt0)
+                   'T0 (MET)', self.t0 - delta_t0, self.t0 + delta_t0,
+                   valinit=self.t0)
 
         self.speriod.on_changed(self.update)
         self.sasini.on_changed(self.update)
@@ -263,33 +270,29 @@ class BinaryPhaseogram(BasePhaseogram):
         self.fig.canvas.draw_idle()
 
     def _read_sliders(self):
-        dt0 = self.st0.val
-        dasini = self.sasini.val
-        dorbital_period = self.speriod.val * 86400
-        return dorbital_period, dasini, dt0
+        return self.speriod.val, self.sasini.val, self.st0.val
 
     def _line_delay_fun(self, times):
-        dorbital_period, dasini, dt0 = self._read_sliders()
-        orbital_period = self.orbital_period + dorbital_period
-        asini = self.asini + dasini
-        t0 = self.t0 + dt0
+        orbital_period, asini, t0 = self._read_sliders()
 
         new_values = asini * np.sin(2 * np.pi * (times - t0) / orbital_period)
         old_values = \
             self.asini * np.sin(2 * np.pi * (times - self.t0) /
-                                self.orbital_period)
-        return new_values - old_values
+                                (self.orbital_period))
+        return (new_values - old_values) * self.freq
 
     def _delay_fun(self, times):
+        if self.t0 is None:
+            self.t0 = self.pepoch
+        if self.orbital_period is None:
+            self.orbital_period = self.ev_times[-1] - self.ev_times[0]
+
         return \
             self.asini * np.sin(2 * np.pi * (times - self.t0) /
                                 self.orbital_period)
 
     def recalculate(self, event):
-        dorbital_period, dasini, dt0 = self._read_sliders()
-        self.orbital_period = self.orbital_period + dorbital_period
-        self.asini = self.asini + dasini
-        self.t0 = self.t0 + dt0
+        self.orbital_period, self.asini, self.t0 = self._read_sliders()
 
         corrected_times = self.ev_times - self._delay_fun(self.ev_times)
 
@@ -298,14 +301,17 @@ class BinaryPhaseogram(BasePhaseogram):
                        nph=self.nph, nt=self.nt, pepoch=self.pepoch,
                        fddot=self.fddot)
 
-        self.reset(1)
+        self._set_lines(False)
+        self.pcolor.set_array(self.phaseogr.T.ravel())
+        self.sasini.valinit = self.asini
+        self.speriod.valinit = self.orbital_period
+        self.st0.valinit = self.t0
 
         self.fig.canvas.draw()
         print("------------------------")
-        print("PEPOCH    {} + MJDREF".format(self.pepoch / 86400))
-        print("F0        {}".format(self.freq))
-        print("F1        {}".format(self.fdot))
-        print("F2        {}".format(self.fddot))
+        print("PB (s)     {}".format(self.orbital_period))
+        print("A1 (l-s)   {}".format(self.asini))
+        print("T0 (MET)   {}".format(self.t0))
         print("------------------------")
 
     def quit(self, event):
