@@ -2,8 +2,8 @@ from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
-from hendrics.efsearch import main_efsearch, main_zsearch, main_phaseogram, \
-    run_interactive_phaseogram
+from hendrics.efsearch import main_efsearch, main_zsearch
+from hendrics.phaseogram import main_phaseogram, run_interactive_phaseogram
 from hendrics.plot import plot_folding
 import os
 import pytest
