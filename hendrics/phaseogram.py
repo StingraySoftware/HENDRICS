@@ -40,6 +40,9 @@ class BasePhaseogram(object):
 
         self.pcolor = plt.pcolormesh(phases, times, self.phaseogr.T,
                                      cmap='magma')
+        plt.xlabel('Phase')
+        plt.ylabel('Time')
+        plt.colorbar()
         self.lines = []
         self.line_phases = np.arange(-2, 3, 0.5)
         for ph0 in self.line_phases:
@@ -47,9 +50,7 @@ class BasePhaseogram(object):
                                 lw=2, color='w')
             self.lines.append(newline)
 
-        plt.xlabel('Phase')
-        plt.ylabel('Time')
-        plt.colorbar()
+        plt.xlim([0, 2])
 
         axcolor = 'lightgoldenrodyellow'
         self.axfreq = plt.axes([0.25, 0.1, 0.5, 0.03], facecolor=axcolor)
@@ -94,8 +95,7 @@ class BasePhaseogram(object):
         for s in self.sliders:
             s.reset()
         self.pcolor.set_array(self.phaseogr.T.ravel())
-        for i, ph0 in enumerate(self.line_phases):
-            self.lines[i].set_xdata(ph0)
+        self._set_lines()
 
     @abstractmethod
     def quit(self):
@@ -104,6 +104,13 @@ class BasePhaseogram(object):
     @abstractmethod
     def get_values(self):
         pass
+
+    def _set_lines(self, func=None):
+        if func is None:
+            func = lambda input: 0
+
+        for i, ph0 in enumerate(self.line_phases):
+            self.lines[i].set_xdata(ph0 + func(self.times))
 
 
 class InteractivePhaseogram(BasePhaseogram):
@@ -154,9 +161,8 @@ class InteractivePhaseogram(BasePhaseogram):
         delay_fun = lambda times: (times - pepoch).astype(np.float64) * freq + \
                                    0.5 * (times - pepoch) ** 2 * fdot + \
                                    1/6 * (times - pepoch) ** 3 * fddot
-        self.l1.set_xdata(0.5 + delay_fun(self.times))
-        self.l2.set_xdata(1 + delay_fun(self.times))
-        self.l3.set_xdata(1.5 + delay_fun(self.times))
+
+        self._set_lines(delay_fun)
 
         self.fig.canvas.draw_idle()
 
@@ -175,9 +181,7 @@ class InteractivePhaseogram(BasePhaseogram):
                        nph=self.nph, nt=self.nt, pepoch=pepoch,
                        fddot=self.fddot)
 
-        self.l1.set_xdata(0.5)
-        self.l2.set_xdata(1)
-        self.l3.set_xdata(1.5)
+        self._set_lines()
 
         self.sfreq.reset()
         self.sfdot.reset()
