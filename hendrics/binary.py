@@ -24,8 +24,13 @@ def get_header_info(obj):
     info.user = user
     info.tstart = header['TSTART']
     info.tstop = header['TSTOP']
-    ra = header['RA_OBJ']
-    dec = header['DEC_OBJ']
+    try:
+        ra = header['RA_OBJ']
+        dec = header['DEC_OBJ']
+    except:
+        ra = header['RA_PNT']
+        dec = header['DEC_PNT']
+
     a = SkyCoord(ra, dec, unit="degree")
     info.raj = \
         (a.ra.to_string("hourangle")
@@ -34,7 +39,7 @@ def get_header_info(obj):
                  ).replace("s", "").replace("d", ":").replace("m", ":")
     if hasattr(obj, 'e_interval'):
         e0, e1 = obj.e_interval
-    elif hasattr(obj, 'energy'):
+    elif hasattr(obj, 'energy') and obj.energy is not None:
         e0, e1 = np.min(obj.energy), np.max(obj.energy)
     else:
         e0, e1 = 0, 0
