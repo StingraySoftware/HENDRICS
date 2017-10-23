@@ -70,31 +70,6 @@ class TestEFsearch():
         assert efperiod.N == 2
         # os.unlink(outfile)
 
-    def test_phaseogram_input_periodogram(self):
-        evfile = self.dum
-        main_phaseogram([evfile, '--periodogram',
-                         'events_Z2n' + HEN_FILE_EXTENSION, '--test'])
-
-    def test_phaseogram_input_f(self):
-        evfile = self.dum
-        main_phaseogram([evfile, '-f', '9.9', '--test'])
-
-    def test_phaseogram_input_f_change(self):
-        evfile = self.dum
-        ip = run_interactive_phaseogram(evfile, 9.9, test=True)
-        ip.update(1)
-        ip.recalculate(1)
-        ip.reset(1)
-        ip.fdot = 2
-        f, fdot, fddot = ip.get_values()
-        assert fdot == 2
-        assert f == 9.9
-
-    def test_phaseogram_raises(self):
-        evfile = self.dum
-        with pytest.raises(ValueError):
-            main_phaseogram([evfile, '--test'])
-
     @classmethod
     def teardown_class(cls):
         os.unlink(cls.dum)
