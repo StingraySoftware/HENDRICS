@@ -109,15 +109,15 @@ class BasePhaseogram(object):
             plt.show()
 
     @abstractmethod
-    def _construct_widgets(self, **kwargs):
+    def _construct_widgets(self, **kwargs):  # pragma: no cover
         pass
 
     @abstractmethod
-    def update(self, val):
+    def update(self, val):  # pragma: no cover
         pass
 
     @abstractmethod
-    def recalculate(self, event):
+    def recalculate(self, event):  # pragma: no cover
         pass
 
     def reset(self, event):
@@ -173,24 +173,24 @@ class BasePhaseogram(object):
             s.on_changed(self.update)
 
     @abstractmethod
-    def quit(self, event):
+    def quit(self, event):  # pragma: no cover
         pass
 
     @abstractmethod
-    def get_values(self):
+    def get_values(self):  # pragma: no cover
         pass
 
     @abstractmethod
-    def _line_delay_fun(self, times):
+    def _line_delay_fun(self, times):  # pragma: no cover
         pass
 
     @abstractmethod
-    def _delay_fun(self, times):
+    def _delay_fun(self, times):  # pragma: no cover
         """This is the delay function _without_ frequency derivatives."""
         pass
 
     @abstractmethod
-    def _read_sliders(self):
+    def _read_sliders(self):  # pragma: no cover
         pass
 
     def _set_lines(self, apply_delay=True):
