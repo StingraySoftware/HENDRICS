@@ -26,18 +26,6 @@ class TestEFsearch():
         cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
 
-    def test_efsearch(self):
-        evfile = self.dum
-        main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
-                       '--fit-candidates'])
-        outfile = 'events_EF' + HEN_FILE_EXTENSION
-        assert os.path.exists(outfile)
-        plot_folding([outfile], ylog=True)
-        efperiod = load_folding(outfile)
-        assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
-                          atol=1/25.25)
-        os.unlink(outfile)
-
     def test_zsearch(self):
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
@@ -51,24 +39,55 @@ class TestEFsearch():
                           atol=1/25.25)
         # Defaults to 2 harmonics
         assert efperiod.N == 2
-        os.unlink(outfile)
 
-    def test_zsearch_fdots(self):
+    def test_phaseogram_input_periodogram(self):
         evfile = self.dum
-        main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
-                      '--fdotmin', ' -0.1', '--fdotmax', '0.1',
-                      '--fit-candidates', '--fit-frequency',
-                      str(self.pulse_frequency)])
-        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
-        assert os.path.exists(outfile)
-        plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
-        efperiod = load_folding(outfile)
-        assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
-                          atol=1/25.25)
-        # Defaults to 2 harmonics
-        assert len(efperiod.fdots) > 1
-        assert efperiod.N == 2
-        # os.unlink(outfile)
+        main_phaseogram([evfile, '--periodogram',
+                         'events_Z2n' + HEN_FILE_EXTENSION, '--test'])
+
+    def test_phaseogram_input_f(self):
+        evfile = self.dum
+        main_phaseogram([evfile, '-f', '9.9', '--test'])
+
+    def test_phaseogram_input_f_change(self):
+        evfile = self.dum
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True)
+        ip.update(1)
+        ip.recalculate(1)
+        ip.reset(1)
+        ip.fdot = 2
+        f, fdot, fddot = ip.get_values()
+        assert fdot == 2
+        assert f == 9.9
+
+    def test_phaseogram_raises(self):
+        evfile = self.dum
+        with pytest.raises(ValueError):
+            main_phaseogram([evfile, '--test'])
+
+    def test_phaseogram_input_periodogram_binary(self):
+        evfile = self.dum
+        main_phaseogram([evfile, '--binary', '--periodogram',
+                         'events_Z2n' + HEN_FILE_EXTENSION, '--test'])
+
+    def test_phaseogram_input_f_binary(self):
+        evfile = self.dum
+        main_phaseogram([evfile, '--binary', '-f', '9.9', '--test'])
+
+    def test_phaseogram_input_f_change_binary(self):
+        evfile = self.dum
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True, binary=True)
+        ip.update(1)
+        ip.recalculate(1)
+        ip.reset(1)
+        ip.orbital_period = 2
+        orbital_period, fdot, fddot = ip.get_values()
+        assert orbital_period == 2
+
+    def test_phaseogram_raises_binary(self):
+        evfile = self.dum
+        with pytest.raises(ValueError):
+            main_phaseogram([evfile, '--test'])
 
     @classmethod
     def teardown_class(cls):
