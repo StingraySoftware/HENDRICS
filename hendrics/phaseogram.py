@@ -225,10 +225,20 @@ class InteractivePhaseogram(BasePhaseogram):
 
 
 class BinaryPhaseogram(BasePhaseogram):
-    def __init__(self, *args, orbital_period=None, asini=0, t0=None, **kwargs):
-        self.orbital_period = orbital_period
-        self.asini = asini
-        self.t0 = t0
+    def __init__(self, *args, **kwargs):
+        self.orbital_period=None
+        self.asini=0
+        self.t0=None
+
+        if 'orbital_period' in kwargs:
+            self.orbital_period = kwargs['orbital_period']
+            kwargs.pop('orbital_period')
+        if 'asini' in kwargs:
+            self.asini = kwargs['asini']
+            kwargs.pop('asini')
+        if 't0' in kwargs:
+            self.t0 = kwargs['t0']
+            kwargs.pop('t0')
         BasePhaseogram.__init__(self, *args, **kwargs)
 
     def _construct_widgets(self):
