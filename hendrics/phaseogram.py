@@ -332,13 +332,17 @@ class BinaryPhaseogram(BasePhaseogram):
 
 
 def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
-                               nt=32, binary=False, test=False):
+                               nt=32, binary=False, test=False,
+                               binary_parameters=[None, 0, None]):
     events = load_events(event_file)
 
     if binary:
         ip = BinaryPhaseogram(events.time, freq, nph=nbin, nt=nt,
-                                   fdot=fdot, test=test, fddot=fddot,
-                                   pepoch=events.gti[0, 0])
+                              fdot=fdot, test=test, fddot=fddot,
+                              pepoch=events.gti[0, 0],
+                              orbital_period=binary_parameters[0],
+                              asini=binary_parameters[1],
+                              t0=binary_parameters[2])
     else:
         ip = InteractivePhaseogram(events.time, freq, nph=nbin, nt=nt,
                                    fdot=fdot, test=test, fddot=fddot,
@@ -367,6 +371,9 @@ def main_phaseogram(args=None):
     parser.add_argument("--binary", help="Interact on binary parameters "
                                          "instead of frequency derivatives",
                         default=False, action='store_true')
+    parser.add_argument("--binary-parameters",
+                        help="Initial values for binary parameters",
+                        default=[None, 0, None], nargs=3)
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
     parser.add_argument("--test",
@@ -401,4 +408,5 @@ def main_phaseogram(args=None):
 
     ip = run_interactive_phaseogram(args.file, freq=frequency, fdot=fdot,
                                     nbin=args.nbin, nt=args.ntimes,
-                                    test=args.test, binary=args.binary)
+                                    test=args.test, binary=args.binary,
+                                    binary_parameters=args.binary_parameters)
