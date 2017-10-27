@@ -2,14 +2,15 @@ from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
-from hendrics.efsearch import main_efsearch, main_zsearch
+from hendrics.efsearch import main_zsearch
 from hendrics.phaseogram import main_phaseogram, run_interactive_phaseogram
+from hendrics.phaseogram import BasePhaseogram
 from hendrics.plot import plot_folding
 import os
 import pytest
 
 
-class TestEFsearch():
+class TestPhaseogram():
     def setup_class(cls):
         cls.pulse_frequency = 1/0.101
         cls.tstart = 0
@@ -80,6 +81,8 @@ class TestEFsearch():
         ip.update(1)
         ip.recalculate(1)
         ip.reset(1)
+        ip.zoom_in(1)
+        ip.zoom_out(1)
         ip.orbital_period = 2
         orbital_period, fdot, fddot = ip.get_values()
         assert orbital_period == 2
@@ -92,4 +95,3 @@ class TestEFsearch():
     @classmethod
     def teardown_class(cls):
         os.unlink(cls.dum)
-

@@ -17,6 +17,19 @@ from matplotlib.widgets import Slider, Button
 import astropy.units as u
 
 
+class SliderOnSteroids(Slider):
+    def __init__(self, *args, **kwargs):
+        self.hardvalmin = None
+        self.hardvalmax = None
+        if 'hardvalmin' in kwargs:
+            self.hardvalmin = kwargs['hardvalmin']
+            kwargs.pop('hardvalmin')
+        if 'hardvalmax' in kwargs:
+            self.hardvalmax = kwargs['hardvalmax']
+            kwargs.pop('hardvalmax')
+        Slider.__init__(self, *args, **kwargs)
+
+
 @six.add_metaclass(ABCMeta)
 class BasePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, test=False,
@@ -54,7 +67,7 @@ class BasePhaseogram(object):
 
         plt.xlim([0, 2])
 
-        axcolor = 'lightgoldenrodyellow'
+        axcolor = '#ff8888'
         self.slider_axes = []
         self.slider_axes.append(plt.axes([0.25, 0.1, 0.5, 0.03],
                                          facecolor=axcolor))
@@ -65,20 +78,30 @@ class BasePhaseogram(object):
 
         self._construct_widgets(**kwargs)
 
-        self.recalcax = plt.axes([0.4, 0.020, 0.2, 0.04])
+        self.closeax = plt.axes([0.15, 0.020, 0.15, 0.04])
+        self.button_close = Button(self.closeax, 'Quit', color=axcolor,
+                                   hovercolor='0.8')
+
+        self.recalcax = plt.axes([0.3, 0.020, 0.15, 0.04])
         self.button_recalc = Button(self.recalcax, 'Recalculate',
                                     color=axcolor,
                                     hovercolor='0.975')
 
-        self.closeax = plt.axes([0.2, 0.020, 0.2, 0.04])
-        self.button_close = Button(self.closeax, 'Quit', color=axcolor,
-                                   hovercolor='0.8')
-
-        self.resetax = plt.axes([0.6, 0.020, 0.2, 0.04])
-        self.button = Button(self.resetax, 'Reset', color=axcolor,
+        self.resetax = plt.axes([0.45, 0.020, 0.15, 0.04])
+        self.button_reset = Button(self.resetax, 'Reset', color=axcolor,
                              hovercolor='0.975')
 
-        self.button.on_clicked(self.reset)
+        self.zoominax = plt.axes([0.6, 0.020, 0.15, 0.04])
+        self.button_zoomin = Button(self.zoominax, 'Zoom in', color=axcolor,
+                                    hovercolor='0.975')
+
+        self.zoomoutax = plt.axes([0.75, 0.020, 0.15, 0.04])
+        self.button_zoomout = Button(self.zoomoutax, 'Zoom out', color=axcolor,
+                                     hovercolor='0.975')
+
+        self.button_reset.on_clicked(self.reset)
+        self.button_zoomin.on_clicked(self.zoom_in)
+        self.button_zoomout.on_clicked(self.zoom_out)
         self.button_recalc.on_clicked(self.recalculate)
         self.button_close.on_clicked(self.quit)
 
@@ -86,15 +109,15 @@ class BasePhaseogram(object):
             plt.show()
 
     @abstractmethod
-    def _construct_widgets(self, **kwargs):
+    def _construct_widgets(self, **kwargs):  # pragma: no cover
         pass
 
     @abstractmethod
-    def update(self, val):
+    def update(self, val):  # pragma: no cover
         pass
 
     @abstractmethod
-    def recalculate(self, event):
+    def recalculate(self, event):  # pragma: no cover
         pass
 
     def reset(self, event):
@@ -103,25 +126,71 @@ class BasePhaseogram(object):
         self.pcolor.set_array(self.phaseogr.T.ravel())
         self._set_lines(False)
 
+    def zoom_in(self, event):
+        for s in self.sliders:
+            valinit = s.val
+            valrange = s.valmax - s.valmin
+            valmin = valinit - valrange / 4
+            if s.hardvalmin is not None:
+                valmin = max(s.hardvalmin, valmin)
+            valmax = valinit + valrange / 4
+            if s.hardvalmax is not None:
+                valmax = min(s.hardvalmax, valmax)
+            label = s.label.get_text()
+            ax = s.ax
+            ax.clear()
+
+            s.__init__(ax, label, valmin=valmin, valmax=valmax,
+                       valinit=valinit, hardvalmax=s.hardvalmax,
+                       hardvalmin=s.hardvalmin)
+            ax.text(0, 0, str(valmin), transform=ax.transAxes,
+                    horizontalalignment='left', color='white')
+            ax.text(1, 0, str(valmax), transform=ax.transAxes,
+                    horizontalalignment='right', color='white')
+            s.on_changed(self.update)
+
+    def zoom_out(self, event):
+        for s in self.sliders:
+            valinit = s.val
+            valrange = s.valmax - s.valmin
+            valmin = valinit - valrange
+            if s.hardvalmin is not None:
+                valmin = max(s.hardvalmin, valmin)
+            valmax = valinit + valrange
+            if s.hardvalmax is not None:
+                valmax = min(s.hardvalmax, valmax)
+            label = s.label.get_text()
+            ax = s.ax
+            ax.clear()
+
+            s.__init__(ax, label, valmin=valmin, valmax=valmax,
+                       valinit=valinit, hardvalmax=s.hardvalmax,
+                       hardvalmin=s.hardvalmin)
+            ax.text(0, 0, str(valmin), transform=ax.transAxes,
+                    horizontalalignment='left', color='white')
+            ax.text(1, 0, str(valmax), transform=ax.transAxes,
+                    horizontalalignment='right', color='white')
+            s.on_changed(self.update)
+
     @abstractmethod
-    def quit(self, event):
+    def quit(self, event):  # pragma: no cover
         pass
 
     @abstractmethod
-    def get_values(self):
+    def get_values(self):  # pragma: no cover
         pass
 
     @abstractmethod
-    def _line_delay_fun(self, times):
+    def _line_delay_fun(self, times):  # pragma: no cover
         pass
 
     @abstractmethod
-    def _delay_fun(self, times):
+    def _delay_fun(self, times):  # pragma: no cover
         """This is the delay function _without_ frequency derivatives."""
         pass
 
     @abstractmethod
-    def _read_sliders(self):
+    def _read_sliders(self):  # pragma: no cover
         pass
 
     def _set_lines(self, apply_delay=True):
@@ -131,7 +200,7 @@ class BasePhaseogram(object):
             func = lambda x: 0
 
         for i, ph0 in enumerate(self.line_phases):
-            self.lines[i].set_xdata(ph0 + func(self.times))
+            self.lines[i].set_xdata(ph0 + func(self.times) - func(self.times[0]))
 
 
 class InteractivePhaseogram(BasePhaseogram):
@@ -156,18 +225,22 @@ class InteractivePhaseogram(BasePhaseogram):
         delta_dfddot = delta_dfddot_start / 10 ** self.dfddot_order_of_mag
 
         self.sfreq = \
-            Slider(self.slider_axes[0],
-                   'Delta freq x$10^{}$'.format(self.df_order_of_mag),
-                   -delta_df, delta_df, valinit=self.df)
+            SliderOnSteroids(
+                self.slider_axes[0],
+                'Delta freq x$10^{}$'.format(self.df_order_of_mag),
+                -delta_df, delta_df, valinit=self.df,
+                             hardvalmin=0)
         self.sfdot = \
-            Slider(self.slider_axes[1],
-                   'Delta fdot x$10^{}$'.format(self.dfdot_order_of_mag),
-                   -delta_dfdot, delta_dfdot, valinit=self.dfdot)
+            SliderOnSteroids(
+                self.slider_axes[1],
+                'Delta fdot x$10^{}$'.format(self.dfdot_order_of_mag),
+                -delta_dfdot, delta_dfdot, valinit=self.dfdot)
 
         self.sfddot = \
-            Slider(self.slider_axes[2],
-                   'Delta fddot x$10^{}$'.format(self.dfddot_order_of_mag),
-                   -delta_dfddot, delta_dfddot, valinit=self.dfddot)
+            SliderOnSteroids(
+                self.slider_axes[2],
+                'Delta fddot x$10^{}$'.format(self.dfddot_order_of_mag),
+                -delta_dfddot, delta_dfddot, valinit=self.dfddot)
 
         self.sfreq.on_changed(self.update)
         self.sfdot.on_changed(self.update)
@@ -254,21 +327,27 @@ class BinaryPhaseogram(BasePhaseogram):
         delta_t0 = delta_period
 
         self.speriod = \
-            Slider(self.slider_axes[0],
-                   'Orb. PEr. (s)',
-                   np.max([0, self.orbital_period - delta_period]),
-                   self.orbital_period + delta_period,
-                   valinit=self.orbital_period)
+            SliderOnSteroids(
+                self.slider_axes[0],
+                'Orb. PEr. (s)',
+                np.max([0, self.orbital_period - delta_period]),
+                self.orbital_period + delta_period,
+                valinit=self.orbital_period,
+                hardvalmin=0)
 
         self.sasini = \
-            Slider(self.slider_axes[1],
-                   'a sin i / c (l-sec)', 0, self.asini + delta_asini,
-                   valinit=self.asini)
+            SliderOnSteroids(
+                self.slider_axes[1],
+                'a sin i / c (l-sec)', 0, self.asini + delta_asini,
+                valinit=self.asini,
+                hardvalmin=0)
 
         self.st0 = \
-            Slider(self.slider_axes[2],
-                   'T0 (MET)', self.t0 - delta_t0, self.t0 + delta_t0,
-                   valinit=self.t0)
+            SliderOnSteroids(
+                self.slider_axes[2],
+                'T0 (MET)', self.t0 - delta_t0, self.t0 + delta_t0,
+                valinit=self.t0,
+                hardvalmin=0)
 
         self.speriod.on_changed(self.update)
         self.sasini.on_changed(self.update)
@@ -316,10 +395,12 @@ class BinaryPhaseogram(BasePhaseogram):
         self.sasini.valinit = self.asini
         self.speriod.valinit = self.orbital_period
         self.st0.valinit = self.t0
-
+        self.st0.valmin = self.t0 - self.orbital_period
+        self.st0.valmax = self.t0 + self.orbital_period
         self.fig.canvas.draw()
         print("------------------------")
-        print("PB (s)     {}".format(self.orbital_period))
+        print("PB (s)     {}  ({} d)".format(self.orbital_period,
+                                             self.orbital_period / 86400))
         print("A1 (l-s)   {}".format(self.asini))
         print("T0 (MET)   {}".format(self.t0))
         print("------------------------")
