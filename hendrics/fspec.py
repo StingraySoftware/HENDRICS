@@ -231,9 +231,6 @@ def calc_fspec(files, fftlen,
     [5] Miyamoto et al. 1991, ApJ, 383, 784
 
     """
-    if normalization.lower() not in ['leahy', 'rms']:
-        logging.warning('Beware! Unknown normalization!')
-        normalization = 'leahy'
 
     logging.info('Using %s normalization' % normalization)
 
@@ -459,6 +456,11 @@ def main(args=None):
     fftlen = args.fftlen
     pdsrebin = args.rebin
     normalization = args.norm
+    if normalization.lower() not in ["frac", "abs", "leahy", "none", "rms"]:
+        warnings.warn('Beware! Unknown normalization!')
+        normalization = 'leahy'
+    if normalization == 'rms':
+        normalization = 'frac'
 
     do_cpds = do_pds = do_cos = do_lag = False
     kinds = args.kind.split(',')
