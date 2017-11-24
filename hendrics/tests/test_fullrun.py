@@ -460,6 +460,19 @@ class TestFullRun(object):
         assert np.allclose(gti_to_test, out_lc.gti)
 
 
+    def test_pds_leahy(self):
+        """Test PDS production."""
+        lc = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
+                HEN_FILE_EXTENSION
+        hen.io.main([lc])
+        command = \
+            '{0} -f 128 -k PDS --norm leahy'.format(lc)
+        hen.fspec.main(command.split())
+
+        assert os.path.exists(os.path.join(self.datadir,
+                                           'monol_testA_E3-50_pds')
+                              + HEN_FILE_EXTENSION)
+
     def test_pds(self):
         """Test PDS production."""
         command = \
@@ -492,6 +505,33 @@ class TestFullRun(object):
                                   HEN_FILE_EXTENSION)
         command = '{0} -f 128'.format(lcurve_txt)
         hen.fspec.main(command.split())
+
+    def test_cpds_rms_norm(self):
+        """Test CPDS production."""
+        command = \
+            '{0} {1} -f 128 --save-dyn -k CPDS --norm rms -o {2}'.format(
+                os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
+                HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
+                HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, 'monol_test_E3-50'))
+
+        hen.fspec.main(command.split())
+
+    def test_cpds_wrong_norm(self):
+        """Test CPDS production."""
+        command = \
+            '{0} {1} -f 128 --save-dyn -k CPDS --norm blablabla -o {2}'.format(
+                os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
+                HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
+                HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, 'monol_test_E3-50'))
+        with pytest.warns(UserWarning) as record:
+            hen.fspec.main(command.split())
+
+        assert np.any(["Beware! Unknown normalization" in r.message.args[0]
+                       for r in record])
 
     def test_cpds(self):
         """Test CPDS production."""
