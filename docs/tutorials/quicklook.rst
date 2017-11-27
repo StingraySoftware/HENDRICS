@@ -210,12 +210,12 @@ Producing power spectra and cross power spectra
 
 Let us just produce the cross power spectrum for now. To produce also
 the power spectra corresponding to each light curve, substitute
-``"CPDS"`` with ``"PDS,CPDS"``. I use rms normalization here, default
-would be Leahy normalization.
+``"CPDS"`` with ``"PDS,CPDS"``. I use Fractional r.m.s. normalization
+here, the default would be Leahy et al. 1983 normalization.
 
 ::
 
-    $ HENfspec 002A_E3-30_lc.nc 002B_E3-30_lc.nc -k CPDS -o cpds_002_3-30 --norm rms
+    $ HENfspec 002A_E3-30_lc.nc 002B_E3-30_lc.nc -k CPDS -o cpds_002_3-30 --norm frac
     Beware! For cpds and derivatives, I assume that the files are
     ordered as follows: obs1_FPMA, obs1_FPMB, obs2_FPMA, obs2_FPMB...
     Loading file 002A_E3-30_lc.nc...
@@ -251,7 +251,7 @@ give the command
 
 ::
 
-    $ MP2xspec cpds_002_3-30_0_rebin1.03.nc --flx2xsp
+    $ HEN2xspec cpds_002_3-30_0_rebin1.03.nc --flx2xsp
 
 Open and fit in XSpec!
 ~~~~~~~~~~~~~~~~~~~~~~
