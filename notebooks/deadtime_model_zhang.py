@@ -56,7 +56,7 @@ def A(k, r0, td, tb, tau):
                  for n in range(1, INFINITE)]
     return r0 * tb * sum(eq39_sums)
 
-def safe_A(k, r0, td, tb, tau, limit=50):
+def safe_A(k, r0, td, tb, tau, limit=60):
     if k > limit:
         return r0 ** 2 * tb**2
     return A(k, r0, td, tb, tau)
@@ -82,7 +82,7 @@ def B(k, r0, td, tb, tau):
     return 4 * (A(k, r0, td, tb, tau) - r0**2 * tb**2) / (r0*tb)
 
 
-def safe_B(k, r0, td, tb, tau, limit=50):
+def safe_B(k, r0, td, tb, tau, limit=60):
     if k > limit:
         return 0
     return B(k, r0, td, tb, tau)
