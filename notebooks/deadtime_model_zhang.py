@@ -41,6 +41,7 @@ def heaviside(x):
 
 @jit(nopython=True)
 def h(k, n, td, tb, tau):
+    # Typo in Zhang+95 corrected. k * tb, not k * td 
     if k * tb < n * td:
         return 0
     return (k - n*(td + tau) / tb +
