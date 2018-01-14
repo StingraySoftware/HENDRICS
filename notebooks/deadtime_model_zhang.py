@@ -1,6 +1,7 @@
 from stingray.utils import jit
 from math import gamma
 import numpy as np
+import matplotlib.pyplot as plt
 
 from hendrics.base import r_det
 
@@ -57,8 +58,8 @@ def A(k, r0, td, tb, tau):
                  for n in range(1, INFINITE)]
     return r0 * tb * sum(eq39_sums)
 
-def safe_A(k, r0, td, tb, tau, limit=60):
-    if k > limit:
+def safe_A(k, r0, td, tb, tau, limit_k=60):
+    if k > limit_k:
         return r0 ** 2 * tb**2
     return A(k, r0, td, tb, tau)
 
@@ -83,8 +84,8 @@ def B(k, r0, td, tb, tau):
     return 4 * (A(k, r0, td, tb, tau) - r0**2 * tb**2) / (r0*tb)
 
 
-def safe_B(k, r0, td, tb, tau, limit=60):
-    if k > limit:
+def safe_B(k, r0, td, tb, tau, limit_k=60):
+    if k > limit_k:
         return 0
     return B(k, r0, td, tb, tau)
 
@@ -102,7 +103,7 @@ def check_B(rate, td, tb, max_k=100):
     plt.ylabel('$B_k$')
 
 
-def pds_model_zhang_back(N, rate, td, tb):
+def pds_model_zhang_back(N, rate, td, tb, limit_k=60):
     tau = 1 / rate
     r0 = r_det(td, rate)
     Nph = N / tau
@@ -111,7 +112,8 @@ def pds_model_zhang_back(N, rate, td, tb):
         eq8_sums = [(N - k) * safe_A(k, r0, td, tb, tau) * np.cos(2 * np.pi * j * k / N)
                     for k in range(1, N)]
 
-        P[j] = 2 / Nph * (N * safe_A(0, r0, td, tb, tau) + 2 * sum(eq8_sums))
+        P[j] = 2 / Nph * (N * safe_A(0, r0, td, tb, tau, limit_k=limit_k) +
+                          2 * sum(eq8_sums))
 
     maxf = 0.5 / tb
     df = maxf / len(P)
@@ -119,14 +121,16 @@ def pds_model_zhang_back(N, rate, td, tb):
 
     return freqs, P
 
-def pds_model_zhang(N, rate, td, tb):
+def pds_model_zhang(N, rate, td, tb, limit_k=60):
     tau = 1 / rate
     r0 = r_det(td, rate)
 
     Nph = N / tau
     P = np.zeros(N // 2)
     for j in range(N//2):
-        eq8_sums = [(N - k) / N * safe_B(k, r0, td, tb, tau) * np.cos(2 * np.pi * j * k / N)
+        eq8_sums = [(N - k) / N *
+                    safe_B(k, r0, td, tb, tau,
+                           limit_k=limit_k) * np.cos(2 * np.pi * j * k / N)
                     for k in range(1, N)]
 
         P[j] = safe_B(0, r0, td, tb, tau) + sum(eq8_sums)
