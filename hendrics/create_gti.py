@@ -100,9 +100,11 @@ def apply_gti(fname, gti, outname=None,
     data['__sr__class__type__'] = 'gti'
     data['gti'] = newgtis
     good = create_gti_mask(data['time'], newgtis)
+
     data['time'] = data['time'][good]
     if ftype == 'lc':
         data['counts'] = data['counts'][good]
+        data['counts_err'] = data['counts_err'][good]
     elif ftype == 'events':
         data['PI'] = data['PI'][good]
         if data['instr'] == 'PCA':  # pragma: no cover
