@@ -772,8 +772,12 @@ model = models.Const1D()
             HEN_FILE_EXTENSION
         lcfname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
             HEN_FILE_EXTENSION
+        lcoutname = os.path.join(self.datadir,
+                                 'monol_testA_E3-50_lc_gtifilt') + \
+            HEN_FILE_EXTENSION
         command = "{0} -a {1} --debug".format(lcfname, fname)
         hen.create_gti.main(command.split())
+        hen.io.load_lcurve(lcoutname)
 
     def test_create_gti_and_minlen(self):
         """Test creating a GTI file and apply minimum length."""
