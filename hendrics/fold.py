@@ -24,9 +24,10 @@ def _check_odd(n):
 
 
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
-                test=False, emin=0, emax=1e32, normalize_to1=False,
+                test=False, emin=0, emax=1e32, norm='to1',
                 smooth_window=None, **opts):
 
+    file_label = ''
     ev = load_events(file)
     times = ev.time
     gtis = ev.gti
@@ -49,9 +50,9 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
 
     binx = np.linspace(0, 1, nbin + 1)
     if plot_energy:
-        biny = np.logspace(np.log10(np.min(energy)),
-                           np.log10(np.max(energy)),
-                           nebin + 1)
+        biny = np.percentile(energy, np.linspace(0, 100, nebin + 1))
+        biny[0] = emin
+        biny[-1] = emax
 
     profile, _ = np.histogram(phases, bins=binx)
     if smooth_window is None:
@@ -61,30 +62,31 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
     smoothed_profile = savgol_filter(profile, window_length=smooth_window,
                                      polyorder=2, mode='wrap')
 
-    binx = np.concatenate((binx[:-1], binx + 1))
-
     profile = np.concatenate((profile, profile))
     smooth = np.concatenate((smoothed_profile, smoothed_profile))
-
-    meanbins = (binx[:-1] + binx[1:])/2
 
     if plot_energy:
         histen, _ = np.histogram(energy, bins=biny)
 
         hist2d, _, _ = np.histogram2d(phases.astype(np.float64),
                                       energy, bins=(binx, biny))
+
+    binx = np.concatenate((binx[:-1], binx + 1))
+    meanbins = (binx[:-1] + binx[1:])/2
+
+    if plot_energy:
         hist2d = np.vstack((hist2d, hist2d))
         X, Y = np.meshgrid(binx, biny)
 
-        if normalize_to1:
+        if norm == 'ratios':
+            hist2d /= smooth[:, np.newaxis]
+            hist2d *= histen[np.newaxis, :]
+            file_label = '_ratios'
+        else:
             hist2d /= histen[np.newaxis, :]
             factor = np.max(hist2d, axis=0)[np.newaxis, :]
             hist2d /= factor
-        else:
-            mean = np.mean(hist2d, axis=0)[np.newaxis, :]
-            min = np.min(hist2d, axis=0)[np.newaxis, :]
-            hist2d -= min
-            hist2d /= (mean * 2)
+            file_label = '_to1'
 
     plt.figure()
     if plot_energy:
@@ -113,13 +115,13 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
     ax0.legend()
 
     if plot_energy:
-        ax1.pcolormesh(X, Y, hist2d.T, vmin=0, vmax=1)
+        ax1.pcolormesh(X, Y, hist2d.T)
         ax1.semilogy()
 
         ax1.set_xlabel('Phase')
         ax1.set_ylabel(elabel)
 
-    plt.savefig('Energyprofile.png')
+    plt.savefig('Energyprofile' + file_label + '.png')
     if not test:  # pragma:no cover
         plt.show()
 
@@ -146,10 +148,10 @@ def main_fold(args=None):
                         help="Minimum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--emax", default=1e32, type=int,
                         help="Maximum energy (or PI if uncalibrated) to plot")
-    parser.add_argument("--norm", default=False, action='store_true',
-                        help="Normalize hist so that the maximum at each "
-                             "energy is one. If not, use fraction of total "
-                             "intensity at given energy")
+    parser.add_argument("--norm", default='to1',
+                        help="--norm to1: Normalize hist so that the maximum "
+                             "at each energy is one. "
+                             "--norm ratios: Divide by mean profile")
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
     parser.add_argument("--test",
@@ -178,4 +180,4 @@ def main_fold(args=None):
     run_folding(args.file, freq=frequency, fdot=fdot, fddot=fddot,
                 nbin=args.nbin, nebin=args.nebin, tref=args.tref,
                 test=args.test, emin=args.emin, emax=args.emax,
-                normalize_to1=args.norm)
+                norm=args.norm)

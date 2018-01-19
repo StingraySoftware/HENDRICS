@@ -24,16 +24,33 @@ class TestEFsearch():
         events = EventList()
         events.simulate_times(lc)
         cls.event_times = events.time
+        cls.dum_noe = 'events' + HEN_FILE_EXTENSION
+        save_events(events, cls.dum_noe)
+        events.pi = np.random.uniform(3, 79, len(events.time))
         cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
 
     def test_fold(self):
         evfile = self.dum
+        evfile_noe = self.dum_noe
+
         main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
-                   '--test'])
-        outfile = 'Energyprofile.png'
+                   '--test', '--norm', 'ratios'])
+        outfile = 'Energyprofile_ratios.png'
         assert os.path.exists(outfile)
         os.unlink(outfile)
+        main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test', '--norm', 'to1'])
+        outfile = 'Energyprofile_to1.png'
+        assert os.path.exists(outfile)
+        main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test', '--norm', 'blablabla'])
+        outfile = 'Energyprofile_to1.png'
+        assert os.path.exists(outfile)
+        main_fold([evfile_noe, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test', '--norm', 'blablabla'])
+        outfile = 'Energyprofile.png'
+        assert os.path.exists(outfile)
 
     def test_efsearch(self):
         evfile = self.dum
