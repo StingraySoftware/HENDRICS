@@ -19,6 +19,10 @@ from matplotlib.widgets import Slider, Button
 import astropy.units as u
 
 
+def _check_odd(n):
+    return n // 2 * 2 + 1
+
+
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
                 test=False, emin=0, emax=1e32, normalize_to1=False,
                 smooth_window=None, **opts):
@@ -26,12 +30,17 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
     ev = load_events(file)
     times = ev.time
     gtis = ev.gti
+    plot_energy = True
     if hasattr(ev, 'energy') and ev.energy is not None:
         energy = ev.energy
         elabel = 'Energy'
-    else:
+    elif hasattr(ev, 'pi') and ev.pi is not None:
         energy = ev.pi
         elabel = 'PI'
+    else:
+        energy = np.ones_like(times)
+        elabel = ''
+        plot_energy = False
 
     good = (energy > emin) & (energy < emax)
     times = times[good]
@@ -39,44 +48,53 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
     phases = pulse_phase(times - tref, freq, fdot, fddot, to_1=True)
 
     binx = np.linspace(0, 1, nbin + 1)
-    biny = np.logspace(np.log10(np.min(energy)),
-                       np.log10(np.max(energy)),
-                       nebin + 1)
+    if plot_energy:
+        biny = np.logspace(np.log10(np.min(energy)),
+                           np.log10(np.max(energy)),
+                           nebin + 1)
 
     profile, _ = np.histogram(phases, bins=binx)
     if smooth_window is None:
-        smooth_window = np.max([len(profile) // 10, 5])
+        smooth_window = np.min([len(profile), np.max([len(profile) // 10, 5])])
+        smooth_window = _check_odd(smooth_window)
 
     smoothed_profile = savgol_filter(profile, window_length=smooth_window,
                                      polyorder=2, mode='wrap')
 
-    histen, _ = np.histogram(energy, bins=biny)
-
-    hist2d, _, _ = np.histogram2d(phases.astype(np.float64),
-                                  energy, bins=(binx, biny))
-
     binx = np.concatenate((binx[:-1], binx + 1))
-    hist2d = np.vstack((hist2d, hist2d))
+
     profile = np.concatenate((profile, profile))
     smooth = np.concatenate((smoothed_profile, smoothed_profile))
-    X, Y = np.meshgrid(binx, biny)
 
     meanbins = (binx[:-1] + binx[1:])/2
-    if normalize_to1:
-        hist2d /= histen[np.newaxis, :]
-        factor = np.max(hist2d, axis=0)[np.newaxis, :]
-        hist2d /= factor
-    else:
-        mean = np.mean(hist2d, axis=0)[np.newaxis, :]
-        min = np.min(hist2d, axis=0)[np.newaxis, :]
-        hist2d -= min
-        hist2d /= (mean * 2)
+
+    if plot_energy:
+        histen, _ = np.histogram(energy, bins=biny)
+
+        hist2d, _, _ = np.histogram2d(phases.astype(np.float64),
+                                      energy, bins=(binx, biny))
+        hist2d = np.vstack((hist2d, hist2d))
+        X, Y = np.meshgrid(binx, biny)
+
+        if normalize_to1:
+            hist2d /= histen[np.newaxis, :]
+            factor = np.max(hist2d, axis=0)[np.newaxis, :]
+            hist2d /= factor
+        else:
+            mean = np.mean(hist2d, axis=0)[np.newaxis, :]
+            min = np.min(hist2d, axis=0)[np.newaxis, :]
+            hist2d -= min
+            hist2d /= (mean * 2)
 
     plt.figure()
-    gs = GridSpec(2, 1, height_ratios=(1, 3))
-    ax0 = plt.subplot(gs[0])
-    ax1 = plt.subplot(gs[1], sharex=ax0)
+    if plot_energy:
+        gs = GridSpec(2, 1, height_ratios=(1, 3))
+        ax0 = plt.subplot(gs[0])
+        ax1 = plt.subplot(gs[1], sharex=ax0)
+    else:
+        ax0 = plt.subplot()
 
+    # Plot pulse profile
     max = np.max(smooth)
     min = np.min(smooth)
     ax0.plot(meanbins, profile, drawstyle='steps-mid',
@@ -94,12 +112,14 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
     ax0.axhline(mean, ls='--')
     ax0.legend()
 
-    ax1.pcolormesh(X, Y, hist2d.T, vmin=0, vmax=1)
-    ax1.semilogy()
+    if plot_energy:
+        ax1.pcolormesh(X, Y, hist2d.T, vmin=0, vmax=1)
+        ax1.semilogy()
 
-    ax1.set_xlabel('Phase')
-    ax1.set_ylabel(elabel)
+        ax1.set_xlabel('Phase')
+        ax1.set_ylabel(elabel)
 
+    plt.savefig('Energyprofile.png')
     if not test:  # pragma:no cover
         plt.show()
 
