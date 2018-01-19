@@ -77,11 +77,22 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
     ax0 = plt.subplot(gs[0])
     ax1 = plt.subplot(gs[1], sharex=ax0)
 
-    ax0.plot(meanbins, profile, drawstyle='steps-mid')
-    ax0.plot(meanbins, smooth, drawstyle='steps-mid')
+    max = np.max(smooth)
+    min = np.min(smooth)
+    ax0.plot(meanbins, profile, drawstyle='steps-mid',
+             color='grey')
+    ax0.plot(meanbins, smooth, drawstyle='steps-mid',
+             label='Smooth profile '
+                   '(P.F. = {:.1f}%)'.format(100 * (max - min) / max),
+             color='k')
+    ax0.axhline(max, lw=1, color='k')
+    ax0.axhline(min, lw=1, color='k')
+
+
     mean = np.mean(profile)
-    ax0.axhline(mean - np.sqrt(mean))
-    ax0.axhline(mean + np.sqrt(mean))
+    ax0.fill_between(meanbins, mean - np.sqrt(mean), mean + np.sqrt(mean))
+    ax0.axhline(mean, ls='--')
+    ax0.legend()
 
     ax1.pcolormesh(X, Y, hist2d.T, vmin=0, vmax=1)
     ax1.semilogy()
