@@ -3,6 +3,7 @@ from stingray.events import EventList
 import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
 from hendrics.efsearch import main_efsearch, main_zsearch
+from hendrics.fold import main_fold
 from hendrics.phaseogram import main_phaseogram, run_interactive_phaseogram
 from hendrics.plot import plot_folding
 import os
@@ -25,6 +26,14 @@ class TestEFsearch():
         cls.event_times = events.time
         cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
+
+    def test_fold(self):
+        evfile = self.dum
+        main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test'])
+        outfile = 'Dyn.png'
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
 
     def test_efsearch(self):
         evfile = self.dum

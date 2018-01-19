@@ -83,12 +83,20 @@ def dyn_folding_search(events, fmin, fmax, step=None,
         times_filt = events.time[(events.time >= st)&(events.time < sp)]
 
         trial_freqs = np.arange(fmin, fmax, step)
-
-        results = func(times_filt, trial_freqs, **kwargs)
-        frequencies, stat = results
-        stats.append(stat)
-
-    return (start + stop) / 2, frequencies, np.array(stats)
+        try:
+            results = func(times_filt, trial_freqs, **kwargs)
+            frequencies, stat = results
+            stats.append(stat)
+        except:
+            stats.append(np.zeros_like(trial_freqs))
+    times = (start + stop) / 2
+    fig = plt.figure('Dynamical search')
+    plt.pcolormesh(frequencies, times, np.array(stats))
+    plt.xlabel('Frequency')
+    plt.ylabel('Time')
+    plt.savefig('Dyn.png')
+    plt.close(fig)
+    return times, frequencies, np.array(stats)
 
 
 def _common_parser(args=None):
@@ -105,6 +113,8 @@ def _common_parser(args=None):
                         help="Minimum fdot to fold", default=0)
     parser.add_argument("--fdotmax", type=float, required=False,
                         help="Maximum fdot to fold", default=0)
+    parser.add_argument("--dynstep", type=int, required=False,
+                        help="Dynamical EF step", default=128)
     parser.add_argument('-n', "--nbin", default=128, type=int,
                         help="Number of phase bins of the profile")
     parser.add_argument("--segment-size", default=1e32, type=float,
@@ -198,6 +208,10 @@ def _common_main(args, func):
             frequencies, stats, step, length = results
         elif len(results) == 6:
             frequencies, fdots, stats, step, fdotsteps, length = results
+
+        _ = dyn_folding_search(events, args.fmin, args.fmax, step=step,
+                               func=func, oversample=args.oversample,
+                               time_step=args.dynstep, **kwargs)
 
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
                                       args.N, fdots=fdots)
