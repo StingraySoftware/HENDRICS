@@ -31,7 +31,7 @@ class TestEFsearch():
         evfile = self.dum
         main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
                    '--test'])
-        outfile = 'Dyn.png'
+        outfile = 'Energyprofile.png'
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
@@ -51,7 +51,8 @@ class TestEFsearch():
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fit-candidates', '--fit-frequency',
-                      str(self.pulse_frequency)])
+                      str(self.pulse_frequency),
+                      '--dynstep', '5'])
         outfile = 'events_Z2n' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
