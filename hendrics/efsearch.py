@@ -75,7 +75,13 @@ def dyn_folding_search(events, fmin, fmax, step=None,
     if step is None:
         step = 1 / oversample / time_step
 
-    start, stop = time_intervals_from_gtis(events.gti, time_step)
+    gti = np.copy(events.gti)
+    length = np.diff(gti, axis=1)
+
+    if not np.any(length > time_step):
+        gti = np.array([[gti[0,0], gti[-1, 1]]])
+
+    start, stop = time_intervals_from_gtis(gti, time_step)
 
     stats = []
 
@@ -209,9 +215,10 @@ def _common_main(args, func):
         elif len(results) == 6:
             frequencies, fdots, stats, step, fdotsteps, length = results
 
-        _ = dyn_folding_search(events, args.fmin, args.fmax, step=step,
-                               func=func, oversample=args.oversample,
-                               time_step=args.dynstep, **kwargs)
+        if length > args.dynstep:
+            _ = dyn_folding_search(events, args.fmin, args.fmax, step=step,
+                                   func=func, oversample=args.oversample,
+                                   time_step=args.dynstep, **kwargs)
 
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
                                       args.N, fdots=fdots)
