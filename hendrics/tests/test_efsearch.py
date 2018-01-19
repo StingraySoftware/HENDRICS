@@ -3,6 +3,7 @@ from stingray.events import EventList
 import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
 from hendrics.efsearch import main_efsearch, main_zsearch
+from hendrics.fold import main_fold
 from hendrics.phaseogram import main_phaseogram, run_interactive_phaseogram
 from hendrics.plot import plot_folding
 import os
@@ -23,8 +24,36 @@ class TestEFsearch():
         events = EventList()
         events.simulate_times(lc)
         cls.event_times = events.time
+        cls.dum_noe = 'events_noe' + HEN_FILE_EXTENSION
+        save_events(events, cls.dum_noe)
+        events.pi = np.random.uniform(3, 79, len(events.time))
         cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
+
+    def test_fold(self):
+        evfile = self.dum
+        evfile_noe = self.dum_noe
+
+        main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test', '--norm', 'ratios'])
+        outfile = 'Energyprofile_ratios.png'
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+        main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test', '--norm', 'to1'])
+        outfile = 'Energyprofile_to1.png'
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+        main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test', '--norm', 'blablabla'])
+        outfile = 'Energyprofile_to1.png'
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+        main_fold([evfile_noe, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test', '--norm', 'blablabla'])
+        outfile = 'Energyprofile.png'
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
 
     def test_efsearch(self):
         evfile = self.dum
@@ -42,7 +71,8 @@ class TestEFsearch():
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fit-candidates', '--fit-frequency',
-                      str(self.pulse_frequency)])
+                      str(self.pulse_frequency),
+                      '--dynstep', '5'])
         outfile = 'events_Z2n' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
