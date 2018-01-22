@@ -52,7 +52,7 @@ The **documentation** can be found
 `here <http://hendrics.readthedocs.io>`__.
 
 A **tutorial** is also available
-`here <http://hendrics.readthedocs.org/en/latest/tutorial.html>`__
+`here <http://hendrics.readthedocs.io/en/master/tutorials/index.html>`__.
 
 Installation instructions
 -------------------------
