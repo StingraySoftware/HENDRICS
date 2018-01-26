@@ -454,7 +454,7 @@ def main_phaseogram(args=None):
                         default=False, action='store_true')
     parser.add_argument("--binary-parameters",
                         help="Initial values for binary parameters",
-                        default=[None, 0, None], nargs=3)
+                        default=[None, 0, None], nargs=3, type=float)
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
     parser.add_argument("--test",
