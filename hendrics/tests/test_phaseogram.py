@@ -73,7 +73,8 @@ class TestPhaseogram():
 
     def test_phaseogram_input_f_binary(self):
         evfile = self.dum
-        main_phaseogram([evfile, '--binary', '-f', '9.9', '--test'])
+        main_phaseogram([evfile, '--binary', '-f', '9.9', '--test',
+                         '--binary-parameters', '10000', '0', '0'])
 
     def test_phaseogram_input_f_change_binary(self):
         evfile = self.dum
@@ -90,7 +91,7 @@ class TestPhaseogram():
     def test_phaseogram_raises_binary(self):
         evfile = self.dum
         with pytest.raises(ValueError):
-            main_phaseogram([evfile, '--test'])
+            main_phaseogram([evfile, '--binary', '--test'])
 
     @classmethod
     def teardown_class(cls):

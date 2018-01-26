@@ -76,6 +76,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
 
     if plot_energy:
         hist2d = np.vstack((hist2d, hist2d))
+        hist2d_save = np.copy(hist2d)
         X, Y = np.meshgrid(binx, biny)
 
         if norm == 'ratios':
@@ -90,9 +91,12 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
 
     plt.figure()
     if plot_energy:
-        gs = GridSpec(2, 1, height_ratios=(1, 3))
-        ax0 = plt.subplot(gs[0])
-        ax1 = plt.subplot(gs[1], sharex=ax0)
+        gs = GridSpec(2, 2, height_ratios=(1, 3))
+        ax0 = plt.subplot(gs[0, 0])
+        ax1 = plt.subplot(gs[1, 0], sharex=ax0)
+        ax2 = plt.subplot(gs[1, 1], sharex=ax0)
+        ax3 = plt.subplot(gs[0, 1])
+
     else:
         ax0 = plt.subplot()
 
@@ -108,7 +112,6 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
     ax0.axhline(max, lw=1, color='k')
     ax0.axhline(min, lw=1, color='k')
 
-
     mean = np.mean(profile)
     ax0.fill_between(meanbins, mean - np.sqrt(mean), mean + np.sqrt(mean))
     ax0.axhline(mean, ls='--')
@@ -120,6 +123,36 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
 
         ax1.set_xlabel('Phase')
         ax1.set_ylabel(elabel)
+        ax1.set_xlim([0, 2])
+
+        pfs = []
+        errs = []
+        meannrgs = (biny[:-1] + biny[1:]) / 2
+        for i, prof in enumerate(hist2d_save.T):
+            smooth = savgol_filter(prof, window_length=smooth_window,
+                                   polyorder=2, mode='wrap')
+            max = np.max(smooth)
+            min = np.min(smooth)
+            pf = 100 * (max - min) / max
+            ax2.plot(meanbins, prof, drawstyle='steps-mid',
+                     label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],
+                                                     biny[i+1], pf))
+            std = np.max(prof - smooth)
+            ax2.set_xlabel('Phase')
+            ax2.set_ylabel('Counts')
+
+            pfs.append(pf)
+            errs.append(std / max)
+
+        if len(meannrgs) < 6:
+            ax2.legend()
+        ax2.set_xlim([0, 2])
+
+        ax3.errorbar(meannrgs, pfs, fmt='o', yerr=errs,
+                     xerr=(biny[1:] - biny[:-1]) / 2)
+        ax3.semilogx()
+        ax3.set_xlabel('Energy')
+        ax3.set_ylabel('Pulsed fraction')
 
     plt.savefig('Energyprofile' + file_label + '.png')
     if not test:  # pragma:no cover
