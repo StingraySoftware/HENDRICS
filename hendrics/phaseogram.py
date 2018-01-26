@@ -34,6 +34,30 @@ class SliderOnSteroids(Slider):
 class BasePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, test=False,
                  pepoch=None, fdot=0, fddot=0, **kwargs):
+        """Init BasePhaseogram class.
+
+        Parameters
+        ----------
+        ev_times : array-like
+            Event times
+        freq : float
+            Frequency of pulsation
+
+        Other parameters
+        ----------------
+        nph : int
+            Number of phase bins in the profile
+        nt : int
+            Number of time bins in the profile
+        pepoch : float, default None
+            Epoch of timing solution, in the same units as ev_times
+        fdot : float
+            First frequency derivative
+        fddot : float
+            Second frequency derivative
+        **kwargs : keyword args
+            additional arguments to pass to `self._construct_widgets`
+        """
 
         self.fdot = fdot
         self.fddot = fddot
@@ -89,7 +113,7 @@ class BasePhaseogram(object):
 
         self.resetax = plt.axes([0.45, 0.020, 0.15, 0.04])
         self.button_reset = Button(self.resetax, 'Reset', color=axcolor,
-                             hovercolor='0.975')
+                                   hovercolor='0.975')
 
         self.zoominax = plt.axes([0.6, 0.020, 0.15, 0.04])
         self.button_zoomin = Button(self.zoominax, 'Zoom in', color=axcolor,
@@ -229,7 +253,7 @@ class InteractivePhaseogram(BasePhaseogram):
                 self.slider_axes[0],
                 'Delta freq x$10^{}$'.format(self.df_order_of_mag),
                 -delta_df, delta_df, valinit=self.df,
-                             hardvalmin=0)
+                hardvalmin=0)
         self.sfdot = \
             SliderOnSteroids(
                 self.slider_axes[1],
@@ -259,8 +283,8 @@ class InteractivePhaseogram(BasePhaseogram):
 
     def _line_delay_fun(self, times):
         freq, fdot, fddot = self._read_sliders()
-        return ((times - self.pepoch).astype(np.float64) * freq + \
-                0.5 * (times - self.pepoch) ** 2 * fdot + \
+        return ((times - self.pepoch).astype(np.float64) * freq +
+                0.5 * (times - self.pepoch) ** 2 * fdot +
                 1/6 * (times - self.pepoch) ** 3 * fddot)
 
     def _delay_fun(self, times):
@@ -299,9 +323,29 @@ class InteractivePhaseogram(BasePhaseogram):
 
 class BinaryPhaseogram(BasePhaseogram):
     def __init__(self, *args, **kwargs):
-        self.orbital_period=None
-        self.asini=0
-        self.t0=None
+        """Init BinaryPhaseogram class.
+
+        Parameters
+        ----------
+        ev_times : array-like
+            Event times
+        freq : float
+            Frequency of pulsation
+
+        Other parameters
+        ----------------
+        orbital_period : float
+            orbital period in seconds
+        asini : float
+            projected semi-major axis in light-sec
+        T0 : float
+            passage through the ascending node, in seconds.
+        **kwargs : keyword args
+            additional arguments to pass to `BasePhaseogram`
+        """
+        self.orbital_period = None
+        self.asini = 0
+        self.t0 = None
 
         if 'orbital_period' in kwargs:
             self.orbital_period = kwargs['orbital_period']
