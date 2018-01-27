@@ -23,6 +23,10 @@ class TestPhasetag():
         self.phasetagged = self.fits_fileA.replace('.evt', '_phasetag.evt')
         assert os.path.exists(self.phasetagged)
 
+        # Redo to test if existing columns are preserved
+        main_phasetag([self.phasetagged, '-f', str(self.freq), '--test',
+                       '--tomax', '-n', str(N)])
+
         hdulist = fits.open(self.phasetagged)
 
         times = np.array(hdulist[1].data['TIME'])

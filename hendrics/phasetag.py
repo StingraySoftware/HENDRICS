@@ -30,6 +30,7 @@ from stingray.pulse.pulsar import pulse_phase, phase_exposure
 #     return np.array(TOAs)
 #
 
+
 def outfile_name(file):
     return file.replace(".evt", "_phasetag.evt")
 
@@ -87,14 +88,13 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
     # ----- CHECK IF GTIs ARE PRESENT ------------------
 
     gtistring = None
-    for i in ['STDGTI', 'GTI']:
-        try:
-            gtihdu = hdulist[i]
-            gtis = np.array(list(zip(gtihdu.data.field('START'),
-                                     gtihdu.data.field('STOP'))))
-            gtistring = i
-        except:
-            pass
+    for gtiextname in ['STDGTI', 'GTI']:
+        if not gtiextname in hdulist:
+            continue
+        gtihdu = hdulist[gtiextname]
+        gtis = np.array(list(zip(gtihdu.data.field('START'),
+                                 gtihdu.data.field('STOP'))))
+        gtistring = gtiextname
 
     if gtistring is None:
         gtis = np.array([[ev_list[0], ev_list[-1]]])
@@ -103,9 +103,6 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
 
     ev_mjd = ev_list / 86400 + ref_mjd
     gtis_mjd = gtis / 86400 + ref_mjd
-
-    mjdstart = np.min(gtis_mjd[:, 0])
-    mjdstop = np.max(gtis_mjd[:, 1])
 
     pepoch = _assign_value_if_none(pepoch, ev_mjd[0])
 
@@ -194,11 +191,11 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
 
     # If columns already exist, overwrite them. Else, create them
     create = False
-    try:
+    if 'Orbit_bary' in table.names:
         table.field("Orbit_bary")[:] = ev_list
         table.field("TotPhase_s")[:] = phase / f + ref_time
         table.field("Phase")[:] = phase_to1
-    except:
+    else:
         create = True
 
     # first of all, copy columns
