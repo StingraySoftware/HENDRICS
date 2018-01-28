@@ -9,41 +9,27 @@ import matplotlib.pyplot as plt
 import astropy.io.fits as pf
 
 import warnings
-from .io import high_precision_keyword_read, is_string
+from .io import is_string
+from stingray.io import load_events_and_gtis, ref_mjd
 from .base import _assign_value_if_none
 from .fold import fit_profile, std_fold_fit_func
 
 from stingray.pulse.pulsar import pulse_phase, phase_exposure
-#
-#
-# def parse_tim(timfile, format="tempo2"):
-#     if format != "tempo2":
-#         sys.exit("Only tempo2 files are understood for now")
-#     file = open(timfile)
-#     TOAs = []
-#     for l in file.readlines():
-#         els = l.split()
-#         if len(els) < 5:
-#             continue
-#         dum, dum, TOA, dum, dum = els[:5]
-#         TOAs.append(np.longdouble(TOA))
-#     return np.array(TOAs)
-#
 
 
 def outfile_name(file):
     return file.replace(".evt", "_phasetag.evt")
 
 
-def phase_tag_fits(filename, parameter_info, nbin=10,
-                   ref_to_max=False, pepoch=None, expocorr=True,
-                   pulse_ref_time=None, plot=True, test=False):
+def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
+              nbin=10, ref_to_max=False, pepoch=None,
+              expocorr=True, pulse_ref_time=None, plot=True, test=False):
     """Phase-tag events in a FITS file with a given ephemeris.
 
     Parameters
     ----------
-    filename : str
-        Events FITS file
+    ev_list : float
+        Event times
     parameter_info : str or array of floats
         If a string, this is a pulsar parameter file that PINT is able to
         understand. Otherwise, this is a list of frequency derivatives
@@ -51,6 +37,8 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
 
     Other parameters
     ----------------
+    gtis : [[g0_0, g0_1], [g1_0, g1_1], ...]
+        Good time intervals
     nbin : int
         Number of nbin in the pulsed profile
     ref_to_max : bool
@@ -66,50 +54,17 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
         Use exposure correction when calculating the profile
 
     """
-
-    outfile = outfile_name(filename)
-
-    # ----- OPEN EVENT FITS FILE ------------------------
-
-    hdulist = pf.open(filename, checksum=True)
-    ref_mjd = high_precision_keyword_read(hdulist[1].header, 'MJDREF')
-    timezero = high_precision_keyword_read(hdulist[1].header, 'TIMEZERO')
-
-    hdulist.verify('warn')
-
-    # ----- READ EVENT LIST ------------------------
-
-    tbhdu = hdulist["EVENTS"]
-    table = tbhdu.data
-
-    ev_list = np.array(table.field("TIME"), dtype=np.longdouble)
-    ev_list += timezero
-
-    # ----- CHECK IF GTIs ARE PRESENT ------------------
-
-    gtistring = None
-    for gtiextname in ['STDGTI', 'GTI']:
-        if not gtiextname in hdulist:
-            continue
-        gtihdu = hdulist[gtiextname]
-        gtis = np.array(list(zip(gtihdu.data.field('START'),
-                                 gtihdu.data.field('STOP'))))
-        gtistring = gtiextname
-
-    if gtistring is None:
+    # ---- in MJD ----
+    if gtis is None:
         gtis = np.array([[ev_list[0], ev_list[-1]]])
 
-    # ---- in MJD ----
-
-    ev_mjd = ev_list / 86400 + ref_mjd
-    gtis_mjd = gtis / 86400 + ref_mjd
+    ev_mjd = ev_list / 86400 + mjdref
+    gtis_mjd = gtis / 86400 + mjdref
 
     pepoch = _assign_value_if_none(pepoch, ev_mjd[0])
 
     # ------ Orbital DEMODULATION --------------------
     if is_string(parameter_info):
-        times = -1
-        frequency_derivatives = [0]
         raise NotImplementedError('This part is not yet implemented. Please '
                                   'use single frequencies and pepoch as '
                                   'documented')
@@ -147,6 +102,7 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
         maxp = np.argmax(fitted_profile)
         ref_phase = fine_phases[maxp]
         if test:  # pragma: no cover
+            # No tests with a pulsed profile yet
             ref_phase = bins[np.argmax(raw_profile)]
 
         ref_time = ref_phase / f
@@ -188,12 +144,73 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
         if not test:  # pragma: no cover
             plt.show()
     # ------ WRITE RESULTS BACK TO FITS --------------
+    results = type('results', (object,), {})
+    results.ev_list = ev_list
+    results.phase = phase
+    results.frequency_derivatives = frequency_derivatives
+    results.ref_time = ref_time
+    return results
+
+
+def phase_tag_fits(filename, parameter_info, **kwargs):
+    """Phase-tag events in a FITS file with a given ephemeris.
+
+    Parameters
+    ----------
+    filename : str
+        Events FITS file
+    parameter_info : str or array of floats
+        If a string, this is a pulsar parameter file that PINT is able to
+        understand. Otherwise, this is a list of frequency derivatives
+        [F0, F1, F2, ...]
+
+    Other parameters
+    ----------------
+    nbin : int
+        Number of nbin in the pulsed profile
+    ref_to_max : bool
+        Automatically refer the TOAs to the maximum of the profile
+    pepoch : float, default None
+        Reference epoch for the timing solution. If None, this is the start
+        of the observation.
+    pulse_ref_time : float
+        Reference time for the pulse. This overrides ref_to_max
+    plot : bool
+        Plot diagnostics
+    expocorr : bool
+        Use exposure correction when calculating the profile
+
+    """
+
+    outfile = outfile_name(filename)
+    evreturns = load_events_and_gtis(filename)
+    mjdref = ref_mjd(filename)
+
+    results = phase_tag(evreturns.ev_list, parameter_info, mjdref=mjdref,
+                        **kwargs)
+
+    phase = results.phase
+    frequency_derivatives = results.frequency_derivatives
+    ref_time = results.ref_time
+
+    phase_to1 = phase - np.floor(phase)
+
+    # Save results to fits file
+    hdulist = pf.open(filename, checksum=True)
+    tbhdu = hdulist["EVENTS"]
+    table = tbhdu.data
+    order = np.argsort(table['TIME'])
+    # load_events_and_gtis sorts the data automatically. This is not the case
+    # of the other operations done here. So, let's sort the table first.
+    for col in table.names:
+        table.field(col)[:] = np.array(table[col])[order]
 
     # If columns already exist, overwrite them. Else, create them
     create = False
     if 'Orbit_bary' in table.names:
-        table.field("Orbit_bary")[:] = ev_list
-        table.field("TotPhase_s")[:] = phase / f + ref_time
+        table.field("Orbit_bary")[:] = evreturns.ev_list
+        table.field("TotPhase_s")[:] = \
+            phase / frequency_derivatives[0] + ref_time
         table.field("Phase")[:] = phase_to1
     else:
         create = True
@@ -212,7 +229,7 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
         newcol = pf.Column(name='Orbit_bary',
                            format='1D',
                            unit='s',
-                           array=ev_list)
+                           array=results.ev_list)
 
         # append it to new table
         newlist.append(newcol)
@@ -221,7 +238,7 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
         newcol = pf.Column(name='TotPhase_s',
                            format='1D',
                            unit='s',
-                           array=phase / f + ref_time)
+                           array=phase / frequency_derivatives[0] + ref_time)
 
         newlist.append(newcol)
 
@@ -257,42 +274,6 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
 
     newhdulist.writeto(outfile, overwrite=True)
     hdulist.close()
-
-#
-# def phase_tag(filename, parfile, nperiods=2, nbin=10, ref_to_max=False,
-#               pulse_ref_time=None, plot=True):
-#
-#     '''Phase-tags events according to ephemeris
-#
-#     filename is a event file in MaLTPyNT format
-#     parfile is a parameter file in TEMPO2 format
-#     '''
-#     import libstempo.toasim as LT
-#     import libstempo as T
-#     from astropy.time import Time
-#     from astropy import units as u
-#     evdata = load_events(f)
-#
-#     pulsar = bp.binary_psr(parfile)
-#
-#     tstart = evdata['Tstart'] * u.s
-#     tstop = evdata['Tstop'] * u.s
-#     events = evdata['time'] * u.s
-#     instr = evdata['Instr']
-#     mjdref = Time(evdata['MJDref'], format='mjd')
-#
-#     if instr == 'PCA':
-#         pcus = evdata['PCU']
-#     gtis = evdata['GTI']
-#     if ignore_gtis:
-#         gtis = np.array([[tstart, tstop]])
-#
-#     ev_mjd = mjdref + events
-#
-#     newev = pulsar.demodulate_TOAs(ev_mjd.mjd)
-#
-#     newref_mjd, newpep_mjd = \
-#         pulsar.demodulate_TOAs(np.array([mjdref.mjd, pulsar.par.PEPOCH]))
 
 
 def main_phasetag(args=None):
