@@ -116,7 +116,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
     fit_pars_save = guess_pars
     success_save = -1
     if debug:
-        plt.figure('Debug profile')
+        fig = plt.figure('Debug profile')
         plt.errorbar(x, profile, yerr=profile_err, drawstyle='steps-mid')
         plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
 
@@ -142,9 +142,9 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
             fit_pars_save = fit_pars[:]
             success_save = success
 
-        if debug:
-            print(success_save, fit_pars_save, chisq_save)
-            plt.show()
+    if debug:
+        plt.savefig('debug_fit_profile.png')
+        plt.close(fig)
     return fit_pars_save, success_save, chisq_save
 
 

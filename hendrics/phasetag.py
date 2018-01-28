@@ -95,7 +95,8 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
         profile_err = np.sqrt(raw_profile) / exposure
 
         sinpars, bu, bu = fit_profile(profile, profile_err,
-                                      nperiods=2, baseline=True)
+                                      nperiods=2, baseline=True,
+                                      debug=test)
         fine_phases = np.linspace(0, 2, 1000 * 2)
         fitted_profile = std_fold_fit_func(sinpars, fine_phases)
         maxp = np.argmax(fitted_profile)

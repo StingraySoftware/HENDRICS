@@ -26,13 +26,17 @@ class TestEFsearch():
         cls.event_times = events.time
         cls.dum_noe = 'events_noe' + HEN_FILE_EXTENSION
         save_events(events, cls.dum_noe)
-        events.pi = np.random.uniform(3, 79, len(events.time))
+        events.pi = np.random.uniform(0, 1000, len(events.time))
+        cls.dum_pi = 'events_pi' + HEN_FILE_EXTENSION
+        save_events(events, cls.dum_pi)
+        events.energy = np.random.uniform(3, 79, len(events.time))
         cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
 
     def test_fold(self):
         evfile = self.dum
         evfile_noe = self.dum_noe
+        evfile_pi = self.dum_pi
 
         main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
                    '--test', '--norm', 'ratios'])
@@ -45,6 +49,11 @@ class TestEFsearch():
         assert os.path.exists(outfile)
         os.unlink(outfile)
         main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test', '--norm', 'blablabla'])
+        outfile = 'Energyprofile_to1.png'
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+        main_fold([evfile_pi, '-f', str(self.pulse_frequency), '-n', '64',
                    '--test', '--norm', 'blablabla'])
         outfile = 'Energyprofile_to1.png'
         assert os.path.exists(outfile)
