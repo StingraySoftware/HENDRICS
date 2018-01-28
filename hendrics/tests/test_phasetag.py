@@ -63,6 +63,7 @@ class TestPhasetag():
                            '--tomax', '-n', '1000', '--plot'])
         assert np.any(["Exposure has NaNs or zeros. " in r.message.args[0]
                        for r in record])
+
     def test_phase_tag_invalid0(self):
         with pytest.raises(ValueError) as excinfo:
             main_phasetag([self.fits_fileA, '--test'])
