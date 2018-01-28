@@ -16,10 +16,10 @@ class TestPhasetag():
         cls.fits_fileA = os.path.join(cls.datadir, 'monol_testA.evt')
         cls.freq = 0.1235242
 
-    @pytest.mark.parametrize('N', [5, 6, 11, 16])
+    @pytest.mark.parametrize('N', [5, 6, 11, 16, 32, 41])
     def test_phase_tag(self, N):
         main_phasetag([self.fits_fileA, '-f', str(self.freq), '--test',
-                       '--tomax', '-n', str(N)])
+                       '--tomax', '-n', str(N), '--plot'])
         self.phasetagged = self.fits_fileA.replace('.evt', '_phasetag.evt')
         assert os.path.exists(self.phasetagged)
 
@@ -56,3 +56,21 @@ class TestPhasetag():
         #     # Test that all the remaining bins have zero events
         #     prof[i] = 0
         #     assert np.all(prof == 0)
+
+    def test_phase_tag_badexposure(self):
+        with pytest.warns(UserWarning) as record:
+            main_phasetag([self.fits_fileA, '-f', '0.00001', '--test',
+                           '--tomax', '-n', '1000', '--plot'])
+        assert np.any(["Exposure has NaNs or zeros. " in r.message.args[0]
+                       for r in record])
+    def test_phase_tag_invalid0(self):
+        with pytest.raises(ValueError) as excinfo:
+            main_phasetag([self.fits_fileA, '--test'])
+        assert 'Specify one between' in str(excinfo)
+
+    def test_phase_tag_invalid1(self):
+        with pytest.raises(ValueError) as excinfo:
+            main_phasetag([self.fits_fileA, '-f', '1', '--parfile', 'bubu.par',
+                           '--test'])
+        assert 'Specify only one between' in str(excinfo)
+

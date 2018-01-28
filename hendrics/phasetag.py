@@ -162,8 +162,8 @@ def phase_tag_fits(filename, parameter_info, nbin=10,
 
     exposure = phase_exposure(gti_phases[0, 0], gti_phases[-1, 1], 1,
                               nbin=nbin, gtis=gti_phases)
-    if np.any(np.isnan(exposure)):
-        warnings.warn('Exposure has NaNs. Profile is not normalized')
+    if np.any(np.logical_or(exposure != exposure, exposure == 0)):
+        warnings.warn('Exposure has NaNs or zeros. Profile is not normalized')
         expocorr = False
 
     if not expocorr:
