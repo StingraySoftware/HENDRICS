@@ -155,26 +155,6 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
                                       baseline=baseline)
 
 
-def calculate_phase(time, pepoch, nu, nudot=0, nudot2=0, plot=False,
-                    verbose=0):
-    newtime = time - pepoch
-
-    p0 = newtime * nu
-    pcorr1 = 0.5 * newtime ** 2 * nudot
-    pcorr2 = \
-        1./6. * newtime ** 3 * nudot2
-
-    if plot:
-        import matplotlib.pyplot as plt
-        plt.figure("correction")
-        plt.plot(newtime, pcorr1)
-        plt.plot(newtime, pcorr1 + pcorr2)
-        plt.show()
-
-    phases = p0 + pcorr1 + pcorr2
-    return phases
-
-
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
                 test=False, emin=0, emax=1e32, norm='to1',
                 smooth_window=None, **opts):
