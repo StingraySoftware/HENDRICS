@@ -106,7 +106,7 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
             ref_phase = bins[np.argmax(raw_profile)]
 
         ref_time = ref_phase / f
-    elif pulse_ref_time is not None:
+    elif pulse_ref_time is not None: # pragma: no cover
         raise NotImplementedError('pulse_ref_time is not implemented.')
 
     phase -= ref_phase

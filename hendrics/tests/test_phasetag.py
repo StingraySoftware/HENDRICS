@@ -74,3 +74,8 @@ class TestPhasetag():
                            '--test'])
         assert 'Specify only one between' in str(excinfo)
 
+    def test_phase_tag_parfile(self):
+        with pytest.raises(NotImplementedError) as excinfo:
+            main_phasetag([self.fits_fileA, '--parfile', 'bubu.par',
+                           '--test'])
+        assert 'This part is not yet implemented' in str(excinfo)
