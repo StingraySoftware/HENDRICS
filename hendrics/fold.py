@@ -155,7 +155,7 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
                                       baseline=baseline)
 
 
-def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
+def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
                 test=False, emin=0, emax=1e32, norm='to1',
                 smooth_window=None, **opts):
 
@@ -174,6 +174,9 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=0,
         energy = np.ones_like(times)
         elabel = ''
         plot_energy = False
+
+    if tref is None:
+        tref = times[0]
 
     good = (energy > emin) & (energy < emax)
     times = times[good]
@@ -304,7 +307,7 @@ def main_fold(args=None):
                         help="Initial fddot", default=0)
     parser.add_argument("--tref", type=float, required=False,
                         help="Reference time (same unit as time array)",
-                        default=0)
+                        default=None)
     parser.add_argument('-n', "--nbin", default=16, type=int,
                         help="Number of phase bins (X axis) of the profile")
     parser.add_argument("--nebin", default=16, type=int,

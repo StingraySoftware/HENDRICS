@@ -44,18 +44,14 @@ class TestPhasetag():
 
         # I used --tomax
         assert np.argmax(prof) == 0
-        #
-        # for i, ph in enumerate(zip(phase_bins[:-1], phase_bins[1:])):
-        #     good = (phases >= ph[0]) & (phases < ph[1])
-        #     times_to_fold = times[good] - times[0]
-        #     phases_to_fold = times_to_fold / self.freq
-        #     phases_to_fold -= np.floor(phases_to_fold)
-        #     prof, _ = np.histogram(phases_to_fold, bins=phase_bins)
-        #     # Test that bin i has >0 events
-        #     assert prof[i] > 0
-        #     # Test that all the remaining bins have zero events
-        #     prof[i] = 0
-        #     assert np.all(prof == 0)
+        os.unlink(self.phasetagged)
+
+    @pytest.mark.parametrize('N', [5, 6, 11, 16, 32, 41])
+    def test_phase_tag_TOA(self, N):
+        main_phasetag([self.fits_fileA, '-f', str(self.freq), '--test',
+                       '--refTOA', '57000.01', '-n', str(N), '--plot'])
+        self.phasetagged = self.fits_fileA.replace('.evt', '_phasetag.evt')
+        assert os.path.exists(self.phasetagged)
 
     def test_phase_tag_badexposure(self):
         with pytest.warns(UserWarning) as record:
