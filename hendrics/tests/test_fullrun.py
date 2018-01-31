@@ -129,7 +129,7 @@ class TestFullRun(object):
                     os.path.join(self.datadir, 'monol_testB.evt'))
             hen.read_events.main(command.split())
         assert str(w[0].message).strip().endswith(
-            "noclobber option used. Skipping"), \
+            "exists and using noclobber. Skipping"), \
             "Unexpected warning output"
 
     def test_load_events_xmm(self):
