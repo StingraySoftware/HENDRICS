@@ -31,8 +31,8 @@ class TestReadEvents():
     def test_treat_event_file_xmm(self):
         fits_file = os.path.join(self.datadir, 'monol_test_fake.evt')
         hen.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
-                      '--ctrate', '2000',
-                      '-o', fits_file])
+                       '--ctrate', '2000',
+                       '-o', fits_file])
 
         treat_event_file(fits_file)
         new_filename = 'monol_test_fake_xmm_epn_det01_ev' + HEN_FILE_EXTENSION

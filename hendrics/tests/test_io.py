@@ -49,7 +49,7 @@ class TestIO():
 
     def test_load_and_save_events(self):
         events = EventList([0, 2, 3.], pi=[1, 2, 3], mjdref=54385.3254923845,
-                           gti = np.longdouble([[-0.5, 3.5]]))
+                           gti=np.longdouble([[-0.5, 3.5]]))
         events.energy = np.array([3., 4., 5.])
         save_events(events, self.dum)
         events2 = load_events(self.dum)
@@ -62,7 +62,7 @@ class TestIO():
     def test_load_and_save_lcurve(self):
         lcurve = Lightcurve(np.linspace(0, 10, 15), np.random.poisson(30, 15),
                             mjdref=54385.3254923845,
-                            gti = np.longdouble([[-0.5, 3.5]]))
+                            gti=np.longdouble([[-0.5, 3.5]]))
         save_lcurve(lcurve, self.dum)
         lcurve2 = load_lcurve(self.dum)
         assert np.allclose(lcurve.time, lcurve2.time)
@@ -88,11 +88,11 @@ class TestIO():
         lcurve1 = Lightcurve(np.linspace(0, 10, 150),
                              np.random.poisson(30, 150),
                              mjdref=54385.3254923845,
-                             gti = np.longdouble([[-0.5, 3.5]]))
+                             gti=np.longdouble([[-0.5, 3.5]]))
         lcurve2 = Lightcurve(np.linspace(0, 10, 150),
                              np.random.poisson(30, 150),
-                            mjdref=54385.3254923845,
-                            gti = np.longdouble([[-0.5, 3.5]]))
+                             mjdref=54385.3254923845,
+                             gti=np.longdouble([[-0.5, 3.5]]))
 
         xps = AveragedCrossspectrum(lcurve1, lcurve2, 1)
 
@@ -128,11 +128,11 @@ class TestIO():
         lcurve1 = Lightcurve(np.linspace(0, 10, 150),
                              np.random.poisson(30, 150),
                              mjdref=54385.3254923845,
-                             gti = np.longdouble([[-0.5, 3.5]]))
+                             gti=np.longdouble([[-0.5, 3.5]]))
         lcurve2 = Lightcurve(np.linspace(0, 10, 150),
                              np.random.poisson(30, 150),
-                            mjdref=54385.3254923845,
-                            gti = np.longdouble([[-0.5, 3.5]]))
+                             mjdref=54385.3254923845,
+                             gti=np.longdouble([[-0.5, 3.5]]))
 
         xps = AveragedCrossspectrum(lcurve1, lcurve2, 1)
 
@@ -160,7 +160,7 @@ class TestIO():
         assert k == "double"
 
     def test_save_longcomplex(self):
-        val = np.longcomplex(1.01 +2.3j)
+        val = np.longcomplex(1.01 + 2.3j)
         data = {'val': val}
         save_data(data, 'bubu' + HEN_FILE_EXTENSION)
         data_out = load_data('bubu' + HEN_FILE_EXTENSION)
@@ -169,7 +169,7 @@ class TestIO():
 
     @pytest.mark.skipif('not HAS_C256 or not HAS_NETCDF')
     def test_save_longcomplex(self):
-        val = np.complex256(1.01 +2.3j)
+        val = np.complex256(1.01 + 2.3j)
         data = {'val': val}
         with pytest.warns(UserWarning) as record:
             save_data(data, 'bubu' + HEN_FILE_EXTENSION)

@@ -79,14 +79,14 @@ def dyn_folding_search(events, fmin, fmax, step=None,
     length = np.diff(gti, axis=1)
 
     if not np.any(length > time_step):
-        gti = np.array([[gti[0,0], gti[-1, 1]]])
+        gti = np.array([[gti[0, 0], gti[-1, 1]]])
 
     start, stop = time_intervals_from_gtis(gti, time_step)
 
     stats = []
 
     for st, sp in zip(start, stop):
-        times_filt = events.time[(events.time >= st)&(events.time < sp)]
+        times_filt = events.time[(events.time >= st) & (events.time < sp)]
 
         trial_freqs = np.arange(fmin, fmax, step)
         try:
@@ -167,8 +167,7 @@ def _common_parser(args=None):
     # Only relevant to z search
     parser.add_argument('-N', default=2, type=int,
                         help="The number of harmonics to use in the search "
-                            "(the 'N' in Z^2_N; only relevant to Z search!)")
-
+                             "(the 'N' in Z^2_N; only relevant to Z search!)")
 
     args = parser.parse_args(args)
 

@@ -65,15 +65,15 @@ class TestFullRun(object):
         """Test produce a fake event file and apply deadtime."""
         fits_file = os.path.join(self.datadir, 'monol_test_fake_lc.evt')
         hen.fake.main(['--deadtime', '2.5e-3',
-                      '--ctrate', '2000',
-                      '-o', fits_file])
+                       '--ctrate', '2000',
+                       '-o', fits_file])
 
     def test_fake_file_xmm(self):
         """Test produce a fake event file and apply deadtime."""
         fits_file = os.path.join(self.datadir, 'monol_test_fake_lc_xmm.evt')
         hen.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
-                      '--ctrate', '2000',
-                      '-o', fits_file])
+                       '--ctrate', '2000',
+                       '-o', fits_file])
         hdu_list = fits.open(fits_file)
         hdunames = [hdu.name for hdu in hdu_list]
         assert 'STDGTI01' in hdunames
@@ -181,7 +181,7 @@ class TestFullRun(object):
         fname = os.path.join(self.datadir,
                              'monol_testA_nustar_fpma_ev_calib' +
                              HEN_FILE_EXTENSION)
-        hen.varenergy.main([fname,"-f", "0", "100", "--energy-values",
+        hen.varenergy.main([fname, "-f", "0", "100", "--energy-values",
                             "0.3", "12", "5", "lin", "--rms", "-b", "0.5",
                             "--segment-size", "128"])
         out = hen.base.hen_root(fname) + "_rms" + '.qdp'
@@ -191,12 +191,11 @@ class TestFullRun(object):
         fname = os.path.join(self.datadir,
                              'monol_testA_nustar_fpma_ev_calib' +
                              HEN_FILE_EXTENSION)
-        hen.varenergy.main([fname,"-f", "0", "100", "--energy-values",
+        hen.varenergy.main([fname, "-f", "0", "100", "--energy-values",
                             "0.3", "12", "5", "lin", "--lag", "-b", "0.5",
                             "--segment-size", "128"])
         out = hen.base.hen_root(fname) + "_lag" + '.qdp'
         os.path.exists(out)
-
 
     def test_lcurve(self):
         """Test light curve production."""
@@ -259,7 +258,6 @@ class TestFullRun(object):
         lc = hen.io.load_lcurve(new_filename)
         gti_to_test = hen.io.load_events(self.first_event_file).gti[0]
         assert np.allclose(gti_to_test, lc.gti)
-
 
     def test_lcurve_split(self):
         """Test lc with gti-split option."""
@@ -354,7 +352,7 @@ class TestFullRun(object):
         """Test produce joined light curves."""
         new_filename = os.path.join(
             self.datadir, 'monol_test_joinlc' + HEN_FILE_EXTENSION)
-        #because join_lightcurves separates by instrument
+        # because join_lightcurves separates by instrument
         new_actual_filename = os.path.join(
             self.datadir, 'FPMAmonol_test_joinlc' + HEN_FILE_EXTENSION)
         hen.lcurve.join_lightcurves(
@@ -371,12 +369,12 @@ class TestFullRun(object):
 
     def test_scrunchlcs(self):
         """Test produce scrunched light curves."""
-        a_in = os.path.join(self.datadir, 'monol_testA_E3-50_lc' + \
-            HEN_FILE_EXTENSION)
-        b_in = os.path.join(self.datadir, 'monol_testB_E3-50_lc' + \
-            HEN_FILE_EXTENSION)
-        out = os.path.join(self.datadir, 'monol_test_scrunchlc' + \
-            HEN_FILE_EXTENSION)
+        a_in = os.path.join(self.datadir,
+                            'monol_testA_E3-50_lc' + HEN_FILE_EXTENSION)
+        b_in = os.path.join(self.datadir,
+                            'monol_testB_E3-50_lc' + HEN_FILE_EXTENSION)
+        out = os.path.join(self.datadir,
+                           'monol_test_scrunchlc' + HEN_FILE_EXTENSION)
         command = '{0} {1} -o {2}'.format(a_in, b_in, out)
 
         hen.lcurve.scrunch_main(command.split())
@@ -389,8 +387,8 @@ class TestFullRun(object):
 
     def testbaselinelc(self):
         """Test produce scrunched light curves."""
-        a_in = os.path.join(self.datadir, 'monol_testA_E3-50_lc' + \
-            HEN_FILE_EXTENSION)
+        a_in = os.path.join(self.datadir,
+                            'monol_testA_E3-50_lc' + HEN_FILE_EXTENSION)
         out = os.path.join(self.datadir, 'monol_test_baselc')
         command = '{0} -o {1} -p 0.001 --lam 1e5'.format(a_in, out)
 
@@ -402,13 +400,13 @@ class TestFullRun(object):
 
     def testbaselinelc_nooutroot(self):
         """Test produce scrunched light curves."""
-        a_in = os.path.join(self.datadir, 'monol_testA_E3-50_lc' + \
-            HEN_FILE_EXTENSION)
+        a_in = os.path.join(self.datadir,
+                            'monol_testA_E3-50_lc' + HEN_FILE_EXTENSION)
         command = '{0} -p 0.001 --lam 1e5'.format(a_in)
 
         hen.lcurve.baseline_main(command.split())
-        out_lc = hen.io.load_lcurve(hen.base.hen_root(a_in) + '_lc_baseline' +
-                                    HEN_FILE_EXTENSION)
+        out_lc = hen.io.load_lcurve(
+            hen.base.hen_root(a_in) + '_lc_baseline' + HEN_FILE_EXTENSION)
         assert hasattr(out_lc, 'base')
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, out_lc.gti)
@@ -416,8 +414,9 @@ class TestFullRun(object):
     def test_lcurve_error_uncalibrated(self):
         """Test light curve error from uncalibrated file."""
         command = ('{0} -e {1} {2}').format(
-            os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
-                         HEN_FILE_EXTENSION), 3, 50)
+            os.path.join(self.datadir,
+                         'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION),
+            3, 50)
 
         with pytest.raises(ValueError) as excinfo:
             hen.lcurve.main(command.split())
@@ -427,16 +426,18 @@ class TestFullRun(object):
     def test_lcurve_pi_filtering(self):
         """Test light curve using PI filtering."""
         command = ('{0} --pi-interval {1} {2}').format(
-            os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
-                         HEN_FILE_EXTENSION), 10, 300)
+            os.path.join(self.datadir,
+                         'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION),
+            10, 300)
 
         hen.lcurve.main(command.split())
 
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
         command = ('{0} -b 100 -e {1} {2} {2} {3}').format(
-            os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev' +
-                         HEN_FILE_EXTENSION), 3, 5, 10)
+            os.path.join(self.datadir,
+                         'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION),
+            3, 5, 10)
         with pytest.raises(ValueError) as excinfo:
             hen.colors.main(command.split())
 
@@ -446,8 +447,10 @@ class TestFullRun(object):
         """Test light curve using PI filtering."""
         # calculate colors
         command = ('{0} -b 100 -e {1} {2} {2} {3}').format(
-            os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
-                         HEN_FILE_EXTENSION), 3, 5, 10)
+            os.path.join(self.datadir,
+                         'monol_testA_nustar_fpma_ev_calib' +
+                         HEN_FILE_EXTENSION),
+            3, 5, 10)
         hen.colors.main(command.split())
 
         new_filename = \
@@ -459,36 +462,35 @@ class TestFullRun(object):
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, out_lc.gti)
 
-
     def test_pds_leahy(self):
         """Test PDS production."""
-        lc = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
-                HEN_FILE_EXTENSION
+        lc = os.path.join(self.datadir,
+                          'monol_testA_E3-50_lc') + HEN_FILE_EXTENSION
         hen.io.main([lc])
         command = \
             '{0} -f 128 -k PDS --norm leahy'.format(lc)
         hen.fspec.main(command.split())
 
-        assert os.path.exists(os.path.join(self.datadir,
-                                           'monol_testA_E3-50_pds')
-                              + HEN_FILE_EXTENSION)
+        assert os.path.exists(
+            os.path.join(self.datadir,
+                         'monol_testA_E3-50_pds' + HEN_FILE_EXTENSION))
 
     def test_pds(self):
         """Test PDS production."""
         command = \
             '{0} {1} -f 128 --save-dyn -k PDS --norm frac --nproc 2 '.format(
-                os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-                HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-                HEN_FILE_EXTENSION)
+                os.path.join(self.datadir,
+                             'monol_testA_E3-50_lc') + HEN_FILE_EXTENSION,
+                os.path.join(self.datadir,
+                             'monol_testB_E3-50_lc') + HEN_FILE_EXTENSION)
         hen.fspec.main(command.split())
 
-        assert os.path.exists(os.path.join(self.datadir,
-                                           'monol_testB_E3-50_pds')
-                              + HEN_FILE_EXTENSION)
-        assert os.path.exists(os.path.join(self.datadir,
-                                           'monol_testA_E3-50_pds')
-                              + HEN_FILE_EXTENSION)
+        assert os.path.exists(
+            os.path.join(self.datadir,
+                         'monol_testB_E3-50_pds' + HEN_FILE_EXTENSION))
+        assert os.path.exists(
+            os.path.join(self.datadir,
+                         'monol_testA_E3-50_pds') + HEN_FILE_EXTENSION)
 
     def test_pds_fits(self):
         """Test PDS production with light curves obtained from FITS files."""
@@ -645,9 +647,8 @@ class TestFullRun(object):
 
     def test_save_fvar(self):
         fname = os.path.join(self.datadir,
-                             'monol_testA_E3-50_lc' +
-                             HEN_FILE_EXTENSION)
-        hen.exvar.main([fname,"-c", "10", "--fraction-step", "0.6",
+                             'monol_testA_E3-50_lc' + HEN_FILE_EXTENSION)
+        hen.exvar.main([fname, "-c", "10", "--fraction-step", "0.6",
                         "--norm", "fvar"])
         out = hen.base.hen_root(fname) + "_fvar" + '.qdp'
         os.path.exists(out)
@@ -756,8 +757,9 @@ model = models.Const1D()
 
         os.path.exists(os.path.join(self.datadir,
                                     'monol_test_E3-50_cpds_rebin1.03.pha'))
-        os.path.exists(os.path.join(self.datadir,
-                                    'monol_test_E3-50_cpds_rebin1.03_lags.pha'))
+        os.path.exists(
+            os.path.join(self.datadir,
+                         'monol_test_E3-50_cpds_rebin1.03_lags.pha'))
 
     def test_create_gti(self):
         """Test creating a GTI file."""
@@ -815,12 +817,12 @@ model = models.Const1D()
         arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
         errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
         hen.io.save_as_qdp(arrays, errors,
-                          filename=os.path.join(self.datadir,
-                                                "monol_test_qdp.txt"))
+                           filename=os.path.join(self.datadir,
+                                                 "monol_test_qdp.txt"))
         hen.io.save_as_qdp(arrays, errors,
-                          filename=os.path.join(self.datadir,
-                                                "monol_test_qdp.txt"),
-                          mode='a')
+                           filename=os.path.join(self.datadir,
+                                                 "monol_test_qdp.txt"),
+                           mode='a')
 
     def test_save_as_ascii(self):
         """Test saving arrays in a ascii file."""
@@ -853,7 +855,7 @@ model = models.Const1D()
 
         hen.exposure.main(command.split())
         fname = os.path.join(self.datadir,
-                             'monol_testA_E3-50_lccorr'  + HEN_FILE_EXTENSION)
+                             'monol_testA_E3-50_lccorr' + HEN_FILE_EXTENSION)
         assert os.path.exists(fname)
         ftype, contents = hen.io.get_file_type(fname)
 
@@ -871,12 +873,12 @@ model = models.Const1D()
         hen.plot.main([pname, cname, lname, '--noplot', '--xlin', '--ylin',
                       '-o', 'dummy.qdp'])
         hen.plot.main([lname, '--noplot',
-                      '--axes', 'time', 'counts', '--xlin', '--ylin',
-                      '-o', 'dummy.qdp'])
+                       '--axes', 'time', 'counts', '--xlin', '--ylin',
+                       '-o', 'dummy.qdp'])
 
     def test_plot_lcurve_baseline(self):
-        a_in = os.path.join(self.datadir, 'monol_testA_E3-50_lc' + \
-            HEN_FILE_EXTENSION)
+        a_in = os.path.join(self.datadir,
+                            'monol_testA_E3-50_lc' + HEN_FILE_EXTENSION)
         base_file = hen.base.hen_root(a_in) + '_lc_baseline' + \
             HEN_FILE_EXTENSION
         hen.plot.main([base_file, '--noplot', '-o', 'dummy_base.qdp'])
@@ -886,20 +888,23 @@ model = models.Const1D()
 
     def test_plot_log(self):
         """Test plotting with log axes."""
-        pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
-            HEN_FILE_EXTENSION
-        cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds_rebin1.03') + \
-            HEN_FILE_EXTENSION
+        pname = os.path.join(
+            self.datadir,
+            'monol_testA_E3-50_pds_rebin1.03' + HEN_FILE_EXTENSION)
+        cname = os.path.join(
+            self.datadir,
+            'monol_test_E3-50_cpds_rebin1.03' + HEN_FILE_EXTENSION)
         hen.plot.main([pname, cname, '--noplot', '--xlog', '--ylog',
-                      '-o', 'dummy.qdp'])
+                       '-o', 'dummy.qdp'])
         hen.plot.main([pname, '--noplot', '--axes', 'power', 'power_err',
-                      '--xlin', '--ylin',
-                      '-o', 'dummy.qdp'])
+                       '--xlin', '--ylin',
+                       '-o', 'dummy.qdp'])
 
     def test_plot_save_figure(self):
         """Test plotting and saving figure."""
-        pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_rebin1.03') + \
-            HEN_FILE_EXTENSION
+        pname = os.path.join(
+            self.datadir,
+            'monol_testA_E3-50_pds_rebin1.03' + HEN_FILE_EXTENSION)
         hen.plot.main([pname, '--noplot', '--figname',
                       os.path.join(self.datadir,
                                    'monol_testA_E3-50_pds_rebin1.03.png'),

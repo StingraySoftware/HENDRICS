@@ -66,7 +66,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
         outfile = outroot_local + '_ev' + HEN_FILE_EXTENSION
         if noclobber and os.path.exists(outfile) and (not gti_split):
             warnings.warn(
-                '{0} exists, and noclobber option used. Skipping'.format(outfile))
+                '{0} exists and using noclobber. Skipping'.format(outfile))
             return
 
         if gti_split:

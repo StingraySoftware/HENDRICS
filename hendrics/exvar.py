@@ -31,16 +31,17 @@ def main(args=None):
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument('-c', "--chunk-length", type=float, default= 20,
+    parser.add_argument('-c', "--chunk-length", type=float, default=20,
                         help="Length in seconds of the light curve chunks")
-    parser.add_argument("--fraction-step", type=float, default= 0.5,
+    parser.add_argument("--fraction-step", type=float, default=0.5,
                         help="If the step is not a full chunk_length but less,"
                         "this indicates the ratio between step step and"
                         " `chunk_length`")
     parser.add_argument("--norm", type=str, default="excvar",
                         help="Choose between fvar, excvar and norm_excvar "
-                             "normalization, referring to Fvar, excess variance"
-                             " and normalized excess variance respectively (see"
+                             "normalization, referring to Fvar, excess "
+                             "variance, and normalized excess variance "
+                             "respectively (see"
                              " Vaughan et al. 2003 for details).")
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
@@ -50,19 +51,20 @@ def main(args=None):
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
     args = parser.parse_args(args)
-    
+
     if args.debug:
         args.loglevel = 'DEBUG'
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
     logging.basicConfig(filename='HENexcvar.log', level=numeric_level,
                         filemode='w')
-    filelist=[]
+    filelist = []
     for fname in args.files:
         lcurve = load_lcurve(fname)
         if args.norm == "fvar":
-            start, stop, res = lcurve.analyze_lc_chunks(args.chunk_length, fvar,
-                                                        args.fraction_step)
+            start, stop, res = \
+                lcurve.analyze_lc_chunks(args.chunk_length, fvar,
+                                         args.fraction_step)
         elif args.norm == "excvar":
             start, stop, res = \
                 lcurve.analyze_lc_chunks(args.chunk_length, excvar_none,
@@ -76,8 +78,8 @@ def main(args=None):
                              "or excvar")
         var, var_err = res
         out = hen_root(fname) + "_" + args.norm + '.qdp'
-        save_as_qdp([(start+stop)/2, var],[(stop-start)/2, var_err],
+        save_as_qdp([(start+stop)/2, var], [(stop-start)/2, var_err],
                     filename=out)
         filelist.append(out)
-    
+
     return filelist

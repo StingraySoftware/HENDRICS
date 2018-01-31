@@ -110,9 +110,10 @@ def apply_gti(fname, gti, outname=None,
         if data['instr'] == 'PCA':  # pragma: no cover
             data['PCU'] = data['PCU'][good]
 
+    newext = '_gtifilt' + HEN_FILE_EXTENSION
     outname = _assign_value_if_none(
         outname,
-        fname.replace(HEN_FILE_EXTENSION, '') + '_gtifilt' + HEN_FILE_EXTENSION)
+        fname.replace(HEN_FILE_EXTENSION, '') + newext)
     save_data(data, outname)
 
     return newgtis

@@ -4,7 +4,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .io import load_events, save_events, get_file_extension, HEN_FILE_EXTENSION
+from .io import load_events, save_events, get_file_extension
+from .io import HEN_FILE_EXTENSION
 import numpy as np
 import os
 import logging

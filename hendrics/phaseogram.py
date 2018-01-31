@@ -221,10 +221,11 @@ class BasePhaseogram(object):
         if apply_delay:
             func = self._line_delay_fun
         else:
-            func = lambda x: 0
+            def func(x): return 0
 
         for i, ph0 in enumerate(self.line_phases):
-            self.lines[i].set_xdata(ph0 + func(self.times) - func(self.times[0]))
+            linephase = ph0 + func(self.times) - func(self.times[0])
+            self.lines[i].set_xdata(linephase)
 
 
 class InteractivePhaseogram(BasePhaseogram):

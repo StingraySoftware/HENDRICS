@@ -386,12 +386,12 @@ def save_lcurve(lcurve, fname, lctype='Lightcurve'):
 def load_lcurve(fname):
     """Load light curve from a file."""
     if get_file_format(fname) == 'pickle':
-        data =  _load_data_pickle(fname)
+        data = _load_data_pickle(fname)
     elif get_file_format(fname) == 'nc':
         data = _load_data_nc(fname)
 
     lcurve = Lightcurve(data['time'], data['counts'], err=data['counts_err'],
-                        gti=data['gti'], err_dist = data['err_dist'],
+                        gti=data['gti'], err_dist=data['err_dist'],
                         mjdref=data['mjdref'])
 
     if 'instr' in list(data.keys()):
@@ -411,8 +411,8 @@ def load_lcurve(fname):
 
     return lcurve
 
-# ---- Functions to save epoch folding results
 
+# ---- Functions to save epoch folding results
 def save_folding(efperiodogram, fname):
     """Save PDS in a file."""
 
@@ -430,6 +430,7 @@ def save_folding(efperiodogram, fname):
         return _save_data_pickle(outdata, fname)
     elif get_file_format(fname) == 'nc':
         return _save_data_nc(outdata, fname)
+
 
 def load_folding(fname):
     """Load PDS from a file."""
@@ -457,7 +458,6 @@ def load_folding(fname):
 
 
 # ---- Functions to save PDSs
-
 def save_pds(cpds, fname, save_all=True):
     """Save PDS in a file."""
     from .base import mkdir_p
@@ -471,7 +471,6 @@ def save_pds(cpds, fname, save_all=True):
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
     if save_all:
         mkdir_p(outdir)
-
 
     if 'lc1' in outdata:
         if save_all:
@@ -500,9 +499,10 @@ def save_pds(cpds, fname, save_all=True):
     if 'cs_all' in outdata:
         if save_all:
             for i, c in enumerate(cpds.cs_all):
-                save_pds(c,
-                         os.path.join(outdir,
-                                      '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
+                save_pds(
+                    c,
+                    os.path.join(outdir,
+                                 '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
         outdata.pop('cs_all')
 
     if get_file_format(fname) == 'pickle':
@@ -560,6 +560,7 @@ def load_pds(fname, nosub=False):
         cpds.cs_all = cs_all
 
     return cpds
+
 
 # ---- GENERIC function to save stuff.
 def _load_data_pickle(fname, kind="data"):
