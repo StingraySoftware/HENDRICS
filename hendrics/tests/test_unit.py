@@ -38,7 +38,7 @@ class TestAll(unittest.TestCase):
         priors = np.array([2.])
         dt = np.array([1., 1., 1.])
         expo = hen.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
-                                                gti=None)
+                                                 gti=None)
         np.testing.assert_almost_equal(expo, np.array([1, 0.5, 0.]))
 
     def test_exposure_calculation2(self):
@@ -48,7 +48,7 @@ class TestAll(unittest.TestCase):
         priors = np.array([0.3])
         dt = np.array([1., 1.])
         expo = hen.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
-                                                gti=None)
+                                                 gti=None)
         np.testing.assert_almost_equal(expo, np.array([0, 0.3]))
 
     def test_exposure_calculation3(self):
@@ -58,7 +58,7 @@ class TestAll(unittest.TestCase):
         priors = np.array([0.7])
         dt = np.array([1., 1., 1.])
         expo = hen.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
-                                                gti=None)
+                                                 gti=None)
         np.testing.assert_almost_equal(expo, np.array([0.1, 0.6, 0.]))
 
     def test_exposure_calculation4(self):
@@ -69,7 +69,7 @@ class TestAll(unittest.TestCase):
         dt = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
         expected_expo = np.array([0.15, 0.5, 0.5, 0.35, 0])
         expo = hen.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
-                                                gti=None)
+                                                 gti=None)
         np.testing.assert_almost_equal(expo, expected_expo)
 
     def test_exposure_calculation5(self):
@@ -81,7 +81,7 @@ class TestAll(unittest.TestCase):
         dt = np.array([1, 1, 1])
         expected_expo = np.array([0.8, 0.9, 1])
         expo = hen.exposure.get_livetime_per_bin(times, events, priors, dt=dt,
-                                                gti=None)
+                                                 gti=None)
         np.testing.assert_almost_equal(expo, expected_expo)
 
     def test_high_precision_keyword(self):
@@ -111,7 +111,7 @@ class TestAll(unittest.TestCase):
         bkg_events = np.array([1, 3.1])
         filt_events, info = \
             hen.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
-                                        return_all=True)
+                                         return_all=True)
         expected_ev = np.array([2, 2.2, 3, 3.2])
         expected_bk = np.array([1])
         assert np.all(filt_events == expected_ev), \
@@ -131,7 +131,7 @@ class TestAll(unittest.TestCase):
         bkg_events = np.array([1, 3.1])
         filt_events, info = \
             hen.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
-                                        paralyzable=True, return_all=True)
+                                         paralyzable=True, return_all=True)
         expected_ev = np.array([2, 2.2, 3])
         expected_bk = np.array([1])
         assert np.all(filt_events == expected_ev), \
@@ -145,7 +145,7 @@ class TestAll(unittest.TestCase):
         bkg_events = np.array([1, 3.1])
         filt_events, info = \
             hen.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
-                                        paralyzable=True, return_all=True)
+                                         paralyzable=True, return_all=True)
 
         assert np.all(filt_events == events[info.mask])
 

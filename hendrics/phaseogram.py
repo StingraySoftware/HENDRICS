@@ -33,7 +33,7 @@ class SliderOnSteroids(Slider):
 @six.add_metaclass(ABCMeta)
 class BasePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, test=False,
-                 pepoch=None, fdot=0, fddot=0, **kwargs):
+                 pepoch=None, fdot=0, fddot=0, mjdref=None, **kwargs):
         """Init BasePhaseogram class.
 
         Parameters
@@ -63,6 +63,7 @@ class BasePhaseogram(object):
         self.fddot = fddot
         self.nt = nt
         self.nph = nph
+        self.mjdref = mjdref
 
         self.pepoch = assign_value_if_none(pepoch, ev_times[0])
         self.ev_times = ev_times
@@ -221,10 +222,11 @@ class BasePhaseogram(object):
         if apply_delay:
             func = self._line_delay_fun
         else:
-            func = lambda x: 0
+            def func(x): return 0
 
         for i, ph0 in enumerate(self.line_phases):
-            self.lines[i].set_xdata(ph0 + func(self.times) - func(self.times[0]))
+            linephase = ph0 + func(self.times) - func(self.times[0])
+            self.lines[i].set_xdata(linephase)
 
 
 class InteractivePhaseogram(BasePhaseogram):
@@ -308,10 +310,12 @@ class InteractivePhaseogram(BasePhaseogram):
 
         self.fig.canvas.draw()
         print("------------------------")
-        print("PEPOCH    {} + MJDREF".format(self.pepoch / 86400))
-        print("F0        {}".format(self.freq))
-        print("F1        {}".format(self.fdot))
-        print("F2        {}".format(self.fddot))
+        print("PEPOCH (MET)   {}".format(self.pepoch))
+        if self.mjdref is not None:
+            print("PEPOCH (MJD)   {}".format(self.pepoch / 86400 + self.mjdref))
+        print("F0 (Hz)        {}".format(self.freq))
+        print("F1 (Hz/s)      {}".format(self.fdot))
+        print("F2 (Hz/s^2)    {}".format(self.fddot))
         print("------------------------")
 
     def quit(self, event):
@@ -447,6 +451,8 @@ class BinaryPhaseogram(BasePhaseogram):
                                              self.orbital_period / 86400))
         print("A1 (l-s)   {}".format(self.asini))
         print("T0 (MET)   {}".format(self.t0))
+        if self.mjdref is not None:
+            print("T0 (MJD)   {}".format(self.t0 / 86400 + self.mjdref))
         print("------------------------")
 
     def quit(self, event):
@@ -458,20 +464,27 @@ class BinaryPhaseogram(BasePhaseogram):
 
 def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                                nt=32, binary=False, test=False,
-                               binary_parameters=[None, 0, None]):
+                               binary_parameters=[None, 0, None],
+                               pepoch=None):
     events = load_events(event_file)
+    if pepoch is None:
+        pepoch = events.gti[0, 0]
+    else:
+        pepoch = (pepoch - events.mjdref) * 86400
 
     if binary:
         ip = BinaryPhaseogram(events.time, freq, nph=nbin, nt=nt,
                               fdot=fdot, test=test, fddot=fddot,
-                              pepoch=events.gti[0, 0],
+                              pepoch=pepoch,
                               orbital_period=binary_parameters[0],
                               asini=binary_parameters[1],
-                              t0=binary_parameters[2])
+                              t0=binary_parameters[2],
+                              mjdref=events.mjdref)
     else:
         ip = InteractivePhaseogram(events.time, freq, nph=nbin, nt=nt,
                                    fdot=fdot, test=test, fddot=fddot,
-                                   pepoch=events.gti[0, 0])
+                                   pepoch=pepoch,
+                                   mjdref=events.mjdref)
 
     return ip
 
@@ -487,6 +500,9 @@ def main_phaseogram(args=None):
                         help="Initial fdot", default=0)
     parser.add_argument("--fddot", type=float, required=False,
                         help="Initial fddot", default=0)
+    parser.add_argument("--pepoch", type=float, required=False,
+                        help="Reference epoch for timing parameters",
+                        default=None)
     parser.add_argument("--periodogram", type=str, required=False,
                         help="Periodogram file", default=None)
     parser.add_argument('-n', "--nbin", default=128, type=int,
@@ -534,4 +550,5 @@ def main_phaseogram(args=None):
     ip = run_interactive_phaseogram(args.file, freq=frequency, fdot=fdot,
                                     nbin=args.nbin, nt=args.ntimes,
                                     test=args.test, binary=args.binary,
-                                    binary_parameters=args.binary_parameters)
+                                    binary_parameters=args.binary_parameters,
+                                    pepoch=args.pepoch)

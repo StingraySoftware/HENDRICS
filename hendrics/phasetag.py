@@ -10,7 +10,7 @@ import astropy.io.fits as pf
 import warnings
 from .io import is_string
 from stingray.io import load_events_and_gtis, ref_mjd
-from .base import _assign_value_if_none
+from .base import _assign_value_if_none, hen_root
 from .fold import fit_profile, std_fold_fit_func
 
 from stingray.pulse.pulsar import pulse_phase, phase_exposure
@@ -60,7 +60,7 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     ev_mjd = ev_list / 86400 + mjdref
     gtis_mjd = gtis / 86400 + mjdref
 
-    pepoch = _assign_value_if_none(pepoch, ev_mjd[0])
+    pepoch = _assign_value_if_none(pepoch, gtis_mjd[0, 0])
 
     # ------ Orbital DEMODULATION --------------------
     if is_string(parameter_info):
@@ -84,7 +84,10 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     ref_phase = 0
     ref_time = 0
 
-    if ref_to_max:
+    if pulse_ref_time is not None:
+        ref_time = (pulse_ref_time - pepoch) * 86400
+        ref_phase = ref_time * f
+    elif ref_to_max:
         phase_to1 = phase - np.floor(phase)
 
         raw_profile, bins = np.histogram(phase_to1,
@@ -106,8 +109,6 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
             ref_phase = bins[np.argmax(raw_profile)]
 
         ref_time = ref_phase / f
-    elif pulse_ref_time is not None:  # pragma: no cover
-        raise NotImplementedError('pulse_ref_time is not implemented.')
 
     phase -= ref_phase
     gti_phases -= ref_phase
@@ -132,7 +133,9 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     phs = (bins[1:] + bins[:-1]) / 2
     phs = np.append(phs, phs + 1)
 
+    fig = None
     if plot:
+        fig = plt.figure()
         plt.errorbar(phs, profile / exposure,
                      yerr=profile_err / exposure, fmt='none')
         plt.plot(phs, profile / exposure, 'k-',
@@ -149,6 +152,7 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     results.phase = phase
     results.frequency_derivatives = frequency_derivatives
     results.ref_time = ref_time
+    results.figure = fig
     return results
 
 
@@ -186,9 +190,12 @@ def phase_tag_fits(filename, parameter_info, **kwargs):
     evreturns = load_events_and_gtis(filename)
     mjdref = ref_mjd(filename)
 
-    results = phase_tag(evreturns.ev_list, parameter_info, mjdref=mjdref,
+    results = phase_tag(evreturns.ev_list, parameter_info,
+                        gtis=evreturns.gti_list,
+                        mjdref=mjdref,
                         **kwargs)
-
+    if results.figure is not None:
+        results.figure.savefig(hen_root(filename) + '.pdf')
     phase = results.phase
     frequency_derivatives = results.frequency_derivatives
     ref_time = results.ref_time
@@ -294,8 +301,13 @@ def main_phasetag(args=None):
     parser.add_argument("--test", action="store_true", default=False,
                         dest="test",
                         help="Only for unit tests! Do not use")
-    parser.add_argument("--refTOA", default=None, type=float,
-                        help="Reference TOA in MJD (overrides --tomax)")
+    parser.add_argument("--refTOA", default=None, type=np.longdouble,
+                        help="Reference TOA in MJD (overrides --tomax) for "
+                             "reference pulse phase",
+                        dest='pulse_ref_time')
+    parser.add_argument("--pepoch", default=None, type=np.longdouble,
+                        help="Reference time for timing solution",
+                        dest='pepoch')
 
     args = parser.parse_args(args)
 
@@ -312,4 +324,5 @@ def main_phasetag(args=None):
     expocorr = True
 
     phase_tag_fits(args.file, parameter_info, plot=plot, nbin=args.nbin,
-                   test=args.test, expocorr=expocorr, ref_to_max=args.tomax)
+                   test=args.test, expocorr=expocorr, ref_to_max=args.tomax,
+                   pulse_ref_time=args.pulse_ref_time, pepoch=args.pepoch)

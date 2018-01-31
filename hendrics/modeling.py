@@ -7,6 +7,7 @@ from .io import load_model, load_pds, save_model
 import numpy as np
 from stingray.modeling import fit_powerspectrum
 
+
 def main_model(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
@@ -61,7 +62,7 @@ def main_model(args=None):
         if freqs is not None:
             good = np.zeros(len(spectrum.freq), dtype=bool)
             for f0, f1 in zip(freqs[::2], freqs[1::2]):
-                local_good = (spectrum.freq >= f0)&(spectrum.freq < f1)
+                local_good = (spectrum.freq >= f0) & (spectrum.freq < f1)
                 good[local_good] = True
 
             spectrum_filt = copy.copy(spectrum)

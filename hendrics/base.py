@@ -186,7 +186,7 @@ def hen_root(filename):
     """
     import os.path
     fname = filename.replace('.gz', '')
-    fname = os.path.splitext(filename)[0]
+    fname = os.path.splitext(fname)[0]
     fname = fname.replace('_ev', '').replace('_lc', '')
     fname = fname.replace('_calib', '')
     return fname

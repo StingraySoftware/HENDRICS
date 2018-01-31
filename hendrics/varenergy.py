@@ -19,7 +19,7 @@ def main(args=None):
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument('-f', "--freq-interval", nargs=2, type=float,
-                        default= [0., 100], help="Frequence interval")
+                        default=[0., 100], help="Frequence interval")
     parser.add_argument("--energy-values", nargs=4, type=str,
                         default="0.3 12 5 lin".split(" "),
                         help="Choose Emin, Emax, number of intervals,"
@@ -41,9 +41,9 @@ def main(args=None):
                         help="Energy intervals are specified as PI channels")
     parser.add_argument("--cross-instr", default=False, action='store_true',
                         help="Use data files in pairs, for example with the"
-                             "reference band from one and the subbands from the"
-                             " other (useful in NuSTAR and multiple-detector "
-                             "missions)")
+                             "reference band from one and the subbands from "
+                             "the  other (useful in NuSTAR and "
+                             "multiple-detector missions)")
     parser.add_argument("--lag", default=False, action='store_true',
                         help="Calculate lag-energy")
     parser.add_argument("--loglevel",
@@ -62,7 +62,7 @@ def main(args=None):
     numeric_level = getattr(logging, args.loglevel.upper(), None)
     logging.basicConfig(filename='HENvarenergy.log', level=numeric_level,
                         filemode='w')
-    filelist=[]
+    filelist = []
     energy_spec = (float(args.energy_values[0]),
                    float(args.energy_values[1]),
                    int(args.energy_values[2]),
@@ -93,8 +93,8 @@ def main(args=None):
         events2 = load_events(fname2)
         if not args.use_pi and \
                 (events.energy is None or events2.energy is None):
-            raise ValueError("If --use-pi is not specified, event lists must be"
-                             " calibrated! Please use HENcalibrate.")
+            raise ValueError("If --use-pi is not specified, event lists must "
+                             "be calibrated! Please use HENcalibrate.")
 
         if args.rms:
             rms = RmsEnergySpectrum(events, args.freq_interval,
@@ -104,10 +104,10 @@ def main(args=None):
                                     events2=events2,
                                     use_pi=args.use_pi)
             out1 = hen_root(fname) + "_rms" + '.qdp'
-            start_energy = np.asarray(rms.energy_intervals)[:,0]
-            stop_energy = np.asarray(rms.energy_intervals)[:,1]
+            start_energy = np.asarray(rms.energy_intervals)[:, 0]
+            stop_energy = np.asarray(rms.energy_intervals)[:, 1]
             save_as_qdp([start_energy, stop_energy, rms.spectrum],
-                    [None, None, rms.spectrum_error], filename=out1)
+                        [None, None, rms.spectrum_error], filename=out1)
             filelist.append(out1)
 
         if args.lag:
@@ -117,11 +117,11 @@ def main(args=None):
                                     bin_time=args.bin_time,
                                     events2=events2,
                                     use_pi=args.use_pi)
-            start_energy = np.asarray(lag.energy_intervals)[:,0]
-            stop_energy = np.asarray(lag.energy_intervals)[:,1]
+            start_energy = np.asarray(lag.energy_intervals)[:, 0]
+            stop_energy = np.asarray(lag.energy_intervals)[:, 1]
             out2 = hen_root(fname) + "_lag" + '.qdp'
             save_as_qdp([start_energy, stop_energy, lag.spectrum],
-                    [None, None, lag.spectrum_error], filename=out2)
+                        [None, None, lag.spectrum_error], filename=out2)
             filelist.append(out2)
 
         if args.covariance:

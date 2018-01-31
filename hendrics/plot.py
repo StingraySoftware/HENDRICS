@@ -252,7 +252,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             out_err = [None, None, None]
 
             if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
-                not len(ef.stat.shape) > 1:
+                    not len(ef.stat.shape) > 1:
                 for f in ef.best_fits:
                     out.append(f(ef.freq.flatten()))
                     out_err.append(None)

@@ -22,8 +22,8 @@ class TestLcurve():
                          'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION)
         cls.calib_filename = \
             os.path.join(cls.datadir,
-                         'monol_testA_nustar_fpma_ev_calib' + HEN_FILE_EXTENSION)
-
+                         'monol_testA_nustar_fpma_ev_calib' +
+                         HEN_FILE_EXTENSION)
 
     def test_treat_event_file_nustar(self):
         from astropy.io.fits import Header

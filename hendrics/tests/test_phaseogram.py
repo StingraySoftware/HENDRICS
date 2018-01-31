@@ -48,7 +48,8 @@ class TestPhaseogram():
 
     def test_phaseogram_input_f(self):
         evfile = self.dum
-        main_phaseogram([evfile, '-f', '9.9', '--test'])
+        main_phaseogram([evfile, '-f', '9.9', '--test',
+                         '--pepoch', '57000'])
 
     def test_phaseogram_input_f_change(self):
         evfile = self.dum
@@ -69,7 +70,8 @@ class TestPhaseogram():
     def test_phaseogram_input_periodogram_binary(self):
         evfile = self.dum
         main_phaseogram([evfile, '--binary', '--periodogram',
-                         'events_Z2n' + HEN_FILE_EXTENSION, '--test'])
+                         'events_Z2n' + HEN_FILE_EXTENSION, '--test',
+                         '--pepoch', '57000'])
 
     def test_phaseogram_input_f_binary(self):
         evfile = self.dum

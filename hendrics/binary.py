@@ -6,6 +6,8 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from .io import high_precision_keyword_read, get_file_type, HEN_FILE_EXTENSION
 
+MAXBIN = 100000000
+
 
 def get_header_info(obj):
     """Get header info from a Stingray object."""
@@ -87,7 +89,6 @@ def save_lc_to_binary(lc, filename):
     return lcinfo
 
 
-MAXBIN = 100000000
 def save_events_to_binary(events, filename, bin_time, tstart=None,
                           emin=None, emax=None):
     """Save an event list to binary format.
@@ -125,7 +126,7 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
                 'Energy filtering requested for uncalibrated event '
                 'list')
 
-        good = (events.energy >= emin)&(events.energy < emax)
+        good = (events.energy >= emin) & (events.energy < emax)
         events.time = events.time[good]
 
     tstop = events.gti[-1, 1]
@@ -140,10 +141,11 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
         lastbin = np.min([MAXBIN, (nbin - i) // 2 * 2])
         t1 = t0 + lastbin * bin_time
 
-        good = (events.time >= t0)&(events.time < t1)
+        good = (events.time >= t0) & (events.time < t1)
 
         goodev = events.time[good]
-        hist, times = np.histogram(goodev, bins=np.linspace(t0, t1, lastbin + 1))
+        hist, times = \
+            np.histogram(goodev, bins=np.linspace(t0, t1, lastbin + 1))
 
         lclen += lastbin
         s = struct.pack('f'*len(hist), *hist)
@@ -153,8 +155,10 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
     file.close()
 
     lcinfo = type('', (), {})()
-    lcinfo.bin_intervals_start = np.floor((events.gti[:, 0] - tstart) / bin_time)
-    lcinfo.bin_intervals_stop = np.floor((events.gti[:, 1] - tstart) / bin_time)
+    lcinfo.bin_intervals_start = \
+        np.floor((events.gti[:, 0] - tstart) / bin_time)
+    lcinfo.bin_intervals_stop = \
+        np.floor((events.gti[:, 1] - tstart) / bin_time)
     lcinfo.lclen = lclen
     lcinfo.tstart = tstart
     lcinfo.dt = bin_time
@@ -203,7 +207,6 @@ def save_inf(lcinfo, info, filename):
                   "{binstop:<11}".format(ngti=i + 1, binstart=st,
                                          binstop=bin_intervals_stop[i]),
                   file=f)
-            # print("{:.2f} {:.2f}".format(st / lclen, bin_intervals_stop[i] / lclen), end=" ")
         print(" Type of observation (EM band)         "
               " =  X-ray", file=f)
         print(" Field-of-view diameter (arcsec)       "
@@ -220,6 +223,7 @@ def save_inf(lcinfo, info, filename):
               file=f)
 
     return
+
 
 def main_presto(args=None):
     import argparse

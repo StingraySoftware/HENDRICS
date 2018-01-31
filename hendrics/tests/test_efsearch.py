@@ -112,4 +112,3 @@ class TestEFsearch():
     @classmethod
     def teardown_class(cls):
         os.unlink(cls.dum)
-
