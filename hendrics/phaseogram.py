@@ -4,6 +4,8 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .io import load_events, load_folding
+from .fold import get_TOAs
+from .base import hen_root
 from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
 
@@ -14,7 +16,7 @@ import matplotlib.pyplot as plt
 import six
 from abc import ABCMeta, abstractmethod
 from matplotlib.widgets import Slider, Button
-import astropy.units as u
+import warnings
 
 
 class SliderOnSteroids(Slider):
@@ -33,7 +35,8 @@ class SliderOnSteroids(Slider):
 @six.add_metaclass(ABCMeta)
 class BasePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, test=False,
-                 pepoch=None, fdot=0, fddot=0, mjdref=None, **kwargs):
+                 fdot=0, fddot=0, mjdref=None, pepoch=None, gti=None,
+                 label="phaseogram", **kwargs):
         """Init BasePhaseogram class.
 
         Parameters
@@ -51,6 +54,8 @@ class BasePhaseogram(object):
             Number of time bins in the profile
         pepoch : float, default None
             Epoch of timing solution, in the same units as ev_times
+        mjdref : float, default None
+            Reference MJD
         fdot : float
             First frequency derivative
         fddot : float
@@ -64,6 +69,8 @@ class BasePhaseogram(object):
         self.nt = nt
         self.nph = nph
         self.mjdref = mjdref
+        self.gti = gti
+        self.label = label
 
         self.pepoch = assign_value_if_none(pepoch, ev_times[0])
         self.ev_times = ev_times
@@ -116,17 +123,22 @@ class BasePhaseogram(object):
         self.button_reset = Button(self.resetax, 'Reset', color=axcolor,
                                    hovercolor='0.975')
 
-        self.zoominax = plt.axes([0.6, 0.020, 0.15, 0.04])
-        self.button_zoomin = Button(self.zoominax, 'Zoom in', color=axcolor,
+        self.zoominax = plt.axes([0.6, 0.020, 0.1, 0.04])
+        self.button_zoomin = Button(self.zoominax, '+Zoom', color=axcolor,
                                     hovercolor='0.975')
 
-        self.zoomoutax = plt.axes([0.75, 0.020, 0.15, 0.04])
-        self.button_zoomout = Button(self.zoomoutax, 'Zoom out', color=axcolor,
+        self.zoomoutax = plt.axes([0.7, 0.020, 0.1, 0.04])
+        self.button_zoomout = Button(self.zoomoutax, '-Zoom', color=axcolor,
                                      hovercolor='0.975')
+
+        self.toaax = plt.axes([0.8, 0.020, 0.1, 0.04])
+        self.button_toa = Button(self.toaax, 'TOA', color=axcolor,
+                                 hovercolor='0.975')
 
         self.button_reset.on_clicked(self.reset)
         self.button_zoomin.on_clicked(self.zoom_in)
         self.button_zoomout.on_clicked(self.zoom_out)
+        self.button_toa.on_clicked(self.toa)
         self.button_recalc.on_clicked(self.recalculate)
         self.button_close.on_clicked(self.quit)
 
@@ -144,6 +156,10 @@ class BasePhaseogram(object):
     @abstractmethod
     def recalculate(self, event):  # pragma: no cover
         pass
+
+    def toa(self, event):  # pragma: no cover
+        warnings.warn("This function was not implemented for this Phaseogram. "
+                      "Try the basic one.")
 
     def reset(self, event):
         for s in self.sliders:
@@ -318,6 +334,15 @@ class InteractivePhaseogram(BasePhaseogram):
         print("F2 (Hz/s^2)    {}".format(self.fddot))
         print("------------------------")
 
+    def toa(self, event):
+        dfreq, dfdot, dfddot = self._read_sliders()
+        freqs = [self.freq - dfreq, self.fdot - dfdot, self.fddot - dfddot]
+        folding_length = np.median(np.diff(self.times))
+        toa, toaerr = \
+            get_TOAs(self.ev_times, folding_length, *freqs, gti=self.gti,
+                     template=None, mjdref=self.mjdref, nbin=self.nph,
+                     pepoch=self.pepoch, timfile=self.label + '.tim')
+
     def quit(self, event):
         plt.close(self.fig)
 
@@ -479,12 +504,16 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                               orbital_period=binary_parameters[0],
                               asini=binary_parameters[1],
                               t0=binary_parameters[2],
-                              mjdref=events.mjdref)
+                              mjdref=events.mjdref,
+                              gti=events.gti,
+                              label=hen_root(event_file))
     else:
         ip = InteractivePhaseogram(events.time, freq, nph=nbin, nt=nt,
                                    fdot=fdot, test=test, fddot=fddot,
                                    pepoch=pepoch,
-                                   mjdref=events.mjdref)
+                                   mjdref=events.mjdref,
+                                   gti=events.gti,
+                                   label=hen_root(event_file))
 
     return ip
 
