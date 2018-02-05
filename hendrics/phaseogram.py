@@ -4,7 +4,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .io import load_events, load_folding
-from .fold import get_TOAs
+from .fold import get_TOAs_from_events
 from .base import hen_root
 from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
@@ -71,6 +71,7 @@ class BasePhaseogram(object):
         self.mjdref = mjdref
         self.gti = gti
         self.label = label
+        self.test = test
 
         self.pepoch = assign_value_if_none(pepoch, ev_times[0])
         self.ev_times = ev_times
@@ -339,9 +340,13 @@ class InteractivePhaseogram(BasePhaseogram):
         freqs = [self.freq - dfreq, self.fdot - dfdot, self.fddot - dfddot]
         folding_length = np.median(np.diff(self.times))
         toa, toaerr = \
-            get_TOAs(self.ev_times, folding_length, *freqs, gti=self.gti,
-                     template=None, mjdref=self.mjdref, nbin=self.nph,
-                     pepoch=self.pepoch, timfile=self.label + '.tim')
+            get_TOAs_from_events(self.ev_times, folding_length, *freqs,
+                                 gti=self.gti, template=None,
+                                 mjdref=self.mjdref, nbin=self.nph,
+                                 pepoch=self.pepoch,
+                                 timfile=self.label + '.tim',
+                                 label=self.label[:10],
+                                 quick=self.test)
 
     def quit(self, event):
         plt.close(self.fig)

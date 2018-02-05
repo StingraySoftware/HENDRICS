@@ -23,6 +23,7 @@ class TestPhaseogram():
         lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]])
         events = EventList()
         events.simulate_times(lc)
+        events.mjdref = 57000.
         cls.event_times = events.time
         cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
@@ -53,7 +54,7 @@ class TestPhaseogram():
 
     def test_phaseogram_input_f_change(self):
         evfile = self.dum
-        ip = run_interactive_phaseogram(evfile, 9.9, test=True, nbin=16)
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True, nbin=16, nt=8)
         ip.update(1)
         ip.recalculate(1)
         ip.toa(1)

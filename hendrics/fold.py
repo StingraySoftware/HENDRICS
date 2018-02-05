@@ -14,8 +14,11 @@ import argparse
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from scipy.signal import savgol_filter
+from scipy.interpolate import interp1d
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
+import time
+
 import copy
 try:
     from tqdm import tqdm as show_progress
@@ -47,9 +50,8 @@ def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE405"):
     return toalist
 
 
-def get_TOAs(events, folding_length, *frequency_derivatives, gti=None,
-             template=None, mjdref=None, nbin=16, pepoch=None,
-             timfile='out.tim'):
+def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
+                         **kwargs):
     """Get TOAs of pulsation.
 
     Parameters
@@ -75,6 +77,10 @@ def get_TOAs(events, folding_length, *frequency_derivatives, gti=None,
         template)
     timfile : str, default 'out.tim'
         file to save the TOAs to (if PINT is installed)
+    gti: [[g0_0, g0_1], [g1_0, g1_1], ...]
+         Good time intervals. Defaults to None
+    quick: bool
+         If True, use a quicker fitting algorithms for TOAs. Defaults to False
 
     Returns
     -------
@@ -84,6 +90,15 @@ def get_TOAs(events, folding_length, *frequency_derivatives, gti=None,
     toa_err : array-like
         errorbars on TOAs, in the same units as TOAs.
     """
+    template = kwargs['template'] if 'template' in kwargs else None
+    mjdref = kwargs['mjdref'] if 'mjdref' in kwargs else None
+    nbin = kwargs['nbin'] if 'nbin' in kwargs else 16
+    pepoch = kwargs['pepoch'] if 'pepoch' in kwargs else None,
+    timfile = kwargs['timfile'] if 'timfile' in kwargs else 'out.tim'
+    gti = kwargs['gti'] if 'gti' in kwargs else None
+    label = kwargs['label'] if 'label' in kwargs else None
+    quick = kwargs['quick'] if 'quick' in kwargs else False
+
     pepoch = assign_value_if_none(pepoch, events[0])
     gti = assign_value_if_none(gti, [[events[0], events[-1]]])
     # run exposure correction only if there are less than 1000 pulsations
@@ -93,6 +108,7 @@ def get_TOAs(events, folding_length, *frequency_derivatives, gti=None,
 
     if template is not None:
         nbin = len(template)
+        additional_phase = np.argmax(template) / nbin
     else:
         phase, profile, profile_err = \
             fold_events(copy.deepcopy(events), *frequency_derivatives,
@@ -100,12 +116,19 @@ def get_TOAs(events, folding_length, *frequency_derivatives, gti=None,
                         expocorr=expocorr, nbin=nbin)
         fit_pars_save, _, _ = \
             fit_profile_with_sinusoids(profile, profile_err, nperiods=1,
-                                       baseline=False)
+                                       baseline=True)
         template = std_fold_fit_func(fit_pars_save, phase)
+        fig = plt.figure()
+        plt.plot(phase, profile, drawstyle='steps-mid')
+        plt.plot(phase, template, drawstyle='steps-mid')
+        plt.savefig(timfile.replace('.tim', '') + '.png')
+        plt.close(fig)
         # start template from highest bin!
         # template = np.roll(template, -np.argmax(template))
         template *= folding_length / length
-    additional_phase = np.argmax(template) / nbin
+        template_fine = std_fold_fit_func(fit_pars_save,
+                                          np.arange(0, 1, 0.001))
+        additional_phase = np.argmax(template_fine) / len(template_fine)
 
     starts = np.arange(gti[0, 0], gti[-1, 1], folding_length)
 
@@ -139,7 +162,8 @@ def get_TOAs(events, folding_length, *frequency_derivatives, gti=None,
 
         toa, toaerr = \
             get_TOA(profile, 1/frequency_derivatives[0], start,
-                    template=template, additional_phase=additional_phase)
+                    template=template, additional_phase=additional_phase,
+                    quick=quick)
         toas.append(toa)
         toa_errs.append(toaerr)
 
@@ -150,8 +174,9 @@ def get_TOAs(events, folding_length, *frequency_derivatives, gti=None,
         toa_errs = toa_errs * 1e6
 
         if HAS_PINT:
+            label = assign_value_if_none(label, 'hendrics')
             toa_list = _load_and_prepare_TOAs(toas, errs_us=toa_errs)
-            toa_list.write_TOA_file(timfile)
+            toa_list.write_TOA_file(timfile, name=label)
 
         print('TOA(MJD)  TOAerr(us)')
     else:
@@ -504,9 +529,8 @@ def main_fold(args=None):
                 norm=args.norm)
 
 
-def fftfit(prof, template=None, **fftfit_kwargs):
+def fftfit(prof, template=None, quick=False, sigma=None, **fftfit_kwargs):
     """Align a template to a pulse profile.
-
     Parameters
     ----------
     phase : array
@@ -516,20 +540,20 @@ def fftfit(prof, template=None, **fftfit_kwargs):
     template : array, default None
         The template of the pulse used to perform the TOA calculation. If None,
         a simple sinusoid is used
-
     Returns
     -------
     mean_amp, std_amp : floats
         Mean and standard deviation of the amplitude
     mean_phase, std_phase : floats
         Mean and standard deviation of the phase
-
     Other Parameters
     ----------------
     fftfit_kwargs : arguments
         Additional arguments to be passed to error calculation
     """
     prof = prof - np.mean(prof)
+    if sigma is None:
+        sigma = np.sqrt(prof)
 
     nbin = len(prof)
 
@@ -538,27 +562,74 @@ def fftfit(prof, template=None, **fftfit_kwargs):
         template = np.cos(2 * np.pi * ph)
     template = template - np.mean(template)
 
-    p0 = [np.max(prof), np.float(np.argmax(prof) / nbin)]
+    dph = np.float((np.argmax(prof) - np.argmax(template) - 0.2) / nbin)
+    while dph > 0.5:
+        dph -= 1.
+    while dph < -0.5:
+        dph += 1.
 
-    res = basinhopping(_fft_fun_wrap, p0,
-                       minimizer_kwargs={'args': ([prof, template],),
-                                         'bounds': [[0, None], [0, None]]},
-                       niter=10000, niter_success=200)
+    if quick:
+        min_chisq = 1e32
 
-    # return fftfit_error(ph, prof, template, res.x, **fftfit_kwargs)
+        binsize = 1/nbin
+        for d in np.linspace(-0.5, 0.5, nbin/2):
+            p0 = [np.max(prof), dph + d]
+
+            res_trial = minimize(_fft_fun_wrap, p0, args=([prof, template],),
+                                 method='L-BFGS-B',
+                                 bounds=[[0, None], [dph + d - binsize, dph + d + binsize]],
+                                 options={'maxiter': 10000})
+            chisq = _fft_fun_wrap(res_trial.x, [prof, template])
+
+            if chisq < min_chisq:
+                min_chisq = chisq
+                res = res_trial
+    else:
+        p0 = [np.max(prof), dph]
+
+        res = basinhopping(_fft_fun_wrap, p0,
+                           minimizer_kwargs={'args': ([prof, template],),
+                                             'bounds': [[0, None], [-1, 1]]},
+                           niter=1000, niter_success=200).lowest_optimization_result
+
+    chisq = _fft_fun_wrap(res.x, [prof, template])
+
+    while res.x[1] > 0.5:
+        res.x[1] -= 1.
+    while res.x[1] < -0.5:
+        res.x[1] += 1.
+
+    return res.x[0], 0, res.x[1], 0.5 / nbin
+
+
+def plot_TOA_fit(profile, template, toa, mod=None, toaerr=None,
+                 additional_phase=0., show=False, period=1):
+    window = 5
+    phases = np.arange(0, 1, 1 / len(profile))
+    if mod is None:
+        mod = interp1d(phases, template, fill_value='extrapolate')
+
     fig = plt.figure()
-    plt.plot(ph, prof)
-    plt.plot(ph, template, color='grey')
-    plt.axvline(res.x[1])
-    plt.savefig(str(np.random.randint(0, 100000)) + '.png')
-    plt.close(fig)
-    return res.x[1], 0.5/nbin
+    plt.plot(phases - np.floor(phases), profile, drawstyle='steps-mid')
+    fine_phases = np.linspace(0, 1, 1000)
+    fine_phases_shifted = fine_phases - toa / period + additional_phase
+    plt.plot(fine_phases, mod(fine_phases_shifted - np.floor(fine_phases_shifted)))
+    if toaerr is not None:
+        plt.axvline((toa - toaerr) / period)
+        plt.axvline((toa + toaerr) / period)
+    plt.axvline(toa / period - 0.5/len(profile), ls='--')
+    plt.axvline(toa / period + 0.5/len(profile), ls='--')
+    timestamp = int(time.time())
+    plt.savefig('{}.png'.format(timestamp))
+    if not show:
+        plt.close(fig)
 
 
 def get_TOA(prof, period, tstart, template=None, additional_phase=0,
+            quick=False,
+            debug=True,
             **fftfit_kwargs):
     """Calculate the Time-Of-Arrival of a pulse.
-
     Parameters
     ----------
     prof : array
@@ -568,22 +639,27 @@ def get_TOA(prof, period, tstart, template=None, additional_phase=0,
         Otherwise use the default of fftfit
     tstart : float
         The time at the start of the pulse profile
-
     Returns
     -------
     toa, toastd : floats
         Mean and standard deviation of the TOA
-
     Other parameters
     ----------------
     nstep : int, optional, default 100
         Number of steps for the bootstrap method
     """
-    phase_res, phase_res_err = \
-        fftfit(prof, template=template, **fftfit_kwargs)
+
+    mean_amp, std_amp, phase_res, phase_res_err = \
+        fftfit(prof, template=template, quick=quick, **fftfit_kwargs)
     phase_res = phase_res + additional_phase
     phase_res = phase_res - np.floor(phase_res)
 
     toa = tstart + phase_res * period
     toaerr = phase_res_err * period
+
+    if debug:
+        plot_TOA_fit(prof, template, toa - tstart, toaerr=toaerr,
+                     additional_phase=additional_phase,
+                     period=period)
+
     return toa, toaerr
