@@ -1,7 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Search for pulsars."""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
+from __future__ import (absolute_import, division, print_function)
 
 from .io import load_events, EFPeriodogram, save_folding, load_folding, \
     HEN_FILE_EXTENSION
@@ -11,12 +10,92 @@ from stingray.pulse.search import epoch_folding_search, z_n_search, \
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
+import pandas as pd
 
 import numpy as np
 import os
 import logging
 import argparse
 import matplotlib.pyplot as plt
+import pandas as pd
+
+
+D_OMEGA_FACTOR = 2 * np.sqrt(3)
+TWOPI = 2 * np.pi
+
+
+def _save_df_to_csv(df, csv_file):
+    if not os.path.exists(csv_file):
+        mode = 'w'
+        header = True
+    else:
+        mode = 'a'
+        header = False
+    with open(csv_file, mode) as f:
+        df.to_csv(f, header=header)
+
+
+def decide_binary_parameters(length, freq_range, porb_range, asini_range,
+                             fdot_range=[0, 0], NMAX=10,
+                             csv_file='db.csv'):
+    count = 0
+    omega_range = [1 / porb_range[1], 1 / porb_range[0]]
+    columns = ['freq', 'fdot', 'X', 'Porb', 'done', 'detection']
+
+    while count < NMAX:
+        block_of_data = []
+        freq = np.random.uniform(freq_range[0], freq_range[1])
+        fdot = np.random.uniform(fdot_range[0], fdot_range[1])
+
+        dX = 1/(TWOPI * freq)
+
+        nX = np.int(np.diff(asini_range) // dX) + 1
+        Xs = np.random.uniform(asini_range[0], asini_range[1], nX)
+
+        for X in Xs:
+            dOmega = 1 / (TWOPI * freq * X * length) * D_OMEGA_FACTOR
+            nOmega = np.int(np.diff(omega_range) // dOmega) + 1
+            Omegas = np.random.uniform(omega_range[0], omega_range[1],
+                                       nOmega)
+            for Omega in Omegas:
+                block_of_data.append([freq, fdot, X, TWOPI / Omega,
+                                      False, False])
+
+        df = pd.DataFrame(block_of_data, columns=columns)
+        _save_df_to_csv(df, csv_file)
+        count += 1
+
+    return csv_file
+
+
+def folding_orbital_search(events, parameter_csv_file, chunksize=100,
+                           outfile='out.csv',
+                           fun=epoch_folding_search, **fun_kwargs):
+    times = (events.time - events.gti[0, 0]).astype(np.float64)
+    for chunk in pd.read_csv(parameter_csv_file, chunksize=chunksize):
+        df = chunk[chunk['done'] == False]
+        for i in range(len(df)):
+            row = df.iloc[i]
+            freq, fdot, X, Porb = \
+                np.array([row['freq'], row['fdot'], row['X'], row['Porb']], dtype=np.float64)
+
+            print(freq, fdot, X, Porb)
+            dT0 = 1 / (TWOPI ** 2 * freq) * Porb / X
+            for T0 in np.arange(0, Porb, dT0):
+                # one iteration
+                new_values = \
+                    times - X * np.sin(2 * np.pi * (times - T0) / Porb)
+                new_values = \
+                    new_values - X * np.sin(2 * np.pi *
+                                            (new_values - T0) / Porb)
+
+                print(new_values)
+                fgrid, fdgrid, stats = \
+                    fun(new_values, np.array([freq]), np.array([fdot]), **fun_kwargs)
+                print(freq, fdot, X, Porb, T0, stats[0, 0])
+
+        chunk['done'] = True
+        _save_df_to_csv(df, outfile)
 
 
 def fit(frequencies, stats, center_freq, width=None, obs_length=None,
