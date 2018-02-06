@@ -8,7 +8,7 @@ from .io import HEN_FILE_EXTENSION, load_lcurve, save_lcurve
 from .base import hen_root
 import logging
 from .lcurve import main as henlcurve
-from stingray import Lightcurve
+from stingray.lightcurve import Lightcurve
 import numpy as np
 import os
 

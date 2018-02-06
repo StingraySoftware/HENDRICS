@@ -10,7 +10,6 @@ from stingray.pulse.search import epoch_folding_search, z_n_search, \
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
-import pandas as pd
 
 import numpy as np
 import os
@@ -91,7 +90,8 @@ def folding_orbital_search(events, parameter_csv_file, chunksize=100,
 
                 print(new_values)
                 fgrid, fdgrid, stats = \
-                    fun(new_values, np.array([freq]), np.array([fdot]), **fun_kwargs)
+                    fun(new_values, np.array([freq]), np.array([fdot]),
+                        **fun_kwargs)
                 print(freq, fdot, X, Porb, T0, stats[0, 0])
 
         chunk['done'] = True

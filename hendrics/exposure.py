@@ -13,7 +13,7 @@ from .io import get_file_type, save_lcurve, HEN_FILE_EXTENSION, load_data
 from .base import hen_root, _assign_value_if_none
 import logging
 import warnings
-from stingray import Lightcurve
+from stingray.lightcurve import Lightcurve
 from stingray.gti import create_gti_mask
 
 
