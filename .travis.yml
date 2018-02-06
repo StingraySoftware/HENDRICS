@@ -30,7 +30,7 @@ env:
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
         - ASTROPY_VERSION=stable
-        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip'
+        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip pandas'
         - PIP_DEPENDENCIES='git+https://github.com/stingraysoftware/stingray.git@548763864f35479b9a8d14d362128289d00114b6'
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes

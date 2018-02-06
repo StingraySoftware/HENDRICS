@@ -1,13 +1,19 @@
 from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
-from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
+from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding, \
+    load_events
 from hendrics.efsearch import main_efsearch, main_zsearch
+from hendrics.efsearch import decide_binary_parameters, folding_orbital_search
 from hendrics.fold import main_fold
-from hendrics.phaseogram import main_phaseogram, run_interactive_phaseogram
 from hendrics.plot import plot_folding
 import os
 import pytest
+try:
+    import pandas as pd
+    HAS_PD = True
+except:
+    HAS_PD = False
 
 
 class TestEFsearch():
@@ -108,6 +114,25 @@ class TestEFsearch():
         assert len(efperiod.fdots) > 1
         assert efperiod.N == 2
         # os.unlink(outfile)
+
+    @pytest.mark.skipif('not HAS_PD')
+    def test_orbital(self):
+        import pandas as pd
+        events = load_events(self.dum)
+        csv_file = decide_binary_parameters(137430, [0.03, 0.035],
+                                            [2. * 86400, 2.5 * 86400],
+                                            [0., 1.],
+                                            fdot_range=[0, 5e-10], reset=False,
+                                            NMAX=10)
+        table = pd.read_csv(csv_file)
+        assert len(table) == 10
+        folding_orbital_search(events, csv_file, chunksize=10,
+                               outfile='out.csv')
+        table = pd.read_csv('out.csv')
+        assert len(table) == 10
+        assert np.all(table['done'])
+        os.unlink(csv_file)
+        os.unlink('out.csv')
 
     @classmethod
     def teardown_class(cls):
