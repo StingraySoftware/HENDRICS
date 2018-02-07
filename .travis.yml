@@ -50,6 +50,9 @@ matrix:
           env: SETUP_CMD='test --coverage' USE_NETCDF=no
         - python: 3.6
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes
+        - python: 3.6
+          env: SETUP_CMD='test --coverage' USE_NUMBA=yes
+          PIP_DEPENDENCIES: 'git+https://git@github.com/nanograv/pint.git jplephem git+https://github.com/stingraysoftware/stingray.git@548763864f35479b9a8d14d362128289d00114b6'
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - python: 3.6
