@@ -176,6 +176,8 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         if HAS_PINT:
             label = assign_value_if_none(label, 'hendrics')
             toa_list = _load_and_prepare_TOAs(toas, errs_us=toa_errs)
+            # workaround until PR #368 is accepted in pint
+            toa_list.table['clkcorr'] = 0
             toa_list.write_TOA_file(timfile, name=label)
 
         print('TOA(MJD)  TOAerr(us)')
