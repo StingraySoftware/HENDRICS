@@ -112,7 +112,7 @@ install_requires = [
     'numpy',
     'astropy',
     'stingray'
-    ]
+]
 
 # Note that requires and provides should not be included in the call to
 # ``setup``, since these are now deprecated. See this link for more details:

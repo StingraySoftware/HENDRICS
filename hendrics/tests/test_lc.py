@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import division, print_function
-from stingray import Lightcurve
+from stingray.lightcurve import Lightcurve
 import numpy as np
 import os
 from hendrics.read_events import treat_event_file

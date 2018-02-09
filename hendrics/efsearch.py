@@ -1,7 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Search for pulsars."""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
+from __future__ import (absolute_import, division, print_function)
 
 from .io import load_events, EFPeriodogram, save_folding, load_folding, \
     HEN_FILE_EXTENSION
@@ -17,6 +16,108 @@ import os
 import logging
 import argparse
 import matplotlib.pyplot as plt
+
+
+D_OMEGA_FACTOR = 2 * np.sqrt(3)
+TWOPI = 2 * np.pi
+
+
+def _save_df_to_csv(df, csv_file, reset=False):
+    if not os.path.exists(csv_file) or reset:
+        mode = 'w'
+        header = True
+    else:
+        mode = 'a'
+        header = False
+    with open(csv_file, mode) as f:
+        df.to_csv(f, header=header, index=False)
+
+
+def decide_binary_parameters(length, freq_range, porb_range, asini_range,
+                             fdot_range=[0, 0], NMAX=10,
+                             csv_file='db.csv', reset=False):
+    import pandas as pd
+    count = 0
+    omega_range = [1 / porb_range[1], 1 / porb_range[0]]
+    columns = ['freq', 'fdot', 'X', 'Porb', 'done', 'max_stat', 'min_stat', 'best_T0']
+
+    df = 1 / length
+    print('Recommended frequency steps: {}'.format(int(np.diff(freq_range)[0] // df + 1)))
+    while count < NMAX:
+        # In any case, only the first loop deletes the file
+        if count > 0:
+            reset = False
+        block_of_data = []
+        freq = np.random.uniform(freq_range[0], freq_range[1])
+        fdot = np.random.uniform(fdot_range[0], fdot_range[1])
+
+        dX = 1/(TWOPI * freq)
+
+        nX = np.int(np.diff(asini_range) // dX) + 1
+        Xs = np.random.uniform(asini_range[0], asini_range[1], nX)
+
+        for X in Xs:
+            dOmega = 1 / (TWOPI * freq * X * length) * D_OMEGA_FACTOR
+            nOmega = np.int(np.diff(omega_range) // dOmega) + 1
+            Omegas = np.random.uniform(omega_range[0], omega_range[1],
+                                       nOmega)
+
+            for Omega in Omegas:
+                block_of_data.append([freq, fdot, X, TWOPI / Omega,
+                                      False, 0., 0., 0.])
+
+        df = pd.DataFrame(block_of_data, columns=columns)
+        _save_df_to_csv(df, csv_file, reset=reset)
+        count += 1
+
+    return csv_file
+
+
+def folding_orbital_search(events, parameter_csv_file, chunksize=100,
+                           outfile='out.csv',
+                           fun=epoch_folding_search, **fun_kwargs):
+    import pandas as pd
+
+    times = (events.time - events.gti[0, 0]).astype(np.float64)
+    for chunk in pd.read_csv(parameter_csv_file, chunksize=chunksize):
+        try:
+            chunk['done'][0]
+        except:
+            continue
+        for i in range(len(chunk)):
+            if chunk['done'][i]:
+                continue
+
+            row = chunk.iloc[i]
+            freq, fdot, X, Porb = \
+                np.array([row['freq'], row['fdot'], row['X'], row['Porb']],
+                         dtype=np.float64)
+
+            dT0 = min(1 / (TWOPI ** 2 * freq) * Porb / X, Porb / 10)
+            max_stats = 0
+            min_stats = 1e32
+            best_T0 = None
+            T0s = np.random.uniform(0, Porb, int(Porb // dT0 + 1))
+            for T0 in T0s:
+                # one iteration
+                new_values = \
+                    times - X * np.sin(2 * np.pi * (times - T0) / Porb)
+                new_values = \
+                    new_values - X * np.sin(2 * np.pi *
+                                            (new_values - T0) / Porb)
+                fgrid, stats = \
+                    fun(new_values, np.array([freq]), fdots=fdot, **fun_kwargs)
+                if stats[0] > max_stats:
+                    max_stats = stats[0]
+                    best_T0 = T0
+                if stats[0] < min_stats:
+                    min_stats = stats[0]
+            chunk['max_stat'][i] = max_stats
+            chunk['min_stat'][i] = min_stats
+            chunk['best_T0'][i] = best_T0
+
+            chunk['done'][i] = True
+        _save_df_to_csv(chunk, outfile)
 
 
 def fit(frequencies, stats, center_freq, width=None, obs_length=None,

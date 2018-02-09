@@ -13,7 +13,7 @@ import numpy as np
 from astropy.tests.helper import catch_warnings
 from astropy.io import fits
 import pytest
-from stingray import Lightcurve
+from stingray.lightcurve import Lightcurve
 try:
     FileNotFoundError
 except NameError:

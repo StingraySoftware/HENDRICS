@@ -23,6 +23,7 @@ class TestPhaseogram():
         lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]])
         events = EventList()
         events.simulate_times(lc)
+        events.mjdref = 57000.
         cls.event_times = events.time
         cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
@@ -53,9 +54,10 @@ class TestPhaseogram():
 
     def test_phaseogram_input_f_change(self):
         evfile = self.dum
-        ip = run_interactive_phaseogram(evfile, 9.9, test=True)
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True, nbin=16, nt=8)
         ip.update(1)
         ip.recalculate(1)
+        ip.toa(1)
         ip.reset(1)
         ip.fdot = 2
         f, fdot, fddot = ip.get_values()
@@ -86,6 +88,10 @@ class TestPhaseogram():
         ip.reset(1)
         ip.zoom_in(1)
         ip.zoom_out(1)
+        with pytest.warns(UserWarning) as record:
+            ip.toa(1)
+        assert np.any(["This function was not implemented" in r.message.args[0]
+                       for r in record])
         ip.orbital_period = 2
         orbital_period, fdot, fddot = ip.get_values()
         assert orbital_period == 2
