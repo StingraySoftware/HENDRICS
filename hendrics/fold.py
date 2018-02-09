@@ -138,7 +138,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         stop = start + folding_length
         good = (events >= start) & (events < stop)
         events_tofold = events[good]
-        if len(events_tofold) < nbin * 3:
+        if len(events_tofold) < nbin:
             continue
         gtis_tofold = \
             copy.deepcopy(gti[(gti[:, 0] < stop) & (gti[:, 1] > start)])
@@ -172,7 +172,6 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
     if mjdref is not None:
         toas = toas / 86400 + mjdref
         toa_errs = toa_errs * 1e6
-
         if HAS_PINT:
             label = assign_value_if_none(label, 'hendrics')
             toa_list = _load_and_prepare_TOAs(toas, errs_us=toa_errs)
