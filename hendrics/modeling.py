@@ -2,7 +2,7 @@ from __future__ import division, print_function
 import logging
 import os
 import copy
-from .io import load_model, load_pds, save_model
+from .io import load_model, load_pds, save_model, save_pds, HEN_FILE_EXTENSION
 
 import numpy as np
 from stingray.modeling import fit_powerspectrum
@@ -82,3 +82,7 @@ def main_model(args=None):
                                         fitmethod=args.fitmethod)
 
         save_model(res.model, root + '_bestfit.p')
+        spectrum.best_fits = [res.model]
+        print('Best-fit model:')
+        print(res.model)
+        save_pds(spectrum, root + '_fit' + HEN_FILE_EXTENSION)
