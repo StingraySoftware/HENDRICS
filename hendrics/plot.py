@@ -149,11 +149,11 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
             xlog = _assign_value_if_none(xlog, True)
             ylog = _assign_value_if_none(ylog, True)
 
-        models = None
+        models = []
         if hasattr(pds_obj, 'best_fits') and pds_obj.best_fits is not None:
             models = pds_obj.best_fits
         if isinstance(models, Model):
-            models = []
+            models = [models]
 
         pds = pds_obj.power
         epds = pds_obj.power_err
