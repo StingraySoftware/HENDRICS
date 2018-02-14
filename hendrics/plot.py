@@ -11,6 +11,9 @@ except:
 from .io import load_data, get_file_type, load_pds, load_lcurve
 from .io import is_string, save_as_qdp, load_folding
 from stingray.gti import create_gti_mask
+from astropy.modeling.models import Const1D
+from astropy.modeling import Model
+
 from .base import _assign_value_if_none
 from .base import detection_level
 import logging
@@ -75,6 +78,54 @@ def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None,
     plt.legend()
 
 
+def _get_const(models):
+    """Get constant from Astropy model, list of models or compound model.
+
+    Return None if no Const1D objects are in ``models``.
+    Return the value of the first Const1D object found.
+
+    Examples
+    --------
+    >>> from astropy.modeling.models import Const1D, Gaussian1D
+    >>> model = Const1D(2) + Gaussian1D(1, 4, 5)
+    >>> _get_const(model)
+    2.0
+    >>> _get_const(model[0])
+    2.0
+    >>> _get_const([model[0]])
+    2.0
+    >>> _get_const([[model]])
+    2.0
+    >>> _get_const(model[1])
+
+    >>> _get_const(None)
+
+    >>> _get_const(1)
+
+    >>> _get_const('avdsfa')
+
+    """
+    import collections
+
+    if isinstance(models, Const1D):
+        return models.amplitude.value
+
+    if hasattr(models, 'submodel_names'):
+        for subm in models:
+            if isinstance(subm, Const1D):
+                return subm.amplitude.value
+
+    if models is None:
+        return None
+
+    if isinstance(models, collections.Iterable) and \
+            not is_string(models) and len(models) != 0:
+        for model in models:
+            return _get_const(model)
+
+    return None
+
+
 def plot_pds(fnames, figname=None, xlog=None, ylog=None,
              output_data_file=None, white_sub=False):
     """Plot a list of PDSs, or a single one."""
@@ -97,6 +148,12 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
             freq = (fhi + flo) / 2
             xlog = _assign_value_if_none(xlog, True)
             ylog = _assign_value_if_none(ylog, True)
+
+        models = []
+        if hasattr(pds_obj, 'best_fits') and pds_obj.best_fits is not None:
+            models = pds_obj.best_fits
+        if isinstance(models, Model):
+            models = [models]
 
         pds = pds_obj.power
         epds = pds_obj.power_err
@@ -126,17 +183,26 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
         level = lev  # Can be modified below
         y = pds[1:]
         yerr = epds[1:]
-        if norm.lower() == 'leahy' or (norm.lower() == 'rms' and
+
+        if norm.lower() == 'leahy' or (norm.lower() in ['rms', 'frac'] and
                                        (not xlog or not ylog)):
             plt.errorbar(freq[1:], y, yerr=yerr, fmt='-',
                          drawstyle='steps-mid', color=color, label=fname)
-        elif norm == 'rms' and xlog and ylog:
-            # TODO: Very rough! Use new machinery
-            p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
-            logging.info('White noise level is {0}'.format(p[0]))
+            for i, func in enumerate(models):
+                plt.plot(freq, func(freq),
+                         label='Model {}'.format(i + 1), zorder=20, color='k')
 
-            pds -= p[0]
-            level = lev - p[0]
+        elif norm.lower() in ['rms', 'frac'] and xlog and ylog:
+            # TODO: Very rough! Use new machinery
+            const = _get_const(models)
+            if const is None:
+                p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2],
+                                    sigma=epds)
+                logging.info('White noise level is {0}'.format(p[0]))
+                const = p[0]
+
+            pds -= const
+            level = lev - const
 
             y = pds[1:] * freq[1:]
             yerr = epds[1:] * freq[1:]
@@ -144,6 +210,10 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
                          yerr=yerr, fmt='-',
                          drawstyle='steps-mid', color=color, label=fname)
             level *= freq
+            for i, func in enumerate(models):
+                const = _get_const(func)
+                plt.plot(freq, freq*(func(freq) - const),
+                         label='Model {}'.format(i + 1), zorder=20, color='k')
 
         if np.any(level < 0):
             continue
@@ -160,6 +230,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
         plt.ylabel('(rms/mean)^2')
     elif norm.lower() == 'leahy':
         plt.ylabel('Leahy power')
+
     plt.legend()
 
     if figname is not None:
@@ -176,6 +247,10 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
 
     for i, fname in enumerate(fnames):
         pds_obj = load_pds(fname, nosub=True)
+        models = []
+        if hasattr(pds_obj, 'best_fits') and pds_obj.best_fits is not None:
+            models = pds_obj.best_fits
+
         if np.allclose(np.diff(pds_obj.freq), pds_obj.df):
             freq = pds_obj.freq
             xlog = _assign_value_if_none(xlog, False)
@@ -205,6 +280,10 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
             y = freq[1:] * cospectrum[1:]
             plt.plot(freq[1:], y,
                      drawstyle='steps-mid', label=fname)
+            for i, func in enumerate(models):
+                plt.plot(freq, freq * func(freq),
+                         label='Model {}'.format(i + 1))
+
             plt.ylabel('Cospectrum * Frequency')
         else:
             y = cospectrum[1:]
@@ -212,8 +291,12 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
                      label=fname)
 
             plt.ylabel('Cospectrum')
+            for i, func in enumerate(models):
+                plt.plot(freq, func(freq),
+                         label='Model {}'.format(i + 1))
         if output_data_file is not None:
             save_as_qdp([freq[1:], y], filename=output_data_file, mode='a')
+
     plt.legend()
 
     if figname is not None:

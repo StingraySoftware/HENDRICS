@@ -692,13 +692,16 @@ model = models.Const1D()
             os.path.join(self.datadir,
                          'monol_testB_E3-50_pds' + HEN_FILE_EXTENSION)
 
-        command = '{0} {1} -m {2} --frequency-interval 0 10'.format(pdsfile1,
-                                                                    pdsfile2,
-                                                                    modelfile)
+        command = '{0} {1} -m {2} --frequency-interval 0 10'.format(
+            pdsfile1,
+            pdsfile2,
+            modelfile)
         hen.modeling.main_model(command.split())
 
-        out0 = os.path.join(self.datadir, 'monol_testA_E3-50_pds_bestfit.p')
-        out1 = os.path.join(self.datadir, 'monol_testB_E3-50_pds_bestfit.p')
+        out0 = os.path.join(self.datadir,
+                            'monol_testA_E3-50_pds_bestfit.p')
+        out1 = os.path.join(self.datadir,
+                            'monol_testB_E3-50_pds_bestfit.p')
         assert os.path.exists(out0)
         assert os.path.exists(out1)
         m, k, c = hen.io.load_model(
@@ -707,6 +710,46 @@ model = models.Const1D()
         assert hasattr(m, 'amplitude')
         os.unlink(out0)
         os.unlink(out1)
+
+        out0 = os.path.join(self.datadir,
+                            'monol_testA_E3-50_pds_fit' + HEN_FILE_EXTENSION)
+        out1 = os.path.join(self.datadir,
+                            'monol_testB_E3-50_pds_fit' + HEN_FILE_EXTENSION)
+        assert os.path.exists(out0)
+        assert os.path.exists(out1)
+        spec = hen.io.load_pds(out0)
+        assert hasattr(spec, 'best_fits')
+
+    def test_fit_cpds(self):
+        modelstring = '''
+from astropy.modeling import models
+model = models.Const1D()
+        '''
+        modelfile = 'bubu__model__.py'
+        with open(modelfile, 'w') as fobj:
+            print(modelstring, file=fobj)
+        pdsfile1 = \
+            os.path.join(self.datadir,
+                         'monol_test_E3-50_cpds' + HEN_FILE_EXTENSION)
+
+        command = '{0} -m {1} --frequency-interval 0 10'.format(
+            pdsfile1,
+            modelfile)
+        hen.modeling.main_model(command.split())
+
+        out0 = os.path.join(self.datadir,
+                            'monol_test_E3-50_cpds_bestfit.p')
+        assert os.path.exists(out0)
+        m, k, c = hen.io.load_model(out0)
+        assert hasattr(m, 'amplitude')
+        os.unlink(out0)
+
+        out0 = \
+            os.path.join(self.datadir,
+                         'monol_test_E3-50_cpds_fit' + HEN_FILE_EXTENSION)
+        assert os.path.exists(out0)
+        spec = hen.io.load_pds(out0)
+        assert hasattr(spec, 'best_fits')
 
     def test_fit_pds_f_no_of_intervals_invalid(self):
         modelstring = '''
@@ -864,9 +907,9 @@ model = models.Const1D()
 
     def test_plot_lin(self):
         """Test plotting with linear axes."""
-        pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds') + \
+        pname = os.path.join(self.datadir, 'monol_testA_E3-50_pds_fit') + \
             HEN_FILE_EXTENSION
-        cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds') + \
+        cname = os.path.join(self.datadir, 'monol_test_E3-50_cpds_fit') + \
             HEN_FILE_EXTENSION
         lname = os.path.join(self.datadir, 'monol_testA_E3-50_lc') + \
             HEN_FILE_EXTENSION

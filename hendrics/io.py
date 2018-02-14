@@ -505,6 +505,17 @@ def save_pds(cpds, fname, save_all=True):
                                  '__cs__{}__'.format(i) + HEN_FILE_EXTENSION))
         outdata.pop('cs_all')
 
+    if 'best_fits' in outdata and cpds.best_fits is not None:
+        model_files = []
+        for i, b in enumerate(cpds.best_fits):
+            mfile = \
+                os.path.join(outdir,
+                             fname.replace(HEN_FILE_EXTENSION,
+                                           '__mod{}__.p'.format(i)))
+            save_model(b, mfile)
+            model_files.append(mfile)
+        outdata.pop('best_fits')
+
     if get_file_format(fname) == 'pickle':
         return _save_data_pickle(outdata, fname)
     elif get_file_format(fname) == 'nc':
@@ -534,10 +545,20 @@ def load_pds(fname, nosub=False):
     for key in data.keys():
         setattr(cpds, key, data[key])
 
+    outdir = fname.replace(HEN_FILE_EXTENSION, "")
+    modelfiles = glob.glob(
+        os.path.join(outdir, fname.replace(HEN_FILE_EXTENSION, '__mod*__.p')))
+    cpds.best_fits = None
+    if len(modelfiles) >= 1:
+        bmodels = []
+        for mfile in modelfiles:
+            if os.path.exists(mfile):
+                bmodels.append(load_model(mfile)[0])
+        cpds.best_fits = bmodels
+
     if nosub:
         return cpds
 
-    outdir = fname.replace(HEN_FILE_EXTENSION, "")
     lc1_name = os.path.join(outdir, '__lc1__' + HEN_FILE_EXTENSION)
     lc2_name = os.path.join(outdir, '__lc2__' + HEN_FILE_EXTENSION)
     pds1_name = os.path.join(outdir, '__pds1__' + HEN_FILE_EXTENSION)

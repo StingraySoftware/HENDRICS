@@ -53,8 +53,9 @@ def calc_pds(lcfile, fftlen,
         performed
     pdsrebin : int
         Rebin the PDS of this factor.
-    normalization : str
-        'Leahy' or 'rms'
+    normalization: str
+        'Leahy', 'frac', 'rms', or any normalization accepted by ``stingray``.
+        Default 'Leahy'
     back_ctrate : float
         The non-source count rate
     noclobber : bool
@@ -123,7 +124,8 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     pdsrebin : int
         Rebin the PDS of this factor.
     normalization : str
-        'Leahy' or 'rms'. Default 'Leahy'
+        'Leahy', 'frac', 'rms', or any normalization accepted by ``stingray``.
+        Default 'Leahy'
     back_ctrate : float
         The non-source count rate
     noclobber : bool
