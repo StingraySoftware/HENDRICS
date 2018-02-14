@@ -15,7 +15,7 @@ environment:
                         # to the matrix section.
       CONDA_DEPENDENCIES: "scipy matplotlib numpy astropy numba netcdf4 pandas"
       ASTROPY_VERSION: stable
-      PIP_DEPENDENCIES: "git+https://github.com/stingraysoftware/stingray.git@548763864f35479b9a8d14d362128289d00114b6"
+      PIP_DEPENDENCIES: "stingray>=0.1rc1"
       COVERALLS_REPO_TOKEN:
         secure: sX1jhJ0jV5LxZPvfIfy5Y+P28oEBmcwnEiZ3HWhC3Xbt8g+cgROQ2DZodw4Ij8lu
 

@@ -2,4 +2,4 @@ numpy
 scipy
 astropy
 matplotlib
-https://github.com/stingraysoftware/stingray.git
+stingray >= 0.1rc1
