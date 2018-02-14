@@ -184,7 +184,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
         y = pds[1:]
         yerr = epds[1:]
 
-        if norm.lower() == 'leahy' or (norm.lower() == 'rms' and
+        if norm.lower() == 'leahy' or (norm.lower() in ['rms', 'frac'] and
                                        (not xlog or not ylog)):
             plt.errorbar(freq[1:], y, yerr=yerr, fmt='-',
                          drawstyle='steps-mid', color=color, label=fname)
@@ -192,7 +192,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
                 plt.plot(freq, func(freq),
                          label='Model {}'.format(i + 1), zorder=20, color='k')
 
-        elif norm == 'rms' and xlog and ylog:
+        elif norm.lower() in ['rms', 'frac'] and xlog and ylog:
             # TODO: Very rough! Use new machinery
             const = _get_const(models)
             if const is None:
