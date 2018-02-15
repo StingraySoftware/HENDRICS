@@ -196,10 +196,10 @@ HENefsearch
 ::
 
     usage: HENefsearch [-h] -f FMIN -F FMAX [--fdotmin FDOTMIN]
-                       [--fdotmax FDOTMAX] [-n NBIN] [--segment-size SEGMENT_SIZE]
-                       [--step STEP] [--oversample OVERSAMPLE] [--expocorr]
-                       [--find-candidates] [--conflevel CONFLEVEL]
-                       [--fit-candidates] [--curve CURVE]
+                       [--fdotmax FDOTMAX] [--dynstep DYNSTEP] [-n NBIN]
+                       [--segment-size SEGMENT_SIZE] [--step STEP]
+                       [--oversample OVERSAMPLE] [--expocorr] [--find-candidates]
+                       [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
                        [--fit-frequency FIT_FREQUENCY] [--debug]
                        [--loglevel LOGLEVEL] [-N N]
                        files [files ...]
@@ -215,6 +215,7 @@ HENefsearch
       -F FMAX, --fmax FMAX  Maximum frequency to fold
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
+      --dynstep DYNSTEP     Dynamical EF step
       -n NBIN, --nbin NBIN  Number of phase bins of the profile
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
@@ -266,7 +267,7 @@ HENexcvar
                             indicates the ratio between step step and
                             `chunk_length`
       --norm NORM           Choose between fvar, excvar and norm_excvar
-                            normalization, referring to Fvar, excess variance and
+                            normalization, referring to Fvar, excess variance, and
                             normalized excess variance respectively (see Vaughan
                             et al. 2003 for details).
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -334,6 +335,39 @@ HENfake
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               use DEBUG logging level
+
+
+HENfold
+-------
+
+::
+
+    usage: HENfold [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT] [--tref TREF]
+                   [-n NBIN] [--nebin NEBIN] [--emin EMIN] [--emax EMAX]
+                   [--norm NORM] [--debug] [--test] [--loglevel LOGLEVEL]
+                   file
+
+    Plot a folded profile
+
+    positional arguments:
+      file                  Input event file
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -f FREQ, --freq FREQ  Initial frequency to fold
+      --fdot FDOT           Initial fdot
+      --fddot FDDOT         Initial fddot
+      --tref TREF           Reference time (same unit as time array)
+      -n NBIN, --nbin NBIN  Number of phase bins (X axis) of the profile
+      --nebin NEBIN         Number of energy bins (Y axis) of the profile
+      --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
+      --norm NORM           --norm to1: Normalize hist so that the maximum at each
+                            energy is one. --norm ratios: Divide by mean profile
+      --debug               use DEBUG logging level
+      --test                Just a test. Destroys the window immediately
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
 
 
 HENfspec
@@ -485,7 +519,9 @@ HENphaseogram
 ::
 
     usage: HENphaseogram [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT]
-                         [--periodogram PERIODOGRAM] [-n NBIN] [--ntimes NTIMES]
+                         [--pepoch PEPOCH] [--periodogram PERIODOGRAM] [-n NBIN]
+                         [--ntimes NTIMES] [--binary]
+                         [--binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS]
                          [--debug] [--test] [--loglevel LOGLEVEL]
                          file
 
@@ -499,14 +535,47 @@ HENphaseogram
       -f FREQ, --freq FREQ  Initial frequency to fold
       --fdot FDOT           Initial fdot
       --fddot FDDOT         Initial fddot
+      --pepoch PEPOCH       Reference epoch for timing parameters
       --periodogram PERIODOGRAM
                             Periodogram file
       -n NBIN, --nbin NBIN  Number of phase bins (X axis) of the profile
       --ntimes NTIMES       Number of time bins (Y axis) of the phaseogram
+      --binary              Interact on binary parameters instead of frequency
+                            derivatives
+      --binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS
+                            Initial values for binary parameters
       --debug               use DEBUG logging level
       --test                Just a test. Destroys the window immediately
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
+
+
+HENphasetag
+-----------
+
+::
+
+    usage: HENphasetag [-h] [--parfile PARFILE] [-f FREQS [FREQS ...]] [-n NBIN]
+                       [--plot] [--tomax] [--test] [--refTOA PULSE_REF_TIME]
+                       [--pepoch PEPOCH]
+                       file
+
+    positional arguments:
+      file                  Event file
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --parfile PARFILE     Parameter file
+      -f FREQS [FREQS ...], --freqs FREQS [FREQS ...]
+                            Frequency derivatives
+      -n NBIN, --nbin NBIN  Nbin
+      --plot                Plot profile
+      --tomax               Refer phase to pulse max
+      --test                Only for unit tests! Do not use
+      --refTOA PULSE_REF_TIME
+                            Reference TOA in MJD (overrides --tomax) for reference
+                            pulse phase
+      --pepoch PEPOCH       Reference time for timing solution
 
 
 HENplot
@@ -706,9 +775,10 @@ HENzsearch
 ::
 
     usage: HENzsearch [-h] -f FMIN -F FMAX [--fdotmin FDOTMIN] [--fdotmax FDOTMAX]
-                      [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
-                      [--oversample OVERSAMPLE] [--expocorr] [--find-candidates]
-                      [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+                      [--dynstep DYNSTEP] [-n NBIN] [--segment-size SEGMENT_SIZE]
+                      [--step STEP] [--oversample OVERSAMPLE] [--expocorr]
+                      [--find-candidates] [--conflevel CONFLEVEL]
+                      [--fit-candidates] [--curve CURVE]
                       [--fit-frequency FIT_FREQUENCY] [--debug]
                       [--loglevel LOGLEVEL] [-N N]
                       files [files ...]
@@ -724,6 +794,7 @@ HENzsearch
       -F FMAX, --fmax FMAX  Maximum frequency to fold
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
+      --dynstep DYNSTEP     Dynamical EF step
       -n NBIN, --nbin NBIN  Number of phase bins of the profile
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
