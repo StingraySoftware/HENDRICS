@@ -38,11 +38,19 @@ installation to produce the cleaned event files and to use
 Installing releases
 -------------------
 
-The usual:
+If you use the Anaconda python distribution, you are well off with:
 
 ::
 
-    $ pip install hendrics
+    $ conda install numba emcee statsmodels netcdf4
+    $ conda install -c conda-forge hendrics
+
+
+Otherwise, you might want to install
+
+::
+
+    $ pip install hendrics numba emcee statsmodels netcdf4
 
 
 Installing the Development version
@@ -75,7 +83,7 @@ information if this doesn't work the first time).
 Installation
 ~~~~~~~~~~~~
 
-Enter the distribution directory and run
+Install the dependencies above; then, enter the distribution directory and run
 
 ::
 
