@@ -17,7 +17,6 @@ from .base import _empty, jit, njit
 from .lcurve import lcurve_from_fits
 from .base import njit
 
-
 def _paralyzable_dead_time(event_list, dead_time):
     mask = np.ones(len(event_list), dtype=bool)
     dead_time_end = event_list + dead_time

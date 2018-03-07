@@ -326,6 +326,20 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
                                       baseline=baseline)
 
 
+def get_energy_from_events(ev):
+    if hasattr(ev, 'energy') and ev.energy is not None:
+        energy = ev.energy
+        elabel = 'Energy'
+    elif hasattr(ev, 'pi') and ev.pi is not None:
+        energy = ev.pi
+        elabel = 'PI'
+        ev.energy = energy
+    else:
+        energy = np.ones_like(ev.time)
+        elabel = ''
+    return elabel, energy
+
+
 def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     """Filter event list by energy (or PI)
 
@@ -369,28 +383,24 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     True
     """
     times = ev.time
-    if hasattr(ev, 'energy') and ev.energy is not None:
-        energy = ev.energy
-        elabel = 'Energy'
-    elif hasattr(ev, 'pi') and ev.pi is not None:
-        # For some reason the doctest doesn't work if I don't do this instead
-        # of using warnings.warn
-        if emax is not None or emin is not None:
-            log.warning(f"No energy information in event list "
-                        f"while filtering between {emin} and {emax}. "
-                        "Definition of events.energy is now based on PI.",
-                        AstropyUserWarning)
-        energy = ev.pi
-        elabel = 'PI'
-        ev.energy = energy
-    else:
+
+    elabel, energy = get_energy_from_events(ev)
+    # For some reason the doctest doesn't work if I don't do this instead
+    # of using warnings.warn
+    if elabel == '':
         log.error("No Energy or PI information available. "
                   "No energy filter applied to events")
         return ev, ''
 
     if emax is None and emin is None:
         return ev, elabel
-
+    # For some reason the doctest doesn't work if I don't do this instead
+    # of using warnings.warn
+    if elabel.lower() == 'pi' and emax is not None or emin is not None:
+        log.warning(f"No energy information in event list "
+                    f"while filtering between {emin} and {emax}. "
+                    "Definition of events.energy is now based on PI.",
+                    AstropyUserWarning)
     if emin is None:
         emin = np.min(energy)
     if emax is None:
