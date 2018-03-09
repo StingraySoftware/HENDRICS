@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import astropy.io.fits as pf
 
 import warnings
-from .io import is_string
+from .io import is_string, save_as_qdp
 from stingray.io import load_events_and_gtis, ref_mjd
 from .base import _assign_value_if_none, hen_root
 from .fold import fit_profile, std_fold_fit_func
@@ -146,6 +146,7 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
             plt.axvline(i * 0.1, ls='--', color='b')
         if not test:  # pragma: no cover
             plt.show()
+
     # ------ WRITE RESULTS BACK TO FITS --------------
     results = type('results', (object,), {})
     results.ev_list = ev_list
@@ -153,6 +154,9 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     results.frequency_derivatives = frequency_derivatives
     results.ref_time = ref_time
     results.figure = fig
+    results.plot_phase = phs
+    results.plot_profile = profile / exposure
+    results.plot_profile_err = profile_err / exposure
     return results
 
 
@@ -281,6 +285,10 @@ def phase_tag_fits(filename, parameter_info, **kwargs):
 
     newhdulist.writeto(outfile, overwrite=True)
     hdulist.close()
+
+    save_as_qdp(
+        [results.plot_phase, results.plot_profile, results.plot_profile_err],
+        filename=outfile.replace('.evt', '') + '.qdp')
 
 
 def main_phasetag(args=None):

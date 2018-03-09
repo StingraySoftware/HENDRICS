@@ -1,0 +1,45 @@
+If you use this software in a publication, please refer to its Astrophysics Source Code Library identifier:
+
+    Bachetti, M. 2015, MaLTPyNT, Astrophysics Source Code Library, record ascl:1502.021.
+
+In particular, if you use the cospectrum, please also refer to:
+
+    Bachetti et al. 2015, ApJ , 800, 109.
+
+@MISC{2015ascl.soft02021B,
+   author = {{Bachetti}, M.},
+    title = "{MaLTPyNT: Quick look timing analysis for NuSTAR data}",
+ keywords = {Software},
+howpublished = {Astrophysics Source Code Library},
+     year = 2015,
+    month = feb,
+archivePrefix = "ascl",
+   eprint = {1502.021},
+   adsurl = {http://adsabs.harvard.edu/abs/2015ascl.soft02021B},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{2015ApJ...800..109B,
+   author = {{Bachetti}, M. and {Harrison}, F.~A. and {Cook}, R. and {Tomsick}, J. and
+	{Schmid}, C. and {Grefenstette}, B.~W. and {Barret}, D. and
+	{Boggs}, S.~E. and {Christensen}, F.~E. and {Craig}, W.~W. and
+	{Fabian}, A.~C. and {F{\"u}rst}, F. and {Gandhi}, P. and {Hailey}, C.~J. and
+	{Kara}, E. and {Maccarone}, T.~J. and {Miller}, J.~M. and {Pottschmidt}, K. and
+	{Stern}, D. and {Uttley}, P. and {Walton}, D.~J. and {Wilms}, J. and
+	{Zhang}, W.~W.},
+    title = "{No Time for Dead Time: Timing Analysis of Bright Black Hole Binaries with NuSTAR}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {1409.3248},
+ primaryClass = "astro-ph.HE",
+ keywords = {accretion, accretion disks, black hole physics, methods: data analysis, methods: statistical, X-rays: stars},
+     year = 2015,
+    month = feb,
+   volume = 800,
+      eid = {109},
+    pages = {109},
+      doi = {10.1088/0004-637X/800/2/109},
+   adsurl = {http://adsabs.harvard.edu/abs/2015ApJ...800..109B},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
