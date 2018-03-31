@@ -10,6 +10,7 @@ import numpy as np
 from astropy import log
 from numpy import histogram2d as histogram2d_np
 from astropy.logger import AstropyUserWarning
+from .io import get_file_type
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
     search_best_peaks
 from stingray.gti import time_intervals_from_gtis
@@ -810,6 +811,10 @@ def folding_search(events, fmin, fmax, step=None,
                    fdotmax=0, fdotstep=None, expocorr=False, **kwargs):
 
     times = (events.time - events.gti[0, 0]).astype(np.float64)
+    weights = 1
+    if hasattr(events, 'counts'):
+        weights = events.counts
+
     length = times[-1]
 
     if step is None:
@@ -832,7 +837,7 @@ def folding_search(events, fmin, fmax, step=None,
         log.info("Searching {} frequencies".format(len(trial_freqs)))
 
     results = func(times, trial_freqs, fdots=trial_fdots,
-                   expocorr=expocorr, gti=gti, **kwargs)
+                   expocorr=expocorr, gti=gti, weights=weights, **kwargs)
     if len(results) == 2:
         frequencies, stats = results
         return frequencies, stats, step, length
@@ -990,27 +995,31 @@ def _common_main(args, func):
             kwargs = {'nharm': args.N}
             baseline = args.N
             kind = 'Z2n'
-        events = load_events(fname)
-        mjdref = events.mjdref
-        if args.emin is not None or args.emax is not None:
-            events, elabel = filter_energy(events, args.emin, args.emax)
 
-        if args.deorbit_par is not None:
-            events = deorbit_events(events, args.deorbit_par)
+        ftype, events = get_file_type(fname)
+
+        if ftype == 'events':
+            mjdref = events.mjdref
+            if args.emin is not None or args.emax is not None:
+                events, elabel = filter_energy(events, args.emin, args.emax)
+
+            if args.deorbit_par is not None:
+                events = deorbit_events(events, args.deorbit_par)
 
         if args.fast:
             oversample = assign_value_if_none(args.oversample, 4 * n)
-
         else:
             oversample = assign_value_if_none(args.oversample, 2)
 
-        if args.transient:
-            results = transient_search(events.time, args.fmin, args.fmax,
-                                       fdot=0,
+        if args.transient and ftype =='lc':
+            log.error("Transient search not yet available for light curves")
+        if args.transient and ftype == 'events':
+            results = transient_search(events.time, args.fmin, args.fmax, fdot=0,
                                        nbin=args.nbin, n=n,
                                        nprof=None, oversample=oversample)
             plot_transient_search(results, hen_root(fname) + '_transient.gif')
             continue
+
 
         if not args.fast:
             results = \
