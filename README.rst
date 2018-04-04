@@ -72,6 +72,27 @@ For development versions:
     $ python setup.py install
 
 
+License and notes for the users
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This software is released with a 3-clause BSD license. You can find
+license information in the ``LICENSE.rst`` file.
+
+**If you use this software in a publication**, please refer to its
+Astrophysics Source Code Library identifier:
+
+1. Bachetti, M. 2015, MaLTPyNT, Astrophysics Source Code Library, record `ascl:1502.021 <http://ascl.net/1502.021>`__.
+
+In particular, **if you use the cospectrum**, please also refer to:
+
+2. Bachetti et al. 2015, `ApJ <http://iopscience.iop.org/0004-637X/800/2/109/>`__ , **800**, 109.
+
+I listed a number of **open issues** in the
+`Issues <https://bitbucket.org/mbachett/hendics/issues?status=new&status=open>`__
+page. Feel free to **comment** on them and **propose more**. Please
+choose carefully the category: bugs, enhancements, etc.
+
+
 Development guidelines
 ----------------------
 
