@@ -47,6 +47,25 @@ class TestPhaseogram():
         main_phaseogram([evfile, '--periodogram',
                          'events_Z2n' + HEN_FILE_EXTENSION, '--test'])
 
+    def test_phaseogram_input_norm(self):
+        evfile = self.dum
+        # to1
+        main_phaseogram([evfile, '--periodogram',
+                         'events_Z2n' + HEN_FILE_EXTENSION, '--test',
+                         '--norm', 'to1'])
+        # mediansub
+        main_phaseogram([evfile, '--periodogram',
+                         'events_Z2n' + HEN_FILE_EXTENSION, '--test',
+                         '--norm', 'mediansub'])
+        # garbage
+        with pytest.warns(UserWarning) as record:
+            main_phaseogram([evfile, '--periodogram',
+                             'events_Z2n' + HEN_FILE_EXTENSION, '--test',
+                             '--norm', 'arsdfajl'])
+            assert np.any(
+                ["Profile normalization arsdfajl" in r.message.args[0]
+                 for r in record])
+
     def test_phaseogram_input_f(self):
         evfile = self.dum
         main_phaseogram([evfile, '-f', '9.9', '--test',
