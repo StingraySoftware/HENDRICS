@@ -55,7 +55,6 @@ def test_ffa_vs_folding_search():
     t1 = time.time()
     freqs, stats, _, _ = folding_search(ev, 1/pmax, 1/pmin, oversample=3,
                                         nbin=128)
-    nst = len(freqs)
     t2 = time.time()
     print("Standard search completed in {:.1e} s".format(t2 - t1))
 

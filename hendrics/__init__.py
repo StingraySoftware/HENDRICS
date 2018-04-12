@@ -10,7 +10,6 @@ from ._astropy_init import *
 
 # For egg_info test builds to pass, put package imports here.
 if not _ASTROPY_SETUP_:
-
     # Workaround: import netCDF4 before everything else. This loads the HDF5
     # library that netCDF4 uses and not something else.
 

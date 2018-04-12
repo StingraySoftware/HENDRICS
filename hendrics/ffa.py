@@ -1,6 +1,5 @@
 import numpy as np
-import copy
-import matplotlib.pyplot as plt
+
 from numba import jit, vectorize
 from stingray.pulse.pulsar import stat
 
