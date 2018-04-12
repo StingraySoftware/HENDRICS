@@ -32,11 +32,31 @@ class SliderOnSteroids(Slider):
         Slider.__init__(self, *args, **kwargs)
 
 
+def normalized_phaseogram(norm, *args, **kwargs):
+    phas, phases, times, additional_info = phaseogram(*args, **kwargs)
+    if norm is None:
+        pass
+    elif norm == 'to1':
+        minarr = np.min(phas, axis=0)
+        maxarr = np.max(phas, axis=0)
+        for i in range(phas.shape[0]):
+            phas[i][:] -= minarr
+            phas[i][:] /= maxarr
+    elif norm == 'mediansub':
+        medarr = np.median(phas, axis=0)
+        for i in range(phas.shape[0]):
+            phas -= medarr
+    else:
+        warnings.warn('Profile normalization '
+                      '{} not known. Using default'.format(norm))
+    return phas, phases, times, additional_info
+
+
 @six.add_metaclass(ABCMeta)
 class BasePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, test=False,
                  fdot=0, fddot=0, mjdref=None, pepoch=None, gti=None,
-                 label="phaseogram", **kwargs):
+                 label="phaseogram", norm=None, **kwargs):
         """Init BasePhaseogram class.
 
         Parameters
@@ -76,14 +96,17 @@ class BasePhaseogram(object):
         self.pepoch = assign_value_if_none(pepoch, ev_times[0])
         self.ev_times = ev_times
         self.freq = freq
+        self.norm = norm
 
         self.fig, ax = plt.subplots()
         plt.subplots_adjust(left=0.25, bottom=0.30)
 
         corrected_times = self.ev_times - self._delay_fun(self.ev_times)
         self.phaseogr, phases, times, additional_info = \
-            phaseogram(corrected_times, freq, return_plot=True, nph=nph, nt=nt,
-                       fdot=fdot, fddot=fddot, plot=False, pepoch=pepoch)
+            normalized_phaseogram(self.norm, corrected_times, freq,
+                                  return_plot=True, nph=nph, nt=nt, fdot=fdot,
+                                  fddot=fddot, plot=False, pepoch=pepoch)
+
         self.phases, self.times = phases, times
 
         self.pcolor = plt.pcolormesh(phases, times, self.phaseogr.T,
@@ -319,9 +342,9 @@ class InteractivePhaseogram(BasePhaseogram):
         self.freq = self.freq - dfreq
 
         self.phaseogr, _, _, _ = \
-            phaseogram(self.ev_times, self.freq, fdot=self.fdot, plot=False,
-                       nph=self.nph, nt=self.nt, pepoch=pepoch,
-                       fddot=self.fddot)
+            normalized_phaseogram(self.norm, self.ev_times, self.freq,
+                                  fdot=self.fdot, plot=False, nph=self.nph,
+                                  nt=self.nt, pepoch=pepoch, fddot=self.fddot)
 
         self.reset(1)
 
@@ -464,9 +487,10 @@ class BinaryPhaseogram(BasePhaseogram):
         corrected_times = self.ev_times - self._delay_fun(self.ev_times)
 
         self.phaseogr, _, _, _ = \
-            phaseogram(corrected_times, self.freq, fdot=self.fdot, plot=False,
-                       nph=self.nph, nt=self.nt, pepoch=self.pepoch,
-                       fddot=self.fddot)
+            normalized_phaseogram(self.norm, corrected_times, self.freq,
+                                  fdot=self.fdot, plot=False, nph=self.nph,
+                                  nt=self.nt, pepoch=self.pepoch,
+                                  fddot=self.fddot)
 
         self._set_lines(False)
         self.pcolor.set_array(self.phaseogr.T.ravel())
@@ -495,7 +519,7 @@ class BinaryPhaseogram(BasePhaseogram):
 def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                                nt=32, binary=False, test=False,
                                binary_parameters=[None, 0, None],
-                               pepoch=None):
+                               pepoch=None, norm=None):
     events = load_events(event_file)
     if pepoch is None:
         pepoch = events.gti[0, 0]
@@ -511,14 +535,16 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                               t0=binary_parameters[2],
                               mjdref=events.mjdref,
                               gti=events.gti,
-                              label=hen_root(event_file))
+                              label=hen_root(event_file),
+                              norm=norm)
     else:
         ip = InteractivePhaseogram(events.time, freq, nph=nbin, nt=nt,
                                    fdot=fdot, test=test, fddot=fddot,
                                    pepoch=pepoch,
                                    mjdref=events.mjdref,
                                    gti=events.gti,
-                                   label=hen_root(event_file))
+                                   label=hen_root(event_file),
+                                   norm=norm)
 
     return ip
 
@@ -549,6 +575,13 @@ def main_phaseogram(args=None):
     parser.add_argument("--binary-parameters",
                         help="Initial values for binary parameters",
                         default=[None, 0, None], nargs=3, type=float)
+    parser.add_argument("--norm",
+                        help=("Normalization for the phaseogram. Can be 'to1' "
+                              "(each profile normalized from 0 to 1); "
+                              "'mediansub' (just subtract the median from each "
+                              "profile); default None"),
+                        default=None,
+                        type=str)
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
     parser.add_argument("--test",
@@ -585,4 +618,4 @@ def main_phaseogram(args=None):
                                     nbin=args.nbin, nt=args.ntimes,
                                     test=args.test, binary=args.binary,
                                     binary_parameters=args.binary_parameters,
-                                    pepoch=args.pepoch)
+                                    pepoch=args.pepoch, norm=args.norm)

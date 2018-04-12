@@ -67,6 +67,15 @@ satellite (for sure XMM-Newton and RXTE).
 
 What's new
 ----------
+HENDRICS 4.0
+~~~~~~~~~~~~
+Lots of improvements to pulsar functionalities;
+.. Note ::
+
+    Windows support for Python <3.6 was dropped. Most of the code will still work on old versions,
+    but the difficulty of tracking down library versions to test in Appveyor forces me
+    to drop the obsolescent versions of Python from testing on that architecture.
+
 HENDRICS 3.0
 ~~~~~~~~~~~~
 The API is now rewritten to use
@@ -160,9 +169,6 @@ choose carefully the category: bugs, enhancements, etc.
 
 Acknowledgements
 ----------------
-HENDRICS 3.0
-~~~~~~~~~~~~
-TBW
 
 (MaLTPyNT) 2.0
 ~~~~~~~~~~~~~~
