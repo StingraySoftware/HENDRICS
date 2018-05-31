@@ -56,7 +56,8 @@ def normalized_phaseogram(norm, *args, **kwargs):
 class BasePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, test=False,
                  fdot=0, fddot=0, mjdref=None, pepoch=None, gti=None,
-                 label="phaseogram", norm=None, **kwargs):
+                 label="phaseogram", norm=None, position=None, object=None,
+                 **kwargs):
         """Init BasePhaseogram class.
 
         Parameters
@@ -80,6 +81,14 @@ class BasePhaseogram(object):
             First frequency derivative
         fddot : float
             Second frequency derivative
+        label : str
+            Label for windows
+        norm : str
+            Normalization
+        position : `astropy.Skycoord` object
+            Position of the pulsar
+        object : str
+            Name of the pulsar
         **kwargs : keyword args
             additional arguments to pass to `self._construct_widgets`
         """
@@ -97,8 +106,11 @@ class BasePhaseogram(object):
         self.ev_times = ev_times
         self.freq = freq
         self.norm = norm
+        self.position = position
+        self.object = object
+        self.timing_model_string = ""
 
-        self.fig, ax = plt.subplots()
+        self.fig, ax = plt.subplots(num=self.label)
         plt.subplots_adjust(left=0.25, bottom=0.30)
 
         corrected_times = self.ev_times - self._delay_fun(self.ev_times)
@@ -268,6 +280,34 @@ class BasePhaseogram(object):
             linephase = ph0 + func(self.times) - func(self.times[0])
             self.lines[i].set_xdata(linephase)
 
+    def get_timing_model_string(self):
+        tm_string = ""
+
+        if self.mjdref is not None:
+            tm_string += "PEPOCH         {}\n".format(
+                self.pepoch / 86400 + self.mjdref)
+        tm_string += "PSRJ           {}\n".format(self.object)
+        if self.position is not None:
+            tm_string += "RAJ            {}\n".format(
+                self.position.ra.to_string(sep=':'))
+            tm_string += "DECJ           {}\n".format(
+                self.position.dec.to_string(sep=':'))
+
+        tm_string += "F0             {}\n".format(self.freq)
+        tm_string += "F1             {}\n".format(self.fdot)
+        tm_string += "F2             {}\n".format(self.fddot)
+
+        if hasattr(self, 'orbital_period') and self.orbital_period is not None:
+            tm_string += "BINARY BT\n"
+            tm_string += "PB             {}\n".format(self.orbital_period / 86400)
+            tm_string += "A1             {}\n".format(self.asini)
+            if self.mjdref is not None:
+                tm_string += "T0             {}\n".format(self.t0 / 86400 + self.mjdref)
+            tm_string += "T0(MET)        {}\n".format(self.t0)
+            tm_string += "PB(s)          {}\n".format(self.orbital_period)
+
+        tm_string += "PEPOCH(MET)    {}\n".format(self.pepoch)
+        return tm_string
 
 class InteractivePhaseogram(BasePhaseogram):
 
@@ -349,16 +389,14 @@ class InteractivePhaseogram(BasePhaseogram):
         self.reset(1)
 
         self.fig.canvas.draw()
+        self.timing_model_string = self.get_timing_model_string()
         print("------------------------")
-        print("PEPOCH (MET)   {}".format(self.pepoch))
-        if self.mjdref is not None:
-            print("PEPOCH (MJD)   {}".format(self.pepoch / 86400 + self.mjdref))
-        print("F0 (Hz)        {}".format(self.freq))
-        print("F1 (Hz/s)      {}".format(self.fdot))
-        print("F2 (Hz/s^2)    {}".format(self.fddot))
+        print(self.timing_model_string)
         print("------------------------")
 
     def toa(self, event):
+        self.timing_model_string = self.get_timing_model_string()
+
         dfreq, dfdot, dfddot = self._read_sliders()
         freqs = [self.freq - dfreq, self.fdot - dfdot, self.fddot - dfddot]
         folding_length = np.median(np.diff(self.times))
@@ -369,7 +407,10 @@ class InteractivePhaseogram(BasePhaseogram):
                                  pepoch=self.pepoch,
                                  timfile=self.label + '.tim',
                                  label=self.label[:10],
-                                 quick=self.test)
+                                 quick=self.test,
+                                 position=None)
+        with open(self.label + '.par', 'w') as fobj:
+            print(self.timing_model_string, file=fobj)
 
     def quit(self, event):
         plt.close(self.fig)
@@ -500,13 +541,11 @@ class BinaryPhaseogram(BasePhaseogram):
         self.st0.valmin = self.t0 - self.orbital_period
         self.st0.valmax = self.t0 + self.orbital_period
         self.fig.canvas.draw()
+
+        self.timing_model_string = self.get_timing_model_string()
+
         print("------------------------")
-        print("PB (s)     {}  ({} d)".format(self.orbital_period,
-                                             self.orbital_period / 86400))
-        print("A1 (l-s)   {}".format(self.asini))
-        print("T0 (MET)   {}".format(self.t0))
-        if self.mjdref is not None:
-            print("T0 (MJD)   {}".format(self.t0 / 86400 + self.mjdref))
+        print(self.timing_model_string)
         print("------------------------")
 
     def quit(self, event):
@@ -520,7 +559,18 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                                nt=32, binary=False, test=False,
                                binary_parameters=[None, 0, None],
                                pepoch=None, norm=None):
+    from astropy.io.fits import Header
+    from astropy.coordinates import SkyCoord
+
     events = load_events(event_file)
+    try:
+        header = Header.fromstring(events.header)
+        position = SkyCoord(header['RA_OBJ'], header['DEC_OBJ'], unit='deg',
+                            frame=header['RADECSYS'].lower())
+        name = header['OBJECT']
+    except (KeyError, AttributeError):
+        position = name = None
+
     if pepoch is None:
         pepoch = events.gti[0, 0]
     else:
@@ -536,7 +586,7 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                               mjdref=events.mjdref,
                               gti=events.gti,
                               label=hen_root(event_file),
-                              norm=norm)
+                              norm=norm, object=name, position=position)
     else:
         ip = InteractivePhaseogram(events.time, freq, nph=nbin, nt=nt,
                                    fdot=fdot, test=test, fddot=fddot,
@@ -544,7 +594,7 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                                    mjdref=events.mjdref,
                                    gti=events.gti,
                                    label=hen_root(event_file),
-                                   norm=norm)
+                                   norm=norm, object=name, position=position)
 
     return ip
 
