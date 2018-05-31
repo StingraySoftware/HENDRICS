@@ -51,7 +51,7 @@ matrix:
         - python: 3.6
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes
         - python: 3.6
-          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem git+https://github.com/stingraysoftware/stingray.git'
+          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='emcee git+https://git@github.com/nanograv/pint.git jplephem git+https://github.com/stingraysoftware/stingray.git'
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - python: 3.6
@@ -66,8 +66,6 @@ matrix:
     allow_failures:
         - python: 3.4
           env: NUMPY_VERSION=1.9 SETUP_CMD='test'
-        - python: 3.6
-          env: SETUP_CMD='build_docs -w'
         # Try Astropy development version
         - python: 3.6
           env: ASTROPY_VERSION=development SETUP_CMD='test'
