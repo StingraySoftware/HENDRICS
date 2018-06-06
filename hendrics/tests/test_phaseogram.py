@@ -8,6 +8,7 @@ from hendrics.phaseogram import BasePhaseogram
 from hendrics.plot import plot_folding
 import os
 import pytest
+import subprocess as sp
 
 
 class TestPhaseogram():
@@ -27,6 +28,16 @@ class TestPhaseogram():
         cls.event_times = events.time
         cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
+
+        curdir = os.path.abspath(os.path.dirname(__file__))
+        cls.datadir = os.path.join(curdir, 'data')
+        fits_file = os.path.join(cls.datadir, 'monol_testA.evt')
+        command = 'HENreadevents {0}'.format(fits_file)
+        sp.check_call(command.split())
+
+        cls.real_event_file = os.path.join(cls.datadir,
+                                           'monol_testA_nustar_fpma_ev' +
+                                           HEN_FILE_EXTENSION)
 
     def test_zsearch(self):
         evfile = self.dum
@@ -68,6 +79,11 @@ class TestPhaseogram():
 
     def test_phaseogram_input_f(self):
         evfile = self.dum
+        main_phaseogram([evfile, '-f', '9.9', '--test',
+                         '--pepoch', '57000'])
+
+    def test_phaseogram_input_real_data(self):
+        evfile = self.real_event_file
         main_phaseogram([evfile, '-f', '9.9', '--test',
                          '--pepoch', '57000'])
 

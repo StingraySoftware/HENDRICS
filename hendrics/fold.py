@@ -81,6 +81,8 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
          Good time intervals. Defaults to None
     quick: bool
          If True, use a quicker fitting algorithms for TOAs. Defaults to False
+    position: `astropy.SkyCoord` object
+         Position of the object
 
     Returns
     -------
@@ -98,6 +100,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
     gti = kwargs['gti'] if 'gti' in kwargs else None
     label = kwargs['label'] if 'label' in kwargs else None
     quick = kwargs['quick'] if 'quick' in kwargs else False
+    position = kwargs['position'] if 'position' in kwargs else None
 
     pepoch = assign_value_if_none(pepoch, events[0])
     gti = assign_value_if_none(gti, [[events[0], events[-1]]])
@@ -177,7 +180,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
             toa_list = _load_and_prepare_TOAs(toas, errs_us=toa_errs)
             # workaround until PR #368 is accepted in pint
             toa_list.table['clkcorr'] = 0
-            toa_list.write_TOA_file(timfile, name=label)
+            toa_list.write_TOA_file(timfile, name=label, format='Tempo2')
 
         print('TOA(MJD)  TOAerr(us)')
     else:
