@@ -1,10 +1,13 @@
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 import numpy as np
+from hendrics.base import HAS_NUMBA
 from ..ffa import ffa_search
+
 from ..efsearch import fit
+import pytest
 
-
+@pytest.mark.skipif('not HAS_NUMBA')
 def test_ffa():
     period = 0.01
     pmin = 0.009
@@ -26,6 +29,8 @@ def test_ffa():
     model = fit(1/per[::-1], st[::-1], 1/period, obs_length=10)
     assert np.isclose(1/model.mean, period, atol=1e-6)
 
+
+@pytest.mark.skipif('not HAS_NUMBA')
 
 def test_ffa_vs_folding_search():
     import time

@@ -11,13 +11,16 @@ from pathlib import Path
 import tempfile
 
 import numpy as np
-from astropy import log
 from astropy.logger import AstropyUserWarning
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 try:
-    from numba import jit, njit, prange
+    from numba import jit, njit, prange, vectorize
+
+    HAS_NUMBA = True
 except ImportError:
+    HAS_NUMBA = False
+
     def njit(**kwargs):
         """Dummy decorator in case jit cannot be imported."""
         def true_decorator(func):
@@ -34,6 +37,15 @@ except ImportError:
         """Dummy decorator in case jit cannot be imported."""
         return range(*args)
 
+    class vectorize(object):
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __call__(self, func):
+            wrapped_f = np.vectorize(func)
+
+            return wrapped_f
+    float32 = float64 = int32 = int64 = lambda x, y: None
 
 DEFAULT_PARSER_ARGS = {}
 DEFAULT_PARSER_ARGS['loglevel'] = dict(
@@ -85,14 +97,6 @@ DEFAULT_PARSER_ARGS['pepoch'] = dict(
     kwargs=dict(type=float, required=False,
                 help="Reference epoch for timing parameters (MJD)",
                 default=None))
-
-
-try:
-    from numba import jit
-except:
-    def jit(fun):
-        """Dummy decorator in case jit cannot be imported."""
-        return fun
 
 
 def r_in(td, r_0):
