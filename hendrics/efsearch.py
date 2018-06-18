@@ -29,8 +29,7 @@ def _save_df_to_csv(df, csv_file, reset=False):
     else:
         mode = 'a'
         header = False
-    with open(csv_file, mode) as f:
-        df.to_csv(f, header=header, index=False)
+    df.to_csv(csv_file, header=header, index=False, mode=mode)
 
 
 def decide_binary_parameters(length, freq_range, porb_range, asini_range,
