@@ -30,7 +30,7 @@ env:
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
         - ASTROPY_VERSION=stable
-        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip pandas'
+        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip pandas emcee'
         - PIP_DEPENDENCIES='stingray>=0.1rc1'
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
@@ -57,7 +57,7 @@ matrix:
 
         # ----- Try risky stuff ----
         - python: 3.6
-          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='emcee git+https://git@github.com/nanograv/pint.git jplephem git+https://github.com/stingraysoftware/stingray.git'
+          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem git+https://github.com/stingraysoftware/stingray.git'
         # Try older numpy versions
         - python: 3.4
           env: NUMPY_VERSION=1.9 SETUP_CMD='test'
