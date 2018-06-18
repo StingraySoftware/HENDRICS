@@ -468,6 +468,9 @@ def save_pds(cpds, fname, save_all=True):
     if not hasattr(cpds, 'instr'):
         outdata["instr"] = 'unknown'
 
+    if hasattr(cpds, 'amplitude'):
+        outdata['amplitude'] = int(cpds.amplitude)
+
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
     if save_all:
         mkdir_p(outdir)
@@ -544,6 +547,9 @@ def load_pds(fname, nosub=False):
     data.pop('__sr__class__type__')
     for key in data.keys():
         setattr(cpds, key, data[key])
+
+    if 'amplitude' in list(data.keys()):
+        cpds.amplitude = bool(data["amplitude"])
 
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
     modelfiles = glob.glob(
