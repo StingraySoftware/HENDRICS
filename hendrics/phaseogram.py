@@ -289,7 +289,7 @@ class BasePhaseogram(object):
         tm_string += "PSRJ           {}\n".format(self.object)
         if self.position is not None:
             tm_string += "RAJ            {}\n".format(
-                self.position.ra.to_string(sep=':'))
+                self.position.ra.to_string("hour", sep=':'))
             tm_string += "DECJ           {}\n".format(
                 self.position.dec.to_string(sep=':'))
 
