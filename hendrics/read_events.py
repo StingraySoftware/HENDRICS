@@ -87,6 +87,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                 good = np.logical_and(events.time >= g[0],
                                       events.time < g[1])
                 all_good = good_det & good
+                if len(events.time[all_good]) < 1:
+                    continue
                 events_filt = EventList(events.time[all_good],
                                         pi=events.pi[all_good],
                                         gti=np.array([g], dtype=np.longdouble),
