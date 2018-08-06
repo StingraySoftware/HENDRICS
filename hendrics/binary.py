@@ -149,7 +149,6 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
 
         lclen += lastbin
         s = struct.pack('f'*len(hist), *hist)
-        print(s[:8])
         file.write(s)
         nphot += len(goodev)
     file.close()
@@ -236,6 +235,9 @@ def main_presto(args=None):
 
     parser.add_argument("-b", "--bin-time", help="Bin time",
                         type=np.longdouble, default=1)
+    parser.add_argument("-l", "--max-length", help="Maximum length of light "
+                                                   "curves (split otherwise)",
+                        type=np.longdouble, default=1e32)
     parser.add_argument("-e", "--energy-interval", help="Energy interval",
                         nargs=2, type=float, default=[None, None])
 
