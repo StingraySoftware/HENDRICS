@@ -46,7 +46,7 @@ class TestReadEvents():
 
         treat_event_file(self.fits_file, gti_split=True)
         new_filename = \
-            'monol_test_fake_xmm_epn_det01_gti0_ev' + HEN_FILE_EXTENSION
+            'monol_test_fake_xmm_epn_det01_gti000_ev' + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir,
                                            new_filename))
         data = load_data(os.path.join(self.datadir, new_filename))
@@ -58,7 +58,7 @@ class TestReadEvents():
 
         treat_event_file(self.fits_file, length_split=10)
         new_filename = \
-            'monol_test_fake_xmm_epn_det01_chunk0_ev' + HEN_FILE_EXTENSION
+            'monol_test_fake_xmm_epn_det01_chunk000_ev' + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir,
                                            new_filename))
         data = load_data(os.path.join(self.datadir, new_filename))

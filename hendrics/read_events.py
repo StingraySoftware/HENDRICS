@@ -73,26 +73,6 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                 '{0} exists and using noclobber. Skipping'.format(outfile))
             return
 
-        # if length_split is not None:
-        #     t0 = gtis[0, 0]
-        #     gti_cluster_n = []
-        #     idx = 0
-        #     for ig, g in enumerate(gtis):
-        #         length = g[1] - g[0]
-        #         if g[1] > t0 + length_split:
-        #             t0 = g[0]
-        #             idx += 0
-        #         if length < min_length:
-        #             print("GTI shorter than {} s; skipping".format(min_length))
-        #             gti_cluster_n.append(-1)
-        #         else:
-        #             gti_cluster_n.append(idx)
-        # elif gti_split:
-        #     gti_cluster_n = np.array([i for (i, g) in enumerate(gtis)])
-        #     lengths = np.array([g1 - g0 for (g1, g0) in gtis])
-        #     gti_cluster_n[lengths < min_length] = -1
-        #
-
         if gti_split or (length_split is not None):
             lengths = np.array([g1 - g0 for (g0, g1) in gtis])
             gtis = gtis[lengths >= min_length]
@@ -106,10 +86,9 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                 gti_chunks = gtis
                 label='gti'
 
-
             for ig, g in enumerate(gti_chunks):
                 outfile_local = \
-                    '{0}_{1}{2}_ev'.format(outroot_local, label,
+                    '{0}_{1}{2:03d}_ev'.format(outroot_local, label,
                                            ig) + HEN_FILE_EXTENSION
 
                 good_gtis = cross_two_gtis([g], gtis)
