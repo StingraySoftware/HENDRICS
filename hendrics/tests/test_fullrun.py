@@ -105,7 +105,7 @@ class TestFullRun(object):
                 os.path.join(self.datadir, 'monol_testB.evt'))
         hen.read_events.main(command.split())
         new_filename = os.path.join(self.datadir,
-                                    'monol_testB_nustar_fpmb_gti0_ev' +
+                                    'monol_testB_nustar_fpmb_gti000_ev' +
                                     HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
 
@@ -248,11 +248,11 @@ class TestFullRun(object):
     def test_lcurve_from_split_event(self):
         """Test lc reading of split event file."""
         command = '{0}'.format(
-            os.path.join(self.datadir, 'monol_testB_nustar_fpmb_gti0_ev' +
+            os.path.join(self.datadir, 'monol_testB_nustar_fpmb_gti000_ev' +
                          HEN_FILE_EXTENSION))
         hen.lcurve.main(command.split())
         new_filename = os.path.join(self.datadir,
-                                    'monol_testB_nustar_fpmb_gti0_lc' +
+                                    'monol_testB_nustar_fpmb_gti000_lc' +
                                     HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
         lc = hen.io.load_lcurve(new_filename)
@@ -268,7 +268,7 @@ class TestFullRun(object):
                          HEN_FILE_EXTENSION))
         hen.lcurve.main(command.split())
         new_filename = os.path.join(self.datadir,
-                                    'monol_testA_nustar_fpma_gti0_lc' +
+                                    'monol_testA_nustar_fpma_gti000_lc' +
                                     HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
         lc = hen.io.load_lcurve(new_filename)
