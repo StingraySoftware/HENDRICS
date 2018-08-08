@@ -357,9 +357,9 @@ class TestFullRun(object):
             self.datadir, 'FPMAmonol_test_joinlc' + HEN_FILE_EXTENSION)
         hen.lcurve.join_lightcurves(
             glob.glob(os.path.join(self.datadir,
-                                   'monol_testA_nustar_fpma_gti[0-9]_lc*')) +
+                                   'monol_testA_nustar_fpma_gti[0-9][0-9][0-9]_lc*')) +
             glob.glob(os.path.join(self.datadir,
-                                   'monol_testB_nustar_fpmb_gti[0-9]_lc*')),
+                                   'monol_testB_nustar_fpmb_gti[0-9][0-9][0-9]_lc*')),
             new_filename)
 
         lc = hen.io.load_lcurve(new_actual_filename)
