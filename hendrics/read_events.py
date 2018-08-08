@@ -5,6 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 from stingray.utils import assign_value_if_none
 from stingray.events import EventList
+from stingray.gti import cross_two_gtis
 from .base import hen_root, read_header_key
 from .io import save_events, load_events_and_gtis
 from .io import HEN_FILE_EXTENSION
@@ -15,7 +16,7 @@ import os
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,
-                     min_length=4, gtistring=None):
+                     min_length=4, gtistring=None, length_split=None):
     """Read data from an event file, with no external GTI information.
 
     Parameters
@@ -30,8 +31,11 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
         comma-separated set of GTI strings to consider
     gti_split: bool
         split the file in multiple chunks, containing one GTI each
+    length_split: float, default None
+        split the file in multiple chunks, with approximately this length
     min_length: float
-        minimum length of GTIs accepted (only if gti_split is True)
+        minimum length of GTIs accepted (only if gti_split is True or
+        length_split is not None)
     """
     gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
     logging.info('Opening %s' % filename)
@@ -64,22 +68,30 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             outroot_local = outfile_root
 
         outfile = outroot_local + '_ev' + HEN_FILE_EXTENSION
-        if noclobber and os.path.exists(outfile) and (not gti_split):
+        if noclobber and os.path.exists(outfile) and (not (gti_split or length_split)):
             warnings.warn(
                 '{0} exists and using noclobber. Skipping'.format(outfile))
             return
 
-        if gti_split:
-            for ig, g in enumerate(gtis):
-                length = g[1] - g[0]
-                if length < min_length:
-                    print("GTI shorter than {} s; skipping".format(min_length))
-                    continue
+        if gti_split or (length_split is not None):
+            lengths = np.array([g1 - g0 for (g0, g1) in gtis])
+            gtis = gtis[lengths >= min_length]
 
+            if length_split:
+                gti0 = np.arange(gtis[0, 0], gtis[-1, 1], length_split)
+                gti1 = gti0 + length_split
+                gti_chunks = np.array([[g0, g1] for (g0, g1) in zip(gti0, gti1)])
+                label='chunk'
+            else:
+                gti_chunks = gtis
+                label='gti'
+
+            for ig, g in enumerate(gti_chunks):
                 outfile_local = \
-                    '{0}_gti{1}_ev'.format(outroot_local,
+                    '{0}_{1}{2:03d}_ev'.format(outroot_local, label,
                                            ig) + HEN_FILE_EXTENSION
 
+                good_gtis = cross_two_gtis([g], gtis)
                 if noclobber and os.path.exists(outfile_local):
                     warnings.warn('{0} exists, '.format(outfile_local) +
                                   'and noclobber option used. Skipping')
@@ -91,7 +103,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                     continue
                 events_filt = EventList(events.time[all_good],
                                         pi=events.pi[all_good],
-                                        gti=np.array([g], dtype=np.longdouble),
+                                        gti=good_gtis,
                                         mjdref=events.mjdref)
                 events_filt.instr = events.instr
                 events_filt.header = events.header
@@ -138,6 +150,9 @@ def main(args=None):
                         help="Split event list by GTI",
                         default=False,
                         action="store_true")
+    parser.add_argument("-l", "--length-split",
+                        help="Split event list by GTI",
+                        default=None, type=float)
     parser.add_argument("--min-length", type=int,
                         help="Minimum length of GTIs to consider",
                         default=0)
@@ -158,7 +173,8 @@ def main(args=None):
                         filemode='w')
 
     argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,
-               "min_length": args.min_length, "gtistring": args.gti_string}
+               "min_length": args.min_length, "gtistring": args.gti_string,
+               "length_split": args.length_split}
 
     arglist = [[f, argdict] for f in files]
 

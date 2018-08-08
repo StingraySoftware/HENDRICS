@@ -331,7 +331,7 @@ def lcurve_from_events(f, safe_interval=0,
         outfiles = []
 
         for ib, l0 in enumerate(lcs):
-            local_tag = tag + '_gti%d' % ib
+            local_tag = tag + '_gti{:03d}'.format(ib)
             outf = hen_root(outfile) + local_tag + '_lc' + HEN_FILE_EXTENSION
             if noclobber and os.path.exists(outf):
                 warnings.warn(
