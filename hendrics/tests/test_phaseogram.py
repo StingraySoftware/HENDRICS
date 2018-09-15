@@ -4,7 +4,8 @@ import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
 from hendrics.efsearch import main_zsearch
 from hendrics.phaseogram import main_phaseogram, run_interactive_phaseogram
-from hendrics.phaseogram import BasePhaseogram
+from hendrics.base import hen_root
+from hendrics.fold import HAS_PINT
 from hendrics.plot import plot_folding
 import os
 import pytest
@@ -90,6 +91,33 @@ class TestPhaseogram():
     def test_phaseogram_input_f_change(self):
         evfile = self.dum
         ip = run_interactive_phaseogram(evfile, 9.9, test=True, nbin=16, nt=8)
+        ip.update(1)
+        ip.recalculate(1)
+        ip.toa(1)
+        ip.reset(1)
+        ip.fdot = 2
+        f, fdot, fddot = ip.get_values()
+        assert fdot == 2
+        assert f == 9.9
+        par = hen_root(evfile) + '.par'
+        assert os.path.exists(par)
+
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_phaseogram_deorbit(self):
+        evfile = self.dum
+
+        par = hen_root(evfile) + '.par'
+        with open (par, 'a') as fobj:
+            print("BINARY BT", file=fobj)
+            print("PB  1e20", file=fobj)
+            print("A1  0", file=fobj)
+            print("T0  56000", file=fobj)
+            print("EPHEM  DE200", file=fobj)
+            print("RAJ  00:55:01", file=fobj)
+            print("DECJ 12:00:40.2", file=fobj)
+
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True, nbin=16, nt=8,
+                                        deorbit_par=par)
         ip.update(1)
         ip.recalculate(1)
         ip.toa(1)
