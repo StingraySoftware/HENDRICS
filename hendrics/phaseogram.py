@@ -19,6 +19,12 @@ from abc import ABCMeta, abstractmethod
 from matplotlib.widgets import Slider, Button
 import warnings
 from astropy.stats import poisson_conf_interval
+import matplotlib
+
+if int(matplotlib.__version__.split('.')[0]) < 2:
+    DEFAULT_COLORMAP = 'afmhot'
+else:
+    DEFAULT_COLORMAP = 'magma'
 
 
 def get_z2_label(phas, prof):
@@ -144,7 +150,7 @@ class BasePhaseogram(object):
         self.phases, self.times = phases, times
 
         self.pcolor = ax.pcolormesh(phases, times, self.phaseogr.T,
-                                    cmap='magma')
+                                    cmap=DEFAULT_COLORMAP)
         self.colorbar = plt.colorbar(self.pcolor, cax=colorbax)
         ax.set_xlabel('Phase')
         ax.set_ylabel('Time')
