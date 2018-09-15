@@ -4,7 +4,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .io import load_events, load_folding
-from .fold import get_TOAs_from_events
+from .fold import get_TOAs_from_events, HAS_PINT
 from .base import hen_root
 from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
@@ -458,6 +458,12 @@ class InteractivePhaseogram(BasePhaseogram):
                                  label=self.label[:10],
                                  quick=self.test,
                                  position=None)
+        if not HAS_PINT:
+            with open(self.label + '.tim', 'w') as fobj:
+                print('FORMAT 1', file=fobj)
+                for t, te in zip(toa, toaerr):
+                    print("HEN", 0, t, te, "@", file=fobj)
+
         with open(self.label + '.par', 'w') as fobj:
             print(self.timing_model_string, file=fobj)
 
@@ -614,7 +620,8 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                                nt=32, binary=False, test=False,
                                binary_parameters=[None, 0, None],
                                pepoch=None, norm=None,
-                               plot_only=False):
+                               plot_only=False,
+                               deorbit_par=None):
     from astropy.io.fits import Header
     from astropy.coordinates import SkyCoord
 
@@ -627,10 +634,12 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
     except (KeyError, AttributeError):
         position = name = None
 
+    pepoch_mjd = pepoch
     if pepoch is None:
         pepoch = events.gti[0, 0]
+        pepoch_mjd = pepoch / 86400 + events.mjdref
     else:
-        pepoch = (pepoch - events.mjdref) * 86400
+        pepoch = (pepoch_mjd - events.mjdref) * 86400
 
     if binary:
         ip = BinaryPhaseogram(events.time, freq, nph=nbin, nt=nt,
@@ -645,6 +654,15 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                               norm=norm, object=name, position=position,
                               plot_only=plot_only)
     else:
+        if deorbit_par is not None:
+            from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
+            length = np.max(events.time) - np.min(events.time)
+            length_d = length / 86400
+            results = get_orbital_correction_from_ephemeris_file(pepoch_mjd - 1, pepoch_mjd + length_d + 1,
+                                                                 deorbit_par,
+                                                                 ntimes=int(length // 10))
+            orbital_correction_fun = results[0]
+            events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
         ip = InteractivePhaseogram(events.time, freq, nph=nbin, nt=nt,
                                    fdot=fdot, test=test, fddot=fddot,
                                    pepoch=pepoch,
@@ -690,6 +708,10 @@ def main_phaseogram(args=None):
                               "profile); default None"),
                         default=None,
                         type=str)
+    parser.add_argument("--deorbit-par",
+                        help=("Deorbit data with this parameter file (requires PINT installed)"),
+                        default=None,
+                        type=str)
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
     parser.add_argument("--test",
@@ -733,4 +755,5 @@ def main_phaseogram(args=None):
                                     test=args.test, binary=args.binary,
                                     binary_parameters=args.binary_parameters,
                                     pepoch=args.pepoch, norm=args.norm,
-                                    plot_only=args.plot_only)
+                                    plot_only=args.plot_only,
+                                    deorbit_par=args.deorbit_par)

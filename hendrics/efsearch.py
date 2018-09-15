@@ -154,7 +154,8 @@ def folding_search(events, fmin, fmax, step=None,
     # epsilon is needed if fmin == fmax
     epsilon = 1e-8 * step
     trial_freqs = np.arange(fmin, fmax + epsilon, step)
-    trial_fdots = np.arange(fdotmin, fdotmax + epsilon, fdotstep)
+    fdotepsilon = 1e-2 * fdotstep
+    trial_fdots = np.arange(fdotmin, fdotmax + fdotepsilon, fdotstep)
     if len(trial_fdots) > 1:
         print("Searching {} frequencies and {} fdots".format(len(trial_freqs),
                                                              len(trial_fdots)))
