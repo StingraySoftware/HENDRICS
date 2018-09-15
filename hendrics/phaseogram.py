@@ -166,11 +166,18 @@ class BasePhaseogram(object):
 
         axcolor = '#ff8888'
         self.slider_axes = []
-        self.slider_axes.append(plt.axes([0.25, 0.1, 0.5, 0.03],
+        def newax_fn(*args, **kwargs):
+            try:
+                ax = plt.axes(*args, facecolor=axcolor)
+            except AttributeError:
+                # MPL < 2
+                ax = plt.axes(*args, axis_bgcolor=axcolor)
+            return ax
+        self.slider_axes.append(newax_fn([0.25, 0.1, 0.5, 0.03],
                                          facecolor=axcolor))
-        self.slider_axes.append(plt.axes([0.25, 0.15, 0.5, 0.03],
+        self.slider_axes.append(newax_fn([0.25, 0.15, 0.5, 0.03],
                                          facecolor=axcolor))
-        self.slider_axes.append(plt.axes([0.25, 0.2, 0.5, 0.03],
+        self.slider_axes.append(newax_fn([0.25, 0.2, 0.5, 0.03],
                                          facecolor=axcolor))
 
         self._construct_widgets(**kwargs)
