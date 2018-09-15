@@ -57,7 +57,7 @@ matrix:
 
         # ----- Try risky stuff ----
         - python: 3.6
-          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem'
+          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem git+https://github.com/stingraysoftware/stingray.git'
         - python: 3.6
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://github.com/stingraysoftware/stingray.git'
         # Try older numpy versions
