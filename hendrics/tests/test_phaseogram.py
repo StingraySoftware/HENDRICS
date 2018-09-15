@@ -1,3 +1,4 @@
+from __future__ import print_function
 from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
