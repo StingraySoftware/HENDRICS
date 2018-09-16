@@ -54,10 +54,10 @@ matrix:
         # may run for a long time
         - python: 3.6
           env: SETUP_CMD='build_docs -w'
-
-        # ----- Try risky stuff ----
         - python: 3.6
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem git+https://github.com/stingraysoftware/stingray.git'
+
+        # ----- Try risky stuff ----
         - python: 3.6
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://github.com/stingraysoftware/stingray.git'
         # Try older numpy versions
@@ -77,11 +77,11 @@ matrix:
           env: ASTROPY_VERSION=development SETUP_CMD='test'
 
 before_install:
+    - pip install --upgrade pip
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
     - export DISPLAY=:99.0
     - sh -e /etc/init.d/xvfb start
-    - pip install --upgrade pip
 
 install:
     # OPTIONAL DEPENDENCIES
