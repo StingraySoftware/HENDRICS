@@ -30,8 +30,8 @@ env:
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
         - ASTROPY_VERSION=stable
-        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip pandas emcee'
-        - PIP_DEPENDENCIES='stingray>=0.1rc1'
+        - CONDA_DEPENDENCIES='scipy matplotlib pytest pip pandas'
+        - PIP_DEPENDENCIES='emcee stingray>=0.1rc1'
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
     matrix:
@@ -77,7 +77,6 @@ matrix:
           env: ASTROPY_VERSION=development SETUP_CMD='test'
 
 before_install:
-    - pip install --upgrade pip
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
     - export DISPLAY=:99.0
