@@ -127,7 +127,7 @@ class BasePhaseogram(object):
         self.object = object
         self.timing_model_string = ""
 
-        self.fig = plt.figure(figsize=plt.figaspect(1.2))
+        self.fig = plt.figure(label, figsize=plt.figaspect(1.2))
         from matplotlib.gridspec import GridSpec
         gs = GridSpec(2, 2, width_ratios=[15, 1], height_ratios=[2, 3])
         plt.subplots_adjust(left=0.25, bottom=0.30)
