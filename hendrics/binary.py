@@ -5,6 +5,7 @@ import logging
 from astropy.coordinates import SkyCoord
 import numpy as np
 from .io import high_precision_keyword_read, get_file_type, HEN_FILE_EXTENSION
+from .base import deorbit_events
 
 MAXBIN = 100000000
 
@@ -247,6 +248,10 @@ def main_presto(args=None):
                               "default:WARNING)"),
                         default='WARNING',
                         type=str)
+    parser.add_argument("--deorbit-par",
+                        help=("Deorbit data with this parameter file (requires PINT installed)"),
+                        default=None,
+                        type=str)
     parser.add_argument("--nproc",
                         help=("Number of processors to use"),
                         default=1,
@@ -270,6 +275,8 @@ def main_presto(args=None):
         if ftype == 'lc':
             lcinfo = save_lc_to_binary(contents, outfile)
         elif ftype == 'events':
+            if args.deorbit_par is not None:
+                contents = deorbit_events(contents, args.deorbit_par)
             lcinfo = save_events_to_binary(contents, outfile,
                                            bin_time=args.bin_time,
                                            emin=args.energy_interval[0],

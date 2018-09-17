@@ -7,6 +7,8 @@ from __future__ import (absolute_import, unicode_literals, division,
 import numpy as np
 import logging
 import sys
+import copy
+from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 
 def r_in(td, r_0):
@@ -249,3 +251,22 @@ def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
 def gti_len(gti):
     """Return the total good time from a list of GTIs."""
     return np.sum([g[1] - g[0] for g in gti])
+
+
+def deorbit_events(events, parameter_file=None):
+    events = copy.deepcopy(events)
+    if parameter_file is None:
+        return events
+
+    pepoch = events.gti[0, 0]
+    pepoch_mjd = pepoch / 86400 + events.mjdref
+
+    length = np.max(events.time) - np.min(events.time)
+    length_d = length / 86400
+    results = get_orbital_correction_from_ephemeris_file(pepoch_mjd - 1,
+                                                         pepoch_mjd + length_d + 1,
+                                                         parameter_file,
+                                                         ntimes=int(length // 10))
+    orbital_correction_fun = results[0]
+    events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
+    return events

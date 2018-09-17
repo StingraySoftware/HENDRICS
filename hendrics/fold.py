@@ -420,9 +420,14 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
         poisson_conf_interval(smooth,
                               interval='frequentist-confidence', sigma=3)
 
-    ax0.fill_between(meanbins, err_low, err_high, color='grey', zorder=1,
-                     alpha=0.5, label='3-sigma confidence',
-                     step='mid')
+    try:
+        ax0.fill_between(meanbins, err_low, err_high, color='grey', zorder=1,
+                         alpha=0.5, label='3-sigma confidence',
+                         step='mid')
+    except AttributeError:
+        # MPL < 2
+        ax0.fill_between(meanbins, err_low, err_high, color='grey', zorder=1,
+                         alpha=0.5, label='3-sigma confidence')
 
     ax0.axhline(max, lw=1, color='k')
     ax0.axhline(min, lw=1, color='k')

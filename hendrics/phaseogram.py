@@ -4,10 +4,11 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 from .io import load_events, load_folding
-from .fold import get_TOAs_from_events
-from .base import hen_root
+from .fold import get_TOAs_from_events, HAS_PINT
+from .base import hen_root, deorbit_events
 from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
+from stingray.pulse.pulsar import z_n, z2_n_detection_level
 
 import numpy as np
 import logging
@@ -17,6 +18,21 @@ import six
 from abc import ABCMeta, abstractmethod
 from matplotlib.widgets import Slider, Button
 import warnings
+from astropy.stats import poisson_conf_interval
+import matplotlib
+
+if int(matplotlib.__version__.split('.')[0]) < 2:
+    DEFAULT_COLORMAP = 'afmhot'
+else:
+    DEFAULT_COLORMAP = 'magma'
+
+
+def get_z2_label(phas, prof):
+    good = phas < 1
+    z2 = z_n(phas[good], n=2, norm=prof[good])
+    z2_detlev = z2_n_detection_level(n=2)
+    z2_label = r'$Z_2^2 = {:.1f} (90\% det. lev. {:.1f})$'.format(z2, z2_detlev)
+    return z2_label
 
 
 class SliderOnSteroids(Slider):
@@ -41,7 +57,7 @@ def normalized_phaseogram(norm, *args, **kwargs):
         maxarr = np.max(phas, axis=0)
         for i in range(phas.shape[0]):
             phas[i][:] -= minarr
-            phas[i][:] /= maxarr
+            phas[i][:] /= (maxarr - minarr)
     elif norm == 'mediansub':
         medarr = np.median(phas, axis=0)
         for i in range(phas.shape[0]):
@@ -57,6 +73,7 @@ class BasePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, test=False,
                  fdot=0, fddot=0, mjdref=None, pepoch=None, gti=None,
                  label="phaseogram", norm=None, position=None, object=None,
+                 plot_only=False,
                  **kwargs):
         """Init BasePhaseogram class.
 
@@ -110,10 +127,21 @@ class BasePhaseogram(object):
         self.object = object
         self.timing_model_string = ""
 
-        self.fig, ax = plt.subplots(num=self.label)
+        self.fig = plt.figure(label, figsize=plt.figaspect(1.2))
+        from matplotlib.gridspec import GridSpec
+        gs = GridSpec(2, 2, width_ratios=[15, 1], height_ratios=[2, 3])
         plt.subplots_adjust(left=0.25, bottom=0.30)
+        ax = plt.subplot(gs[1, 0])
+        self.profax = plt.subplot(gs[0, 0], sharex=ax)
+        self.profax.set_xticks([])
+        colorbax = plt.subplot(gs[1, 1])
 
         corrected_times = self.ev_times - self._delay_fun(self.ev_times)
+        self.unnorm_phaseogr, phases, times, additional_info = \
+            normalized_phaseogram(None, corrected_times, freq,
+                                  return_plot=True, nph=nph, nt=nt, fdot=fdot,
+                                  fddot=fddot, plot=False, pepoch=pepoch)
+
         self.phaseogr, phases, times, additional_info = \
             normalized_phaseogram(self.norm, corrected_times, freq,
                                   return_plot=True, nph=nph, nt=nt, fdot=fdot,
@@ -121,27 +149,35 @@ class BasePhaseogram(object):
 
         self.phases, self.times = phases, times
 
-        self.pcolor = plt.pcolormesh(phases, times, self.phaseogr.T,
-                                     cmap='magma')
-        plt.xlabel('Phase')
-        plt.ylabel('Time')
-        plt.colorbar()
+        self.pcolor = ax.pcolormesh(phases, times, self.phaseogr.T,
+                                    cmap=DEFAULT_COLORMAP)
+        self.colorbar = plt.colorbar(self.pcolor, cax=colorbax)
+        ax.set_xlabel('Phase')
+        ax.set_ylabel('Time')
+        # plt.colorbar()
         self.lines = []
         self.line_phases = np.arange(-2, 3, 0.5)
         for ph0 in self.line_phases:
-            newline, = plt.plot(np.zeros_like(times) + ph0, times, zorder=10,
-                                lw=2, color='w')
+            newline, = ax.plot(np.zeros_like(times) + ph0, times, zorder=10,
+                               lw=2, color='w')
             self.lines.append(newline)
 
-        plt.xlim([0, 2])
+        ax.set_xlim([0, 2])
 
         axcolor = '#ff8888'
         self.slider_axes = []
-        self.slider_axes.append(plt.axes([0.25, 0.1, 0.5, 0.03],
+        def newax_fn(*args, **kwargs):
+            try:
+                ax = plt.axes(*args, facecolor=axcolor)
+            except AttributeError:
+                # MPL < 2
+                ax = plt.axes(*args, axis_bgcolor=axcolor)
+            return ax
+        self.slider_axes.append(newax_fn([0.25, 0.1, 0.5, 0.03],
                                          facecolor=axcolor))
-        self.slider_axes.append(plt.axes([0.25, 0.15, 0.5, 0.03],
+        self.slider_axes.append(newax_fn([0.25, 0.15, 0.5, 0.03],
                                          facecolor=axcolor))
-        self.slider_axes.append(plt.axes([0.25, 0.2, 0.5, 0.03],
+        self.slider_axes.append(newax_fn([0.25, 0.2, 0.5, 0.03],
                                          facecolor=axcolor))
 
         self._construct_widgets(**kwargs)
@@ -177,9 +213,27 @@ class BasePhaseogram(object):
         self.button_toa.on_clicked(self.toa)
         self.button_recalc.on_clicked(self.recalculate)
         self.button_close.on_clicked(self.quit)
+        #self.profax = plt.axes([0.25, 0.75, 0.5, 0.2])
 
-        if not test:
+        prof = np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1)
+        nbin = len(prof)
+        phas = np.linspace(0, 2, nbin + 1)[:-1]
+        self.profile_fixed, = \
+            self.profax.plot(phas, prof, drawstyle='steps-mid', color='grey')
+        self.profile, = \
+            self.profax.plot(phas, prof, drawstyle='steps-mid', color='k')
+        mean = np.mean(prof)
+        low, high = \
+            poisson_conf_interval(mean,
+                                  interval='frequentist-confidence', sigma=2)
+        self.profax.fill_between(phas, low, high, alpha=0.5)
+        z2_label = get_z2_label(phas, prof)
+        self.proftext = self.profax.text(0.1, 0.8, z2_label,
+                                         transform=self.profax.transAxes)
+        if not test and not plot_only:
             plt.show()
+        if plot_only:
+            plt.savefig(self.label + '_{:.10f}Hz.png'.format(self.freq))
 
     @abstractmethod
     def _construct_widgets(self, **kwargs):  # pragma: no cover
@@ -202,6 +256,10 @@ class BasePhaseogram(object):
             s.reset()
         self.pcolor.set_array(self.phaseogr.T.ravel())
         self._set_lines(False)
+        prof = np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1)
+        ph = np.linspace(0, 2, len(prof) + 1)[:-1]
+        self.profile.set_ydata(prof)
+        self.proftext.set_text(get_z2_label(ph, prof))
 
     def zoom_in(self, event):
         for s in self.sliders:
@@ -381,6 +439,10 @@ class InteractivePhaseogram(BasePhaseogram):
         self.fdot = self.fdot - dfdot
         self.freq = self.freq - dfreq
 
+        self.unnorm_phaseogr, _, _, _ = \
+            normalized_phaseogram(None, self.ev_times, self.freq,
+                                  fdot=self.fdot, plot=False, nph=self.nph,
+                                  nt=self.nt, pepoch=pepoch, fddot=self.fddot)
         self.phaseogr, _, _, _ = \
             normalized_phaseogram(self.norm, self.ev_times, self.freq,
                                   fdot=self.fdot, plot=False, nph=self.nph,
@@ -409,6 +471,12 @@ class InteractivePhaseogram(BasePhaseogram):
                                  label=self.label[:10],
                                  quick=self.test,
                                  position=None)
+        if not HAS_PINT:
+            with open(self.label + '.tim', 'w') as fobj:
+                print('FORMAT 1', file=fobj)
+                for t, te in zip(toa, toaerr):
+                    print("HEN", 0, t, te, "@", file=fobj)
+
         with open(self.label + '.par', 'w') as fobj:
             print(self.timing_model_string, file=fobj)
 
@@ -527,6 +595,12 @@ class BinaryPhaseogram(BasePhaseogram):
 
         corrected_times = self.ev_times - self._delay_fun(self.ev_times)
 
+        self.unnorm_phaseogr, _, _, _ = \
+            normalized_phaseogram(None, corrected_times, self.freq,
+                                  fdot=self.fdot, plot=False, nph=self.nph,
+                                  nt=self.nt, pepoch=self.pepoch,
+                                  fddot=self.fddot)
+
         self.phaseogr, _, _, _ = \
             normalized_phaseogram(self.norm, corrected_times, self.freq,
                                   fdot=self.fdot, plot=False, nph=self.nph,
@@ -558,7 +632,9 @@ class BinaryPhaseogram(BasePhaseogram):
 def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                                nt=32, binary=False, test=False,
                                binary_parameters=[None, 0, None],
-                               pepoch=None, norm=None):
+                               pepoch=None, norm=None,
+                               plot_only=False,
+                               deorbit_par=None):
     from astropy.io.fits import Header
     from astropy.coordinates import SkyCoord
 
@@ -571,10 +647,12 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
     except (KeyError, AttributeError):
         position = name = None
 
+    pepoch_mjd = pepoch
     if pepoch is None:
         pepoch = events.gti[0, 0]
+        pepoch_mjd = pepoch / 86400 + events.mjdref
     else:
-        pepoch = (pepoch - events.mjdref) * 86400
+        pepoch = (pepoch_mjd - events.mjdref) * 86400
 
     if binary:
         ip = BinaryPhaseogram(events.time, freq, nph=nbin, nt=nt,
@@ -586,15 +664,20 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                               mjdref=events.mjdref,
                               gti=events.gti,
                               label=hen_root(event_file),
-                              norm=norm, object=name, position=position)
+                              norm=norm, object=name, position=position,
+                              plot_only=plot_only)
     else:
+        if deorbit_par is not None:
+            events = deorbit_events(events, deorbit_par)
+
         ip = InteractivePhaseogram(events.time, freq, nph=nbin, nt=nt,
                                    fdot=fdot, test=test, fddot=fddot,
                                    pepoch=pepoch,
                                    mjdref=events.mjdref,
                                    gti=events.gti,
                                    label=hen_root(event_file),
-                                   norm=norm, object=name, position=position)
+                                   norm=norm, object=name, position=position,
+                                   plot_only=plot_only)
 
     return ip
 
@@ -632,10 +715,17 @@ def main_phaseogram(args=None):
                               "profile); default None"),
                         default=None,
                         type=str)
+    parser.add_argument("--deorbit-par",
+                        help=("Deorbit data with this parameter file (requires PINT installed)"),
+                        default=None,
+                        type=str)
     parser.add_argument("--debug", help="use DEBUG logging level",
                         default=False, action='store_true')
     parser.add_argument("--test",
                         help="Just a test. Destroys the window immediately",
+                        default=False, action='store_true')
+    parser.add_argument("--plot-only",
+                        help="Only plot the phaseogram",
                         default=False, action='store_true')
     parser.add_argument("--loglevel",
                         help=("use given logging level (one between INFO, "
@@ -660,12 +750,17 @@ def main_phaseogram(args=None):
         periodogram = load_folding(args.periodogram)
         frequency = float(periodogram.peaks[0])
         fdot = 0
+        fddot = 0
     else:
         frequency = args.freq
         fdot = args.fdot
+        fddot = args.fddot
 
     ip = run_interactive_phaseogram(args.file, freq=frequency, fdot=fdot,
+                                    fddot=fddot,
                                     nbin=args.nbin, nt=args.ntimes,
                                     test=args.test, binary=args.binary,
                                     binary_parameters=args.binary_parameters,
-                                    pepoch=args.pepoch, norm=args.norm)
+                                    pepoch=args.pepoch, norm=args.norm,
+                                    plot_only=args.plot_only,
+                                    deorbit_par=args.deorbit_par)
