@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 from .io import load_events, load_folding
 from .fold import get_TOAs_from_events, HAS_PINT
-from .base import hen_root
+from .base import hen_root, deorbit_events
 from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
 from stingray.pulse.pulsar import z_n, z2_n_detection_level
@@ -668,14 +668,8 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                               plot_only=plot_only)
     else:
         if deorbit_par is not None:
-            from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
-            length = np.max(events.time) - np.min(events.time)
-            length_d = length / 86400
-            results = get_orbital_correction_from_ephemeris_file(pepoch_mjd - 1, pepoch_mjd + length_d + 1,
-                                                                 deorbit_par,
-                                                                 ntimes=int(length // 10))
-            orbital_correction_fun = results[0]
-            events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
+            events = deorbit_events(events, deorbit_par)
+
         ip = InteractivePhaseogram(events.time, freq, nph=nbin, nt=nt,
                                    fdot=fdot, test=test, fddot=fddot,
                                    pepoch=pepoch,

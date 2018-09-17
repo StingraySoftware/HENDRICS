@@ -56,7 +56,7 @@ matrix:
         - python: 3.6
           env: SETUP_CMD='build_docs -w'
         - python: 3.6
-          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem' STINGRAY_VERSION=devel
+          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
 
         # ----- Try risky stuff ----
         - python: 3.6
