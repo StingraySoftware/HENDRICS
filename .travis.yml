@@ -63,7 +63,7 @@ matrix:
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel PIP_DEPENDENCIES=''
         # Try older numpy versions
         - python: 3.4
-          env: NUMPY_VERSION=1.9 SETUP_CMD='test'
+          env: NUMPY_VERSION=1.9 SETUP_CMD='test --coverage'
         # Try Astropy development version
         - python: 3.6
           env: ASTROPY_VERSION=development SETUP_CMD='test'
@@ -72,7 +72,7 @@ matrix:
         - python: 3.6
           env: SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel PIP_DEPENDENCIES=''
         - python: 3.4
-          env: NUMPY_VERSION=1.9 SETUP_CMD='test'
+          env: NUMPY_VERSION=1.9 SETUP_CMD='test --coverage'
         # Try Astropy development version
         - python: 3.6
           env: ASTROPY_VERSION=development SETUP_CMD='test'
