@@ -34,6 +34,7 @@ env:
         - PIP_DEPENDENCIES='emcee stingray>=0.1rc1'
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
+        - STINGRAY_VERSION=stable
     matrix:
         # Make sure that egg_info works without dependencies
         - SETUP_CMD='egg_info'
@@ -55,11 +56,11 @@ matrix:
         - python: 3.6
           env: SETUP_CMD='build_docs -w'
         - python: 3.6
-          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem git+https://github.com/stingraysoftware/stingray.git'
+          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem' STINGRAY_VERSION=devel
 
         # ----- Try risky stuff ----
         - python: 3.6
-          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://github.com/stingraysoftware/stingray.git'
+          env: SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel PIP_DEPENDENCIES=''
         # Try older numpy versions
         - python: 3.4
           env: NUMPY_VERSION=1.9 SETUP_CMD='test'
@@ -69,7 +70,7 @@ matrix:
 
     allow_failures:
         - python: 3.6
-          env: SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://github.com/stingraysoftware/stingray.git'
+          env: SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel PIP_DEPENDENCIES=''
         - python: 3.4
           env: NUMPY_VERSION=1.9 SETUP_CMD='test'
         # Try Astropy development version
@@ -90,6 +91,7 @@ install:
     # install since this ensures Numpy does not get automatically upgraded.
     - if [[ $SETUP_CMD != egg_info ]] && [[ $USE_NETCDF == yes ]]; then $CONDA_INSTALL netcdf4; fi
     - if [[ $SETUP_CMD != egg_info ]] && [[ $USE_NUMBA == yes ]]; then $CONDA_INSTALL numba; fi
+    - if [[ $SETUP_CMD != egg_info ]] && [[ $STINGRAY_VERSION == devel ]]; then $PIP_INSTALL git+https://github.com/stingraysoftware/stingray.git; fi
     - if [[ $SETUP_CMD != egg_info ]]; then python setup.py install; fi
 
 script:
