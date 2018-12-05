@@ -35,6 +35,8 @@ env:
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
         - STINGRAY_VERSION=stable
+        - SETUP_XVFB=True
+        - MPLBACKEND="Agg"
     matrix:
         # Make sure that egg_info works without dependencies
         - SETUP_CMD='egg_info'
