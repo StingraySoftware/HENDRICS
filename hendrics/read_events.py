@@ -13,6 +13,8 @@ import numpy as np
 import logging
 import warnings
 import os
+from hendrics.io import load_events, save_events
+from hendrics.base import common_name
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,
@@ -122,6 +124,35 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
 def _wrap_fun(arglist):
     f, kwargs = arglist
     return treat_event_file(f, **kwargs)
+
+
+def join_eventlists(event_file1, event_file2, new_event_file=None):
+    if new_event_file is None:
+        new_event_file = common_name(event_file1, event_file2) + '_ev.nc'
+
+    events1 = load_events(event_file1)
+    events2 = load_events(event_file2)
+    events = events1.join(events2)
+    events.header = events1.header
+    save_events(events, new_event_file)
+    return events
+
+
+def main_join(args=None):
+    import argparse
+    from multiprocessing import Pool
+
+    description = ('Read a cleaned event files and saves the relevant '
+                   'information in a standard format')
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("file1", help="File 1", type=str)
+    parser.add_argument("file2", help="File 2", type=str)
+    parser.add_argument("-o", "--output", type=str,
+                        help="Name of output file",
+                        default=None)
+    args = parser.parse_args(args)
+
+    join_eventlists(args.file1, args.file2, new_event_file=args.output)
 
 
 def main(args=None):
