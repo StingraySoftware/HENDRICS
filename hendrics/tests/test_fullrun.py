@@ -109,6 +109,18 @@ class TestFullRun(object):
                                     HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
 
+    def test_merge_events(self):
+        filea = os.path.join(self.datadir,
+                             'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION)
+        fileb = os.path.join(self.datadir,
+                             'monol_testB_nustar_fpmb_ev' + HEN_FILE_EXTENSION)
+
+        hen.read_events.main_join([filea, fileb])
+
+        out = os.path.join(self.datadir,
+                           'monol_test_nustar_fpm_ev' + HEN_FILE_EXTENSION)
+        assert os.path.exists(out)
+
     def test_save_binary_events(self):
         f = self.first_event_file
         with pytest.raises(ValueError) as excinfo:
