@@ -127,6 +127,26 @@ def _wrap_fun(arglist):
 
 
 def join_eventlists(event_file1, event_file2, new_event_file=None):
+    """Join two event files.
+
+    Parameters
+    ----------
+    event_file1 : str
+        First event file
+    event_file2 : str
+        Second event file
+
+    Other parameters
+    ----------------
+    new_event_file : str, default None
+        Output event file. If not specified uses `hendrics.utils.common_name`
+        to figure out a good name to use mixing up the two input names.
+
+    Returns
+    -------
+    new_event_file : str
+        Output event file
+    """
     if new_event_file is None:
         new_event_file = common_name(event_file1, event_file2) + '_ev.nc'
 
@@ -135,12 +155,12 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
     events = events1.join(events2)
     events.header = events1.header
     save_events(events, new_event_file)
-    return events
+    return new_event_file
 
 
 def main_join(args=None):
+    """Main function called by the `HENjoinevents` command line script."""
     import argparse
-    from multiprocessing import Pool
 
     description = ('Read a cleaned event files and saves the relevant '
                    'information in a standard format')
