@@ -148,7 +148,8 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
         Output event file
     """
     if new_event_file is None:
-        new_event_file = common_name(event_file1, event_file2) + '_ev.nc'
+        new_event_file = \
+            common_name(event_file1, event_file2) + '_ev' + HEN_FILE_EXTENSION
 
     events1 = load_events(event_file1)
     events2 = load_events(event_file2)
