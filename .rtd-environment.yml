@@ -9,5 +9,6 @@ dependencies:
     - matplotlib
     - numpy
     - scipy
+    - sphinx-astropy
     - pip:
        - git+https://github.com/stingraysoftware/stingray.git
