@@ -15,6 +15,8 @@ try:
 except:
     HAS_PD = False
 
+from hendrics.fold import HAS_PINT
+
 
 class TestEFsearch():
     def setup_class(cls):
@@ -133,6 +135,26 @@ class TestEFsearch():
         assert np.all(table['done'])
         os.unlink(csv_file)
         os.unlink('out.csv')
+
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_efsearch_deorbit(self):
+        evfile = self.dum
+
+        par = 'bububububu.par'
+        with open (par, 'a') as fobj:
+            print("BINARY BT", file=fobj)
+            print("PB  1e20", file=fobj)
+            print("A1  0", file=fobj)
+            print("T0  56000", file=fobj)
+            print("EPHEM  DE200", file=fobj)
+            print("RAJ  00:55:01", file=fobj)
+            print("DECJ 12:00:40.2", file=fobj)
+
+        ip = main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                           '--deorbit-par', par])
+
+        ip = main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                           '--deorbit-par', par])
 
     @classmethod
     def teardown_class(cls):

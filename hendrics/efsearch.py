@@ -16,6 +16,7 @@ import os
 import logging
 import argparse
 import matplotlib.pyplot as plt
+from .base import deorbit_events
 
 
 D_OMEGA_FACTOR = 2 * np.sqrt(3)
@@ -269,6 +270,10 @@ def _common_parser(args=None):
     parser.add_argument('-N', default=2, type=int,
                         help="The number of harmonics to use in the search "
                              "(the 'N' in Z^2_N; only relevant to Z search!)")
+    parser.add_argument("--deorbit-par",
+                        help=("Deorbit data with this parameter file (requires PINT installed)"),
+                        default=None,
+                        type=str)
 
     args = parser.parse_args(args)
 
@@ -300,6 +305,8 @@ def _common_main(args, func):
             baseline = args.N
             kind = 'Z2n'
         events = load_events(fname)
+        if args.deorbit_par is not None:
+            events = deorbit_events(events, args.deorbit_par)
 
         results = \
             folding_search(events, args.fmin, args.fmax, step=args.step,
