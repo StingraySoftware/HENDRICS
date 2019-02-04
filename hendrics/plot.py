@@ -317,7 +317,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             if ef.stat.size > 300:
                 vmin = np.median(ef.stat)
                 from stingray.utils import mad
-                vmax = vmin + 5 * mad(ef.stat)
+                vmax = vmin + 5 * mad(ef.stat.flatten())
             else:
                 vmin = ef.N - 1
                 vmax = None
