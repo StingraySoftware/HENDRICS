@@ -313,7 +313,17 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
             plt.figure(fname)
-            plt.pcolormesh(ef.freq, np.asarray(ef.fdots), ef.stat)
+            plt.title("Colorbar normalized to 5 x MAD")
+            if ef.stat.size > 300:
+                vmin = np.median(ef.stat)
+                from stingray.utils import mad
+                vmax = vmin + 5 * mad(ef.stat)
+            else:
+                vmin = ef.N - 1
+                vmax = None
+
+            plt.pcolormesh(ef.freq, np.asarray(ef.fdots), ef.stat,
+                           vmin=vmin, vmax=vmax)
             plt.colorbar()
             plt.xlabel('Frequency (Hz)')
             plt.ylabel('Fdot (Hz/s)')
