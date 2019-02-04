@@ -260,6 +260,9 @@ def deorbit_events(events, parameter_file=None):
 
     pepoch = events.gti[0, 0]
     pepoch_mjd = pepoch / 86400 + events.mjdref
+    if events.mjdref < 10000:
+        logging.warning("MJDREF is very low. Are you sure everything is "
+                        "correct?")
 
     length = np.max(events.time) - np.min(events.time)
     length_d = length / 86400
