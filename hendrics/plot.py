@@ -303,30 +303,101 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
         plt.savefig(figname)
 
 
+def plot_ffdotsearch(frequencies, fdots, stats, label, detlev=1):
+    idx = stats.argmax()
+    ix, iy = np.unravel_index(np.argmax(stats, axis=None), stats.shape)
+
+    best_f, best_fd = frequencies.flatten()[idx], fdots.flatten()[idx]
+    plt.figure(figsize=(15, 15))
+    gs = plt.GridSpec(2, 2, height_ratios=(1, 3), width_ratios=(3, 1),
+                      hspace=0, wspace=0)
+    axf = plt.subplot(gs[0, 0])
+    axfdot = plt.subplot(gs[1, 1])
+    axffdot = plt.subplot(gs[1, 0])
+    axf.plot(frequencies[ix, :], stats[ix, :])
+    axfdot.plot(stats[:, iy], fdots[:, iy])
+    axffdot.pcolormesh(frequencies, fdots * 1e10, stats,
+                       vmax=detlev)
+    axf.axhline(detlev)
+    axfdot.axvline(detlev)
+
+    #     plt.colorbar()
+    plt.title(label)
+    axffdot.scatter(best_f, best_fd * 1e10, marker='+', c='w')
+    axffdot.set_xlabel(r"$\nu$ (Hz)")
+    axffdot.set_ylabel(r"$\dot{\nu}$ ($10^{-10}$ Hz/s)")
+    axf.set_ylabel(r"$Z_2^2$")
+    axfdot.set_xlabel(r"$Z_2^2$")
+
+    return best_f, best_fd, stats.flatten()[idx]
+
+
 def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                  output_data_file=None):
+    from .fold import z2_n_detection_level
+    from stingray.pulse.pulsar import fold_detection_level
     if is_string(fnames):
         fnames = [fnames]
 
     for fname in fnames:
         ef = load_folding(fname)
 
-        if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-            plt.figure(fname)
-            plt.title("Colorbar normalized to 5 x MAD")
-            if ef.stat.size > 300:
-                vmin = np.median(ef.stat)
-                from stingray.utils import mad
-                vmax = vmin + 5 * mad(ef.stat.flatten())
-            else:
-                vmin = ef.N - 1
-                vmax = None
+        if not hasattr(ef, 'M') or ef.M is None:
+            ef.M = 1
+        if ef.kind == "Z2n":
+            vmin = ef.N
+            vmax = z2_n_detection_level(0.001, n=ef.N, ntrial=ef.stat.shape[0],
+                                        n_summed_spectra=ef.M)
+        else:
+            vmin = ef.nbin
+            vmax = fold_detection_level(ef.nbin, 0.001,
+                                        ntrial=ef.stat.shape[0])
 
-            plt.pcolormesh(ef.freq, np.asarray(ef.fdots), ef.stat,
-                           vmin=vmin, vmax=vmax)
-            plt.colorbar()
-            plt.xlabel('Frequency (Hz)')
-            plt.ylabel('Fdot (Hz/s)')
+
+        if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+
+            plt.figure(fname, figsize=(10, 10))
+            gs = plt.GridSpec(2, 2, height_ratios=(1, 3), width_ratios=(3, 1),
+                              hspace=0, wspace=0)
+            axf = plt.subplot(gs[0, 0])
+            axfdot = plt.subplot(gs[1, 1])
+            if vmax is not None:
+                axf.axhline(vmax, ls="--", label="5 x MAD")
+                axfdot.axvline(vmax)
+            axffdot = plt.subplot(gs[1, 0], sharex=axf, sharey=axfdot)
+            axffdot.pcolormesh(ef.freq, np.asarray(ef.fdots), ef.stat,
+                               vmin=vmin, vmax=vmax)
+            maximum_idx = 0
+            maximum = 0
+            for ix in range(ef.stat.shape[0]):
+                axf.plot(ef.freq[ix, :], ef.stat[ix, :], alpha=0.5, lw=0.2,
+                         color='k')
+                if np.max(ef.stat[ix, :]) > maximum:
+                    maximum = np.max(ef.stat[ix, :])
+                    maximum_idx = ix
+            if vmax is not None and maximum_idx > 0:
+                axf.plot(ef.freq[maximum_idx, :], ef.stat[maximum_idx, :],
+                         lw=1, color='k')
+            maximum_idx = -1
+            maximum = 0
+            for iy in range(ef.stat.shape[1]):
+                axfdot.plot(ef.stat[:, iy], np.asarray(ef.fdots)[:, iy],
+                            alpha=0.5, lw=0.2, color='k')
+                if np.max(ef.stat[:, iy]) > maximum:
+                    maximum = np.max(ef.stat[:, iy])
+                    maximum_idx = iy
+            if vmax is not None and maximum_idx > 0:
+                axfdot.plot(ef.stat[:, maximum_idx],
+                            np.asarray(ef.fdots)[:, maximum_idx],
+                            lw=1, color='k')
+            axf.set_ylabel(r"Stat")
+            axfdot.set_xlabel(r"Stat")
+
+            # plt.colorbar()
+            axffdot.set_xlabel('Frequency (Hz)')
+            axffdot.set_ylabel('Fdot (Hz/s)')
+            axffdot.set_xlim([np.min(ef.freq), np.max(ef.freq)])
+            axffdot.set_ylim([np.min(ef.fdots), np.max(ef.fdots)])
         else:
             plt.plot(ef.freq, ef.stat, drawstyle='steps-mid', label=fname)
             plt.xlabel('Frequency (Hz)')

@@ -315,6 +315,9 @@ def _common_main(args, func):
                            expocorr=args.expocorr, fdotmin=args.fdotmin,
                            fdotmax=args.fdotmax,
                            segment_size=args.segment_size, **kwargs)
+        length = events.time.max() - events.time.min()
+        segment_size = np.min([length, args.segment_size])
+        M = length // segment_size
 
         fdots = 0
         if len(results) == 4:
@@ -328,7 +331,8 @@ def _common_main(args, func):
                                    time_step=args.dynstep, **kwargs)
 
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
-                                      args.N, fdots=fdots)
+                                      args.N, fdots=fdots, M=M,
+                                      segment_size=segment_size)
         if args.find_candidates:
             threshold = 1 - args.conflevel / 100
             best_peaks, best_stat = \

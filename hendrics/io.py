@@ -62,7 +62,9 @@ if HAS_C256:
 
 class EFPeriodogram(object):
     def __init__(self, freq=None, stat=None, kind=None, nbin=None, N=None,
-                 peaks=None, peak_stat=None, best_fits=None, fdots=0):
+                 M=None,
+                 peaks=None, peak_stat=None, best_fits=None, fdots=0,
+                 segment_size=1e32):
         self.freq = freq
         self.stat = stat
         self.kind = kind
@@ -72,6 +74,8 @@ class EFPeriodogram(object):
         self.peak_stat = peak_stat
         self.best_fits = best_fits
         self.fdots = fdots
+        self.M = M
+        self.segment_size=segment_size
 
 
 def _get_key(dict_like, key):
@@ -418,7 +422,7 @@ def save_folding(efperiodogram, fname):
 
     outdata = copy.copy(efperiodogram.__dict__)
     outdata['__sr__class__type__'] = 'EFPeriodogram'
-    if 'best_fits' in outdata:
+    if 'best_fits' in outdata and efperiodogram.best_fits is not None:
         model_files = []
         for i, b in enumerate(efperiodogram.best_fits):
             mfile = fname.replace(HEN_FILE_EXTENSION, '__mod{}__.p'.format(i))
@@ -452,7 +456,7 @@ def load_folding(fname):
             if os.path.exists(mfile):
                 bmodels.append(load_model(mfile)[0])
         ef.best_fits = bmodels
-    if len(np.asarray(ef.peaks).shape) == 0:
+    if ef.peaks is not None and len(np.asarray(ef.peaks).shape) == 0:
         ef.peaks = [ef.peaks]
     return ef
 
@@ -675,7 +679,6 @@ def _split_high_precision_number(varname, var, probesize):
         kind_str = 'double'
     if probesize == 16:
         kind_str = 'longdouble'
-
     if isinstance(var, collections.Iterable):
         dum = np.min(np.abs(var))
         if dum < 1 and dum > 0.:

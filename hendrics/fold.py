@@ -536,3 +536,70 @@ def main_fold(args=None):
                 nbin=args.nbin, nebin=args.nebin, tref=args.tref,
                 test=args.test, emin=args.emin, emax=args.emax,
                 norm=args.norm)
+
+
+def z2_n_detection_level(epsilon=0.01, n=2, n_summed_spectra=1, ntrial=1):
+    """Return the detection level for the Z^2_n statistics.
+
+    See Buccheri et al. (1983), Bendat and Piersol (1971).
+
+    Parameters
+    ----------
+    n : int, default 2
+        The ``n`` in $Z^2_n$
+    epsilon : float, default 0.01
+        The fractional probability that the signal has been produced by noise
+
+    Other Parameters
+    ----------------
+    ntrial : int
+        The number of trials executed to find this profile
+    n_summed_spectra : int
+        Number of Z_2^n periodograms that are being averaged
+
+    Returns
+    -------
+    detlev : float
+        The epoch folding statistics corresponding to a probability
+        epsilon * 100 % that the signal has been produced by noise
+    """
+
+    from scipy import stats
+
+    retlev = stats.chi2.isf(epsilon / ntrial, 2 * n_summed_spectra * n) \
+        / (n_summed_spectra)
+
+    return retlev
+
+
+def z2_n_probability(z2, n=2, ntrial=1, n_summed_spectra=1):
+    """Calculate the probability of a certain folded profile, due to noise.
+
+    Parameters
+    ----------
+    z2 : float
+        A Z^2_n statistics value
+    n : int, default 2
+        The ``n`` in $Z^2_n$
+
+    Other Parameters
+    ----------------
+    ntrial : int
+        The number of trials executed to find this profile
+    n_summed_spectra : int
+        Number of Z_2^n periodograms that were averaged to obtain z2
+
+    Returns
+    -------
+    p : float
+        The probability that the Z^2_n value has been produced by noise
+    """
+    if ntrial > 1:
+        import warnings
+        warnings.warn("Z2_n: The treatment of ntrial is very rough. "
+                      "Use with caution")
+    from scipy import stats
+
+    epsilon = ntrial * stats.chi2.sf(z2 * n_summed_spectra,
+                                     2 * n * n_summed_spectra)
+    return epsilon

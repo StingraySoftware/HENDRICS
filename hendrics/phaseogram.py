@@ -8,7 +8,8 @@ from .fold import get_TOAs_from_events, HAS_PINT
 from .base import hen_root, deorbit_events
 from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
-from stingray.pulse.pulsar import z_n, z2_n_detection_level
+from stingray.pulse.pulsar import z_n
+from .fold import z2_n_detection_level
 
 import numpy as np
 import logging
