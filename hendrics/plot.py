@@ -313,6 +313,7 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
 def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                  output_data_file=None):
     from .fold import z2_n_detection_level
+    from .io import find_file_in_allowed_paths
     from stingray.pulse.pulsar import fold_detection_level
     from matplotlib import gridspec
     import matplotlib.pyplot as plt
@@ -328,7 +329,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
         if ef.kind == "Z2n":
             vmin = ef.N - 1
-            vmax = z2_n_detection_level(0.001, n=ef.N, ntrial=ef.stat.shape[0],
+            vmax = z2_n_detection_level(0.001, n=ef.N, ntrial=ef.stat.shape[1],
                                         n_summed_spectra=ef.M)
             nbin = ef.N * 8
         else:
@@ -365,10 +366,16 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             events = load_events(ef.filename)
 
             if hasattr(ef, "parfile") and ef.parfile is not None:
-                if os.path.exists(ef.parfile):
-                    events = deorbit_events(events, ef.parfile)
-                else:
+                root = os.path.split(fname)
+                parfile = find_file_in_allowed_paths(ef.parfile,
+                                                     ['.', root])
+                if not parfile:
                     warnings.warn("{} does not exist".format(ef.parfile))
+                else:
+                    ef.parfile = parfile
+
+                if parfile and os.path.exists(ef.parfile):
+                    events = deorbit_events(events, ef.parfile)
 
             phase, profile, profile_err = \
                 fold_events(copy.deepcopy(events.time), f, fdot,
