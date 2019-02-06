@@ -3,21 +3,16 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .io import load_events, load_folding
+from .io import load_events
 from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
 from stingray.utils import assign_value_if_none
-from scipy.optimize import minimize, basinhopping
 
 import numpy as np
 import logging
 import argparse
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 from scipy.signal import savgol_filter
-from scipy.interpolate import interp1d
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
-import time
 
 import copy
 try:
@@ -92,6 +87,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
     toa_err : array-like
         errorbars on TOAs, in the same units as TOAs.
     """
+    import matplotlib.pyplot as plt
     template = kwargs['template'] if 'template' in kwargs else None
     mjdref = kwargs['mjdref'] if 'mjdref' in kwargs else None
     nbin = kwargs['nbin'] if 'nbin' in kwargs else 16
@@ -288,6 +284,8 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
     fit_pars_save = guess_pars
     success_save = -1
     if debug:
+        import matplotlib.pyplot as plt
+
         fig = plt.figure('Debug profile')
         plt.errorbar(x, profile, yerr=profile_err, drawstyle='steps-mid')
         plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
@@ -330,6 +328,8 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
                 test=False, emin=0, emax=1e32, norm='to1',
                 smooth_window=None, **opts):
+    from matplotlib.gridspec import GridSpec
+    import matplotlib.pyplot as plt
 
     file_label = ''
     ev = load_events(file)
@@ -565,8 +565,7 @@ def z2_n_detection_level(epsilon=0.01, n=2, n_summed_spectra=1, ntrial=1):
     """
 
     from scipy import stats
-
-    retlev = stats.chi2.isf(epsilon / ntrial, 2 * n_summed_spectra * n) \
+    retlev = stats.chi2.isf(epsilon / ntrial, 2 * int(n_summed_spectra) * n) \
         / (n_summed_spectra)
 
     return retlev

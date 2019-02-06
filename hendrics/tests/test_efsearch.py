@@ -153,6 +153,10 @@ class TestEFsearch():
         ip = main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                            '--deorbit-par', par])
 
+        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True)
+
         ip = main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                            '--deorbit-par', par])
 

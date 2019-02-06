@@ -35,7 +35,6 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-import collections
 import numpy as np
 import os.path
 from .base import _order_list_of_arrays, _empty, is_string
@@ -64,7 +63,7 @@ class EFPeriodogram(object):
     def __init__(self, freq=None, stat=None, kind=None, nbin=None, N=None,
                  M=None,
                  peaks=None, peak_stat=None, best_fits=None, fdots=0,
-                 segment_size=1e32):
+                 segment_size=1e32, filename="", parfile=None):
         self.freq = freq
         self.stat = stat
         self.kind = kind
@@ -76,6 +75,8 @@ class EFPeriodogram(object):
         self.fdots = fdots
         self.M = M
         self.segment_size=segment_size
+        self.filename = filename
+        self.parfile = parfile
 
 
 def _get_key(dict_like, key):

@@ -15,7 +15,6 @@ import numpy as np
 import os
 import logging
 import argparse
-import matplotlib.pyplot as plt
 from .base import deorbit_events
 
 
@@ -173,6 +172,7 @@ def folding_search(events, fmin, fmax, step=None,
 def dyn_folding_search(events, fmin, fmax, step=None,
                        func=epoch_folding_search, oversample=2,
                        time_step=128, **kwargs):
+    import matplotlib.pyplot as plt
 
     if step is None:
         step = 1 / oversample / time_step
@@ -332,7 +332,9 @@ def _common_main(args, func):
 
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
                                       args.N, fdots=fdots, M=M,
-                                      segment_size=segment_size)
+                                      segment_size=segment_size,
+                                      filename=fname)
+
         if args.find_candidates:
             threshold = 1 - args.conflevel / 100
             best_peaks, best_stat = \
