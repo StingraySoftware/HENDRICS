@@ -8,6 +8,8 @@ import numpy as np
 import logging
 import sys
 import copy
+import os
+import warnings
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 
@@ -256,6 +258,9 @@ def gti_len(gti):
 def deorbit_events(events, parameter_file=None):
     events = copy.deepcopy(events)
     if parameter_file is None:
+        return events
+    elif not os.path.exists(parameter_file):
+        warnings.warn("Parameter file {} does not exist".format(parameter_file))
         return events
 
     pepoch = events.gti[0, 0]

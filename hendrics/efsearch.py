@@ -333,7 +333,7 @@ def _common_main(args, func):
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
                                       args.N, fdots=fdots, M=M,
                                       segment_size=segment_size,
-                                      filename=fname)
+                                      filename=fname, parfile=args.deorbit_par)
 
         if args.find_candidates:
             threshold = 1 - args.conflevel / 100
