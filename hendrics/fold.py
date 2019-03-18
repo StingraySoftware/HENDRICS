@@ -27,6 +27,7 @@ try:
     HAS_PINT = True
 except ImportError:
     HAS_PINT = False
+from .base import deorbit_events
 
 
 def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE405"):
@@ -162,7 +163,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         toa, toaerr = \
             get_TOA(profile, 1/frequency_derivatives[0], start,
                     template=template, additional_phase=additional_phase,
-                    quick=quick)
+                    quick=quick, debug=True)
         toas.append(toa)
         toa_errs.append(toaerr)
 
@@ -327,12 +328,15 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
 
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
                 test=False, emin=0, emax=1e32, norm='to1',
-                smooth_window=None, **opts):
+                smooth_window=None, deorbit_par=None, **opts):
     from matplotlib.gridspec import GridSpec
     import matplotlib.pyplot as plt
 
     file_label = ''
     ev = load_events(file)
+    if deorbit_par is not None:
+        events = deorbit_events(ev, deorbit_par)
+
     times = ev.time
     gtis = ev.gti
     plot_energy = True
@@ -518,6 +522,10 @@ def main_fold(args=None):
                               "default:WARNING)"),
                         default='WARNING',
                         type=str)
+    parser.add_argument("--deorbit-par",
+                        help=("Deorbit data with this parameter file (requires PINT installed)"),
+                        default=None,
+                        type=str)
 
     args = parser.parse_args(args)
 
@@ -535,7 +543,7 @@ def main_fold(args=None):
     run_folding(args.file, freq=frequency, fdot=fdot, fddot=fddot,
                 nbin=args.nbin, nebin=args.nebin, tref=args.tref,
                 test=args.test, emin=args.emin, emax=args.emax,
-                norm=args.norm)
+                norm=args.norm, deorbit_par=args.deorbit_par)
 
 
 def z2_n_detection_level(epsilon=0.01, n=2, n_summed_spectra=1, ntrial=1):

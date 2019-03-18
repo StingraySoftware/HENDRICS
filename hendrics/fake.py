@@ -417,7 +417,6 @@ def main(args=None):
         deadtime_sigma = None
         if len(args.deadtime) > 1:
             deadtime_sigma = args.deadtime[1]
-        print(deadtime, deadtime_sigma)
         event_list, info = filter_for_deadtime(event_list, deadtime,
                                                dt_sigma=deadtime_sigma,
                                                return_all=True)

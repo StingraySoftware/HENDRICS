@@ -6,6 +6,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 import warnings
 
 import copy
+import collections
 from stingray.gti import create_gti_mask
 from astropy.modeling.models import Const1D
 from astropy.modeling import Model
@@ -329,13 +330,14 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
         if ef.kind == "Z2n":
             vmin = ef.N - 1
-            vmax = z2_n_detection_level(0.001, n=ef.N, ntrial=ef.stat.shape[1],
+            vmax = z2_n_detection_level(0.001, n=ef.N,
+                                        ntrial=max(ef.stat.shape),
                                         n_summed_spectra=ef.M)
             nbin = ef.N * 8
         else:
             vmin = ef.nbin
             vmax = fold_detection_level(ef.nbin, 0.001,
-                                        ntrial=ef.stat.shape[0])
+                                        ntrial=max(ef.stat.shape))
             nbin = ef.nbin
 
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
@@ -353,8 +355,6 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             dfdot = 1
         else:
             raise ValueError("Did not understand stats shape.")
-
-        print("Best frequency, fdot: {} Hz, {} Hz/s".format(f, fdot))
 
         plt.figure(fname, figsize=(10, 10))
 
@@ -413,6 +413,14 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             ax.set_ylabel("Counts")
             ax.set_xlim([0, 2])
             ax.legend()
+            phascommand = "HENphaseogram -f {} --fdot {} {}".format(f, fdot,
+                                                                    ef.filename)
+            if ef.parfile and os.path.exists(ef.parfile):
+                phascommand += " --deorbit-par {}".format(parfile)
+
+            print("To see the detailed phaseogram, "
+                  "run {}".format(phascommand))
+
         elif not os.path.exists(ef.filename):
             warnings.warn(ef.filename + " does not exist")
             external_gs = gridspec.GridSpec(1, 1)
@@ -420,6 +428,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
         else:
             external_gs = gridspec.GridSpec(1, 1)
             search_gs_no = 0
+
 
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
 
@@ -484,7 +493,10 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                 plt.plot(xs, f(xs))
 
         if output_data_file is not None:
-            out = [ef.freq.flatten(), ef.fdots.flatten(), ef.stat.flatten()]
+            fdots = ef.fdots
+            if not isinstance(fdots, collections.Iterable) or len(fdots) == 1:
+                fdots = fdots + np.zeros_like(ef.freq.flatten())
+            out = [ef.freq.flatten(), fdots, ef.stat.flatten()]
             out_err = [None, None, None]
 
             if hasattr(ef, 'best_fits') and ef.best_fits is not None and \

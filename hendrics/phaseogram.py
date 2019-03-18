@@ -3,6 +3,8 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
+import copy
+from scipy.interpolate import interp1d
 from .io import load_events, load_folding
 from .fold import get_TOAs_from_events, HAS_PINT
 from .base import hen_root, deorbit_events
@@ -25,7 +27,7 @@ import matplotlib
 if int(matplotlib.__version__.split('.')[0]) < 2:
     DEFAULT_COLORMAP = 'afmhot'
 else:
-    DEFAULT_COLORMAP = 'magma'
+    DEFAULT_COLORMAP = 'gnuplot2'
 
 
 def get_z2_label(phas, prof):
@@ -62,7 +64,11 @@ def normalized_phaseogram(norm, *args, **kwargs):
     elif norm == 'mediansub':
         medarr = np.median(phas, axis=0)
         for i in range(phas.shape[0]):
-            phas -= medarr
+            phas[i][:] -= medarr
+    elif norm == 'meansub':
+        medarr = np.mean(phas, axis=0)
+        for i in range(phas.shape[0]):
+            phas[i][:] -= medarr
     else:
         warnings.warn('Profile normalization '
                       '{} not known. Using default'.format(norm))
@@ -74,7 +80,7 @@ class BasePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, test=False,
                  fdot=0, fddot=0, mjdref=None, pepoch=None, gti=None,
                  label="phaseogram", norm=None, position=None, object=None,
-                 plot_only=False,
+                 plot_only=False, time_corr=None,
                  **kwargs):
         """Init BasePhaseogram class.
 
@@ -121,12 +127,22 @@ class BasePhaseogram(object):
         self.test = test
 
         self.pepoch = assign_value_if_none(pepoch, ev_times[0])
+        self.time_corr = \
+            assign_value_if_none(time_corr, np.zeros_like(ev_times))
         self.ev_times = ev_times
         self.freq = freq
         self.norm = norm
         self.position = position
         self.object = object
         self.timing_model_string = ""
+
+        self.time_corr_fun = interp1d(self.ev_times, self.time_corr,
+                                      bounds_error=False,
+                                      fill_value="extrapolate")
+        self.time_corr_mjd_fun = interp1d(self.ev_times / 86400 + mjdref,
+                                          self.time_corr / 86400,
+                                          bounds_error=False,
+                                          fill_value="extrapolate")
 
         self.fig = plt.figure(label, figsize=plt.figaspect(1.2))
         from matplotlib.gridspec import GridSpec
@@ -149,7 +165,6 @@ class BasePhaseogram(object):
                                   fddot=fddot, plot=False, pepoch=pepoch)
 
         self.phases, self.times = phases, times
-
         self.pcolor = ax.pcolormesh(phases, times, self.phaseogr.T,
                                     cmap=DEFAULT_COLORMAP)
         self.colorbar = plt.colorbar(self.pcolor, cax=colorbax)
@@ -340,6 +355,7 @@ class BasePhaseogram(object):
             self.lines[i].set_xdata(linephase)
 
     def get_timing_model_string(self):
+
         tm_string = ""
 
         if self.mjdref is not None:
@@ -463,8 +479,9 @@ class InteractivePhaseogram(BasePhaseogram):
         dfreq, dfdot, dfddot = self._read_sliders()
         freqs = [self.freq - dfreq, self.fdot - dfdot, self.fddot - dfddot]
         folding_length = np.median(np.diff(self.times))
+
         toa, toaerr = \
-            get_TOAs_from_events(self.ev_times, folding_length, *freqs,
+            get_TOAs_from_events(self.ev_times, folding_length, * freqs,
                                  gti=self.gti, template=None,
                                  mjdref=self.mjdref, nbin=self.nph,
                                  pepoch=self.pepoch,
@@ -472,11 +489,16 @@ class InteractivePhaseogram(BasePhaseogram):
                                  label=self.label[:10],
                                  quick=self.test,
                                  position=None)
-        if not HAS_PINT:
-            with open(self.label + '.tim', 'w') as fobj:
-                print('FORMAT 1', file=fobj)
-                for t, te in zip(toa, toaerr):
-                    print("HEN", 0, t, te, "@", file=fobj)
+        toa_corr = toa + self.time_corr_mjd_fun(toa)
+        corr_string = ""
+
+        if np.any(toa_corr != toa):
+            corr_string = "_corr"
+
+        with open(self.label + corr_string + '.tim', 'w') as fobj:
+            print('FORMAT 1', file=fobj)
+            for t, te in zip(toa_corr, toaerr):
+                print("HEN", 0, t, te, "@", file=fobj)
 
         with open(self.label + '.par', 'w') as fobj:
             print(self.timing_model_string, file=fobj)
@@ -668,6 +690,7 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                               norm=norm, object=name, position=position,
                               plot_only=plot_only)
     else:
+        events_save = copy.deepcopy(events)
         if deorbit_par is not None:
             events = deorbit_events(events, deorbit_par)
 
@@ -678,7 +701,8 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                                    gti=events.gti,
                                    label=hen_root(event_file),
                                    norm=norm, object=name, position=position,
-                                   plot_only=plot_only)
+                                   plot_only=plot_only,
+                                   time_corr=events_save.time - events.time)
 
     return ip
 

@@ -159,6 +159,9 @@ def folding_search(events, fmin, fmax, step=None,
     if len(trial_fdots) > 1:
         print("Searching {} frequencies and {} fdots".format(len(trial_freqs),
                                                              len(trial_fdots)))
+    else:
+        print("Searching {} frequencies".format(len(trial_freqs)))
+
     results = func(times, trial_freqs, fdots=trial_fdots,
                    expocorr=expocorr, gti=gti, **kwargs)
     if len(results) == 2:
