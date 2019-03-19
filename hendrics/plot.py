@@ -366,7 +366,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             events = load_events(ef.filename)
 
             if hasattr(ef, "parfile") and ef.parfile is not None:
-                root = os.path.split(fname)
+                root = os.path.split(fname)[0]
                 parfile = find_file_in_allowed_paths(ef.parfile,
                                                      ['.', root])
                 if not parfile:
@@ -496,7 +496,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             fdots = ef.fdots
             if not isinstance(fdots, collections.Iterable) or len(fdots) == 1:
                 fdots = fdots + np.zeros_like(ef.freq.flatten())
-            out = [ef.freq.flatten(), fdots, ef.stat.flatten()]
+            # print(fdots.shape, ef.freq.shape, ef.stat.shape)
+            out = [ef.freq.flatten(), fdots.flatten(), ef.stat.flatten()]
             out_err = [None, None, None]
 
             if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
@@ -506,6 +507,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                     out_err.append(None)
 
             save_as_qdp(out, out_err, filename=output_data_file, mode='a')
+
     ax = plt.gca()
     if xlog:
         ax.set_xscale('log', nonposx='clip')

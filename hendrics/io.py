@@ -1333,7 +1333,6 @@ def find_file_in_allowed_paths(fname, other_paths=None):
     existance_condition = os.path.exists(fname)
     if existance_condition:
         return fname
-
     bname = os.path.basename(fname)
 
     if other_paths is not None:
