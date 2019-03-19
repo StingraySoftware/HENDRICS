@@ -2,6 +2,7 @@ name: hendrics
 
 channels:
   - conda-forge
+
 dependencies:
   - python==3.5
   - sphinx>=1.4
@@ -13,4 +14,4 @@ dependencies:
   - matplotlib
   - pip:
     - nbsphinx
-    - git+https://github.com/stingraysoftware/stingray.git
+    - stingray >= 0.1rc1
