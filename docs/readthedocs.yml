@@ -1,0 +1,12 @@
+formats:
+    - epub
+    - pdf
+
+conda:
+    - file: readthedocs-environment.yml
+
+requirements_file: requirements/docs.txt
+
+python:
+   setup_py_install: true
+

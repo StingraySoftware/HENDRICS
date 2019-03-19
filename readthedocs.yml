@@ -1,5 +1,8 @@
 conda:
-  file: .rtd-environment.yml
+    file: docs/readthedocs-environment.yml
+
+requirements_file: requirements.txt
 
 python:
-   setup_py_install: true
+    setup_py_install: true
+
