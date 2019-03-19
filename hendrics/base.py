@@ -8,6 +8,8 @@ import numpy as np
 import logging
 import sys
 import copy
+import os
+import warnings
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 
@@ -257,9 +259,15 @@ def deorbit_events(events, parameter_file=None):
     events = copy.deepcopy(events)
     if parameter_file is None:
         return events
+    elif not os.path.exists(parameter_file):
+        warnings.warn("Parameter file {} does not exist".format(parameter_file))
+        return events
 
     pepoch = events.gti[0, 0]
     pepoch_mjd = pepoch / 86400 + events.mjdref
+    if events.mjdref < 10000:
+        logging.warning("MJDREF is very low. Are you sure everything is "
+                        "correct?")
 
     length = np.max(events.time) - np.min(events.time)
     length_d = length / 86400

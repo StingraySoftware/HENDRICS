@@ -3,21 +3,16 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-from .io import load_events, load_folding
+from .io import load_events
 from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
 from stingray.utils import assign_value_if_none
-from scipy.optimize import minimize, basinhopping
 
 import numpy as np
 import logging
 import argparse
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 from scipy.signal import savgol_filter
-from scipy.interpolate import interp1d
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
-import time
 
 import copy
 try:
@@ -32,6 +27,7 @@ try:
     HAS_PINT = True
 except ImportError:
     HAS_PINT = False
+from .base import deorbit_events
 
 
 def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE405"):
@@ -92,6 +88,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
     toa_err : array-like
         errorbars on TOAs, in the same units as TOAs.
     """
+    import matplotlib.pyplot as plt
     template = kwargs['template'] if 'template' in kwargs else None
     mjdref = kwargs['mjdref'] if 'mjdref' in kwargs else None
     nbin = kwargs['nbin'] if 'nbin' in kwargs else 16
@@ -166,7 +163,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         toa, toaerr = \
             get_TOA(profile, 1/frequency_derivatives[0], start,
                     template=template, additional_phase=additional_phase,
-                    quick=quick)
+                    quick=quick, debug=True)
         toas.append(toa)
         toa_errs.append(toaerr)
 
@@ -288,6 +285,8 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
     fit_pars_save = guess_pars
     success_save = -1
     if debug:
+        import matplotlib.pyplot as plt
+
         fig = plt.figure('Debug profile')
         plt.errorbar(x, profile, yerr=profile_err, drawstyle='steps-mid')
         plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
@@ -329,10 +328,15 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
 
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
                 test=False, emin=0, emax=1e32, norm='to1',
-                smooth_window=None, **opts):
+                smooth_window=None, deorbit_par=None, **opts):
+    from matplotlib.gridspec import GridSpec
+    import matplotlib.pyplot as plt
 
     file_label = ''
     ev = load_events(file)
+    if deorbit_par is not None:
+        events = deorbit_events(ev, deorbit_par)
+
     times = ev.time
     gtis = ev.gti
     plot_energy = True
@@ -518,6 +522,10 @@ def main_fold(args=None):
                               "default:WARNING)"),
                         default='WARNING',
                         type=str)
+    parser.add_argument("--deorbit-par",
+                        help=("Deorbit data with this parameter file (requires PINT installed)"),
+                        default=None,
+                        type=str)
 
     args = parser.parse_args(args)
 
@@ -535,4 +543,70 @@ def main_fold(args=None):
     run_folding(args.file, freq=frequency, fdot=fdot, fddot=fddot,
                 nbin=args.nbin, nebin=args.nebin, tref=args.tref,
                 test=args.test, emin=args.emin, emax=args.emax,
-                norm=args.norm)
+                norm=args.norm, deorbit_par=args.deorbit_par)
+
+
+def z2_n_detection_level(epsilon=0.01, n=2, n_summed_spectra=1, ntrial=1):
+    """Return the detection level for the Z^2_n statistics.
+
+    See Buccheri et al. (1983), Bendat and Piersol (1971).
+
+    Parameters
+    ----------
+    n : int, default 2
+        The ``n`` in $Z^2_n$
+    epsilon : float, default 0.01
+        The fractional probability that the signal has been produced by noise
+
+    Other Parameters
+    ----------------
+    ntrial : int
+        The number of trials executed to find this profile
+    n_summed_spectra : int
+        Number of Z_2^n periodograms that are being averaged
+
+    Returns
+    -------
+    detlev : float
+        The epoch folding statistics corresponding to a probability
+        epsilon * 100 % that the signal has been produced by noise
+    """
+
+    from scipy import stats
+    retlev = stats.chi2.isf(epsilon / ntrial, 2 * int(n_summed_spectra) * n) \
+        / (n_summed_spectra)
+
+    return retlev
+
+
+def z2_n_probability(z2, n=2, ntrial=1, n_summed_spectra=1):
+    """Calculate the probability of a certain folded profile, due to noise.
+
+    Parameters
+    ----------
+    z2 : float
+        A Z^2_n statistics value
+    n : int, default 2
+        The ``n`` in $Z^2_n$
+
+    Other Parameters
+    ----------------
+    ntrial : int
+        The number of trials executed to find this profile
+    n_summed_spectra : int
+        Number of Z_2^n periodograms that were averaged to obtain z2
+
+    Returns
+    -------
+    p : float
+        The probability that the Z^2_n value has been produced by noise
+    """
+    if ntrial > 1:
+        import warnings
+        warnings.warn("Z2_n: The treatment of ntrial is very rough. "
+                      "Use with caution")
+    from scipy import stats
+
+    epsilon = ntrial * stats.chi2.sf(z2 * n_summed_spectra,
+                                     2 * n * n_summed_spectra)
+    return epsilon

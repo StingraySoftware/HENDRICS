@@ -3,22 +3,27 @@
 from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    # Permit to import the module anyway if matplotlib is not present
-    pass
-from .io import load_data, get_file_type, load_pds, load_lcurve
-from .io import is_string, save_as_qdp, load_folding
+import warnings
+
+import copy
+import collections
 from stingray.gti import create_gti_mask
 from astropy.modeling.models import Const1D
 from astropy.modeling import Model
+from astropy.stats import poisson_conf_interval
 
-from .base import _assign_value_if_none
-from .base import detection_level
 import logging
 import numpy as np
+
+import os
+from .fold import fold_events
+from .base import deorbit_events
+from .io import load_events
+from .io import load_data, get_file_type, load_pds
+from .io import is_string, save_as_qdp, load_folding
 from .io import HEN_FILE_EXTENSION
+from .base import _assign_value_if_none
+from .base import detection_level
 
 
 def _next_color(ax):
@@ -43,6 +48,7 @@ def _value_or_none(dict_like, key):
 def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None,
                  output_data_file=None):
     """Generic plotting function."""
+    import matplotlib.pyplot as plt
     if is_string(fnames):
         fnames = [fnames]
     figname = _assign_value_if_none(figname,
@@ -129,8 +135,9 @@ def _get_const(models):
 def plot_pds(fnames, figname=None, xlog=None, ylog=None,
              output_data_file=None, white_sub=False):
     """Plot a list of PDSs, or a single one."""
-    from scipy.optimize import curve_fit
     import collections
+    from scipy.optimize import curve_fit
+    import matplotlib.pyplot as plt
     if is_string(fnames):
         fnames = [fnames]
 
@@ -240,6 +247,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
 def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
                     output_data_file=None):
     """Plot the cospectra from a list of CPDSs, or a single one."""
+    import matplotlib.pyplot as plt
     if is_string(fnames):
         fnames = [fnames]
 
@@ -305,22 +313,176 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
 
 def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                  output_data_file=None):
+    from .fold import z2_n_detection_level
+    from .io import find_file_in_allowed_paths
+    from stingray.pulse.pulsar import fold_detection_level
+    from matplotlib import gridspec
+    import matplotlib.pyplot as plt
+
     if is_string(fnames):
         fnames = [fnames]
 
     for fname in fnames:
         ef = load_folding(fname)
 
-        if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-            plt.figure(fname)
-            plt.pcolormesh(ef.freq, np.asarray(ef.fdots), ef.stat)
-            plt.colorbar()
-            plt.xlabel('Frequency (Hz)')
-            plt.ylabel('Fdot (Hz/s)')
+        if not hasattr(ef, 'M') or ef.M is None:
+            ef.M = 1
+
+        if ef.kind == "Z2n":
+            vmin = ef.N - 1
+            vmax = z2_n_detection_level(0.001, n=ef.N,
+                                        ntrial=max(ef.stat.shape),
+                                        n_summed_spectra=ef.M)
+            nbin = ef.N * 8
         else:
-            plt.plot(ef.freq, ef.stat, drawstyle='steps-mid', label=fname)
-            plt.xlabel('Frequency (Hz)')
-            plt.ylabel(ef.kind + ' stat')
+            vmin = ef.nbin
+            vmax = fold_detection_level(ef.nbin, 0.001,
+                                        ntrial=max(ef.stat.shape))
+            nbin = ef.nbin
+
+        if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+            idx = ef.stat.argmax()
+            # ix, iy = np.unravel_index(np.argmax(ef.stat, axis=None),
+            #                           ef.stat.shape)
+            f, fdot = ef.freq.flatten()[idx], ef.fdots.flatten()[idx]
+            df = np.min(np.diff(ef.freq[0]))
+            dfdot = np.min(np.diff(ef.fdots[:, 0]))
+        elif len(ef.stat.shape) == 1:
+            f = ef.freq[ef.stat.argmax()]
+            df = np.min(np.diff(ef.freq))
+
+            fdot = 0
+            dfdot = 1
+        else:
+            raise ValueError("Did not understand stats shape.")
+
+        plt.figure(fname, figsize=(10, 10))
+
+        if hasattr(ef, "filename") and ef.filename is not None and \
+                os.path.exists(ef.filename):
+            external_gs = gridspec.GridSpec(2, 1)
+            search_gs_no = 1
+
+            events = load_events(ef.filename)
+
+            if hasattr(ef, "parfile") and ef.parfile is not None:
+                root = os.path.split(fname)[0]
+                parfile = find_file_in_allowed_paths(ef.parfile,
+                                                     ['.', root])
+                if not parfile:
+                    warnings.warn("{} does not exist".format(ef.parfile))
+                else:
+                    ef.parfile = parfile
+
+                if parfile and os.path.exists(ef.parfile):
+                    events = deorbit_events(events, ef.parfile)
+
+            phase, profile, profile_err = \
+                fold_events(copy.deepcopy(events.time), f, fdot,
+                            ref_time=events.gti[0, 0],
+                            gtis=copy.deepcopy(events.gti),
+                            expocorr=False, nbin=nbin)
+
+            ax = plt.subplot(external_gs[0])
+
+            ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
+                round(f, -np.int(np.floor(np.log10(np.abs(df))))),
+                round(fdot, -np.int(np.floor(np.log10(np.abs(dfdot)))))),
+                    horizontalalignment='left', verticalalignment = 'center',
+                    transform = ax.transAxes)
+            ax.plot(np.concatenate((phase, phase + 1)),
+                    np.concatenate((profile, profile)), drawstyle='steps-mid')
+
+            mean = np.mean(profile)
+
+            low, high = \
+                poisson_conf_interval(mean,
+                                      interval='frequentist-confidence',
+                                      sigma=1)
+
+            ax.axhline(mean)
+            ax.fill_between([0, 2], [low, low], [high, high],
+                            label=r"1-$\sigma c.l.$", alpha=0.5)
+            low, high = \
+                poisson_conf_interval(mean,
+                                      interval='frequentist-confidence',
+                                      sigma=3)
+            ax.fill_between([0, 2], [low, low], [high, high],
+                            label=r"3-$\sigma c.l.$", alpha=0.5)
+            ax.set_xlabel("Phase")
+            ax.set_ylabel("Counts")
+            ax.set_xlim([0, 2])
+            ax.legend()
+            phascommand = "HENphaseogram -f {} --fdot {} {}".format(f, fdot,
+                                                                    ef.filename)
+            if ef.parfile and os.path.exists(ef.parfile):
+                phascommand += " --deorbit-par {}".format(parfile)
+
+            print("To see the detailed phaseogram, "
+                  "run {}".format(phascommand))
+
+        elif not os.path.exists(ef.filename):
+            warnings.warn(ef.filename + " does not exist")
+            external_gs = gridspec.GridSpec(1, 1)
+            search_gs_no = 0
+        else:
+            external_gs = gridspec.GridSpec(1, 1)
+            search_gs_no = 0
+
+
+        if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+
+            gs = gridspec.GridSpecFromSubplotSpec(
+                2, 2, height_ratios=(1, 3), width_ratios=(3, 1),
+                hspace=0, wspace=0, subplot_spec=external_gs[search_gs_no])
+
+            axf = plt.subplot(gs[0, 0])
+            axfdot = plt.subplot(gs[1, 1])
+            if vmax is not None:
+                axf.axhline(vmax, ls="--", label="99.9\% c.l.")
+                axfdot.axvline(vmax)
+            axffdot = plt.subplot(gs[1, 0], sharex=axf, sharey=axfdot)
+            axffdot.pcolormesh(ef.freq, np.asarray(ef.fdots), ef.stat,
+                               vmin=vmin, vmax=vmax)
+            maximum_idx = 0
+            maximum = 0
+            for ix in range(ef.stat.shape[0]):
+                axf.plot(ef.freq[ix, :], ef.stat[ix, :], alpha=0.5, lw=0.2,
+                         color='k')
+                if np.max(ef.stat[ix, :]) > maximum:
+                    maximum = np.max(ef.stat[ix, :])
+                    maximum_idx = ix
+            if vmax is not None and maximum_idx > 0:
+                axf.plot(ef.freq[maximum_idx, :], ef.stat[maximum_idx, :],
+                         lw=1, color='k')
+            maximum_idx = -1
+            maximum = 0
+            for iy in range(ef.stat.shape[1]):
+                axfdot.plot(ef.stat[:, iy], np.asarray(ef.fdots)[:, iy],
+                            alpha=0.5, lw=0.2, color='k')
+                if np.max(ef.stat[:, iy]) > maximum:
+                    maximum = np.max(ef.stat[:, iy])
+                    maximum_idx = iy
+            if vmax is not None and maximum_idx > 0:
+                axfdot.plot(ef.stat[:, maximum_idx],
+                            np.asarray(ef.fdots)[:, maximum_idx],
+                            lw=1, color='k')
+            axf.set_ylabel(r"Stat")
+            axfdot.set_xlabel(r"Stat")
+
+            # plt.colorbar()
+            axffdot.set_xlabel('Frequency (Hz)')
+            axffdot.set_ylabel('Fdot (Hz/s)')
+            axffdot.set_xlim([np.min(ef.freq), np.max(ef.freq)])
+            axffdot.set_ylim([np.min(ef.fdots), np.max(ef.fdots)])
+            axf.legend()
+        else:
+            axf = plt.subplot(external_gs[search_gs_no])
+            axf.plot(ef.freq, ef.stat, drawstyle='steps-mid', label=fname)
+            axf.set_xlabel('Frequency (Hz)')
+            axf.set_ylabel(ef.kind + ' stat')
+            axf.legend()
+
 
         if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
                 not len(ef.stat.shape) > 1:
@@ -331,7 +493,11 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                 plt.plot(xs, f(xs))
 
         if output_data_file is not None:
-            out = [ef.freq.flatten(), ef.fdots.flatten(), ef.stat.flatten()]
+            fdots = ef.fdots
+            if not isinstance(fdots, collections.Iterable) or len(fdots) == 1:
+                fdots = fdots + np.zeros_like(ef.freq.flatten())
+            # print(fdots.shape, ef.freq.shape, ef.stat.shape)
+            out = [ef.freq.flatten(), fdots.flatten(), ef.stat.flatten()]
             out_err = [None, None, None]
 
             if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
@@ -341,12 +507,12 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                     out_err.append(None)
 
             save_as_qdp(out, out_err, filename=output_data_file, mode='a')
+
     ax = plt.gca()
     if xlog:
         ax.set_xscale('log', nonposx='clip')
     if ylog:
         ax.set_yscale('log', nonposy='clip')
-    plt.legend()
 
     if figname is not None:
         plt.savefig(figname)
@@ -354,6 +520,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
 def plot_color(file0, file1, xlog=None, ylog=None, figname=None,
                output_data_file=None):
+    import matplotlib.pyplot as plt
     type0, lc0 = get_file_type(file0)
     type1, lc1 = get_file_type(file1)
     xlabel, ylabel = 'Count rate', 'Count rate'
@@ -386,6 +553,7 @@ def plot_color(file0, file1, xlog=None, ylog=None, figname=None,
 def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
             output_data_file=None):
     """Plot a list of light curve files, or a single one."""
+    import matplotlib.pyplot as plt
     if is_string(lcfiles):
         lcfiles = [lcfiles]
 
@@ -483,7 +651,8 @@ def main(args=None):
     args = parser.parse_args(args)
     if args.noplot and args.figname is None:
         args.figname = args.files[0].replace(HEN_FILE_EXTENSION, '.png')
-
+        import matplotlib
+        matplotlib.use('Agg')
     if args.xlin is not None:
         args.xlog = False
     if args.ylin is not None:
@@ -519,4 +688,5 @@ def main(args=None):
                      figname=args.figname, output_data_file=args.outfile)
 
     if not args.noplot:
+        import matplotlib.pyplot as plt
         plt.show()

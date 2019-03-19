@@ -35,7 +35,6 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-import collections
 import numpy as np
 import os.path
 from .base import _order_list_of_arrays, _empty, is_string
@@ -62,7 +61,9 @@ if HAS_C256:
 
 class EFPeriodogram(object):
     def __init__(self, freq=None, stat=None, kind=None, nbin=None, N=None,
-                 peaks=None, peak_stat=None, best_fits=None, fdots=0):
+                 M=None,
+                 peaks=None, peak_stat=None, best_fits=None, fdots=0,
+                 segment_size=1e32, filename="", parfile=None):
         self.freq = freq
         self.stat = stat
         self.kind = kind
@@ -72,6 +73,10 @@ class EFPeriodogram(object):
         self.peak_stat = peak_stat
         self.best_fits = best_fits
         self.fdots = fdots
+        self.M = M
+        self.segment_size=segment_size
+        self.filename = filename
+        self.parfile = parfile
 
 
 def _get_key(dict_like, key):
@@ -418,7 +423,7 @@ def save_folding(efperiodogram, fname):
 
     outdata = copy.copy(efperiodogram.__dict__)
     outdata['__sr__class__type__'] = 'EFPeriodogram'
-    if 'best_fits' in outdata:
+    if 'best_fits' in outdata and efperiodogram.best_fits is not None:
         model_files = []
         for i, b in enumerate(efperiodogram.best_fits):
             mfile = fname.replace(HEN_FILE_EXTENSION, '__mod{}__.p'.format(i))
@@ -452,7 +457,7 @@ def load_folding(fname):
             if os.path.exists(mfile):
                 bmodels.append(load_model(mfile)[0])
         ef.best_fits = bmodels
-    if len(np.asarray(ef.peaks).shape) == 0:
+    if ef.peaks is not None and len(np.asarray(ef.peaks).shape) == 0:
         ef.peaks = [ef.peaks]
     return ef
 
@@ -675,7 +680,6 @@ def _split_high_precision_number(varname, var, probesize):
         kind_str = 'double'
     if probesize == 16:
         kind_str = 'longdouble'
-
     if isinstance(var, collections.Iterable):
         dum = np.min(np.abs(var))
         if dum < 1 and dum > 0.:
@@ -1295,3 +1299,49 @@ def load_model(modelstring):
             raise TypeError("Accepted callable models have only one "
                             "non-keyword argument")
         return model, 'callable', constraints
+
+
+def find_file_in_allowed_paths(fname, other_paths=None):
+    """Check if file exists at its own relative/absolute path, or elsewhere.
+
+    Parameters
+    ----------
+    fname : str
+        The name of the file, with or without a path.
+
+    Other Parameters
+    ----------------
+    other_paths : list of str
+        list of other possible paths
+
+    >>> import os
+    >>> with open('bu', 'w') as fobj: print("blabla", file=fobj)
+    >>> fakepath = os.path.join("directory", "bu")
+    >>> realpath = os.path.join('.', 'bu')
+    >>> find_file_in_allowed_paths(fakepath, ["."]) == realpath
+    True
+    >>> find_file_in_allowed_paths("bu") == "bu"
+    True
+    >>> find_file_in_allowed_paths(os.path.join("directory", "bu"))
+    False
+    >>> find_file_in_allowed_paths(None)
+    False
+   >>> os.unlink("bu")
+    """
+    if fname is None:
+        return False
+    existance_condition = os.path.exists(fname)
+    if existance_condition:
+        return fname
+    bname = os.path.basename(fname)
+
+    if other_paths is not None:
+        for p in other_paths:
+            fullpath = os.path.join(p, bname)
+            if os.path.exists(fullpath):
+                warnings.warn("Parfile found at different path: {}".format(
+                    fullpath
+                ))
+                return fullpath
+
+    return False
