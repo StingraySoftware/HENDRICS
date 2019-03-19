@@ -1,0 +1,16 @@
+name: hendrics
+
+channels:
+  - conda-forge
+dependencies:
+  - python==3.5
+  - sphinx>=1.4
+  - pandoc
+  - nbconvert
+  - ipykernel
+  - numpy
+  - scipy
+  - matplotlib
+  - pip:
+    - nbsphinx
+    - git+https://github.com/stingraysoftware/stingray.git
