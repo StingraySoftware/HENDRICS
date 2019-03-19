@@ -4,11 +4,11 @@ channels:
     - astropy
 
 dependencies:
+    - python=3.5
     - astropy
     - Cython
     - matplotlib
     - numpy
     - scipy
-    - sphinx-astropy
     - pip:
        - git+https://github.com/stingraysoftware/stingray.git
