@@ -341,12 +341,12 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             nbin = ef.nbin
 
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+            df = np.median(np.diff(ef.freq[0]))
+            dfdot = np.median(np.diff(ef.fdots[:, 0]))
             idx = ef.stat.argmax()
             # ix, iy = np.unravel_index(np.argmax(ef.stat, axis=None),
             #                           ef.stat.shape)
             f, fdot = ef.freq.flatten()[idx], ef.fdots.flatten()[idx]
-            df = np.min(np.diff(ef.freq[0]))
-            dfdot = np.min(np.diff(ef.fdots[:, 0]))
         elif len(ef.stat.shape) == 1:
             f = ef.freq[ef.stat.argmax()]
             df = np.min(np.diff(ef.freq))
