@@ -446,9 +446,11 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                                vmin=vmin, vmax=vmax)
             maximum_idx = 0
             maximum = 0
+
             for ix in range(ef.stat.shape[0]):
-                axf.plot(ef.freq[ix, :], ef.stat[ix, :], alpha=0.5, lw=0.2,
-                         color='k')
+                if ef.stat.shape[0] < 100:
+                    axf.plot(ef.freq[ix, :], ef.stat[ix, :], alpha=0.5, lw=0.2,
+                             color='k')
                 if np.max(ef.stat[ix, :]) > maximum:
                     maximum = np.max(ef.stat[ix, :])
                     maximum_idx = ix
@@ -458,8 +460,9 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             maximum_idx = -1
             maximum = 0
             for iy in range(ef.stat.shape[1]):
-                axfdot.plot(ef.stat[:, iy], np.asarray(ef.fdots)[:, iy],
-                            alpha=0.5, lw=0.2, color='k')
+                if ef.stat.shape[1] < 100:
+                    axfdot.plot(ef.stat[:, iy], np.asarray(ef.fdots)[:, iy],
+                                alpha=0.5, lw=0.2, color='k')
                 if np.max(ef.stat[:, iy]) > maximum:
                     maximum = np.max(ef.stat[:, iy])
                     maximum_idx = iy
