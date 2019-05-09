@@ -244,7 +244,9 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     if allvalues == []:
         allvalues = [0]
 
-    all_fgrid = all_fdotgrid = all_stats = None
+    all_fgrid = []
+    all_fdotgrid = []
+    all_stats = []
     for ii, i in enumerate(show_progress(allvalues)):
         offset = step * i
         fdot_offset = 0
@@ -262,9 +264,12 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
             all_fdotgrid = fdotgrid
             all_stats = stats
         else:
-            all_fgrid = np.vstack((all_fgrid, fgrid))
-            all_fdotgrid = np.vstack((all_fdotgrid, fdotgrid))
-            all_stats = np.vstack((all_stats, stats))
+            all_fgrid.append(fgrid)
+            all_fdotgrid.append(fdotgrid)
+            all_stats.append(stats)
+    all_fgrid = np.vstack(all_fgrid)
+    all_fdotgrid = np.vstack(all_fdotgrid)
+    all_stats = np.vstack(all_stats)
 
     step = np.median(np.diff(all_fgrid[:,0]))
     fdotstep = np.median(np.diff(all_fdotgrid[0]))
