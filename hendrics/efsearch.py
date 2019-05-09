@@ -481,12 +481,8 @@ def _common_main(args, func):
             frequencies, stats, step, length = results
         elif len(results) == 6:
             frequencies, fdots, stats, step, fdotsteps, length = results
-            # import matplotlib.pyplot as plt
-            # plt.figure()
-            # plt.pcolormesh(frequencies, fdots, stats)
-            # plt.show()
-            # plt.savefig('bubu.png')
-        if length > args.dynstep:
+
+        if length > args.dynstep and not args.fast:
             _ = dyn_folding_search(events, args.fmin, args.fmax, step=step,
                                    func=func, oversample=args.oversample,
                                    time_step=args.dynstep, **kwargs)
