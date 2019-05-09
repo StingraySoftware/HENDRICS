@@ -115,7 +115,20 @@ class TestEFsearch():
         # Defaults to 2 harmonics
         assert len(efperiod.fdots) > 1
         assert efperiod.N == 2
-        # os.unlink(outfile)
+        os.unlink(outfile)
+
+    def test_zsearch_fdots_fast(self):
+        evfile = self.dum
+        main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                      '--fast'])
+        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
+        efperiod = load_folding(outfile)
+
+        assert len(efperiod.fdots) > 1
+        assert efperiod.N == 2
+        os.unlink(outfile)
 
     @pytest.mark.skipif('not HAS_PD')
     def test_orbital(self):

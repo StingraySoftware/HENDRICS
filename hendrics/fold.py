@@ -327,7 +327,7 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
 
 
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
-                test=False, emin=0, emax=1e32, norm='to1',
+                test=False, emin=None, emax=None, norm='to1',
                 smooth_window=None, deorbit_par=None, **opts):
     from matplotlib.gridspec import GridSpec
     import matplotlib.pyplot as plt
@@ -350,6 +350,11 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
         energy = np.ones_like(times)
         elabel = ''
         plot_energy = False
+
+    if emin is None:
+        emin = np.min(energy)
+    if emax is None:
+        emax = np.max(energy)
 
     if tref is None:
         tref = times[0]
