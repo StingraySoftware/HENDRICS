@@ -173,7 +173,8 @@ def shift_and_select(repeated_profiles, lshift, qshift, newprof):
 
 
 def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
-                          npfact=2, oversample=8):
+                          npfact=2, oversample=8, n=1):
+    """Single step of quasi-fast folding algorithm."""
     ts = times - np.mean(times)
     phases = ts * mean_f + 0.5 * ts**2 * mean_fdot
     phases = phases - np.floor(phases)
@@ -209,7 +210,7 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
         for j, q in enumerate(quabinshifts):
             newprof = shift_and_select(repeated_profiles, L[i, j], Q[i, j], newprof)
             splat_prof = np.sum(newprof, axis=0)
-            local_stat = z_n(np.arange(0, 1, 1/nbin), norm=splat_prof, n=1)
+            local_stat = z_n(np.arange(0, 1, 1/nbin), norm=splat_prof, n=n)
             # local_stat = stat(splat_prof)
             stats[i, j] = local_stat
 
@@ -217,8 +218,30 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
 
 
 def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
-                     oversample=8):
+                     oversample=8, n=1):
+    """Quite fast folding algorithm.
 
+    Parameters
+    ----------
+    times : array of floats
+        Arrival times of photons
+    f0 : float
+        Minimum frequency to search
+    f1 : float
+        Maximum frequency to search
+
+    Other parameters
+    ----------------
+    nbin : int
+        Number of bins to divide the profile into
+    nprof : int, default None
+        number of slices of the dataset to use. If None, we use 8 times nbin.
+        Motivation in the comments.
+    npfact : int, default 2
+        maximum "sliding" of the dataset, in phase.
+    oversample : int, default 8
+        Oversampling wrt the standard FFT delta f = 1/T
+    """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
         # In a single sub interval
@@ -227,7 +250,7 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
         # so dnu T / nprof < 1 / nbin, and
         # nprof > total_delta_phi * nbin to get all the signal inside one bin
         # in a given sub-integration
-        nprof = 4 * 2 * nbin
+        nprof = 4 * 2 * nbin * npfact
 
     t0, t1 = times.min(), times.max()
     length = t1 - t0
@@ -256,7 +279,7 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
         fgrid, fdotgrid, stats = \
             search_with_qffa_step(times, mean_f, mean_fdot=mean_fdot,
                                   nbin=nbin, nprof=nprof, npfact=npfact,
-                                  oversample=oversample)
+                                  oversample=oversample, n=n)
 
         idx = stats.argmax()
         if all_fgrid is None:
@@ -467,10 +490,12 @@ def _common_main(args, func):
                                fdotmax=args.fdotmax,
                                segment_size=args.segment_size, **kwargs)
         else:
+            if func == z_n_search:
+                n = args.N
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
                                  nbin=args.nbin,
-                                 nprof=64, npfact=2, oversample=8)
+                                 nprof=64, npfact=2, oversample=8, n=n)
 
         length = events.time.max() - events.time.min()
         segment_size = np.min([length, args.segment_size])
