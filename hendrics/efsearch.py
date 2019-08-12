@@ -17,12 +17,20 @@ import numpy as np
 import os
 import logging
 import argparse
+from functools import wraps
 try:
     from numba import njit, prange
 except:
-    def njit(fun):
+    def njit(**kwargs):
         """Dummy decorator in case jit cannot be imported."""
-        return fun
+        def true_decorator(f):
+            @wraps(f)
+            def wrapped(*args, **kwargs):
+                r = f(*args, **kwargs)
+                return r
+            return wrapped
+        return true_decorator
+
     def prange(*args):
         """Dummy decorator in case jit cannot be imported."""
         return range(*args)
@@ -522,7 +530,7 @@ def _common_main(args, func):
 
         if length > args.dynstep and not args.fast:
             _ = dyn_folding_search(events, args.fmin, args.fmax, step=step,
-                                   func=func, oversample=args.oversample,
+                                   func=func, oversample=oversample,
                                    time_step=args.dynstep, **kwargs)
 
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
@@ -543,7 +551,7 @@ def _common_main(args, func):
         best_models = []
 
         if args.fit_candidates:
-            search_width = 5 * args.oversample * step
+            search_width = 5 * oversample * step
             for f in best_peaks:
                 good = np.abs(frequencies - f) < search_width
                 if args.curve.lower() == 'sinc':

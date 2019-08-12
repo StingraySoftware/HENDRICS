@@ -368,6 +368,7 @@ def filter_energy(ev, emin, emax):
     elif hasattr(ev, 'pi') and ev.pi is not None:
         energy = ev.pi
         elabel = 'PI'
+        ev.energy = ev.pi
     else:
         log.info("No Energy or PI information available. "
                  "No energy filter applied to events")
@@ -401,7 +402,12 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
     gtis = ev.gti
     plot_energy = True
     ev, elabel = filter_energy(ev, emin, emax)
-    times, energy = ev.times, ev.energy
+    times, energy = ev.time, ev.energy
+    if emin is None:
+        emin = np.min(energy)
+    if emax is None:
+        emax = np.max(energy)
+    print(elabel, emin, emax, energy)
 
     if elabel == '':
         plot_energy = False
