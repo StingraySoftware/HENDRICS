@@ -328,8 +328,12 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
                                       baseline=baseline)
 
 
-def filter_energy(ev, emin, emax):
-    """
+def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
+    """Filter event list by energy (or PI)
+
+    If an ``energy`` attribute is present, uses it. Otherwise, it switches
+    automatically to ``pi``
+
     Examples
     --------
     >>> import doctest
