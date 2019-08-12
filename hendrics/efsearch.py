@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division, print_function)
 from .io import load_events, EFPeriodogram, save_folding, load_folding, \
     HEN_FILE_EXTENSION
 from .base import hen_root
+from .fold import filter_energy
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
     search_best_peaks, phaseogram
 from stingray.pulse.pulsar import z_n
@@ -383,6 +384,10 @@ def _common_parser(args=None):
                         help="Minimum frequency to fold")
     parser.add_argument("-F", "--fmax", type=float, required=True,
                         help="Maximum frequency to fold")
+    parser.add_argument("--emin", default=None, type=int,
+                        help="Minimum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--emax", default=None, type=int,
+                        help="Maximum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--fdotmin", type=float, required=False,
                         help="Minimum fdot to fold", default=0)
     parser.add_argument("--fdotmax", type=float, required=False,
@@ -397,7 +402,7 @@ def _common_parser(args=None):
     parser.add_argument("--step", default=None, type=float,
                         help="Step size of the frequency axis. Defaults to "
                              "1/oversample/observ.length. ")
-    parser.add_argument("--oversample", default=2, type=float,
+    parser.add_argument("--oversample", default=None, type=float,
                         help="Oversampling factor - frequency resolution "
                              "improvement w.r.t. the standard FFT's "
                              "1/observ.length.")
@@ -478,24 +483,32 @@ def _common_main(args, func):
             baseline = args.N
             kind = 'Z2n'
         events = load_events(fname)
+        if args.emin is not None or args.emax is not None:
+            events, elabel = filter_energy(events, args.emin, args.emax)
+
         if args.deorbit_par is not None:
             events = deorbit_events(events, args.deorbit_par)
 
         if not args.fast:
+            oversample = assign_value_if_none(args.oversample, 2)
+
             results = \
                 folding_search(events, args.fmin, args.fmax, step=args.step,
                                func=func,
-                               oversample=args.oversample, nbin=args.nbin,
+                               oversample=oversample, nbin=args.nbin,
                                expocorr=args.expocorr, fdotmin=args.fdotmin,
                                fdotmax=args.fdotmax,
                                segment_size=args.segment_size, **kwargs)
         else:
+            n = 1
             if func == z_n_search:
                 n = args.N
+            oversample = assign_value_if_none(args.oversample, 8)
+
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
-                                 nbin=args.nbin,
-                                 nprof=64, npfact=2, oversample=8, n=n)
+                                 nbin=args.nbin, n=n,
+                                 nprof=None, npfact=2, oversample=oversample)
 
         length = events.time.max() - events.time.min()
         segment_size = np.min([length, args.segment_size])
