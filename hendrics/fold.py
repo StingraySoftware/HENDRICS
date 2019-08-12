@@ -366,6 +366,7 @@ def filter_energy(ev, emin, emax):
         energy = ev.energy
         elabel = 'Energy'
     elif hasattr(ev, 'pi') and ev.pi is not None:
+        log.warning("Definition of events.energy is now based on PI.")
         energy = ev.pi
         elabel = 'PI'
         ev.energy = ev.pi
