@@ -63,16 +63,16 @@ class TestPhasetag():
     def test_phase_tag_invalid0(self):
         with pytest.raises(ValueError) as excinfo:
             main_phasetag([self.fits_fileA, '--test'])
-        assert 'Specify one between' in str(excinfo)
+        assert 'Specify one between' in str(excinfo.value)
 
     def test_phase_tag_invalid1(self):
         with pytest.raises(ValueError) as excinfo:
             main_phasetag([self.fits_fileA, '-f', '1', '--parfile', 'bubu.par',
                            '--test'])
-        assert 'Specify only one between' in str(excinfo)
+        assert 'Specify only one between' in str(excinfo.value)
 
     def test_phase_tag_parfile(self):
         with pytest.raises(NotImplementedError) as excinfo:
             main_phasetag([self.fits_fileA, '--parfile', 'bubu.par',
                            '--test'])
-        assert 'This part is not yet implemented' in str(excinfo)
+        assert 'This part is not yet implemented' in str(excinfo.value)
