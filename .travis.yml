@@ -51,23 +51,19 @@ matrix:
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - env: PYTHON_VERSION=3.6 SETUP_CMD='build_docs -w' PIP_DEPENDENCIES='sphinx-astropy emcee stingray>=0.1rc1'
-        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
+        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
         - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
 
         # ----- Try risky stuff ----
-        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel PIP_DEPENDENCIES=''
+        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel
         # Try Astropy development version
         - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='stingray>=0.1rc1 pytest-astropy'
-        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
 
     allow_failures:
-        - os: windows
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='scipy matplotlib pip pandas emcee stingray>=0.1rc1 ' CONDA_DEPENDENCIES=''
         # ----- Try risky stuff ----
-        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel PIP_DEPENDENCIES=''
+        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel
         # Try Astropy development version
         - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='stingray>=0.1rc1 pytest-astropy'
-        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
 
 before_install:
     - git clone git://github.com/astropy/ci-helpers.git
