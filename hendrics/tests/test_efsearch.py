@@ -9,6 +9,7 @@ from hendrics.fold import main_fold
 from hendrics.plot import plot_folding
 import os
 import pytest
+from astropy.tests.helper import remote_data
 try:
     import pandas as pd
     HAS_PD = True
@@ -149,6 +150,7 @@ class TestEFsearch():
         os.unlink(csv_file)
         os.unlink('out.csv')
 
+    @remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_efsearch_deorbit(self):
         evfile = self.dum
