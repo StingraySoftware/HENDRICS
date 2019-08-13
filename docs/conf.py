@@ -198,7 +198,11 @@ if eval(setup_cfg.get('edit_on_github')):
 github_issues_url = 'https://github.com/{0}/issues/'.format(setup_cfg['github_project'])
 
 if not ON_RTD and not ON_TRAVIS:
-    scripts = dict(conf.items('entry_points'))
+    scripts = dict(conf.items('options.entry_points'))['console_scripts']
+
+    scripts = dict([(l.strip() for l in line.split("="))
+                    for line in scripts.split('\n')
+                    if line.strip() != ''])
     import subprocess as sp
     with open(os.path.join(os.getcwd(), 'scripts',
                            'cli.rst'), 'w') as fobj:

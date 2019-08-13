@@ -131,6 +131,14 @@ class TestEFsearch():
         assert efperiod.N == 2
         os.unlink(outfile)
 
+    def test_fold_fast_fails(self):
+        evfile = self.dum
+
+        with pytest.raises(ValueError) as excinfo:
+            main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                           '--fast'])
+        assert 'The fast option is only available for z ' in str(excinfo.value)
+
     @pytest.mark.skipif('not HAS_PD')
     def test_orbital(self):
         import pandas as pd

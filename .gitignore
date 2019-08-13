@@ -48,6 +48,9 @@ distribute-*.tar.gz
 *.log
 .spyderproject
 .coveralls.yml
+*.p
+*.nc
+*.qdp
 
 # Mac OSX
 .DS_Store

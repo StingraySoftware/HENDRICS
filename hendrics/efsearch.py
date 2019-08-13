@@ -217,7 +217,8 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
 
     for i, l in enumerate(linbinshifts):
         for j, q in enumerate(quabinshifts):
-            newprof = shift_and_select(repeated_profiles, L[i, j], Q[i, j], newprof)
+            newprof = shift_and_select(repeated_profiles, L[i, j], Q[i, j],
+                                       newprof)
             splat_prof = np.sum(newprof, axis=0)
             local_stat = z_n(np.arange(0, 1, 1/nbin), norm=splat_prof, n=n)
             # local_stat = stat(splat_prof)
@@ -481,6 +482,9 @@ def _common_main(args, func):
     elif args.fit_candidates and args.fit_frequency is not None:
         args.find_candidates = False
         best_peaks = [args.fit_frequency]
+
+    if func != z_n_search and args.fast:
+        raise ValueError('The fast option is only available for z searches')
 
     for i_f, fname in enumerate(files):
         kwargs = {}

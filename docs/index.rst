@@ -67,6 +67,14 @@ satellite (for sure XMM-Newton and RXTE).
 
 What's new
 ----------
+HENDRICS 5.0
+~~~~~~~~~~~~
+More improvements to pulsar functionalities;
+.. Note ::
+
+    A much faster folding algorithm is now available, allowing to reduce the computing time
+    of Z searches by a factor ~10. See pulsar tutorial for details.
+
 HENDRICS 4.0
 ~~~~~~~~~~~~
 Lots of improvements to pulsar functionalities;
