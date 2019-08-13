@@ -1,8 +1,14 @@
+build:
+    image: latest
+
+python:
+   version: 3.6
+   install:
+      - requirements: requirements.txt
+
 conda:
     file: docs/readthedocs-environment.yml
-
-requirements_file: requirements.txt
-
+    
 python:
     setup_py_install: true
 

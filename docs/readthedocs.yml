@@ -1,3 +1,10 @@
+build:
+    image: latest
+
+python:
+    setup_py_install: true
+    version: 3.6
+
 formats:
     - epub
     - pdf
@@ -6,7 +13,4 @@ conda:
     - file: readthedocs-environment.yml
 
 requirements_file: requirements/docs.txt
-
-python:
-   setup_py_install: true
 
