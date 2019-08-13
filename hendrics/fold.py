@@ -6,6 +6,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 from .io import load_events
 from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
 from stingray.utils import assign_value_if_none
+from stingray.events import EventList
 
 import numpy as np
 import logging
@@ -13,6 +14,7 @@ import argparse
 from scipy.signal import savgol_filter
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
+from astropy import log
 
 import copy
 try:
@@ -326,8 +328,74 @@ def fit_profile(profile, profile_err, debug=False, nperiods=1,
                                       baseline=baseline)
 
 
+def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
+    """Filter event list by energy (or PI)
+
+    If an ``energy`` attribute is present, uses it. Otherwise, it switches
+    automatically to ``pi``
+
+    Examples
+    --------
+    >>> import doctest
+    >>> time = np.arange(5)
+    >>> energy = np.array([0, 0, 30, 4, 1])
+    >>> events = EventList(time=time, energy=energy)
+    >>> ev_out, elabel = filter_energy(events, 3, None)
+    >>> np.all(ev_out.time == [2, 3])
+    True
+    >>> elabel == 'Energy'
+    True
+    >>> events = EventList(time=time, pi=energy)
+    >>> ev_out, elabel = filter_energy(events, None, 20)
+    >>> np.all(ev_out.time == [0, 1, 3, 4])
+    True
+    >>> elabel == 'PI'
+    True
+    >>> events = EventList(time=time, pi=energy)
+    >>> ev_out, elabel = filter_energy(events, None, None)
+    >>> np.all(ev_out.time == time)
+    True
+    >>> elabel == 'PI'
+    True
+    >>> events = EventList(time=time)
+    >>> ev_out, elabel = filter_energy(events, 3, None)  # doctest: +ELLIPSIS
+    INFO: No Energy or PI...
+    >>> np.all(ev_out.time == time)
+    True
+    >>> elabel == ''
+    True
+    """
+    times = ev.time
+    if hasattr(ev, 'energy') and ev.energy is not None:
+        energy = ev.energy
+        elabel = 'Energy'
+    elif hasattr(ev, 'pi') and ev.pi is not None:
+        log.warning("No energy information in event list. "
+                    "Definition of events.energy is now based on PI.")
+        energy = ev.pi
+        elabel = 'PI'
+        ev.energy = ev.pi
+    else:
+        log.info("No Energy or PI information available. "
+                 "No energy filter applied to events")
+        return ev, ''
+
+    if emax is None and emin is None:
+        return ev, elabel
+
+    if emin is None:
+        emin = np.min(energy)
+    if emax is None:
+        emax = np.max(energy)
+
+    good = (energy >= emin) & (energy <= emax)
+    ev.time = times[good]
+    ev.energy = energy[good]
+    return ev, elabel
+
+
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
-                test=False, emin=0, emax=1e32, norm='to1',
+                test=False, emin=None, emax=None, norm='to1',
                 smooth_window=None, deorbit_par=None, **opts):
     from matplotlib.gridspec import GridSpec
     import matplotlib.pyplot as plt
@@ -337,26 +405,22 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
     if deorbit_par is not None:
         events = deorbit_events(ev, deorbit_par)
 
-    times = ev.time
     gtis = ev.gti
     plot_energy = True
-    if hasattr(ev, 'energy') and ev.energy is not None:
-        energy = ev.energy
-        elabel = 'Energy'
-    elif hasattr(ev, 'pi') and ev.pi is not None:
-        energy = ev.pi
-        elabel = 'PI'
-    else:
-        energy = np.ones_like(times)
-        elabel = ''
+    ev, elabel = filter_energy(ev, emin, emax)
+    times, energy = ev.time, ev.energy
+    if emin is None:
+        emin = np.min(energy)
+    if emax is None:
+        emax = np.max(energy)
+    print(elabel, emin, emax, energy)
+
+    if elabel == '':
         plot_energy = False
 
     if tref is None:
         tref = times[0]
 
-    good = (energy > emin) & (energy < emax)
-    times = times[good]
-    energy = energy[good]
     phases = pulse_phase(times - tref, freq, fdot, fddot, to_1=True)
 
     binx = np.linspace(0, 1, nbin + 1)
@@ -503,9 +567,9 @@ def main_fold(args=None):
                         help="Number of phase bins (X axis) of the profile")
     parser.add_argument("--nebin", default=16, type=int,
                         help="Number of energy bins (Y axis) of the profile")
-    parser.add_argument("--emin", default=0, type=int,
+    parser.add_argument("--emin", default=None, type=int,
                         help="Minimum energy (or PI if uncalibrated) to plot")
-    parser.add_argument("--emax", default=1e32, type=int,
+    parser.add_argument("--emax", default=None, type=int,
                         help="Maximum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--norm", default='to1',
                         help="--norm to1: Normalize hist so that the maximum "

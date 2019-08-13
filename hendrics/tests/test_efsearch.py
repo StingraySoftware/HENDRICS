@@ -9,6 +9,7 @@ from hendrics.fold import main_fold
 from hendrics.plot import plot_folding
 import os
 import pytest
+from astropy.tests.helper import remote_data
 try:
     import pandas as pd
     HAS_PD = True
@@ -115,7 +116,28 @@ class TestEFsearch():
         # Defaults to 2 harmonics
         assert len(efperiod.fdots) > 1
         assert efperiod.N == 2
-        # os.unlink(outfile)
+        os.unlink(outfile)
+
+    def test_zsearch_fdots_fast(self):
+        evfile = self.dum
+        main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                      '--fast'])
+        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
+        efperiod = load_folding(outfile)
+
+        assert len(efperiod.fdots) > 1
+        assert efperiod.N == 2
+        os.unlink(outfile)
+
+    def test_fold_fast_fails(self):
+        evfile = self.dum
+
+        with pytest.raises(ValueError) as excinfo:
+            main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                           '--fast'])
+        assert 'The fast option is only available for z ' in str(excinfo.value)
 
     @pytest.mark.skipif('not HAS_PD')
     def test_orbital(self):
@@ -136,6 +158,7 @@ class TestEFsearch():
         os.unlink(csv_file)
         os.unlink('out.csv')
 
+    @remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_efsearch_deorbit(self):
         evfile = self.dum

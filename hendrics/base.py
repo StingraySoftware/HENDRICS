@@ -277,4 +277,5 @@ def deorbit_events(events, parameter_file=None):
                                                          ntimes=int(length // 10))
     orbital_correction_fun = results[0]
     events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
+    events.gti = orbital_correction_fun(events.gti, mjdref=events.mjdref)
     return events

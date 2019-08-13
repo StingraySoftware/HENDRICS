@@ -3,7 +3,13 @@
 # no matter how it is invoked within the source tree.
 """Configuration for py.test."""
 
-from astropy.tests.pytest_plugins import *   # NOQA
+try:
+    # This is the way to get plugins in astropy 2.x
+    from astropy.tests.pytest_plugins import *
+except ImportError:
+    # Otherwise they are installed as separate packages that pytest
+    # automagically finds.
+    pass
 
 # # Uncomment the following line to treat all DeprecationWarnings as
 # # exceptions

@@ -126,7 +126,7 @@ class TestFullRun(object):
         with pytest.raises(ValueError) as excinfo:
             hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
 
-        assert 'Energy filtering requested' in str(excinfo)
+        assert 'Energy filtering requested' in str(excinfo.value)
 
     def test_load_gtis(self):
         """Test loading of GTIs from FITS files."""

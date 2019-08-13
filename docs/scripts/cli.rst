@@ -58,8 +58,9 @@ HENbinary
 
 ::
 
-    usage: HENbinary [-h] [-b BIN_TIME] [-e ENERGY_INTERVAL ENERGY_INTERVAL]
-                     [--loglevel LOGLEVEL] [--nproc NPROC] [--debug]
+    usage: HENbinary [-h] [-b BIN_TIME] [-l MAX_LENGTH]
+                     [-e ENERGY_INTERVAL ENERGY_INTERVAL] [--loglevel LOGLEVEL]
+                     [--deorbit-par DEORBIT_PAR] [--nproc NPROC] [--debug]
                      files [files ...]
 
     Save light curves in a format readable to PRESTO
@@ -71,10 +72,15 @@ HENbinary
       -h, --help            show this help message and exit
       -b BIN_TIME, --bin-time BIN_TIME
                             Bin time
+      -l MAX_LENGTH, --max-length MAX_LENGTH
+                            Maximum length of light curves (split otherwise)
       -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
                             Energy interval
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
+                            installed)
       --nproc NPROC         Number of processors to use
       --debug               use DEBUG logging level
 
@@ -195,13 +201,14 @@ HENefsearch
 
 ::
 
-    usage: HENefsearch [-h] -f FMIN -F FMAX [--fdotmin FDOTMIN]
-                       [--fdotmax FDOTMAX] [--dynstep DYNSTEP] [-n NBIN]
-                       [--segment-size SEGMENT_SIZE] [--step STEP]
-                       [--oversample OVERSAMPLE] [--expocorr] [--find-candidates]
-                       [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+    usage: HENefsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
+                       [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
+                       [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
+                       [--oversample OVERSAMPLE] [--fast] [--expocorr]
+                       [--find-candidates] [--conflevel CONFLEVEL]
+                       [--fit-candidates] [--curve CURVE]
                        [--fit-frequency FIT_FREQUENCY] [--debug]
-                       [--loglevel LOGLEVEL] [-N N]
+                       [--loglevel LOGLEVEL] [-N N] [--deorbit-par DEORBIT_PAR]
                        files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -213,6 +220,8 @@ HENefsearch
       -h, --help            show this help message and exit
       -f FMIN, --fmin FMIN  Minimum frequency to fold
       -F FMAX, --fmax FMAX  Maximum frequency to fold
+      --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
@@ -225,6 +234,10 @@ HENefsearch
       --oversample OVERSAMPLE
                             Oversampling factor - frequency resolution improvement
                             w.r.t. the standard FFT's 1/observ.length.
+      --fast                Use a faster folding algorithm. It automatically
+                            searches for the first spin derivative using an
+                            optimized step.This option ignores expocorr,
+                            fdotmin/max, segment-size, and step
       --expocorr            Correct for the exposure of the profile bins. This
                             method is *much* slower, but it is useful for very
                             slow pulsars, where data gaps due to occultation or
@@ -242,6 +255,9 @@ HENefsearch
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
+                            installed)
 
 
 HENexcvar
@@ -345,6 +361,7 @@ HENfold
     usage: HENfold [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT] [--tref TREF]
                    [-n NBIN] [--nebin NEBIN] [--emin EMIN] [--emax EMAX]
                    [--norm NORM] [--debug] [--test] [--loglevel LOGLEVEL]
+                   [--deorbit-par DEORBIT_PAR]
                    file
 
     Plot a folded profile
@@ -368,6 +385,9 @@ HENfold
       --test                Just a test. Destroys the window immediately
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
+                            installed)
 
 
 HENfspec
@@ -411,6 +431,26 @@ HENfspec
       --debug               use DEBUG logging level
       --save-dyn            save dynamical power spectrum
       --ignore-instr        Ignore instrument names in channels
+
+
+HENjoinevents
+-------------
+
+::
+
+    usage: HENjoinevents [-h] [-o OUTPUT] file1 file2
+
+    Read a cleaned event files and saves the relevant information in a standard
+    format
+
+    positional arguments:
+      file1                 File 1
+      file2                 File 2
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -o OUTPUT, --output OUTPUT
+                            Name of output file
 
 
 HENlags
@@ -522,7 +562,8 @@ HENphaseogram
                          [--pepoch PEPOCH] [--periodogram PERIODOGRAM] [-n NBIN]
                          [--ntimes NTIMES] [--binary]
                          [--binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS]
-                         [--debug] [--test] [--loglevel LOGLEVEL]
+                         [--norm NORM] [--deorbit-par DEORBIT_PAR] [--debug]
+                         [--test] [--plot-only] [--loglevel LOGLEVEL]
                          file
 
     Plot an interactive phaseogram
@@ -544,8 +585,15 @@ HENphaseogram
                             derivatives
       --binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS
                             Initial values for binary parameters
+      --norm NORM           Normalization for the phaseogram. Can be 'to1' (each
+                            profile normalized from 0 to 1); 'mediansub' (just
+                            subtract the median from each profile); default None
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
+                            installed)
       --debug               use DEBUG logging level
       --test                Just a test. Destroys the window immediately
+      --plot-only           Only plot the phaseogram
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
 
@@ -621,8 +669,8 @@ HENreadevents
 ::
 
     usage: HENreadevents [-h] [--loglevel LOGLEVEL] [--nproc NPROC] [--noclobber]
-                         [-g] [--min-length MIN_LENGTH] [--gti-string GTI_STRING]
-                         [--debug]
+                         [-g] [-l LENGTH_SPLIT] [--min-length MIN_LENGTH]
+                         [--gti-string GTI_STRING] [--debug]
                          files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
@@ -638,6 +686,8 @@ HENreadevents
       --nproc NPROC         Number of processors to use
       --noclobber           Do not overwrite existing event files
       -g, --gti-split       Split event list by GTI
+      -l LENGTH_SPLIT, --length-split LENGTH_SPLIT
+                            Split event list by GTI
       --min-length MIN_LENGTH
                             Minimum length of GTIs to consider
       --gti-string GTI_STRING
@@ -774,13 +824,14 @@ HENzsearch
 
 ::
 
-    usage: HENzsearch [-h] -f FMIN -F FMAX [--fdotmin FDOTMIN] [--fdotmax FDOTMAX]
-                      [--dynstep DYNSTEP] [-n NBIN] [--segment-size SEGMENT_SIZE]
-                      [--step STEP] [--oversample OVERSAMPLE] [--expocorr]
+    usage: HENzsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
+                      [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
+                      [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
+                      [--oversample OVERSAMPLE] [--fast] [--expocorr]
                       [--find-candidates] [--conflevel CONFLEVEL]
                       [--fit-candidates] [--curve CURVE]
                       [--fit-frequency FIT_FREQUENCY] [--debug]
-                      [--loglevel LOGLEVEL] [-N N]
+                      [--loglevel LOGLEVEL] [-N N] [--deorbit-par DEORBIT_PAR]
                       files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -792,6 +843,8 @@ HENzsearch
       -h, --help            show this help message and exit
       -f FMIN, --fmin FMIN  Minimum frequency to fold
       -F FMAX, --fmax FMAX  Maximum frequency to fold
+      --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
@@ -804,6 +857,10 @@ HENzsearch
       --oversample OVERSAMPLE
                             Oversampling factor - frequency resolution improvement
                             w.r.t. the standard FFT's 1/observ.length.
+      --fast                Use a faster folding algorithm. It automatically
+                            searches for the first spin derivative using an
+                            optimized step.This option ignores expocorr,
+                            fdotmin/max, segment-size, and step
       --expocorr            Correct for the exposure of the profile bins. This
                             method is *much* slower, but it is useful for very
                             slow pulsars, where data gaps due to occultation or
@@ -821,5 +878,8 @@ HENzsearch
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
+                            installed)
 
 

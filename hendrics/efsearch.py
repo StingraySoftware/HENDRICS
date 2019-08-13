@@ -5,8 +5,10 @@ from __future__ import (absolute_import, division, print_function)
 from .io import load_events, EFPeriodogram, save_folding, load_folding, \
     HEN_FILE_EXTENSION
 from .base import hen_root
+from .fold import filter_energy
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
     search_best_peaks, phaseogram
+from stingray.pulse.pulsar import z_n
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
@@ -15,7 +17,32 @@ import numpy as np
 import os
 import logging
 import argparse
+from functools import wraps
+try:
+    from numba import njit, prange
+except:
+    def njit(**kwargs):
+        """Dummy decorator in case jit cannot be imported."""
+        def true_decorator(f):
+            @wraps(f)
+            def wrapped(*args, **kwargs):
+                r = f(*args, **kwargs)
+                return r
+            return wrapped
+        return true_decorator
+
+    def prange(*args):
+        """Dummy decorator in case jit cannot be imported."""
+        return range(*args)
+
 from .base import deorbit_events
+
+
+try:
+    from tqdm import tqdm as show_progress
+except ImportError:
+    def show_progress(a):
+        return a
 
 
 D_OMEGA_FACTOR = 2 * np.sqrt(3)
@@ -136,6 +163,152 @@ def fit(frequencies, stats, center_freq, width=None, obs_length=None,
     return s
 
 
+@njit()
+def calculate_shifts(nprof: int, nbin : int, nshift : int, order : int =1) -> np.array:
+    shifts = np.linspace(-1., 1., nprof) ** order
+    return nshift * shifts
+
+
+@njit(parallel=True)
+def shift_and_select(repeated_profiles, lshift, qshift, newprof):
+    nprof = len(repeated_profiles)
+    nbin = len(newprof[0])
+    lshifts = calculate_shifts(nprof, nbin, lshift, 1)
+    qshifts = calculate_shifts(nprof, nbin, qshift, 2)
+    for k in prange(nprof):
+        total_shift = int(np.rint(lshifts[k] + qshifts[k])) % nbin
+        newprof[k, :] = repeated_profiles[k, nbin - total_shift: 2 * nbin - total_shift]
+    return newprof
+
+
+def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
+                          npfact=2, oversample=8, n=1):
+    """Single step of quasi-fast folding algorithm."""
+    ts = times - np.mean(times)
+    phases = ts * mean_f + 0.5 * ts**2 * mean_fdot
+    phases = phases - np.floor(phases)
+    phbins = np.linspace(0, 1, nbin + 1)
+    tbins = np.linspace(times[0], times[-1], nprof + 1)
+    profiles, phbins, tbins = np.histogram2d(phases, times,
+                                             bins=(phbins, tbins))
+
+    t0, t1 = times.min(), times.max()
+
+    # dn = max(1, int(nbin / oversample))
+    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, oversample * npfact)
+    quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, oversample * npfact)
+
+    L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing='ij')
+
+    dphi = 1 / nbin
+    delta_t = (t1 - t0) / 2
+    df = dphi / delta_t
+    dfdot = 2 * dphi / delta_t ** 2
+
+    bin_to_frequency = df
+    bin_to_fdot = dfdot
+
+    factor = bin_to_frequency
+
+    stats = np.zeros_like(L)
+    profiles = profiles.T
+    newprof = np.zeros_like(profiles)
+    repeated_profiles = np.hstack((profiles, profiles, profiles))
+
+    for i, l in enumerate(linbinshifts):
+        for j, q in enumerate(quabinshifts):
+            newprof = shift_and_select(repeated_profiles, L[i, j], Q[i, j],
+                                       newprof)
+            splat_prof = np.sum(newprof, axis=0)
+            local_stat = z_n(np.arange(0, 1, 1/nbin), norm=splat_prof, n=n)
+            # local_stat = stat(splat_prof)
+            stats[i, j] = local_stat
+
+    return L * bin_to_frequency + mean_f, Q * bin_to_fdot + mean_fdot, stats
+
+
+def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
+                     oversample=8, n=1):
+    """Quite fast folding algorithm.
+
+    Parameters
+    ----------
+    times : array of floats
+        Arrival times of photons
+    f0 : float
+        Minimum frequency to search
+    f1 : float
+        Maximum frequency to search
+
+    Other parameters
+    ----------------
+    nbin : int
+        Number of bins to divide the profile into
+    nprof : int, default None
+        number of slices of the dataset to use. If None, we use 8 times nbin.
+        Motivation in the comments.
+    npfact : int, default 2
+        maximum "sliding" of the dataset, in phase.
+    oversample : int, default 8
+        Oversampling wrt the standard FFT delta f = 1/T
+    """
+    if nprof is None:
+        # total_delta_phi = 2 == dnu * T
+        # In a single sub interval
+        # delta_phi = dnu * t
+        # with t = T / nprof
+        # so dnu T / nprof < 1 / nbin, and
+        # nprof > total_delta_phi * nbin to get all the signal inside one bin
+        # in a given sub-integration
+        nprof = 4 * 2 * nbin * npfact
+
+    t0, t1 = times.min(), times.max()
+    length = t1 - t0
+
+    frequency = (f0 + f1) / 2
+
+    # Step: npfact * 1 / T
+
+    step = 4 * npfact / length
+
+    niter = int(np.rint((f1 - f0) / step)) + 2
+
+    allvalues = list(range(-(niter // 2), niter // 2))
+    if allvalues == []:
+        allvalues = [0]
+
+    all_fgrid = []
+    all_fdotgrid = []
+    all_stats = []
+    for ii, i in enumerate(show_progress(allvalues)):
+        offset = step * i
+        fdot_offset = 0
+
+        mean_f = frequency + offset + 0.12 * step
+        mean_fdot = fdot + fdot_offset
+        fgrid, fdotgrid, stats = \
+            search_with_qffa_step(times, mean_f, mean_fdot=mean_fdot,
+                                  nbin=nbin, nprof=nprof, npfact=npfact,
+                                  oversample=oversample, n=n)
+
+        idx = stats.argmax()
+        if all_fgrid is None:
+            all_fgrid = fgrid
+            all_fdotgrid = fdotgrid
+            all_stats = stats
+        else:
+            all_fgrid.append(fgrid)
+            all_fdotgrid.append(fdotgrid)
+            all_stats.append(stats)
+    all_fgrid = np.vstack(all_fgrid)
+    all_fdotgrid = np.vstack(all_fdotgrid)
+    all_stats = np.vstack(all_stats)
+
+    step = np.median(np.diff(all_fgrid[:,0]))
+    fdotstep = np.median(np.diff(all_fdotgrid[0]))
+    return all_fgrid.T, all_fdotgrid.T, all_stats.T, step, fdotstep, length
+
+
 def folding_search(events, fmin, fmax, step=None,
                    func=epoch_folding_search, oversample=2, fdotmin=0,
                    fdotmax=0, fdotstep=None, expocorr=False, **kwargs):
@@ -220,6 +393,10 @@ def _common_parser(args=None):
                         help="Minimum frequency to fold")
     parser.add_argument("-F", "--fmax", type=float, required=True,
                         help="Maximum frequency to fold")
+    parser.add_argument("--emin", default=None, type=int,
+                        help="Minimum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--emax", default=None, type=int,
+                        help="Maximum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--fdotmin", type=float, required=False,
                         help="Minimum fdot to fold", default=0)
     parser.add_argument("--fdotmax", type=float, required=False,
@@ -234,10 +411,17 @@ def _common_parser(args=None):
     parser.add_argument("--step", default=None, type=float,
                         help="Step size of the frequency axis. Defaults to "
                              "1/oversample/observ.length. ")
-    parser.add_argument("--oversample", default=2, type=float,
+    parser.add_argument("--oversample", default=None, type=float,
                         help="Oversampling factor - frequency resolution "
                              "improvement w.r.t. the standard FFT's "
                              "1/observ.length.")
+    parser.add_argument("--fast",
+                        help="Use a faster folding algorithm. "
+                             "It automatically searches for the first spin "
+                             "derivative using an optimized step."
+                             "This option ignores expocorr, fdotmin/max, "
+                             "segment-size, and step",
+                        default=False, action='store_true')
     parser.add_argument("--expocorr",
                         help="Correct for the exposure of the profile bins. "
                              "This method is *much* slower, but it is useful "
@@ -299,25 +483,44 @@ def _common_main(args, func):
         args.find_candidates = False
         best_peaks = [args.fit_frequency]
 
+    if func != z_n_search and args.fast:
+        raise ValueError('The fast option is only available for z searches')
+
     for i_f, fname in enumerate(files):
         kwargs = {}
         baseline = args.nbin
         kind = 'EF'
+        n = 1
         if func == z_n_search:
+            n = args.N
             kwargs = {'nharm': args.N}
             baseline = args.N
             kind = 'Z2n'
         events = load_events(fname)
+        if args.emin is not None or args.emax is not None:
+            events, elabel = filter_energy(events, args.emin, args.emax)
+
         if args.deorbit_par is not None:
             events = deorbit_events(events, args.deorbit_par)
 
-        results = \
-            folding_search(events, args.fmin, args.fmax, step=args.step,
-                           func=func,
-                           oversample=args.oversample, nbin=args.nbin,
-                           expocorr=args.expocorr, fdotmin=args.fdotmin,
-                           fdotmax=args.fdotmax,
-                           segment_size=args.segment_size, **kwargs)
+        if not args.fast:
+            oversample = assign_value_if_none(args.oversample, 2)
+
+            results = \
+                folding_search(events, args.fmin, args.fmax, step=args.step,
+                               func=func,
+                               oversample=oversample, nbin=args.nbin,
+                               expocorr=args.expocorr, fdotmin=args.fdotmin,
+                               fdotmax=args.fdotmax,
+                               segment_size=args.segment_size, **kwargs)
+        else:
+            oversample = assign_value_if_none(args.oversample, 8)
+
+            results = \
+                search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
+                                 nbin=args.nbin, n=n,
+                                 nprof=None, npfact=2, oversample=oversample)
+
         length = events.time.max() - events.time.min()
         segment_size = np.min([length, args.segment_size])
         M = length // segment_size
@@ -328,9 +531,9 @@ def _common_main(args, func):
         elif len(results) == 6:
             frequencies, fdots, stats, step, fdotsteps, length = results
 
-        if length > args.dynstep:
+        if length > args.dynstep and not args.fast:
             _ = dyn_folding_search(events, args.fmin, args.fmax, step=step,
-                                   func=func, oversample=args.oversample,
+                                   func=func, oversample=oversample,
                                    time_step=args.dynstep, **kwargs)
 
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
@@ -351,7 +554,7 @@ def _common_main(args, func):
         best_models = []
 
         if args.fit_candidates:
-            search_width = 5 * args.oversample * step
+            search_width = 5 * oversample * step
             for f in best_peaks:
                 good = np.abs(frequencies - f) < search_width
                 if args.curve.lower() == 'sinc':

@@ -403,6 +403,7 @@ def dumpdyn_main(args=None):
         dumpdyn(f, plot=not args.noplot)
 
 
+
 def main(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse

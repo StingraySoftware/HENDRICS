@@ -72,6 +72,38 @@ We can plot the results of this search with `HENplot`, as such:
 .. |zn_search.png| image:: ../images/zn_search.png
 
 
+NEW: Fast searches
+~~~~~~~~~~~~~~~~~~
+HENDRICS now implements a much faster, experimental algorithm for pulsation searches.
+Select this algorithm with the ``--fast`` option on the command line of `HENzsearch`.
+Instead of calculating the phase of all photons at each trial value of frequency and
+derivative, we pre-bin the data in small chunks and shift the different chunks to the
+amount required by different trial values.
+
+|fast_zsearch.jpeg|
+
+Each pre-folding leads to a large number of trial values to be evaluated. This only
+works if we assume that the trial frequency is sufficiently close to the initial one
+that no signal leaks into nearby bins inside the sub-profiles. This requires that we
+choose a sufficiently large number of sub-profiles, and limit the total shift to
+reasonable values to limit this leak.
+
+Given the wanted range of frequencies to search, the program chooses automatically the
+number of trial frequencies and fdots to derive from each given pre-folding, and when
+to perform a new pre-folding.
+
+At the moment, the trial fdots are chosen automatically and cannot be defined by the user.
+The only actions the user can do are the selection of the mean fdot and the parameter
+``--npfact`` that increases the number of trial values to obtain from a single central
+frequency/fdot combination (npfact=2 means that the number of trial values will be
+double for both the frequency and the fdot, so four times the trials in the end).
+
+The results of this Z search can be plotted with `HENplot`. There is at the moment
+no automatic fitting being performed as in the slow option.
+
+.. |fast_zsearch.jpeg| image:: ../images/fast_zsearch.jpeg
+
+
 Searching for pulsars and measuring frequency derivatives interactively
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
