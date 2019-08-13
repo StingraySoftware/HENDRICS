@@ -486,7 +486,9 @@ def _common_main(args, func):
         kwargs = {}
         baseline = args.nbin
         kind = 'EF'
+        n = 1
         if func == z_n_search:
+            n = args.N
             kwargs = {'nharm': args.N}
             baseline = args.N
             kind = 'Z2n'
@@ -508,9 +510,6 @@ def _common_main(args, func):
                                fdotmax=args.fdotmax,
                                segment_size=args.segment_size, **kwargs)
         else:
-            n = 1
-            if func == z_n_search:
-                n = args.N
             oversample = assign_value_if_none(args.oversample, 8)
 
             results = \
