@@ -182,7 +182,7 @@ def shift_and_select(repeated_profiles, lshift, qshift, newprof):
 
 
 def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
-                          npfact=2, oversample=8, n=1):
+                          npfact=2, oversample=8, n=1, search_fdot=True):
     """Single step of quasi-fast folding algorithm."""
     ts = times - np.mean(times)
     phases = ts * mean_f + 0.5 * ts**2 * mean_fdot
@@ -196,7 +196,10 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
 
     # dn = max(1, int(nbin / oversample))
     linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, oversample * npfact)
-    quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, oversample * npfact)
+    if search_fdot:
+        quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, oversample * npfact)
+    else:
+        quabinshifts = [0]
 
     L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing='ij')
 
@@ -228,8 +231,8 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
 
 
 def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
-                     oversample=8, n=1):
-    """Quite fast folding algorithm.
+                     oversample=8, n=1, search_fdot=True, t0=None, t1=None):
+    """'Quite fast folding' algorithm.
 
     Parameters
     ----------
@@ -251,6 +254,12 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
         maximum "sliding" of the dataset, in phase.
     oversample : int, default 8
         Oversampling wrt the standard FFT delta f = 1/T
+    search_fdot : bool, default False
+        Switch fdot search on or off
+    t0 : float, default min(times)
+        starting time
+    t1 : float, default max(times)
+        stop time
     """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
@@ -262,7 +271,11 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
         # in a given sub-integration
         nprof = 4 * 2 * nbin * npfact
 
-    t0, t1 = times.min(), times.max()
+    if t0 is None:
+        t0 = times.min()
+    if t1 is None:
+        t1 = times.max()
+
     length = t1 - t0
 
     frequency = (f0 + f1) / 2
@@ -289,7 +302,8 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
         fgrid, fdotgrid, stats = \
             search_with_qffa_step(times, mean_f, mean_fdot=mean_fdot,
                                   nbin=nbin, nprof=nprof, npfact=npfact,
-                                  oversample=oversample, n=n)
+                                  oversample=oversample, n=n,
+                                  search_fdot=search_fdot)
 
         idx = stats.argmax()
         if all_fgrid is None:
