@@ -181,6 +181,47 @@ def shift_and_select(repeated_profiles, lshift, qshift, newprof):
     return newprof
 
 
+@njit()
+def z_n_fast(phase, norm, n=2):
+    '''Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
+
+    Here in a fast implementation based on numba.
+    Assumes that nbin != 0 and norm is an array.
+
+    Parameters
+    ----------
+    phase : array of floats
+        The phases of the events, in terms of 2PI
+    norm : float or array of floats
+        A normalization factor that gets multiplied as a weight.
+    n : int, default 2
+        The ``n`` in $Z^2_n$.
+
+    Returns
+    -------
+    z2_n : float
+        The Z^2_n statistics of the events.
+
+    Examples
+    --------
+    >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
+    >>> norm = np.sin(phase) + 1
+    >>> from stingray.pulse.pulsar import z_n
+    >>> np.isclose(z_n_fast(phase, norm, n=4), 50)
+    True
+    >>> np.isclose(z_n_fast(phase, norm, n=2), 50)
+    True
+    '''
+    total_norm = np.sum(norm)
+
+    result = 0
+    for k in range(1, n + 1):
+        kph = k * phase
+        result += np.sum(np.cos(kph) * norm) ** 2 + np.sum(np.sin(kph) * norm) ** 2
+
+    return 2 / total_norm * result
+
+
 def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
                           npfact=2, oversample=8, n=1, search_fdot=True):
     """Single step of quasi-fast folding algorithm."""
@@ -218,12 +259,13 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
     newprof = np.zeros_like(profiles)
     repeated_profiles = np.hstack((profiles, profiles, profiles))
 
+    twopiphases = 2 * np.pi * np.arange(0, 1, 1/nbin)
     for i, l in enumerate(linbinshifts):
         for j, q in enumerate(quabinshifts):
             newprof = shift_and_select(repeated_profiles, L[i, j], Q[i, j],
                                        newprof)
             splat_prof = np.sum(newprof, axis=0)
-            local_stat = z_n(np.arange(0, 1, 1/nbin), norm=splat_prof, n=n)
+            local_stat = z_n_fast(twopiphases, norm=splat_prof, n=n)
             # local_stat = stat(splat_prof)
             stats[i, j] = local_stat
 
