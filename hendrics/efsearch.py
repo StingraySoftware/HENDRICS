@@ -260,8 +260,6 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
     ts = times - np.mean(times)
     phases = ts * mean_f + 0.5 * ts**2 * mean_fdot
     phases = phases - np.floor(phases)
-    #phbins = np.linspace(0, 1, nbin + 1)
-    #tbins = np.linspace(times[0], times[-1], nprof + 1)
     profiles = histogram2d(phases, times, range=[[0, 1], [times[0], times[-1]]],
                             bins=(nbin, nprof))
     t0, t1 = times.min(), times.max()
