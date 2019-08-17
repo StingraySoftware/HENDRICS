@@ -19,6 +19,17 @@ except:
 from hendrics.fold import HAS_PINT
 
 
+def _dummy_par(par):
+    with open(par, 'a') as fobj:
+        print("BINARY BT", file=fobj)
+        print("PB  1e20", file=fobj)
+        print("A1  0", file=fobj)
+        print("T0  56000", file=fobj)
+        print("EPHEM  DE200", file=fobj)
+        print("RAJ  00:55:01", file=fobj)
+        print("DECJ 12:00:40.2", file=fobj)
+
+
 class TestEFsearch():
     def setup_class(cls):
         cls.pulse_frequency = 1/0.101
@@ -163,14 +174,8 @@ class TestEFsearch():
     def test_efsearch_deorbit(self):
         evfile = self.dum
         par = 'bububububu.par'
-        with open (par, 'a') as fobj:
-            print("BINARY BT", file=fobj)
-            print("PB  1e20", file=fobj)
-            print("A1  0", file=fobj)
-            print("T0  56000", file=fobj)
-            print("EPHEM  DE200", file=fobj)
-            print("RAJ  00:55:01", file=fobj)
-            print("DECJ 12:00:40.2", file=fobj)
+
+        _dummy_par(par)
 
         ip = main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                            '--deorbit-par', par])
@@ -178,20 +183,14 @@ class TestEFsearch():
         outfile = 'events_Z2n' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
+        os.unlink(par)
 
     def test_efsearch_deorbit_invalid(self):
         evfile = self.dum
-        with pytest.warns(UserWarning) as record:
+        with pytest.raises(FileNotFoundError) as excinfo:
             ip = main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                                '--deorbit-par', "nonexistent.par"])
-        assert np.any(["Parameter file" in r.message.args[0] for r in record])
-
-        outfile = 'events_EF' + HEN_FILE_EXTENSION
-        assert os.path.exists(outfile)
-        with pytest.warns(UserWarning) as record:
-            plot_folding([outfile], ylog=True)
-        assert np.any(["does not exist" in r.message.args[0] for r in record])
-
+        assert "Parameter file" in str(excinfo.value)
 
     @classmethod
     def teardown_class(cls):
