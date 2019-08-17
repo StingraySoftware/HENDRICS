@@ -234,15 +234,17 @@ def z_n_fast(phase, norm, n=2):
     return 2 / total_norm * result
 
 
-@njit(parallel=True)
+@njit(parallel=True, nogil=True)
 def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
-    twopiphases = 2 * np.pi * np.arange(0, 1, 1/nbin)
+    twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
     stats = np.zeros_like(L)
     profiles = profiles.T
-    newprof = np.zeros_like(profiles)
     repeated_profiles = np.hstack((profiles, profiles, profiles))
 
-    for i in range(len(linbinshifts)):
+    for i in prange(len(linbinshifts)):
+        # This zeros needs to be here, not outside the parallel loop, or
+        # the threads will try to write it all at the same time
+        newprof = np.zeros(profiles.shape)
         for j in range(len(quabinshifts)):
             newprof = shift_and_select(repeated_profiles, L[i, j], Q[i, j],
                                        newprof)
@@ -260,14 +262,24 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
     ts = times - np.mean(times)
     phases = ts * mean_f + 0.5 * ts**2 * mean_fdot
     phases = phases - np.floor(phases)
-    profiles = histogram2d(phases, times, range=[[0, 1], [times[0], times[-1]]],
-                            bins=(nbin, nprof))
+
+    # Cast to standard double, or the fast_histogram.histogram2d will fail
+    # horribly.
+    ts = ts.astype(np.double)
+    phases = phases.astype(np.double)
+
+    profiles = histogram2d(phases, ts,
+                           range=[[0, 1], [ts[0], ts[-1]]],
+                           bins=(nbin, nprof))
+
     t0, t1 = times.min(), times.max()
 
     # dn = max(1, int(nbin / oversample))
-    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, oversample * npfact)
+    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact,
+                               oversample * npfact)
     if search_fdot:
-        quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, oversample * npfact)
+        quabinshifts = np.linspace(-nbin * npfact, nbin * npfact,
+                                   oversample * npfact)
     else:
         quabinshifts = [0]
 
