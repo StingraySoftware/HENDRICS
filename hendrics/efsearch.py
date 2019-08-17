@@ -184,19 +184,7 @@ def shift_and_select(repeated_profiles, lshift, qshift, newprof):
     nbin = len(newprof[0])
     lshifts = calculate_shifts(nprof, nbin, lshift, 1)
     qshifts = calculate_shifts(nprof, nbin, qshift, 2)
-    for k in prange(nprof):
-        total_shift = int(np.rint(lshifts[k] + qshifts[k])) % nbin
-        newprof[k, :] = repeated_profiles[k, nbin - total_shift: 2 * nbin - total_shift]
-    return newprof
-
-
-@njit(parallel=True)
-def shift_and_select_parallel(repeated_profiles, lshift, qshift, newprof):
-    nprof = len(repeated_profiles)
-    nbin = len(newprof[0])
-    lshifts = calculate_shifts(nprof, nbin, lshift, 1)
-    qshifts = calculate_shifts(nprof, nbin, qshift, 2)
-    for k in prange(nprof):
+    for k in range(nprof):
         total_shift = int(np.rint(lshifts[k] + qshifts[k])) % nbin
         newprof[k, :] = repeated_profiles[k, nbin - total_shift: 2 * nbin - total_shift]
     return newprof
@@ -295,55 +283,6 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
     L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing='ij')
 
     stats = _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=n)
-
-    return L * bin_to_frequency + mean_f, Q * bin_to_fdot + mean_fdot, stats
-
-
-def search_with_qffa_step_old(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
-                          npfact=2, oversample=8, n=1, search_fdot=True):
-    """Single step of quasi-fast folding algorithm."""
-    ts = times - np.mean(times)
-    phases = ts * mean_f + 0.5 * ts**2 * mean_fdot
-    phases = phases - np.floor(phases)
-    phbins = np.linspace(0, 1, nbin + 1)
-    tbins = np.linspace(times[0], times[-1], nprof + 1)
-    profiles, phbins, tbins = np.histogram2d(phases, times,
-                                             bins=(phbins, tbins))
-
-    t0, t1 = times.min(), times.max()
-
-    # dn = max(1, int(nbin / oversample))
-    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, oversample * npfact)
-    if search_fdot:
-        quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, oversample * npfact)
-    else:
-        quabinshifts = [0]
-
-    L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing='ij')
-
-    dphi = 1 / nbin
-    delta_t = (t1 - t0) / 2
-    df = dphi / delta_t
-    dfdot = 2 * dphi / delta_t ** 2
-
-    bin_to_frequency = df
-    bin_to_fdot = dfdot
-
-    stats = np.zeros_like(L)
-    profiles = profiles.T
-    newprof = np.zeros_like(profiles)
-    repeated_profiles = np.hstack((profiles, profiles, profiles))
-
-    twopiphases = 2 * np.pi * np.arange(0, 1, 1/nbin)
-    for i, l in enumerate(linbinshifts):
-        for j, q in enumerate(quabinshifts):
-            newprof = shift_and_select_parallel(repeated_profiles, L[i, j],
-                                                Q[i, j],
-                                       newprof)
-            splat_prof = np.sum(newprof, axis=0)
-            local_stat = z_n_fast(twopiphases, norm=splat_prof, n=n)
-            # local_stat = stat(splat_prof)
-            stats[i, j] = local_stat
 
     return L * bin_to_frequency + mean_f, Q * bin_to_fdot + mean_fdot, stats
 
