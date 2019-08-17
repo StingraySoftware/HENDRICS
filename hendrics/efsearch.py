@@ -23,7 +23,7 @@ try:
     from fast_histogram import histogram2d
     HAS_FAST_HIST = True
 except ImportError:
-    from numpy import histogram2d_np
+    from numpy import histogram2d as histogram2d_np
     def histogram2d(*args, **kwargs):
         return histogram2d_np(*args, **kwargs)[0]
 
@@ -276,7 +276,6 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
     #tbins = np.linspace(times[0], times[-1], nprof + 1)
     profiles = histogram2d(phases, times, range=[[0, 1], [times[0], times[-1]]],
                             bins=(nbin, nprof))
-    print(profiles)
     t0, t1 = times.min(), times.max()
 
     # dn = max(1, int(nbin / oversample))
@@ -338,7 +337,8 @@ def search_with_qffa_step_old(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
     twopiphases = 2 * np.pi * np.arange(0, 1, 1/nbin)
     for i, l in enumerate(linbinshifts):
         for j, q in enumerate(quabinshifts):
-            newprof = shift_and_select_parallel(repeated_profiles, L[i, j], Q[i, j],
+            newprof = shift_and_select_parallel(repeated_profiles, L[i, j],
+                                                Q[i, j],
                                        newprof)
             splat_prof = np.sum(newprof, axis=0)
             local_stat = z_n_fast(twopiphases, norm=splat_prof, n=n)

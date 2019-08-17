@@ -46,13 +46,14 @@ matrix:
         # Old matplotlib
         - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NETCDF=no
         - os: windows
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='scipy matplotlib pip pandas emcee stingray>=0.1rc1 ' CONDA_DEPENDENCIES=''
+          env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram scipy matplotlib pip pandas emcee stingray>=0.1rc1 ' CONDA_DEPENDENCIES=''
         - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes
+        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram emcee stingray>=0.1rc1 '
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - env: PYTHON_VERSION=3.6 SETUP_CMD='build_docs -w' PIP_DEPENDENCIES='sphinx-astropy emcee stingray>=0.1rc1'
         - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
-        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
+        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram git+https://git@github.com/nanograv/pint.git jplephem stingray'
 
         # ----- Try risky stuff ----
         - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel
