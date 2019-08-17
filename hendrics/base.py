@@ -260,8 +260,7 @@ def deorbit_events(events, parameter_file=None):
     if parameter_file is None:
         return events
     elif not os.path.exists(parameter_file):
-        warnings.warn("Parameter file {} does not exist".format(parameter_file))
-        return events
+        raise FileNotFoundError("Parameter file {} does not exist".format(parameter_file))
 
     pepoch = events.gti[0, 0]
     pepoch_mjd = pepoch / 86400 + events.mjdref
