@@ -12,12 +12,14 @@ from stingray.pulse.pulsar import z_n
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
+from astropy import log
 
 import numpy as np
 import os
 import logging
 import argparse
 from functools import wraps
+import copy
 
 try:
     from fast_histogram import histogram2d
@@ -66,6 +68,15 @@ def _save_df_to_csv(df, csv_file, reset=False):
         mode = 'a'
         header = False
     df.to_csv(csv_file, header=header, index=False, mode=mode)
+
+
+def check_phase_error_after_casting_to_double(tref, f, fdot=0):
+    """Check the maximum error expected in the phase when casting to double."""
+    times = np.array(np.random.normal(tref, 0.1, 1000), dtype=np.longdouble)
+    times_dbl = times.astype(np.double)
+    phase = times * f + 0.5 * times * fdot ** 2
+    phase_dbl = times_dbl * np.double(f) + 0.5 * times_dbl ** 2 * np.double(fdot)
+    return np.max(np.abs(phase_dbl - phase))
 
 
 def decide_binary_parameters(length, freq_range, porb_range, asini_range,
@@ -221,6 +232,7 @@ def z_n_fast(phase, norm, n=2):
     >>> np.isclose(z_n_fast(phase, norm, n=2), 50)
     True
     '''
+
     total_norm = np.sum(norm)
 
     result = 0
@@ -256,23 +268,26 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     return stats
 
 
-def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
+@njit(parallel=True)
+def _fast_phase(ts, mean_f, mean_fdot=0):
+    phases = ts * mean_f + 0.5 * ts*ts * mean_fdot
+    return phases - np.floor(phases)
+
+
+def search_with_qffa_step(times : np.double, mean_f : np.double, mean_fdot=0, nbin=16, nprof=64,
                           npfact=2, oversample=8, n=1, search_fdot=True):
     """Single step of quasi-fast folding algorithm."""
-    ts = times - np.mean(times)
-    phases = ts * mean_f + 0.5 * ts**2 * mean_fdot
-    phases = phases - np.floor(phases)
 
     # Cast to standard double, or the fast_histogram.histogram2d will fail
     # horribly.
-    ts = ts.astype(np.double)
-    phases = phases.astype(np.double)
 
-    profiles = histogram2d(phases, ts,
-                           range=[[0, 1], [ts[0], ts[-1]]],
-                           bins=(nbin, nprof))
+    phases = _fast_phase(times, mean_f, mean_fdot)
 
-    t0, t1 = times.min(), times.max()
+    profiles = histogram2d(
+        phases, times, range=[[0, 1], [times[0], times[-1]]], bins=(nbin, nprof))
+
+    # Assume times are sorted
+    t1, t0 = times[-1], times[0]
 
     # dn = max(1, int(nbin / oversample))
     linbinshifts = np.linspace(-nbin * npfact, nbin * npfact,
@@ -285,11 +300,9 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
 
     dphi = 1 / nbin
     delta_t = (t1 - t0) / 2
-    df = dphi / delta_t
-    dfdot = 2 * dphi / delta_t ** 2
+    bin_to_frequency = dphi / delta_t
+    bin_to_fdot = 2 * dphi / delta_t ** 2
 
-    bin_to_frequency = df
-    bin_to_fdot = dfdot
     L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing='ij')
 
     stats = _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=n)
@@ -338,10 +351,21 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
         # in a given sub-integration
         nprof = 4 * 2 * nbin * npfact
 
+    times = copy.deepcopy(times)
+
     if t0 is None:
         t0 = times.min()
     if t1 is None:
         t1 = times.max()
+    times -= np.mean(times)
+
+    maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
+    log.info(f"Maximum error on the phase expected when casting to double: {maxerr}")
+    if maxerr > 1 / nbin / 10:
+        log.warning("Casting to double produces non-negligible phase errors. "
+                    "Please use shorter light curves.")
+
+    times = times.astype(np.double)
 
     length = t1 - t0
 
@@ -360,19 +384,19 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     all_fgrid = []
     all_fdotgrid = []
     all_stats = []
+
     for ii, i in enumerate(show_progress(allvalues)):
         offset = step * i
         fdot_offset = 0
 
-        mean_f = frequency + offset + 0.12 * step
-        mean_fdot = fdot + fdot_offset
+        mean_f = np.double(frequency + offset + 0.12 * step)
+        mean_fdot = np.double(fdot + fdot_offset)
         fgrid, fdotgrid, stats = \
             search_with_qffa_step(times, mean_f, mean_fdot=mean_fdot,
                                   nbin=nbin, nprof=nprof, npfact=npfact,
                                   oversample=oversample, n=n,
                                   search_fdot=search_fdot)
 
-        idx = stats.argmax()
         if all_fgrid is None:
             all_fgrid = fgrid
             all_fdotgrid = fdotgrid
