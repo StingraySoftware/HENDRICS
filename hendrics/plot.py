@@ -421,7 +421,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             if hasattr(ef, 'emin') and ef.emin is not None:
                 phascommand += " --emin {}".format(ef.emin)
             if hasattr(ef, 'emin') and ef.emin is not None:
-                phascommand += " --emax {}".format(ef.emin)
+                phascommand += " --emax {}".format(ef.emax)
 
             print("To see the detailed phaseogram, "
                   "run {}".format(phascommand))
