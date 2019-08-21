@@ -12,6 +12,7 @@ from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
 from stingray.pulse.pulsar import z_n
 from .fold import z2_n_detection_level
+from .fold import filter_energy
 
 import numpy as np
 import logging
@@ -657,11 +658,14 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                                binary_parameters=[None, 0, None],
                                pepoch=None, norm=None,
                                plot_only=False,
-                               deorbit_par=None):
+                               deorbit_par=None,
+                               emin=None, emax=None):
     from astropy.io.fits import Header
     from astropy.coordinates import SkyCoord
 
     events = load_events(event_file)
+    if emin is not None or emax is not None:
+        events, elabel = filter_energy(events, emin, emax)
     try:
         header = Header.fromstring(events.header)
         position = SkyCoord(header['RA_OBJ'], header['DEC_OBJ'], unit='deg',
@@ -733,6 +737,10 @@ def main_phaseogram(args=None):
     parser.add_argument("--binary-parameters",
                         help="Initial values for binary parameters",
                         default=[None, 0, None], nargs=3, type=float)
+    parser.add_argument("--emin", default=None, type=int,
+                        help="Minimum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--emax", default=None, type=int,
+                        help="Maximum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--norm",
                         help=("Normalization for the phaseogram. Can be 'to1' "
                               "(each profile normalized from 0 to 1); "
@@ -788,4 +796,5 @@ def main_phaseogram(args=None):
                                     binary_parameters=args.binary_parameters,
                                     pepoch=args.pepoch, norm=args.norm,
                                     plot_only=args.plot_only,
-                                    deorbit_par=args.deorbit_par)
+                                    deorbit_par=args.deorbit_par,
+                                    emin=args.emin, emax=args.emax)

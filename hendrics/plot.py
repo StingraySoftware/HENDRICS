@@ -413,10 +413,15 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             ax.set_ylabel("Counts")
             ax.set_xlim([0, 2])
             ax.legend()
-            phascommand = "HENphaseogram -f {} --fdot {} {}".format(f, fdot,
-                                                                    ef.filename)
+            phascommand = "HENphaseogram -f {} " \
+                          "--fdot {} {} -n {} --norm to1".format(f, fdot,
+                                                                 ef.filename, nbin)
             if ef.parfile and os.path.exists(ef.parfile):
                 phascommand += " --deorbit-par {}".format(parfile)
+            if hasattr(ef, 'emin') and ef.emin is not None:
+                phascommand += " --emin {}".format(ef.emin)
+            if hasattr(ef, 'emin') and ef.emin is not None:
+                phascommand += " --emax {}".format(ef.emin)
 
             print("To see the detailed phaseogram, "
                   "run {}".format(phascommand))

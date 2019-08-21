@@ -562,8 +562,9 @@ HENphaseogram
                          [--pepoch PEPOCH] [--periodogram PERIODOGRAM] [-n NBIN]
                          [--ntimes NTIMES] [--binary]
                          [--binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS]
-                         [--norm NORM] [--deorbit-par DEORBIT_PAR] [--debug]
-                         [--test] [--plot-only] [--loglevel LOGLEVEL]
+                         [--emin EMIN] [--emax EMAX] [--norm NORM]
+                         [--deorbit-par DEORBIT_PAR] [--debug] [--test]
+                         [--plot-only] [--loglevel LOGLEVEL]
                          file
 
     Plot an interactive phaseogram
@@ -585,6 +586,8 @@ HENphaseogram
                             derivatives
       --binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS
                             Initial values for binary parameters
+      --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --norm NORM           Normalization for the phaseogram. Can be 'to1' (each
                             profile normalized from 0 to 1); 'mediansub' (just
                             subtract the median from each profile); default None

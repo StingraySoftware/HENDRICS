@@ -126,7 +126,6 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         plt.savefig(timfile.replace('.tim', '') + '.png')
         plt.close(fig)
         # start template from highest bin!
-        # template = np.roll(template, -np.argmax(template))
         template *= folding_length / length
         template_fine = std_fold_fit_func(fit_pars_save,
                                           np.arange(0, 1, 0.001))
@@ -337,6 +336,8 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     Examples
     --------
     >>> import doctest
+    >>> from contextlib import redirect_stderr
+    >>> import sys
     >>> time = np.arange(5)
     >>> energy = np.array([0, 0, 30, 4, 1])
     >>> events = EventList(time=time, energy=energy)
@@ -346,20 +347,25 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     >>> elabel == 'Energy'
     True
     >>> events = EventList(time=time, pi=energy)
-    >>> ev_out, elabel = filter_energy(events, None, 20)
+    >>> with redirect_stderr(sys.stdout):
+    ...     ev_out, elabel = filter_energy(events, None, 20)  # doctest: +ELLIPSIS
+    WARNING: No energy information ...
     >>> np.all(ev_out.time == [0, 1, 3, 4])
     True
     >>> elabel == 'PI'
     True
     >>> events = EventList(time=time, pi=energy)
-    >>> ev_out, elabel = filter_energy(events, None, None)
+    >>> with redirect_stderr(sys.stdout):
+    ...     ev_out, elabel = filter_energy(events, None, None)  # doctest: +ELLIPSIS
+    WARNING: No energy information ...
     >>> np.all(ev_out.time == time)
     True
     >>> elabel == 'PI'
     True
     >>> events = EventList(time=time)
-    >>> ev_out, elabel = filter_energy(events, 3, None)  # doctest: +ELLIPSIS
-    INFO: No Energy or PI...
+    >>> with redirect_stderr(sys.stdout):
+    ...     ev_out, elabel = filter_energy(events, 3, None)  # doctest: +ELLIPSIS
+    ERROR:...No Energy or PI...
     >>> np.all(ev_out.time == time)
     True
     >>> elabel == ''
@@ -376,8 +382,8 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
         elabel = 'PI'
         ev.energy = ev.pi
     else:
-        log.info("No Energy or PI information available. "
-                 "No energy filter applied to events")
+        log.error("No Energy or PI information available. "
+                  "No energy filter applied to events")
         return ev, ''
 
     if emax is None and emin is None:

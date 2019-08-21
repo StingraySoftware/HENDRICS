@@ -87,8 +87,9 @@ class TestEFsearch():
     def test_efsearch(self):
         evfile = self.dum
         main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                       '--emin', '3', '--emax', '79',
                        '--fit-candidates'])
-        outfile = 'events_EF' + HEN_FILE_EXTENSION
+        outfile = 'events_EF_3-79keV' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
@@ -99,10 +100,11 @@ class TestEFsearch():
     def test_zsearch(self):
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
-                      '--fit-candidates', '--fit-frequency',
-                      str(self.pulse_frequency),
-                      '--dynstep', '5'])
-        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
+                       '--emin', '3', '--emax', '79',
+                       '--fit-candidates', '--fit-frequency',
+                       str(self.pulse_frequency),
+                       '--dynstep', '5'])
+        outfile = 'events_Z2n_3-79keV' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)

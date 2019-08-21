@@ -644,7 +644,8 @@ def _common_main(args, func):
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
                                       args.N, fdots=fdots, M=M,
                                       segment_size=segment_size,
-                                      filename=fname, parfile=args.deorbit_par)
+                                      filename=fname, parfile=args.deorbit_par,
+                                      emin=args.emin, emax=args.emax)
 
         if args.find_candidates:
             threshold = 1 - args.conflevel / 100
@@ -675,8 +676,14 @@ def _common_main(args, func):
 
         efperiodogram.best_fits = best_models
 
+        out_fname = hen_root(fname) + '_{}'.format(kind)
+        if args.emin is not None or args.emax is not None:
+            emin = assign_value_if_none(args.emin, '**')
+            emax = assign_value_if_none(args.emax, '**')
+            out_fname += f'_{emin}-{emax}keV'
+
         save_folding(efperiodogram,
-                     hen_root(fname) + '_{}'.format(kind) + HEN_FILE_EXTENSION)
+                     out_fname + HEN_FILE_EXTENSION)
 
 
 def main_efsearch(args=None):
