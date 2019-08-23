@@ -247,6 +247,8 @@ def main_presto(args=None):
 
     log.setLevel(args.loglevel)
 
+    if args.energy_interval is None:
+        args.energy_interval = [None, None]
     with log.log_to_file('HENbinary.log'):
         for f in args.files:
             print(f)
@@ -258,7 +260,7 @@ def main_presto(args=None):
                 if args.deorbit_par is not None:
                     contents = deorbit_events(contents, args.deorbit_par)
                 lcinfo = save_events_to_binary(contents, outfile,
-                                               bin_time=args.bin_time,
+                                               bin_time=args.bintime,
                                                emin=args.energy_interval[0],
                                                emax=args.energy_interval[1])
             else:

@@ -264,6 +264,7 @@ def lcurve_from_events(f, safe_interval=0,
     total_lc = evdata.to_lc(100)
     total_lc.instr = instr
 
+    print(e_interval, e_interval is not None)
     # Then, apply filters
     if pi_interval is not None and np.all(np.array(pi_interval) > 0):
         pis = evdata.pi
@@ -642,8 +643,11 @@ def _execute_lcurve(args):
     bintime = args.bintime
 
     safe_interval = args.safe_interval
-    pi_interval = np.array(args.pi_interval)
-    e_interval = np.array(args.e_interval)
+    e_interval, pi_interval = args.energy_interval, args.pi_interval
+    if args.pi_interval is not None:
+        pi_interval = np.array(args.pi_interval)
+    if e_interval is not None:
+        args.e_interval = np.array(args.energy_interval)
 
     # ------ Use functools.partial to wrap lcurve* with relevant keywords---
     if args.fits_input:
@@ -710,7 +714,7 @@ def main(args=None):
                         default=[0, 0],
                         help="Interval at start and stop of GTIs used" +
                         " for filtering")
-    _add_default_args(parser, ['energies', 'pi'])
+    parser = _add_default_args(parser, ['energies', 'pi'])
     parser.add_argument("-s", "--scrunch",
                         help="Create scrunched light curve (single channel)",
                         default=False,
@@ -740,11 +744,10 @@ def main(args=None):
     parser.add_argument("--txt-input",
                         help="Input files are light curves in txt format",
                         default=False, action='store_true')
-    _add_default_args(parser, ['output',
-                               'loglevel', 'debug', 'nproc'])
+    parser = _add_default_args(parser, ['output',
+                                        'loglevel', 'debug', 'nproc'])
 
     args = parser.parse_args(args)
-
     if args.debug:
         args.loglevel = 'DEBUG'
     log.setLevel(args.loglevel)

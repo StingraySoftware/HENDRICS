@@ -97,7 +97,7 @@ def main(args=None):
                 rms = RmsEnergySpectrum(events, args.freq_interval,
                                         energy_spec,
                                         segment_size=args.segment_size,
-                                        bin_time=args.bin_time,
+                                        bin_time=args.bintime,
                                         events2=events2,
                                         use_pi=args.use_pi)
                 out1 = hen_root(fname) + "_rms" + '.qdp'
@@ -111,7 +111,7 @@ def main(args=None):
                 lag = LagEnergySpectrum(events, args.freq_interval,
                                         energy_spec, args.ref_band,
                                         segment_size=args.segment_size,
-                                        bin_time=args.bin_time,
+                                        bin_time=args.bintime,
                                         events2=events2,
                                         use_pi=args.use_pi)
                 start_energy = np.asarray(lag.energy_intervals)[:, 0]
@@ -131,7 +131,7 @@ def main(args=None):
                 cov = CovarianceEnergySpectrum(events, args.freq_interval,
                                                energy_spec, args.ref_band,
                                                segment_size=args.segment_size,
-                                               bin_time=args.bin_time,
+                                               bin_time=args.bintime,
                                                events2=events2,
                                                use_pi=args.use_pi)
                 start_energy = np.asarray(cov.energy_intervals)[:, 0]

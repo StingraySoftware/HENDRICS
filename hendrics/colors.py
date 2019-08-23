@@ -31,29 +31,29 @@ def main(args=None):
                              "as PI channels")
 
     _add_default_args(parser, ['bintime', 'usepi', 'output',
-                               'nproc', 'loglevel', 'debug',])
-
+                               'loglevel', 'debug'])
     args = parser.parse_args(args)
     files = args.files
-
     if args.debug:
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
 
-
     with log.log_to_file('HENcolors.log'):
-        option = '--e-interval'
+        option = '--energy-interval'
         if args.use_pi:
             option = '--pi-interval'
 
+        if args.outfile is not None and len(files) > 1:
+            raise ValueError('Specify --output only when processing '
+                             'a single file')
         for f in files:
             henlcurve([f] + [option] + args.energies[:2] +
-                      ['-b', args.bintime, '-d', '.', '-o',
+                      ['-b', str(args.bintime), '-d', '.', '-o',
                        'lc0' + HEN_FILE_EXTENSION])
             lc0 = load_lcurve('lc0' + HEN_FILE_EXTENSION)
             henlcurve([f] + [option] + args.energies[2:] +
-                      ['-b', args.bintime, '-d', '.', '-o',
+                      ['-b', str(args.bintime), '-d', '.', '-o',
                        'lc1' + HEN_FILE_EXTENSION])
             lc1 = load_lcurve('lc1' + HEN_FILE_EXTENSION)
 
@@ -68,12 +68,12 @@ def main(args=None):
             os.unlink('lc0' + HEN_FILE_EXTENSION)
             os.unlink('lc1' + HEN_FILE_EXTENSION)
 
-            if args.out is None:
+            if args.outfile is None:
                 label = '_E_'
                 if args.use_pi:
                     label = '_PI_'
                 label += '{3}-{2}_over_{1}-{0}'.format(*args.energies)
-                args.out = hen_root(f) + label + HEN_FILE_EXTENSION
+                args.outfile = hen_root(f) + label + HEN_FILE_EXTENSION
             scolor.e_intervals = np.asarray([float(k) for k in args.energies])
             scolor.use_pi = args.use_pi
-            save_lcurve(scolor, args.out, lctype='Color')
+            save_lcurve(scolor, args.outfile, lctype='Color')

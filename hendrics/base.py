@@ -27,27 +27,23 @@ DEFAULT_PARSER_ARGS['debug'] = dict(
     kwargs=dict(help=("se DEBUG logging level"),
                 default=False, action='store_true'))
 DEFAULT_PARSER_ARGS['bintime'] = dict(
-    args=["-b", "--bin-time"],
+    args=["-b", "--bintime"],
     kwargs=dict(help="Bin time",
                 type=np.longdouble, default=1))
 DEFAULT_PARSER_ARGS['energies'] = dict(
     args=["-e", "--energy-interval"],
     kwargs=dict(help="Energy interval used for filtering",
-                nargs=2, type=float, default=[None, None]))
+                nargs=2, type=float, default=None))
 DEFAULT_PARSER_ARGS['pi'] = dict(
     args=["--pi-interval"],
     kwargs=dict(help="PI interval used for filtering",
                 nargs=2, type=int, default=[-1, -1]))
 DEFAULT_PARSER_ARGS['deorbit'] = dict(
-    args=["--deorbit"],
-    kwargs=dict(help=("Deorbit data with this parameter file (requires PINT installed)"),
-                default=None, type=str))
-DEFAULT_PARSER_ARGS['deorbit'] = dict(
-    args=["--deorbit"],
+    args=["--deorbit-par"],
     kwargs=dict(help=("Deorbit data with this parameter file (requires PINT installed)"),
                 default=None, type=str))
 DEFAULT_PARSER_ARGS['output'] = dict(
-    args=["-o", "--out"],
+    args=["-o", "--outfile"],
     kwargs=dict(help='Output file',
                 default=None, type=str))
 DEFAULT_PARSER_ARGS['usepi'] = dict(

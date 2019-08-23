@@ -977,7 +977,7 @@ model = models.Const1D()
     def test_plot_hid(self):
         """Test plotting with linear axes."""
         # also produce a light curve with the same binning
-        command = ('{0} -b 100 --e-interval {1} {2}').format(
+        command = ('{0} -b 100 --energy-interval {1} {2}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
                          HEN_FILE_EXTENSION), 3, 10)
 

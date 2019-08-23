@@ -353,9 +353,7 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     >>> elabel == 'PI'
     True
     >>> events = EventList(time=time, pi=energy)
-    >>> with redirect_stderr(sys.stdout):
-    ...     ev_out, elabel = filter_energy(events, None, None)  # doctest: +ELLIPSIS
-    WARNING: No energy information ...
+    >>> ev_out, elabel = filter_energy(events, None, None)  # doctest: +ELLIPSIS
     >>> np.all(ev_out.time == time)
     True
     >>> elabel == 'PI'
@@ -376,13 +374,14 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     elif hasattr(ev, 'pi') and ev.pi is not None:
         # For some reason the doctest doesn't work if I don't do this instead
         # of using warnings.warn
-        log.warning(f"No energy information in event list "
-                      f"while filtering between {emin} and {emax}. "
-                      "Definition of events.energy is now based on PI.",
-                    AstropyUserWarning)
+        if emax is not None or emin is not None:
+            log.warning(f"No energy information in event list "
+                        f"while filtering between {emin} and {emax}. "
+                        "Definition of events.energy is now based on PI.",
+                        AstropyUserWarning)
         energy = ev.pi
         elabel = 'PI'
-        ev.energy = ev.pi
+        ev.energy = energy
     else:
         log.error("No Energy or PI information available. "
                   "No energy filter applied to events")
@@ -421,7 +420,6 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
         emin = np.min(energy)
     if emax is None:
         emax = np.max(energy)
-    print(elabel, emin, emax, energy)
 
     if elabel == '':
         plot_energy = False

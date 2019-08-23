@@ -58,9 +58,10 @@ HENbinary
 
 ::
 
-    usage: HENbinary [-h] [-l MAX_LENGTH] [-b BIN_TIME]
-                     [-e ENERGY_INTERVAL ENERGY_INTERVAL] [--deorbit DEORBIT]
-                     [--nproc NPROC] [--loglevel LOGLEVEL] [--debug]
+    usage: HENbinary [-h] [-l MAX_LENGTH] [-b BINTIME]
+                     [-e ENERGY_INTERVAL ENERGY_INTERVAL]
+                     [--deorbit-par DEORBIT_PAR] [--nproc NPROC]
+                     [--loglevel LOGLEVEL] [--debug]
                      files [files ...]
 
     Save light curves in a format readable to PRESTO
@@ -72,11 +73,12 @@ HENbinary
       -h, --help            show this help message and exit
       -l MAX_LENGTH, --max-length MAX_LENGTH
                             Maximum length of light curves (split otherwise)
-      -b BIN_TIME, --bin-time BIN_TIME
+      -b BINTIME, --bintime BINTIME
                             Bin time
       -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
                             Energy interval used for filtering
-      --deorbit DEORBIT     Deorbit data with this parameter file (requires PINT
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
                             installed)
       --nproc NPROC         Number of processors to use
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -115,9 +117,8 @@ HENcolors
 
 ::
 
-    usage: HENcolors [-h] -e ENERGIES ENERGIES ENERGIES ENERGIES [-b BIN_TIME]
-                     [--use-pi] [-o OUT] [--nproc NPROC] [--loglevel LOGLEVEL]
-                     [--debug]
+    usage: HENcolors [-h] -e ENERGIES ENERGIES ENERGIES ENERGIES [-b BINTIME]
+                     [--use-pi] [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
                      files [files ...]
 
     Calculate color light curves
@@ -132,11 +133,11 @@ HENcolors
                             color. E.g. -e 2 3 4 6 means that the color will be
                             calculated as 4.-6./2.-3. keV. If --use-pi is
                             specified, these are interpreted as PI channels
-      -b BIN_TIME, --bin-time BIN_TIME
+      -b BINTIME, --bintime BINTIME
                             Bin time
       --use-pi              Use the PI channel instead of energies
-      -o OUT, --out OUT     Output file
-      --nproc NPROC         Number of processors to use
+      -o OUTFILE, --outfile OUTFILE
+                            Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               se DEBUG logging level
@@ -227,8 +228,8 @@ HENefsearch
                        [--oversample OVERSAMPLE] [--fast] [--expocorr]
                        [--find-candidates] [--conflevel CONFLEVEL]
                        [--fit-candidates] [--curve CURVE]
-                       [--fit-frequency FIT_FREQUENCY] [-N N] [--deorbit DEORBIT]
-                       [--loglevel LOGLEVEL] [--debug]
+                       [--fit-frequency FIT_FREQUENCY] [-N N]
+                       [--deorbit-par DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -272,7 +273,8 @@ HENefsearch
                             Force the candidate frequency to FIT_FREQUENCY
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
-      --deorbit DEORBIT     Deorbit data with this parameter file (requires PINT
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
@@ -379,7 +381,7 @@ HENfold
 
     usage: HENfold [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT] [--tref TREF]
                    [-n NBIN] [--nebin NEBIN] [--emin EMIN] [--emax EMAX]
-                   [--norm NORM] [--deorbit DEORBIT] [--loglevel LOGLEVEL]
+                   [--norm NORM] [--deorbit-par DEORBIT_PAR] [--loglevel LOGLEVEL]
                    [--debug] [--test]
                    file
 
@@ -400,7 +402,8 @@ HENfold
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --norm NORM           --norm to1: Normalize hist so that the maximum at each
                             energy is one. --norm ratios: Divide by mean profile
-      --deorbit DEORBIT     Deorbit data with this parameter file (requires PINT
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
@@ -500,8 +503,8 @@ HENlcurve
                      [-e ENERGY_INTERVAL ENERGY_INTERVAL]
                      [--pi-interval PI_INTERVAL PI_INTERVAL] [-s] [-j] [-g]
                      [--minlen MINLEN] [--ignore-gtis] [-d OUTDIR] [--noclobber]
-                     [--fits-input] [--txt-input] [-o OUT] [--loglevel LOGLEVEL]
-                     [--debug] [--nproc NPROC]
+                     [--fits-input] [--txt-input] [-o OUTFILE]
+                     [--loglevel LOGLEVEL] [--debug] [--nproc NPROC]
                      files [files ...]
 
     Create lightcurves starting from event files. It is possible to specify energy
@@ -530,7 +533,8 @@ HENlcurve
       --noclobber           Do not overwrite existing files
       --fits-input          Input files are light curves in FITS format
       --txt-input           Input files are light curves in txt format
-      -o OUT, --out OUT     Output file
+      -o OUTFILE, --outfile OUTFILE
+                            Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               se DEBUG logging level
@@ -580,8 +584,8 @@ HENphaseogram
                          [--ntimes NTIMES] [--binary]
                          [--binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS]
                          [--emin EMIN] [--emax EMAX] [--norm NORM] [--plot-only]
-                         [--deorbit DEORBIT] [--test] [--loglevel LOGLEVEL]
-                         [--debug]
+                         [--deorbit-par DEORBIT_PAR] [--test]
+                         [--loglevel LOGLEVEL] [--debug]
                          file
 
     Plot an interactive phaseogram
@@ -609,7 +613,8 @@ HENphaseogram
                             profile normalized from 0 to 1); 'mediansub' (just
                             subtract the median from each profile); default None
       --plot-only           Only plot the phaseogram
-      --deorbit DEORBIT     Deorbit data with this parameter file (requires PINT
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
                             installed)
       --test                Only used for tests
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -689,7 +694,8 @@ HENreadevents
 
     usage: HENreadevents [-h] [--noclobber] [-g] [-l LENGTH_SPLIT]
                          [--min-length MIN_LENGTH] [--gti-string GTI_STRING]
-                         [-o OUT] [--loglevel LOGLEVEL] [--debug] [--nproc NPROC]
+                         [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
+                         [--nproc NPROC]
                          files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
@@ -708,7 +714,8 @@ HENreadevents
                             Minimum length of GTIs to consider
       --gti-string GTI_STRING
                             GTI string
-      -o OUT, --out OUT     Output file
+      -o OUTFILE, --outfile OUTFILE
+                            Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               se DEBUG logging level
@@ -805,7 +812,7 @@ HENvarenergy
                         [--energy-values ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES]
                         [--segment-size SEGMENT_SIZE]
                         [--ref-band REF_BAND REF_BAND] [--rms] [--covariance]
-                        [--use-pi] [--cross-instr] [--lag] [-b BIN_TIME]
+                        [--use-pi] [--cross-instr] [--lag] [-b BINTIME]
                         [--loglevel LOGLEVEL] [--debug]
                         files [files ...]
 
@@ -832,7 +839,7 @@ HENvarenergy
                             band from one and the subbands from the other (useful
                             in NuSTAR and multiple-detector missions)
       --lag                 Calculate lag-energy
-      -b BIN_TIME, --bin-time BIN_TIME
+      -b BINTIME, --bintime BINTIME
                             Bin time
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
@@ -850,8 +857,8 @@ HENzsearch
                       [--oversample OVERSAMPLE] [--fast] [--expocorr]
                       [--find-candidates] [--conflevel CONFLEVEL]
                       [--fit-candidates] [--curve CURVE]
-                      [--fit-frequency FIT_FREQUENCY] [-N N] [--deorbit DEORBIT]
-                      [--loglevel LOGLEVEL] [--debug]
+                      [--fit-frequency FIT_FREQUENCY] [-N N]
+                      [--deorbit-par DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -895,7 +902,8 @@ HENzsearch
                             Force the candidate frequency to FIT_FREQUENCY
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
-      --deorbit DEORBIT     Deorbit data with this parameter file (requires PINT
+      --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
