@@ -409,7 +409,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
     file_label = ''
     ev = load_events(file)
     if deorbit_par is not None:
-        events = deorbit_events(ev, deorbit_par)
+        ev = deorbit_events(ev, deorbit_par)
 
     gtis = ev.gti
     plot_energy = True
@@ -680,3 +680,46 @@ def z2_n_probability(z2, n=2, ntrial=1, n_summed_spectra=1):
     epsilon = ntrial * stats.chi2.sf(z2 * n_summed_spectra,
                                      2 * n * n_summed_spectra)
     return epsilon
+
+
+def main_deorbit(args=None):
+    import argparse
+    from .base import hen_root
+    from .io import HEN_FILE_EXTENSION, load_events, save_events
+    description = ('Deorbit the event arrival times')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("files", help="Input event file", type=str, nargs='+')
+    # parser.add_argument("--debug", help="use DEBUG logging level",
+    #                     default=False, action='store_true')
+    # parser.add_argument("--test",
+    #                     help="Just a test. Destroys the window immediately",
+    #                     default=False, action='store_true')
+    # parser.add_argument("--loglevel",
+    #                     help=("use given logging level (one between INFO, "
+    #                           "WARNING, ERROR, CRITICAL, DEBUG; "
+    #                           "default:WARNING)"),
+    #                     default='WARNING',
+    #                     type=str)
+    parser.add_argument('-p', "--deorbit-par",
+                        help=("Deorbit data with this parameter file (requires PINT installed)"),
+                        default=None, required=True,
+                        type=str)
+
+    args = parser.parse_args(args)
+
+    # if args.debug:
+    #     args.loglevel = 'DEBUG'
+    #
+    # numeric_level = getattr(logging, args.loglevel.upper(), None)
+    # logging.basicConfig(filename='HENfold.log', level=numeric_level,
+    #                     filemode='w')
+
+    for fname in args.files:
+        log.info(f"Deorbiting events from {fname}")
+        events = load_events(fname)
+        events = deorbit_events(events, parameter_file=args.deorbit_par)
+        outfile = hen_root(fname) + '_deorb' + HEN_FILE_EXTENSION
+
+        save_events(events, outfile)
+        log.info(f"Saved to {outfile}")

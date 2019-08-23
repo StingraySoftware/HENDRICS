@@ -179,6 +179,25 @@ HENcreategti
       --debug               use DEBUG logging level
 
 
+HENdeorbit
+----------
+
+::
+
+    usage: HENdeorbit [-h] -p DEORBIT_PAR files [files ...]
+
+    Deorbit the event arrival times
+
+    positional arguments:
+      files                 Input event file
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
+                            installed)
+
+
 HENdumpdyn
 ----------
 
