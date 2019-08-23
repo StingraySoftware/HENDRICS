@@ -1,20 +1,18 @@
 """Interactive phaseogram."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
+import warnings
 from .io import load_events
 from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
 from stingray.utils import assign_value_if_none
 from stingray.events import EventList
 
 import numpy as np
-from astropy import log
 import argparse
 from scipy.signal import savgol_filter
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
 from astropy import log
+from astropy.logger import AstropyUserWarning
 
 import copy
 try:
@@ -376,8 +374,12 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
         energy = ev.energy
         elabel = 'Energy'
     elif hasattr(ev, 'pi') and ev.pi is not None:
-        log.warning("No energy information in event list. "
-                    "Definition of events.energy is now based on PI.")
+        # For some reason the doctest doesn't work if I don't do this instead
+        # of using warnings.warn
+        log.warning(f"No energy information in event list "
+                      f"while filtering between {emin} and {emax}. "
+                      "Definition of events.energy is now based on PI.",
+                    AstropyUserWarning)
         energy = ev.pi
         elabel = 'PI'
         ev.energy = ev.pi
@@ -603,7 +605,6 @@ def main_fold(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
 
     with log.log_to_file('HENfold.log'):
         frequency = args.freq
@@ -674,7 +675,7 @@ def z2_n_probability(z2, n=2, ntrial=1, n_summed_spectra=1):
     if ntrial > 1:
         import warnings
         warnings.warn("Z2_n: The treatment of ntrial is very rough. "
-                      "Use with caution")
+                      "Use with caution", AstropyUserWarning)
     from scipy import stats
 
     epsilon = ntrial * stats.chi2.sf(z2 * n_summed_spectra,
@@ -712,7 +713,7 @@ def main_deorbit(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENdeorbit.log'):
         for fname in args.files:

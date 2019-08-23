@@ -5,7 +5,7 @@ Created on Thu Aug 17 08:55:47 2017
 
 @author: marta
 """
-from __future__ import print_function, division
+
 from .io import load_lcurve
 from .io import save_as_qdp
 from .base import hen_root
@@ -56,7 +56,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENexcvar.log'):
         filelist = []

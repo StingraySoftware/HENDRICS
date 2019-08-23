@@ -4,8 +4,6 @@
 Only works for data taken in specific data modes of NuSTAR, where all events
 are telemetered.
 """
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
 import numpy as np
 from .io import load_events_and_gtis
@@ -332,7 +330,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENexposure.log'):
         lc_file = args.lcfile

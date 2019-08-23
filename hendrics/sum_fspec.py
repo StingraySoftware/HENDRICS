@@ -1,9 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Function to sum frequency spectra."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
 from .io import save_pds, get_file_type
 from .io import HEN_FILE_EXTENSION
 from .base import _assign_value_if_none

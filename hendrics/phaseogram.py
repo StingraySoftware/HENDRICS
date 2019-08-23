@@ -1,8 +1,5 @@
 """Interactive phaseogram."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
 import copy
 from scipy.interpolate import interp1d
 from .io import load_events, load_folding
@@ -16,6 +13,7 @@ from .fold import filter_energy
 
 import numpy as np
 from astropy import log
+from astropy.logger import AstropyUserWarning
 import argparse
 import matplotlib.pyplot as plt
 import six
@@ -266,7 +264,7 @@ class BasePhaseogram(object):
 
     def toa(self, event):  # pragma: no cover
         warnings.warn("This function was not implemented for this Phaseogram. "
-                      "Try the basic one.")
+                      "Try the basic one.", AstropyUserWarning)
 
     def reset(self, event):
         for s in self.sliders:
@@ -773,7 +771,7 @@ def main_phaseogram(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENphaseogram.log'):
         if args.periodogram is None and args.freq is None:

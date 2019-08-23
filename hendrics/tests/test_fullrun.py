@@ -1,9 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Test a full run of the codes from the command line."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
 import hendrics as hen
 from astropy import log
 import os
@@ -21,7 +18,8 @@ except NameError:
 
 HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
-log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
+log.setLevel('DEBUG')
+# log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
 class TestFullRun(object):

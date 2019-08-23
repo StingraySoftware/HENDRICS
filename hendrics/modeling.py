@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+
 from astropy import log
 import os
 import copy
@@ -48,7 +48,7 @@ def main_model(args=None):
         raise ValueError("Invalid number of frequencies specified")
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENmodel.log'):
         model, kind, constraints = load_model(args.modelfile)

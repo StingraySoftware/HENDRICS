@@ -1,9 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to perform input/output operations."""
-from __future__ import (absolute_import, division,
-                        print_function)
 
+import os
+import glob
+import copy
+import collections
+import importlib
 from astropy import log
+from astropy.logger import AstropyUserWarning
 import warnings
 from stingray.gti import cross_gtis
 from stingray.events import EventList
@@ -18,7 +22,7 @@ try:
     HAS_NETCDF = True
 except ImportError:
     msg = "Warning! NetCDF is not available. Using pickle format."
-    log.warning(msg)
+    warnings.warn(msg)
     HEN_FILE_EXTENSION = '.p'
     HAS_NETCDF = False
     pass
@@ -39,12 +43,7 @@ import numpy as np
 import os.path
 from .base import _order_list_of_arrays, _empty, is_string
 from stingray.utils import assign_value_if_none
-import os
-import glob
-import copy
 from astropy.modeling.core import Model
-import collections
-import importlib
 
 try:
     _ = np.complex256
@@ -85,9 +84,18 @@ class EFPeriodogram(object):
 
 
 def _get_key(dict_like, key):
+    """
+    Examples
+    --------
+    >>> a = dict(b=1)
+    >>> _get_key(a, 'b')
+    1
+    >>> _get_key(a, 'c') == ""
+     True
+    """
     try:
         return dict_like[key]
-    except:
+    except KeyError:
         return ""
 
 
@@ -162,7 +170,7 @@ def save_as_netcdf(vars, varnames, formats, fname):
 
         if formats[iv] == 'c32':
             # Too complicated. Let's decrease precision
-            warnings.warn("complex256 yet unsupported")
+            warnings.warn("complex256 yet unsupported", AstropyUserWarning)
             formats[iv] = 'c16'
 
         if formats[iv] == 'c16':
@@ -1052,7 +1060,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     try:
         lctable = lchdulist[hduname].data
     except:  # pragma: no cover
-        log.warning('HDU %s not found. Trying first extension' % hduname)
+        warnings.warn('HDU %s not found. Trying first extension' % hduname)
         lctable = lchdulist[1].data
         hduname = 1
 
@@ -1065,7 +1073,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     try:
         timezero = np.longdouble(header['TIMEZERO'])
     except:  # pragma: no cover
-        log.warning("No TIMEZERO in file")
+        warnings.warn("No TIMEZERO in file", AstropyUserWarning)
         timezero = np.longdouble(0.)
 
     try:
@@ -1080,7 +1088,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         t_start = np.longdouble(header['TSTART'])
         t_stop = np.longdouble(header['TSTOP'])
     except:  # pragma: no cover
-        log.warning("Tstart and Tstop error. using defaults")
+        warnings.warn("Tstart and Tstop error. using defaults", AstropyUserWarning)
         t_start = ev_list[0]
         t_stop = ev_list[-1]
 
@@ -1098,7 +1106,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
                     det_numbers=det_number)
         except:  # pragma: no cover
             warnings.warn("No extensions found with a valid name. "
-                          "Please check the `accepted_gtistrings` values.")
+                          "Please check the `accepted_gtistrings` values.", AstropyUserWarning)
             gti_list = np.array([[t_start, t_stop]],
                                 dtype=np.longdouble)
     else:
@@ -1284,7 +1292,7 @@ def load_model(modelstring):
         try:
             importlib.invalidate_caches()
         except AttributeError:
-            log.warning("importlib.invalidate_caches() is not implemented "
+            warnings.warn("importlib.invalidate_caches() is not implemented "
                             "in Python 2")
 
         _model = importlib.import_module(modulename)

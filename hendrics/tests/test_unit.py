@@ -1,8 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """First set of tests."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
 import hendrics as hen
 import numpy as np
@@ -13,7 +11,8 @@ import pytest
 
 HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
-log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
+log.setLevel('DEBUG')
+# log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 curdir = os.path.abspath(os.path.dirname(__file__))
 datadir = os.path.join(curdir, 'data')
 

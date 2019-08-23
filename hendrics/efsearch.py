@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Search for pulsars."""
-from __future__ import (absolute_import, division, print_function)
 
+import warnings
 from .io import load_events, EFPeriodogram, save_folding, load_folding, \
     HEN_FILE_EXTENSION
 from .base import hen_root
@@ -12,11 +12,11 @@ from stingray.pulse.pulsar import z_n
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
-from astropy import log
 
 import numpy as np
 import os
 from astropy import log
+from astropy.logger import AstropyUserWarning
 import argparse
 from functools import wraps
 import copy
@@ -363,8 +363,8 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
     log.info(f"Maximum error on the phase expected when casting to double: {maxerr}")
     if maxerr > 1 / nbin / 10:
-        log.warning("Casting to double produces non-negligible phase errors. "
-                    "Please use shorter light curves.")
+        warnings.warn("Casting to double produces non-negligible phase errors. "
+                    "Please use shorter light curves.", AstropyUserWarning)
 
     times = times.astype(np.double)
 
@@ -574,7 +574,7 @@ def _common_parser(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     return args
 

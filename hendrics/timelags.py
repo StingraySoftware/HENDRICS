@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division
+
 from .io import load_pds, HEN_FILE_EXTENSION
 from .io import save_as_qdp
 from astropy import log
@@ -27,7 +27,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENlags.log'):
         filelist = []

@@ -1,7 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to rebin light curves and frequency spectra."""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
 import numpy as np
 from .io import get_file_type
@@ -63,7 +61,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENrebin.log'):
         rebin = args.rebin

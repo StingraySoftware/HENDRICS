@@ -1,7 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Read and save event lists from FITS files."""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
 from stingray.utils import assign_value_if_none
 from stingray.events import EventList
@@ -221,7 +219,6 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
 
     with log.log_to_file('HENreadevents.log'):
         argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,

@@ -1,15 +1,14 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to create and apply GTIs."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
+import sys
+import warnings
 from .io import HEN_FILE_EXTENSION, save_data, load_data, get_file_type
 from stingray.gti import cross_gtis, create_gti_from_condition, create_gti_mask
 from .base import hen_root, _assign_value_if_none
 from astropy import log
+from astropy.logger import AstropyUserWarning
 import numpy as np
-import sys
 
 
 def filter_gti_by_length(gti, minimum_length):
@@ -58,7 +57,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None,
 
     instr = data['instr']
     if ftype == 'lc' and instr.lower() == 'pca':
-        log.warning('RXTE/PCA data; normalizing lc per no. PCUs')
+        warnings.warn('RXTE/PCA data; normalizing lc per no. PCUs', AstropyUserWarning)
         # If RXTE, plot per PCU count rate
         data['counts'] /= data['nPCUs']
     mjdref = data['mjdref']
@@ -92,7 +91,7 @@ def apply_gti(fname, gti, outname=None,
         datagti = data['gti']
         newgtis = cross_gtis([gti, datagti])
     except:  # pragma: no cover
-        log.warning('Data have no GTI extension')
+        warnings.warn('Data have no GTI extension', AstropyUserWarning)
         newgtis = gti
 
     newgtis = filter_gti_by_length(newgtis, minimum_length)
@@ -172,7 +171,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENcreategti.log'):
         filter_expr = args.filter

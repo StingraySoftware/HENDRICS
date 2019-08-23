@@ -1,11 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """A miscellaneous collection of basic functions."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
+import warnings
 import numpy as np
 from astropy import log
+from astropy.logger import AstropyUserWarning
 import sys
 import copy
 import os
@@ -264,8 +263,8 @@ def deorbit_events(events, parameter_file=None):
     pepoch = events.gti[0, 0]
     pepoch_mjd = pepoch / 86400 + events.mjdref
     if events.mjdref < 10000:
-        log.warning("MJDREF is very low. Are you sure everything is "
-                    "correct?")
+        warnings.warn("MJDREF is very low. Are you sure everything is "
+                    "correct?", AstropyUserWarning)
 
     length = np.max(events.time) - np.min(events.time)
     length_d = length / 86400

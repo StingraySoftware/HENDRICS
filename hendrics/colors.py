@@ -1,9 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to calculate colors and hardness."""
 
-from __future__ import (absolute_import, division,
-                        print_function)
-
 from .io import HEN_FILE_EXTENSION, load_lcurve, save_lcurve
 from .base import hen_root
 from astropy import log
@@ -54,7 +51,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENcolors.log'):
         option = '--e-interval'

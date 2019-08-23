@@ -1,7 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Quicklook plots."""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
 import warnings
 
@@ -391,6 +389,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                             expocorr=False, nbin=nbin)
             ax = plt.subplot(external_gs[0])
 
+            # noinspection PyPackageRequirements
             ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
                 round(f, -np.int(np.floor(np.log10(np.abs(df))))),
                 round(fdot, -np.int(np.floor(np.log10(np.abs(dfdot)))))),

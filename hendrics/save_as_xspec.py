@@ -1,7 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to save data in a Xspec-readable format."""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
 from .io import get_file_type
 import numpy as np
@@ -81,7 +79,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HEN2Xspec.log'):
         for f in files:

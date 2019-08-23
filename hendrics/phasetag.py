@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import (division, print_function, absolute_import)
 
 import argparse
 
@@ -7,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import astropy.io.fits as pf
 
+from astropy.logger import AstropyUserWarning
 import warnings
 from .io import is_string, save_as_qdp
 from stingray.io import load_events_and_gtis, ref_mjd
@@ -120,7 +120,7 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     exposure = phase_exposure(gti_phases[0, 0], gti_phases[-1, 1], 1,
                               nbin=nbin, gtis=gti_phases)
     if np.any(np.logical_or(exposure != exposure, exposure == 0)):
-        warnings.warn('Exposure has NaNs or zeros. Profile is not normalized')
+        warnings.warn('Exposure has NaNs or zeros. Profile is not normalized', AstropyUserWarning)
         expocorr = False
 
     if not expocorr:

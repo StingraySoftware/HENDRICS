@@ -1,7 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to calculate frequency spectra."""
-from __future__ import (absolute_import, division,
-                        print_function)
 
 from .base import hen_root, common_name, _empty, _assign_value_if_none
 from .io import sort_files, get_file_type, load_data, save_pds, load_lcurve
@@ -11,6 +9,7 @@ from stingray.crossspectrum import AveragedCrossspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
 import numpy as np
 from astropy import log
+from astropy.logger import AstropyUserWarning
 import warnings
 from multiprocessing import Pool
 import os
@@ -276,7 +275,7 @@ def calc_fspec(files, fftlen,
         log.info('Sorting file list')
         sorted_files = sort_files(files)
 
-        log.warning('Beware! For cpds and derivatives, I assume that the '
+        warnings.warn('Beware! For cpds and derivatives, I assume that the '
                         'files are from only two instruments and in pairs '
                         '(even in random order)')
 
@@ -461,7 +460,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENfspec.log'):
         bintime = args.bintime
@@ -469,7 +468,7 @@ def main(args=None):
         pdsrebin = args.rebin
         normalization = args.norm
         if normalization.lower() not in ["frac", "abs", "leahy", "none", "rms"]:
-            warnings.warn('Beware! Unknown normalization!')
+            warnings.warn('Beware! Unknown normalization!', AstropyUserWarning)
             normalization = 'leahy'
         if normalization == 'rms':
             normalization = 'frac'

@@ -1,5 +1,4 @@
 """Save different input files in PRESTO-readable format."""
-from __future__ import print_function, division
 
 from astropy import log
 from astropy.coordinates import SkyCoord
@@ -265,7 +264,7 @@ def main_presto(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENbinary.log'):
         for f in args.files:

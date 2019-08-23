@@ -1,14 +1,12 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Light curve-related functions."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
 import numpy as np
 import os
 import warnings
 import copy
 from astropy import log
+from astropy.logger import AstropyUserWarning
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from stingray.gti import create_gti_mask, cross_gtis, contiguous_regions
@@ -303,7 +301,7 @@ def lcurve_from_events(f, safe_interval=0,
     outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
-        warnings.warn('File exists, and noclobber option used. Skipping')
+        warnings.warn('File exists, and noclobber option used. Skipping', AstropyUserWarning)
         return [outfile]
 
     lc = Lightcurve.make_lightcurve(events, bintime, tstart=tstart,
@@ -389,7 +387,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     noclobber : bool
         If True, do not overwrite existing files
     """
-    log.warning(
+    warnings.warn(
         """WARNING! FITS light curve handling is still under testing.
         Absolute times might be incorrect.""")
     # TODO:
@@ -410,7 +408,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
-        warnings.warn('File exists, and noclobber option used. Skipping')
+        warnings.warn('File exists, and noclobber option used. Skipping', AstropyUserWarning)
         return [outfile]
 
     lchdulist = pf.open(fits_file)
@@ -484,7 +482,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
             dt *= 86400
     except:
         warnings.warn('Assuming that TIMEDEL is the difference between the'
-                      ' first two times of the light curve')
+                      ' first two times of the light curve', AstropyUserWarning)
         dt = time[1] - time[0]
 
     # ----------------------------------------------------------------
@@ -583,7 +581,7 @@ def lcurve_from_txt(txt_file, outfile=None,
     outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
-        warnings.warn('File exists, and noclobber option used. Skipping')
+        warnings.warn('File exists, and noclobber option used. Skipping', AstropyUserWarning)
         return [outfile]
 
     time, counts = np.genfromtxt(txt_file, delimiter=' ', unpack=True)
@@ -641,6 +639,7 @@ def _wrap_fits(args):
         return []
 
 def _execute_lcurve(args):
+    from multiprocessing import Pool
     bintime = args.bintime
 
     safe_interval = args.safe_interval
@@ -698,7 +697,6 @@ def _execute_lcurve(args):
 def main(args=None):
     """Main function called by the `HENlcurve` command line script."""
     import argparse
-    from multiprocessing import Pool
 
     description = ('Create lightcurves starting from event files. It is '
                    'possible to specify energy or channel filtering options')
@@ -767,7 +765,6 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
 
     with log.log_to_file('HENlcurve.log'):
         _execute_lcurve(args)
@@ -799,7 +796,7 @@ def scrunch_main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENscrunchlc.log'):
         scrunch_lightcurves(files, args.out)
@@ -842,7 +839,7 @@ def baseline_main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENbaseline.log'):
         _baseline_lightcurves(files, args.out, args.asymmetry, args.lam)

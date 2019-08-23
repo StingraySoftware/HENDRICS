@@ -2,8 +2,10 @@
 """
 @author: marta
 """
-from __future__ import print_function, division
+
+import warnings
 from astropy import log
+from astropy.logger import AstropyUserWarning
 import numpy as np
 from .base import hen_root
 from .io import load_events
@@ -60,7 +62,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENvarenergy.log'):
         filelist = []
@@ -74,7 +76,7 @@ def main(args=None):
             log.info('Sorting file list')
             sorted_files = sort_files(args.files)
 
-            log.warning('Beware! For cpds and derivatives, I assume that the '
+            warnings.warn('Beware! For cpds and derivatives, I assume that the '
                             'files are from only two instruments and in pairs '
                             '(even in random order)')
 
@@ -129,8 +131,8 @@ def main(args=None):
                 try:
                     from stingray.varenergyspectrum import CovarianceEnergySpectrum
                 except:
-                    log.warning('This version of Stingray does not implement '
-                                    'the correct version of Covariance Spectrum.')
+                    warnings.warn('This version of Stingray does not implement '
+                                    'the correct version of Covariance Spectrum.', AstropyUserWarning)
                     continue
                 cov = CovarianceEnergySpectrum(events, args.freq_interval,
                                                energy_spec, args.ref_band,

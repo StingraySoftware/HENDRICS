@@ -1,13 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to simulate data and produce a fake event file."""
 
-from __future__ import (absolute_import, division,
-                        print_function)
-
 import numpy as np
 import numpy.random as ra
 import os
 from astropy import log
+from astropy.logger import AstropyUserWarning
 import warnings
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
@@ -147,7 +145,7 @@ def filter_for_deadtime(event_list, deadtime, bkg_ev_list=None,
     retval = EventList(time=tot_ev_list[ev_kind], mjdref=event_list_obj.mjdref)
 
     if hasattr(event_list_obj, 'pi') and event_list_obj.pi is not None:
-        warnings.warn("PI information is lost during dead time filtering")
+        warnings.warn("PI information is lost during dead time filtering", AstropyUserWarning)
 
     if not isinstance(event_list, EventList):
         retval = retval.time
@@ -328,7 +326,7 @@ def generate_fake_fits_observation(event_list=None, filename=None,
 
 def _read_event_list(filename):
     if filename is not None:
-        warnings.warn('Input event lists not yet implemented')
+        warnings.warn('Input event lists not yet implemented', AstropyUserWarning)
     return None, None
 
 
@@ -389,7 +387,7 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-    log.enable_warnings_logging()
+
 
     with log.log_to_file('HENfake.log'):
         additional_columns = {}
