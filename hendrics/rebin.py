@@ -35,6 +35,7 @@ def rebin_file(filename, rebin):
 def main(args=None):
     """Main function called by the `HENrebin` command line script."""
     import argparse
+    from .base import _add_default_args
     description = 'Rebin light curves and frequency spectra. '
     parser = argparse.ArgumentParser(description=description)
 
@@ -45,14 +46,7 @@ def main(args=None):
                         " non-integer rebin factor, in which case it is" +
                         " interpreted as a geometrical binning factor")
 
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+    _add_default_args(parser, ['loglevel', 'debug'])
 
     args = parser.parse_args(args)
     files = args.files

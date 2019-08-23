@@ -304,6 +304,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
 def main(args=None):
     """Main function called by the `HENexposure` command line script."""
     import argparse
+    from .base import _add_default_args
     description = (
         'Create exposure light curve based on unfiltered event files.')
     parser = argparse.ArgumentParser(description=description)
@@ -312,17 +313,9 @@ def main(args=None):
     parser.add_argument("uffile", help="Unfiltered event file (FITS)")
     parser.add_argument("-o", "--outroot", type=str, default=None,
                         help='Root of output file names')
-
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
     parser.add_argument("--plot", help="Plot on window",
                         default=False, action='store_true')
+    _add_default_args(parser, ['loglevel', 'debug'])
 
     args = parser.parse_args(args)
 

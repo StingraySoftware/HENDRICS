@@ -558,6 +558,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
 
 
 def main_fold(args=None):
+    from .base import _add_default_args
     description = ('Plot a folded profile')
     parser = argparse.ArgumentParser(description=description)
 
@@ -583,21 +584,8 @@ def main_fold(args=None):
                         help="--norm to1: Normalize hist so that the maximum "
                              "at each energy is one. "
                              "--norm ratios: Divide by mean profile")
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--test",
-                        help="Just a test. Destroys the window immediately",
-                        default=False, action='store_true')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--deorbit-par",
-                        help=("Deorbit data with this parameter file (requires PINT installed)"),
-                        default=None,
-                        type=str)
+
+    _add_default_args(parser, ['deorbit', 'loglevel', 'debug', 'test'])
 
     args = parser.parse_args(args)
 

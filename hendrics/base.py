@@ -11,6 +11,54 @@ import os
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 
+DEFAULT_PARSER_ARGS = {}
+DEFAULT_PARSER_ARGS['loglevel'] = dict(
+    args=['--loglevel'],
+    kwargs=dict(help=("use given logging level (one between INFO, "
+                      "WARNING, ERROR, CRITICAL, DEBUG; "
+                      "default:WARNING)"),
+                default='WARNING', type=str))
+DEFAULT_PARSER_ARGS['nproc'] = dict(
+    args=['--nproc'],
+    kwargs=dict(help=("Number of processors to use"),
+                default=1, type=int))
+DEFAULT_PARSER_ARGS['debug'] = dict(
+    args=['--debug'],
+    kwargs=dict(help=("se DEBUG logging level"),
+                default=False, action='store_true'))
+DEFAULT_PARSER_ARGS['bintime'] = dict(
+    args=["-b", "--bin-time"],
+    kwargs=dict(help="Bin time",
+                type=np.longdouble, default=1))
+DEFAULT_PARSER_ARGS['energies'] = dict(
+    args=["-e", "--energy-interval"],
+    kwargs=dict(help="Energy interval used for filtering",
+                nargs=2, type=float, default=[None, None]))
+DEFAULT_PARSER_ARGS['pi'] = dict(
+    args=["--pi-interval"],
+    kwargs=dict(help="PI interval used for filtering",
+                nargs=2, type=int, default=[-1, -1]))
+DEFAULT_PARSER_ARGS['deorbit'] = dict(
+    args=["--deorbit"],
+    kwargs=dict(help=("Deorbit data with this parameter file (requires PINT installed)"),
+                default=None, type=str))
+DEFAULT_PARSER_ARGS['deorbit'] = dict(
+    args=["--deorbit"],
+    kwargs=dict(help=("Deorbit data with this parameter file (requires PINT installed)"),
+                default=None, type=str))
+DEFAULT_PARSER_ARGS['output'] = dict(
+    args=["-o", "--out"],
+    kwargs=dict(help='Output file',
+                default=None, type=str))
+DEFAULT_PARSER_ARGS['usepi'] = dict(
+    args=['--use-pi'],
+    kwargs=dict(help="Use the PI channel instead of energies",
+                default=False, action='store_true'))
+DEFAULT_PARSER_ARGS['test'] = dict(
+    args=["--test"],
+    kwargs=dict(help="Only used for tests",
+                default=False, action='store_true'))
+
 def r_in(td, r_0):
     """Calculate incident countrate given dead time and detected countrate."""
     tau = 1 / r_0
@@ -276,3 +324,13 @@ def deorbit_events(events, parameter_file=None):
     events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
     events.gti = orbital_correction_fun(events.gti, mjdref=events.mjdref)
     return events
+
+
+def _add_default_args(parser, list_of_args):
+    for key in list_of_args:
+        arg = DEFAULT_PARSER_ARGS[key]
+        a = arg['args']
+        k = arg['kwargs']
+        parser.add_argument(*a, **k)
+
+    return parser

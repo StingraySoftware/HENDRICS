@@ -124,6 +124,7 @@ def main(args=None):
     """Main function called by the `HENcalibrate` command line script."""
     import argparse
     from multiprocessing import Pool
+    from .base import _add_default_args
 
     description = ('Calibrate clean event files by associating the correct '
                    'energy to each PI channel. Uses either a specified rmf '
@@ -137,18 +138,7 @@ def main(args=None):
                         help="Overwrite; default: no",
                         default=False,
                         action="store_true")
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--nproc",
-                        help=("Number of processors to use"),
-                        default=1,
-                        type=int)
+    _add_default_args(parser, ['nproc', 'loglevel', 'debug'])
 
     args = parser.parse_args(args)
     files = args.files

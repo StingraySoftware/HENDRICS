@@ -121,6 +121,7 @@ def apply_gti(fname, gti, outname=None,
 def main(args=None):
     """Main function called by the `HENcreategti` command line script."""
     import argparse
+    from .base import _add_default_args
 
     description = ('Create GTI files from a filter expression, or applies '
                    'previously created GTIs to a file')
@@ -154,15 +155,7 @@ def main(args=None):
                         help="Interval at start and stop of GTIs used" +
                         " for filtering")
 
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+    _add_default_args(parser, ['loglevel', 'debug'])
 
     args = parser.parse_args(args)
     files = args.files

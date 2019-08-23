@@ -8,19 +8,15 @@ from .base import hen_root
 
 def main(args=None):
     import argparse
+    from .base import _add_default_args
     description = ('Read timelags from cross spectrum results and save them'
                    ' to a qdp file')
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs='+')
 
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING', type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+    _add_default_args(parser, ['loglevel', 'debug'])
+
     args = parser.parse_args(args)
 
     if args.debug:

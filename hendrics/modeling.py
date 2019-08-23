@@ -11,6 +11,7 @@ from stingray.modeling import fit_powerspectrum
 def main_model(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
+    from .base import _add_default_args
     description = ('Fit frequency spectra (PDS, CPDS, cospectrum) '
                    'with user-defined models')
     parser = argparse.ArgumentParser(description=description)
@@ -29,14 +30,8 @@ def main_model(args=None):
                              '"--frequency-interval 0 2 5 10", meaning that '
                              'the spectrum will be fitted between 0 and 2 Hz, '
                              'or using the intervals 0-2 Hz and 5-10 Hz.')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+
+    _add_default_args(parser, ['loglevel', 'debug'])
 
     args = parser.parse_args(args)
 

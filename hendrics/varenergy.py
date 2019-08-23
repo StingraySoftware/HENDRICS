@@ -17,6 +17,7 @@ from stingray.varenergyspectrum import LagEnergySpectrum
 
 def main(args=None):
     import argparse
+    from .base import _add_default_args
     description = ('Calculates variability-energy spectra')
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
@@ -30,9 +31,6 @@ def main(args=None):
                         default=512,
                         help="Length of the light curve intervals to be "
                              "averaged")
-    parser.add_argument("-b", "--bin-time", type=float,
-                        default=1,
-                        help="Bin time for the light curve")
     parser.add_argument("--ref-band", nargs=2, type=float,
                         default=None, help="Reference band when relevant")
     parser.add_argument("--rms", default=False, action='store_true',
@@ -48,13 +46,9 @@ def main(args=None):
                              "multiple-detector missions)")
     parser.add_argument("--lag", default=False, action='store_true',
                         help="Calculate lag-energy")
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING', type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+
+    _add_default_args(parser, ['bintime',
+                               'loglevel', 'debug'])
 
     args = parser.parse_args(args)
 

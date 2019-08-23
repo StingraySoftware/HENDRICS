@@ -178,21 +178,12 @@ def main(args=None):
     """Main function called by the `HENreadevents` command line script."""
     import argparse
     from multiprocessing import Pool
+    from .base import _add_default_args
 
     description = ('Read a cleaned event files and saves the relevant '
                    'information in a standard format')
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--nproc",
-                        help=("Number of processors to use"),
-                        default=1,
-                        type=int)
     parser.add_argument("--noclobber",
                         help=("Do not overwrite existing event files"),
                         default=False, action='store_true')
@@ -209,8 +200,9 @@ def main(args=None):
     parser.add_argument("--gti-string", type=str,
                         help="GTI string",
                         default=None)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+
+    _add_default_args(parser, ['output',
+                               'loglevel', 'debug', 'nproc'])
 
     args = parser.parse_args(args)
     files = args.files

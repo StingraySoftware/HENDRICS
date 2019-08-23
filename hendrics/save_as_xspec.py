@@ -57,21 +57,16 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
 def main(args=None):
     """Main function called by the `HEN2xspec` command line script."""
     import argparse
+    from .base import _add_default_args
     description = ('Save a frequency spectrum in a qdp file that can be '
                    'read by flx2xsp and produce a XSpec-compatible spectrum'
                    'file')
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+
     parser.add_argument("--flx2xsp", help="Also call flx2xsp at the end",
                         default=False, action='store_true')
+    _add_default_args(parser, ['loglevel', 'debug'])
 
     args = parser.parse_args(args)
     files = args.files

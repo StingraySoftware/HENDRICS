@@ -406,6 +406,7 @@ def dumpdyn_main(args=None):
 def main(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
+    from .base import _add_default_args
     description = ('Create frequency spectra (PDS, CPDS, cospectrum) '
                    'starting from well-defined input ligthcurves')
     parser = argparse.ArgumentParser(description=description)
@@ -432,27 +433,16 @@ def main(args=None):
                         default=False, action='store_true')
     parser.add_argument("-o", "--outroot", type=str, default=None,
                         help='Root of output file names for CPDS only')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--nproc",
-                        help=("Number of processors to use"),
-                        default=1,
-                        type=int)
     parser.add_argument("--back",
                         help=("Estimated background (non-source) count rate"),
                         default=0.,
                         type=float)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
     parser.add_argument("--save-dyn", help="save dynamical power spectrum",
                         default=False, action='store_true')
     parser.add_argument("--ignore-instr",
                         help="Ignore instrument names in channels",
                         default=False, action='store_true')
+    _add_default_args(parser, ['nproc', 'loglevel', 'debug'])
 
     args = parser.parse_args(args)
 
@@ -460,7 +450,6 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
 
     with log.log_to_file('HENfspec.log'):
         bintime = args.bintime

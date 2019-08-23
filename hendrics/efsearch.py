@@ -490,6 +490,7 @@ def dyn_folding_search(events, fmin, fmax, step=None,
 
 
 def _common_parser(args=None):
+    from .base import _add_default_args
     description = ('Search for pulsars using the epoch folding or the Z_n^2 '
                    'algorithm')
     parser = argparse.ArgumentParser(description=description)
@@ -551,22 +552,12 @@ def _common_parser(args=None):
     parser.add_argument("--fit-frequency", type=float,
                         help="Force the candidate frequency to FIT_FREQUENCY")
 
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
     # Only relevant to z search
     parser.add_argument('-N', default=2, type=int,
                         help="The number of harmonics to use in the search "
                              "(the 'N' in Z^2_N; only relevant to Z search!)")
-    parser.add_argument("--deorbit-par",
-                        help=("Deorbit data with this parameter file (requires PINT installed)"),
-                        default=None,
-                        type=str)
+
+    _add_default_args(parser, ['deorbit', 'loglevel', 'debug'])
 
     args = parser.parse_args(args)
 

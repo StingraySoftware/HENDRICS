@@ -342,6 +342,7 @@ def _read_light_curve(filename):
 def main(args=None):
     """Main function called by the `HENfake` command line script."""
     import argparse
+    from .base import _add_default_args
     description = (
         'Create an event file in FITS format from an event list, or simulating'
         ' it. If input event list is not specified, generates the events '
@@ -371,15 +372,7 @@ def main(args=None):
                              "single number, or two. In this last case, the "
                              "second value is used as sigma of the dead time "
                              "distribution")
-
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+    _add_default_args(parser, ['loglevel', 'debug'])
 
     args = parser.parse_args(args)
 

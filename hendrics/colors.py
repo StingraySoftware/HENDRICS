@@ -17,6 +17,7 @@ def colors():
 def main(args=None):
     """Main function called by the `HENcolors` command line script."""
     import argparse
+    from .base import _add_default_args
     description = \
         'Calculate color light curves'
     parser = argparse.ArgumentParser(description=description)
@@ -28,21 +29,9 @@ def main(args=None):
                              "color will be calculated as 4.-6./2.-3. keV. "
                              "If --use-pi is specified, these are interpreted "
                              "as PI channels")
-    parser.add_argument("-b", "--bintime", type=str, default='100',
-                        help="Bin time; if negative, negative power of 2")
-    parser.add_argument("-o", "--out", type=str,
-                        default=None,
-                        help='Output file')
-    parser.add_argument('--use-pi', type=bool, default=False,
-                        help="Use the PI channel instead of energies")
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+
+    _add_default_args(parser, ['bintime', 'usepi', 'output',
+                               'nproc', 'loglevel', 'debug',])
 
     args = parser.parse_args(args)
     files = args.files

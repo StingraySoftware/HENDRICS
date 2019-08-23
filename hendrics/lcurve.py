@@ -618,7 +618,6 @@ def _wrap_lc(args):
     except Exception as e:
         warnings.warn("HENlcurve exception: {0}".format(str(e)))
         raise
-        return []
 
 
 def _wrap_txt(args):
@@ -697,6 +696,7 @@ def _execute_lcurve(args):
 def main(args=None):
     """Main function called by the `HENlcurve` command line script."""
     import argparse
+    from .base import _add_default_args
 
     description = ('Create lightcurves starting from event files. It is '
                    'possible to specify energy or channel filtering options')
@@ -710,12 +710,7 @@ def main(args=None):
                         default=[0, 0],
                         help="Interval at start and stop of GTIs used" +
                         " for filtering")
-    parser.add_argument("--pi-interval", type=int, default=[-1, -1],
-                        nargs=2,
-                        help="PI interval used for filtering")
-    parser.add_argument('-e', "--e-interval", type=float, default=[-1, -1],
-                        nargs=2,
-                        help="Energy interval used for filtering")
+    _add_default_args(parser, ['energies', 'pi'])
     parser.add_argument("-s", "--scrunch",
                         help="Create scrunched light curve (single channel)",
                         default=False,
@@ -737,20 +732,6 @@ def main(args=None):
                         action="store_true")
     parser.add_argument("-d", "--outdir", type=str, default=None,
                         help='Output directory')
-    parser.add_argument("-o", "--outfile", type=str, default=None,
-                        help='Output file name')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--nproc",
-                        help=("Number of processors to use"),
-                        default=1,
-                        type=int)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
     parser.add_argument("--noclobber", help="Do not overwrite existing files",
                         default=False, action='store_true')
     parser.add_argument("--fits-input",
@@ -759,6 +740,8 @@ def main(args=None):
     parser.add_argument("--txt-input",
                         help="Input files are light curves in txt format",
                         default=False, action='store_true')
+    _add_default_args(parser, ['output',
+                               'loglevel', 'debug', 'nproc'])
 
     args = parser.parse_args(args)
 

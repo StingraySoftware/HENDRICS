@@ -711,6 +711,7 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
 
 def main_phaseogram(args=None):
     description = ('Plot an interactive phaseogram')
+    from .base import _add_default_args
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("file", help="Input event file", type=str)
@@ -746,24 +747,11 @@ def main_phaseogram(args=None):
                               "profile); default None"),
                         default=None,
                         type=str)
-    parser.add_argument("--deorbit-par",
-                        help=("Deorbit data with this parameter file (requires PINT installed)"),
-                        default=None,
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--test",
-                        help="Just a test. Destroys the window immediately",
-                        default=False, action='store_true')
     parser.add_argument("--plot-only",
                         help="Only plot the phaseogram",
                         default=False, action='store_true')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
+
+    _add_default_args(parser, ['deorbit', 'test', 'loglevel', 'debug'])
 
     args = parser.parse_args(args)
 
