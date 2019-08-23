@@ -6,10 +6,9 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 import numpy as np
 import os
-import logging
 import warnings
 import copy
-
+from astropy import log
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from stingray.gti import create_gti_mask, cross_gtis, contiguous_regions
@@ -38,9 +37,9 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
     lcdatas = []
 
     for lfc in lcfilelist:
-        logging.info("Loading file %s..." % lfc)
+        log.info("Loading file %s..." % lfc)
         lcdata = load_lcurve(lfc)
-        logging.info("Done.")
+        log.info("Done.")
         lcdatas.append(lcdata)
         del lcdata
 
@@ -75,7 +74,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
                 tag = ""
             else:
                 tag = instr
-            logging.info('Saving joined light curve to %s' % outfile)
+            log.info('Saving joined light curve to %s' % outfile)
 
             dname, fname = os.path.split(outfile)
             save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
@@ -133,7 +132,7 @@ def scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+HEN_FILE_EXTENSION,
 
     lc0.instr = ",".join(instrs)
 
-    logging.info('Saving scrunched light curve to %s' % outfile)
+    log.info('Saving scrunched light curve to %s' % outfile)
     save_lcurve(lc0, outfile)
 
     return lc0
@@ -241,9 +240,9 @@ def lcurve_from_events(f, safe_interval=0,
         If True, do not overwrite existing files
 
     """
-    logging.info("Loading file %s..." % f)
+    log.info("Loading file %s..." % f)
     evdata = load_events(f)
-    logging.info("Done.")
+    log.info("Done.")
 
     if bintime < 0:
         bintime = 2 ** (bintime)
@@ -343,7 +342,7 @@ def lcurve_from_events(f, safe_interval=0,
             save_lcurve(l0, outf)
             outfiles.append(outf)
     else:
-        logging.info('Saving light curve to %s' % outfile)
+        log.info('Saving light curve to %s' % outfile)
         save_lcurve(lc, outfile)
         outfiles = [outfile]
 
@@ -390,7 +389,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     noclobber : bool
         If True, do not overwrite existing files
     """
-    logging.warning(
+    log.warning(
         """WARNING! FITS light curve handling is still under testing.
         Absolute times might be incorrect.""")
     # TODO:
@@ -534,7 +533,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     lc.instr = instr
     lc.header = lchdulist[ratehdu].header.tostring()
 
-    logging.info('Saving light curve to %s' % outfile)
+    log.info('Saving light curve to %s' % outfile)
     save_lcurve(lc, outfile)
     return [outfile]
 
@@ -596,7 +595,7 @@ def lcurve_from_txt(txt_file, outfile=None,
 
     lc.instr = 'EXTERN'
 
-    logging.info('Saving light curve to %s' % outfile)
+    log.info('Saving light curve to %s' % outfile)
     save_lcurve(lc, outfile)
     return [outfile]
 
@@ -715,9 +714,11 @@ def main(args=None):
         args.loglevel = 'DEBUG'
     bintime = args.bintime
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENlcurve.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
+    # numeric_level = getattr(logging, args.loglevel.upper(), None)
+    # logging.basicConfig(filename='HENlcurve.log', level=numeric_level,
+    #                     filemode='w')
 
     safe_interval = args.safe_interval
     pi_interval = np.array(args.pi_interval)
@@ -762,7 +763,7 @@ def main(args=None):
             outfiles.append(i)
         pool.close()
 
-    logging.debug(outfiles)
+    log.debug(f"{outfiles}")
 
     if args.scrunch:
         scrunch_lightcurves(outfiles)
