@@ -9,7 +9,7 @@ from __future__ import print_function, division
 from .io import load_lcurve
 from .io import save_as_qdp
 from .base import hen_root
-import logging
+from astropy import log
 from stingray.utils import excess_variance
 
 
@@ -55,31 +55,32 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENexcvar.log', level=numeric_level,
-                        filemode='w')
-    filelist = []
-    for fname in args.files:
-        lcurve = load_lcurve(fname)
-        if args.norm == "fvar":
-            start, stop, res = \
-                lcurve.analyze_lc_chunks(args.chunk_length, fvar,
-                                         args.fraction_step)
-        elif args.norm == "excvar":
-            start, stop, res = \
-                lcurve.analyze_lc_chunks(args.chunk_length, excvar_none,
-                                         args.fraction_step)
-        elif args.norm == "norm_excvar":
-            start, stop, res = lcurve.analyze_lc_chunks(args.chunk_length,
-                                                        excvar_norm,
-                                                        args.fraction_step)
-        else:
-            raise ValueError("Normalization must be fvar, norm_excvar "
-                             "or excvar")
-        var, var_err = res
-        out = hen_root(fname) + "_" + args.norm + '.qdp'
-        save_as_qdp([(start+stop)/2, var], [(stop-start)/2, var_err],
-                    filename=out)
-        filelist.append(out)
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
+
+    with log.log_to_file('HENexcvar.log'):
+        filelist = []
+        for fname in args.files:
+            lcurve = load_lcurve(fname)
+            if args.norm == "fvar":
+                start, stop, res = \
+                    lcurve.analyze_lc_chunks(args.chunk_length, fvar,
+                                             args.fraction_step)
+            elif args.norm == "excvar":
+                start, stop, res = \
+                    lcurve.analyze_lc_chunks(args.chunk_length, excvar_none,
+                                             args.fraction_step)
+            elif args.norm == "norm_excvar":
+                start, stop, res = lcurve.analyze_lc_chunks(args.chunk_length,
+                                                            excvar_norm,
+                                                            args.fraction_step)
+            else:
+                raise ValueError("Normalization must be fvar, norm_excvar "
+                                 "or excvar")
+            var, var_err = res
+            out = hen_root(fname) + "_" + args.norm + '.qdp'
+            save_as_qdp([(start+stop)/2, var], [(stop-start)/2, var_err],
+                        filename=out)
+            filelist.append(out)
 
     return filelist

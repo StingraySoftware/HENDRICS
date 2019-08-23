@@ -15,7 +15,7 @@ from .fold import z2_n_detection_level
 from .fold import filter_energy
 
 import numpy as np
-import logging
+from astropy import log
 import argparse
 import matplotlib.pyplot as plt
 import six
@@ -772,29 +772,29 @@ def main_phaseogram(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENefsearch.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    if args.periodogram is None and args.freq is None:
-        raise ValueError('One of -f or --periodogram arguments MUST be '
-                         'specified')
-    elif args.periodogram is not None:
-        periodogram = load_folding(args.periodogram)
-        frequency = float(periodogram.peaks[0])
-        fdot = 0
-        fddot = 0
-    else:
-        frequency = args.freq
-        fdot = args.fdot
-        fddot = args.fddot
+    with log.log_to_file('HENphaseogram.log'):
+        if args.periodogram is None and args.freq is None:
+            raise ValueError('One of -f or --periodogram arguments MUST be '
+                             'specified')
+        elif args.periodogram is not None:
+            periodogram = load_folding(args.periodogram)
+            frequency = float(periodogram.peaks[0])
+            fdot = 0
+            fddot = 0
+        else:
+            frequency = args.freq
+            fdot = args.fdot
+            fddot = args.fddot
 
-    ip = run_interactive_phaseogram(args.file, freq=frequency, fdot=fdot,
-                                    fddot=fddot,
-                                    nbin=args.nbin, nt=args.ntimes,
-                                    test=args.test, binary=args.binary,
-                                    binary_parameters=args.binary_parameters,
-                                    pepoch=args.pepoch, norm=args.norm,
-                                    plot_only=args.plot_only,
-                                    deorbit_par=args.deorbit_par,
+        ip = run_interactive_phaseogram(args.file, freq=frequency, fdot=fdot,
+                                        fddot=fddot,
+                                        nbin=args.nbin, nt=args.ntimes,
+                                        test=args.test, binary=args.binary,
+                                        binary_parameters=args.binary_parameters,
+                                        pepoch=args.pepoch, norm=args.norm,
+                                        plot_only=args.plot_only,
+                                        deorbit_par=args.deorbit_par,
                                     emin=args.emin, emax=args.emax)

@@ -2,7 +2,7 @@
 from __future__ import print_function, division
 from .io import load_pds, HEN_FILE_EXTENSION
 from .io import save_as_qdp
-import logging
+from astropy import log
 from .base import hen_root
 
 
@@ -26,16 +26,17 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENlags.log', level=numeric_level,
-                        filemode='w')
-    filelist = []
-    for fname in args.files:
-        cross = load_pds(fname)
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-        lag, lag_err = cross.time_lag()
-        out = hen_root(fname) + '_lags.qdp'
-        save_as_qdp([cross.freq, lag], [None, lag_err], filename=out)
-        filelist.append(out)
+    with log.log_to_file('HENlags.log'):
+        filelist = []
+        for fname in args.files:
+            cross = load_pds(fname)
+
+            lag, lag_err = cross.time_lag()
+            out = hen_root(fname) + '_lags.qdp'
+            save_as_qdp([cross.freq, lag], [None, lag_err], filename=out)
+            filelist.append(out)
 
     return filelist

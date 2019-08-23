@@ -5,11 +5,10 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import numpy as np
-import logging
+from astropy import log
 import sys
 import copy
 import os
-import warnings
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 
@@ -132,7 +131,7 @@ def ref_mjd(fits_file, hdu=1):
     if isinstance(fits_file, collections.Iterable) and\
             not is_string(fits_file):
         fits_file = fits_file[0]
-        logging.info("opening %s" % fits_file)
+        log.info("opening %s" % fits_file)
 
     try:
         ref_mjd_int = np.long(read_header_key(fits_file, 'MJDREFI'))
@@ -177,7 +176,7 @@ def common_name(str1, str2, default='common'):
     common_str = common_str.lstrip('_').lstrip('-')
     if common_str == '':
         common_str = default
-    logging.debug('common_name: %s %s -> %s' % (str1, str2, common_str))
+    log.debug('common_name: %s %s -> %s' % (str1, str2, common_str))
     return common_str
 
 
@@ -265,8 +264,8 @@ def deorbit_events(events, parameter_file=None):
     pepoch = events.gti[0, 0]
     pepoch_mjd = pepoch / 86400 + events.mjdref
     if events.mjdref < 10000:
-        logging.warning("MJDREF is very low. Are you sure everything is "
-                        "correct?")
+        log.warning("MJDREF is very low. Are you sure everything is "
+                    "correct?")
 
     length = np.max(events.time) - np.min(events.time)
     length_d = length / 86400

@@ -3,7 +3,7 @@
 from __future__ import (absolute_import, division,
                         print_function)
 
-import logging
+from astropy import log
 import warnings
 from stingray.gti import cross_gtis
 from stingray.events import EventList
@@ -18,7 +18,7 @@ try:
     HAS_NETCDF = True
 except ImportError:
     msg = "Warning! NetCDF is not available. Using pickle format."
-    logging.warning(msg)
+    log.warning(msg)
     HEN_FILE_EXTENSION = '.p'
     HAS_NETCDF = False
     pass
@@ -602,7 +602,7 @@ def load_pds(fname, nosub=False):
 # ---- GENERIC function to save stuff.
 def _load_data_pickle(fname, kind="data"):
     """Load generic data in pickle format."""
-    logging.info('Loading %s and info from %s' % (kind, fname))
+    log.info('Loading %s and info from %s' % (kind, fname))
     try:
         with open(fname, 'rb') as fobj:
             result = pickle.load(fobj)
@@ -614,7 +614,7 @@ def _load_data_pickle(fname, kind="data"):
 
 def _save_data_pickle(struct, fname, kind="data"):
     """Save generic data in pickle format."""
-    logging.info('Saving %s and info to %s' % (kind, fname))
+    log.info('Saving %s and info to %s' % (kind, fname))
     try:
         with open(fname, 'wb') as fobj:
             pickle.dump(struct, fobj)
@@ -705,7 +705,7 @@ def _split_high_precision_number(varname, var, probesize):
 
 def _save_data_nc(struct, fname, kind="data"):
     """Save generic data in netcdf format."""
-    logging.info('Saving %s and info to %s' % (kind, fname))
+    log.info('Saving %s and info to %s' % (kind, fname))
     varnames = []
     values = []
     formats = []
@@ -718,7 +718,7 @@ def _save_data_nc(struct, fname, kind="data"):
             try:
                 probe = var[0]
             except:
-                logging.error('This failed: %s %s in file %s' %
+                log.error('This failed: %s %s in file %s' %
                               (k, repr(var), fname))
                 raise Exception('This failed: %s %s in file %s' %
                                 (k, repr(var), fname))
@@ -846,7 +846,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None,
     """Save arrays as TXT file with respective errors."""
     import numpy as np
 
-    logging.debug('%s %s' % (repr(cols), repr(np.shape(cols))))
+    log.debug('%s %s' % (repr(cols), repr(np.shape(cols))))
     if append:
         txtfile = open(filename, "a")
     else:
@@ -857,7 +857,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None,
     if ndim == 1:
         cols = [cols]
     elif ndim > 3 or ndim == 0:
-        logging.error("Only one- or two-dim arrays accepted")
+        log.error("Only one- or two-dim arrays accepted")
         return -1
     lcol = len(cols[0])
 
@@ -971,7 +971,7 @@ def load_gtis(fits_file, gtistring=None):
     import numpy as np
 
     gtistring = assign_value_if_none(gtistring, 'GTI')
-    logging.info("Loading GTIS from file %s" % fits_file)
+    log.info("Loading GTIS from file %s" % fits_file)
     lchdulist = pf.open(fits_file, checksum=True)
     lchdulist.verify('warn')
 
@@ -1052,7 +1052,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     try:
         lctable = lchdulist[hduname].data
     except:  # pragma: no cover
-        logging.warning('HDU %s not found. Trying first extension' % hduname)
+        log.warning('HDU %s not found. Trying first extension' % hduname)
         lctable = lchdulist[1].data
         hduname = 1
 
@@ -1065,7 +1065,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     try:
         timezero = np.longdouble(header['TIMEZERO'])
     except:  # pragma: no cover
-        logging.warning("No TIMEZERO in file")
+        log.warning("No TIMEZERO in file")
         timezero = np.longdouble(0.)
 
     try:
@@ -1080,7 +1080,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         t_start = np.longdouble(header['TSTART'])
         t_stop = np.longdouble(header['TSTOP'])
     except:  # pragma: no cover
-        logging.warning("Tstart and Tstop error. using defaults")
+        log.warning("Tstart and Tstop error. using defaults")
         t_start = ev_list[0]
         t_stop = ev_list[-1]
 
@@ -1190,7 +1190,7 @@ def sort_files(files):
     ftypes = []
 
     for f in files:
-        logging.info('Loading file ' + f)
+        log.info('Loading file ' + f)
         ftype, contents = get_file_type(f)
         instr = contents.instr
         ftypes.append(ftype)
@@ -1261,13 +1261,13 @@ def load_model(modelstring):
 
     # modelstring is a pickle file
     if modelstring.endswith('.p'):
-        logging.debug('Loading model from pickle file')
+        log.debug('Loading model from pickle file')
         with open(modelstring, 'rb') as fobj:
             modeldata = pickle.load(fobj)
         return modeldata['model'], modeldata['kind'], modeldata['constraints']
     # modelstring is a python file
     elif modelstring.endswith('.py'):
-        logging.debug('Loading model from Python source')
+        log.debug('Loading model from Python source')
         modulename = modelstring.replace('.py', '')
         sys.path.append(os.getcwd())
         # If a module with the same name was already imported, unload it!
@@ -1284,7 +1284,7 @@ def load_model(modelstring):
         try:
             importlib.invalidate_caches()
         except AttributeError:
-            logging.warning("importlib.invalidate_caches() is not implemented "
+            log.warning("importlib.invalidate_caches() is not implemented "
                             "in Python 2")
 
         _model = importlib.import_module(modulename)

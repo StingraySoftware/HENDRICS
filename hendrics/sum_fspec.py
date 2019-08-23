@@ -8,7 +8,7 @@ from .io import save_pds, get_file_type
 from .io import HEN_FILE_EXTENSION
 from .base import _assign_value_if_none
 import numpy as np
-import logging
+from astropy import log
 import copy
 
 
@@ -60,7 +60,7 @@ def sum_fspec(files, outname=None):
     tot_contents.power_err = np.sqrt(tot_epds) / tot_npds
     tot_contents.m = tot_npds
 
-    logging.info('Saving %s to %s' % (pdstype, outname))
+    log.info('Saving %s to %s' % (pdstype, outname))
     save_pds(tot_contents, outname)
 
     return tot_contents

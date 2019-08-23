@@ -7,7 +7,7 @@ from __future__ import (absolute_import, unicode_literals, division,
 from .io import HEN_FILE_EXTENSION, save_data, load_data, get_file_type
 from stingray.gti import cross_gtis, create_gti_from_condition, create_gti_mask
 from .base import hen_root, _assign_value_if_none
-import logging
+from astropy import log
 import numpy as np
 import sys
 
@@ -58,7 +58,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None,
 
     instr = data['instr']
     if ftype == 'lc' and instr.lower() == 'pca':
-        logging.warning('RXTE/PCA data; normalizing lc per no. PCUs')
+        log.warning('RXTE/PCA data; normalizing lc per no. PCUs')
         # If RXTE, plot per PCU count rate
         data['counts'] /= data['nPCUs']
     mjdref = data['mjdref']
@@ -92,7 +92,7 @@ def apply_gti(fname, gti, outname=None,
         datagti = data['gti']
         newgtis = cross_gtis([gti, datagti])
     except:  # pragma: no cover
-        logging.warning('Data have no GTI extension')
+        log.warning('Data have no GTI extension')
         newgtis = gti
 
     newgtis = filter_gti_by_length(newgtis, minimum_length)
@@ -171,29 +171,29 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENcreategti.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    filter_expr = args.filter
-    if filter_expr is None and args.apply_gti is None:
-        sys.exit("Please specify filter expression (-f option) or input "
-                 "GTI file (-a option)")
+    with log.log_to_file('HENcreategti.log'):
+        filter_expr = args.filter
+        if filter_expr is None and args.apply_gti is None:
+            sys.exit("Please specify filter expression (-f option) or input "
+                     "GTI file (-a option)")
 
-    for fname in files:
-        if args.apply_gti is not None:
-            data = load_data(args.apply_gti)
-            gtis = data['gti']
-        else:
-            gtis = create_gti(fname, filter_expr,
-                              safe_interval=args.safe_interval,
-                              minimum_length=args.minimum_length)
-        if args.create_only:
-            continue
-        if args.overwrite:
-            outname = fname
-        else:
-            # Use default
-            outname = None
-        apply_gti(fname, gtis, outname=outname,
-                  minimum_length=args.minimum_length)
+        for fname in files:
+            if args.apply_gti is not None:
+                data = load_data(args.apply_gti)
+                gtis = data['gti']
+            else:
+                gtis = create_gti(fname, filter_expr,
+                                  safe_interval=args.safe_interval,
+                                  minimum_length=args.minimum_length)
+            if args.create_only:
+                continue
+            if args.overwrite:
+                outname = fname
+            else:
+                # Use default
+                outname = None
+            apply_gti(fname, gtis, outname=outname,
+                      minimum_length=args.minimum_length)

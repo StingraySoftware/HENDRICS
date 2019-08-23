@@ -16,7 +16,7 @@ from astropy import log
 
 import numpy as np
 import os
-import logging
+from astropy import log
 import argparse
 from functools import wraps
 import copy
@@ -573,9 +573,8 @@ def _common_parser(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENefsearch.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
     return args
 
@@ -694,9 +693,13 @@ def _common_main(args, func):
 
 def main_efsearch(args=None):
     """Main function called by the `HENefsearch` command line script."""
-    _common_main(args, epoch_folding_search)
+
+    with log.log_to_file('HENefsearch.log'):
+        _common_main(args, epoch_folding_search)
 
 
 def main_zsearch(args=None):
     """Main function called by the `HENzsearch` command line script."""
-    _common_main(args, z_n_search)
+
+    with log.log_to_file('HENzsearch.log'):
+        _common_main(args, z_n_search)

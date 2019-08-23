@@ -1,7 +1,7 @@
 """Save different input files in PRESTO-readable format."""
 from __future__ import print_function, division
 
-import logging
+from astropy import log
 from astropy.coordinates import SkyCoord
 import numpy as np
 from .io import high_precision_keyword_read, get_file_type, HEN_FILE_EXTENSION
@@ -264,25 +264,25 @@ def main_presto(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENbinary.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    for f in args.files:
-        print(f)
-        outfile = f.replace(HEN_FILE_EXTENSION, '.dat')
-        ftype, contents = get_file_type(f)
-        if ftype == 'lc':
-            lcinfo = save_lc_to_binary(contents, outfile)
-        elif ftype == 'events':
-            if args.deorbit_par is not None:
-                contents = deorbit_events(contents, args.deorbit_par)
-            lcinfo = save_events_to_binary(contents, outfile,
-                                           bin_time=args.bin_time,
-                                           emin=args.energy_interval[0],
-                                           emax=args.energy_interval[1])
-        else:
-            raise ValueError('File type not recognized')
+    with log.log_to_file('HENbinary.log'):
+        for f in args.files:
+            print(f)
+            outfile = f.replace(HEN_FILE_EXTENSION, '.dat')
+            ftype, contents = get_file_type(f)
+            if ftype == 'lc':
+                lcinfo = save_lc_to_binary(contents, outfile)
+            elif ftype == 'events':
+                if args.deorbit_par is not None:
+                    contents = deorbit_events(contents, args.deorbit_par)
+                lcinfo = save_events_to_binary(contents, outfile,
+                                               bin_time=args.bin_time,
+                                               emin=args.energy_interval[0],
+                                               emax=args.energy_interval[1])
+            else:
+                raise ValueError('File type not recognized')
 
-        info = get_header_info(contents)
-        save_inf(lcinfo, info, f.replace(HEN_FILE_EXTENSION, '.inf'))
+            info = get_header_info(contents)
+            save_inf(lcinfo, info, f.replace(HEN_FILE_EXTENSION, '.inf'))

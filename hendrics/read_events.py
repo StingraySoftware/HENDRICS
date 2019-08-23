@@ -10,7 +10,7 @@ from .base import hen_root, read_header_key
 from .io import save_events, load_events_and_gtis
 from .io import HEN_FILE_EXTENSION
 import numpy as np
-import logging
+from astropy import log
 import warnings
 import os
 from hendrics.io import load_events, save_events
@@ -40,7 +40,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
         length_split is not None)
     """
     gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
-    logging.info('Opening %s' % filename)
+    log.info('Opening %s' % filename)
 
     instr = read_header_key(filename, 'INSTRUME')
     mission = read_header_key(filename, 'TELESCOP')
@@ -220,20 +220,20 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENreadevents.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,
-               "min_length": args.min_length, "gtistring": args.gti_string,
-               "length_split": args.length_split}
+    with log.log_to_file('HENreadevents.log'):
+        argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,
+                   "min_length": args.min_length, "gtistring": args.gti_string,
+                   "length_split": args.length_split}
 
-    arglist = [[f, argdict] for f in files]
+        arglist = [[f, argdict] for f in files]
 
-    if os.name == 'nt' or args.nproc == 1:
-        [_wrap_fun(a) for a in arglist]
-    else:
-        pool = Pool(processes=args.nproc)
-        for i in pool.imap_unordered(_wrap_fun, arglist):
-            pass
-        pool.close()
+        if os.name == 'nt' or args.nproc == 1:
+            [_wrap_fun(a) for a in arglist]
+        else:
+            pool = Pool(processes=args.nproc)
+            for i in pool.imap_unordered(_wrap_fun, arglist):
+                pass
+            pool.close()

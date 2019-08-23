@@ -9,7 +9,7 @@ from stingray.utils import assign_value_if_none
 from stingray.events import EventList
 
 import numpy as np
-import logging
+from astropy import log
 import argparse
 from scipy.signal import savgol_filter
 from scipy import optimize
@@ -294,7 +294,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
 
     for phase in np.arange(0., 1., 0.1):
         guess_pars[3 + startidx] = phase
-        logging.debug(guess_pars)
+        log.debug(guess_pars)
         if debug:
             plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
         fit_pars, success = optimize.leastsq(std_residuals, guess_pars[:],
@@ -602,18 +602,18 @@ def main_fold(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENfold.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    frequency = args.freq
-    fdot = args.fdot
-    fddot = args.fddot
+    with log.log_to_file('HENfold.log'):
+        frequency = args.freq
+        fdot = args.fdot
+        fddot = args.fddot
 
-    run_folding(args.file, freq=frequency, fdot=fdot, fddot=fddot,
-                nbin=args.nbin, nebin=args.nebin, tref=args.tref,
-                test=args.test, emin=args.emin, emax=args.emax,
-                norm=args.norm, deorbit_par=args.deorbit_par)
+        run_folding(args.file, freq=frequency, fdot=fdot, fddot=fddot,
+                    nbin=args.nbin, nebin=args.nebin, tref=args.tref,
+                    test=args.test, emin=args.emin, emax=args.emax,
+                    norm=args.norm, deorbit_par=args.deorbit_par)
 
 
 def z2_n_detection_level(epsilon=0.01, n=2, n_summed_spectra=1, ntrial=1):
@@ -708,18 +708,18 @@ def main_deorbit(args=None):
 
     args = parser.parse_args(args)
 
-    # if args.debug:
-    #     args.loglevel = 'DEBUG'
-    #
-    # numeric_level = getattr(logging, args.loglevel.upper(), None)
-    # logging.basicConfig(filename='HENfold.log', level=numeric_level,
-    #                     filemode='w')
+    if args.debug:
+        args.loglevel = 'DEBUG'
 
-    for fname in args.files:
-        log.info(f"Deorbiting events from {fname}")
-        events = load_events(fname)
-        events = deorbit_events(events, parameter_file=args.deorbit_par)
-        outfile = hen_root(fname) + '_deorb' + HEN_FILE_EXTENSION
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-        save_events(events, outfile)
-        log.info(f"Saved to {outfile}")
+    with log.log_to_file('HENdeorbit.log'):
+        for fname in args.files:
+            log.info(f"Deorbiting events from {fname}")
+            events = load_events(fname)
+            events = deorbit_events(events, parameter_file=args.deorbit_par)
+            outfile = hen_root(fname) + '_deorb' + HEN_FILE_EXTENSION
+
+            save_events(events, outfile)
+            log.info(f"Saved to {outfile}")

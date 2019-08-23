@@ -7,7 +7,7 @@ from .io import get_file_type
 import numpy as np
 from .io import get_file_extension
 import subprocess as sp
-import logging
+from astropy import log
 
 
 def save_as_xspec(fname, direct_save=False, save_lags=True):
@@ -80,9 +80,9 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HEN2xpec.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    for f in files:
-        save_as_xspec(f, direct_save=args.flx2xsp)
+    with log.log_to_file('HEN2Xspec.log'):
+        for f in files:
+            save_as_xspec(f, direct_save=args.flx2xsp)

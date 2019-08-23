@@ -3,7 +3,7 @@
 @author: marta
 """
 from __future__ import print_function, division
-import logging
+from astropy import log
 import numpy as np
 from .base import hen_root
 from .io import load_events
@@ -59,89 +59,90 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENvarenergy.log', level=numeric_level,
-                        filemode='w')
-    filelist = []
-    energy_spec = (float(args.energy_values[0]),
-                   float(args.energy_values[1]),
-                   int(args.energy_values[2]),
-                   args.energy_values[3])
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    from .io import sort_files
-    if args.cross_instr:
-        logging.info('Sorting file list')
-        sorted_files = sort_files(args.files)
+    with log.log_to_file('HENvarenergy.log'):
+        filelist = []
+        energy_spec = (float(args.energy_values[0]),
+                       float(args.energy_values[1]),
+                       int(args.energy_values[2]),
+                       args.energy_values[3])
 
-        logging.warning('Beware! For cpds and derivatives, I assume that the '
-                        'files are from only two instruments and in pairs '
-                        '(even in random order)')
+        from .io import sort_files
+        if args.cross_instr:
+            log.info('Sorting file list')
+            sorted_files = sort_files(args.files)
 
-        instrs = list(sorted_files.keys())
+            log.warning('Beware! For cpds and derivatives, I assume that the '
+                            'files are from only two instruments and in pairs '
+                            '(even in random order)')
 
-        files1 = sorted_files[instrs[0]]
-        files2 = sorted_files[instrs[1]]
-    else:
-        files1 = args.files
-        files2 = args.files
+            instrs = list(sorted_files.keys())
 
-    for fnames in zip(files1, files2):
-        fname = fnames[0]
-        fname2 = fnames[1]
+            files1 = sorted_files[instrs[0]]
+            files2 = sorted_files[instrs[1]]
+        else:
+            files1 = args.files
+            files2 = args.files
 
-        events = load_events(fname)
-        events2 = load_events(fname2)
-        if not args.use_pi and \
-                (events.energy is None or events2.energy is None):
-            raise ValueError("If --use-pi is not specified, event lists must "
-                             "be calibrated! Please use HENcalibrate.")
+        for fnames in zip(files1, files2):
+            fname = fnames[0]
+            fname2 = fnames[1]
 
-        if args.rms:
-            rms = RmsEnergySpectrum(events, args.freq_interval,
-                                    energy_spec,
-                                    segment_size=args.segment_size,
-                                    bin_time=args.bin_time,
-                                    events2=events2,
-                                    use_pi=args.use_pi)
-            out1 = hen_root(fname) + "_rms" + '.qdp'
-            start_energy = np.asarray(rms.energy_intervals)[:, 0]
-            stop_energy = np.asarray(rms.energy_intervals)[:, 1]
-            save_as_qdp([start_energy, stop_energy, rms.spectrum],
-                        [None, None, rms.spectrum_error], filename=out1)
-            filelist.append(out1)
+            events = load_events(fname)
+            events2 = load_events(fname2)
+            if not args.use_pi and \
+                    (events.energy is None or events2.energy is None):
+                raise ValueError("If --use-pi is not specified, event lists must "
+                                 "be calibrated! Please use HENcalibrate.")
 
-        if args.lag:
-            lag = LagEnergySpectrum(events, args.freq_interval,
-                                    energy_spec, args.ref_band,
-                                    segment_size=args.segment_size,
-                                    bin_time=args.bin_time,
-                                    events2=events2,
-                                    use_pi=args.use_pi)
-            start_energy = np.asarray(lag.energy_intervals)[:, 0]
-            stop_energy = np.asarray(lag.energy_intervals)[:, 1]
-            out2 = hen_root(fname) + "_lag" + '.qdp'
-            save_as_qdp([start_energy, stop_energy, lag.spectrum],
-                        [None, None, lag.spectrum_error], filename=out2)
-            filelist.append(out2)
+            if args.rms:
+                rms = RmsEnergySpectrum(events, args.freq_interval,
+                                        energy_spec,
+                                        segment_size=args.segment_size,
+                                        bin_time=args.bin_time,
+                                        events2=events2,
+                                        use_pi=args.use_pi)
+                out1 = hen_root(fname) + "_rms" + '.qdp'
+                start_energy = np.asarray(rms.energy_intervals)[:, 0]
+                stop_energy = np.asarray(rms.energy_intervals)[:, 1]
+                save_as_qdp([start_energy, stop_energy, rms.spectrum],
+                            [None, None, rms.spectrum_error], filename=out1)
+                filelist.append(out1)
 
-        if args.covariance:
-            try:
-                from stingray.varenergyspectrum import CovarianceEnergySpectrum
-            except:
-                logging.warning('This version of Stingray does not implement '
-                                'the correct version of Covariance Spectrum.')
-                continue
-            cov = CovarianceEnergySpectrum(events, args.freq_interval,
-                                           energy_spec, args.ref_band,
-                                           segment_size=args.segment_size,
-                                           bin_time=args.bin_time,
-                                           events2=events2,
-                                           use_pi=args.use_pi)
-            start_energy = np.asarray(cov.energy_intervals)[:, 0]
-            stop_energy = np.asarray(cov.energy_intervals)[:, 1]
-            out2 = hen_root(fname) + "_cov" + '.qdp'
-            save_as_qdp([start_energy, stop_energy, cov.spectrum],
-                        [None, None, cov.spectrum_error], filename=out2)
-            filelist.append(out2)
+            if args.lag:
+                lag = LagEnergySpectrum(events, args.freq_interval,
+                                        energy_spec, args.ref_band,
+                                        segment_size=args.segment_size,
+                                        bin_time=args.bin_time,
+                                        events2=events2,
+                                        use_pi=args.use_pi)
+                start_energy = np.asarray(lag.energy_intervals)[:, 0]
+                stop_energy = np.asarray(lag.energy_intervals)[:, 1]
+                out2 = hen_root(fname) + "_lag" + '.qdp'
+                save_as_qdp([start_energy, stop_energy, lag.spectrum],
+                            [None, None, lag.spectrum_error], filename=out2)
+                filelist.append(out2)
+
+            if args.covariance:
+                try:
+                    from stingray.varenergyspectrum import CovarianceEnergySpectrum
+                except:
+                    log.warning('This version of Stingray does not implement '
+                                    'the correct version of Covariance Spectrum.')
+                    continue
+                cov = CovarianceEnergySpectrum(events, args.freq_interval,
+                                               energy_spec, args.ref_band,
+                                               segment_size=args.segment_size,
+                                               bin_time=args.bin_time,
+                                               events2=events2,
+                                               use_pi=args.use_pi)
+                start_energy = np.asarray(cov.energy_intervals)[:, 0]
+                stop_energy = np.asarray(cov.energy_intervals)[:, 1]
+                out2 = hen_root(fname) + "_cov" + '.qdp'
+                save_as_qdp([start_energy, stop_energy, cov.spectrum],
+                            [None, None, cov.spectrum_error], filename=out2)
+                filelist.append(out2)
 
     return filelist

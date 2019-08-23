@@ -7,7 +7,7 @@ from __future__ import (absolute_import, division,
 import numpy as np
 import numpy.random as ra
 import os
-import logging
+from astropy import log
 import warnings
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
@@ -140,7 +140,7 @@ def filter_for_deadtime(event_list, deadtime, bkg_ev_list=None,
     ev_kind = ev_kind[saved_mask]
     deadtime_values = deadtime_values[saved_mask]
     final_len = len(tot_ev_list)
-    logging.info(
+    log.info(
         'filter_for_deadtime: '
         '{0}/{1} events rejected'.format(initial_len - final_len,
                                          initial_len))
@@ -388,52 +388,52 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENfake.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    additional_columns = {}
-    livetime = None
-    if args.lc is None and args.ctrate is None and args.event_list is not None:
-        event_list = _read_event_list(args.event_list)
-    elif args.lc is not None or args.ctrate is not None:
-        event_list = EventList()
-        if args.lc is not None:
-            lc = _read_light_curve(args.lc)
-        elif args.ctrate is not None:
-            tstart = assign_value_if_none(args.tstart, 0)
-            tstop = assign_value_if_none(args.tstop, 1025)
-            t = np.arange(tstart, tstop)
-            lc = Lightcurve(time=t, counts=args.ctrate + np.zeros_like(t))
-        event_list.simulate_times(lc)
-        nevents = len(event_list.time)
-        event_list.pi = np.zeros(nevents, dtype=int)
-        print('{} events generated'.format(nevents))
-    else:
-        event_list = None
+    with log.log_to_file('HENfake.log'):
+        additional_columns = {}
+        livetime = None
+        if args.lc is None and args.ctrate is None and args.event_list is not None:
+            event_list = _read_event_list(args.event_list)
+        elif args.lc is not None or args.ctrate is not None:
+            event_list = EventList()
+            if args.lc is not None:
+                lc = _read_light_curve(args.lc)
+            elif args.ctrate is not None:
+                tstart = assign_value_if_none(args.tstart, 0)
+                tstop = assign_value_if_none(args.tstop, 1025)
+                t = np.arange(tstart, tstop)
+                lc = Lightcurve(time=t, counts=args.ctrate + np.zeros_like(t))
+            event_list.simulate_times(lc)
+            nevents = len(event_list.time)
+            event_list.pi = np.zeros(nevents, dtype=int)
+            log.info('{} events generated'.format(nevents))
+        else:
+            event_list = None
 
-    if args.deadtime is not None and event_list is not None:
-        deadtime = args.deadtime[0]
-        deadtime_sigma = None
-        if len(args.deadtime) > 1:
-            deadtime_sigma = args.deadtime[1]
-        event_list, info = filter_for_deadtime(event_list, deadtime,
-                                               dt_sigma=deadtime_sigma,
-                                               return_all=True)
-        print('{} events after filter'.format(len(event_list.time)))
+        if args.deadtime is not None and event_list is not None:
+            deadtime = args.deadtime[0]
+            deadtime_sigma = None
+            if len(args.deadtime) > 1:
+                deadtime_sigma = args.deadtime[1]
+            event_list, info = filter_for_deadtime(event_list, deadtime,
+                                                   dt_sigma=deadtime_sigma,
+                                                   return_all=True)
+            log.info('{} events after filter'.format(len(event_list.time)))
 
-        prior = np.zeros_like(event_list.time)
+            prior = np.zeros_like(event_list.time)
 
-        prior[1:] = np.diff(event_list.time) - info.deadtime[:-1]
+            prior[1:] = np.diff(event_list.time) - info.deadtime[:-1]
 
-        additional_columns["PRIOR"] = {"data": prior, "format": "D"}
-        additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
-        livetime = np.sum(prior)
+            additional_columns["PRIOR"] = {"data": prior, "format": "D"}
+            additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
+            livetime = np.sum(prior)
 
-    generate_fake_fits_observation(event_list=event_list,
-                                   filename=args.outname,
-                                   instr=args.instrument, mission=args.mission,
-                                   tstart=args.tstart,
-                                   tstop=args.tstop,
-                                   mjdref=args.mjdref, livetime=livetime,
-                                   additional_columns=additional_columns)
+        generate_fake_fits_observation(event_list=event_list,
+                                       filename=args.outname,
+                                       instr=args.instrument, mission=args.mission,
+                                       tstart=args.tstart,
+                                       tstop=args.tstop,
+                                       mjdref=args.mjdref, livetime=livetime,
+                                       additional_columns=additional_columns)

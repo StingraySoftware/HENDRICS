@@ -8,7 +8,7 @@ from .io import get_file_type
 from .io import save_lcurve, save_pds
 from .io import HEN_FILE_EXTENSION, get_file_extension
 from .base import _empty, _assign_value_if_none
-import logging
+from astropy import log
 
 
 def rebin_file(filename, rebin):
@@ -30,7 +30,7 @@ def rebin_file(filename, rebin):
 
     outfile = filename.replace(get_file_extension(filename),
                                '_rebin%g' % rebin + HEN_FILE_EXTENSION)
-    logging.info('Saving %s to %s' % (ftype, outfile))
+    log.info('Saving %s to %s' % (ftype, outfile))
     func(contents, outfile)
 
 
@@ -62,9 +62,10 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENrebin.log', level=numeric_level,
-                        filemode='w')
-    rebin = args.rebin
-    for f in files:
-        rebin_file(f, rebin)
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
+
+    with log.log_to_file('HENrebin.log'):
+        rebin = args.rebin
+        for f in files:
+            rebin_file(f, rebin)

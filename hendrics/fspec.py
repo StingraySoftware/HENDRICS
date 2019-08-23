@@ -10,7 +10,7 @@ from stingray.gti import cross_gtis, create_gti_mask
 from stingray.crossspectrum import AveragedCrossspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
 import numpy as np
-import logging
+from astropy import log
 import warnings
 from multiprocessing import Pool
 import os
@@ -70,13 +70,13 @@ def calc_pds(lcfile, fftlen,
         print('File exists, and noclobber option used. Skipping')
         return
 
-    logging.info("Loading file %s..." % lcfile)
+    log.info("Loading file %s..." % lcfile)
     lc = load_lcurve(lcfile)
     instr = lc.instr
 
     if bintime > lc.dt:
         lcrebin = np.rint(bintime / lc.dt)
-        logging.info("Rebinning lcs by a factor %d" % lcrebin)
+        log.info("Rebinning lcs by a factor %d" % lcrebin)
         lc = lc.rebin(lcrebin)
         lc.instr = instr
 
@@ -91,7 +91,7 @@ def calc_pds(lcfile, fftlen,
     pds.back_phots = back_ctrate * fftlen
     pds.mjdref = lc.mjdref
 
-    logging.info('Saving PDS to %s' % outname)
+    log.info('Saving PDS to %s' % outname)
     save_pds(pds, outname)
 
 
@@ -137,9 +137,9 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
         print('File exists, and noclobber option used. Skipping')
         return
 
-    logging.info("Loading file %s..." % lcfile1)
+    log.info("Loading file %s..." % lcfile1)
     lc1 = load_lcurve(lcfile1)
-    logging.info("Loading file %s..." % lcfile2)
+    log.info("Loading file %s..." % lcfile2)
     lc2 = load_lcurve(lcfile2)
     instr1 = lc1.instr
     instr2 = lc2.instr
@@ -158,7 +158,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
 
     if bintime > dt:
         lcrebin = np.rint(bintime / dt)
-        logging.info("Rebinning lcs by a factor %d" % lcrebin)
+        log.info("Rebinning lcs by a factor %d" % lcrebin)
         lc1 = lc1.rebin(lcrebin)
         lc1.instr = instr1
         lc2 = lc2.rebin(lcrebin)
@@ -183,7 +183,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     cpds.lag = lags
     cpds.lag_err = lags
 
-    logging.info('Saving CPDS to %s' % outname)
+    log.info('Saving CPDS to %s' % outname)
     save_pds(cpds, outname)
 
 
@@ -243,7 +243,7 @@ def calc_fspec(files, fftlen,
 
     """
 
-    logging.info('Using %s normalization' % normalization)
+    log.info('Using %s normalization' % normalization)
 
     if do_calc_pds:
         wrapped_file_dicts = []
@@ -273,10 +273,10 @@ def calc_fspec(files, fftlen,
         files1 = files[0::2]
         files2 = files[1::2]
     else:
-        logging.info('Sorting file list')
+        log.info('Sorting file list')
         sorted_files = sort_files(files)
 
-        logging.warning('Beware! For cpds and derivatives, I assume that the '
+        log.warning('Beware! For cpds and derivatives, I assume that the '
                         'files are from only two instruments and in pairs '
                         '(even in random order)')
 
@@ -460,45 +460,45 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENfspec.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    bintime = args.bintime
-    fftlen = args.fftlen
-    pdsrebin = args.rebin
-    normalization = args.norm
-    if normalization.lower() not in ["frac", "abs", "leahy", "none", "rms"]:
-        warnings.warn('Beware! Unknown normalization!')
-        normalization = 'leahy'
-    if normalization == 'rms':
-        normalization = 'frac'
+    with log.log_to_file('HENfspec.log'):
+        bintime = args.bintime
+        fftlen = args.fftlen
+        pdsrebin = args.rebin
+        normalization = args.norm
+        if normalization.lower() not in ["frac", "abs", "leahy", "none", "rms"]:
+            warnings.warn('Beware! Unknown normalization!')
+            normalization = 'leahy'
+        if normalization == 'rms':
+            normalization = 'frac'
 
-    do_cpds = do_pds = do_cos = do_lag = False
-    kinds = args.kind.split(',')
-    for k in kinds:
-        if k == 'PDS':
-            do_pds = True
-        elif k == 'CPDS':
-            do_cpds = True
-        elif k == 'cos' or k == 'cospectrum':
-            do_cos = True
-            do_cpds = True
-        elif k == 'lag':
-            do_lag = True
-            do_cpds = True
+        do_cpds = do_pds = do_cos = do_lag = False
+        kinds = args.kind.split(',')
+        for k in kinds:
+            if k == 'PDS':
+                do_pds = True
+            elif k == 'CPDS':
+                do_cpds = True
+            elif k == 'cos' or k == 'cospectrum':
+                do_cos = True
+                do_cpds = True
+            elif k == 'lag':
+                do_lag = True
+                do_cpds = True
 
-    calc_fspec(args.files, fftlen,
-               do_calc_pds=do_pds,
-               do_calc_cpds=do_cpds,
-               do_calc_cospectrum=do_cos,
-               do_calc_lags=do_lag,
-               save_dyn=args.save_dyn,
-               bintime=bintime,
-               pdsrebin=pdsrebin,
-               outroot=args.outroot,
-               normalization=normalization,
-               nproc=args.nproc,
-               back_ctrate=args.back,
-               noclobber=args.noclobber,
-               ignore_instr=args.ignore_instr)
+        calc_fspec(args.files, fftlen,
+                   do_calc_pds=do_pds,
+                   do_calc_cpds=do_cpds,
+                   do_calc_cospectrum=do_cos,
+                   do_calc_lags=do_lag,
+                   save_dyn=args.save_dyn,
+                   bintime=bintime,
+                   pdsrebin=pdsrebin,
+                   outroot=args.outroot,
+                   normalization=normalization,
+                   nproc=args.nproc,
+                   back_ctrate=args.back,
+                   noclobber=args.noclobber,
+                   ignore_instr=args.ignore_instr)

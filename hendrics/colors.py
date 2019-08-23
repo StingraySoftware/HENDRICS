@@ -6,7 +6,7 @@ from __future__ import (absolute_import, division,
 
 from .io import HEN_FILE_EXTENSION, load_lcurve, save_lcurve
 from .base import hen_root
-import logging
+from astropy import log
 from .lcurve import main as henlcurve
 from stingray.lightcurve import Lightcurve
 import numpy as np
@@ -53,41 +53,41 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENcolors.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    option = '--e-interval'
-    if args.use_pi:
-        option = '--pi-interval'
+    with log.log_to_file('HENcolors.log'):
+        option = '--e-interval'
+        if args.use_pi:
+            option = '--pi-interval'
 
-    for f in files:
-        henlcurve([f] + [option] + args.energies[:2] +
-                  ['-b', args.bintime, '-d', '.', '-o',
-                   'lc0' + HEN_FILE_EXTENSION])
-        lc0 = load_lcurve('lc0' + HEN_FILE_EXTENSION)
-        henlcurve([f] + [option] + args.energies[2:] +
-                  ['-b', args.bintime, '-d', '.', '-o',
-                   'lc1' + HEN_FILE_EXTENSION])
-        lc1 = load_lcurve('lc1' + HEN_FILE_EXTENSION)
+        for f in files:
+            henlcurve([f] + [option] + args.energies[:2] +
+                      ['-b', args.bintime, '-d', '.', '-o',
+                       'lc0' + HEN_FILE_EXTENSION])
+            lc0 = load_lcurve('lc0' + HEN_FILE_EXTENSION)
+            henlcurve([f] + [option] + args.energies[2:] +
+                      ['-b', args.bintime, '-d', '.', '-o',
+                       'lc1' + HEN_FILE_EXTENSION])
+            lc1 = load_lcurve('lc1' + HEN_FILE_EXTENSION)
 
-        time = lc0.time
-        counts = lc1.countrate / lc0.countrate
-        counts_err = np.sqrt(lc1.countrate_err ** 2 + lc0.countrate_err ** 2)
-        scolor = Lightcurve(time=time, counts=counts, err=counts_err,
-                            input_counts=False, err_dist='gauss',
-                            gti=lc0.gti)
-        del lc0
-        del lc1
-        os.unlink('lc0' + HEN_FILE_EXTENSION)
-        os.unlink('lc1' + HEN_FILE_EXTENSION)
+            time = lc0.time
+            counts = lc1.countrate / lc0.countrate
+            counts_err = np.sqrt(lc1.countrate_err ** 2 + lc0.countrate_err ** 2)
+            scolor = Lightcurve(time=time, counts=counts, err=counts_err,
+                                input_counts=False, err_dist='gauss',
+                                gti=lc0.gti)
+            del lc0
+            del lc1
+            os.unlink('lc0' + HEN_FILE_EXTENSION)
+            os.unlink('lc1' + HEN_FILE_EXTENSION)
 
-        if args.out is None:
-            label = '_E_'
-            if args.use_pi:
-                label = '_PI_'
-            label += '{3}-{2}_over_{1}-{0}'.format(*args.energies)
-            args.out = hen_root(f) + label + HEN_FILE_EXTENSION
-        scolor.e_intervals = np.asarray([float(k) for k in args.energies])
-        scolor.use_pi = args.use_pi
-        save_lcurve(scolor, args.out, lctype='Color')
+            if args.out is None:
+                label = '_E_'
+                if args.use_pi:
+                    label = '_PI_'
+                label += '{3}-{2}_over_{1}-{0}'.format(*args.energies)
+                args.out = hen_root(f) + label + HEN_FILE_EXTENSION
+            scolor.e_intervals = np.asarray([float(k) for k in args.energies])
+            scolor.use_pi = args.use_pi
+            save_lcurve(scolor, args.out, lctype='Color')

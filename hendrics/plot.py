@@ -12,7 +12,7 @@ from astropy.modeling.models import Const1D
 from astropy.modeling import Model
 from astropy.stats import poisson_conf_interval
 
-import logging
+from astropy import log
 import numpy as np
 
 import os
@@ -205,7 +205,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
             if const is None:
                 p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2],
                                     sigma=epds)
-                logging.info('White noise level is {0}'.format(p[0]))
+                log.info('White noise level is {0}'.format(p[0]))
                 const = p[0]
 
             pds -= const
@@ -580,7 +580,7 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
 
     plt.figure('LC ' + figlabel)
     for lcfile in lcfiles:
-        logging.info('Loading %s...' % lcfile)
+        log.info('Loading %s...' % lcfile)
         lcdata = load_data(lcfile)
 
         time = lcdata['time']

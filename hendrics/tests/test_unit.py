@@ -6,14 +6,14 @@ from __future__ import (absolute_import, unicode_literals, division,
 
 import hendrics as hen
 import numpy as np
-import logging
+from astropy import log
 import os
 import unittest
 import pytest
 
 HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
-logging.basicConfig(filename='HEN.log', level=logging.DEBUG, filemode='w')
+log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 curdir = os.path.abspath(os.path.dirname(__file__))
 datadir = os.path.join(curdir, 'data')
 

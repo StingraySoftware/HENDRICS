@@ -640,6 +640,60 @@ def _wrap_fits(args):
         warnings.warn("HENlcurve exception: {0}".format(str(e)))
         return []
 
+def _execute_lcurve(args):
+    bintime = args.bintime
+
+    safe_interval = args.safe_interval
+    pi_interval = np.array(args.pi_interval)
+    e_interval = np.array(args.e_interval)
+
+    # ------ Use functools.partial to wrap lcurve* with relevant keywords---
+    if args.fits_input:
+        wrap_fun = _wrap_fits
+        argdict = {"noclobber": args.noclobber}
+    elif args.txt_input:
+        wrap_fun = _wrap_txt
+        argdict = {"noclobber": args.noclobber}
+    else:
+        wrap_fun = _wrap_lc
+        argdict = {"noclobber": args.noclobber, "safe_interval": safe_interval,
+                   "pi_interval": pi_interval,
+                   "e_interval": e_interval,
+                   "min_length": args.minlen,
+                   "gti_split": args.gti_split,
+                   "ignore_gtis": args.ignore_gtis,
+                   "bintime": bintime, "outdir": args.outdir}
+
+    arglist = [[f, argdict.copy()] for f in args.files]
+    na = len(arglist)
+    outfile = args.outfile
+    if outfile is not None:
+        outname = os.path.splitext(outfile)[0]
+        for i in range(na):
+            if na > 1:
+                outname = outfile + "_{0}".format(i)
+            arglist[i][1]['outfile'] = outname
+
+    # -------------------------------------------------------------------------
+    outfiles = []
+
+    if os.name == 'nt' or args.nproc == 1:
+        for a in arglist:
+            outfiles.append(wrap_fun(a))
+    else:
+        pool = Pool(processes=args.nproc)
+        for i in pool.imap_unordered(wrap_fun, arglist):
+            outfiles.append(i)
+        pool.close()
+
+    log.debug(f"{outfiles}")
+
+    if args.scrunch:
+        scrunch_lightcurves(outfiles)
+
+    if args.join:
+        join_lightcurves(outfiles)
+
 
 def main(args=None):
     """Main function called by the `HENlcurve` command line script."""
@@ -712,64 +766,11 @@ def main(args=None):
 
     if args.debug:
         args.loglevel = 'DEBUG'
-    bintime = args.bintime
-
     log.setLevel(args.loglevel)
     log.enable_warnings_logging()
-    # numeric_level = getattr(logging, args.loglevel.upper(), None)
-    # logging.basicConfig(filename='HENlcurve.log', level=numeric_level,
-    #                     filemode='w')
 
-    safe_interval = args.safe_interval
-    pi_interval = np.array(args.pi_interval)
-    e_interval = np.array(args.e_interval)
-
-    # ------ Use functools.partial to wrap lcurve* with relevant keywords---
-    if args.fits_input:
-        wrap_fun = _wrap_fits
-        argdict = {"noclobber": args.noclobber}
-    elif args.txt_input:
-        wrap_fun = _wrap_txt
-        argdict = {"noclobber": args.noclobber}
-    else:
-        wrap_fun = _wrap_lc
-        argdict = {"noclobber": args.noclobber, "safe_interval": safe_interval,
-                   "pi_interval": pi_interval,
-                   "e_interval": e_interval,
-                   "min_length": args.minlen,
-                   "gti_split": args.gti_split,
-                   "ignore_gtis": args.ignore_gtis,
-                   "bintime": bintime, "outdir": args.outdir}
-
-    arglist = [[f, argdict.copy()] for f in args.files]
-    na = len(arglist)
-    outfile = args.outfile
-    if outfile is not None:
-        outname = os.path.splitext(outfile)[0]
-        for i in range(na):
-            if na > 1:
-                outname = outfile + "_{0}".format(i)
-            arglist[i][1]['outfile'] = outname
-
-    # -------------------------------------------------------------------------
-    outfiles = []
-
-    if os.name == 'nt' or args.nproc == 1:
-        for a in arglist:
-            outfiles.append(wrap_fun(a))
-    else:
-        pool = Pool(processes=args.nproc)
-        for i in pool.imap_unordered(wrap_fun, arglist):
-            outfiles.append(i)
-        pool.close()
-
-    log.debug(f"{outfiles}")
-
-    if args.scrunch:
-        scrunch_lightcurves(outfiles)
-
-    if args.join:
-        join_lightcurves(outfiles)
+    with log.log_to_file('HENlcurve.log'):
+        _execute_lcurve(args)
 
 
 def scrunch_main(args=None):
@@ -797,11 +798,11 @@ def scrunch_main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENscrunchlc.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    scrunch_lightcurves(files, args.out)
+    with log.log_to_file('HENscrunchlc.log'):
+        scrunch_lightcurves(files, args.out)
 
 
 def baseline_main(args=None):
@@ -840,8 +841,8 @@ def baseline_main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENscrunchlc.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    _baseline_lightcurves(files, args.out, args.asymmetry, args.lam)
+    with log.log_to_file('HENbaseline.log'):
+        _baseline_lightcurves(files, args.out, args.asymmetry, args.lam)

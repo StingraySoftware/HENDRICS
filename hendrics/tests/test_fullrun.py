@@ -5,7 +5,7 @@ from __future__ import (absolute_import, unicode_literals, division,
                         print_function)
 
 import hendrics as hen
-import logging
+from astropy import log
 import os
 import glob
 import subprocess as sp
@@ -21,7 +21,7 @@ except NameError:
 
 HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
-logging.basicConfig(filename='HEN.log', level=logging.DEBUG, filemode='w')
+log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
 class TestFullRun(object):

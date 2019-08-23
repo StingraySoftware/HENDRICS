@@ -11,7 +11,7 @@ import numpy as np
 from .io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, HEN_FILE_EXTENSION, load_data
 from .base import hen_root, _assign_value_if_none
-import logging
+from astropy import log
 import warnings
 from stingray.lightcurve import Lightcurve
 from stingray.gti import create_gti_mask
@@ -331,32 +331,32 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENexposure.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    log.enable_warnings_logging()
 
-    lc_file = args.lcfile
-    uf_file = args.uffile
+    with log.log_to_file('HENexposure.log'):
+        lc_file = args.lcfile
+        uf_file = args.uffile
 
-    outroot = _assign_value_if_none(args.outroot, hen_root(lc_file))
+        outroot = _assign_value_if_none(args.outroot, hen_root(lc_file))
 
-    outname = outroot + "_lccorr" + HEN_FILE_EXTENSION
+        outname = outroot + "_lccorr" + HEN_FILE_EXTENSION
 
-    outfile = correct_lightcurve(lc_file, uf_file, outname)
+        outfile = correct_lightcurve(lc_file, uf_file, outname)
 
-    outdata = load_data(outfile)
-    time = outdata["time"]
-    lc = outdata['counts']
-    expo = outdata["expo"]
-    gti = outdata["gti"]
+        outdata = load_data(outfile)
+        time = outdata["time"]
+        lc = outdata['counts']
+        expo = outdata["expo"]
+        gti = outdata["gti"]
 
-    try:
-        _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
-        _plot_dead_time_from_uf(uf_file, outroot)
-    except Exception as e:
-        warnings.warn(str(e))
-        pass
+        try:
+            _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
+            _plot_dead_time_from_uf(uf_file, outroot)
+        except Exception as e:
+            warnings.warn(str(e))
+            pass
 
-    if args.plot:
-        import matplotlib.pyplot as plt
-        plt.show()
+        if args.plot:
+            import matplotlib.pyplot as plt
+            plt.show()
