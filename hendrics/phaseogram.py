@@ -677,7 +677,7 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
     pepoch_mjd = pepoch
     if pepoch is None:
         pepoch = events.gti[0, 0]
-        pepoch_mjd = pepoch / 86400 + events.mjdref
+        # pepoch_mjd = pepoch / 86400 + events.mjdref
     else:
         pepoch = (pepoch_mjd - events.mjdref) * 86400
 

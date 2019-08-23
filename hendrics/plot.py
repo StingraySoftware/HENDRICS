@@ -16,7 +16,7 @@ import logging
 import numpy as np
 
 import os
-from .fold import fold_events
+from .fold import fold_events, filter_energy
 from .base import deorbit_events
 from .io import load_events
 from .io import load_data, get_file_type, load_pds
@@ -364,6 +364,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             search_gs_no = 1
 
             events = load_events(ef.filename)
+            if ef.emin is not None or ef.emax is not None:
+                events, elabel = filter_energy(events, ef.emin, ef.emax)
 
             if hasattr(ef, "parfile") and ef.parfile is not None:
                 root = os.path.split(fname)[0]
@@ -374,15 +376,19 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                 else:
                     ef.parfile = parfile
 
-                if parfile and os.path.exists(ef.parfile):
-                    events = deorbit_events(events, ef.parfile)
+                if parfile and os.path.exists(parfile):
+                    events = deorbit_events(events, parfile)
+
+            if hasattr(ef, 'ref_time') and ef.ref_time is not None:
+                ref_time = ef.ref_time
+            else:
+                ref_time = (events.time[0] + events.time[-1]) / 2
 
             phase, profile, profile_err = \
                 fold_events(copy.deepcopy(events.time), f, fdot,
-                            ref_time=events.gti[0, 0],
-                            gtis=copy.deepcopy(events.gti),
+                            ref_time=ref_time,
+                            #gtis=copy.deepcopy(events.gti),
                             expocorr=False, nbin=nbin)
-
             ax = plt.subplot(external_gs[0])
 
             ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
@@ -422,6 +428,10 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                 phascommand += " --emin {}".format(ef.emin)
             if hasattr(ef, 'emin') and ef.emin is not None:
                 phascommand += " --emax {}".format(ef.emax)
+            pepoch = ref_time / 86400 + events.mjdref
+
+            if hasattr(events, 'mjdref') and events.mjdref is not None:
+                phascommand += " --pepoch {}".format(pepoch)
 
             print("To see the detailed phaseogram, "
                   "run {}".format(phascommand))
@@ -483,6 +493,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             axffdot.set_ylabel('Fdot (Hz/s)')
             axffdot.set_xlim([np.min(ef.freq), np.max(ef.freq)])
             axffdot.set_ylim([np.min(ef.fdots), np.max(ef.fdots)])
+            axffdot.axvline(f, ls='--', color='white')
+            axffdot.axhline(fdot, ls='--', color='white')
             axf.legend()
         else:
             axf = plt.subplot(external_gs[search_gs_no])
@@ -490,7 +502,6 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             axf.set_xlabel('Frequency (Hz)')
             axf.set_ylabel(ef.kind + ' stat')
             axf.legend()
-
 
         if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
                 not len(ef.stat.shape) > 1:

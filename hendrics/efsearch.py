@@ -357,7 +357,8 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
         t0 = times.min()
     if t1 is None:
         t1 = times.max()
-    times -= np.mean(times)
+    meantime = (t1 + t0) / 2
+    times -= meantime
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
     log.info(f"Maximum error on the phase expected when casting to double: {maxerr}")
@@ -602,6 +603,7 @@ def _common_main(args, func):
             baseline = args.N
             kind = 'Z2n'
         events = load_events(fname)
+        mjdref = events.mjdref
         if args.emin is not None or args.emax is not None:
             events, elabel = filter_energy(events, args.emin, args.emax)
 
@@ -618,6 +620,7 @@ def _common_main(args, func):
                                expocorr=args.expocorr, fdotmin=args.fdotmin,
                                fdotmax=args.fdotmax,
                                segment_size=args.segment_size, **kwargs)
+            ref_time = (events.gti[0, 0])
         else:
             oversample = assign_value_if_none(args.oversample, 8)
 
@@ -625,6 +628,7 @@ def _common_main(args, func):
                 search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
                                  nbin=args.nbin, n=n,
                                  nprof=None, npfact=2, oversample=oversample)
+            ref_time = (events.time[-1] + events.time[0]) / 2
 
         length = events.time.max() - events.time.min()
         segment_size = np.min([length, args.segment_size])
@@ -645,7 +649,9 @@ def _common_main(args, func):
                                       args.N, fdots=fdots, M=M,
                                       segment_size=segment_size,
                                       filename=fname, parfile=args.deorbit_par,
-                                      emin=args.emin, emax=args.emax)
+                                      emin=args.emin, emax=args.emax,
+                                      mjdref=mjdref,
+                                      pepoch=mjdref + ref_time / 86400)
 
         if args.find_candidates:
             threshold = 1 - args.conflevel / 100
