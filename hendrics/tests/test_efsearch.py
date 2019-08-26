@@ -42,6 +42,7 @@ class TestEFsearch():
             100 + 20 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
         lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]])
         events = EventList()
+        events.mjdref = 56000
         events.simulate_times(lc)
         cls.event_times = events.time
         cls.dum_noe = 'events_noe' + HEN_FILE_EXTENSION
