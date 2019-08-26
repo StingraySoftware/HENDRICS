@@ -1,33 +1,23 @@
+import os
+import pytest
 from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding, \
-    load_events
+    load_events, get_file_type
 from hendrics.efsearch import main_efsearch, main_zsearch
 from hendrics.efsearch import decide_binary_parameters, folding_orbital_search
 from hendrics.fold import main_fold
 from hendrics.plot import plot_folding
-import os
-import pytest
+from hendrics.tests import _dummy_par
 from astropy.tests.helper import remote_data
 try:
     import pandas as pd
     HAS_PD = True
-except:
+except ImportError:
     HAS_PD = False
 
 from hendrics.fold import HAS_PINT
-
-
-def _dummy_par(par):
-    with open(par, 'a') as fobj:
-        print("BINARY BT", file=fobj)
-        print("PB  1e20", file=fobj)
-        print("A1  0", file=fobj)
-        print("T0  56000", file=fobj)
-        print("EPHEM  DE200", file=fobj)
-        print("RAJ  00:55:01", file=fobj)
-        print("DECJ 12:00:40.2", file=fobj)
 
 
 class TestEFsearch():
@@ -40,8 +30,10 @@ class TestEFsearch():
         cls.times = np.arange(cls.tstart, cls.tend, cls.dt) + cls.dt / 2
         cls.counts = \
             100 + 20 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
+        cls.mjdref = 56000
         lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]])
         events = EventList()
+        events.mjdref = cls.mjdref
         events.simulate_times(lc)
         cls.event_times = events.time
         cls.dum_noe = 'events_noe' + HEN_FILE_EXTENSION
@@ -52,6 +44,8 @@ class TestEFsearch():
         events.energy = np.random.uniform(3, 79, len(events.time))
         cls.dum = 'events' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
+        cls.par = 'bububububu.par'
+        _dummy_par(cls.par)
 
     def test_fold(self):
         evfile = self.dum
@@ -84,14 +78,25 @@ class TestEFsearch():
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
+    def test_fold_invalid(self):
+        evfile = self.dum
+
+        with pytest.raises(ValueError) as excinfo:
+            main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
+                       '--test', '--norm', 'ratios',
+                       '--pepoch', str(self.mjdref), '--tref', '0'])
+        assert "Only specify one between " in str(excinfo.value)
+
     def test_efsearch(self):
         evfile = self.dum
         main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                       '--emin', '3', '--emax', '79',
                        '--fit-candidates'])
-        outfile = 'events_EF' + HEN_FILE_EXTENSION
+        outfile = 'events_EF_3-79keV' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
-        efperiod = load_folding(outfile)
+        ftype, efperiod = get_file_type(outfile)
+        assert ftype == 'folding'
         assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
                           atol=1/25.25)
         os.unlink(outfile)
@@ -99,10 +104,11 @@ class TestEFsearch():
     def test_zsearch(self):
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
-                      '--fit-candidates', '--fit-frequency',
-                      str(self.pulse_frequency),
-                      '--dynstep', '5'])
-        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
+                       '--emin', '3', '--emax', '79',
+                       '--fit-candidates', '--fit-frequency',
+                       str(self.pulse_frequency),
+                       '--dynstep', '5'])
+        outfile = 'events_Z2n_3-79keV' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
@@ -173,17 +179,25 @@ class TestEFsearch():
     @pytest.mark.skipif("not HAS_PINT")
     def test_efsearch_deorbit(self):
         evfile = self.dum
-        par = 'bububububu.par'
-
-        _dummy_par(par)
 
         ip = main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
-                           '--deorbit-par', par])
+                           '--deorbit-par', self.par])
 
         outfile = 'events_Z2n' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
-        os.unlink(par)
+
+    @remote_data
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_fold_deorbit(self):
+        evfile = self.dum
+
+        main_fold([evfile, '-f', str(self.pulse_frequency), '-n', '64',
+                   '--test', '--norm', 'ratios', '--deorbit-par', self.par,
+                   '--pepoch', str(self.mjdref)])
+        outfile = 'Energyprofile_ratios.png'
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
 
     def test_efsearch_deorbit_invalid(self):
         evfile = self.dum
@@ -195,3 +209,4 @@ class TestEFsearch():
     @classmethod
     def teardown_class(cls):
         os.unlink(cls.dum)
+        os.unlink(cls.par)

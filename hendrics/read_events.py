@@ -1,20 +1,18 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Read and save event lists from FITS files."""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
+import warnings
+import os
+import numpy as np
+from astropy import log
 from stingray.utils import assign_value_if_none
 from stingray.events import EventList
 from stingray.gti import cross_two_gtis
+from .io import load_events
+from .base import common_name
 from .base import hen_root, read_header_key
 from .io import save_events, load_events_and_gtis
 from .io import HEN_FILE_EXTENSION
-import numpy as np
-import logging
-import warnings
-import os
-from hendrics.io import load_events, save_events
-from hendrics.base import common_name
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,
@@ -40,7 +38,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
         length_split is not None)
     """
     gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
-    logging.info('Opening %s' % filename)
+    log.info('Opening %s' % filename)
 
     instr = read_header_key(filename, 'INSTRUME')
     mission = read_header_key(filename, 'TELESCOP')
@@ -70,7 +68,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             outroot_local = outfile_root
 
         outfile = outroot_local + '_ev' + HEN_FILE_EXTENSION
-        if noclobber and os.path.exists(outfile) and (not (gti_split or length_split)):
+        if noclobber and os.path.exists(outfile) and (
+                not (gti_split or length_split)):
             warnings.warn(
                 '{0} exists and using noclobber. Skipping'.format(outfile))
             return
@@ -82,16 +81,17 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             if length_split:
                 gti0 = np.arange(gtis[0, 0], gtis[-1, 1], length_split)
                 gti1 = gti0 + length_split
-                gti_chunks = np.array([[g0, g1] for (g0, g1) in zip(gti0, gti1)])
-                label='chunk'
+                gti_chunks = np.array([[g0, g1]
+                                       for (g0, g1) in zip(gti0, gti1)])
+                label = 'chunk'
             else:
                 gti_chunks = gtis
-                label='gti'
+                label = 'gti'
 
             for ig, g in enumerate(gti_chunks):
                 outfile_local = \
                     '{0}_{1}{2:03d}_ev'.format(outroot_local, label,
-                                           ig) + HEN_FILE_EXTENSION
+                                               ig) + HEN_FILE_EXTENSION
 
                 good_gtis = cross_two_gtis([g], gtis)
                 if noclobber and os.path.exists(outfile_local):
@@ -180,21 +180,12 @@ def main(args=None):
     """Main function called by the `HENreadevents` command line script."""
     import argparse
     from multiprocessing import Pool
+    from .base import _add_default_args, check_negative_numbers_in_args
 
     description = ('Read a cleaned event files and saves the relevant '
                    'information in a standard format')
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--nproc",
-                        help=("Number of processors to use"),
-                        default=1,
-                        type=int)
     parser.add_argument("--noclobber",
                         help=("Do not overwrite existing event files"),
                         default=False, action='store_true')
@@ -211,29 +202,30 @@ def main(args=None):
     parser.add_argument("--gti-string", type=str,
                         help="GTI string",
                         default=None)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
 
+    _add_default_args(parser, ['output',
+                               'loglevel', 'debug', 'nproc'])
+
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
     files = args.files
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENreadevents.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
 
-    argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,
-               "min_length": args.min_length, "gtistring": args.gti_string,
-               "length_split": args.length_split}
+    with log.log_to_file('HENreadevents.log'):
+        argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,
+                   "min_length": args.min_length, "gtistring": args.gti_string,
+                   "length_split": args.length_split}
 
-    arglist = [[f, argdict] for f in files]
+        arglist = [[f, argdict] for f in files]
 
-    if os.name == 'nt' or args.nproc == 1:
-        [_wrap_fun(a) for a in arglist]
-    else:
-        pool = Pool(processes=args.nproc)
-        for i in pool.imap_unordered(_wrap_fun, arglist):
-            pass
-        pool.close()
+        if os.name == 'nt' or args.nproc == 1:
+            [_wrap_fun(a) for a in arglist]
+        else:
+            pool = Pool(processes=args.nproc)
+            for i in pool.imap_unordered(_wrap_fun, arglist):
+                pass
+            pool.close()

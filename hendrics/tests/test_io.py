@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import division, print_function
+
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
@@ -10,6 +10,7 @@ from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
 from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
+from hendrics.io import _get_additional_data, find_file_in_allowed_paths
 
 import pytest
 import glob
@@ -29,6 +30,32 @@ def _dummy_bad(x, z, y=0):
 def _dummy(x, y=0):
     return
 
+
+def test_get_additional_data(capsys):
+    from astropy.table import Table
+    lctable = Table({'a': [1, 2, 3], 'b': [4, 5, 6]})
+    assert np.allclose(_get_additional_data(lctable, ['b'])['b'], [4, 5, 6])
+    add = _get_additional_data(lctable, ['c'])
+    stdout, stderr = capsys.readouterr()
+    assert "WARNING: Column c not found" in stderr
+    assert np.allclose(add['c'], 0)
+
+
+def test_find_files_in_allowed_paths(capsys):
+
+    with open('bu', 'w') as fobj: print("blabla", file=fobj)
+    fakepath = os.path.join("directory", "bu")
+    realpath = os.path.join('.', 'bu')
+    foundpath = find_file_in_allowed_paths(fakepath, ["."])
+    stdout, stderr = capsys.readouterr()
+    assert "WARNING: Parfile found at different path" in stderr
+    assert foundpath == realpath
+    assert find_file_in_allowed_paths("bu") == "bu"
+    assert not find_file_in_allowed_paths(
+        os.path.join("directory", "bu"))
+    assert not find_file_in_allowed_paths(None)
+
+    os.unlink("bu")
 
 class TestIO():
     """Real unit tests."""

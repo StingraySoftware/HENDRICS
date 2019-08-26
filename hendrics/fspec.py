@@ -1,19 +1,19 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to calculate frequency spectra."""
-from __future__ import (absolute_import, division,
-                        print_function)
 
-from .base import hen_root, common_name, _empty, _assign_value_if_none
-from .io import sort_files, get_file_type, load_data, save_pds, load_lcurve
-from .io import HEN_FILE_EXTENSION
+import warnings
+from multiprocessing import Pool
+import os
 from stingray.gti import cross_gtis, create_gti_mask
 from stingray.crossspectrum import AveragedCrossspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
 import numpy as np
-import logging
-import warnings
-from multiprocessing import Pool
-import os
+from astropy import log
+from astropy.logger import AstropyUserWarning
+from .base import hen_root, common_name, _empty, _assign_value_if_none, \
+    interpret_bintime
+from .io import sort_files, get_file_type, load_data, save_pds, load_lcurve
+from .io import HEN_FILE_EXTENSION
 
 
 def _wrap_fun_cpds(arglist):
@@ -70,13 +70,13 @@ def calc_pds(lcfile, fftlen,
         print('File exists, and noclobber option used. Skipping')
         return
 
-    logging.info("Loading file %s..." % lcfile)
+    log.info("Loading file %s..." % lcfile)
     lc = load_lcurve(lcfile)
     instr = lc.instr
 
     if bintime > lc.dt:
         lcrebin = np.rint(bintime / lc.dt)
-        logging.info("Rebinning lcs by a factor %d" % lcrebin)
+        log.info("Rebinning lcs by a factor %d" % lcrebin)
         lc = lc.rebin(lcrebin)
         lc.instr = instr
 
@@ -91,7 +91,7 @@ def calc_pds(lcfile, fftlen,
     pds.back_phots = back_ctrate * fftlen
     pds.mjdref = lc.mjdref
 
-    logging.info('Saving PDS to %s' % outname)
+    log.info('Saving PDS to %s' % outname)
     save_pds(pds, outname)
 
 
@@ -137,9 +137,9 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
         print('File exists, and noclobber option used. Skipping')
         return
 
-    logging.info("Loading file %s..." % lcfile1)
+    log.info("Loading file %s..." % lcfile1)
     lc1 = load_lcurve(lcfile1)
-    logging.info("Loading file %s..." % lcfile2)
+    log.info("Loading file %s..." % lcfile2)
     lc2 = load_lcurve(lcfile2)
     instr1 = lc1.instr
     instr2 = lc2.instr
@@ -158,7 +158,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
 
     if bintime > dt:
         lcrebin = np.rint(bintime / dt)
-        logging.info("Rebinning lcs by a factor %d" % lcrebin)
+        log.info("Rebinning lcs by a factor %d" % lcrebin)
         lc1 = lc1.rebin(lcrebin)
         lc1.instr = instr1
         lc2 = lc2.rebin(lcrebin)
@@ -183,7 +183,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     cpds.lag = lags
     cpds.lag_err = lags
 
-    logging.info('Saving CPDS to %s' % outname)
+    log.info('Saving CPDS to %s' % outname)
     save_pds(cpds, outname)
 
 
@@ -243,7 +243,7 @@ def calc_fspec(files, fftlen,
 
     """
 
-    logging.info('Using %s normalization' % normalization)
+    log.info('Using %s normalization' % normalization)
 
     if do_calc_pds:
         wrapped_file_dicts = []
@@ -273,12 +273,12 @@ def calc_fspec(files, fftlen,
         files1 = files[0::2]
         files2 = files[1::2]
     else:
-        logging.info('Sorting file list')
+        log.info('Sorting file list')
         sorted_files = sort_files(files)
 
-        logging.warning('Beware! For cpds and derivatives, I assume that the '
-                        'files are from only two instruments and in pairs '
-                        '(even in random order)')
+        warnings.warn('Beware! For cpds and derivatives, I assume that the '
+                      'files are from only two instruments and in pairs '
+                      '(even in random order)')
 
         instrs = list(sorted_files.keys())
 
@@ -324,6 +324,18 @@ def calc_fspec(files, fftlen,
 
 
 def _normalize(array, ref=0):
+    """Normalize array in terms of standard deviation.
+
+    Examples
+    --------
+    >>> n = 10000
+    >>> array1 = np.random.normal(0, 1, n)
+    >>> array2 = np.random.normal(0, 1, n)
+    >>> array = array1 ** 2 + array2 ** 2
+    >>> newarr = _normalize(array)
+    >>> np.isclose(np.std(newarr), 1, atol=0.0001)
+    True
+    """
     m = ref
     std = np.std(array)
     newarr = np.zeros_like(array)
@@ -333,61 +345,21 @@ def _normalize(array, ref=0):
 
 
 def dumpdyn(fname, plot=False):
-    """Dump a dynamical frequency spectrum in text files.
-
-    Parameters
-    ----------
-    fname : str
-        The file name
-
-    Other Parameters
-    ----------------
-    plot : bool
-        if True, plot the spectrum
-
-    """
-    ftype, pdsdata = get_file_type(fname, specify_reb=False)
-
-    dynpds = pdsdata['dyn' + ftype]
-    edynpds = pdsdata['edyn' + ftype]
-
-    try:
-        freq = pdsdata['freq']
-    except:
-        flo = pdsdata['flo']
-        fhi = pdsdata['fhi']
-        freq = (fhi + flo) / 2
-
-    time = pdsdata['dyntimes']
-    freqs = np.zeros_like(dynpds)
-    times = np.zeros_like(dynpds)
-
-    for i, im in enumerate(dynpds):
-        freqs[i, :] = freq
-        times[i, :] = time[i]
-
-    t = times.real.flatten()
-    f = freqs.real.flatten()
-    d = dynpds.real.flatten()
-    e = edynpds.real.flatten()
-
-    np.savetxt('{0}_dumped_{1}.txt'.format(hen_root(fname), ftype),
-               np.array([t, f, d, e]).T)
-    size = _normalize(d)
-    if plot:
-        import matplotlib.pyplot as plt
-        plt.scatter(t, f, s=size)
-        plt.xlabel('Time (s)')
-        plt.ylabel('Freq (Hz)')
-
-        plt.show()
+    raise NotImplementedError(
+        "Dynamical power spectrum is being refactored. "
+        "Sorry for the inconvenience. In the meantime, "
+        "you can load the data into Stingray using "
+        "`cs = hendrics.io.load_pds(fname)` and find "
+        "the dynamical PDS/CPDS in cs.cs_all")
 
 
 def dumpdyn_main(args=None):
     """Main function called by the `HENdumpdyn` command line script."""
     import argparse
 
-    description = ('Dump dynamical (cross) power spectra')
+    description = ('Dump dynamical (cross) power spectra. '
+                   'This script is being reimplemented. Please be '
+                   'patient :)')
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help=("List of files in any valid HENDRICS "
@@ -403,16 +375,16 @@ def dumpdyn_main(args=None):
         dumpdyn(f, plot=not args.noplot)
 
 
-
 def main(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Create frequency spectra (PDS, CPDS, cospectrum) '
                    'starting from well-defined input ligthcurves')
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs='+')
-    parser.add_argument("-b", "--bintime", type=float, default=1/4096,
+    parser.add_argument("-b", "--bintime", type=float, default=1 / 4096,
                         help="Light curve bin time; if negative, interpreted" +
                         " as negative power of 2." +
                         " Default: 2^-10, or keep input lc bin time" +
@@ -433,72 +405,63 @@ def main(args=None):
                         default=False, action='store_true')
     parser.add_argument("-o", "--outroot", type=str, default=None,
                         help='Root of output file names for CPDS only')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--nproc",
-                        help=("Number of processors to use"),
-                        default=1,
-                        type=int)
     parser.add_argument("--back",
                         help=("Estimated background (non-source) count rate"),
                         default=0.,
                         type=float)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
     parser.add_argument("--save-dyn", help="save dynamical power spectrum",
                         default=False, action='store_true')
     parser.add_argument("--ignore-instr",
                         help="Ignore instrument names in channels",
                         default=False, action='store_true')
+    _add_default_args(parser, ['nproc', 'loglevel', 'debug'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENfspec.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
 
-    bintime = args.bintime
-    fftlen = args.fftlen
-    pdsrebin = args.rebin
-    normalization = args.norm
-    if normalization.lower() not in ["frac", "abs", "leahy", "none", "rms"]:
-        warnings.warn('Beware! Unknown normalization!')
-        normalization = 'leahy'
-    if normalization == 'rms':
-        normalization = 'frac'
+    with log.log_to_file('HENfspec.log'):
+        bintime = np.longdouble(interpret_bintime(args.bintime))
 
-    do_cpds = do_pds = do_cos = do_lag = False
-    kinds = args.kind.split(',')
-    for k in kinds:
-        if k == 'PDS':
-            do_pds = True
-        elif k == 'CPDS':
-            do_cpds = True
-        elif k == 'cos' or k == 'cospectrum':
-            do_cos = True
-            do_cpds = True
-        elif k == 'lag':
-            do_lag = True
-            do_cpds = True
+        fftlen = args.fftlen
+        pdsrebin = args.rebin
+        normalization = args.norm
+        if normalization.lower() not in [
+                "frac", "abs", "leahy", "none", "rms"]:
+            warnings.warn('Beware! Unknown normalization!', AstropyUserWarning)
+            normalization = 'leahy'
+        if normalization == 'rms':
+            normalization = 'frac'
 
-    calc_fspec(args.files, fftlen,
-               do_calc_pds=do_pds,
-               do_calc_cpds=do_cpds,
-               do_calc_cospectrum=do_cos,
-               do_calc_lags=do_lag,
-               save_dyn=args.save_dyn,
-               bintime=bintime,
-               pdsrebin=pdsrebin,
-               outroot=args.outroot,
-               normalization=normalization,
-               nproc=args.nproc,
-               back_ctrate=args.back,
-               noclobber=args.noclobber,
-               ignore_instr=args.ignore_instr)
+        do_cpds = do_pds = do_cos = do_lag = False
+        kinds = args.kind.split(',')
+        for k in kinds:
+            if k == 'PDS':
+                do_pds = True
+            elif k == 'CPDS':
+                do_cpds = True
+            elif k == 'cos' or k == 'cospectrum':
+                do_cos = True
+                do_cpds = True
+            elif k == 'lag':
+                do_lag = True
+                do_cpds = True
+
+        calc_fspec(args.files, fftlen,
+                   do_calc_pds=do_pds,
+                   do_calc_cpds=do_cpds,
+                   do_calc_cospectrum=do_cos,
+                   do_calc_lags=do_lag,
+                   save_dyn=args.save_dyn,
+                   bintime=bintime,
+                   pdsrebin=pdsrebin,
+                   outroot=args.outroot,
+                   normalization=normalization,
+                   nproc=args.nproc,
+                   back_ctrate=args.back,
+                   noclobber=args.noclobber,
+                   ignore_instr=args.ignore_instr)

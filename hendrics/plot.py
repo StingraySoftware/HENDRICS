@@ -1,22 +1,18 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Quicklook plots."""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
 import warnings
-
+import os
 import copy
 import collections
+import numpy as np
 from stingray.gti import create_gti_mask
 from astropy.modeling.models import Const1D
 from astropy.modeling import Model
 from astropy.stats import poisson_conf_interval
+from astropy import log
 
-import logging
-import numpy as np
-
-import os
-from .fold import fold_events
+from .fold import fold_events, filter_energy
 from .base import deorbit_events
 from .io import load_events
 from .io import load_data, get_file_type, load_pds
@@ -29,7 +25,7 @@ from .base import detection_level
 def _next_color(ax):
     try:
         return next(ax._get_lines.color_cycle)
-    except:
+    except Exception:
         return next(ax._get_lines.prop_cycler)['color']
 
 
@@ -41,7 +37,7 @@ def _baseline_fun(x, a):
 def _value_or_none(dict_like, key):
     try:
         return dict_like[key]
-    except:
+    except KeyError:
         return None
 
 
@@ -205,7 +201,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
             if const is None:
                 p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2],
                                     sigma=epds)
-                logging.info('White noise level is {0}'.format(p[0]))
+                log.info('White noise level is {0}'.format(p[0]))
                 const = p[0]
 
             pds -= const
@@ -219,7 +215,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
             level *= freq
             for i, func in enumerate(models):
                 const = _get_const(func)
-                plt.plot(freq, freq*(func(freq) - const),
+                plt.plot(freq, freq * (func(freq) - const),
                          label='Model {}'.format(i + 1), zorder=20, color='k')
 
         if np.any(level < 0):
@@ -364,6 +360,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             search_gs_no = 1
 
             events = load_events(ef.filename)
+            if ef.emin is not None or ef.emax is not None:
+                events, elabel = filter_energy(events, ef.emin, ef.emax)
 
             if hasattr(ef, "parfile") and ef.parfile is not None:
                 root = os.path.split(fname)[0]
@@ -374,22 +372,27 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                 else:
                     ef.parfile = parfile
 
-                if parfile and os.path.exists(ef.parfile):
-                    events = deorbit_events(events, ef.parfile)
+                if parfile and os.path.exists(parfile):
+                    events = deorbit_events(events, parfile)
+
+            if hasattr(ef, 'ref_time') and ef.ref_time is not None:
+                ref_time = ef.ref_time
+            else:
+                ref_time = (events.time[0] + events.time[-1]) / 2
 
             phase, profile, profile_err = \
                 fold_events(copy.deepcopy(events.time), f, fdot,
-                            ref_time=events.gti[0, 0],
-                            gtis=copy.deepcopy(events.gti),
+                            ref_time=ref_time,
+                            # gtis=copy.deepcopy(events.gti),
                             expocorr=False, nbin=nbin)
-
             ax = plt.subplot(external_gs[0])
 
+            # noinspection PyPackageRequirements
             ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
                 round(f, -np.int(np.floor(np.log10(np.abs(df))))),
                 round(fdot, -np.int(np.floor(np.log10(np.abs(dfdot)))))),
-                    horizontalalignment='left', verticalalignment = 'center',
-                    transform = ax.transAxes)
+                horizontalalignment='left', verticalalignment='center',
+                transform=ax.transAxes)
             ax.plot(np.concatenate((phase, phase + 1)),
                     np.concatenate((profile, profile)), drawstyle='steps-mid')
 
@@ -413,10 +416,19 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             ax.set_ylabel("Counts")
             ax.set_xlim([0, 2])
             ax.legend()
-            phascommand = "HENphaseogram -f {} --fdot {} {}".format(f, fdot,
-                                                                    ef.filename)
+            phascommand = "HENphaseogram -f {} " \
+                          "--fdot {} {} -n {} --norm to1".format(f, fdot,
+                                                                 ef.filename, nbin)
             if ef.parfile and os.path.exists(ef.parfile):
                 phascommand += " --deorbit-par {}".format(parfile)
+            if hasattr(ef, 'emin') and ef.emin is not None:
+                phascommand += " --emin {}".format(ef.emin)
+            if hasattr(ef, 'emin') and ef.emin is not None:
+                phascommand += " --emax {}".format(ef.emax)
+            pepoch = ref_time / 86400 + events.mjdref
+
+            if hasattr(events, 'mjdref') and events.mjdref is not None:
+                phascommand += " --pepoch {}".format(pepoch)
 
             print("To see the detailed phaseogram, "
                   "run {}".format(phascommand))
@@ -429,9 +441,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             external_gs = gridspec.GridSpec(1, 1)
             search_gs_no = 0
 
-
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-
             gs = gridspec.GridSpecFromSubplotSpec(
                 2, 2, height_ratios=(1, 3), width_ratios=(3, 1),
                 hspace=0, wspace=0, subplot_spec=external_gs[search_gs_no])
@@ -439,7 +449,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             axf = plt.subplot(gs[0, 0])
             axfdot = plt.subplot(gs[1, 1])
             if vmax is not None:
-                axf.axhline(vmax, ls="--", label="99.9\% c.l.")
+                axf.axhline(vmax, ls="--", label=r"99.9\% c.l.")
                 axfdot.axvline(vmax)
             axffdot = plt.subplot(gs[1, 0], sharex=axf, sharey=axfdot)
             axffdot.pcolormesh(ef.freq, np.asarray(ef.fdots), ef.stat,
@@ -478,6 +488,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             axffdot.set_ylabel('Fdot (Hz/s)')
             axffdot.set_xlim([np.min(ef.freq), np.max(ef.freq)])
             axffdot.set_ylim([np.min(ef.fdots), np.max(ef.fdots)])
+            axffdot.axvline(f, ls='--', color='white')
+            axffdot.axhline(fdot, ls='--', color='white')
             axf.legend()
         else:
             axf = plt.subplot(external_gs[search_gs_no])
@@ -486,13 +498,12 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             axf.set_ylabel(ef.kind + ' stat')
             axf.legend()
 
-
         if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
                 not len(ef.stat.shape) > 1:
 
             for f in ef.best_fits:
                 xs = np.linspace(np.min(ef.freq), np.max(ef.freq),
-                                 len(ef.freq)*2)
+                                 len(ef.freq) * 2)
                 plt.plot(xs, f(xs))
 
         if output_data_file is not None:
@@ -564,7 +575,7 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
 
     plt.figure('LC ' + figlabel)
     for lcfile in lcfiles:
-        logging.info('Loading %s...' % lcfile)
+        log.info('Loading %s...' % lcfile)
         lcdata = load_data(lcfile)
 
         time = lcdata['time']
@@ -612,6 +623,7 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
 def main(args=None):
     """Main function called by the `HENplot` command line script."""
     import argparse
+    from .base import check_negative_numbers_in_args
 
     description = \
         'Plot the content of HENDRICS light curves and frequency spectra'
@@ -651,6 +663,7 @@ def main(args=None):
                         help="Plot two variables contained in the file",
                         default=None)
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
     if args.noplot and args.figname is None:
         args.figname = args.files[0].replace(HEN_FILE_EXTENSION, '.png')

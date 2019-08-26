@@ -1,35 +1,37 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Search for pulsars."""
-from __future__ import (absolute_import, division, print_function)
 
-from .io import load_events, EFPeriodogram, save_folding, load_folding, \
-    HEN_FILE_EXTENSION
-from .base import hen_root
-from .fold import filter_energy
+import warnings
+import os
+import argparse
+from functools import wraps
+import copy
+import numpy as np
+from astropy import log
+from astropy.logger import AstropyUserWarning
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
-    search_best_peaks, phaseogram
-from stingray.pulse.pulsar import z_n
+    search_best_peaks
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
+from .io import load_events, EFPeriodogram, save_folding, \
+    HEN_FILE_EXTENSION
+from .base import hen_root
+from .fold import filter_energy
 
-import numpy as np
-import os
-import logging
-import argparse
-from functools import wraps
 
 try:
     from fast_histogram import histogram2d
     HAS_FAST_HIST = True
 except ImportError:
     from numpy import histogram2d as histogram2d_np
+
     def histogram2d(*args, **kwargs):
         return histogram2d_np(*args, **kwargs)[0]
 
 try:
     from numba import njit, prange
-except:
+except ImportError:
     def njit(**kwargs):
         """Dummy decorator in case jit cannot be imported."""
         def true_decorator(f):
@@ -68,16 +70,35 @@ def _save_df_to_csv(df, csv_file, reset=False):
     df.to_csv(csv_file, header=header, index=False, mode=mode)
 
 
+def check_phase_error_after_casting_to_double(tref, f, fdot=0):
+    """Check the maximum error expected in the phase when casting to double."""
+    times = np.array(np.random.normal(tref, 0.1, 1000), dtype=np.longdouble)
+    times_dbl = times.astype(np.double)
+    phase = times * f + 0.5 * times * fdot ** 2
+    phase_dbl = times_dbl * np.double(f) + \
+        0.5 * times_dbl ** 2 * np.double(fdot)
+    return np.max(np.abs(phase_dbl - phase))
+
+
 def decide_binary_parameters(length, freq_range, porb_range, asini_range,
                              fdot_range=[0, 0], NMAX=10,
                              csv_file='db.csv', reset=False):
     import pandas as pd
     count = 0
     omega_range = [1 / porb_range[1], 1 / porb_range[0]]
-    columns = ['freq', 'fdot', 'X', 'Porb', 'done', 'max_stat', 'min_stat', 'best_T0']
+    columns = [
+        'freq',
+        'fdot',
+        'X',
+        'Porb',
+        'done',
+        'max_stat',
+        'min_stat',
+        'best_T0']
 
     df = 1 / length
-    print('Recommended frequency steps: {}'.format(int(np.diff(freq_range)[0] // df + 1)))
+    print('Recommended frequency steps: {}'.format(
+        int(np.diff(freq_range)[0] // df + 1)))
     while count < NMAX:
         # In any case, only the first loop deletes the file
         if count > 0:
@@ -86,7 +107,7 @@ def decide_binary_parameters(length, freq_range, porb_range, asini_range,
         freq = np.random.uniform(freq_range[0], freq_range[1])
         fdot = np.random.uniform(fdot_range[0], fdot_range[1])
 
-        dX = 1/(TWOPI * freq)
+        dX = 1 / (TWOPI * freq)
 
         nX = np.int(np.diff(asini_range) // dX) + 1
         Xs = np.random.uniform(asini_range[0], asini_range[1], nX)
@@ -117,7 +138,7 @@ def folding_orbital_search(events, parameter_csv_file, chunksize=100,
     for chunk in pd.read_csv(parameter_csv_file, chunksize=chunksize):
         try:
             chunk['done'][0]
-        except:
+        except Exception:
             continue
         for i in range(len(chunk)):
             if chunk['done'][i]:
@@ -147,11 +168,12 @@ def folding_orbital_search(events, parameter_csv_file, chunksize=100,
                     best_T0 = T0
                 if stats[0] < min_stats:
                     min_stats = stats[0]
-            chunk['max_stat'][i] = max_stats
-            chunk['min_stat'][i] = min_stats
-            chunk['best_T0'][i] = best_T0
+            idx = chunk.index[i]
+            chunk.iloc[idx, chunk.columns.get_loc('max_stat')] = max_stats
+            chunk.iloc[idx, chunk.columns.get_loc('min_stat')] = min_stats
+            chunk.iloc[idx, chunk.columns.get_loc('best_T0')] = best_T0
 
-            chunk['done'][i] = True
+            chunk.iloc[idx, chunk.columns.get_loc('done')] = True
         _save_df_to_csv(chunk, outfile)
 
 
@@ -173,7 +195,11 @@ def fit(frequencies, stats, center_freq, width=None, obs_length=None,
 
 
 @njit()
-def calculate_shifts(nprof: int, nbin : int, nshift : int, order : int =1) -> np.array:
+def calculate_shifts(
+        nprof: int,
+        nbin: int,
+        nshift: int,
+        order: int = 1) -> np.array:
     shifts = np.linspace(-1., 1., nprof) ** order
     return nshift * shifts
 
@@ -186,7 +212,8 @@ def shift_and_select(repeated_profiles, lshift, qshift, newprof):
     qshifts = calculate_shifts(nprof, nbin, qshift, 2)
     for k in range(nprof):
         total_shift = int(np.rint(lshifts[k] + qshifts[k])) % nbin
-        newprof[k, :] = repeated_profiles[k, nbin - total_shift: 2 * nbin - total_shift]
+        newprof[k, :] = repeated_profiles[k, nbin -
+                                          total_shift: 2 * nbin - total_shift]
     return newprof
 
 
@@ -221,6 +248,7 @@ def z_n_fast(phase, norm, n=2):
     >>> np.isclose(z_n_fast(phase, norm, n=2), 50)
     True
     '''
+
     total_norm = np.sum(norm)
 
     result = 0
@@ -229,7 +257,8 @@ def z_n_fast(phase, norm, n=2):
 
     for k in range(1, n + 1):
         kph += phase
-        result += np.sum(np.cos(kph) * norm) ** 2 + np.sum(np.sin(kph) * norm) ** 2
+        result += np.sum(np.cos(kph) * norm) ** 2 + \
+            np.sum(np.sin(kph) * norm) ** 2
 
     return 2 / total_norm * result
 
@@ -256,23 +285,34 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     return stats
 
 
-def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
-                          npfact=2, oversample=8, n=1, search_fdot=True):
+@njit(parallel=True)
+def _fast_phase(ts, mean_f, mean_fdot=0):
+    phases = ts * mean_f + 0.5 * ts * ts * mean_fdot
+    return phases - np.floor(phases)
+
+
+def search_with_qffa_step(
+        times: np.double,
+        mean_f: np.double,
+        mean_fdot=0,
+        nbin=16,
+        nprof=64,
+        npfact=2,
+        oversample=8,
+        n=1,
+        search_fdot=True):
     """Single step of quasi-fast folding algorithm."""
-    ts = times - np.mean(times)
-    phases = ts * mean_f + 0.5 * ts**2 * mean_fdot
-    phases = phases - np.floor(phases)
 
     # Cast to standard double, or the fast_histogram.histogram2d will fail
     # horribly.
-    ts = ts.astype(np.double)
-    phases = phases.astype(np.double)
 
-    profiles = histogram2d(phases, ts,
-                           range=[[0, 1], [ts[0], ts[-1]]],
-                           bins=(nbin, nprof))
+    phases = _fast_phase(times, mean_f, mean_fdot)
 
-    t0, t1 = times.min(), times.max()
+    profiles = histogram2d(phases, times, range=[
+        [0, 1], [times[0], times[-1]]], bins=(nbin, nprof))
+
+    # Assume times are sorted
+    t1, t0 = times[-1], times[0]
 
     # dn = max(1, int(nbin / oversample))
     linbinshifts = np.linspace(-nbin * npfact, nbin * npfact,
@@ -285,11 +325,9 @@ def search_with_qffa_step(times, mean_f, mean_fdot=0, nbin=16, nprof=64,
 
     dphi = 1 / nbin
     delta_t = (t1 - t0) / 2
-    df = dphi / delta_t
-    dfdot = 2 * dphi / delta_t ** 2
+    bin_to_frequency = dphi / delta_t
+    bin_to_fdot = 2 * dphi / delta_t ** 2
 
-    bin_to_frequency = df
-    bin_to_fdot = dfdot
     L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing='ij')
 
     stats = _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=n)
@@ -338,10 +376,25 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
         # in a given sub-integration
         nprof = 4 * 2 * nbin * npfact
 
+    times = copy.deepcopy(times)
+
     if t0 is None:
         t0 = times.min()
     if t1 is None:
         t1 = times.max()
+    meantime = (t1 + t0) / 2
+    times -= meantime
+
+    maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
+    log.info(
+        f"Maximum error on the phase expected when casting to double: {maxerr}")
+    if maxerr > 1 / nbin / 10:
+        warnings.warn(
+            "Casting to double produces non-negligible phase errors. "
+            "Please use shorter light curves.",
+            AstropyUserWarning)
+
+    times = times.astype(np.double)
 
     length = t1 - t0
 
@@ -360,19 +413,19 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     all_fgrid = []
     all_fdotgrid = []
     all_stats = []
+
     for ii, i in enumerate(show_progress(allvalues)):
         offset = step * i
         fdot_offset = 0
 
-        mean_f = frequency + offset + 0.12 * step
-        mean_fdot = fdot + fdot_offset
+        mean_f = np.double(frequency + offset + 0.12 * step)
+        mean_fdot = np.double(fdot + fdot_offset)
         fgrid, fdotgrid, stats = \
             search_with_qffa_step(times, mean_f, mean_fdot=mean_fdot,
                                   nbin=nbin, nprof=nprof, npfact=npfact,
                                   oversample=oversample, n=n,
                                   search_fdot=search_fdot)
 
-        idx = stats.argmax()
         if all_fgrid is None:
             all_fgrid = fgrid
             all_fdotgrid = fdotgrid
@@ -385,7 +438,7 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     all_fdotgrid = np.vstack(all_fdotgrid)
     all_stats = np.vstack(all_stats)
 
-    step = np.median(np.diff(all_fgrid[:,0]))
+    step = np.median(np.diff(all_fgrid[:, 0]))
     fdotstep = np.median(np.diff(all_fdotgrid[0]))
     return all_fgrid.T, all_fdotgrid.T, all_stats.T, step, fdotstep, length
 
@@ -452,7 +505,7 @@ def dyn_folding_search(events, fmin, fmax, step=None,
             results = func(times_filt, trial_freqs, **kwargs)
             frequencies, stat = results
             stats.append(stat)
-        except:
+        except Exception:
             stats.append(np.zeros_like(trial_freqs))
     times = (start + stop) / 2
     fig = plt.figure('Dynamical search')
@@ -465,6 +518,7 @@ def dyn_folding_search(events, fmin, fmax, step=None,
 
 
 def _common_parser(args=None):
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Search for pulsars using the epoch folding or the Z_n^2 '
                    'algorithm')
     parser = argparse.ArgumentParser(description=description)
@@ -526,32 +580,20 @@ def _common_parser(args=None):
     parser.add_argument("--fit-frequency", type=float,
                         help="Force the candidate frequency to FIT_FREQUENCY")
 
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
     # Only relevant to z search
     parser.add_argument('-N', default=2, type=int,
                         help="The number of harmonics to use in the search "
                              "(the 'N' in Z^2_N; only relevant to Z search!)")
-    parser.add_argument("--deorbit-par",
-                        help=("Deorbit data with this parameter file (requires PINT installed)"),
-                        default=None,
-                        type=str)
+
+    args = check_negative_numbers_in_args(args)
+    _add_default_args(parser, ['deorbit', 'loglevel', 'debug'])
 
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENefsearch.log', level=numeric_level,
-                        filemode='w')
-
+    log.setLevel(args.loglevel)
     return args
 
 
@@ -578,6 +620,7 @@ def _common_main(args, func):
             baseline = args.N
             kind = 'Z2n'
         events = load_events(fname)
+        mjdref = events.mjdref
         if args.emin is not None or args.emax is not None:
             events, elabel = filter_energy(events, args.emin, args.emax)
 
@@ -594,6 +637,7 @@ def _common_main(args, func):
                                expocorr=args.expocorr, fdotmin=args.fdotmin,
                                fdotmax=args.fdotmax,
                                segment_size=args.segment_size, **kwargs)
+            ref_time = (events.gti[0, 0])
         else:
             oversample = assign_value_if_none(args.oversample, 8)
 
@@ -601,6 +645,7 @@ def _common_main(args, func):
                 search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
                                  nbin=args.nbin, n=n,
                                  nprof=None, npfact=2, oversample=oversample)
+            ref_time = (events.time[-1] + events.time[0]) / 2
 
         length = events.time.max() - events.time.min()
         segment_size = np.min([length, args.segment_size])
@@ -620,7 +665,10 @@ def _common_main(args, func):
         efperiodogram = EFPeriodogram(frequencies, stats, kind, args.nbin,
                                       args.N, fdots=fdots, M=M,
                                       segment_size=segment_size,
-                                      filename=fname, parfile=args.deorbit_par)
+                                      filename=fname, parfile=args.deorbit_par,
+                                      emin=args.emin, emax=args.emax,
+                                      mjdref=mjdref,
+                                      pepoch=mjdref + ref_time / 86400)
 
         if args.find_candidates:
             threshold = 1 - args.conflevel / 100
@@ -651,15 +699,25 @@ def _common_main(args, func):
 
         efperiodogram.best_fits = best_models
 
+        out_fname = hen_root(fname) + '_{}'.format(kind)
+        if args.emin is not None or args.emax is not None:
+            emin = assign_value_if_none(args.emin, '**')
+            emax = assign_value_if_none(args.emax, '**')
+            out_fname += f'_{emin}-{emax}keV'
+
         save_folding(efperiodogram,
-                     hen_root(fname) + '_{}'.format(kind) + HEN_FILE_EXTENSION)
+                     out_fname + HEN_FILE_EXTENSION)
 
 
 def main_efsearch(args=None):
     """Main function called by the `HENefsearch` command line script."""
-    _common_main(args, epoch_folding_search)
+
+    with log.log_to_file('HENefsearch.log'):
+        _common_main(args, epoch_folding_search)
 
 
 def main_zsearch(args=None):
     """Main function called by the `HENzsearch` command line script."""
-    _common_main(args, z_n_search)
+
+    with log.log_to_file('HENzsearch.log'):
+        _common_main(args, z_n_search)

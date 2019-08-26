@@ -4,17 +4,15 @@
 Only works for data taken in specific data modes of NuSTAR, where all events
 are telemetered.
 """
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
+import warnings
+from stingray.lightcurve import Lightcurve
+from stingray.gti import create_gti_mask
+from astropy import log
 import numpy as np
 from .io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, HEN_FILE_EXTENSION, load_data
 from .base import hen_root, _assign_value_if_none
-import logging
-import warnings
-from stingray.lightcurve import Lightcurve
-from stingray.gti import create_gti_mask
 
 
 def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
@@ -52,7 +50,7 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
 
     try:
         len(dt)
-    except:
+    except Exception:
         dt = dt + np.zeros(len(times))
 
     # Floating point events, starting from events[0]
@@ -306,6 +304,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
 def main(args=None):
     """Main function called by the `HENexposure` command line script."""
     import argparse
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = (
         'Create exposure light curve based on unfiltered event files.')
     parser = argparse.ArgumentParser(description=description)
@@ -314,49 +313,40 @@ def main(args=None):
     parser.add_argument("uffile", help="Unfiltered event file (FITS)")
     parser.add_argument("-o", "--outroot", type=str, default=None,
                         help='Root of output file names')
-
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
     parser.add_argument("--plot", help="Plot on window",
                         default=False, action='store_true')
+    _add_default_args(parser, ['loglevel', 'debug'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENexposure.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    with log.log_to_file('HENexposure.log'):
+        lc_file = args.lcfile
+        uf_file = args.uffile
 
-    lc_file = args.lcfile
-    uf_file = args.uffile
+        outroot = _assign_value_if_none(args.outroot, hen_root(lc_file))
 
-    outroot = _assign_value_if_none(args.outroot, hen_root(lc_file))
+        outname = outroot + "_lccorr" + HEN_FILE_EXTENSION
 
-    outname = outroot + "_lccorr" + HEN_FILE_EXTENSION
+        outfile = correct_lightcurve(lc_file, uf_file, outname)
 
-    outfile = correct_lightcurve(lc_file, uf_file, outname)
+        outdata = load_data(outfile)
+        time = outdata["time"]
+        lc = outdata['counts']
+        expo = outdata["expo"]
+        gti = outdata["gti"]
 
-    outdata = load_data(outfile)
-    time = outdata["time"]
-    lc = outdata['counts']
-    expo = outdata["expo"]
-    gti = outdata["gti"]
+        try:
+            _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
+            _plot_dead_time_from_uf(uf_file, outroot)
+        except Exception as e:
+            warnings.warn(str(e))
+            pass
 
-    try:
-        _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
-        _plot_dead_time_from_uf(uf_file, outroot)
-    except Exception as e:
-        warnings.warn(str(e))
-        pass
-
-    if args.plot:
-        import matplotlib.pyplot as plt
-        plt.show()
+        if args.plot:
+            import matplotlib.pyplot as plt
+            plt.show()

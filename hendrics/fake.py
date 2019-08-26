@@ -1,25 +1,23 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to simulate data and produce a fake event file."""
 
-from __future__ import (absolute_import, division,
-                        print_function)
-
+import os
+import warnings
+import copy
 import numpy as np
 import numpy.random as ra
-import os
-import logging
-import warnings
+from astropy import log
+from astropy.logger import AstropyUserWarning
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from .io import get_file_format, load_data, load_lcurve
 from .base import _empty
-import copy
 
 from .lcurve import lcurve_from_fits
 try:
     from numba import jit
-except:
+except Exception:
     def jit(fun):
         """Dummy decorator in case jit cannot be imported."""
         return fun
@@ -140,14 +138,16 @@ def filter_for_deadtime(event_list, deadtime, bkg_ev_list=None,
     ev_kind = ev_kind[saved_mask]
     deadtime_values = deadtime_values[saved_mask]
     final_len = len(tot_ev_list)
-    logging.info(
+    log.info(
         'filter_for_deadtime: '
         '{0}/{1} events rejected'.format(initial_len - final_len,
                                          initial_len))
     retval = EventList(time=tot_ev_list[ev_kind], mjdref=event_list_obj.mjdref)
 
     if hasattr(event_list_obj, 'pi') and event_list_obj.pi is not None:
-        warnings.warn("PI information is lost during dead time filtering")
+        warnings.warn(
+            "PI information is lost during dead time filtering",
+            AstropyUserWarning)
 
     if not isinstance(event_list, EventList):
         retval = retval.time
@@ -328,7 +328,9 @@ def generate_fake_fits_observation(event_list=None, filename=None,
 
 def _read_event_list(filename):
     if filename is not None:
-        warnings.warn('Input event lists not yet implemented')
+        warnings.warn(
+            'Input event lists not yet implemented',
+            AstropyUserWarning)
     return None, None
 
 
@@ -344,6 +346,7 @@ def _read_light_curve(filename):
 def main(args=None):
     """Main function called by the `HENfake` command line script."""
     import argparse
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = (
         'Create an event file in FITS format from an event list, or simulating'
         ' it. If input event list is not specified, generates the events '
@@ -373,67 +376,61 @@ def main(args=None):
                              "single number, or two. In this last case, the "
                              "second value is used as sigma of the dead time "
                              "distribution")
-
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+    args = check_negative_numbers_in_args(args)
+    _add_default_args(parser, ['loglevel', 'debug'])
 
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENfake.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    with log.log_to_file('HENfake.log'):
+        additional_columns = {}
+        livetime = None
+        if args.lc is None and args.ctrate is None and args.event_list is not None:
+            event_list = _read_event_list(args.event_list)
+        elif args.lc is not None or args.ctrate is not None:
+            event_list = EventList()
+            if args.lc is not None:
+                lc = _read_light_curve(args.lc)
+            elif args.ctrate is not None:
+                tstart = assign_value_if_none(args.tstart, 0)
+                tstop = assign_value_if_none(args.tstop, 1025)
+                t = np.arange(tstart, tstop)
+                lc = Lightcurve(time=t, counts=args.ctrate + np.zeros_like(t))
+            event_list.simulate_times(lc)
+            nevents = len(event_list.time)
+            event_list.pi = np.zeros(nevents, dtype=int)
+            log.info('{} events generated'.format(nevents))
+        else:
+            event_list = None
 
-    additional_columns = {}
-    livetime = None
-    if args.lc is None and args.ctrate is None and args.event_list is not None:
-        event_list = _read_event_list(args.event_list)
-    elif args.lc is not None or args.ctrate is not None:
-        event_list = EventList()
-        if args.lc is not None:
-            lc = _read_light_curve(args.lc)
-        elif args.ctrate is not None:
-            tstart = assign_value_if_none(args.tstart, 0)
-            tstop = assign_value_if_none(args.tstop, 1025)
-            t = np.arange(tstart, tstop)
-            lc = Lightcurve(time=t, counts=args.ctrate + np.zeros_like(t))
-        event_list.simulate_times(lc)
-        nevents = len(event_list.time)
-        event_list.pi = np.zeros(nevents, dtype=int)
-        print('{} events generated'.format(nevents))
-    else:
-        event_list = None
+        if args.deadtime is not None and event_list is not None:
+            deadtime = args.deadtime[0]
+            deadtime_sigma = None
+            if len(args.deadtime) > 1:
+                deadtime_sigma = args.deadtime[1]
+            event_list, info = filter_for_deadtime(event_list, deadtime,
+                                                   dt_sigma=deadtime_sigma,
+                                                   return_all=True)
+            log.info('{} events after filter'.format(len(event_list.time)))
 
-    if args.deadtime is not None and event_list is not None:
-        deadtime = args.deadtime[0]
-        deadtime_sigma = None
-        if len(args.deadtime) > 1:
-            deadtime_sigma = args.deadtime[1]
-        event_list, info = filter_for_deadtime(event_list, deadtime,
-                                               dt_sigma=deadtime_sigma,
-                                               return_all=True)
-        print('{} events after filter'.format(len(event_list.time)))
+            prior = np.zeros_like(event_list.time)
 
-        prior = np.zeros_like(event_list.time)
+            prior[1:] = np.diff(event_list.time) - info.deadtime[:-1]
 
-        prior[1:] = np.diff(event_list.time) - info.deadtime[:-1]
+            additional_columns["PRIOR"] = {"data": prior, "format": "D"}
+            additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
+            livetime = np.sum(prior)
 
-        additional_columns["PRIOR"] = {"data": prior, "format": "D"}
-        additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
-        livetime = np.sum(prior)
-
-    generate_fake_fits_observation(event_list=event_list,
-                                   filename=args.outname,
-                                   instr=args.instrument, mission=args.mission,
-                                   tstart=args.tstart,
-                                   tstop=args.tstop,
-                                   mjdref=args.mjdref, livetime=livetime,
-                                   additional_columns=additional_columns)
+        generate_fake_fits_observation(
+            event_list=event_list,
+            filename=args.outname,
+            instr=args.instrument,
+            mission=args.mission,
+            tstart=args.tstart,
+            tstop=args.tstop,
+            mjdref=args.mjdref,
+            livetime=livetime,
+            additional_columns=additional_columns)

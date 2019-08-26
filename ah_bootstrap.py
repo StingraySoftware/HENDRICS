@@ -799,7 +799,6 @@ class _CommandNotFound(OSError):
     system.
     """
 
-
 def run_cmd(cmd):
     """
     Run a command in a subprocess, given as a list of command-line

@@ -51,6 +51,7 @@ distribute-*.tar.gz
 *.p
 *.nc
 *.qdp
+*.prof
 
 # Mac OSX
 .DS_Store

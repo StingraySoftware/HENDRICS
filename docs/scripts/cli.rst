@@ -6,7 +6,7 @@ HEN2xspec
 
 ::
 
-    usage: HEN2xspec [-h] [--loglevel LOGLEVEL] [--debug] [--flx2xsp]
+    usage: HEN2xspec [-h] [--flx2xsp] [--loglevel LOGLEVEL] [--debug]
                      files [files ...]
 
     Save a frequency spectrum in a qdp file that can be read by flx2xsp and
@@ -17,10 +17,10 @@ HEN2xspec
 
     optional arguments:
       -h, --help           show this help message and exit
+      --flx2xsp            Also call flx2xsp at the end
       --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug              use DEBUG logging level
-      --flx2xsp            Also call flx2xsp at the end
+      --debug              se DEBUG logging level
 
 
 HENbaseline
@@ -58,9 +58,10 @@ HENbinary
 
 ::
 
-    usage: HENbinary [-h] [-b BIN_TIME] [-l MAX_LENGTH]
-                     [-e ENERGY_INTERVAL ENERGY_INTERVAL] [--loglevel LOGLEVEL]
-                     [--deorbit-par DEORBIT_PAR] [--nproc NPROC] [--debug]
+    usage: HENbinary [-h] [-l MAX_LENGTH] [-b BINTIME]
+                     [-e ENERGY_INTERVAL ENERGY_INTERVAL]
+                     [--deorbit-par DEORBIT_PAR] [--nproc NPROC]
+                     [--loglevel LOGLEVEL] [--debug]
                      files [files ...]
 
     Save light curves in a format readable to PRESTO
@@ -70,19 +71,19 @@ HENbinary
 
     optional arguments:
       -h, --help            show this help message and exit
-      -b BIN_TIME, --bin-time BIN_TIME
-                            Bin time
       -l MAX_LENGTH, --max-length MAX_LENGTH
                             Maximum length of light curves (split otherwise)
+      -b BINTIME, --bintime BINTIME
+                            Bin time
       -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
-                            Energy interval
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
+                            Energy interval used for filtering
       --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --nproc NPROC         Number of processors to use
-      --debug               use DEBUG logging level
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               se DEBUG logging level
 
 
 HENcalibrate
@@ -90,8 +91,8 @@ HENcalibrate
 
 ::
 
-    usage: HENcalibrate [-h] [-r RMF] [-o] [--loglevel LOGLEVEL] [--debug]
-                        [--nproc NPROC]
+    usage: HENcalibrate [-h] [-r RMF] [-o] [--nproc NPROC] [--loglevel LOGLEVEL]
+                        [--debug]
                         files [files ...]
 
     Calibrate clean event files by associating the correct energy to each PI
@@ -105,10 +106,10 @@ HENcalibrate
       -h, --help           show this help message and exit
       -r RMF, --rmf RMF    rmf file used for calibration
       -o, --overwrite      Overwrite; default: no
+      --nproc NPROC        Number of processors to use
       --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug              use DEBUG logging level
-      --nproc NPROC        Number of processors to use
+      --debug              se DEBUG logging level
 
 
 HENcolors
@@ -117,7 +118,7 @@ HENcolors
 ::
 
     usage: HENcolors [-h] -e ENERGIES ENERGIES ENERGIES ENERGIES [-b BINTIME]
-                     [-o OUT] [--use-pi USE_PI] [--loglevel LOGLEVEL] [--debug]
+                     [--use-pi] [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
                      files [files ...]
 
     Calculate color light curves
@@ -133,12 +134,13 @@ HENcolors
                             calculated as 4.-6./2.-3. keV. If --use-pi is
                             specified, these are interpreted as PI channels
       -b BINTIME, --bintime BINTIME
-                            Bin time; if negative, negative power of 2
-      -o OUT, --out OUT     Output file
-      --use-pi USE_PI       Use the PI channel instead of energies
+                            Bin time
+      --use-pi              Use the PI channel instead of energies
+      -o OUTFILE, --outfile OUTFILE
+                            Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               use DEBUG logging level
+      --debug               se DEBUG logging level
 
 
 HENcreategti
@@ -176,7 +178,26 @@ HENcreategti
                             Interval at start and stop of GTIs used for filtering
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               use DEBUG logging level
+      --debug               se DEBUG logging level
+
+
+HENdeorbit
+----------
+
+::
+
+    usage: HENdeorbit [-h] -p DEORBIT_PAR files [files ...]
+
+    Deorbit the event arrival times
+
+    positional arguments:
+      files                 Input event file
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
+                            installed)
 
 
 HENdumpdyn
@@ -207,8 +228,8 @@ HENefsearch
                        [--oversample OVERSAMPLE] [--fast] [--expocorr]
                        [--find-candidates] [--conflevel CONFLEVEL]
                        [--fit-candidates] [--curve CURVE]
-                       [--fit-frequency FIT_FREQUENCY] [--debug]
-                       [--loglevel LOGLEVEL] [-N N] [--deorbit-par DEORBIT_PAR]
+                       [--fit-frequency FIT_FREQUENCY] [-N N]
+                       [--deorbit-par DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -250,14 +271,14 @@ HENefsearch
       --curve CURVE         Kind of curve to use (sinc or Gaussian)
       --fit-frequency FIT_FREQUENCY
                             Force the candidate frequency to FIT_FREQUENCY
-      --debug               use DEBUG logging level
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
       --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               se DEBUG logging level
 
 
 HENexcvar
@@ -288,7 +309,7 @@ HENexcvar
                             et al. 2003 for details).
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               use DEBUG logging level
+      --debug               se DEBUG logging level
 
 
 HENexposure
@@ -296,7 +317,7 @@ HENexposure
 
 ::
 
-    usage: HENexposure [-h] [-o OUTROOT] [--loglevel LOGLEVEL] [--debug] [--plot]
+    usage: HENexposure [-h] [-o OUTROOT] [--plot] [--loglevel LOGLEVEL] [--debug]
                        lcfile uffile
 
     Create exposure light curve based on unfiltered event files.
@@ -309,10 +330,10 @@ HENexposure
       -h, --help            show this help message and exit
       -o OUTROOT, --outroot OUTROOT
                             Root of output file names
+      --plot                Plot on window
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               use DEBUG logging level
-      --plot                Plot on window
+      --debug               se DEBUG logging level
 
 
 HENfake
@@ -350,7 +371,7 @@ HENfake
                             used as sigma of the dead time distribution
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               use DEBUG logging level
+      --debug               se DEBUG logging level
 
 
 HENfold
@@ -360,8 +381,8 @@ HENfold
 
     usage: HENfold [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT] [--tref TREF]
                    [-n NBIN] [--nebin NEBIN] [--emin EMIN] [--emax EMAX]
-                   [--norm NORM] [--debug] [--test] [--loglevel LOGLEVEL]
-                   [--deorbit-par DEORBIT_PAR]
+                   [--norm NORM] [--deorbit-par DEORBIT_PAR] [--loglevel LOGLEVEL]
+                   [--debug] [--test]
                    file
 
     Plot a folded profile
@@ -381,13 +402,13 @@ HENfold
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --norm NORM           --norm to1: Normalize hist so that the maximum at each
                             energy is one. --norm ratios: Divide by mean profile
-      --debug               use DEBUG logging level
-      --test                Just a test. Destroys the window immediately
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
       --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               se DEBUG logging level
+      --test                Only used for tests
 
 
 HENfspec
@@ -396,9 +417,9 @@ HENfspec
 ::
 
     usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
-                    [--norm NORM] [--noclobber] [-o OUTROOT] [--loglevel LOGLEVEL]
-                    [--nproc NPROC] [--back BACK] [--debug] [--save-dyn]
-                    [--ignore-instr]
+                    [--norm NORM] [--noclobber] [-o OUTROOT] [--back BACK]
+                    [--save-dyn] [--ignore-instr] [--nproc NPROC]
+                    [--loglevel LOGLEVEL] [--debug]
                     files [files ...]
 
     Create frequency spectra (PDS, CPDS, cospectrum) starting from well-defined
@@ -424,13 +445,13 @@ HENfspec
       --noclobber           Do not overwrite existing files
       -o OUTROOT, --outroot OUTROOT
                             Root of output file names for CPDS only
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --nproc NPROC         Number of processors to use
       --back BACK           Estimated background (non-source) count rate
-      --debug               use DEBUG logging level
       --save-dyn            save dynamical power spectrum
       --ignore-instr        Ignore instrument names in channels
+      --nproc NPROC         Number of processors to use
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               se DEBUG logging level
 
 
 HENjoinevents
@@ -469,7 +490,7 @@ HENlags
       -h, --help           show this help message and exit
       --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug              use DEBUG logging level
+      --debug              se DEBUG logging level
 
 
 HENlcurve
@@ -479,11 +500,11 @@ HENlcurve
 
     usage: HENlcurve [-h] [-b BINTIME]
                      [--safe-interval SAFE_INTERVAL SAFE_INTERVAL]
-                     [--pi-interval PI_INTERVAL PI_INTERVAL]
-                     [-e E_INTERVAL E_INTERVAL] [-s] [-j] [-g] [--minlen MINLEN]
-                     [--ignore-gtis] [-d OUTDIR] [-o OUTFILE]
-                     [--loglevel LOGLEVEL] [--nproc NPROC] [--debug] [--noclobber]
-                     [--fits-input] [--txt-input]
+                     [-e ENERGY_INTERVAL ENERGY_INTERVAL]
+                     [--pi-interval PI_INTERVAL PI_INTERVAL] [-s] [-j] [-g]
+                     [--minlen MINLEN] [--ignore-gtis] [-d OUTDIR] [--noclobber]
+                     [--fits-input] [--txt-input] [-o OUTFILE]
+                     [--loglevel LOGLEVEL] [--debug] [--nproc NPROC]
                      files [files ...]
 
     Create lightcurves starting from event files. It is possible to specify energy
@@ -498,10 +519,10 @@ HENlcurve
                             Bin time; if negative, negative power of 2
       --safe-interval SAFE_INTERVAL SAFE_INTERVAL
                             Interval at start and stop of GTIs used for filtering
+      -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
+                            Energy interval used for filtering
       --pi-interval PI_INTERVAL PI_INTERVAL
                             PI interval used for filtering
-      -e E_INTERVAL E_INTERVAL, --e-interval E_INTERVAL E_INTERVAL
-                            Energy interval used for filtering
       -s, --scrunch         Create scrunched light curve (single channel)
       -j, --join            Create joint light curve (multiple channels)
       -g, --gti-split       Split light curve by GTI
@@ -509,15 +530,15 @@ HENlcurve
       --ignore-gtis         Ignore GTIs
       -d OUTDIR, --outdir OUTDIR
                             Output directory
-      -o OUTFILE, --outfile OUTFILE
-                            Output file name
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --nproc NPROC         Number of processors to use
-      --debug               use DEBUG logging level
       --noclobber           Do not overwrite existing files
       --fits-input          Input files are light curves in FITS format
       --txt-input           Input files are light curves in txt format
+      -o OUTFILE, --outfile OUTFILE
+                            Output file
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               se DEBUG logging level
+      --nproc NPROC         Number of processors to use
 
 
 HENmodel
@@ -550,7 +571,7 @@ HENmodel
                             2 Hz, or using the intervals 0-2 Hz and 5-10 Hz.
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               use DEBUG logging level
+      --debug               se DEBUG logging level
 
 
 HENphaseogram
@@ -562,8 +583,9 @@ HENphaseogram
                          [--pepoch PEPOCH] [--periodogram PERIODOGRAM] [-n NBIN]
                          [--ntimes NTIMES] [--binary]
                          [--binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS]
-                         [--norm NORM] [--deorbit-par DEORBIT_PAR] [--debug]
-                         [--test] [--plot-only] [--loglevel LOGLEVEL]
+                         [--emin EMIN] [--emax EMAX] [--norm NORM] [--plot-only]
+                         [--deorbit-par DEORBIT_PAR] [--test]
+                         [--loglevel LOGLEVEL] [--debug]
                          file
 
     Plot an interactive phaseogram
@@ -585,17 +607,19 @@ HENphaseogram
                             derivatives
       --binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS
                             Initial values for binary parameters
+      --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --norm NORM           Normalization for the phaseogram. Can be 'to1' (each
                             profile normalized from 0 to 1); 'mediansub' (just
                             subtract the median from each profile); default None
+      --plot-only           Only plot the phaseogram
       --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
-      --debug               use DEBUG logging level
-      --test                Just a test. Destroys the window immediately
-      --plot-only           Only plot the phaseogram
+      --test                Only used for tests
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               se DEBUG logging level
 
 
 HENphasetag
@@ -668,9 +692,10 @@ HENreadevents
 
 ::
 
-    usage: HENreadevents [-h] [--loglevel LOGLEVEL] [--nproc NPROC] [--noclobber]
-                         [-g] [-l LENGTH_SPLIT] [--min-length MIN_LENGTH]
-                         [--gti-string GTI_STRING] [--debug]
+    usage: HENreadevents [-h] [--noclobber] [-g] [-l LENGTH_SPLIT]
+                         [--min-length MIN_LENGTH] [--gti-string GTI_STRING]
+                         [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
+                         [--nproc NPROC]
                          files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
@@ -681,9 +706,6 @@ HENreadevents
 
     optional arguments:
       -h, --help            show this help message and exit
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --nproc NPROC         Number of processors to use
       --noclobber           Do not overwrite existing event files
       -g, --gti-split       Split event list by GTI
       -l LENGTH_SPLIT, --length-split LENGTH_SPLIT
@@ -692,7 +714,12 @@ HENreadevents
                             Minimum length of GTIs to consider
       --gti-string GTI_STRING
                             GTI string
-      --debug               use DEBUG logging level
+      -o OUTFILE, --outfile OUTFILE
+                            Output file
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               se DEBUG logging level
+      --nproc NPROC         Number of processors to use
 
 
 HENreadfile
@@ -733,7 +760,7 @@ HENrebin
                             geometrical binning factor
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               use DEBUG logging level
+      --debug               se DEBUG logging level
 
 
 HENscrunchlc
@@ -783,10 +810,10 @@ HENvarenergy
 
     usage: HENvarenergy [-h] [-f FREQ_INTERVAL FREQ_INTERVAL]
                         [--energy-values ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES]
-                        [--segment-size SEGMENT_SIZE] [-b BIN_TIME]
+                        [--segment-size SEGMENT_SIZE]
                         [--ref-band REF_BAND REF_BAND] [--rms] [--covariance]
-                        [--use-pi] [--cross-instr] [--lag] [--loglevel LOGLEVEL]
-                        [--debug]
+                        [--use-pi] [--cross-instr] [--lag] [-b BINTIME]
+                        [--loglevel LOGLEVEL] [--debug]
                         files [files ...]
 
     Calculates variability-energy spectra
@@ -803,8 +830,6 @@ HENvarenergy
                             spacing, lin or log
       --segment-size SEGMENT_SIZE
                             Length of the light curve intervals to be averaged
-      -b BIN_TIME, --bin-time BIN_TIME
-                            Bin time for the light curve
       --ref-band REF_BAND REF_BAND
                             Reference band when relevant
       --rms                 Calculate rms
@@ -814,9 +839,11 @@ HENvarenergy
                             band from one and the subbands from the other (useful
                             in NuSTAR and multiple-detector missions)
       --lag                 Calculate lag-energy
+      -b BINTIME, --bintime BINTIME
+                            Bin time
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               use DEBUG logging level
+      --debug               se DEBUG logging level
 
 
 HENzsearch
@@ -830,8 +857,8 @@ HENzsearch
                       [--oversample OVERSAMPLE] [--fast] [--expocorr]
                       [--find-candidates] [--conflevel CONFLEVEL]
                       [--fit-candidates] [--curve CURVE]
-                      [--fit-frequency FIT_FREQUENCY] [--debug]
-                      [--loglevel LOGLEVEL] [-N N] [--deorbit-par DEORBIT_PAR]
+                      [--fit-frequency FIT_FREQUENCY] [-N N]
+                      [--deorbit-par DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -873,13 +900,13 @@ HENzsearch
       --curve CURVE         Kind of curve to use (sinc or Gaussian)
       --fit-frequency FIT_FREQUENCY
                             Force the candidate frequency to FIT_FREQUENCY
-      --debug               use DEBUG logging level
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
       --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               se DEBUG logging level
 
 

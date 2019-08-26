@@ -1,11 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Test a full run of the codes from the command line."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
 import hendrics as hen
-import logging
+from astropy import log
 import os
 import glob
 import subprocess as sp
@@ -14,6 +11,11 @@ from astropy.tests.helper import catch_warnings
 from astropy.io import fits
 import pytest
 from stingray.lightcurve import Lightcurve
+from astropy.logger import AstropyUserWarning
+from astropy.tests.helper import remote_data
+from hendrics.tests import _dummy_par
+from hendrics.fold import HAS_PINT
+
 try:
     FileNotFoundError
 except NameError:
@@ -21,7 +23,8 @@ except NameError:
 
 HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
-logging.basicConfig(filename='HEN.log', level=logging.DEBUG, filemode='w')
+log.setLevel('DEBUG')
+# log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
 class TestFullRun(object):
@@ -41,6 +44,7 @@ class TestFullRun(object):
         cls.first_event_file = os.path.join(cls.datadir,
                                             'monol_testA_nustar_fpma_ev' +
                                             HEN_FILE_EXTENSION)
+        cls.par = _dummy_par("bubububu.par")
 
     def test_scripts_are_installed(self):
         """Test only once that command line scripts are installed correctly."""
@@ -124,7 +128,8 @@ class TestFullRun(object):
     def test_save_binary_events(self):
         f = self.first_event_file
         with pytest.raises(ValueError) as excinfo:
-            hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
+            hen.binary.main_presto(
+                "{} -b 0.1 -e 3 59 --debug".format(f).split())
 
         assert 'Energy filtering requested' in str(excinfo.value)
 
@@ -170,11 +175,15 @@ class TestFullRun(object):
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, ev.gti)
 
+    @remote_data
+    @pytest.mark.skipif('not HAS_PINT')
     def test_save_binary_calibrated_events(self):
         f = os.path.join(self.datadir,
                          'monol_testA_nustar_fpma_ev_calib' +
                          HEN_FILE_EXTENSION)
-        hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
+        hen.binary.main_presto(
+            "{} -b 0.1 -e 3 59 --debug --deorbit-par {}".format(
+                f, self.par).split())
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.dat'))
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.inf'))
 
@@ -212,20 +221,19 @@ class TestFullRun(object):
     def test_lcurve(self):
         """Test light curve production."""
         from astropy.io.fits import Header
+        new_filename = \
+            os.path.join(os.path.join(self.datadir,
+                                      'monol_testA_E3-50_lc' +
+                                      HEN_FILE_EXTENSION))
         command = ('{0} -e {1} {2} --safe-interval '
                    '{3} {4}  --nproc 2 -b 0.5 -o {5}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
                          HEN_FILE_EXTENSION),
             3, 50, 100, 300,
-            os.path.join(self.datadir, 'monol_testA_E3-50_lc' +
-                         HEN_FILE_EXTENSION)
+            new_filename
         )
         hen.lcurve.main(command.split())
 
-        new_filename = \
-            os.path.join(os.path.join(self.datadir,
-                                      'monol_testA_E3-50_lc' +
-                                      HEN_FILE_EXTENSION))
         assert os.path.exists(new_filename)
         lc = hen.io.load_lcurve(new_filename)
         assert hasattr(lc, 'header')
@@ -234,6 +242,21 @@ class TestFullRun(object):
         assert hasattr(lc, 'gti')
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, lc.gti)
+
+    def test_lcurve_noclobber(self):
+        input_file = \
+            os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
+                         HEN_FILE_EXTENSION)
+        new_filename = \
+            os.path.join(os.path.join(self.datadir,
+                                      'monol_testA_E3-50_lc' +
+                                      HEN_FILE_EXTENSION))
+
+        with pytest.warns(AstropyUserWarning) as record:
+           command = ('{0} -o {1} --noclobber').format(input_file, new_filename)
+           hen.lcurve.main(command.split())
+        assert ["File exists, and noclobber" in r.message.args[0]
+                for r in record]
 
     def test_save_binary_lc(self):
         f = \
@@ -308,6 +331,11 @@ class TestFullRun(object):
             lcurve_ftools_orig,
             lcurve_ftools)
         hen.lcurve.main(command.split())
+        with pytest.warns(AstropyUserWarning) as record:
+            command = command + ' --noclobber'
+            hen.lcurve.main(command.split())
+        assert ["File exists, and noclobber" in r.message.args[0]
+                for r in record]
 
     def test_fits_lcurve1(self):
         """Test light curves from FITS."""
@@ -351,14 +379,20 @@ class TestFullRun(object):
         lcurve_txt = os.path.join(self.datadir,
                                   'lcurve_txt_lc' +
                                   HEN_FILE_EXTENSION)
-        hen.lcurve.main(['--txt-input', lcurve_txt_orig,
-                        '--outfile', lcurve_txt])
+        command = '--txt-input ' + lcurve_txt_orig + ' --outfile ' + lcurve_txt
+        hen.lcurve.main(command.split())
         lcdata_txt = hen.io.load_data(lcurve_txt)
 
         lc_txt = lcdata_txt['counts']
 
         assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), \
             'Light curve data do not coincide between txt and HEN'
+
+        with pytest.warns(AstropyUserWarning) as record:
+            command = command + ' --noclobber'
+            hen.lcurve.main(command.split())
+        assert ["File exists, and noclobber" in r.message.args[0]
+                for r in record]
 
     def test_joinlcs(self):
         """Test produce joined light curves."""
@@ -570,13 +604,14 @@ class TestFullRun(object):
                 os.path.join(self.datadir, 'monol_test_E3-50'))
         hen.fspec.main(command.split())
 
-    # def test_dumpdynpds(self):
-    #     """Test dump dynamical PDSs."""
-    #     command = '--noplot ' + \
-    #         os.path.join(self.datadir,
-    #                      'monol_testA_E3-50_pds') + \
-    #         HEN_FILE_EXTENSION
-    #     hen.fspec.dumpdyn_main(command.split())
+    def test_dumpdynpds(self):
+        """Test dump dynamical PDSs."""
+        command = '--noplot ' + \
+            os.path.join(self.datadir,
+                         'monol_testA_E3-50_pds') + \
+            HEN_FILE_EXTENSION
+        with pytest.raises(NotImplementedError):
+            hen.fspec.dumpdyn_main(command.split())
 
     def test_sumpds(self):
         """Test the sum of pdss."""
@@ -588,13 +623,14 @@ class TestFullRun(object):
             '-o', os.path.join(self.datadir,
                                'monol_test_sum' + HEN_FILE_EXTENSION)])
 
-    # def test_dumpdyncpds(self):
-    #     """Test dumping CPDS file."""
-    #     command = '--noplot ' + \
-    #         os.path.join(self.datadir,
-    #                      'monol_test_E3-50_cpds') + \
-    #         HEN_FILE_EXTENSION
-    #     hen.fspec.dumpdyn_main(command.split())
+    def test_dumpdyncpds(self):
+        """Test dump dynamical PDSs."""
+        command = '--noplot ' + \
+            os.path.join(self.datadir,
+                         'monol_test_E3-50_cpds') + \
+        HEN_FILE_EXTENSION
+        with pytest.raises(NotImplementedError):
+            hen.fspec.dumpdyn_main(command.split())
 
     def test_rebinlc(self):
         """Test LC rebinning."""
@@ -979,7 +1015,7 @@ model = models.Const1D()
     def test_plot_hid(self):
         """Test plotting with linear axes."""
         # also produce a light curve with the same binning
-        command = ('{0} -b 100 --e-interval {1} {2}').format(
+        command = ('{0} -b 100 --energy-interval {1} {2}').format(
             os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev_calib' +
                          HEN_FILE_EXTENSION), 3, 10)
 

@@ -1,28 +1,29 @@
 """Interactive phaseogram."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
 import copy
+import argparse
+import warnings
+from abc import ABCMeta, abstractmethod
+
+import six
 from scipy.interpolate import interp1d
-from .io import load_events, load_folding
-from .fold import get_TOAs_from_events, HAS_PINT
-from .base import hen_root, deorbit_events
+import numpy as np
+from astropy import log
+from astropy.logger import AstropyUserWarning
+from astropy.stats import poisson_conf_interval
 from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
 from stingray.pulse.pulsar import z_n
-from .fold import z2_n_detection_level
-
-import numpy as np
-import logging
-import argparse
 import matplotlib.pyplot as plt
-import six
-from abc import ABCMeta, abstractmethod
 from matplotlib.widgets import Slider, Button
-import warnings
-from astropy.stats import poisson_conf_interval
 import matplotlib
+
+from .fold import z2_n_detection_level
+from .fold import filter_energy
+from .io import load_events, load_folding
+from .fold import get_TOAs_from_events, HAS_PINT
+from .base import hen_root, deorbit_events
+
 
 if int(matplotlib.__version__.split('.')[0]) < 2:
     DEFAULT_COLORMAP = 'afmhot'
@@ -34,7 +35,8 @@ def get_z2_label(phas, prof):
     good = phas < 1
     z2 = z_n(phas[good], n=2, norm=prof[good])
     z2_detlev = z2_n_detection_level(n=2)
-    z2_label = r'$Z_2^2 = {:.1f} (90\% det. lev. {:.1f})$'.format(z2, z2_detlev)
+    z2_label = r'$Z_2^2 = {:.1f} (90\% det. lev. {:.1f})$'.format(
+        z2, z2_detlev)
     return z2_label
 
 
@@ -182,6 +184,7 @@ class BasePhaseogram(object):
 
         axcolor = '#ff8888'
         self.slider_axes = []
+
         def newax_fn(*args, **kwargs):
             try:
                 ax = plt.axes(*args, facecolor=axcolor)
@@ -189,6 +192,7 @@ class BasePhaseogram(object):
                 # MPL < 2
                 ax = plt.axes(*args, axis_bgcolor=axcolor)
             return ax
+
         self.slider_axes.append(newax_fn([0.25, 0.1, 0.5, 0.03],
                                          facecolor=axcolor))
         self.slider_axes.append(newax_fn([0.25, 0.15, 0.5, 0.03],
@@ -265,7 +269,7 @@ class BasePhaseogram(object):
 
     def toa(self, event):  # pragma: no cover
         warnings.warn("This function was not implemented for this Phaseogram. "
-                      "Try the basic one.")
+                      "Try the basic one.", AstropyUserWarning)
 
     def reset(self, event):
         for s in self.sliders:
@@ -374,15 +378,18 @@ class BasePhaseogram(object):
 
         if hasattr(self, 'orbital_period') and self.orbital_period is not None:
             tm_string += "BINARY BT\n"
-            tm_string += "PB             {}\n".format(self.orbital_period / 86400)
+            tm_string += "PB             {}\n".format(
+                self.orbital_period / 86400)
             tm_string += "A1             {}\n".format(self.asini)
             if self.mjdref is not None:
-                tm_string += "T0             {}\n".format(self.t0 / 86400 + self.mjdref)
+                tm_string += "T0             {}\n".format(
+                    self.t0 / 86400 + self.mjdref)
             tm_string += "T0(MET)        {}\n".format(self.t0)
             tm_string += "PB(s)          {}\n".format(self.orbital_period)
 
         tm_string += "PEPOCH(MET)    {}\n".format(self.pepoch)
         return tm_string
+
 
 class InteractivePhaseogram(BasePhaseogram):
 
@@ -442,7 +449,7 @@ class InteractivePhaseogram(BasePhaseogram):
         freq, fdot, fddot = self._read_sliders()
         return ((times - self.pepoch).astype(np.float64) * freq +
                 0.5 * (times - self.pepoch) ** 2 * fdot +
-                1/6 * (times - self.pepoch) ** 3 * fddot)
+                1 / 6 * (times - self.pepoch) ** 3 * fddot)
 
     def _delay_fun(self, times):
         """This is the delay function _without_ frequency derivatives."""
@@ -657,11 +664,14 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
                                binary_parameters=[None, 0, None],
                                pepoch=None, norm=None,
                                plot_only=False,
-                               deorbit_par=None):
+                               deorbit_par=None,
+                               emin=None, emax=None):
     from astropy.io.fits import Header
     from astropy.coordinates import SkyCoord
 
     events = load_events(event_file)
+    if emin is not None or emax is not None:
+        events, elabel = filter_energy(events, emin, emax)
     try:
         header = Header.fromstring(events.header)
         position = SkyCoord(header['RA_OBJ'], header['DEC_OBJ'], unit='deg',
@@ -673,7 +683,7 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
     pepoch_mjd = pepoch
     if pepoch is None:
         pepoch = events.gti[0, 0]
-        pepoch_mjd = pepoch / 86400 + events.mjdref
+        # pepoch_mjd = pepoch / 86400 + events.mjdref
     else:
         pepoch = (pepoch_mjd - events.mjdref) * 86400
 
@@ -709,6 +719,7 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
 
 def main_phaseogram(args=None):
     description = ('Plot an interactive phaseogram')
+    from .base import _add_default_args, check_negative_numbers_in_args
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("file", help="Input event file", type=str)
@@ -718,9 +729,6 @@ def main_phaseogram(args=None):
                         help="Initial fdot", default=0)
     parser.add_argument("--fddot", type=float, required=False,
                         help="Initial fddot", default=0)
-    parser.add_argument("--pepoch", type=float, required=False,
-                        help="Reference epoch for timing parameters",
-                        default=None)
     parser.add_argument("--periodogram", type=str, required=False,
                         help="Periodogram file", default=None)
     parser.add_argument('-n', "--nbin", default=128, type=int,
@@ -733,59 +741,62 @@ def main_phaseogram(args=None):
     parser.add_argument("--binary-parameters",
                         help="Initial values for binary parameters",
                         default=[None, 0, None], nargs=3, type=float)
-    parser.add_argument("--norm",
-                        help=("Normalization for the phaseogram. Can be 'to1' "
-                              "(each profile normalized from 0 to 1); "
-                              "'mediansub' (just subtract the median from each "
-                              "profile); default None"),
-                        default=None,
-                        type=str)
-    parser.add_argument("--deorbit-par",
-                        help=("Deorbit data with this parameter file (requires PINT installed)"),
-                        default=None,
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--test",
-                        help="Just a test. Destroys the window immediately",
-                        default=False, action='store_true')
+    parser.add_argument("--emin", default=None, type=int,
+                        help="Minimum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--emax", default=None, type=int,
+                        help="Maximum energy (or PI if uncalibrated) to plot")
+    parser.add_argument(
+        "--norm",
+        help=(
+            "Normalization for the phaseogram. Can be 'to1' "
+            "(each profile normalized from 0 to 1); "
+            "'mediansub' (just subtract the median from each "
+            "profile); default None"),
+        default=None,
+        type=str)
     parser.add_argument("--plot-only",
                         help="Only plot the phaseogram",
                         default=False, action='store_true')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
 
+    _add_default_args(
+        parser, [
+            'pepoch', 'deorbit', 'test', 'loglevel', 'debug'])
+
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENefsearch.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
 
-    if args.periodogram is None and args.freq is None:
-        raise ValueError('One of -f or --periodogram arguments MUST be '
-                         'specified')
-    elif args.periodogram is not None:
-        periodogram = load_folding(args.periodogram)
-        frequency = float(periodogram.peaks[0])
-        fdot = 0
-        fddot = 0
-    else:
-        frequency = args.freq
-        fdot = args.fdot
-        fddot = args.fddot
+    with log.log_to_file('HENphaseogram.log'):
+        if args.periodogram is None and args.freq is None:
+            raise ValueError('One of -f or --periodogram arguments MUST be '
+                             'specified')
+        elif args.periodogram is not None:
+            periodogram = load_folding(args.periodogram)
+            frequency = float(periodogram.peaks[0])
+            fdot = 0
+            fddot = 0
+        else:
+            frequency = args.freq
+            fdot = args.fdot
+            fddot = args.fddot
 
-    ip = run_interactive_phaseogram(args.file, freq=frequency, fdot=fdot,
-                                    fddot=fddot,
-                                    nbin=args.nbin, nt=args.ntimes,
-                                    test=args.test, binary=args.binary,
-                                    binary_parameters=args.binary_parameters,
-                                    pepoch=args.pepoch, norm=args.norm,
-                                    plot_only=args.plot_only,
-                                    deorbit_par=args.deorbit_par)
+        ip = run_interactive_phaseogram(
+            args.file,
+            freq=frequency,
+            fdot=fdot,
+            fddot=fddot,
+            nbin=args.nbin,
+            nt=args.ntimes,
+            test=args.test,
+            binary=args.binary,
+            binary_parameters=args.binary_parameters,
+            pepoch=args.pepoch,
+            norm=args.norm,
+            plot_only=args.plot_only,
+            deorbit_par=args.deorbit_par,
+            emin=args.emin,
+            emax=args.emax)

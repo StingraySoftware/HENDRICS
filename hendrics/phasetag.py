@@ -1,19 +1,16 @@
 #!/usr/bin/env python
-from __future__ import (division, print_function, absolute_import)
 
 import argparse
-
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.io.fits as pf
-
-import warnings
-from .io import is_string, save_as_qdp
+from astropy.logger import AstropyUserWarning
 from stingray.io import load_events_and_gtis, ref_mjd
+from stingray.pulse.pulsar import pulse_phase, phase_exposure
+from .io import is_string, save_as_qdp
 from .base import _assign_value_if_none, hen_root
 from .fold import fit_profile, std_fold_fit_func
-
-from stingray.pulse.pulsar import pulse_phase, phase_exposure
 
 
 def outfile_name(file):
@@ -120,7 +117,9 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     exposure = phase_exposure(gti_phases[0, 0], gti_phases[-1, 1], 1,
                               nbin=nbin, gtis=gti_phases)
     if np.any(np.logical_or(exposure != exposure, exposure == 0)):
-        warnings.warn('Exposure has NaNs or zeros. Profile is not normalized')
+        warnings.warn(
+            'Exposure has NaNs or zeros. Profile is not normalized',
+            AstropyUserWarning)
         expocorr = False
 
     if not expocorr:
@@ -292,7 +291,7 @@ def phase_tag_fits(filename, parameter_info, **kwargs):
 
 
 def main_phasetag(args=None):
-
+    from .base import check_negative_numbers_in_args
     parser = argparse.ArgumentParser()
 
     parser.add_argument("file", help="Event file", type=str)
@@ -317,6 +316,7 @@ def main_phasetag(args=None):
                         help="Reference time for timing solution",
                         dest='pepoch')
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.freqs is None and args.parfile is None:

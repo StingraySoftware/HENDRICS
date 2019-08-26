@@ -1,22 +1,19 @@
 """Interactive phaseogram."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
-from .io import load_events
+import copy
+import argparse
 from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
 from stingray.utils import assign_value_if_none
 from stingray.events import EventList
 
 import numpy as np
-import logging
-import argparse
 from scipy.signal import savgol_filter
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
 from astropy import log
+from astropy.logger import AstropyUserWarning
+from .io import load_events
 
-import copy
 try:
     from tqdm import tqdm as show_progress
 except ImportError:
@@ -40,7 +37,7 @@ def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE405"):
         toalist[i] = \
             toa.TOA(m, error=errs_us[i], obs='Barycenter', scale='tdb')
 
-    toalist = toa.TOAs(toalist = toalist)
+    toalist = toa.TOAs(toalist=toalist)
     if 'tdb' not in toalist.table.colnames:
         toalist.compute_TDBs()
     if 'ssb_obs_pos' not in toalist.table.colnames:
@@ -126,7 +123,6 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         plt.savefig(timfile.replace('.tim', '') + '.png')
         plt.close(fig)
         # start template from highest bin!
-        # template = np.roll(template, -np.argmax(template))
         template *= folding_length / length
         template_fine = std_fold_fit_func(fit_pars_save,
                                           np.arange(0, 1, 0.001))
@@ -149,7 +145,8 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
 
         local_f = frequency_derivatives[0]
         for i_f, f in enumerate(frequency_derivatives[1:]):
-            local_f += 1 / np.math.factorial(i_f + 1) * (start - pepoch) ** (i_f + 1) * f
+            local_f += 1 / \
+                np.math.factorial(i_f + 1) * (start - pepoch) ** (i_f + 1) * f
 
         fder = copy.deepcopy(list(frequency_derivatives))
         fder[0] = local_f
@@ -163,7 +160,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         # We are folding wrt pepoch, and calculating TOAs wrt start]]
 
         toa, toaerr = \
-            get_TOA(profile, 1/frequency_derivatives[0], start,
+            get_TOA(profile, 1 / frequency_derivatives[0], start,
                     template=template, additional_phase=additional_phase,
                     quick=quick, debug=True)
         toas.append(toa)
@@ -206,9 +203,9 @@ def dbl_cos_fit_func(p, x):
         base = p[0]
         startidx = 1
     first_harm = \
-        p[startidx] * np.cos(2*np.pi*x + 2*np.pi*p[startidx + 1])
+        p[startidx] * np.cos(2 * np.pi * x + 2 * np.pi * p[startidx + 1])
     second_harm = \
-        p[startidx + 2] * np.cos(4.*np.pi*x + 4*np.pi*p[startidx + 3])
+        p[startidx + 2] * np.cos(4. * np.pi * x + 4 * np.pi * p[startidx + 3])
     return base + first_harm + second_harm
 
 
@@ -295,7 +292,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
 
     for phase in np.arange(0., 1., 0.1):
         guess_pars[3 + startidx] = phase
-        logging.debug(guess_pars)
+        log.debug(guess_pars)
         if debug:
             plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
         fit_pars, success = optimize.leastsq(std_residuals, guess_pars[:],
@@ -337,6 +334,8 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     Examples
     --------
     >>> import doctest
+    >>> from contextlib import redirect_stderr
+    >>> import sys
     >>> time = np.arange(5)
     >>> energy = np.array([0, 0, 30, 4, 1])
     >>> events = EventList(time=time, energy=energy)
@@ -346,20 +345,23 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     >>> elabel == 'Energy'
     True
     >>> events = EventList(time=time, pi=energy)
-    >>> ev_out, elabel = filter_energy(events, None, 20)
+    >>> with redirect_stderr(sys.stdout):
+    ...     ev_out, elabel = filter_energy(events, None, 20)  # doctest: +ELLIPSIS
+    WARNING: No energy information ...
     >>> np.all(ev_out.time == [0, 1, 3, 4])
     True
     >>> elabel == 'PI'
     True
     >>> events = EventList(time=time, pi=energy)
-    >>> ev_out, elabel = filter_energy(events, None, None)
+    >>> ev_out, elabel = filter_energy(events, None, None)  # doctest: +ELLIPSIS
     >>> np.all(ev_out.time == time)
     True
     >>> elabel == 'PI'
     True
     >>> events = EventList(time=time)
-    >>> ev_out, elabel = filter_energy(events, 3, None)  # doctest: +ELLIPSIS
-    INFO: No Energy or PI...
+    >>> with redirect_stderr(sys.stdout):
+    ...     ev_out, elabel = filter_energy(events, 3, None)  # doctest: +ELLIPSIS
+    ERROR:...No Energy or PI...
     >>> np.all(ev_out.time == time)
     True
     >>> elabel == ''
@@ -370,14 +372,19 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
         energy = ev.energy
         elabel = 'Energy'
     elif hasattr(ev, 'pi') and ev.pi is not None:
-        log.warning("No energy information in event list. "
-                    "Definition of events.energy is now based on PI.")
+        # For some reason the doctest doesn't work if I don't do this instead
+        # of using warnings.warn
+        if emax is not None or emin is not None:
+            log.warning(f"No energy information in event list "
+                        f"while filtering between {emin} and {emax}. "
+                        "Definition of events.energy is now based on PI.",
+                        AstropyUserWarning)
         energy = ev.pi
         elabel = 'PI'
-        ev.energy = ev.pi
+        ev.energy = energy
     else:
-        log.info("No Energy or PI information available. "
-                 "No energy filter applied to events")
+        log.error("No Energy or PI information available. "
+                  "No energy filter applied to events")
         return ev, ''
 
     if emax is None and emin is None:
@@ -396,14 +403,15 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
 
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
                 test=False, emin=None, emax=None, norm='to1',
-                smooth_window=None, deorbit_par=None, **opts):
+                smooth_window=None, deorbit_par=None, pepoch=None,
+                **opts):
     from matplotlib.gridspec import GridSpec
     import matplotlib.pyplot as plt
 
     file_label = ''
     ev = load_events(file)
     if deorbit_par is not None:
-        events = deorbit_events(ev, deorbit_par)
+        ev = deorbit_events(ev, deorbit_par)
 
     gtis = ev.gti
     plot_energy = True
@@ -413,12 +421,15 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
         emin = np.min(energy)
     if emax is None:
         emax = np.max(energy)
-    print(elabel, emin, emax, energy)
 
     if elabel == '':
         plot_energy = False
 
-    if tref is None:
+    if tref is not None and pepoch is not None:
+        raise ValueError('Only specify one between tref and pepoch')
+    elif pepoch is not None:
+        tref = (pepoch - ev.mjdref) * 86400
+    elif tref is None:
         tref = times[0]
 
     phases = pulse_phase(times - tref, freq, fdot, fddot, to_1=True)
@@ -447,7 +458,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
                                       energy, bins=(binx, biny))
 
     binx = np.concatenate((binx[:-1], binx + 1))
-    meanbins = (binx[:-1] + binx[1:])/2
+    meanbins = (binx[:-1] + binx[1:]) / 2
 
     if plot_energy:
         hist2d = np.vstack((hist2d, hist2d))
@@ -526,7 +537,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
             pf = 100 * (max - min) / max
             ax2.plot(meanbins, prof, drawstyle='steps-mid',
                      label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],
-                                                     biny[i+1], pf))
+                                                     biny[i + 1], pf))
             std = np.max(prof - smooth)
             ax2.set_xlabel('Phase')
             ax2.set_ylabel('Counts')
@@ -550,6 +561,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
 
 
 def main_fold(args=None):
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Plot a folded profile')
     parser = argparse.ArgumentParser(description=description)
 
@@ -575,39 +587,29 @@ def main_fold(args=None):
                         help="--norm to1: Normalize hist so that the maximum "
                              "at each energy is one. "
                              "--norm ratios: Divide by mean profile")
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--test",
-                        help="Just a test. Destroys the window immediately",
-                        default=False, action='store_true')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--deorbit-par",
-                        help=("Deorbit data with this parameter file (requires PINT installed)"),
-                        default=None,
-                        type=str)
 
+    _add_default_args(
+        parser, [
+            'pepoch', 'deorbit', 'loglevel', 'debug', 'test'])
+
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENfold.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
 
-    frequency = args.freq
-    fdot = args.fdot
-    fddot = args.fddot
+    with log.log_to_file('HENfold.log'):
+        frequency = args.freq
+        fdot = args.fdot
+        fddot = args.fddot
 
-    run_folding(args.file, freq=frequency, fdot=fdot, fddot=fddot,
-                nbin=args.nbin, nebin=args.nebin, tref=args.tref,
-                test=args.test, emin=args.emin, emax=args.emax,
-                norm=args.norm, deorbit_par=args.deorbit_par)
+        run_folding(args.file, freq=frequency, fdot=fdot, fddot=fddot,
+                    nbin=args.nbin, nebin=args.nebin, tref=args.tref,
+                    test=args.test, emin=args.emin, emax=args.emax,
+                    norm=args.norm, deorbit_par=args.deorbit_par,
+                    pepoch=args.pepoch)
 
 
 def z2_n_detection_level(epsilon=0.01, n=2, n_summed_spectra=1, ntrial=1):
@@ -668,9 +670,53 @@ def z2_n_probability(z2, n=2, ntrial=1, n_summed_spectra=1):
     if ntrial > 1:
         import warnings
         warnings.warn("Z2_n: The treatment of ntrial is very rough. "
-                      "Use with caution")
+                      "Use with caution", AstropyUserWarning)
     from scipy import stats
 
     epsilon = ntrial * stats.chi2.sf(z2 * n_summed_spectra,
                                      2 * n * n_summed_spectra)
     return epsilon
+
+
+def main_deorbit(args=None):
+    import argparse
+    from .base import hen_root
+    from .io import HEN_FILE_EXTENSION, load_events, save_events
+    description = ('Deorbit the event arrival times')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("files", help="Input event file", type=str, nargs='+')
+    # parser.add_argument("--debug", help="use DEBUG logging level",
+    #                     default=False, action='store_true')
+    # parser.add_argument("--test",
+    #                     help="Just a test. Destroys the window immediately",
+    #                     default=False, action='store_true')
+    # parser.add_argument("--loglevel",
+    #                     help=("use given logging level (one between INFO, "
+    #                           "WARNING, ERROR, CRITICAL, DEBUG; "
+    #                           "default:WARNING)"),
+    #                     default='WARNING',
+    #                     type=str)
+    parser.add_argument(
+        '-p',
+        "--deorbit-par",
+        help=("Deorbit data with this parameter file (requires PINT installed)"),
+        default=None,
+        required=True,
+        type=str)
+
+    args = parser.parse_args(args)
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    log.setLevel(args.loglevel)
+    with log.log_to_file('HENdeorbit.log'):
+        for fname in args.files:
+            log.info(f"Deorbiting events from {fname}")
+            events = load_events(fname)
+            events = deorbit_events(events, parameter_file=args.deorbit_par)
+            outfile = hen_root(fname) + '_deorb' + HEN_FILE_EXTENSION
+
+            save_events(events, outfile)
+            log.info(f"Saved to {outfile}")

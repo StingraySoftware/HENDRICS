@@ -1,14 +1,14 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Calibrate event lists by looking in rmf files."""
 
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
-
+import sys
+import os
+import warnings
+import numpy as np
+from astropy import log
+from astropy.logger import AstropyUserWarning
 from .io import load_events, save_events, get_file_extension
 from .io import HEN_FILE_EXTENSION
-import numpy as np
-import os
-import logging
 
 
 def default_nustar_rmf():
@@ -21,7 +21,9 @@ def default_nustar_rmf():
               name will be eventually replaced with a smarter choice based
               on observing time
     """
-    logging.warning("Rmf not specified. Using default NuSTAR rmf.")
+    log.warning(
+        "Rmf not specified. Using default NuSTAR rmf.",
+        AstropyUserWarning)
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split('/')
     newpath = os.path.join(os.environ['CALDB'], *path)
@@ -105,14 +107,14 @@ def calibrate(fname, outname, rmf_file=None):
         the one given by default_nustar_rmf() is used.
     """
     # Read event file
-    logging.info("Loading file %s..." % fname)
+    log.info("Loading file %s..." % fname)
     evdata = load_events(fname)
-    logging.info("Done.")
+    log.info("Done.")
     pis = evdata.pi
 
     es = read_calibration(pis, rmf_file)
     evdata.energy = es
-    logging.info('Saving calibrated data to %s' % outname)
+    log.info('Saving calibrated data to %s' % outname)
     save_events(evdata, outname)
 
 
@@ -125,6 +127,7 @@ def main(args=None):
     """Main function called by the `HENcalibrate` command line script."""
     import argparse
     from multiprocessing import Pool
+    from .base import _add_default_args
 
     description = ('Calibrate clean event files by associating the correct '
                    'energy to each PI channel. Uses either a specified rmf '
@@ -138,18 +141,7 @@ def main(args=None):
                         help="Overwrite; default: no",
                         default=False,
                         action="store_true")
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("--nproc",
-                        help=("Number of processors to use"),
-                        default=1,
-                        type=int)
+    _add_default_args(parser, ['nproc', 'loglevel', 'debug'])
 
     args = parser.parse_args(args)
     files = args.files
@@ -157,22 +149,20 @@ def main(args=None):
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENcalibrate.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
+    with log.log_to_file('HENcalibrate.log'):
+        funcargs = []
+        for i_f, f in enumerate(files):
+            outname = f
+            if args.overwrite is False:
+                outname = f.replace(get_file_extension(f), '_calib' +
+                                    HEN_FILE_EXTENSION)
+            funcargs.append([f, outname, args.rmf])
 
-    funcargs = []
-    for i_f, f in enumerate(files):
-        outname = f
-        if args.overwrite is False:
-            outname = f.replace(get_file_extension(f), '_calib' +
-                                HEN_FILE_EXTENSION)
-        funcargs.append([f, outname, args.rmf])
-
-    if os.name == 'nt' or args.nproc == 1:
-        [_calib_wrap(fa) for fa in funcargs]
-    else:
-        pool = Pool(processes=args.nproc)
-        for i in pool.imap_unordered(_calib_wrap, funcargs):
-            pass
-        pool.close()
+        if os.name == 'nt' or args.nproc == 1:
+            [_calib_wrap(fa) for fa in funcargs]
+        else:
+            pool = Pool(processes=args.nproc)
+            for i in pool.imap_unordered(_calib_wrap, funcargs):
+                pass
+            pool.close()

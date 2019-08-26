@@ -1,55 +1,43 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to perform input/output operations."""
-from __future__ import (absolute_import, division,
-                        print_function)
 
-import logging
+import sys
+import os
+import glob
+import copy
+import collections
+import importlib
 import warnings
+import pickle
+import os.path
+import numpy as np
+from astropy.modeling.core import Model
+from astropy import log
+from astropy.logger import AstropyUserWarning
+from stingray.utils import assign_value_if_none
 from stingray.gti import cross_gtis
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
-import sys
-from stingray.pulse.modeling import SincSquareModel, sinc_square_model
+from stingray.pulse.modeling import SincSquareModel
+from .base import _order_list_of_arrays, _empty, is_string
+
 try:
     import netCDF4 as nc
     HEN_FILE_EXTENSION = '.nc'
     HAS_NETCDF = True
 except ImportError:
     msg = "Warning! NetCDF is not available. Using pickle format."
-    logging.warning(msg)
+    warnings.warn(msg)
     HEN_FILE_EXTENSION = '.p'
     HAS_NETCDF = False
     pass
 
 try:
-    # Python 2
-    import cPickle as pickle
-except ImportError:
-    # Python 3
-    import pickle
-
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
-
-import numpy as np
-import os.path
-from .base import _order_list_of_arrays, _empty, is_string
-from stingray.utils import assign_value_if_none
-import os
-import glob
-import copy
-from astropy.modeling.core import Model
-import collections
-import importlib
-
-try:
     _ = np.complex256
     HAS_C256 = True
-except:
+except Exception:
     HAS_C256 = False
 
 cpl128 = np.dtype([(str('real'), np.double),
@@ -61,9 +49,10 @@ if HAS_C256:
 
 class EFPeriodogram(object):
     def __init__(self, freq=None, stat=None, kind=None, nbin=None, N=None,
-                 M=None,
+                 M=None, pepoch=None, mjdref=None,
                  peaks=None, peak_stat=None, best_fits=None, fdots=0,
-                 segment_size=1e32, filename="", parfile=None):
+                 segment_size=1e32, filename="", parfile=None,
+                 emin=None, emax=None):
         self.freq = freq
         self.stat = stat
         self.kind = kind
@@ -74,15 +63,28 @@ class EFPeriodogram(object):
         self.best_fits = best_fits
         self.fdots = fdots
         self.M = M
-        self.segment_size=segment_size
+        self.segment_size = segment_size
         self.filename = filename
         self.parfile = parfile
+        self.emin = emin
+        self.emax = emax
+        self.pepoch = pepoch
+        self.mjdref = mjdref
 
 
 def _get_key(dict_like, key):
+    """
+    Examples
+    --------
+    >>> a = dict(b=1)
+    >>> _get_key(a, 'b')
+    1
+    >>> _get_key(a, 'c') == ""
+     True
+    """
     try:
         return dict_like[key]
-    except:
+    except KeyError:
         return ""
 
 
@@ -108,19 +110,28 @@ def high_precision_keyword_read(hdr, keyword):
     value : long double
         The value of the key, or None if keyword not present
 
+    Examples
+    --------
+    >>> hdr = dict(keywordS=1.25)
+    >>> high_precision_keyword_read(hdr, 'keywordS')
+    1.25
+    >>> hdr = dict(keywordI=1, keywordF=0.25)
+    >>> high_precision_keyword_read(hdr, 'keywordS')
+    1.25
+    >>> high_precision_keyword_read(hdr, 'bubabuab') is None
+    True
     """
-    try:
-        value = np.longdouble(hdr[keyword])
-        return value
-    except:
-        pass
-    try:
-        if len(keyword) == 8:
-            keyword = keyword[:7]
-        value = np.longdouble(hdr[keyword + 'I'])
-        value += np.longdouble(hdr[keyword + 'F'])
-        return value
-    except:
+    if keyword in hdr:
+        return np.longdouble(hdr[keyword])
+
+    if len(keyword) == 8:
+        keyword = keyword[:7]
+
+    if keyword + 'I' in hdr and keyword + 'F' in hdr:
+        value_i = np.longdouble(hdr[keyword + 'I'])
+        value_f = np.longdouble(hdr[keyword + 'F'])
+        return value_i + value_f
+    else:
         return None
 
 
@@ -130,7 +141,23 @@ def get_file_extension(fname):
 
 
 def get_file_format(fname):
-    """Decide the file format of the file."""
+    """Decide the file format of the file.
+
+    Examples
+    --------
+    >>> get_file_format('bu.p')
+    'pickle'
+    >>> get_file_format('bu.nc')
+    'nc'
+    >>> get_file_format('bu.evt')
+    'fits'
+    >>> get_file_format('bu.txt')
+    'text'
+    >>> get_file_format('bu.pdfghj')
+    Traceback (most recent call last):
+        ...
+    RuntimeError: File format pdfghj not recognized
+    """
     ext = get_file_extension(fname)
     if ext == '.p':
         return 'pickle'
@@ -141,7 +168,8 @@ def get_file_format(fname):
     elif ext in ['.txt', '.qdp', '.csv']:
         return 'text'
     else:
-        raise Exception("File format not recognized")
+        raise RuntimeError(f"File format {ext[1:]} "
+                           f"not recognized")
 
 
 # ---- Base function to save NetCDF4 files
@@ -152,12 +180,12 @@ def save_as_netcdf(vars, varnames, formats, fname):
 
     for iv, v in enumerate(vars):
         dims = {}
-        dimname = varnames[iv]+"dim"
-        dimspec = (varnames[iv]+"dim", )
+        dimname = varnames[iv] + "dim"
+        dimspec = (varnames[iv] + "dim", )
 
         if formats[iv] == 'c32':
             # Too complicated. Let's decrease precision
-            warnings.warn("complex256 yet unsupported")
+            warnings.warn("complex256 yet unsupported", AstropyUserWarning)
             formats[iv] = 'c16'
 
         if formats[iv] == 'c16':
@@ -199,7 +227,7 @@ def save_as_netcdf(vars, varnames, formats, fname):
                 vnc[0] = v
             else:
                 vnc[:] = v
-        except:
+        except Exception:
             print("Error:", varnames[iv], formats[iv], dimspec, v)
             raise
     rootgrp.close()
@@ -597,25 +625,18 @@ def load_pds(fname, nosub=False):
 # ---- GENERIC function to save stuff.
 def _load_data_pickle(fname, kind="data"):
     """Load generic data in pickle format."""
-    logging.info('Loading %s and info from %s' % (kind, fname))
-    try:
-        with open(fname, 'rb') as fobj:
-            result = pickle.load(fobj)
-        return result
-    except Exception as e:
-        raise Exception("{0} failed ({1}: {2})".format('_load_data_pickle',
-                                                       type(e), e))
+    log.info('Loading %s and info from %s' % (kind, fname))
+    with open(fname, 'rb') as fobj:
+        result = pickle.load(fobj)
+    return result
 
 
 def _save_data_pickle(struct, fname, kind="data"):
     """Save generic data in pickle format."""
-    logging.info('Saving %s and info to %s' % (kind, fname))
-    try:
-        with open(fname, 'wb') as fobj:
-            pickle.dump(struct, fobj)
-    except Exception as e:
-        raise Exception("{0} failed ({1}: {2})".format('_save_data_pickle',
-                                                       type(e), e))
+    log.info('Saving %s and info to %s' % (kind, fname))
+    with open(fname, 'wb') as fobj:
+        pickle.dump(struct, fobj)
+
     return
 
 
@@ -700,7 +721,7 @@ def _split_high_precision_number(varname, var, probesize):
 
 def _save_data_nc(struct, fname, kind="data"):
     """Save generic data in netcdf format."""
-    logging.info('Saving %s and info to %s' % (kind, fname))
+    log.info('Saving %s and info to %s' % (kind, fname))
     varnames = []
     values = []
     formats = []
@@ -710,13 +731,7 @@ def _save_data_nc(struct, fname, kind="data"):
 
         probe = var
         if isinstance(var, collections.Iterable):
-            try:
-                probe = var[0]
-            except:
-                logging.error('This failed: %s %s in file %s' %
-                              (k, repr(var), fname))
-                raise Exception('This failed: %s %s in file %s' %
-                                (k, repr(var), fname))
+            probe = var[0]
 
         if is_string(var):
             probekind = str
@@ -841,7 +856,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None,
     """Save arrays as TXT file with respective errors."""
     import numpy as np
 
-    logging.debug('%s %s' % (repr(cols), repr(np.shape(cols))))
+    log.debug('%s %s' % (repr(cols), repr(np.shape(cols))))
     if append:
         txtfile = open(filename, "a")
     else:
@@ -852,7 +867,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None,
     if ndim == 1:
         cols = [cols]
     elif ndim > 3 or ndim == 0:
-        logging.error("Only one- or two-dim arrays accepted")
+        log.error("Only one- or two-dim arrays accepted")
         return -1
     lcol = len(cols[0])
 
@@ -948,13 +963,15 @@ def _get_gti_from_all_extensions(lchdulist, accepted_gtistrings=['GTI'],
 
 
 def _get_additional_data(lctable, additional_columns):
+    """Get columns from lctable"""
     additional_data = {}
     if additional_columns is not None:
         for a in additional_columns:
             try:
                 additional_data[a] = np.array(lctable.field(a))
             except KeyError:
-                warnings.warn("Column {} not found".format(a))
+                log.warning("Column {} not found".format(a),
+                            AstropyUserWarning)
                 additional_data[a] = np.zeros(len(lctable))
 
     return additional_data
@@ -966,7 +983,7 @@ def load_gtis(fits_file, gtistring=None):
     import numpy as np
 
     gtistring = assign_value_if_none(gtistring, 'GTI')
-    logging.info("Loading GTIS from file %s" % fits_file)
+    log.info("Loading GTIS from file %s" % fits_file)
     lchdulist = pf.open(fits_file, checksum=True)
     lchdulist.verify('warn')
 
@@ -1046,8 +1063,8 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     # Load data table
     try:
         lctable = lchdulist[hduname].data
-    except:  # pragma: no cover
-        logging.warning('HDU %s not found. Trying first extension' % hduname)
+    except Exception:  # pragma: no cover
+        warnings.warn('HDU %s not found. Trying first extension' % hduname)
         lctable = lchdulist[1].data
         hduname = 1
 
@@ -1059,13 +1076,13 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     # Read TIMEZERO keyword and apply it to events
     try:
         timezero = np.longdouble(header['TIMEZERO'])
-    except:  # pragma: no cover
-        logging.warning("No TIMEZERO in file")
+    except Exception:  # pragma: no cover
+        warnings.warn("No TIMEZERO in file", AstropyUserWarning)
         timezero = np.longdouble(0.)
 
     try:
         instr = header['INSTRUME']
-    except:
+    except Exception:
         instr = 'unknown'
 
     ev_list += timezero
@@ -1074,8 +1091,10 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     try:
         t_start = np.longdouble(header['TSTART'])
         t_stop = np.longdouble(header['TSTOP'])
-    except:  # pragma: no cover
-        logging.warning("Tstart and Tstop error. using defaults")
+    except Exception:  # pragma: no cover
+        warnings.warn(
+            "Tstart and Tstop error. using defaults",
+            AstropyUserWarning)
         t_start = ev_list[0]
         t_stop = ev_list[-1]
 
@@ -1091,9 +1110,11 @@ def load_events_and_gtis(fits_file, additional_columns=None,
                 _get_gti_from_all_extensions(
                     lchdulist, accepted_gtistrings=accepted_gtistrings,
                     det_numbers=det_number)
-        except:  # pragma: no cover
-            warnings.warn("No extensions found with a valid name. "
-                          "Please check the `accepted_gtistrings` values.")
+        except Exception:  # pragma: no cover
+            warnings.warn(
+                "No extensions found with a valid name. "
+                "Please check the `accepted_gtistrings` values.",
+                AstropyUserWarning)
             gti_list = np.array([[t_start, t_stop]],
                                 dtype=np.longdouble)
     else:
@@ -1185,7 +1206,7 @@ def sort_files(files):
     ftypes = []
 
     for f in files:
-        logging.info('Loading file ' + f)
+        log.info('Loading file ' + f)
         ftype, contents = get_file_type(f)
         instr = contents.instr
         ftypes.append(ftype)
@@ -1256,13 +1277,13 @@ def load_model(modelstring):
 
     # modelstring is a pickle file
     if modelstring.endswith('.p'):
-        logging.debug('Loading model from pickle file')
+        log.debug('Loading model from pickle file')
         with open(modelstring, 'rb') as fobj:
             modeldata = pickle.load(fobj)
         return modeldata['model'], modeldata['kind'], modeldata['constraints']
     # modelstring is a python file
     elif modelstring.endswith('.py'):
-        logging.debug('Loading model from Python source')
+        log.debug('Loading model from Python source')
         modulename = modelstring.replace('.py', '')
         sys.path.append(os.getcwd())
         # If a module with the same name was already imported, unload it!
@@ -1275,12 +1296,7 @@ def load_model(modelstring):
         # the model file does not exist the first time we call
         # importlib.import_module(). In this case, the second time we call it,
         # even if the file exists it will not exist for importlib.
-        # Unfortunately, this does not work in Python 2.
-        try:
-            importlib.invalidate_caches()
-        except AttributeError:
-            logging.warning("importlib.invalidate_caches() is not implemented "
-                            "in Python 2")
+        importlib.invalidate_caches()
 
         _model = importlib.import_module(modulename)
         model = _model.model
@@ -1313,20 +1329,6 @@ def find_file_in_allowed_paths(fname, other_paths=None):
     ----------------
     other_paths : list of str
         list of other possible paths
-
-    >>> import os
-    >>> with open('bu', 'w') as fobj: print("blabla", file=fobj)
-    >>> fakepath = os.path.join("directory", "bu")
-    >>> realpath = os.path.join('.', 'bu')
-    >>> find_file_in_allowed_paths(fakepath, ["."]) == realpath
-    True
-    >>> find_file_in_allowed_paths("bu") == "bu"
-    True
-    >>> find_file_in_allowed_paths(os.path.join("directory", "bu"))
-    False
-    >>> find_file_in_allowed_paths(None)
-    False
-   >>> os.unlink("bu")
     """
     if fname is None:
         return False
@@ -1339,9 +1341,9 @@ def find_file_in_allowed_paths(fname, other_paths=None):
         for p in other_paths:
             fullpath = os.path.join(p, bname)
             if os.path.exists(fullpath):
-                warnings.warn("Parfile found at different path: {}".format(
+                log.warning("Parfile found at different path: {}".format(
                     fullpath
-                ))
+                ), AstropyUserWarning)
                 return fullpath
 
     return False

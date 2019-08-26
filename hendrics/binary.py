@@ -1,11 +1,10 @@
 """Save different input files in PRESTO-readable format."""
-from __future__ import print_function, division
 
-import logging
+from astropy import log
 from astropy.coordinates import SkyCoord
 import numpy as np
 from .io import high_precision_keyword_read, get_file_type, HEN_FILE_EXTENSION
-from .base import deorbit_events
+from .base import deorbit_events, interpret_bintime
 
 MAXBIN = 100000000
 
@@ -21,7 +20,7 @@ def get_header_info(obj):
     info.source = header['OBJECT']
     try:
         user = header['USER']
-    except:
+    except KeyError:
         user = 'Unknown'
     info.observer = user
     info.user = user
@@ -30,7 +29,7 @@ def get_header_info(obj):
     try:
         ra = header['RA_OBJ']
         dec = header['DEC_OBJ']
-    except:
+    except KeyError:
         ra = header['RA_PNT']
         dec = header['DEC_PNT']
 
@@ -149,7 +148,7 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
             np.histogram(goodev, bins=np.linspace(t0, t1, lastbin + 1))
 
         lclen += lastbin
-        s = struct.pack('f'*len(hist), *hist)
+        s = struct.pack('f' * len(hist), *hist)
         file.write(s)
         nphot += len(goodev)
     file.close()
@@ -227,62 +226,48 @@ def save_inf(lcinfo, info, filename):
 
 def main_presto(args=None):
     import argparse
-    from multiprocessing import Pool
+    from .base import _add_default_args, check_negative_numbers_in_args
 
     description = ('Save light curves in a format readable to PRESTO')
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of input light curves", nargs='+')
 
-    parser.add_argument("-b", "--bin-time", help="Bin time",
-                        type=np.longdouble, default=1)
     parser.add_argument("-l", "--max-length", help="Maximum length of light "
                                                    "curves (split otherwise)",
                         type=np.longdouble, default=1e32)
-    parser.add_argument("-e", "--energy-interval", help="Energy interval",
-                        nargs=2, type=float, default=[None, None])
 
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--deorbit-par",
-                        help=("Deorbit data with this parameter file (requires PINT installed)"),
-                        default=None,
-                        type=str)
-    parser.add_argument("--nproc",
-                        help=("Number of processors to use"),
-                        default=1,
-                        type=int)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+    args = check_negative_numbers_in_args(args)
+    _add_default_args(parser, ['bintime', 'energies', 'deorbit',
+                               'nproc', 'loglevel', 'debug'])
 
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HENbinary.log', level=numeric_level,
-                        filemode='w')
+    log.setLevel(args.loglevel)
 
-    for f in args.files:
-        print(f)
-        outfile = f.replace(HEN_FILE_EXTENSION, '.dat')
-        ftype, contents = get_file_type(f)
-        if ftype == 'lc':
-            lcinfo = save_lc_to_binary(contents, outfile)
-        elif ftype == 'events':
-            if args.deorbit_par is not None:
-                contents = deorbit_events(contents, args.deorbit_par)
-            lcinfo = save_events_to_binary(contents, outfile,
-                                           bin_time=args.bin_time,
-                                           emin=args.energy_interval[0],
-                                           emax=args.energy_interval[1])
-        else:
-            raise ValueError('File type not recognized')
+    bintime = np.longdouble(interpret_bintime(args.bintime))
 
-        info = get_header_info(contents)
-        save_inf(lcinfo, info, f.replace(HEN_FILE_EXTENSION, '.inf'))
+    if args.energy_interval is None:
+        args.energy_interval = [None, None]
+    with log.log_to_file('HENbinary.log'):
+        for f in args.files:
+            print(f)
+            outfile = f.replace(HEN_FILE_EXTENSION, '.dat')
+            ftype, contents = get_file_type(f)
+            if ftype == 'lc':
+                lcinfo = save_lc_to_binary(contents, outfile)
+            elif ftype == 'events':
+                if args.deorbit_par is not None:
+                    contents = deorbit_events(contents, args.deorbit_par)
+                lcinfo = save_events_to_binary(contents, outfile,
+                                               bin_time=bintime,
+                                               emin=args.energy_interval[0],
+                                               emax=args.energy_interval[1])
+            else:
+                raise ValueError('File type not recognized')
+
+            info = get_header_info(contents)
+            save_inf(lcinfo, info, f.replace(HEN_FILE_EXTENSION, '.inf'))

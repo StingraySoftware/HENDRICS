@@ -1,13 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to save data in a Xspec-readable format."""
-from __future__ import (absolute_import, unicode_literals, division,
-                        print_function)
 
-from .io import get_file_type
-import numpy as np
-from .io import get_file_extension
 import subprocess as sp
-import logging
+import numpy as np
+from astropy import log
+from .io import get_file_type
+from .io import get_file_extension
 
 
 def save_as_xspec(fname, direct_save=False, save_lags=True):
@@ -59,30 +57,24 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
 def main(args=None):
     """Main function called by the `HEN2xspec` command line script."""
     import argparse
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Save a frequency spectrum in a qdp file that can be '
                    'read by flx2xsp and produce a XSpec-compatible spectrum'
                    'file')
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+
     parser.add_argument("--flx2xsp", help="Also call flx2xsp at the end",
                         default=False, action='store_true')
+    _add_default_args(parser, ['loglevel', 'debug'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
     files = args.files
     if args.debug:
         args.loglevel = 'DEBUG'
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    logging.basicConfig(filename='HEN2xpec.log', level=numeric_level,
-                        filemode='w')
-
-    for f in files:
-        save_as_xspec(f, direct_save=args.flx2xsp)
+    log.setLevel(args.loglevel)
+    with log.log_to_file('HEN2Xspec.log'):
+        for f in files:
+            save_as_xspec(f, direct_save=args.flx2xsp)

@@ -29,13 +29,14 @@ env:
         # to repeat them for all configurations.
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='scipy matplotlib pip pandas'
-        - PIP_DEPENDENCIES='emcee stingray>=0.1rc1 '
+        - PIP_DEPENDENCIES='emcee stingray>=0.1rc1 sphinx-astropy'
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
         - STINGRAY_VERSION=stable
         - SETUP_XVFB=True
         - MPLBACKEND="Agg"
         - PYTHON_VERSION=3.6
+        - USE_NUMBA=no
     matrix:
         # Make sure that egg_info works without dependencies
         - SETUP_CMD='egg_info'
@@ -43,28 +44,26 @@ env:
 matrix:
     fast_finish: true
     include:
-        # Old matplotlib
-        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NETCDF=no
-        - os: windows
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram scipy matplotlib pip pandas emcee stingray>=0.1rc1 ' CONDA_DEPENDENCIES=''
-        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes
-        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram emcee stingray>=0.1rc1 '
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - env: PYTHON_VERSION=3.6 SETUP_CMD='build_docs -w' PIP_DEPENDENCIES='sphinx-astropy emcee stingray>=0.1rc1'
-        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
-        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram git+https://git@github.com/nanograv/pint.git jplephem stingray'
+        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NETCDF=no
+        - os: windows
+          env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram scipy matplotlib pip pandas emcee stingray>=0.1rc1 sphinx-astropy' CONDA_DEPENDENCIES=''
+        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram git+https://git@github.com/nanograv/pint.git jplephem stingray sphinx-astropy'
+        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray sphinx-astropy'
+        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram emcee stingray>=0.1rc1 sphinx-astropy'
 
         # ----- Try risky stuff ----
-        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel
+        - env: PYTHON_VERSION=3.6 SETUP_CMD='test' USE_NUMBA=yes STINGRAY_VERSION=devel
         # Try Astropy development version
-        - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='stingray>=0.1rc1 pytest-astropy'
+        - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='sphinx-astropy stingray>=0.1rc1 pytest-astropy'
 
     allow_failures:
         # ----- Try risky stuff ----
-        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes STINGRAY_VERSION=devel
+        - env: PYTHON_VERSION=3.6 SETUP_CMD='test' USE_NUMBA=yes STINGRAY_VERSION=devel
         # Try Astropy development version
-        - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='stingray>=0.1rc1 pytest-astropy'
+        - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='sphinx-astropy stingray>=0.1rc1 pytest-astropy'
 
 before_install:
     - git clone git://github.com/astropy/ci-helpers.git
@@ -88,4 +87,4 @@ after_success:
     # If coveralls.io is set up for this package, uncomment the line
     # below and replace "packagename" with the name of your package.
     # The coveragerc file may be customized as needed for your package.
-    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coveralls --rcfile='hendrics/tests/coveragerc'; fi
+    - if [[ $SETUP_CMD == *'--coverage'* ]]; then coveralls --rcfile='hendrics/tests/coveragerc'; fi
