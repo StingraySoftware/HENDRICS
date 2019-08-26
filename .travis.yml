@@ -29,7 +29,7 @@ env:
         # to repeat them for all configurations.
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='scipy matplotlib pip pandas'
-        - PIP_DEPENDENCIES='emcee stingray>=0.1rc1 '
+        - PIP_DEPENDENCIES='emcee stingray>=0.1rc1 sphinx-astropy'
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
         - STINGRAY_VERSION=stable
@@ -49,21 +49,21 @@ matrix:
         - env: PYTHON_VERSION=3.6 SETUP_CMD='build_docs -w' PIP_DEPENDENCIES='sphinx-astropy emcee stingray>=0.1rc1'
         - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NETCDF=no
         - os: windows
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram scipy matplotlib pip pandas emcee stingray>=0.1rc1 ' CONDA_DEPENDENCIES=''
-        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram git+https://git@github.com/nanograv/pint.git jplephem stingray'
-        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray'
-        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram emcee stingray>=0.1rc1 '
+          env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram scipy matplotlib pip pandas emcee stingray>=0.1rc1 sphinx-astropy' CONDA_DEPENDENCIES=''
+        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram git+https://git@github.com/nanograv/pint.git jplephem stingray sphinx-astropy'
+        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray sphinx-astropy'
+        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram emcee stingray>=0.1rc1 sphinx-astropy'
 
         # ----- Try risky stuff ----
         - env: PYTHON_VERSION=3.6 SETUP_CMD='test' USE_NUMBA=yes STINGRAY_VERSION=devel
         # Try Astropy development version
-        - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='stingray>=0.1rc1 pytest-astropy'
+        - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='sphinx-astropy stingray>=0.1rc1 pytest-astropy'
 
     allow_failures:
         # ----- Try risky stuff ----
         - env: PYTHON_VERSION=3.6 SETUP_CMD='test' USE_NUMBA=yes STINGRAY_VERSION=devel
         # Try Astropy development version
-        - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='stingray>=0.1rc1 pytest-astropy'
+        - env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test' PIP_DEPENDENCIES='sphinx-astropy stingray>=0.1rc1 pytest-astropy'
 
 before_install:
     - git clone git://github.com/astropy/ci-helpers.git
