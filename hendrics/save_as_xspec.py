@@ -1,11 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to save data in a Xspec-readable format."""
 
-from .io import get_file_type
-import numpy as np
-from .io import get_file_extension
 import subprocess as sp
+import numpy as np
 from astropy import log
+from .io import get_file_type
+from .io import get_file_extension
 
 
 def save_as_xspec(fname, direct_save=False, save_lags=True):

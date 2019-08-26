@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from .io import load_pds, HEN_FILE_EXTENSION
-from .io import save_as_qdp
 from astropy import log
+from .io import load_pds
+from .io import save_as_qdp
 from .base import hen_root
 
 

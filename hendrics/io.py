@@ -1,21 +1,27 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to perform input/output operations."""
 
+import sys
 import os
 import glob
 import copy
 import collections
 import importlib
+import warnings
+import os.path
+import numpy as np
+from astropy.modeling.core import Model
 from astropy import log
 from astropy.logger import AstropyUserWarning
-import warnings
+from stingray.utils import assign_value_if_none
 from stingray.gti import cross_gtis
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
-import sys
-from stingray.pulse.modeling import SincSquareModel, sinc_square_model
+from stingray.pulse.modeling import SincSquareModel
+from .base import _order_list_of_arrays, _empty, is_string
+
 try:
     import netCDF4 as nc
     HEN_FILE_EXTENSION = '.nc'
@@ -39,16 +45,10 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-import numpy as np
-import os.path
-from .base import _order_list_of_arrays, _empty, is_string
-from stingray.utils import assign_value_if_none
-from astropy.modeling.core import Model
-
 try:
     _ = np.complex256
     HAS_C256 = True
-except:
+except Exception:
     HAS_C256 = False
 
 cpl128 = np.dtype([(str('real'), np.double),
@@ -74,7 +74,7 @@ class EFPeriodogram(object):
         self.best_fits = best_fits
         self.fdots = fdots
         self.M = M
-        self.segment_size=segment_size
+        self.segment_size = segment_size
         self.filename = filename
         self.parfile = parfile
         self.emin = emin
@@ -125,7 +125,7 @@ def high_precision_keyword_read(hdr, keyword):
     try:
         value = np.longdouble(hdr[keyword])
         return value
-    except:
+    except Exception:
         pass
     try:
         if len(keyword) == 8:
@@ -133,7 +133,7 @@ def high_precision_keyword_read(hdr, keyword):
         value = np.longdouble(hdr[keyword + 'I'])
         value += np.longdouble(hdr[keyword + 'F'])
         return value
-    except:
+    except Exception:
         return None
 
 
@@ -165,8 +165,8 @@ def save_as_netcdf(vars, varnames, formats, fname):
 
     for iv, v in enumerate(vars):
         dims = {}
-        dimname = varnames[iv]+"dim"
-        dimspec = (varnames[iv]+"dim", )
+        dimname = varnames[iv] + "dim"
+        dimspec = (varnames[iv] + "dim", )
 
         if formats[iv] == 'c32':
             # Too complicated. Let's decrease precision
@@ -212,7 +212,7 @@ def save_as_netcdf(vars, varnames, formats, fname):
                 vnc[0] = v
             else:
                 vnc[:] = v
-        except:
+        except Exception:
             print("Error:", varnames[iv], formats[iv], dimspec, v)
             raise
     rootgrp.close()
@@ -725,9 +725,9 @@ def _save_data_nc(struct, fname, kind="data"):
         if isinstance(var, collections.Iterable):
             try:
                 probe = var[0]
-            except:
+            except Exception:
                 log.error('This failed: %s %s in file %s' %
-                              (k, repr(var), fname))
+                          (k, repr(var), fname))
                 raise Exception('This failed: %s %s in file %s' %
                                 (k, repr(var), fname))
 
@@ -1059,7 +1059,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     # Load data table
     try:
         lctable = lchdulist[hduname].data
-    except:  # pragma: no cover
+    except Exception:  # pragma: no cover
         warnings.warn('HDU %s not found. Trying first extension' % hduname)
         lctable = lchdulist[1].data
         hduname = 1
@@ -1072,13 +1072,13 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     # Read TIMEZERO keyword and apply it to events
     try:
         timezero = np.longdouble(header['TIMEZERO'])
-    except:  # pragma: no cover
+    except Exception:  # pragma: no cover
         warnings.warn("No TIMEZERO in file", AstropyUserWarning)
         timezero = np.longdouble(0.)
 
     try:
         instr = header['INSTRUME']
-    except:
+    except Exception:
         instr = 'unknown'
 
     ev_list += timezero
@@ -1087,8 +1087,10 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     try:
         t_start = np.longdouble(header['TSTART'])
         t_stop = np.longdouble(header['TSTOP'])
-    except:  # pragma: no cover
-        warnings.warn("Tstart and Tstop error. using defaults", AstropyUserWarning)
+    except Exception:  # pragma: no cover
+        warnings.warn(
+            "Tstart and Tstop error. using defaults",
+            AstropyUserWarning)
         t_start = ev_list[0]
         t_stop = ev_list[-1]
 
@@ -1104,9 +1106,11 @@ def load_events_and_gtis(fits_file, additional_columns=None,
                 _get_gti_from_all_extensions(
                     lchdulist, accepted_gtistrings=accepted_gtistrings,
                     det_numbers=det_number)
-        except:  # pragma: no cover
-            warnings.warn("No extensions found with a valid name. "
-                          "Please check the `accepted_gtistrings` values.", AstropyUserWarning)
+        except Exception:  # pragma: no cover
+            warnings.warn(
+                "No extensions found with a valid name. "
+                "Please check the `accepted_gtistrings` values.",
+                AstropyUserWarning)
             gti_list = np.array([[t_start, t_stop]],
                                 dtype=np.longdouble)
     else:
@@ -1293,7 +1297,7 @@ def load_model(modelstring):
             importlib.invalidate_caches()
         except AttributeError:
             warnings.warn("importlib.invalidate_caches() is not implemented "
-                            "in Python 2")
+                          "in Python 2")
 
         _model = importlib.import_module(modulename)
         model = _model.model

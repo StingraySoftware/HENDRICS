@@ -13,7 +13,7 @@ from astropy.tests.helper import remote_data
 try:
     import pandas as pd
     HAS_PD = True
-except:
+except ImportError:
     HAS_PD = False
 
 from hendrics.fold import HAS_PINT

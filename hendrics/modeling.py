@@ -1,11 +1,11 @@
 
-from astropy import log
 import os
 import copy
-from .io import load_model, load_pds, save_model, save_pds, HEN_FILE_EXTENSION
 
 import numpy as np
+from astropy import log
 from stingray.modeling import fit_powerspectrum
+from .io import load_model, load_pds, save_model, save_pds, HEN_FILE_EXTENSION
 
 
 def main_model(args=None):

@@ -1,18 +1,18 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to calculate frequency spectra."""
 
-from .base import hen_root, common_name, _empty, _assign_value_if_none
-from .io import sort_files, get_file_type, load_data, save_pds, load_lcurve
-from .io import HEN_FILE_EXTENSION
+import warnings
+from multiprocessing import Pool
+import os
 from stingray.gti import cross_gtis, create_gti_mask
 from stingray.crossspectrum import AveragedCrossspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
 import numpy as np
 from astropy import log
 from astropy.logger import AstropyUserWarning
-import warnings
-from multiprocessing import Pool
-import os
+from .base import hen_root, common_name, _empty, _assign_value_if_none
+from .io import sort_files, get_file_type, load_data, save_pds, load_lcurve
+from .io import HEN_FILE_EXTENSION
 
 
 def _wrap_fun_cpds(arglist):
@@ -276,8 +276,8 @@ def calc_fspec(files, fftlen,
         sorted_files = sort_files(files)
 
         warnings.warn('Beware! For cpds and derivatives, I assume that the '
-                        'files are from only two instruments and in pairs '
-                        '(even in random order)')
+                      'files are from only two instruments and in pairs '
+                      '(even in random order)')
 
         instrs = list(sorted_files.keys())
 
@@ -352,7 +352,7 @@ def dumpdyn(fname, plot=False):
 
     try:
         freq = pdsdata['freq']
-    except:
+    except Exception:
         flo = pdsdata['flo']
         fhi = pdsdata['fhi']
         freq = (fhi + flo) / 2
@@ -402,7 +402,6 @@ def dumpdyn_main(args=None):
         dumpdyn(f, plot=not args.noplot)
 
 
-
 def main(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
@@ -412,7 +411,7 @@ def main(args=None):
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs='+')
-    parser.add_argument("-b", "--bintime", type=float, default=1/4096,
+    parser.add_argument("-b", "--bintime", type=float, default=1 / 4096,
                         help="Light curve bin time; if negative, interpreted" +
                         " as negative power of 2." +
                         " Default: 2^-10, or keep input lc bin time" +
@@ -457,7 +456,8 @@ def main(args=None):
         fftlen = args.fftlen
         pdsrebin = args.rebin
         normalization = args.norm
-        if normalization.lower() not in ["frac", "abs", "leahy", "none", "rms"]:
+        if normalization.lower() not in [
+                "frac", "abs", "leahy", "none", "rms"]:
             warnings.warn('Beware! Unknown normalization!', AstropyUserWarning)
             normalization = 'leahy'
         if normalization == 'rms':

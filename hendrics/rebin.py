@@ -2,11 +2,10 @@
 """Functions to rebin light curves and frequency spectra."""
 
 import numpy as np
+from astropy import log
 from .io import get_file_type
 from .io import save_lcurve, save_pds
 from .io import HEN_FILE_EXTENSION, get_file_extension
-from .base import _empty, _assign_value_if_none
-from astropy import log
 
 
 def rebin_file(filename, rebin):

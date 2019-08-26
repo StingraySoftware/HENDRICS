@@ -2,36 +2,36 @@
 """Search for pulsars."""
 
 import warnings
-from .io import load_events, EFPeriodogram, save_folding, load_folding, \
-    HEN_FILE_EXTENSION
-from .base import hen_root
-from .fold import filter_energy
-from stingray.pulse.search import epoch_folding_search, z_n_search, \
-    search_best_peaks, phaseogram
-from stingray.pulse.pulsar import z_n
-from stingray.gti import time_intervals_from_gtis
-from stingray.utils import assign_value_if_none
-from stingray.pulse.modeling import fit_sinc, fit_gaussian
-
-import numpy as np
 import os
-from astropy import log
-from astropy.logger import AstropyUserWarning
 import argparse
 from functools import wraps
 import copy
+import numpy as np
+from astropy import log
+from astropy.logger import AstropyUserWarning
+from stingray.pulse.search import epoch_folding_search, z_n_search, \
+    search_best_peaks
+from stingray.gti import time_intervals_from_gtis
+from stingray.utils import assign_value_if_none
+from stingray.pulse.modeling import fit_sinc, fit_gaussian
+from .io import load_events, EFPeriodogram, save_folding, \
+    HEN_FILE_EXTENSION
+from .base import hen_root
+from .fold import filter_energy
+
 
 try:
     from fast_histogram import histogram2d
     HAS_FAST_HIST = True
 except ImportError:
     from numpy import histogram2d as histogram2d_np
+
     def histogram2d(*args, **kwargs):
         return histogram2d_np(*args, **kwargs)[0]
 
 try:
     from numba import njit, prange
-except:
+except ImportError:
     def njit(**kwargs):
         """Dummy decorator in case jit cannot be imported."""
         def true_decorator(f):
@@ -75,7 +75,8 @@ def check_phase_error_after_casting_to_double(tref, f, fdot=0):
     times = np.array(np.random.normal(tref, 0.1, 1000), dtype=np.longdouble)
     times_dbl = times.astype(np.double)
     phase = times * f + 0.5 * times * fdot ** 2
-    phase_dbl = times_dbl * np.double(f) + 0.5 * times_dbl ** 2 * np.double(fdot)
+    phase_dbl = times_dbl * np.double(f) + \
+        0.5 * times_dbl ** 2 * np.double(fdot)
     return np.max(np.abs(phase_dbl - phase))
 
 
@@ -85,10 +86,19 @@ def decide_binary_parameters(length, freq_range, porb_range, asini_range,
     import pandas as pd
     count = 0
     omega_range = [1 / porb_range[1], 1 / porb_range[0]]
-    columns = ['freq', 'fdot', 'X', 'Porb', 'done', 'max_stat', 'min_stat', 'best_T0']
+    columns = [
+        'freq',
+        'fdot',
+        'X',
+        'Porb',
+        'done',
+        'max_stat',
+        'min_stat',
+        'best_T0']
 
     df = 1 / length
-    print('Recommended frequency steps: {}'.format(int(np.diff(freq_range)[0] // df + 1)))
+    print('Recommended frequency steps: {}'.format(
+        int(np.diff(freq_range)[0] // df + 1)))
     while count < NMAX:
         # In any case, only the first loop deletes the file
         if count > 0:
@@ -97,7 +107,7 @@ def decide_binary_parameters(length, freq_range, porb_range, asini_range,
         freq = np.random.uniform(freq_range[0], freq_range[1])
         fdot = np.random.uniform(fdot_range[0], fdot_range[1])
 
-        dX = 1/(TWOPI * freq)
+        dX = 1 / (TWOPI * freq)
 
         nX = np.int(np.diff(asini_range) // dX) + 1
         Xs = np.random.uniform(asini_range[0], asini_range[1], nX)
@@ -128,7 +138,7 @@ def folding_orbital_search(events, parameter_csv_file, chunksize=100,
     for chunk in pd.read_csv(parameter_csv_file, chunksize=chunksize):
         try:
             chunk['done'][0]
-        except:
+        except Exception:
             continue
         for i in range(len(chunk)):
             if chunk['done'][i]:
@@ -184,7 +194,11 @@ def fit(frequencies, stats, center_freq, width=None, obs_length=None,
 
 
 @njit()
-def calculate_shifts(nprof: int, nbin : int, nshift : int, order : int =1) -> np.array:
+def calculate_shifts(
+        nprof: int,
+        nbin: int,
+        nshift: int,
+        order: int = 1) -> np.array:
     shifts = np.linspace(-1., 1., nprof) ** order
     return nshift * shifts
 
@@ -197,7 +211,8 @@ def shift_and_select(repeated_profiles, lshift, qshift, newprof):
     qshifts = calculate_shifts(nprof, nbin, qshift, 2)
     for k in range(nprof):
         total_shift = int(np.rint(lshifts[k] + qshifts[k])) % nbin
-        newprof[k, :] = repeated_profiles[k, nbin - total_shift: 2 * nbin - total_shift]
+        newprof[k, :] = repeated_profiles[k, nbin -
+                                          total_shift: 2 * nbin - total_shift]
     return newprof
 
 
@@ -241,7 +256,8 @@ def z_n_fast(phase, norm, n=2):
 
     for k in range(1, n + 1):
         kph += phase
-        result += np.sum(np.cos(kph) * norm) ** 2 + np.sum(np.sin(kph) * norm) ** 2
+        result += np.sum(np.cos(kph) * norm) ** 2 + \
+            np.sum(np.sin(kph) * norm) ** 2
 
     return 2 / total_norm * result
 
@@ -270,12 +286,20 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
 
 @njit(parallel=True)
 def _fast_phase(ts, mean_f, mean_fdot=0):
-    phases = ts * mean_f + 0.5 * ts*ts * mean_fdot
+    phases = ts * mean_f + 0.5 * ts * ts * mean_fdot
     return phases - np.floor(phases)
 
 
-def search_with_qffa_step(times : np.double, mean_f : np.double, mean_fdot=0, nbin=16, nprof=64,
-                          npfact=2, oversample=8, n=1, search_fdot=True):
+def search_with_qffa_step(
+        times: np.double,
+        mean_f: np.double,
+        mean_fdot=0,
+        nbin=16,
+        nprof=64,
+        npfact=2,
+        oversample=8,
+        n=1,
+        search_fdot=True):
     """Single step of quasi-fast folding algorithm."""
 
     # Cast to standard double, or the fast_histogram.histogram2d will fail
@@ -283,8 +307,8 @@ def search_with_qffa_step(times : np.double, mean_f : np.double, mean_fdot=0, nb
 
     phases = _fast_phase(times, mean_f, mean_fdot)
 
-    profiles = histogram2d(
-        phases, times, range=[[0, 1], [times[0], times[-1]]], bins=(nbin, nprof))
+    profiles = histogram2d(phases, times, range=[
+        [0, 1], [times[0], times[-1]]], bins=(nbin, nprof))
 
     # Assume times are sorted
     t1, t0 = times[-1], times[0]
@@ -361,10 +385,13 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     times -= meantime
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
-    log.info(f"Maximum error on the phase expected when casting to double: {maxerr}")
+    log.info(
+        f"Maximum error on the phase expected when casting to double: {maxerr}")
     if maxerr > 1 / nbin / 10:
-        warnings.warn("Casting to double produces non-negligible phase errors. "
-                    "Please use shorter light curves.", AstropyUserWarning)
+        warnings.warn(
+            "Casting to double produces non-negligible phase errors. "
+            "Please use shorter light curves.",
+            AstropyUserWarning)
 
     times = times.astype(np.double)
 
@@ -410,7 +437,7 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     all_fdotgrid = np.vstack(all_fdotgrid)
     all_stats = np.vstack(all_stats)
 
-    step = np.median(np.diff(all_fgrid[:,0]))
+    step = np.median(np.diff(all_fgrid[:, 0]))
     fdotstep = np.median(np.diff(all_fdotgrid[0]))
     return all_fgrid.T, all_fdotgrid.T, all_stats.T, step, fdotstep, length
 
@@ -477,7 +504,7 @@ def dyn_folding_search(events, fmin, fmax, step=None,
             results = func(times_filt, trial_freqs, **kwargs)
             frequencies, stat = results
             stats.append(stat)
-        except:
+        except Exception:
             stats.append(np.zeros_like(trial_freqs))
     times = (start + stop) / 2
     fig = plt.figure('Dynamical search')

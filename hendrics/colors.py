@@ -1,13 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to calculate colors and hardness."""
 
-from .io import HEN_FILE_EXTENSION, load_lcurve, save_lcurve
-from .base import hen_root
+import os
 from astropy import log
-from .lcurve import main as henlcurve
 from stingray.lightcurve import Lightcurve
 import numpy as np
-import os
+from .io import HEN_FILE_EXTENSION, load_lcurve, save_lcurve
+from .base import hen_root
+from .lcurve import main as henlcurve
 
 
 def colors():
@@ -60,7 +60,9 @@ def main(args=None):
 
             time = lc0.time
             counts = lc1.countrate / lc0.countrate
-            counts_err = np.sqrt(lc1.countrate_err ** 2 + lc0.countrate_err ** 2)
+            counts_err = np.sqrt(
+                lc1.countrate_err ** 2 +
+                lc0.countrate_err ** 2)
             scolor = Lightcurve(time=time, counts=counts, err=counts_err,
                                 input_counts=False, err_dist='gauss',
                                 gti=lc0.gti)

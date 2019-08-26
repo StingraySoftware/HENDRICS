@@ -6,11 +6,11 @@ Created on Thu Aug 17 08:55:47 2017
 @author: marta
 """
 
+from astropy import log
+from stingray.utils import excess_variance
 from .io import load_lcurve
 from .io import save_as_qdp
 from .base import hen_root
-from astropy import log
-from stingray.utils import excess_variance
 
 
 def fvar(lc):
@@ -74,8 +74,8 @@ def main(args=None):
                                  "or excvar")
             var, var_err = res
             out = hen_root(fname) + "_" + args.norm + '.qdp'
-            save_as_qdp([(start+stop)/2, var], [(stop-start)/2, var_err],
-                        filename=out)
+            save_as_qdp([(start + stop) / 2, var],
+                        [(stop - start) / 2, var_err], filename=out)
             filelist.append(out)
 
     return filelist

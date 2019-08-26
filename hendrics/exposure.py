@@ -5,14 +5,14 @@ Only works for data taken in specific data modes of NuSTAR, where all events
 are telemetered.
 """
 
+import warnings
+from stingray.lightcurve import Lightcurve
+from stingray.gti import create_gti_mask
+from astropy import log
 import numpy as np
 from .io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, HEN_FILE_EXTENSION, load_data
 from .base import hen_root, _assign_value_if_none
-from astropy import log
-import warnings
-from stingray.lightcurve import Lightcurve
-from stingray.gti import create_gti_mask
 
 
 def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
@@ -50,7 +50,7 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
 
     try:
         len(dt)
-    except:
+    except Exception:
         dt = dt + np.zeros(len(times))
 
     # Floating point events, starting from events[0]

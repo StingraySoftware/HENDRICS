@@ -1,13 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """A miscellaneous collection of basic functions."""
 
+import sys
+import copy
+import os
 import warnings
 import numpy as np
 from astropy import log
 from astropy.logger import AstropyUserWarning
-import sys
-import copy
-import os
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 
@@ -40,8 +40,10 @@ DEFAULT_PARSER_ARGS['pi'] = dict(
                 nargs=2, type=int, default=[-1, -1]))
 DEFAULT_PARSER_ARGS['deorbit'] = dict(
     args=["--deorbit-par"],
-    kwargs=dict(help=("Deorbit data with this parameter file (requires PINT installed)"),
-                default=None, type=str))
+    kwargs=dict(
+        help=("Deorbit data with this parameter file (requires PINT installed)"),
+        default=None,
+        type=str))
 DEFAULT_PARSER_ARGS['output'] = dict(
     args=["-o", "--outfile"],
     kwargs=dict(help='Output file',
@@ -67,38 +69,34 @@ def r_in(td, r_0):
     return 1. / (tau - td)
 
 
-def r_det(td, r_in):
+def r_det(td, r_i):
     """Calculate detected countrate given dead time and incident countrate."""
-    tau = 1 / r_in
+    tau = 1 / r_i
     return 1. / (tau + td)
 
 
 def _assign_value_if_none(value, default):
     if value is None:
         return default
-    else:
-        return value
+    return value
 
 
 def _look_for_array_in_array(array1, array2):
     for a1 in array1:
         if a1 in array2:
             return a1
+    return None
 
 
 def is_string(s):
     """Portable function to answer this question."""
-    PY3 = sys.version_info[0] == 3
-    if PY3:
-        return isinstance(s, str)  # NOQA
-    else:
-        return isinstance(s, basestring)  # NOQA
+    return isinstance(s, str)  # NOQA
 
 
 def _order_list_of_arrays(data, order):
     if hasattr(data, 'items'):
-        data = dict([(i[0], i[1][order])
-                     for i in data.items()])
+        data = dict((i[0], i[1][order])
+                    for i in data.items())
     elif hasattr(data, 'index'):
         data = [i[order] for i in data]
     else:
@@ -111,28 +109,9 @@ class _empty():
         pass
 
 
-def mkdir_p(path):  # pragma: no cover
-    """Safe mkdir function.
-
-    Parameters
-    ----------
-    path : str
-        Name of the directory/ies to create
-
-    Notes
-    -----
-    Found at
-    http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
-    """
-    import os
-    import errno
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
+def mkdir_p(path):
+    """Safe mkdir function."""
+    return os.makedirs(path, exist_ok=True)
 
 
 def read_header_key(fits_file, key, hdu=1):
@@ -153,7 +132,7 @@ def read_header_key(fits_file, key, hdu=1):
     hdulist = pf.open(fits_file)
     try:
         value = hdulist[hdu].header[key]
-    except:  # pragma: no cover
+    except KeyError:  # pragma: no cover
         value = ''
     hdulist.close()
     return value
@@ -180,14 +159,16 @@ def ref_mjd(fits_file, hdu=1):
     if isinstance(fits_file, collections.Iterable) and\
             not is_string(fits_file):
         fits_file = fits_file[0]
-        log.info("opening %s" % fits_file)
+        log.info("opening %s", fits_file)
 
     try:
-        ref_mjd_int = np.long(read_header_key(fits_file, 'MJDREFI'))
-        ref_mjd_float = np.longdouble(read_header_key(fits_file, 'MJDREFF'))
+        ref_mjd_int = np.long(read_header_key(fits_file, 'MJDREFI', hdu=hdu))
+        ref_mjd_float = \
+            np.longdouble(read_header_key(fits_file, 'MJDREFF', hdu=hdu))
         ref_mjd_val = ref_mjd_int + ref_mjd_float
-    except:
-        ref_mjd_val = np.longdouble(read_header_key(fits_file, 'MJDREF'))
+    except KeyError:
+        ref_mjd_val = \
+            np.longdouble(read_header_key(fits_file, 'MJDREF', hdu=hdu))
     return ref_mjd_val
 
 
@@ -225,7 +206,7 @@ def common_name(str1, str2, default='common'):
     common_str = common_str.lstrip('_').lstrip('-')
     if common_str == '':
         common_str = default
-    log.debug('common_name: %s %s -> %s' % (str1, str2, common_str))
+    log.debug('common_name: %s %s -> %s', str1, str2, common_str)
     return common_str
 
 
@@ -236,7 +217,6 @@ def hen_root(filename):
     ----------
     filename : str
     """
-    import os.path
     fname = filename.replace('.gz', '')
     fname = os.path.splitext(fname)[0]
     fname = fname.replace('_ev', '').replace('_lc', '')
@@ -251,7 +231,6 @@ def optimal_bin_time(fftlen, tbin):
     slightly shorter than the original, that will produce a power-of-two number
     of FFT bins.
     """
-    import numpy as np
     return fftlen / (2 ** np.ceil(np.log2(fftlen / tbin)))
 
 
@@ -265,7 +244,7 @@ def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     """
     try:
         from scipy import stats
-    except:  # pragma: no cover
+    except Exception:  # pragma: no cover
         raise Exception('You need Scipy to use this function')
 
     import collections
@@ -290,7 +269,7 @@ def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     """
     try:
         from scipy import stats
-    except:  # pragma: no cover
+    except Exception:  # pragma: no cover
         raise Exception('You need Scipy to use this function')
 
     epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
@@ -304,24 +283,37 @@ def gti_len(gti):
 
 
 def deorbit_events(events, parameter_file=None):
+    """Refer arrival times to the center of mass of binary system.
+
+    Parameters
+    ----------
+    events : `stingray.events.EventList` object
+        The event list
+    parameter_file : str
+        The parameter file, in Tempo-compatible format, containing
+        the orbital solution (e.g. a BT model)
+    """
     events = copy.deepcopy(events)
     if parameter_file is None:
         return events
-    elif not os.path.exists(parameter_file):
-        raise FileNotFoundError("Parameter file {} does not exist".format(parameter_file))
+    if not os.path.exists(parameter_file):
+        raise FileNotFoundError(
+            "Parameter file {} does not exist".format(parameter_file))
 
     pepoch = events.gti[0, 0]
     pepoch_mjd = pepoch / 86400 + events.mjdref
     if events.mjdref < 10000:
         warnings.warn("MJDREF is very low. Are you sure everything is "
-                    "correct?", AstropyUserWarning)
+                      "correct?", AstropyUserWarning)
 
     length = np.max(events.time) - np.min(events.time)
     length_d = length / 86400
-    results = get_orbital_correction_from_ephemeris_file(pepoch_mjd - 1,
-                                                         pepoch_mjd + length_d + 1,
-                                                         parameter_file,
-                                                         ntimes=int(length // 10))
+    results = get_orbital_correction_from_ephemeris_file(
+        pepoch_mjd - 1,
+        pepoch_mjd + length_d + 1,
+        parameter_file,
+        ntimes=int(
+            length // 10))
     orbital_correction_fun = results[0]
     events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
     events.gti = orbital_correction_fun(events.gti, mjdref=events.mjdref)
@@ -350,7 +342,6 @@ def check_negative_numbers_in_args(args):
     >>> newargs[4] == ' -2e-10'
     True
     """
-    import sys
     if args is None:
         args = sys.argv[1:]
     newargs = []

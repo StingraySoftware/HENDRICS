@@ -1,11 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Light curve-related functions."""
 
-import numpy as np
 import os
 import warnings
 import copy
 from astropy import log
+import numpy as np
 from astropy.logger import AstropyUserWarning
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
@@ -80,7 +80,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
     return outlcs
 
 
-def scrunch_lightcurves(lcfilelist, outfile='out_scrlc'+HEN_FILE_EXTENSION,
+def scrunch_lightcurves(lcfilelist, outfile='out_scrlc' + HEN_FILE_EXTENSION,
                         save_joint=False):
     """Create a single light curve from input light curves.
 
@@ -289,7 +289,7 @@ def lcurve_from_events(f, safe_interval=0,
         save_lcurve(total_lc, hen_root(f) + '_std_lc' + HEN_FILE_EXTENSION)
 
     # Assign default value if None
-    outfile = assign_value_if_none(outfile,  hen_root(f) + tag + '_lc')
+    outfile = assign_value_if_none(outfile, hen_root(f) + tag + '_lc')
 
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
@@ -302,11 +302,13 @@ def lcurve_from_events(f, safe_interval=0,
     outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
-        warnings.warn('File exists, and noclobber option used. Skipping', AstropyUserWarning)
+        warnings.warn(
+            'File exists, and noclobber option used. Skipping',
+            AstropyUserWarning)
         return [outfile]
 
     lc = Lightcurve.make_lightcurve(events, bintime, tstart=tstart,
-                                    tseg=tstop-tstart, mjdref=evdata.mjdref,
+                                    tseg=tstop - tstart, mjdref=evdata.mjdref,
                                     gti=gtis)
 
     lc.instr = instr
@@ -409,7 +411,9 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
-        warnings.warn('File exists, and noclobber option used. Skipping', AstropyUserWarning)
+        warnings.warn(
+            'File exists, and noclobber option used. Skipping',
+            AstropyUserWarning)
         return [outfile]
 
     lchdulist = pf.open(fits_file)
@@ -422,12 +426,12 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
         mjdref = high_precision_keyword_read(lchdulist[ratehdu].header,
                                              'MJDREF')
         mjdref = Time(mjdref, scale='tdb', format='mjd')
-    except:
+    except Exception:
         mjdref = None
 
     try:
         instr = lchdulist[ratehdu].header['INSTRUME']
-    except:
+    except Exception:
         instr = 'EXTERN'
 
     # ----------------------------------------------------------------
@@ -438,7 +442,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
                                              'TSTART')
         tstop = high_precision_keyword_read(lchdulist[ratehdu].header,
                                             'TSTOP')
-    except:
+    except Exception:
         raise(Exception('TSTART and TSTOP need to be specified'))
 
     # For nulccorr lcs this whould work
@@ -481,9 +485,11 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
                                          'TIMEDEL')
         if tunit == 'd':
             dt *= 86400
-    except:
-        warnings.warn('Assuming that TIMEDEL is the difference between the'
-                      ' first two times of the light curve', AstropyUserWarning)
+    except Exception:
+        warnings.warn(
+            'Assuming that TIMEDEL is the difference between the'
+            ' first two times of the light curve',
+            AstropyUserWarning)
         dt = time[1] - time[0]
 
     # ----------------------------------------------------------------
@@ -495,7 +501,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
     try:
         rate_e = np.array(lctable.field('ERROR'), dtype=np.longdouble)
-    except:
+    except Exception:
         rate_e = np.zeros_like(rate)
 
     if 'RATE' in ratecolumn:
@@ -504,7 +510,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
     try:
         fracexp = np.array(lctable.field('FRACEXP'), dtype=np.longdouble)
-    except:
+    except Exception:
         fracexp = np.ones_like(rate)
 
     good_intervals = (rate == rate) * (fracexp >= fracexp_limit) * \
@@ -521,7 +527,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
                              for a, b in zip(gtitable.field('START'),
                                              gtitable.field('STOP'))],
                             dtype=np.longdouble)
-    except:
+    except Exception:
         gti_list = create_gti_from_condition(time, good_intervals)
 
     lchdulist.close()
@@ -582,7 +588,9 @@ def lcurve_from_txt(txt_file, outfile=None,
     outfile = os.path.join(outdir, outfile)
 
     if noclobber and os.path.exists(outfile):
-        warnings.warn('File exists, and noclobber option used. Skipping', AstropyUserWarning)
+        warnings.warn(
+            'File exists, and noclobber option used. Skipping',
+            AstropyUserWarning)
         return [outfile]
 
     time, counts = np.genfromtxt(txt_file, delimiter=' ', unpack=True)
@@ -637,6 +645,7 @@ def _wrap_fits(args):
     except Exception as e:
         warnings.warn("HENlcurve exception: {0}".format(str(e)))
         return []
+
 
 def _execute_lcurve(args):
     from multiprocessing import Pool

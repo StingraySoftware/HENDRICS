@@ -1,23 +1,23 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to simulate data and produce a fake event file."""
 
+import os
+import warnings
+import copy
 import numpy as np
 import numpy.random as ra
-import os
 from astropy import log
 from astropy.logger import AstropyUserWarning
-import warnings
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from .io import get_file_format, load_data, load_lcurve
 from .base import _empty
-import copy
 
 from .lcurve import lcurve_from_fits
 try:
     from numba import jit
-except:
+except Exception:
     def jit(fun):
         """Dummy decorator in case jit cannot be imported."""
         return fun
@@ -145,7 +145,9 @@ def filter_for_deadtime(event_list, deadtime, bkg_ev_list=None,
     retval = EventList(time=tot_ev_list[ev_kind], mjdref=event_list_obj.mjdref)
 
     if hasattr(event_list_obj, 'pi') and event_list_obj.pi is not None:
-        warnings.warn("PI information is lost during dead time filtering", AstropyUserWarning)
+        warnings.warn(
+            "PI information is lost during dead time filtering",
+            AstropyUserWarning)
 
     if not isinstance(event_list, EventList):
         retval = retval.time
@@ -326,7 +328,9 @@ def generate_fake_fits_observation(event_list=None, filename=None,
 
 def _read_event_list(filename):
     if filename is not None:
-        warnings.warn('Input event lists not yet implemented', AstropyUserWarning)
+        warnings.warn(
+            'Input event lists not yet implemented',
+            AstropyUserWarning)
     return None, None
 
 
@@ -420,10 +424,13 @@ def main(args=None):
             additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
             livetime = np.sum(prior)
 
-        generate_fake_fits_observation(event_list=event_list,
-                                       filename=args.outname,
-                                       instr=args.instrument, mission=args.mission,
-                                       tstart=args.tstart,
-                                       tstop=args.tstop,
-                                       mjdref=args.mjdref, livetime=livetime,
-                                       additional_columns=additional_columns)
+        generate_fake_fits_observation(
+            event_list=event_list,
+            filename=args.outname,
+            instr=args.instrument,
+            mission=args.mission,
+            tstart=args.tstart,
+            tstop=args.tstop,
+            mjdref=args.mjdref,
+            livetime=livetime,
+            additional_columns=additional_columns)

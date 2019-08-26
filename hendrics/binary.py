@@ -20,7 +20,7 @@ def get_header_info(obj):
     info.source = header['OBJECT']
     try:
         user = header['USER']
-    except:
+    except KeyError:
         user = 'Unknown'
     info.observer = user
     info.user = user
@@ -29,7 +29,7 @@ def get_header_info(obj):
     try:
         ra = header['RA_OBJ']
         dec = header['DEC_OBJ']
-    except:
+    except KeyError:
         ra = header['RA_PNT']
         dec = header['DEC_PNT']
 
@@ -148,7 +148,7 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
             np.histogram(goodev, bins=np.linspace(t0, t1, lastbin + 1))
 
         lclen += lastbin
-        s = struct.pack('f'*len(hist), *hist)
+        s = struct.pack('f' * len(hist), *hist)
         file.write(s)
         nphot += len(goodev)
     file.close()
@@ -239,7 +239,7 @@ def main_presto(args=None):
 
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['bintime', 'energies', 'deorbit',
-                               'nproc', 'loglevel', 'debug',])
+                               'nproc', 'loglevel', 'debug'])
 
     args = parser.parse_args(args)
 

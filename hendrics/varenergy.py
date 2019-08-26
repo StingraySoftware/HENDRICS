@@ -7,12 +7,13 @@ import warnings
 from astropy import log
 from astropy.logger import AstropyUserWarning
 import numpy as np
-from .base import hen_root
-from .io import load_events
-from .io import save_as_qdp
 from stingray.varenergyspectrum import RmsEnergySpectrum
 from stingray.varenergyspectrum import LagEnergySpectrum
 # from stingray.covariancespectrum import AveragedCovariancespectrum
+
+from .base import hen_root
+from .io import load_events
+from .io import save_as_qdp
 
 
 def main(args=None):
@@ -69,9 +70,10 @@ def main(args=None):
             log.info('Sorting file list')
             sorted_files = sort_files(args.files)
 
-            warnings.warn('Beware! For cpds and derivatives, I assume that the '
-                            'files are from only two instruments and in pairs '
-                            '(even in random order)')
+            warnings.warn(
+                'Beware! For cpds and derivatives, I assume that the '
+                'files are from only two instruments and in pairs '
+                '(even in random order)')
 
             instrs = list(sorted_files.keys())
 
@@ -89,8 +91,9 @@ def main(args=None):
             events2 = load_events(fname2)
             if not args.use_pi and \
                     (events.energy is None or events2.energy is None):
-                raise ValueError("If --use-pi is not specified, event lists must "
-                                 "be calibrated! Please use HENcalibrate.")
+                raise ValueError(
+                    "If --use-pi is not specified, event lists must "
+                    "be calibrated! Please use HENcalibrate.")
 
             if args.rms:
                 rms = RmsEnergySpectrum(events, args.freq_interval,
@@ -123,9 +126,11 @@ def main(args=None):
             if args.covariance:
                 try:
                     from stingray.varenergyspectrum import CovarianceEnergySpectrum
-                except:
-                    warnings.warn('This version of Stingray does not implement '
-                                    'the correct version of Covariance Spectrum.', AstropyUserWarning)
+                except Exception:
+                    warnings.warn(
+                        'This version of Stingray does not implement '
+                        'the correct version of Covariance Spectrum.',
+                        AstropyUserWarning)
                     continue
                 cov = CovarianceEnergySpectrum(events, args.freq_interval,
                                                energy_spec, args.ref_band,

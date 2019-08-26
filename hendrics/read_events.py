@@ -1,18 +1,18 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Read and save event lists from FITS files."""
 
+import warnings
+import os
+import numpy as np
+from astropy import log
 from stingray.utils import assign_value_if_none
 from stingray.events import EventList
 from stingray.gti import cross_two_gtis
+from .io import load_events
+from .base import common_name
 from .base import hen_root, read_header_key
 from .io import save_events, load_events_and_gtis
 from .io import HEN_FILE_EXTENSION
-import numpy as np
-from astropy import log
-import warnings
-import os
-from hendrics.io import load_events, save_events
-from hendrics.base import common_name
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,
@@ -68,7 +68,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             outroot_local = outfile_root
 
         outfile = outroot_local + '_ev' + HEN_FILE_EXTENSION
-        if noclobber and os.path.exists(outfile) and (not (gti_split or length_split)):
+        if noclobber and os.path.exists(outfile) and (
+                not (gti_split or length_split)):
             warnings.warn(
                 '{0} exists and using noclobber. Skipping'.format(outfile))
             return
@@ -80,16 +81,17 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             if length_split:
                 gti0 = np.arange(gtis[0, 0], gtis[-1, 1], length_split)
                 gti1 = gti0 + length_split
-                gti_chunks = np.array([[g0, g1] for (g0, g1) in zip(gti0, gti1)])
-                label='chunk'
+                gti_chunks = np.array([[g0, g1]
+                                       for (g0, g1) in zip(gti0, gti1)])
+                label = 'chunk'
             else:
                 gti_chunks = gtis
-                label='gti'
+                label = 'gti'
 
             for ig, g in enumerate(gti_chunks):
                 outfile_local = \
                     '{0}_{1}{2:03d}_ev'.format(outroot_local, label,
-                                           ig) + HEN_FILE_EXTENSION
+                                               ig) + HEN_FILE_EXTENSION
 
                 good_gtis = cross_two_gtis([g], gtis)
                 if noclobber and os.path.exists(outfile_local):

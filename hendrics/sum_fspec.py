@@ -1,12 +1,12 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Function to sum frequency spectra."""
 
+import copy
+import numpy as np
+from astropy import log
 from .io import save_pds, get_file_type
 from .io import HEN_FILE_EXTENSION
 from .base import _assign_value_if_none
-import numpy as np
-from astropy import log
-import copy
 
 
 def sum_fspec(files, outname=None):

@@ -1,20 +1,19 @@
 """Interactive phaseogram."""
 
-import warnings
-from .io import load_events
+import copy
+import argparse
 from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
 from stingray.utils import assign_value_if_none
 from stingray.events import EventList
 
 import numpy as np
-import argparse
 from scipy.signal import savgol_filter
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
 from astropy import log
 from astropy.logger import AstropyUserWarning
+from .io import load_events
 
-import copy
 try:
     from tqdm import tqdm as show_progress
 except ImportError:
@@ -38,7 +37,7 @@ def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE405"):
         toalist[i] = \
             toa.TOA(m, error=errs_us[i], obs='Barycenter', scale='tdb')
 
-    toalist = toa.TOAs(toalist = toalist)
+    toalist = toa.TOAs(toalist=toalist)
     if 'tdb' not in toalist.table.colnames:
         toalist.compute_TDBs()
     if 'ssb_obs_pos' not in toalist.table.colnames:
@@ -146,7 +145,8 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
 
         local_f = frequency_derivatives[0]
         for i_f, f in enumerate(frequency_derivatives[1:]):
-            local_f += 1 / np.math.factorial(i_f + 1) * (start - pepoch) ** (i_f + 1) * f
+            local_f += 1 / \
+                np.math.factorial(i_f + 1) * (start - pepoch) ** (i_f + 1) * f
 
         fder = copy.deepcopy(list(frequency_derivatives))
         fder[0] = local_f
@@ -160,7 +160,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         # We are folding wrt pepoch, and calculating TOAs wrt start]]
 
         toa, toaerr = \
-            get_TOA(profile, 1/frequency_derivatives[0], start,
+            get_TOA(profile, 1 / frequency_derivatives[0], start,
                     template=template, additional_phase=additional_phase,
                     quick=quick, debug=True)
         toas.append(toa)
@@ -203,9 +203,9 @@ def dbl_cos_fit_func(p, x):
         base = p[0]
         startidx = 1
     first_harm = \
-        p[startidx] * np.cos(2*np.pi*x + 2*np.pi*p[startidx + 1])
+        p[startidx] * np.cos(2 * np.pi * x + 2 * np.pi * p[startidx + 1])
     second_harm = \
-        p[startidx + 2] * np.cos(4.*np.pi*x + 4*np.pi*p[startidx + 3])
+        p[startidx + 2] * np.cos(4. * np.pi * x + 4 * np.pi * p[startidx + 3])
     return base + first_harm + second_harm
 
 
@@ -458,7 +458,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
                                       energy, bins=(binx, biny))
 
     binx = np.concatenate((binx[:-1], binx + 1))
-    meanbins = (binx[:-1] + binx[1:])/2
+    meanbins = (binx[:-1] + binx[1:]) / 2
 
     if plot_energy:
         hist2d = np.vstack((hist2d, hist2d))
@@ -537,7 +537,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
             pf = 100 * (max - min) / max
             ax2.plot(meanbins, prof, drawstyle='steps-mid',
                      label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],
-                                                     biny[i+1], pf))
+                                                     biny[i + 1], pf))
             std = np.max(prof - smooth)
             ax2.set_xlabel('Phase')
             ax2.set_ylabel('Counts')
@@ -588,7 +588,9 @@ def main_fold(args=None):
                              "at each energy is one. "
                              "--norm ratios: Divide by mean profile")
 
-    _add_default_args(parser, ['pepoch', 'deorbit', 'loglevel', 'debug', 'test'])
+    _add_default_args(
+        parser, [
+            'pepoch', 'deorbit', 'loglevel', 'debug', 'test'])
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
@@ -695,10 +697,13 @@ def main_deorbit(args=None):
     #                           "default:WARNING)"),
     #                     default='WARNING',
     #                     type=str)
-    parser.add_argument('-p', "--deorbit-par",
-                        help=("Deorbit data with this parameter file (requires PINT installed)"),
-                        default=None, required=True,
-                        type=str)
+    parser.add_argument(
+        '-p',
+        "--deorbit-par",
+        help=("Deorbit data with this parameter file (requires PINT installed)"),
+        default=None,
+        required=True,
+        type=str)
 
     args = parser.parse_args(args)
 

@@ -2,18 +2,16 @@
 """Quicklook plots."""
 
 import warnings
-
+import os
 import copy
 import collections
+import numpy as np
 from stingray.gti import create_gti_mask
 from astropy.modeling.models import Const1D
 from astropy.modeling import Model
 from astropy.stats import poisson_conf_interval
-
 from astropy import log
-import numpy as np
 
-import os
 from .fold import fold_events, filter_energy
 from .base import deorbit_events
 from .io import load_events
@@ -27,7 +25,7 @@ from .base import detection_level
 def _next_color(ax):
     try:
         return next(ax._get_lines.color_cycle)
-    except:
+    except Exception:
         return next(ax._get_lines.prop_cycler)['color']
 
 
@@ -39,7 +37,7 @@ def _baseline_fun(x, a):
 def _value_or_none(dict_like, key):
     try:
         return dict_like[key]
-    except:
+    except KeyError:
         return None
 
 
@@ -217,7 +215,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
             level *= freq
             for i, func in enumerate(models):
                 const = _get_const(func)
-                plt.plot(freq, freq*(func(freq) - const),
+                plt.plot(freq, freq * (func(freq) - const),
                          label='Model {}'.format(i + 1), zorder=20, color='k')
 
         if np.any(level < 0):
@@ -385,7 +383,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             phase, profile, profile_err = \
                 fold_events(copy.deepcopy(events.time), f, fdot,
                             ref_time=ref_time,
-                            #gtis=copy.deepcopy(events.gti),
+                            # gtis=copy.deepcopy(events.gti),
                             expocorr=False, nbin=nbin)
             ax = plt.subplot(external_gs[0])
 
@@ -393,8 +391,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
                 round(f, -np.int(np.floor(np.log10(np.abs(df))))),
                 round(fdot, -np.int(np.floor(np.log10(np.abs(dfdot)))))),
-                    horizontalalignment='left', verticalalignment = 'center',
-                    transform = ax.transAxes)
+                horizontalalignment='left', verticalalignment='center',
+                transform=ax.transAxes)
             ax.plot(np.concatenate((phase, phase + 1)),
                     np.concatenate((profile, profile)), drawstyle='steps-mid')
 
@@ -443,9 +441,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             external_gs = gridspec.GridSpec(1, 1)
             search_gs_no = 0
 
-
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-
             gs = gridspec.GridSpecFromSubplotSpec(
                 2, 2, height_ratios=(1, 3), width_ratios=(3, 1),
                 hspace=0, wspace=0, subplot_spec=external_gs[search_gs_no])
@@ -453,7 +449,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             axf = plt.subplot(gs[0, 0])
             axfdot = plt.subplot(gs[1, 1])
             if vmax is not None:
-                axf.axhline(vmax, ls="--", label="99.9\% c.l.")
+                axf.axhline(vmax, ls="--", label=r"99.9\% c.l.")
                 axfdot.axvline(vmax)
             axffdot = plt.subplot(gs[1, 0], sharex=axf, sharey=axfdot)
             axffdot.pcolormesh(ef.freq, np.asarray(ef.fdots), ef.stat,
@@ -507,7 +503,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
             for f in ef.best_fits:
                 xs = np.linspace(np.min(ef.freq), np.max(ef.freq),
-                                 len(ef.freq)*2)
+                                 len(ef.freq) * 2)
                 plt.plot(xs, f(xs))
 
         if output_data_file is not None:
