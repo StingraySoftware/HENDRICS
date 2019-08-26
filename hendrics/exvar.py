@@ -27,7 +27,7 @@ def excvar_norm(lc):
 
 def main(args=None):
     import argparse
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Calculate excess variance in light curve chunks')
     parser = argparse.ArgumentParser(description=description)
 
@@ -46,14 +46,13 @@ def main(args=None):
                              " Vaughan et al. 2003 for details).")
     _add_default_args(parser, ['loglevel', 'debug'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
-
     with log.log_to_file('HENexcvar.log'):
         filelist = []
         for fname in args.files:

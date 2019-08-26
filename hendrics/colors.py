@@ -17,7 +17,7 @@ def colors():
 def main(args=None):
     """Main function called by the `HENcolors` command line script."""
     import argparse
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = \
         'Calculate color light curves'
     parser = argparse.ArgumentParser(description=description)
@@ -30,6 +30,7 @@ def main(args=None):
                              "If --use-pi is specified, these are interpreted "
                              "as PI channels")
 
+    args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['bintime', 'usepi', 'output',
                                'loglevel', 'debug'])
     args = parser.parse_args(args)

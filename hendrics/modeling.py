@@ -11,7 +11,7 @@ from stingray.modeling import fit_powerspectrum
 def main_model(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Fit frequency spectra (PDS, CPDS, cospectrum) '
                    'with user-defined models')
     parser = argparse.ArgumentParser(description=description)
@@ -33,6 +33,7 @@ def main_model(args=None):
 
     _add_default_args(parser, ['loglevel', 'debug'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
@@ -43,8 +44,6 @@ def main_model(args=None):
         raise ValueError("Invalid number of frequencies specified")
 
     log.setLevel(args.loglevel)
-
-
     with log.log_to_file('HENmodel.log'):
         model, kind, constraints = load_model(args.modelfile)
         if kind != 'Astropy':

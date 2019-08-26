@@ -17,7 +17,7 @@ from stingray.varenergyspectrum import LagEnergySpectrum
 
 def main(args=None):
     import argparse
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Calculates variability-energy spectra')
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
@@ -50,14 +50,13 @@ def main(args=None):
     _add_default_args(parser, ['bintime',
                                'loglevel', 'debug'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
-
     with log.log_to_file('HENvarenergy.log'):
         filelist = []
         energy_spec = (float(args.energy_values[0]),

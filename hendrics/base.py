@@ -54,6 +54,12 @@ DEFAULT_PARSER_ARGS['test'] = dict(
     args=["--test"],
     kwargs=dict(help="Only used for tests",
                 default=False, action='store_true'))
+DEFAULT_PARSER_ARGS['pepoch'] = dict(
+    args=["--pepoch"],
+    kwargs=dict(type=float, required=False,
+                help="Reference epoch for timing parameters (MJD)",
+                default=None))
+
 
 def r_in(td, r_0):
     """Calculate incident countrate given dead time and detected countrate."""
@@ -330,3 +336,32 @@ def _add_default_args(parser, list_of_args):
         parser.add_argument(*a, **k)
 
     return parser
+
+
+def check_negative_numbers_in_args(args):
+    """If there are negative numbers in args, prepend a space.
+
+    Examples
+    --------
+    >>> args = ['events.nc', '-f', '103', '--fdot', '-2e-10']
+    >>> newargs = check_negative_numbers_in_args(args)
+    >>> args[:4] == newargs[:4]
+    True
+    >>> newargs[4] == ' -2e-10'
+    True
+    """
+    import sys
+    if args is None:
+        args = sys.argv[1:]
+    newargs = []
+    for arg in args:
+        try:
+            # Has to be a number, has to be negative
+            assert -float(arg) > 0
+        except (ValueError, AssertionError):
+            newargs.append(arg)
+            continue
+
+        newargs.append(" " + arg)
+
+    return newargs

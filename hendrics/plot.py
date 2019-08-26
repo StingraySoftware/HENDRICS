@@ -627,6 +627,7 @@ def plot_lc(lcfiles, figname=None, fromstart=False, xlog=None, ylog=None,
 def main(args=None):
     """Main function called by the `HENplot` command line script."""
     import argparse
+    from .base import check_negative_numbers_in_args
 
     description = \
         'Plot the content of HENDRICS light curves and frequency spectra'
@@ -666,6 +667,7 @@ def main(args=None):
                         help="Plot two variables contained in the file",
                         default=None)
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
     if args.noplot and args.figname is None:
         args.figname = args.files[0].replace(HEN_FILE_EXTENSION, '.png')

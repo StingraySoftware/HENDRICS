@@ -35,7 +35,7 @@ def rebin_file(filename, rebin):
 def main(args=None):
     """Main function called by the `HENrebin` command line script."""
     import argparse
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = 'Rebin light curves and frequency spectra. '
     parser = argparse.ArgumentParser(description=description)
 
@@ -48,6 +48,7 @@ def main(args=None):
 
     _add_default_args(parser, ['loglevel', 'debug'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
     files = args.files
 
@@ -55,8 +56,6 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
-
     with log.log_to_file('HENrebin.log'):
         rebin = args.rebin
         for f in files:

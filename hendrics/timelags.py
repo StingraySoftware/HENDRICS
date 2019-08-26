@@ -23,8 +23,6 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
-
     with log.log_to_file('HENlags.log'):
         filelist = []
         for fname in args.files:

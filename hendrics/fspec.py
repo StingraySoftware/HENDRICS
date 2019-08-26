@@ -406,7 +406,7 @@ def dumpdyn_main(args=None):
 def main(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Create frequency spectra (PDS, CPDS, cospectrum) '
                    'starting from well-defined input ligthcurves')
     parser = argparse.ArgumentParser(description=description)
@@ -444,6 +444,7 @@ def main(args=None):
                         default=False, action='store_true')
     _add_default_args(parser, ['nproc', 'loglevel', 'debug'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:

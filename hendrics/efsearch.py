@@ -490,7 +490,7 @@ def dyn_folding_search(events, fmin, fmax, step=None,
 
 
 def _common_parser(args=None):
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Search for pulsars using the epoch folding or the Z_n^2 '
                    'algorithm')
     parser = argparse.ArgumentParser(description=description)
@@ -557,6 +557,7 @@ def _common_parser(args=None):
                         help="The number of harmonics to use in the search "
                              "(the 'N' in Z^2_N; only relevant to Z search!)")
 
+    args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['deorbit', 'loglevel', 'debug'])
 
     args = parser.parse_args(args)
@@ -565,8 +566,6 @@ def _common_parser(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
-
     return args
 
 

@@ -700,7 +700,7 @@ def _execute_lcurve(args):
 def main(args=None):
     """Main function called by the `HENlcurve` command line script."""
     import argparse
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
 
     description = ('Create lightcurves starting from event files. It is '
                    'possible to specify energy or channel filtering options')
@@ -747,6 +747,7 @@ def main(args=None):
     parser = _add_default_args(parser, ['output',
                                         'loglevel', 'debug', 'nproc'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
     if args.debug:
         args.loglevel = 'DEBUG'
@@ -782,8 +783,6 @@ def scrunch_main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
-
     with log.log_to_file('HENscrunchlc.log'):
         scrunch_lightcurves(files, args.out)
 
@@ -825,7 +824,5 @@ def baseline_main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
-
     with log.log_to_file('HENbaseline.log'):
         _baseline_lightcurves(files, args.out, args.asymmetry, args.lam)

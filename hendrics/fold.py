@@ -403,7 +403,8 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
 
 def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
                 test=False, emin=None, emax=None, norm='to1',
-                smooth_window=None, deorbit_par=None, **opts):
+                smooth_window=None, deorbit_par=None, pepoch=None,
+                **opts):
     from matplotlib.gridspec import GridSpec
     import matplotlib.pyplot as plt
 
@@ -424,7 +425,11 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
     if elabel == '':
         plot_energy = False
 
-    if tref is None:
+    if tref is not None and pepoch is not None:
+        raise ValueError('Only specify one between tref and pepoch')
+    elif pepoch is not None:
+        tref = (pepoch - ev.mjdref) * 86400
+    elif tref is None:
         tref = times[0]
 
     phases = pulse_phase(times - tref, freq, fdot, fddot, to_1=True)
@@ -556,7 +561,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
 
 
 def main_fold(args=None):
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = ('Plot a folded profile')
     parser = argparse.ArgumentParser(description=description)
 
@@ -583,8 +588,9 @@ def main_fold(args=None):
                              "at each energy is one. "
                              "--norm ratios: Divide by mean profile")
 
-    _add_default_args(parser, ['deorbit', 'loglevel', 'debug', 'test'])
+    _add_default_args(parser, ['pepoch', 'deorbit', 'loglevel', 'debug', 'test'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
@@ -600,7 +606,8 @@ def main_fold(args=None):
         run_folding(args.file, freq=frequency, fdot=fdot, fddot=fddot,
                     nbin=args.nbin, nebin=args.nebin, tref=args.tref,
                     test=args.test, emin=args.emin, emax=args.emax,
-                    norm=args.norm, deorbit_par=args.deorbit_par)
+                    norm=args.norm, deorbit_par=args.deorbit_par,
+                    pepoch=args.pepoch)
 
 
 def z2_n_detection_level(epsilon=0.01, n=2, n_summed_spectra=1, ntrial=1):
@@ -699,8 +706,6 @@ def main_deorbit(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
-
     with log.log_to_file('HENdeorbit.log'):
         for fname in args.files:
             log.info(f"Deorbiting events from {fname}")

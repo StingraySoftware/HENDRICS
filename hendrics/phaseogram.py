@@ -711,7 +711,7 @@ def run_interactive_phaseogram(event_file, freq, fdot=0, fddot=0, nbin=64,
 
 def main_phaseogram(args=None):
     description = ('Plot an interactive phaseogram')
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("file", help="Input event file", type=str)
@@ -721,9 +721,6 @@ def main_phaseogram(args=None):
                         help="Initial fdot", default=0)
     parser.add_argument("--fddot", type=float, required=False,
                         help="Initial fddot", default=0)
-    parser.add_argument("--pepoch", type=float, required=False,
-                        help="Reference epoch for timing parameters",
-                        default=None)
     parser.add_argument("--periodogram", type=str, required=False,
                         help="Periodogram file", default=None)
     parser.add_argument('-n', "--nbin", default=128, type=int,
@@ -751,15 +748,15 @@ def main_phaseogram(args=None):
                         help="Only plot the phaseogram",
                         default=False, action='store_true')
 
-    _add_default_args(parser, ['deorbit', 'test', 'loglevel', 'debug'])
+    _add_default_args(parser, ['pepoch', 'deorbit', 'test', 'loglevel', 'debug'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
 
     with log.log_to_file('HENphaseogram.log'):
         if args.periodogram is None and args.freq is None:

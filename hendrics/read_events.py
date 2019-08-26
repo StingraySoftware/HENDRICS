@@ -178,7 +178,7 @@ def main(args=None):
     """Main function called by the `HENreadevents` command line script."""
     import argparse
     from multiprocessing import Pool
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
 
     description = ('Read a cleaned event files and saves the relevant '
                    'information in a standard format')
@@ -204,6 +204,7 @@ def main(args=None):
     _add_default_args(parser, ['output',
                                'loglevel', 'debug', 'nproc'])
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
     files = args.files
 

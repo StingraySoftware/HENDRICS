@@ -292,7 +292,7 @@ def phase_tag_fits(filename, parameter_info, **kwargs):
 
 
 def main_phasetag(args=None):
-
+    from .base import check_negative_numbers_in_args
     parser = argparse.ArgumentParser()
 
     parser.add_argument("file", help="Event file", type=str)
@@ -317,6 +317,7 @@ def main_phasetag(args=None):
                         help="Reference time for timing solution",
                         dest='pepoch')
 
+    args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.freqs is None and args.parfile is None:

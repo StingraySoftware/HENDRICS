@@ -226,7 +226,7 @@ def save_inf(lcinfo, info, filename):
 
 def main_presto(args=None):
     import argparse
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
 
     description = ('Save light curves in a format readable to PRESTO')
     parser = argparse.ArgumentParser(description=description)
@@ -237,6 +237,7 @@ def main_presto(args=None):
                                                    "curves (split otherwise)",
                         type=np.longdouble, default=1e32)
 
+    args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['bintime', 'energies', 'deorbit',
                                'nproc', 'loglevel', 'debug',])
 

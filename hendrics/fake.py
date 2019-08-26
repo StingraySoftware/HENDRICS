@@ -342,7 +342,7 @@ def _read_light_curve(filename):
 def main(args=None):
     """Main function called by the `HENfake` command line script."""
     import argparse
-    from .base import _add_default_args
+    from .base import _add_default_args, check_negative_numbers_in_args
     description = (
         'Create an event file in FITS format from an event list, or simulating'
         ' it. If input event list is not specified, generates the events '
@@ -372,6 +372,7 @@ def main(args=None):
                              "single number, or two. In this last case, the "
                              "second value is used as sigma of the dead time "
                              "distribution")
+    args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['loglevel', 'debug'])
 
     args = parser.parse_args(args)
@@ -380,8 +381,6 @@ def main(args=None):
         args.loglevel = 'DEBUG'
 
     log.setLevel(args.loglevel)
-
-
     with log.log_to_file('HENfake.log'):
         additional_columns = {}
         livetime = None
