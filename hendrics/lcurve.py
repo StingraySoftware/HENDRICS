@@ -10,7 +10,8 @@ from astropy.logger import AstropyUserWarning
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from stingray.gti import create_gti_mask, cross_gtis, contiguous_regions
-from .base import _look_for_array_in_array, hen_root, mkdir_p
+from .base import _look_for_array_in_array, hen_root, mkdir_p, \
+    interpret_bintime
 from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
 
@@ -242,9 +243,7 @@ def lcurve_from_events(f, safe_interval=0,
     evdata = load_events(f)
     log.info("Done.")
 
-    if bintime < 0:
-        bintime = 2 ** (bintime)
-    bintime = np.longdouble(bintime)
+    bintime = np.longdouble(interpret_bintime(bintime))
 
     tag = ''
 

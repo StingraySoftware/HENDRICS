@@ -10,7 +10,8 @@ from stingray.powerspectrum import AveragedPowerspectrum
 import numpy as np
 from astropy import log
 from astropy.logger import AstropyUserWarning
-from .base import hen_root, common_name, _empty, _assign_value_if_none
+from .base import hen_root, common_name, _empty, _assign_value_if_none, \
+    interpret_bintime
 from .io import sort_files, get_file_type, load_data, save_pds, load_lcurve
 from .io import HEN_FILE_EXTENSION
 
@@ -323,6 +324,18 @@ def calc_fspec(files, fftlen,
 
 
 def _normalize(array, ref=0):
+    """Normalize array in terms of standard deviation.
+
+    Examples
+    --------
+    >>> n = 10000
+    >>> array1 = np.random.normal(0, 1, n)
+    >>> array2 = np.random.normal(0, 1, n)
+    >>> array = array1 ** 2 + array2 ** 2
+    >>> newarr = _normalize(array)
+    >>> np.isclose(np.std(newarr), 1, atol=0.0001)
+    True
+    """
     m = ref
     std = np.std(array)
     newarr = np.zeros_like(array)
@@ -332,61 +345,21 @@ def _normalize(array, ref=0):
 
 
 def dumpdyn(fname, plot=False):
-    """Dump a dynamical frequency spectrum in text files.
-
-    Parameters
-    ----------
-    fname : str
-        The file name
-
-    Other Parameters
-    ----------------
-    plot : bool
-        if True, plot the spectrum
-
-    """
-    ftype, pdsdata = get_file_type(fname, specify_reb=False)
-
-    dynpds = pdsdata['dyn' + ftype]
-    edynpds = pdsdata['edyn' + ftype]
-
-    try:
-        freq = pdsdata['freq']
-    except Exception:
-        flo = pdsdata['flo']
-        fhi = pdsdata['fhi']
-        freq = (fhi + flo) / 2
-
-    time = pdsdata['dyntimes']
-    freqs = np.zeros_like(dynpds)
-    times = np.zeros_like(dynpds)
-
-    for i, im in enumerate(dynpds):
-        freqs[i, :] = freq
-        times[i, :] = time[i]
-
-    t = times.real.flatten()
-    f = freqs.real.flatten()
-    d = dynpds.real.flatten()
-    e = edynpds.real.flatten()
-
-    np.savetxt('{0}_dumped_{1}.txt'.format(hen_root(fname), ftype),
-               np.array([t, f, d, e]).T)
-    size = _normalize(d)
-    if plot:
-        import matplotlib.pyplot as plt
-        plt.scatter(t, f, s=size)
-        plt.xlabel('Time (s)')
-        plt.ylabel('Freq (Hz)')
-
-        plt.show()
+    raise NotImplementedError(
+        "Dynamical power spectrum is being refactored. "
+        "Sorry for the inconvenience. In the meantime, "
+        "you can load the data into Stingray using "
+        "`cs = hendrics.io.load_pds(fname)` and find "
+        "the dynamical PDS/CPDS in cs.cs_all")
 
 
 def dumpdyn_main(args=None):
     """Main function called by the `HENdumpdyn` command line script."""
     import argparse
 
-    description = ('Dump dynamical (cross) power spectra')
+    description = ('Dump dynamical (cross) power spectra. '
+                   'This script is being reimplemented. Please be '
+                   'patient :)')
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help=("List of files in any valid HENDRICS "
@@ -452,7 +425,8 @@ def main(args=None):
     log.setLevel(args.loglevel)
 
     with log.log_to_file('HENfspec.log'):
-        bintime = args.bintime
+        bintime = np.longdouble(interpret_bintime(args.bintime))
+
         fftlen = args.fftlen
         pdsrebin = args.rebin
         normalization = args.norm

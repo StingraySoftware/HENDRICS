@@ -8,7 +8,9 @@ import copy
 import collections
 import importlib
 import warnings
+import pickle
 import os.path
+from contextlib import redirect_stderr
 import numpy as np
 from astropy.modeling.core import Model
 from astropy import log
@@ -32,18 +34,6 @@ except ImportError:
     HEN_FILE_EXTENSION = '.p'
     HAS_NETCDF = False
     pass
-
-try:
-    # Python 2
-    import cPickle as pickle
-except ImportError:
-    # Python 3
-    import pickle
-
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
 
 try:
     _ = np.complex256
@@ -121,19 +111,28 @@ def high_precision_keyword_read(hdr, keyword):
     value : long double
         The value of the key, or None if keyword not present
 
+    Examples
+    --------
+    >>> hdr = dict(keywordS=1.25)
+    >>> high_precision_keyword_read(hdr, 'keywordS')
+    1.25
+    >>> hdr = dict(keywordI=1, keywordF=0.25)
+    >>> high_precision_keyword_read(hdr, 'keywordS')
+    1.25
+    >>> high_precision_keyword_read(hdr, 'bubabuab') is None
+    True
     """
-    try:
-        value = np.longdouble(hdr[keyword])
-        return value
-    except Exception:
-        pass
-    try:
-        if len(keyword) == 8:
-            keyword = keyword[:7]
-        value = np.longdouble(hdr[keyword + 'I'])
-        value += np.longdouble(hdr[keyword + 'F'])
-        return value
-    except Exception:
+    if keyword in hdr:
+        return np.longdouble(hdr[keyword])
+
+    if len(keyword) == 8:
+        keyword = keyword[:7]
+
+    if keyword + 'I' in hdr and keyword + 'F' in hdr:
+        value_i = np.longdouble(hdr[keyword + 'I'])
+        value_f = np.longdouble(hdr[keyword + 'F'])
+        return value_i + value_f
+    else:
         return None
 
 
@@ -143,7 +142,23 @@ def get_file_extension(fname):
 
 
 def get_file_format(fname):
-    """Decide the file format of the file."""
+    """Decide the file format of the file.
+
+    Examples
+    --------
+    >>> get_file_format('bu.p')
+    'pickle'
+    >>> get_file_format('bu.nc')
+    'nc'
+    >>> get_file_format('bu.evt')
+    'fits'
+    >>> get_file_format('bu.txt')
+    'text'
+    >>> get_file_format('bu.pdfghj')
+    Traceback (most recent call last):
+        ...
+    RuntimeError: File format pdfghj not recognized
+    """
     ext = get_file_extension(fname)
     if ext == '.p':
         return 'pickle'
@@ -154,7 +169,8 @@ def get_file_format(fname):
     elif ext in ['.txt', '.qdp', '.csv']:
         return 'text'
     else:
-        raise Exception("File format not recognized")
+        raise RuntimeError(f"File format {ext[1:]} "
+                           f"not recognized")
 
 
 # ---- Base function to save NetCDF4 files
@@ -611,24 +627,17 @@ def load_pds(fname, nosub=False):
 def _load_data_pickle(fname, kind="data"):
     """Load generic data in pickle format."""
     log.info('Loading %s and info from %s' % (kind, fname))
-    try:
-        with open(fname, 'rb') as fobj:
-            result = pickle.load(fobj)
-        return result
-    except Exception as e:
-        raise Exception("{0} failed ({1}: {2})".format('_load_data_pickle',
-                                                       type(e), e))
+    with open(fname, 'rb') as fobj:
+        result = pickle.load(fobj)
+    return result
 
 
 def _save_data_pickle(struct, fname, kind="data"):
     """Save generic data in pickle format."""
     log.info('Saving %s and info to %s' % (kind, fname))
-    try:
-        with open(fname, 'wb') as fobj:
-            pickle.dump(struct, fobj)
-    except Exception as e:
-        raise Exception("{0} failed ({1}: {2})".format('_save_data_pickle',
-                                                       type(e), e))
+    with open(fname, 'wb') as fobj:
+        pickle.dump(struct, fobj)
+
     return
 
 
@@ -723,13 +732,7 @@ def _save_data_nc(struct, fname, kind="data"):
 
         probe = var
         if isinstance(var, collections.Iterable):
-            try:
-                probe = var[0]
-            except Exception:
-                log.error('This failed: %s %s in file %s' %
-                          (k, repr(var), fname))
-                raise Exception('This failed: %s %s in file %s' %
-                                (k, repr(var), fname))
+            probe = var[0]
 
         if is_string(var):
             probekind = str
@@ -961,13 +964,27 @@ def _get_gti_from_all_extensions(lchdulist, accepted_gtistrings=['GTI'],
 
 
 def _get_additional_data(lctable, additional_columns):
+    """
+    Examples
+    --------
+    >>> from astropy.table import Table
+    >>> lctable = Table({'a': [1, 2, 3], 'b': [4, 5, 6]})
+    >>> np.allclose(_get_additional_data(lctable, ['b'])['b'], [4, 5, 6])
+    True
+    >>> with redirect_stderr(sys.stdout):
+    ...     add = _get_additional_data(lctable, ['c'])  # doctest: +ELLIPSIS
+    WARNING: Column c not found ...
+    >>> np.allclose(add['c'], 0)
+    True
+    """
     additional_data = {}
     if additional_columns is not None:
         for a in additional_columns:
             try:
                 additional_data[a] = np.array(lctable.field(a))
             except KeyError:
-                warnings.warn("Column {} not found".format(a))
+                warnings.warn("Column {} not found".format(a),
+                              AstropyUserWarning)
                 additional_data[a] = np.zeros(len(lctable))
 
     return additional_data
@@ -1292,12 +1309,7 @@ def load_model(modelstring):
         # the model file does not exist the first time we call
         # importlib.import_module(). In this case, the second time we call it,
         # even if the file exists it will not exist for importlib.
-        # Unfortunately, this does not work in Python 2.
-        try:
-            importlib.invalidate_caches()
-        except AttributeError:
-            warnings.warn("importlib.invalidate_caches() is not implemented "
-                          "in Python 2")
+        importlib.invalidate_caches()
 
         _model = importlib.import_module(modulename)
         model = _model.model
@@ -1335,7 +1347,12 @@ def find_file_in_allowed_paths(fname, other_paths=None):
     >>> with open('bu', 'w') as fobj: print("blabla", file=fobj)
     >>> fakepath = os.path.join("directory", "bu")
     >>> realpath = os.path.join('.', 'bu')
-    >>> find_file_in_allowed_paths(fakepath, ["."]) == realpath
+    >>> with redirect_stderr(sys.stdout):
+    ...     foundpath = \\
+    ...       find_file_in_allowed_paths(fakepath,
+    ...                                  ["."])  # doctest: +ELLIPSIS
+    WARNING: Parfile found at different path: ...
+    >>> foundpath == realpath
     True
     >>> find_file_in_allowed_paths("bu") == "bu"
     True
@@ -1358,7 +1375,7 @@ def find_file_in_allowed_paths(fname, other_paths=None):
             if os.path.exists(fullpath):
                 warnings.warn("Parfile found at different path: {}".format(
                     fullpath
-                ))
+                ), AstropyUserWarning)
                 return fullpath
 
     return False

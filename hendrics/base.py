@@ -356,3 +356,24 @@ def check_negative_numbers_in_args(args):
         newargs.append(" " + arg)
 
     return newargs
+
+
+def interpret_bintime(bintime):
+    """If bin time is negative, interpret as power of two.
+
+    Examples
+    --------
+    >>> interpret_bintime(2)
+    2
+    >>> interpret_bintime(-2) == 0.25
+    True
+    >>> interpret_bintime(0)
+    Traceback (most recent call last):
+        ...
+    ValueError: Bin time cannot be = 0
+    """
+    if bintime < 0:
+        return 2**bintime
+    elif bintime > 0:
+        return bintime
+    raise ValueError("Bin time cannot be = 0")

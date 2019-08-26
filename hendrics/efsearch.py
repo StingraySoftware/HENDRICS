@@ -168,11 +168,12 @@ def folding_orbital_search(events, parameter_csv_file, chunksize=100,
                     best_T0 = T0
                 if stats[0] < min_stats:
                     min_stats = stats[0]
-            chunk['max_stat'][i] = max_stats
-            chunk['min_stat'][i] = min_stats
-            chunk['best_T0'][i] = best_T0
+            idx = chunk.index[i]
+            chunk.iloc[idx, chunk.columns.get_loc('max_stat')] = max_stats
+            chunk.iloc[idx, chunk.columns.get_loc('min_stat')] = min_stats
+            chunk.iloc[idx, chunk.columns.get_loc('best_T0')] = best_T0
 
-            chunk['done'][i] = True
+            chunk.iloc[idx, chunk.columns.get_loc('done')] = True
         _save_df_to_csv(chunk, outfile)
 
 

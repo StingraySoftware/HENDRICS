@@ -4,7 +4,7 @@ from astropy import log
 from astropy.coordinates import SkyCoord
 import numpy as np
 from .io import high_precision_keyword_read, get_file_type, HEN_FILE_EXTENSION
-from .base import deorbit_events
+from .base import deorbit_events, interpret_bintime
 
 MAXBIN = 100000000
 
@@ -248,6 +248,8 @@ def main_presto(args=None):
 
     log.setLevel(args.loglevel)
 
+    bintime = np.longdouble(interpret_bintime(args.bintime))
+
     if args.energy_interval is None:
         args.energy_interval = [None, None]
     with log.log_to_file('HENbinary.log'):
@@ -261,7 +263,7 @@ def main_presto(args=None):
                 if args.deorbit_par is not None:
                     contents = deorbit_events(contents, args.deorbit_par)
                 lcinfo = save_events_to_binary(contents, outfile,
-                                               bin_time=args.bintime,
+                                               bin_time=bintime,
                                                emin=args.energy_interval[0],
                                                emax=args.energy_interval[1])
             else:

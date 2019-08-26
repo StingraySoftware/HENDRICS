@@ -11,7 +11,7 @@ from stingray.varenergyspectrum import RmsEnergySpectrum
 from stingray.varenergyspectrum import LagEnergySpectrum
 # from stingray.covariancespectrum import AveragedCovariancespectrum
 
-from .base import hen_root
+from .base import hen_root, interpret_bintime
 from .io import load_events
 from .io import save_as_qdp
 
@@ -53,6 +53,7 @@ def main(args=None):
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
+    args.bintime = np.longdouble(interpret_bintime(args.bintime))
 
     if args.debug:
         args.loglevel = 'DEBUG'

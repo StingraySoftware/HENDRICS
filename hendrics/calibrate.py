@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Calibrate event lists by looking in rmf files."""
 
+import sys
 import os
 import warnings
 import numpy as np
@@ -19,6 +20,17 @@ def default_nustar_rmf():
     .. note:: The calibration might change in the future. The hardcoded file
               name will be eventually replaced with a smarter choice based
               on observing time
+
+    Examples
+    --------
+    >>> from contextlib import redirect_stderr
+    >>> caldb_path = "fake_caldb"
+    >>> os.environ['CALDB'] = caldb_path
+    >>> path_to_rmf = os.path.join(caldb_path, *"data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf".split('/'))
+    >>> with redirect_stderr(sys.stdout): newpath = default_nustar_rmf()  # doctest: +ELLIPSIS
+    WARNING: Rmf ...
+    >>> newpath == path_to_rmf
+    True
     """
     warnings.warn(
         "Rmf not specified. Using default NuSTAR rmf.",
