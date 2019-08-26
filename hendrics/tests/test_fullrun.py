@@ -12,6 +12,7 @@ from astropy.io import fits
 import pytest
 from stingray.lightcurve import Lightcurve
 from astropy.logger import AstropyUserWarning
+from hendrics.tests import _dummy_par
 
 try:
     FileNotFoundError
@@ -41,6 +42,7 @@ class TestFullRun(object):
         cls.first_event_file = os.path.join(cls.datadir,
                                             'monol_testA_nustar_fpma_ev' +
                                             HEN_FILE_EXTENSION)
+        cls.par = _dummy_par("bubububu.par")
 
     def test_scripts_are_installed(self):
         """Test only once that command line scripts are installed correctly."""
@@ -124,7 +126,8 @@ class TestFullRun(object):
     def test_save_binary_events(self):
         f = self.first_event_file
         with pytest.raises(ValueError) as excinfo:
-            hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
+            hen.binary.main_presto(
+                "{} -b 0.1 -e 3 59 --debug".format(f).split())
 
         assert 'Energy filtering requested' in str(excinfo.value)
 
@@ -174,7 +177,9 @@ class TestFullRun(object):
         f = os.path.join(self.datadir,
                          'monol_testA_nustar_fpma_ev_calib' +
                          HEN_FILE_EXTENSION)
-        hen.binary.main_presto("{} -b 0.1 -e 3 59".format(f).split())
+        hen.binary.main_presto(
+            "{} -b 0.1 -e 3 59 --debug --deorbit-par {}".format(
+                f, self.par).split())
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.dat'))
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.inf'))
 

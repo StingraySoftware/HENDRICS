@@ -1,3 +1,5 @@
+import os
+import pytest
 from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
@@ -7,8 +9,7 @@ from hendrics.efsearch import main_efsearch, main_zsearch
 from hendrics.efsearch import decide_binary_parameters, folding_orbital_search
 from hendrics.fold import main_fold
 from hendrics.plot import plot_folding
-import os
-import pytest
+from hendrics.tests import _dummy_par
 from astropy.tests.helper import remote_data
 try:
     import pandas as pd
@@ -17,17 +18,6 @@ except ImportError:
     HAS_PD = False
 
 from hendrics.fold import HAS_PINT
-
-
-def _dummy_par(par):
-    with open(par, 'a') as fobj:
-        print("BINARY BT", file=fobj)
-        print("PB  1e20", file=fobj)
-        print("A1  0", file=fobj)
-        print("T0  56000", file=fobj)
-        print("EPHEM  DE200", file=fobj)
-        print("RAJ  00:55:01", file=fobj)
-        print("DECJ 12:00:40.2", file=fobj)
 
 
 class TestEFsearch():
