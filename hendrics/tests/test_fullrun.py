@@ -12,7 +12,9 @@ from astropy.io import fits
 import pytest
 from stingray.lightcurve import Lightcurve
 from astropy.logger import AstropyUserWarning
+from astropy.tests.helper import remote_data
 from hendrics.tests import _dummy_par
+from hendrics.fold import HAS_PINT
 
 try:
     FileNotFoundError
@@ -173,6 +175,8 @@ class TestFullRun(object):
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, ev.gti)
 
+    @remote_data
+    @pytest.mark.skipif('not HAS_PINT')
     def test_save_binary_calibrated_events(self):
         f = os.path.join(self.datadir,
                          'monol_testA_nustar_fpma_ev_calib' +
