@@ -10,7 +10,6 @@ import importlib
 import warnings
 import pickle
 import os.path
-from contextlib import redirect_stderr
 import numpy as np
 from astropy.modeling.core import Model
 from astropy import log
@@ -964,27 +963,15 @@ def _get_gti_from_all_extensions(lchdulist, accepted_gtistrings=['GTI'],
 
 
 def _get_additional_data(lctable, additional_columns):
-    """
-    Examples
-    --------
-    >>> from astropy.table import Table
-    >>> lctable = Table({'a': [1, 2, 3], 'b': [4, 5, 6]})
-    >>> np.allclose(_get_additional_data(lctable, ['b'])['b'], [4, 5, 6])
-    True
-    >>> with redirect_stderr(sys.stdout):
-    ...     add = _get_additional_data(lctable, ['c'])  # doctest: +ELLIPSIS
-    WARNING: Column c not found ...
-    >>> np.allclose(add['c'], 0)
-    True
-    """
+    """Get columns from lctable"""
     additional_data = {}
     if additional_columns is not None:
         for a in additional_columns:
             try:
                 additional_data[a] = np.array(lctable.field(a))
             except KeyError:
-                warnings.warn("Column {} not found".format(a),
-                              AstropyUserWarning)
+                log.warning("Column {} not found".format(a),
+                            AstropyUserWarning)
                 additional_data[a] = np.zeros(len(lctable))
 
     return additional_data
@@ -1342,25 +1329,6 @@ def find_file_in_allowed_paths(fname, other_paths=None):
     ----------------
     other_paths : list of str
         list of other possible paths
-
-    >>> import os
-    >>> with open('bu', 'w') as fobj: print("blabla", file=fobj)
-    >>> fakepath = os.path.join("directory", "bu")
-    >>> realpath = os.path.join('.', 'bu')
-    >>> with redirect_stderr(sys.stdout):
-    ...     foundpath = \\
-    ...       find_file_in_allowed_paths(fakepath,
-    ...                                  ["."])  # doctest: +ELLIPSIS
-    WARNING: Parfile found at different path: ...
-    >>> foundpath == realpath
-    True
-    >>> find_file_in_allowed_paths("bu") == "bu"
-    True
-    >>> find_file_in_allowed_paths(os.path.join("directory", "bu"))
-    False
-    >>> find_file_in_allowed_paths(None)
-    False
-   >>> os.unlink("bu")
     """
     if fname is None:
         return False
@@ -1373,7 +1341,7 @@ def find_file_in_allowed_paths(fname, other_paths=None):
         for p in other_paths:
             fullpath = os.path.join(p, bname)
             if os.path.exists(fullpath):
-                warnings.warn("Parfile found at different path: {}".format(
+                log.warning("Parfile found at different path: {}".format(
                     fullpath
                 ), AstropyUserWarning)
                 return fullpath
