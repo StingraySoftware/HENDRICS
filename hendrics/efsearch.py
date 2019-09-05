@@ -242,7 +242,6 @@ def z_n_fast(phase, norm, n=2):
     --------
     >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
     >>> norm = np.sin(phase) + 1
-    >>> from stingray.pulse.pulsar import z_n
     >>> np.isclose(z_n_fast(phase, norm, n=4), 50)
     True
     >>> np.isclose(z_n_fast(phase, norm, n=2), 50)
@@ -263,11 +262,218 @@ def z_n_fast(phase, norm, n=2):
     return 2 / total_norm * result
 
 
+@njit()
+def _average_and_z_sub_search(profiles, n=2):
+    '''Z^2_n statistics calculated in sub-profiles.
+
+    Parameters
+    ----------
+    profiles : array of arrays
+        a M x N matrix containing a list of pulse profiles
+    nbin : int
+        The number of bins in the profiles.
+    Returns
+    -------
+    z2_n : float array (MxM)
+        The Z^2_n statistics of the events.
+
+    Examples
+    --------
+    >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
+    >>> norm = np.sin(phase) + 1
+    >>> profiles = np.ones((16, len(norm)))
+    >>> profiles[8] = norm
+    >>> n_ave, results = _average_and_z_sub_search(profiles, n=2)
+    >>> np.isclose(results[0, 8], 50)
+    True
+    >>> np.isclose(results[1, 8], 50/2)
+    True
+    >>> np.isclose(results[2, 8], 50/4)
+    True
+    >>> np.isclose(results[3, 8], 50/8)
+    True
+    '''
+    nprof = len(profiles)
+    # Only use powers of two
+    nprof = int(2 ** np.log2(nprof))
+    profiles = profiles[:nprof]
+
+    nbin = len(profiles[0])
+
+    n_log_ave_max = int(np.log2(nprof))
+
+    results = np.zeros((n_log_ave_max, nprof))
+    all_nave = np.zeros((n_log_ave_max, nprof))
+
+    twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
+
+    n_ave = 2**np.arange(n_log_ave_max)
+
+    for ave_i in range(len(n_ave)):
+        n_ave_i = n_ave[ave_i]
+        shape_0 = np.int(profiles.shape[0] / n_ave_i)
+        # new_profiles = np.zeros((shape_0, profiles.shape[1]))
+        for i in range(shape_0):
+            new_profiles = np.sum(profiles[i * n_ave_i: (i + 1) * n_ave_i], axis=0)
+            if np.max(new_profiles) == 0:
+                continue
+
+            z = z_n_fast(twopiphases, norm=new_profiles, n=n)
+            results[ave_i, i * n_ave_i: (i + 1) * n_ave_i] = z
+
+    return n_ave, results
+
+
+def _transient_search_step(
+        times: np.double,
+        mean_f: np.double,
+        mean_fdot=0,
+        nbin=16,
+        nprof=64,
+        n=1):
+    """Single step of transient search."""
+
+    # Cast to standard double, or the fast_histogram.histogram2d will fail
+    # horribly.
+
+    phases = _fast_phase_fdot(times, mean_f, mean_fdot)
+
+    profiles = histogram2d(phases, times, range=[
+        [0, 1], [times[0], times[-1]]], bins=(nbin, nprof)).T
+
+    n_ave, results = _average_and_z_sub_search(profiles, n=n)
+    return n_ave, results
+
+
+def transient_search_step(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
+                          t0=None, t1=None, oversample=4):
+    """Search for transient pulsations.
+
+    Parameters
+    ----------
+    times : array of floats
+        Arrival times of photons
+    f0 : float
+        Minimum frequency to search
+    f1 : float
+        Maximum frequency to search
+
+    Other parameters
+    ----------------
+    nbin : int
+        Number of bins to divide the profile into
+    nprof : int, default None
+        number of slices of the dataset to use. If None, we use 8 times nbin.
+        Motivation in the comments.
+    npfact : int, default 2
+        maximum "sliding" of the dataset, in phase.
+    oversample : int, default 8
+        Oversampling wrt the standard FFT delta f = 1/T
+    search_fdot : bool, default False
+        Switch fdot search on or off
+    t0 : float, default min(times)
+        starting time
+    t1 : float, default max(times)
+        stop time
+    """
+    if nprof is None:
+        # total_delta_phi = 2 == dnu * T
+        # In a single sub interval
+        # delta_phi = dnu * t
+        # with t = T / nprof
+        # so dnu T / nprof < 1 / nbin, and
+        # nprof > total_delta_phi * nbin to get all the signal inside one bin
+        # in a given sub-integration
+        nprof = 4 * 2 * nbin
+
+    times = copy.deepcopy(times)
+
+    if t0 is None:
+        t0 = times.min()
+    if t1 is None:
+        t1 = times.max()
+    meantime = (t1 + t0) / 2
+    times -= meantime
+
+    maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
+    log.info(
+        f"Maximum error on the phase expected when casting to double: {maxerr}")
+    if maxerr > 1 / nbin / 10:
+        warnings.warn(
+            "Casting to double produces non-negligible phase errors. "
+            "Please use shorter light curves.",
+            AstropyUserWarning)
+
+    times = times.astype(np.double)
+
+    length = t1 - t0
+
+    frequency = (f0 + f1) / 2
+
+    # Step: npfact * 1 / T
+
+    step = 4 / length / oversample
+
+    niter = int(np.rint((f1 - f0) / step)) + 2
+
+    allvalues = list(range(-(niter // 2), niter // 2))
+    if allvalues == []:
+        allvalues = [0]
+
+    all_results = []
+    all_freqs = []
+
+    dt = (times[-1] - times[0]) / nprof
+
+    for ii, i in enumerate(show_progress(allvalues)):
+        offset = step * i
+        fdot_offset = 0
+
+        mean_f = np.double(frequency + offset + 0.12 * step)
+        mean_fdot = np.double(fdot + fdot_offset)
+        nave, results = \
+            _transient_search_step(times, mean_f, mean_fdot=mean_fdot,
+                                   nbin=nbin, nprof=nprof, n=n)
+        all_results.append(results)
+        all_freqs.append(mean_f)
+
+    all_results = np.array(all_results)
+    all_freqs = np.array(all_freqs)
+
+    images = []
+    for i in range(all_results.shape[1]):
+        times = dt * np.arange(all_results.shape[2])
+        images.append((all_freqs, times, all_results[:, i, :].T))
+
+    return images
+
+
+def plot_transient_search(images):
+    import matplotlib.pyplot as plt
+    from hendrics.fold import z2_n_detection_level
+    for i, ima_data in enumerate(images):
+        f, t, ima = ima_data
+        vmax = z2_n_detection_level(0.0015, n=2,
+                                    ntrial=max(ima.shape))
+        ima /= vmax / 3
+        plt.figure(figsize=(10, 10))
+        gs = plt.GridSpec(2, 1, height_ratios=(1, 3))
+        axima = plt.subplot(gs[1])
+        axf = plt.subplot(gs[0], sharex=axima)
+
+        axima.pcolormesh(f, t, ima, vmax=3, vmin=0.3)
+        for line in ima:
+            axf.plot(f, line, lw=0.2)
+        axima.set_xlabel("Frequency")
+        axima.set_ylabel("Time")
+        axf.set_ylabel(r"Significance ($\sigma$)")
+    plt.show()
+
+
 @njit(parallel=True, nogil=True)
 def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
     stats = np.zeros_like(L)
-    profiles = profiles.T
     repeated_profiles = np.hstack((profiles, profiles, profiles))
 
     for i in prange(len(linbinshifts)):
@@ -286,8 +492,14 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
 
 
 @njit(parallel=True)
-def _fast_phase(ts, mean_f, mean_fdot=0):
+def _fast_phase_fdot(ts, mean_f, mean_fdot=0):
     phases = ts * mean_f + 0.5 * ts * ts * mean_fdot
+    return phases - np.floor(phases)
+
+
+@njit(parallel=True)
+def _fast_phase(ts, mean_f):
+    phases = ts * mean_f
     return phases - np.floor(phases)
 
 
@@ -306,10 +518,10 @@ def search_with_qffa_step(
     # Cast to standard double, or the fast_histogram.histogram2d will fail
     # horribly.
 
-    phases = _fast_phase(times, mean_f, mean_fdot)
+    phases = _fast_phase_fdot(times, mean_f, mean_fdot)
 
     profiles = histogram2d(phases, times, range=[
-        [0, 1], [times[0], times[-1]]], bins=(nbin, nprof))
+        [0, 1], [times[0], times[-1]]], bins=(nbin, nprof)).T
 
     # Assume times are sorted
     t1, t0 = times[-1], times[0]
