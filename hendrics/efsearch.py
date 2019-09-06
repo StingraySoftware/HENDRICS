@@ -345,8 +345,12 @@ def _transient_search_step(
     return n_ave, results
 
 
-def transient_search_step(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
-                          t0=None, t1=None, oversample=4):
+class TransientResults(object):
+    pass
+
+
+def transient_search(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
+                     t0=None, t1=None, oversample=4):
     """Search for transient pulsations.
 
     Parameters
@@ -412,7 +416,7 @@ def transient_search_step(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
 
     # Step: npfact * 1 / T
 
-    step = 4 / length / oversample
+    step = 1 / length / oversample
 
     niter = int(np.rint((f1 - f0) / step)) + 2
 
@@ -440,34 +444,83 @@ def transient_search_step(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
     all_results = np.array(all_results)
     all_freqs = np.array(all_freqs)
 
-    images = []
-    for i in range(all_results.shape[1]):
-        times = dt * np.arange(all_results.shape[2])
-        images.append((all_freqs, times, all_results[:, i, :].T))
+    times = dt * np.arange(all_results.shape[2])
 
-    return images
+    results = TransientResults()
+    results.oversample = oversample
+    results.f0 = f0
+    results.f1 = f1
+    results.fdot = fdot
+    results.nave = nave
+    results.freqs = all_freqs
+    results.times = times
+    results.stats = np.array([all_results[:, i, :].T for i in range(nave.size)])
+
+    return results
 
 
-def plot_transient_search(images):
+def plot_transient_search(results, gif_name=None):
     import matplotlib.pyplot as plt
     from hendrics.fold import z2_n_detection_level
-    for i, ima_data in enumerate(images):
-        f, t, ima = ima_data
-        vmax = z2_n_detection_level(0.0015, n=2,
-                                    ntrial=max(ima.shape))
-        ima /= vmax / 3
-        plt.figure(figsize=(10, 10))
-        gs = plt.GridSpec(2, 1, height_ratios=(1, 3))
-        axima = plt.subplot(gs[1])
-        axf = plt.subplot(gs[0], sharex=axima)
+    try:
+        import imageio
+        HAS_IMAGEIO = True
+    except ImportError:
+        HAS_IMAGEIO = False
+    if gif_name is None:
+        gif_name = 'transients.gif'
 
-        axima.pcolormesh(f, t, ima, vmax=3, vmin=0.3)
-        for line in ima:
-            axf.plot(f, line, lw=0.2)
+    all_images = []
+    for i, (ima, nave) in enumerate(zip(results.stats, results.nave)):
+        f = results.freqs
+        t = results.times
+        nprof = ima.shape[0]
+        oversample = results.oversample
+
+        # To calculate ntrial, we need to take into account that
+        # 1. the image has nave equal pixels
+        # 2. the frequency axis is oversampled by at least nprof / nave
+        ntrial = ima.size / nave / (nprof / nave) / oversample
+
+        detl = z2_n_detection_level(0.0015, n=2,
+                                    ntrial=ntrial)
+
+        # To calculate ntrial from the summed image, we use the
+        # length of the frequency axis, considering oversample by
+        # nprof / nave:
+        ntrial_sum = f.size / nave / (nprof / nave) / oversample
+
+        sum_detl = z2_n_detection_level(0.0015, n=2,
+                                        ntrial=ntrial_sum,
+                                        n_summed_spectra=nprof/nave)
+        fig = plt.figure(figsize=(10, 10))
+        gs = plt.GridSpec(2, 1, height_ratios=(1, 3))
+        axf = plt.subplot(gs[0])
+        axima = plt.subplot(gs[1], sharex=axf)
+
+        axima.pcolormesh(f, t, ima / detl * 3, vmax=3, vmin=0.3)
+
+        for il, line in enumerate(ima / detl * 3):
+            axf.plot(f, line, lw=0.2, ls='-', c='grey', alpha=0.5, label=f"{il}")
+
+        mean_line = np.mean(ima, axis=0)
+        axf.plot(f, mean_line / sum_detl * 3, lw=1, c='k',
+                 zorder=10, label="mean", ls='-')
+
         axima.set_xlabel("Frequency")
         axima.set_ylabel("Time")
         axf.set_ylabel(r"Significance ($\sigma$)")
-    plt.show()
+        axf.set_xlim([results.f0, results.f1])
+
+        fig.canvas.draw()
+        image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
+        image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+        plt.close(fig)
+        all_images.append(image)
+    if HAS_IMAGEIO:
+        imageio.mimsave(gif_name, all_images, fps=1)
+
+    return all_images
 
 
 @njit(parallel=True, nogil=True)
@@ -769,6 +822,10 @@ def _common_parser(args=None):
                              "This option ignores expocorr, fdotmin/max, "
                              "segment-size, and step",
                         default=False, action='store_true')
+    parser.add_argument("--transient",
+                        help="Look for transient emission (produces an animated"
+                             " GIF with the dynamic Z search)",
+                        default=False, action='store_true')
     parser.add_argument("--expocorr",
                         help="Correct for the exposure of the profile bins. "
                              "This method is *much* slower, but it is useful "
@@ -839,9 +896,20 @@ def _common_main(args, func):
         if args.deorbit_par is not None:
             events = deorbit_events(events, args.deorbit_par)
 
-        if not args.fast:
+        if args.fast:
+            oversample = assign_value_if_none(args.oversample, 8)
+
+        else:
             oversample = assign_value_if_none(args.oversample, 2)
 
+        if args.transient:
+            results = transient_search(events.time, args.fmin, args.fmax, fdot=0,
+                                       nbin=args.nbin, n=n,
+                                       nprof=None, oversample=oversample)
+            plot_transient_search(results, hen_root(fname) + '_transient.gif')
+            continue
+
+        if not args.fast:
             results = \
                 folding_search(events, args.fmin, args.fmax, step=args.step,
                                func=func,
@@ -851,8 +919,6 @@ def _common_main(args, func):
                                segment_size=args.segment_size, **kwargs)
             ref_time = (events.gti[0, 0])
         else:
-            oversample = assign_value_if_none(args.oversample, 8)
-
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
                                  nbin=args.nbin, n=n,
