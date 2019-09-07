@@ -494,29 +494,47 @@ def plot_transient_search(results, gif_name=None):
                                         ntrial=ntrial_sum,
                                         n_summed_spectra=nprof/nave)
         fig = plt.figure(figsize=(10, 10))
-        gs = plt.GridSpec(2, 1, height_ratios=(1, 3))
-        axf = plt.subplot(gs[0])
-        axima = plt.subplot(gs[1], sharex=axf)
+        gs = plt.GridSpec(2, 2, height_ratios=(1, 3))
+        for i_f in [0, 1]:
+            axf = plt.subplot(gs[0, i_f])
+            axima = plt.subplot(gs[1, i_f], sharex=axf)
 
-        axima.pcolormesh(f, t, ima / detl * 3, vmax=3, vmin=0.3)
+            axima.pcolormesh(f, t, ima / detl * 3, vmax=3, vmin=0.3)
 
-        for il, line in enumerate(ima / detl * 3):
-            axf.plot(f, line, lw=0.2, ls='-', c='grey', alpha=0.5, label=f"{il}")
+            mean_line = np.mean(ima, axis=0) / sum_detl * 3
+            maxidx = np.argmax(mean_line)
+            maxline = mean_line[maxidx]
+            best_f = f[maxidx]
+            for il, line in enumerate(ima / detl * 3):
+                axf.plot(f, line, lw=0.2, ls='-', c='grey', alpha=0.5, label=f"{il}")
+                maxidx = np.argmax(mean_line)
+                if line[maxidx] > maxline:
+                    best_f = f[maxidx]
+                    maxline = line[maxidx]
 
-        mean_line = np.mean(ima, axis=0)
-        axf.plot(f, mean_line / sum_detl * 3, lw=1, c='k',
-                 zorder=10, label="mean", ls='-')
+            axf.plot(f, mean_line, lw=1, c='k',
+                     zorder=10, label="mean", ls='-')
 
-        axima.set_xlabel("Frequency")
-        axima.set_ylabel("Time")
-        axf.set_ylabel(r"Significance ($\sigma$)")
-        axf.set_xlim([results.f0, results.f1])
+            axima.set_xlabel("Frequency")
+            axima.set_ylabel("Time")
+            axf.set_ylabel(r"Significance ($\sigma$)")
+            nhigh = len(t)
+            df = (f[1] - f[0]) * oversample * nhigh
+            xmin = max(best_f - df, results.f0)
+            xmax = min(best_f + df, results.f1)
+            if i_f == 0:
+                axf.set_xlim([results.f0, results.f1])
+                axf.axvline(xmin, ls='--', c='b', lw=2)
+                axf.axvline(xmax, ls='--', c='b', lw=2)
+            else:
+                axf.set_xlim([xmin, xmax])
 
-        fig.canvas.draw()
-        image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
-        image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+            fig.canvas.draw()
+            image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
+            image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
         plt.close(fig)
         all_images.append(image)
+
     if HAS_IMAGEIO:
         imageio.mimsave(gif_name, all_images, fps=1)
 
