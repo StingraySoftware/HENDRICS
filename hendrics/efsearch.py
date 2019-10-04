@@ -581,6 +581,60 @@ def _fast_phase(ts, mean_f):
     return phases - np.floor(phases)
 
 
+# @njit(nogil=True, parallel=False)
+def hist2d_numba_seq(tracks, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> H, xedges, yedges = np.histogram2d(x, y, bins=np.array((5, 5)), range=[(0., 1.), (2., 3.)])
+    >>> alldata = np.array([x, y])
+    >>> Hn = hist2d_numba_seq(alldata, bins=np.array((5, 5)), ranges=np.array([[0., 1.], [2., 3.]]))
+    >>> assert np.all(H == Hn)
+    """
+    H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
+    delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
+
+    for t in range(tracks.shape[1]):
+        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
+        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+            H[int(i), int(j)] += 1
+
+    return H
+
+
+@njit(nogil=True, parallel=False)
+def _histnd_numba_seq(H, tracks, bins, ranges):
+    delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
+    for t in range(tracks.shape[1]):
+        slicearr = np.array([(tracks[dim, t] - ranges[dim, 0]) * delta[0] for dim in range(tracks.shape[0])])
+        good = np.all((slicearr < bins) & (slicearr > 0))
+        slice = tuple(s for s in slicearr)
+
+        if good:
+            H[slice] += 1
+
+    return H
+
+
+def histnd_numba_seq(tracks, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> H, xedges, yedges = np.histogram2d(x, y, bins=np.array((5, 5)), range=[(0., 1.), (2., 3.)])
+    >>> alldata = np.array([x, y])
+    >>> Hn = histnd_numba_seq(alldata, bins=np.array([5, 5]), ranges=np.array([[0., 1.], [2., 3.]]))
+    >>> assert np.all(H == Hn)
+    """
+    H = np.zeros(tuple(bins), dtype=np.uint64)
+
+    return _histnd_numba_seq(H, tracks, bins, ranges)
+
+
 def search_with_qffa_step(
         times: np.double,
         mean_f: np.double,
