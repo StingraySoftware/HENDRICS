@@ -680,7 +680,7 @@ def z2_n_probability(z2, n=2, ntrial=1, n_summed_spectra=1):
 
 def main_deorbit(args=None):
     import argparse
-    from .base import hen_root
+    from .base import hen_root, _add_default_args
     from .io import HEN_FILE_EXTENSION, load_events, save_events
     description = ('Deorbit the event arrival times')
     parser = argparse.ArgumentParser(description=description)
@@ -697,14 +697,9 @@ def main_deorbit(args=None):
     #                           "default:WARNING)"),
     #                     default='WARNING',
     #                     type=str)
-    parser.add_argument(
-        '-p',
-        "--deorbit-par",
-        help=("Deorbit data with this parameter file (requires PINT installed)"),
-        default=None,
-        required=True,
-        type=str)
 
+    _add_default_args(
+        parser, ['deorbit', 'loglevel', 'debug'])
     args = parser.parse_args(args)
 
     if args.debug:

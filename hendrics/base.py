@@ -24,7 +24,7 @@ DEFAULT_PARSER_ARGS['nproc'] = dict(
                 default=1, type=int))
 DEFAULT_PARSER_ARGS['debug'] = dict(
     args=['--debug'],
-    kwargs=dict(help=("se DEBUG logging level"),
+    kwargs=dict(help=("set DEBUG logging level"),
                 default=False, action='store_true'))
 DEFAULT_PARSER_ARGS['bintime'] = dict(
     args=["-b", "--bintime"],
@@ -39,7 +39,7 @@ DEFAULT_PARSER_ARGS['pi'] = dict(
     kwargs=dict(help="PI interval used for filtering",
                 nargs=2, type=int, default=[-1, -1]))
 DEFAULT_PARSER_ARGS['deorbit'] = dict(
-    args=["--deorbit-par"],
+    args=["-p", "--deorbit-par"],
     kwargs=dict(
         help=("Deorbit data with this parameter file (requires PINT installed)"),
         default=None,
