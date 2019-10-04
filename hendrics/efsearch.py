@@ -346,7 +346,14 @@ def _transient_search_step(
 
 
 class TransientResults(object):
-    pass
+    oversample: int = None
+    f0: float = None
+    f1: float = None
+    fdot: float = None
+    nave: int = None
+    freqs: np.array = None
+    times: np.array = None
+    stats: np.array = None
 
 
 def transient_search(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
