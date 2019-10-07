@@ -400,17 +400,7 @@ def interpret_bintime(bintime):
 
 
 @njit(nogil=True, parallel=False)
-def hist2d_numba_seq(tracks, bins, ranges):
-    """
-    Examples
-    --------
-    >>> x = np.random.uniform(0., 1., 100)
-    >>> y = np.random.uniform(2., 3., 100)
-    >>> H, xedges, yedges = np.histogram2d(x, y, bins=np.array((5, 5)), range=[(0., 1.), (2., 3.)])
-    >>> alldata = np.array([x, y])
-    >>> Hn = hist2d_numba_seq(alldata, bins=np.array((5, 5)), ranges=np.array([[0., 1.], [2., 3.]]))
-    >>> assert np.all(H == Hn)
-    """
+def _hist2d_numba_seq(tracks, bins, ranges):
     H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
@@ -423,21 +413,24 @@ def hist2d_numba_seq(tracks, bins, ranges):
     return H
 
 
-@njit(nogil=True, parallel=False)
-def hist3d_numba_seq(tracks, bins, ranges):
+def hist2d_numba_seq(x, y, bins, ranges):
     """
     Examples
     --------
     >>> x = np.random.uniform(0., 1., 100)
     >>> y = np.random.uniform(2., 3., 100)
-    >>> z = np.random.uniform(4., 5., 100)
-    >>> H, _ = np.histogramdd((x, y, z), bins=np.array((5, 6, 7)),
-    ...                       range=[(0., 1.), (2., 3.), (4., 5)])
-    >>> alldata = np.array([x, y, z])
-    >>> Hn = hist3d_numba_seq(alldata, bins=np.array((5, 6, 7)),
-    ...                       ranges=np.array([[0., 1.], [2., 3.], [4., 5.]]))
+    >>> H, xedges, yedges = np.histogram2d(x, y, bins=(5, 5),
+    ...                                    range=[(0., 1.), (2., 3.)])
+    >>> Hn = hist2d_numba_seq(x, y, bins=(5, 5),
+    ...                       ranges=[[0., 1.], [2., 3.]])
     >>> assert np.all(H == Hn)
     """
+    return _hist2d_numba_seq(np.array([x, y]), np.asarray(list(bins)),
+                             np.asarray(ranges))
+
+
+@njit(nogil=True, parallel=False)
+def _hist3d_numba_seq(tracks, bins, ranges):
     H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.uint64)
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
@@ -449,6 +442,24 @@ def hist3d_numba_seq(tracks, bins, ranges):
             H[int(i), int(j), int(k)] += 1
 
     return H
+
+
+def hist3d_numba_seq(tracks, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> z = np.random.uniform(4., 5., 100)
+    >>> H, _ = np.histogramdd((x, y, z), bins=(5, 6, 7),
+    ...                       range=[(0., 1.), (2., 3.), (4., 5)])
+    >>> Hn = hist3d_numba_seq((x, y, z), bins=(5, 6, 7),
+    ...                       ranges=[[0., 1.], [2., 3.], [4., 5.]])
+    >>> assert np.all(H == Hn)
+    """
+
+    return _hist3d_numba_seq(np.asarray(tracks), np.asarray(list(bins)),
+                             np.asarray(ranges))
 
 
 @njit(nogil=True, parallel=False)

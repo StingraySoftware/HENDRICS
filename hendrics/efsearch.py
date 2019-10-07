@@ -5,8 +5,10 @@ import warnings
 import os
 import argparse
 import copy
+
 import numpy as np
 from astropy import log
+from numpy import histogram2d as histogram2d_np
 from astropy.logger import AstropyUserWarning
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
     search_best_peaks
@@ -20,22 +22,27 @@ from .fold import filter_energy
 
 
 try:
-    from .base import hist2d_numba_seq as histogram2d
+    from .base import hist2d_numba_seq as histogram2d_nb
     HAS_NUMBA_HIST = True
+    def histogram2d(*args, **kwargs):
+        if 'range' in kwargs:
+            kwargs['ranges'] = kwargs.pop('range')
+        return histogram2d_nb(*args, **kwargs)
 except ImportError:
     HAS_NUMBA_HIST = False
 
+try:
+    from fast_histogram import histogram2d as histogram2d_fh
+    HAS_FAST_HIST = True
+except ImportError:
+    HAS_FAST_HIST = False
 
-if not HAS_NUMBA_HIST:
-    try:
-        from fast_histogram import histogram2d as histogram2d
-        HAS_FAST_HIST = True
-    except ImportError:
-        HAS_FAST_HIST = False
+
+if not HAS_NUMBA_HIST and HAS_FAST_HIST:
+    histogram2d = histogram2d_fh
 
 
 if not HAS_NUMBA_HIST and not HAS_FAST_HIST:
-    from numpy import histogram2d as histogram2d_np
 
     def histogram2d(*args, **kwargs):
         return histogram2d_np(*args, **kwargs)[0]
