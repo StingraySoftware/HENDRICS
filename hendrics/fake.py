@@ -15,12 +15,7 @@ from .io import get_file_format, load_data, load_lcurve
 from .base import _empty
 
 from .lcurve import lcurve_from_fits
-try:
-    from numba import jit
-except Exception:
-    def jit(fun):
-        """Dummy decorator in case jit cannot be imported."""
-        return fun
+from .base import jit
 
 
 def _paralyzable_dead_time(event_list, dead_time):

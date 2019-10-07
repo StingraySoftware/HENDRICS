@@ -13,7 +13,7 @@ from astropy.logger import AstropyUserWarning
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 try:
-    from numba import njit, prange
+    from numba import jit, njit, prange
 except ImportError:
     def njit(**kwargs):
         """Dummy decorator in case jit cannot be imported."""
@@ -24,6 +24,8 @@ except ImportError:
                 return r
             return wrapped
         return true_decorator
+
+    jit = njit
 
     def prange(*args):
         """Dummy decorator in case jit cannot be imported."""
