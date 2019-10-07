@@ -402,8 +402,7 @@ def interpret_bintime(bintime):
 
 
 @njit(nogil=True, parallel=False)
-def _hist2d_numba_seq(tracks, bins, ranges):
-    H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
+def _hist2d_numba_seq(H, tracks, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
     for t in range(tracks.shape[1]):
@@ -427,13 +426,13 @@ def hist2d_numba_seq(x, y, bins, ranges):
     ...                       ranges=[[0., 1.], [2., 3.]])
     >>> assert np.all(H == Hn)
     """
-    return _hist2d_numba_seq(np.array([x, y]), np.asarray(list(bins)),
+    H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
+    return _hist2d_numba_seq(H, np.array([x, y]), np.asarray(list(bins)),
                              np.asarray(ranges))
 
 
 @njit(nogil=True, parallel=False)
-def _hist3d_numba_seq(tracks, bins, ranges):
-    H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.uint64)
+def _hist3d_numba_seq(H, tracks, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
     for t in range(tracks.shape[1]):
@@ -460,7 +459,8 @@ def hist3d_numba_seq(tracks, bins, ranges):
     >>> assert np.all(H == Hn)
     """
 
-    return _hist3d_numba_seq(np.asarray(tracks), np.asarray(list(bins)),
+    H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.uint64)
+    return _hist3d_numba_seq(H, np.asarray(tracks), np.asarray(list(bins)),
                              np.asarray(ranges))
 
 
