@@ -175,9 +175,9 @@ def ref_mjd(fits_file, hdu=1):
     ----------------
     hdu : int
     """
-    import collections
+    from collections.abc import Iterable
 
-    if isinstance(fits_file, collections.Iterable) and\
+    if isinstance(fits_file, Iterable) and\
             not is_string(fits_file):
         fits_file = fits_file[0]
         log.info("opening %s", fits_file)
@@ -268,8 +268,8 @@ def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     except Exception:  # pragma: no cover
         raise Exception('You need Scipy to use this function')
 
-    import collections
-    if not isinstance(n_rebin, collections.Iterable):
+    from collections.abc import Iterable
+    if not isinstance(n_rebin, Iterable):
         r = n_rebin
         retlev = stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) \
             / (n_summed_spectra * r)

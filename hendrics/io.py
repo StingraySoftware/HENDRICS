@@ -5,7 +5,7 @@ import sys
 import os
 import glob
 import copy
-import collections
+from collections import Iterable
 import importlib
 import warnings
 import pickle
@@ -204,12 +204,12 @@ def save_as_netcdf(vars, varnames, formats, fname):
         except TypeError:
             unsized = True
 
-        if isinstance(v, collections.Iterable) and formats[iv] != str \
+        if isinstance(v, Iterable) and formats[iv] != str \
                 and not unsized:
             dim = len(v)
             dims[dimname] = dim
 
-            if isinstance(v[0], collections.Iterable):
+            if isinstance(v[0], Iterable):
                 dim = len(v[0])
                 dims[dimname + '_2'] = dim
                 dimspec = (dimname, dimname + '_2')
@@ -680,7 +680,7 @@ def _load_data_nc(fname):
                                  ": unrecognized kind string")
 
             log10_part = contents[log10_key]
-            if isinstance(contents[integer_key], collections.Iterable):
+            if isinstance(contents[integer_key], Iterable):
                 integer_part = np.array(contents[integer_key], dtype=dtype)
                 float_part = np.array(contents[float_key], dtype=dtype)
             else:
@@ -701,7 +701,7 @@ def _split_high_precision_number(varname, var, probesize):
         kind_str = 'double'
     if probesize == 16:
         kind_str = 'longdouble'
-    if isinstance(var, collections.Iterable):
+    if isinstance(var, Iterable):
         dum = np.min(np.abs(var))
         if dum < 1 and dum > 0.:
             var_log10 = np.floor(np.log10(dum))
@@ -730,7 +730,7 @@ def _save_data_nc(struct, fname, kind="data"):
         var = struct[k]
 
         probe = var
-        if isinstance(var, collections.Iterable):
+        if isinstance(var, Iterable):
             probe = var[0]
 
         if is_string(var):
@@ -1188,7 +1188,7 @@ def main(args=None):
                 val = '{0} s'.format(contents[k])
             else:
                 val = contents[k]
-            if isinstance(val, collections.Iterable) and not is_string(val):
+            if isinstance(val, Iterable) and not is_string(val):
                 length = len(val)
                 if len(val) < 4:
                     val = repr(list(val[:4]))

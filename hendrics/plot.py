@@ -4,7 +4,7 @@
 import warnings
 import os
 import copy
-import collections
+from collections.abc import Iterable
 import numpy as np
 from stingray.gti import create_gti_mask
 from astropy.modeling.models import Const1D
@@ -107,7 +107,7 @@ def _get_const(models):
     >>> _get_const('avdsfa')
 
     """
-    import collections
+    from collections.abc import Iterable
 
     if isinstance(models, Const1D):
         return models.amplitude.value
@@ -120,7 +120,7 @@ def _get_const(models):
     if models is None:
         return None
 
-    if isinstance(models, collections.Iterable) and \
+    if isinstance(models, Iterable) and \
             not is_string(models) and len(models) != 0:
         for model in models:
             return _get_const(model)
@@ -131,7 +131,7 @@ def _get_const(models):
 def plot_pds(fnames, figname=None, xlog=None, ylog=None,
              output_data_file=None, white_sub=False):
     """Plot a list of PDSs, or a single one."""
-    import collections
+    from collections.abc import Iterable
     from scipy.optimize import curve_fit
     import matplotlib.pyplot as plt
     if is_string(fnames):
@@ -220,7 +220,7 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
 
         if np.any(level < 0):
             continue
-        if isinstance(level, collections.Iterable):
+        if isinstance(level, Iterable):
             plt.plot(freq, level, ls='--', color=color)
         else:
             plt.axhline(level, ls='--', color=color)
@@ -508,7 +508,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
         if output_data_file is not None:
             fdots = ef.fdots
-            if not isinstance(fdots, collections.Iterable) or len(fdots) == 1:
+            if not isinstance(fdots, Iterable) or len(fdots) == 1:
                 fdots = fdots + np.zeros_like(ef.freq.flatten())
             # print(fdots.shape, ef.freq.shape, ef.stat.shape)
             out = [ef.freq.flatten(), fdots.flatten(), ef.stat.flatten()]

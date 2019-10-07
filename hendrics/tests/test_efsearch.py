@@ -156,6 +156,11 @@ class TestEFsearch():
                            '--fast'])
         assert 'The fast option is only available for z ' in str(excinfo.value)
 
+    def test_zsearch_fdots_fast_transient(self):
+        evfile = self.dum
+        main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                      '--fast', '--transient'])
+
     @pytest.mark.skipif('not HAS_PD')
     def test_orbital(self):
         import pandas as pd
