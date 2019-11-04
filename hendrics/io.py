@@ -423,9 +423,18 @@ def load_lcurve(fname):
     elif get_file_format(fname) == 'nc':
         data = _load_data_nc(fname)
 
-    lcurve = Lightcurve(data['time'], data['counts'], err=data['counts_err'],
-                        gti=data['gti'], err_dist=data['err_dist'],
-                        mjdref=data['mjdref'], dt=data['dt'], skip_checks=True)
+    try:
+        lcurve = Lightcurve(data['time'], data['counts'],
+                            err=data['counts_err'], gti=data['gti'],
+                            err_dist=data['err_dist'],
+                            mjdref=data['mjdref'], dt=data['dt'],
+                            skip_checks=True)
+    except TypeError:
+        # Old stingray version
+        lcurve = Lightcurve(data['time'], data['counts'],
+                            err=data['counts_err'], gti=data['gti'],
+                            err_dist=data['err_dist'],
+                            mjdref=data['mjdref'], dt=data['dt'])
 
     if 'instr' in list(data.keys()):
         lcurve.instr = data["instr"]
