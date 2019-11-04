@@ -31,7 +31,8 @@ class TestEFsearch():
         cls.counts = \
             100 + 20 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
         cls.mjdref = 56000
-        lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]])
+        lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]],
+                        dt=cls.dt)
         events = EventList()
         events.mjdref = cls.mjdref
         events.simulate_times(lc)
