@@ -425,7 +425,7 @@ def load_lcurve(fname):
 
     lcurve = Lightcurve(data['time'], data['counts'], err=data['counts_err'],
                         gti=data['gti'], err_dist=data['err_dist'],
-                        mjdref=data['mjdref'])
+                        mjdref=data['mjdref'], data=data['dt'])
 
     if 'instr' in list(data.keys()):
         lcurve.instr = data["instr"]

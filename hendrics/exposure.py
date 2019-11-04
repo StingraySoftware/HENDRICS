@@ -293,7 +293,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
 
     lcurve = Lightcurve(time, newlc, err=newlc_err,
                         gti=gti, err_dist='gauss',
-                        mjdref=contents.mjdref)
+                        mjdref=contents.mjdref, dt=dt)
 
     lcurve.expo = expo
 

@@ -486,10 +486,10 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
             dt *= 86400
     except Exception:
         warnings.warn(
-            'Assuming that TIMEDEL is the difference between the'
-            ' first two times of the light curve',
+            'Assuming that TIMEDEL is the median difference between the'
+            ' light curve times',
             AstropyUserWarning)
-        dt = time[1] - time[0]
+        dt = np.median(np.diff(time))
 
     # ----------------------------------------------------------------
     ratecolumn = assign_value_if_none(
@@ -532,7 +532,7 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     lchdulist.close()
 
     lc = Lightcurve(time=time, counts=rate, err=rate_e, gti=gti_list,
-                    mjdref=mjdref.mjd)
+                    mjdref=mjdref.mjd, dt=dt)
 
     lc.instr = instr
     lc.header = lchdulist[ratehdu].header.tostring()
