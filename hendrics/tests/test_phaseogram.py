@@ -24,7 +24,8 @@ class TestPhaseogram():
         cls.times = np.arange(cls.tstart, cls.tend, cls.dt) + cls.dt / 2
         cls.counts = \
             100 + 20 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
-        lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]])
+        lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]],
+                        dt=cls.dt)
         events = EventList()
         events.simulate_times(lc)
         events.mjdref = 57000.

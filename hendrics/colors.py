@@ -65,7 +65,7 @@ def main(args=None):
                 lc0.countrate_err ** 2)
             scolor = Lightcurve(time=time, counts=counts, err=counts_err,
                                 input_counts=False, err_dist='gauss',
-                                gti=lc0.gti)
+                                gti=lc0.gti, dt=args.bintime)
             del lc0
             del lc1
             os.unlink('lc0' + HEN_FILE_EXTENSION)
