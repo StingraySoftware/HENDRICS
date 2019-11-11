@@ -57,6 +57,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     outfile_root = \
         hen_root(filename) + '_' + mission.lower() + '_' + instr.lower()
 
+    output_files = []
     for d in detectors:
         if d is not None:
             good_det = d == data.detector_id
@@ -110,6 +111,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                 events_filt.instr = events.instr
                 events_filt.header = events.header
                 save_events(events_filt, outfile_local)
+                output_files.append(outfile_local)
             pass
         else:
             events_filt = EventList(events.time[good_det],
@@ -119,6 +121,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             events_filt.header = events.header
 
             save_events(events_filt, outfile)
+            output_files.append(outfile)
+    return output_files
 
 
 def _wrap_fun(arglist):
