@@ -400,7 +400,6 @@ def interpret_bintime(bintime):
     raise ValueError("Bin time cannot be = 0")
 
 
-
 @njit(nogil=True, parallel=False)
 def _hist2d_numba_seq(H, tracks, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
