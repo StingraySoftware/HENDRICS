@@ -12,10 +12,10 @@ from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from .io import get_file_format, load_data, load_lcurve
-from .base import _empty
+from .base import _empty, jit, njit
 
 from .lcurve import lcurve_from_fits
-from .base import jit, njit
+from .base import njit
 
 
 def _paralyzable_dead_time(event_list, dead_time):
