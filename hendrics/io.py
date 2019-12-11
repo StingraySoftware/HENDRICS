@@ -5,7 +5,8 @@ import sys
 import os
 import glob
 import copy
-from collections import Iterable
+
+from collections.abc import Iterable
 import importlib
 import warnings
 import pickle

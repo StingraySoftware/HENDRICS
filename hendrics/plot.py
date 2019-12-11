@@ -49,7 +49,7 @@ def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None,
         fnames = [fnames]
     figname = _assign_value_if_none(figname,
                                     '{0} vs {1}'.format(vars[1], vars[0]))
-    plt.figure(figname)
+    fig = plt.figure(figname)
     ax = plt.gca()
     if xlog:
         ax.set_xscale('log', nonposx='clip')
@@ -107,7 +107,6 @@ def _get_const(models):
     >>> _get_const('avdsfa')
 
     """
-    from collections.abc import Iterable
 
     if isinstance(models, Const1D):
         return models.amplitude.value
@@ -131,7 +130,7 @@ def _get_const(models):
 def plot_pds(fnames, figname=None, xlog=None, ylog=None,
              output_data_file=None, white_sub=False):
     """Plot a list of PDSs, or a single one."""
-    from collections.abc import Iterable
+
     from scipy.optimize import curve_fit
     import matplotlib.pyplot as plt
     if is_string(fnames):

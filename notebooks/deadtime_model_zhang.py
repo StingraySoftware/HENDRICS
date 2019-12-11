@@ -69,12 +69,14 @@ def check_A(rate, td, tb, max_k=100):
     r0 = r_det(td, rate)
 
     value = r0 ** 2 * tb**2
-    plt.figure()
+    fig = plt.figure()
     for k in range(max_k):
         plt.scatter(k, A(k, r0, td, tb, tau), color='k')
     plt.axhline(value, ls='--', color='k')
     plt.xlabel('$k$')
     plt.ylabel('$A_k$')
+    plt.savefig('check_A.png')
+    plt.close(fig)
 
 
 def B(k, r0, td, tb, tau):

@@ -15,7 +15,7 @@ from .io import get_file_format, load_data, load_lcurve
 from .base import _empty
 
 from .lcurve import lcurve_from_fits
-from .base import jit
+from .base import jit, njit
 
 
 def _paralyzable_dead_time(event_list, dead_time):
@@ -29,7 +29,7 @@ def _paralyzable_dead_time(event_list, dead_time):
     return event_list[mask], mask
 
 
-@jit(nopython=True)
+@njit
 def _nonpar_core(event_list, dead_time_end, mask):
     for i in range(1, len(event_list)):
         if (event_list[i] < dead_time_end[i - 1]):
@@ -39,11 +39,10 @@ def _nonpar_core(event_list, dead_time_end, mask):
 
 
 def _non_paralyzable_dead_time(event_list, dead_time):
-    event_list_fl64 = (event_list - event_list[0]).astype(np.float64)
-    dead_time_end = event_list_fl64 + dead_time
-    mask = np.ones(len(event_list_fl64), dtype=bool)
-    mask = _nonpar_core(event_list_fl64,
-                        dead_time_end, mask)
+    event_list_dbl = (event_list - event_list[0]).astype(np.double)
+    dead_time_end = event_list_dbl + np.double(dead_time)
+    mask = np.ones(event_list_dbl.size, dtype=bool)
+    mask = _nonpar_core(event_list_dbl, dead_time_end, mask)
     return event_list[mask], mask
 
 

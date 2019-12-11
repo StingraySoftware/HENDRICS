@@ -6,6 +6,7 @@ import copy
 import os
 import warnings
 from functools import wraps
+from collections.abc import Iterable
 
 import numpy as np
 from astropy import log
@@ -175,8 +176,6 @@ def ref_mjd(fits_file, hdu=1):
     ----------------
     hdu : int
     """
-    from collections.abc import Iterable
-
     if isinstance(fits_file, Iterable) and\
             not is_string(fits_file):
         fits_file = fits_file[0]
@@ -268,7 +267,6 @@ def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     except Exception:  # pragma: no cover
         raise Exception('You need Scipy to use this function')
 
-    from collections.abc import Iterable
     if not isinstance(n_rebin, Iterable):
         r = n_rebin
         retlev = stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) \

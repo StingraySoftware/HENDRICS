@@ -3,9 +3,8 @@
 import copy
 import argparse
 import warnings
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
-import six
 from scipy.interpolate import interp1d
 import numpy as np
 from astropy import log
@@ -17,6 +16,7 @@ from stingray.pulse.pulsar import z_n
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 import matplotlib
+from matplotlib.gridspec import GridSpec
 
 from .fold import z2_n_detection_level
 from .fold import filter_energy
@@ -77,7 +77,6 @@ def normalized_phaseogram(norm, *args, **kwargs):
     return phas, phases, times, additional_info
 
 
-@six.add_metaclass(ABCMeta)
 class BasePhaseogram(object):
     def __init__(self, ev_times, freq, nph=128, nt=128, test=False,
                  fdot=0, fddot=0, mjdref=None, pepoch=None, gti=None,
@@ -147,7 +146,6 @@ class BasePhaseogram(object):
                                           fill_value="extrapolate")
 
         self.fig = plt.figure(label, figsize=plt.figaspect(1.2))
-        from matplotlib.gridspec import GridSpec
         gs = GridSpec(2, 2, width_ratios=[15, 1], height_ratios=[2, 3])
         plt.subplots_adjust(left=0.25, bottom=0.30)
         ax = plt.subplot(gs[1, 0])

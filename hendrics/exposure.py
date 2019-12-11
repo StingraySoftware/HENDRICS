@@ -192,6 +192,7 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
     ax2.legend()
     plt.draw()
     fig.savefig(outroot + "_deadt_distr.png")
+    plt.close(fig)
 
 
 def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
@@ -251,6 +252,7 @@ def _plot_corrected_light_curve(time, lc, expo, gti=None, outroot="expo"):
              label="Exposure-corrected Light curve")
     plt.legend()
     fig.savefig(outroot + "_corr_lc.png")
+    plt.close(fig)
 
 
 def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
