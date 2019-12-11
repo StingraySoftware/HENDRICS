@@ -204,23 +204,25 @@ if not ON_RTD and not ON_TRAVIS:
                     for line in scripts.split('\n')
                     if line.strip() != ''])
     import subprocess as sp
-    with open(os.path.join(os.getcwd(), 'scripts',
-                           'cli.rst'), 'w') as fobj:
-        print("""Command line interface""", file=fobj)
-        print("""======================\n""", file=fobj)
+    cli_file = os.path.join(os.getcwd(), 'scripts', 'cli.rst')
+    if os.path.exists(cli_file):
 
-        for cl in sorted(scripts.keys()):
-            if cl.startswith('MP'):
-                continue
-            print(cl, file=fobj)
-            print('-' * len(cl), file=fobj)
-            print(file=fobj)
-            print('::', file=fobj)
-            print(file=fobj)
-            lines = sp.check_output([cl, '--help']).decode().split('\n')
-            for l in lines:
-                if l.strip() == '':
-                    print(file=fobj)
-                else:
-                    print('    ' + l, file=fobj)
-            print(file=fobj)
+        with open(cli_file, 'w') as fobj:
+            print("""Command line interface""", file=fobj)
+            print("""======================\n""", file=fobj)
+
+            for cl in sorted(scripts.keys()):
+                if cl.startswith('MP'):
+                    continue
+                print(cl, file=fobj)
+                print('-' * len(cl), file=fobj)
+                print(file=fobj)
+                print('::', file=fobj)
+                print(file=fobj)
+                lines = sp.check_output([cl, '--help']).decode().split('\n')
+                for l in lines:
+                    if l.strip() == '':
+                        print(file=fobj)
+                    else:
+                        print('    ' + l, file=fobj)
+                print(file=fobj)
