@@ -29,7 +29,7 @@ def _paralyzable_dead_time(event_list, dead_time):
     return event_list[mask], mask
 
 
-@njit
+@njit()
 def _nonpar_core(event_list, dead_time_end, mask):
     for i in range(1, len(event_list)):
         if (event_list[i] < dead_time_end[i - 1]):
