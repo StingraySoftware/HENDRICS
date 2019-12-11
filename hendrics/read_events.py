@@ -111,7 +111,6 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                 events_filt.header = events.header
                 save_events(events_filt, outfile_local)
                 output_files.append(outfile_local)
-            pass
         else:
             events_filt = EventList(events.time[good_det],
                                     pi=events.pi[good_det],

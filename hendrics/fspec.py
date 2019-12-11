@@ -150,8 +150,8 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
 
     lc1.gti = gti
     lc2.gti = gti
-    lc1._apply_gtis()
-    lc2._apply_gtis()
+    lc1.apply_gtis()
+    lc2.apply_gtis()
     if lc1.tseg != lc2.tseg:  # compatibility with old versions of stingray
         lc1.tseg = np.max(gti) - np.min(gti)
         lc2.tseg = np.max(gti) - np.min(gti)

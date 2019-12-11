@@ -10,6 +10,23 @@ from ._astropy_init import *
 
 # For egg_info test builds to pass, put package imports here.
 if not _ASTROPY_SETUP_:
+
+    # Workaround: import netCDF4 before everything else. This loads the HDF5
+    # library that netCDF4 uses and not something else.
+
+    import warnings
+    try:
+        import netCDF4 as nc
+
+        HEN_FILE_EXTENSION = '.nc'
+        HAS_NETCDF = True
+    except ImportError:
+        msg = "Warning! NetCDF is not available. Using pickle format."
+        warnings.warn(msg)
+        HEN_FILE_EXTENSION = '.p'
+        HAS_NETCDF = False
+        pass
+
     from . import base
     from . import binary
     from . import calibrate

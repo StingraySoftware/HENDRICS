@@ -210,7 +210,8 @@ class TestIO():
         import shutil
         for dum in glob.glob('bubu*.*'):
             os.unlink(dum)
-        shutil.rmtree('bubu')
+        if os.path.exists('bubu'):
+            shutil.rmtree('bubu')
 
 
 class TestIOModel():

@@ -11,6 +11,16 @@ import warnings
 import pickle
 import os.path
 import numpy as np
+try:
+    import netCDF4 as nc
+    HEN_FILE_EXTENSION = '.nc'
+    HAS_NETCDF = True
+except ImportError:
+    msg = "Warning! NetCDF is not available. Using pickle format."
+    warnings.warn(msg)
+    HEN_FILE_EXTENSION = '.p'
+    HAS_NETCDF = False
+    pass
 from astropy.modeling.core import Model
 from astropy import log
 from astropy.logger import AstropyUserWarning
@@ -23,16 +33,6 @@ from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
 from stingray.pulse.modeling import SincSquareModel
 from .base import _order_list_of_arrays, _empty, is_string
 
-try:
-    import netCDF4 as nc
-    HEN_FILE_EXTENSION = '.nc'
-    HAS_NETCDF = True
-except ImportError:
-    msg = "Warning! NetCDF is not available. Using pickle format."
-    warnings.warn(msg)
-    HEN_FILE_EXTENSION = '.p'
-    HAS_NETCDF = False
-    pass
 
 try:
     _ = np.complex256
@@ -215,7 +215,6 @@ def save_as_netcdf(vars, varnames, formats, fname):
                 dimspec = (dimname, dimname + '_2')
         else:
             dims[dimname] = 1
-            dim = 1
 
         for dimname in dims.keys():
             rootgrp.createDimension(dimname, dims[dimname])
@@ -986,22 +985,27 @@ def _get_additional_data(lctable, additional_columns):
     return additional_data
 
 
-def load_gtis(fits_file, gtistring=None):
+def load_gtis(fits_file, gtistring=None, data_hduname='EVENTS'):
     """Load GTI from HDU EVENTS of file fits_file."""
     from astropy.io import fits as pf
     import numpy as np
 
     gtistring = assign_value_if_none(gtistring, 'GTI')
+    accepted_gtistrings = gtistring.split(',')
     log.info("Loading GTIS from file %s" % fits_file)
     lchdulist = pf.open(fits_file, checksum=True)
-    lchdulist.verify('warn')
 
-    gtitable = lchdulist[gtistring].data
-    gti_list = np.array([[a, b]
-                         for a, b in zip(gtitable.field('START'),
-                                         gtitable.field('STOP'))],
-                        dtype=np.longdouble)
-    lchdulist.close()
+    lctable = lchdulist[data_hduname].data
+    detector_id = _get_detector_id(lctable)
+    det_number = None
+
+    if detector_id is not None:
+        det_number = list(set(detector_id))
+
+    gti_list = \
+        _get_gti_from_all_extensions(
+            lchdulist, accepted_gtistrings=accepted_gtistrings,
+            det_numbers=det_number)
     return gti_list
 
 
