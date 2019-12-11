@@ -16,7 +16,7 @@ from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 try:
     from numba import jit, njit, prange
 except ImportError:
-    def njit(**kwargs):
+    def njit(*args, **kwargs):
         """Dummy decorator in case jit cannot be imported."""
         def true_decorator(f):
             @wraps(f)

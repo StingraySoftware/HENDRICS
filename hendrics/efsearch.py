@@ -50,7 +50,6 @@ if not HAS_NUMBA_HIST and not HAS_FAST_HIST:
 
 from .base import deorbit_events, njit, prange
 
-
 try:
     from tqdm import tqdm as show_progress
 except ImportError:
