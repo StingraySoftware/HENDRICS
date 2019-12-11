@@ -29,7 +29,7 @@ env:
         # to repeat them for all configurations.
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='scipy matplotlib pip pandas'
-        - PIP_DEPENDENCIES='emcee stingray>=0.1rc1 sphinx-astropy'
+        - PIP_DEPENDENCIES='emcee stingray>=0.1 sphinx-astropy'
         - MAIN_CMD='python setup.py'
         - USE_NETCDF=yes
         - STINGRAY_VERSION=stable
@@ -51,8 +51,8 @@ matrix:
         - os: windows
           env: PYTHON_VERSION=3.6 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram scipy matplotlib pip pandas emcee stingray>=0.1rc1 sphinx-astropy' CONDA_DEPENDENCIES=''
         - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram git+https://git@github.com/nanograv/pint.git jplephem stingray sphinx-astropy'
-        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='git+https://git@github.com/nanograv/pint.git jplephem stingray sphinx-astropy'
-        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='fast-histogram emcee stingray>=0.1rc1 sphinx-astropy'
+        - env: PYTHON_VERSION=3.6 SETUP_CMD='test --remote-data' USE_NUMBA=yes PIP_DEPENDENCIES='imageio git+https://git@github.com/nanograv/pint.git jplephem stingray sphinx-astropy'
+        - env: PYTHON_VERSION=3.7 SETUP_CMD='test --coverage' USE_NUMBA=yes PIP_DEPENDENCIES='imageio fast-histogram emcee stingray>=0.1rc1 sphinx-astropy'
 
         # ----- Try risky stuff ----
         - env: PYTHON_VERSION=3.6 SETUP_CMD='test' USE_NUMBA=yes STINGRAY_VERSION=devel

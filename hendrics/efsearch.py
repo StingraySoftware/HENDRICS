@@ -4,10 +4,11 @@
 import warnings
 import os
 import argparse
-from functools import wraps
 import copy
+
 import numpy as np
 from astropy import log
+from numpy import histogram2d as histogram2d_np
 from astropy.logger import AstropyUserWarning
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
     search_best_peaks
@@ -19,35 +20,40 @@ from .io import load_events, EFPeriodogram, save_folding, \
 from .base import hen_root
 from .fold import filter_energy
 
+try:
+    import imageio
+    HAS_IMAGEIO = True
+except ImportError:
+    HAS_IMAGEIO = False
 
 try:
-    from fast_histogram import histogram2d
+    from .base import hist2d_numba_seq as histogram2d_nb
+    HAS_NUMBA_HIST = True
+    def histogram2d(*args, **kwargs):
+        if 'range' in kwargs:
+            kwargs['ranges'] = kwargs.pop('range')
+        return histogram2d_nb(*args, **kwargs)
+except ImportError:
+    HAS_NUMBA_HIST = False
+
+try:
+    from fast_histogram import histogram2d as histogram2d_fh
     HAS_FAST_HIST = True
 except ImportError:
-    from numpy import histogram2d as histogram2d_np
+    HAS_FAST_HIST = False
+
+
+if not HAS_NUMBA_HIST and HAS_FAST_HIST:
+    histogram2d = histogram2d_fh
+
+
+if not HAS_NUMBA_HIST and not HAS_FAST_HIST:
 
     def histogram2d(*args, **kwargs):
         return histogram2d_np(*args, **kwargs)[0]
 
-try:
-    from numba import njit, prange
-except ImportError:
-    def njit(**kwargs):
-        """Dummy decorator in case jit cannot be imported."""
-        def true_decorator(f):
-            @wraps(f)
-            def wrapped(*args, **kwargs):
-                r = f(*args, **kwargs)
-                return r
-            return wrapped
-        return true_decorator
 
-    def prange(*args):
-        """Dummy decorator in case jit cannot be imported."""
-        return range(*args)
-
-from .base import deorbit_events
-
+from .base import deorbit_events, njit, prange
 
 try:
     from tqdm import tqdm as show_progress
@@ -469,11 +475,7 @@ def transient_search(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
 def plot_transient_search(results, gif_name=None):
     import matplotlib.pyplot as plt
     from hendrics.fold import z2_n_detection_level
-    try:
-        import imageio
-        HAS_IMAGEIO = True
-    except ImportError:
-        HAS_IMAGEIO = False
+
     if gif_name is None:
         gif_name = 'transients.gif'
 
@@ -544,6 +546,9 @@ def plot_transient_search(results, gif_name=None):
 
     if HAS_IMAGEIO:
         imageio.mimsave(gif_name, all_images, fps=1)
+    else:
+        warnings.warn("imageio needed to save the transient search results "
+                      "into a gif image.")
 
     return all_images
 

@@ -5,12 +5,23 @@ import sys
 import os
 import glob
 import copy
-import collections
+
+from collections.abc import Iterable
 import importlib
 import warnings
 import pickle
 import os.path
 import numpy as np
+try:
+    import netCDF4 as nc
+    HEN_FILE_EXTENSION = '.nc'
+    HAS_NETCDF = True
+except ImportError:
+    msg = "Warning! NetCDF is not available. Using pickle format."
+    warnings.warn(msg)
+    HEN_FILE_EXTENSION = '.p'
+    HAS_NETCDF = False
+    pass
 from astropy.modeling.core import Model
 from astropy import log
 from astropy.logger import AstropyUserWarning
@@ -23,16 +34,6 @@ from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
 from stingray.pulse.modeling import SincSquareModel
 from .base import _order_list_of_arrays, _empty, is_string
 
-try:
-    import netCDF4 as nc
-    HEN_FILE_EXTENSION = '.nc'
-    HAS_NETCDF = True
-except ImportError:
-    msg = "Warning! NetCDF is not available. Using pickle format."
-    warnings.warn(msg)
-    HEN_FILE_EXTENSION = '.p'
-    HAS_NETCDF = False
-    pass
 
 try:
     _ = np.complex256
@@ -204,18 +205,17 @@ def save_as_netcdf(vars, varnames, formats, fname):
         except TypeError:
             unsized = True
 
-        if isinstance(v, collections.Iterable) and formats[iv] != str \
+        if isinstance(v, Iterable) and formats[iv] != str \
                 and not unsized:
             dim = len(v)
             dims[dimname] = dim
 
-            if isinstance(v[0], collections.Iterable):
+            if isinstance(v[0], Iterable):
                 dim = len(v[0])
                 dims[dimname + '_2'] = dim
                 dimspec = (dimname, dimname + '_2')
         else:
             dims[dimname] = 1
-            dim = 1
 
         for dimname in dims.keys():
             rootgrp.createDimension(dimname, dims[dimname])
@@ -689,7 +689,7 @@ def _load_data_nc(fname):
                                  ": unrecognized kind string")
 
             log10_part = contents[log10_key]
-            if isinstance(contents[integer_key], collections.Iterable):
+            if isinstance(contents[integer_key], Iterable):
                 integer_part = np.array(contents[integer_key], dtype=dtype)
                 float_part = np.array(contents[float_key], dtype=dtype)
             else:
@@ -710,7 +710,7 @@ def _split_high_precision_number(varname, var, probesize):
         kind_str = 'double'
     if probesize == 16:
         kind_str = 'longdouble'
-    if isinstance(var, collections.Iterable):
+    if isinstance(var, Iterable):
         dum = np.min(np.abs(var))
         if dum < 1 and dum > 0.:
             var_log10 = np.floor(np.log10(dum))
@@ -739,7 +739,7 @@ def _save_data_nc(struct, fname, kind="data"):
         var = struct[k]
 
         probe = var
-        if isinstance(var, collections.Iterable):
+        if isinstance(var, Iterable):
             probe = var[0]
 
         if is_string(var):
@@ -986,22 +986,27 @@ def _get_additional_data(lctable, additional_columns):
     return additional_data
 
 
-def load_gtis(fits_file, gtistring=None):
+def load_gtis(fits_file, gtistring=None, data_hduname='EVENTS'):
     """Load GTI from HDU EVENTS of file fits_file."""
     from astropy.io import fits as pf
     import numpy as np
 
     gtistring = assign_value_if_none(gtistring, 'GTI')
+    accepted_gtistrings = gtistring.split(',')
     log.info("Loading GTIS from file %s" % fits_file)
     lchdulist = pf.open(fits_file, checksum=True)
-    lchdulist.verify('warn')
 
-    gtitable = lchdulist[gtistring].data
-    gti_list = np.array([[a, b]
-                         for a, b in zip(gtitable.field('START'),
-                                         gtitable.field('STOP'))],
-                        dtype=np.longdouble)
-    lchdulist.close()
+    lctable = lchdulist[data_hduname].data
+    detector_id = _get_detector_id(lctable)
+    det_number = None
+
+    if detector_id is not None:
+        det_number = list(set(detector_id))
+
+    gti_list = \
+        _get_gti_from_all_extensions(
+            lchdulist, accepted_gtistrings=accepted_gtistrings,
+            det_numbers=det_number)
     return gti_list
 
 
@@ -1093,6 +1098,10 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         instr = header['INSTRUME']
     except Exception:
         instr = 'unknown'
+    try:
+        mission = header['TELESCOP']
+    except Exception:
+        mission = 'unknown'
 
     ev_list += timezero
 
@@ -1151,6 +1160,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     returns.ev_list = EventList(ev_list, gti=gti_list, pi=pi)
 
     returns.ev_list.instr = instr
+    returns.ev_list.mission = mission
     returns.ev_list.mjdref = mjdref
     returns.ev_list.header = header.tostring()
     returns.additional_data = additional_data
@@ -1197,7 +1207,7 @@ def main(args=None):
                 val = '{0} s'.format(contents[k])
             else:
                 val = contents[k]
-            if isinstance(val, collections.Iterable) and not is_string(val):
+            if isinstance(val, Iterable) and not is_string(val):
                 length = len(val)
                 if len(val) < 4:
                     val = repr(list(val[:4]))

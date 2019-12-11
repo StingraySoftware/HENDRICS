@@ -5,10 +5,32 @@ import sys
 import copy
 import os
 import warnings
+from functools import wraps
+from collections.abc import Iterable
+
 import numpy as np
 from astropy import log
 from astropy.logger import AstropyUserWarning
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
+
+try:
+    from numba import jit, njit, prange
+except ImportError:
+    def njit(**kwargs):
+        """Dummy decorator in case jit cannot be imported."""
+        def true_decorator(func):
+            @wraps(func)
+            def wrapped(*args, **kwargs):
+                r = func(*args, **kwargs)
+                return r
+            return wrapped
+        return true_decorator
+
+    jit = njit
+
+    def prange(*args):
+        """Dummy decorator in case jit cannot be imported."""
+        return range(*args)
 
 
 DEFAULT_PARSER_ARGS = {}
@@ -154,9 +176,7 @@ def ref_mjd(fits_file, hdu=1):
     ----------------
     hdu : int
     """
-    import collections
-
-    if isinstance(fits_file, collections.Iterable) and\
+    if isinstance(fits_file, Iterable) and\
             not is_string(fits_file):
         fits_file = fits_file[0]
         log.info("opening %s", fits_file)
@@ -241,14 +261,19 @@ def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     Density Spectrum of nbins bins, normalized a la Leahy (1983), based on
     the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
     and multiple PDS averaging (n_summed_spectra)
+    Examples
+    --------
+    >>> np.isclose(detection_level(1, 0.1), 4.6, atol=0.1)
+    True
+    >>> np.allclose(detection_level(1, 0.1, n_rebin=[1]), [4.6], atol=0.1)
+    True
     """
     try:
         from scipy import stats
     except Exception:  # pragma: no cover
         raise Exception('You need Scipy to use this function')
 
-    import collections
-    if not isinstance(n_rebin, collections.Iterable):
+    if not isinstance(n_rebin, Iterable):
         r = n_rebin
         retlev = stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) \
             / (n_summed_spectra * r)
@@ -266,6 +291,13 @@ def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     Spectrum of nbins bins, normalized a la Leahy (1983), based on
     the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
     and multiple PDS averaging (n_summed_spectra)
+
+    Examples
+    --------
+    >>> np.isclose(probability_of_power(4.6, 1), 0.1, atol=0.1)
+    True
+    >>> np.allclose(probability_of_power([4.6], 1), [0.1], atol=0.1)
+    True
     """
     try:
         from scipy import stats
@@ -274,12 +306,18 @@ def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
 
     epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
                                     2 * n_summed_spectra * n_rebin)
-    return 1 - epsilon
+    return epsilon
 
 
 def gti_len(gti):
-    """Return the total good time from a list of GTIs."""
-    return np.sum([g[1] - g[0] for g in gti])
+    """Return the total good time from a list of GTIs.
+
+    Examples
+    --------
+    >>> gti_len([[0, 1], [2, 4]])
+    3
+    """
+    return np.sum(np.diff(gti, axis=1))
 
 
 def deorbit_events(events, parameter_file=None):
@@ -377,3 +415,126 @@ def interpret_bintime(bintime):
     elif bintime > 0:
         return bintime
     raise ValueError("Bin time cannot be = 0")
+
+
+@njit(nogil=True, parallel=False)
+def _hist2d_numba_seq(H, tracks, bins, ranges):
+    delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
+
+    for t in range(tracks.shape[1]):
+        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
+        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+            H[int(i), int(j)] += 1
+
+    return H
+
+
+def hist2d_numba_seq(x, y, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> H, xedges, yedges = np.histogram2d(x, y, bins=(5, 5),
+    ...                                    range=[(0., 1.), (2., 3.)])
+    >>> Hn = hist2d_numba_seq(x, y, bins=(5, 5),
+    ...                       ranges=[[0., 1.], [2., 3.]])
+    >>> assert np.all(H == Hn)
+    """
+    H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
+    return _hist2d_numba_seq(H, np.array([x, y]), np.asarray(list(bins)),
+                             np.asarray(ranges))
+
+
+@njit(nogil=True, parallel=False)
+def _hist3d_numba_seq(H, tracks, bins, ranges):
+    delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
+
+    for t in range(tracks.shape[1]):
+        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
+        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+        k = (tracks[2, t] - ranges[2, 0]) * delta[2]
+        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+            H[int(i), int(j), int(k)] += 1
+
+    return H
+
+
+def hist3d_numba_seq(tracks, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> z = np.random.uniform(4., 5., 100)
+    >>> H, _ = np.histogramdd((x, y, z), bins=(5, 6, 7),
+    ...                       range=[(0., 1.), (2., 3.), (4., 5)])
+    >>> Hn = hist3d_numba_seq((x, y, z), bins=(5, 6, 7),
+    ...                       ranges=[[0., 1.], [2., 3.], [4., 5.]])
+    >>> assert np.all(H == Hn)
+    """
+
+    H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.uint64)
+    return _hist3d_numba_seq(H, np.asarray(tracks), np.asarray(list(bins)),
+                             np.asarray(ranges))
+
+
+@njit(nogil=True, parallel=False)
+def index_arr(a, ix_arr):
+    strides = np.array(a.strides) / a.itemsize
+    ix = int((ix_arr * strides).sum())
+    return a.ravel()[ix]
+
+
+@njit(nogil=True, parallel=False)
+def index_set_arr(a, ix_arr, val):
+    strides = np.array(a.strides) / a.itemsize
+    ix = int((ix_arr * strides).sum())
+    a.ravel()[ix] = val
+
+
+@njit(nogil=True, parallel=False)
+def _histnd_numba_seq(H, tracks, bins, ranges, slice_int):
+    delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
+
+    for t in range(tracks.shape[1]):
+        slicearr = np.array([(tracks[dim, t] - ranges[dim, 0]) * delta[dim]
+                             for dim in range(tracks.shape[0])])
+
+        good = np.all((slicearr < bins) & (slicearr >= 0))
+        slice_int[:] = slicearr
+
+        if good:
+            curr = index_arr(H, slice_int)
+            index_set_arr(H, slice_int, curr + 1)
+
+    return H
+
+
+def histnd_numba_seq(tracks, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> z = np.random.uniform(4., 5., 100)
+    >>> # 2d example
+    >>> H, _, _ = np.histogram2d(x, y, bins=np.array((5, 5)),
+    ...                          range=[(0., 1.), (2., 3.)])
+    >>> alldata = np.array([x, y])
+    >>> Hn = histnd_numba_seq(alldata, bins=np.array([5, 5]),
+    ...                       ranges=np.array([[0., 1.], [2., 3.]]))
+    >>> assert np.all(H == Hn)
+    >>> # 3d example
+    >>> H, _ = np.histogramdd((x, y, z), bins=np.array((5, 6, 7)),
+    ...                       range=[(0., 1.), (2., 3.), (4., 5)])
+    >>> alldata = np.array([x, y, z])
+    >>> Hn = hist3d_numba_seq(alldata, bins=np.array((5, 6, 7)),
+    ...                       ranges=np.array([[0., 1.], [2., 3.], [4., 5.]]))
+    >>> assert np.all(H == Hn)
+    """
+    H = np.zeros(tuple(bins), dtype=np.uint64)
+    slice_int = np.zeros(len(bins), dtype=np.uint64)
+
+    return _histnd_numba_seq(H, tracks, bins, ranges, slice_int)

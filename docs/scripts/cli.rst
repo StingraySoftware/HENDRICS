@@ -20,7 +20,7 @@ HEN2xspec
       --flx2xsp            Also call flx2xsp at the end
       --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug              se DEBUG logging level
+      --debug              set DEBUG logging level
 
 
 HENbaseline
@@ -59,9 +59,8 @@ HENbinary
 ::
 
     usage: HENbinary [-h] [-l MAX_LENGTH] [-b BINTIME]
-                     [-e ENERGY_INTERVAL ENERGY_INTERVAL]
-                     [--deorbit-par DEORBIT_PAR] [--nproc NPROC]
-                     [--loglevel LOGLEVEL] [--debug]
+                     [-e ENERGY_INTERVAL ENERGY_INTERVAL] [-p DEORBIT_PAR]
+                     [--nproc NPROC] [--loglevel LOGLEVEL] [--debug]
                      files [files ...]
 
     Save light curves in a format readable to PRESTO
@@ -77,13 +76,13 @@ HENbinary
                             Bin time
       -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
                             Energy interval used for filtering
-      --deorbit-par DEORBIT_PAR
+      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --nproc NPROC         Number of processors to use
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENcalibrate
@@ -109,7 +108,7 @@ HENcalibrate
       --nproc NPROC        Number of processors to use
       --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug              se DEBUG logging level
+      --debug              set DEBUG logging level
 
 
 HENcolors
@@ -140,7 +139,7 @@ HENcolors
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENcreategti
@@ -178,7 +177,7 @@ HENcreategti
                             Interval at start and stop of GTIs used for filtering
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENdeorbit
@@ -186,7 +185,8 @@ HENdeorbit
 
 ::
 
-    usage: HENdeorbit [-h] -p DEORBIT_PAR files [files ...]
+    usage: HENdeorbit [-h] [-p DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
+                      files [files ...]
 
     Deorbit the event arrival times
 
@@ -198,6 +198,9 @@ HENdeorbit
       -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               set DEBUG logging level
 
 
 HENdumpdyn
@@ -207,7 +210,8 @@ HENdumpdyn
 
     usage: HENdumpdyn [-h] [--noplot] files [files ...]
 
-    Dump dynamical (cross) power spectra
+    Dump dynamical (cross) power spectra. This script is being reimplemented.
+    Please be patient :)
 
     positional arguments:
       files       List of files in any valid HENDRICS format for PDS or CPDS
@@ -225,11 +229,11 @@ HENefsearch
     usage: HENefsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
                        [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
                        [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
-                       [--oversample OVERSAMPLE] [--fast] [--expocorr]
-                       [--find-candidates] [--conflevel CONFLEVEL]
+                       [--oversample OVERSAMPLE] [--fast] [--transient]
+                       [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
                        [--fit-candidates] [--curve CURVE]
-                       [--fit-frequency FIT_FREQUENCY] [-N N]
-                       [--deorbit-par DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
+                       [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
+                       [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -259,6 +263,8 @@ HENefsearch
                             searches for the first spin derivative using an
                             optimized step.This option ignores expocorr,
                             fdotmin/max, segment-size, and step
+      --transient           Look for transient emission (produces an animated GIF
+                            with the dynamic Z search)
       --expocorr            Correct for the exposure of the profile bins. This
                             method is *much* slower, but it is useful for very
                             slow pulsars, where data gaps due to occultation or
@@ -273,12 +279,12 @@ HENefsearch
                             Force the candidate frequency to FIT_FREQUENCY
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
-      --deorbit-par DEORBIT_PAR
+      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENexcvar
@@ -309,7 +315,7 @@ HENexcvar
                             et al. 2003 for details).
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENexposure
@@ -333,7 +339,7 @@ HENexposure
       --plot                Plot on window
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENfake
@@ -371,7 +377,7 @@ HENfake
                             used as sigma of the dead time distribution
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENfold
@@ -381,8 +387,8 @@ HENfold
 
     usage: HENfold [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT] [--tref TREF]
                    [-n NBIN] [--nebin NEBIN] [--emin EMIN] [--emax EMAX]
-                   [--norm NORM] [--deorbit-par DEORBIT_PAR] [--loglevel LOGLEVEL]
-                   [--debug] [--test]
+                   [--norm NORM] [--pepoch PEPOCH] [-p DEORBIT_PAR]
+                   [--loglevel LOGLEVEL] [--debug] [--test]
                    file
 
     Plot a folded profile
@@ -402,12 +408,13 @@ HENfold
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --norm NORM           --norm to1: Normalize hist so that the maximum at each
                             energy is one. --norm ratios: Divide by mean profile
-      --deorbit-par DEORBIT_PAR
+      --pepoch PEPOCH       Reference epoch for timing parameters (MJD)
+      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
       --test                Only used for tests
 
 
@@ -451,7 +458,7 @@ HENfspec
       --nproc NPROC         Number of processors to use
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENjoinevents
@@ -490,7 +497,7 @@ HENlags
       -h, --help           show this help message and exit
       --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug              se DEBUG logging level
+      --debug              set DEBUG logging level
 
 
 HENlcurve
@@ -537,7 +544,7 @@ HENlcurve
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
       --nproc NPROC         Number of processors to use
 
 
@@ -571,7 +578,7 @@ HENmodel
                             2 Hz, or using the intervals 0-2 Hz and 5-10 Hz.
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENphaseogram
@@ -580,11 +587,11 @@ HENphaseogram
 ::
 
     usage: HENphaseogram [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT]
-                         [--pepoch PEPOCH] [--periodogram PERIODOGRAM] [-n NBIN]
-                         [--ntimes NTIMES] [--binary]
+                         [--periodogram PERIODOGRAM] [-n NBIN] [--ntimes NTIMES]
+                         [--binary]
                          [--binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS]
                          [--emin EMIN] [--emax EMAX] [--norm NORM] [--plot-only]
-                         [--deorbit-par DEORBIT_PAR] [--test]
+                         [--pepoch PEPOCH] [-p DEORBIT_PAR] [--test]
                          [--loglevel LOGLEVEL] [--debug]
                          file
 
@@ -598,7 +605,6 @@ HENphaseogram
       -f FREQ, --freq FREQ  Initial frequency to fold
       --fdot FDOT           Initial fdot
       --fddot FDDOT         Initial fddot
-      --pepoch PEPOCH       Reference epoch for timing parameters
       --periodogram PERIODOGRAM
                             Periodogram file
       -n NBIN, --nbin NBIN  Number of phase bins (X axis) of the profile
@@ -613,13 +619,14 @@ HENphaseogram
                             profile normalized from 0 to 1); 'mediansub' (just
                             subtract the median from each profile); default None
       --plot-only           Only plot the phaseogram
-      --deorbit-par DEORBIT_PAR
+      --pepoch PEPOCH       Reference epoch for timing parameters (MJD)
+      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --test                Only used for tests
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENphasetag
@@ -718,7 +725,7 @@ HENreadevents
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
       --nproc NPROC         Number of processors to use
 
 
@@ -760,7 +767,7 @@ HENrebin
                             geometrical binning factor
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENscrunchlc
@@ -843,7 +850,7 @@ HENvarenergy
                             Bin time
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 
 HENzsearch
@@ -854,11 +861,11 @@ HENzsearch
     usage: HENzsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
                       [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
                       [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
-                      [--oversample OVERSAMPLE] [--fast] [--expocorr]
-                      [--find-candidates] [--conflevel CONFLEVEL]
+                      [--oversample OVERSAMPLE] [--fast] [--transient]
+                      [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
                       [--fit-candidates] [--curve CURVE]
-                      [--fit-frequency FIT_FREQUENCY] [-N N]
-                      [--deorbit-par DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
+                      [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
+                      [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -888,6 +895,8 @@ HENzsearch
                             searches for the first spin derivative using an
                             optimized step.This option ignores expocorr,
                             fdotmin/max, segment-size, and step
+      --transient           Look for transient emission (produces an animated GIF
+                            with the dynamic Z search)
       --expocorr            Correct for the exposure of the profile bins. This
                             method is *much* slower, but it is useful for very
                             slow pulsars, where data gaps due to occultation or
@@ -902,11 +911,11 @@ HENzsearch
                             Force the candidate frequency to FIT_FREQUENCY
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
-      --deorbit-par DEORBIT_PAR
+      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               se DEBUG logging level
+      --debug               set DEBUG logging level
 
 

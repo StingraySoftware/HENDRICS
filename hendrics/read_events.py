@@ -40,13 +40,12 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
     log.info('Opening %s' % filename)
 
-    instr = read_header_key(filename, 'INSTRUME')
-    mission = read_header_key(filename, 'TELESCOP')
-
     data = load_events_and_gtis(filename,
                                 gtistring=gtistring)
 
     events = data.ev_list
+    mission = events.mission
+    instr = events.instr
     gtis = events.gti
     detector_id = data.detector_id
 
@@ -112,7 +111,6 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                 events_filt.header = events.header
                 save_events(events_filt, outfile_local)
                 output_files.append(outfile_local)
-            pass
         else:
             events_filt = EventList(events.time[good_det],
                                     pi=events.pi[good_det],

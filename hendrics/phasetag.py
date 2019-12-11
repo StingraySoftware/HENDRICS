@@ -145,6 +145,8 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
             plt.axvline(i * 0.1, ls='--', color='b')
         if not test:  # pragma: no cover
             plt.show()
+        else:
+            plt.close(fig)
 
     # ------ WRITE RESULTS BACK TO FITS --------------
     results = type('results', (object,), {})
