@@ -261,6 +261,12 @@ def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
     Density Spectrum of nbins bins, normalized a la Leahy (1983), based on
     the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
     and multiple PDS averaging (n_summed_spectra)
+    Examples
+    --------
+    >>> np.isclose(detection_level(1, 0.1), 4.6, atol=0.1)
+    True
+    >>> np.allclose(detection_level(1, 0.1, n_rebin=[1]), [4.6], atol=0.1)
+    True
     """
     try:
         from scipy import stats
@@ -285,6 +291,13 @@ def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
     Spectrum of nbins bins, normalized a la Leahy (1983), based on
     the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
     and multiple PDS averaging (n_summed_spectra)
+
+    Examples
+    --------
+    >>> np.isclose(probability_of_power(4.6, 1), 0.1, atol=0.1)
+    True
+    >>> np.allclose(probability_of_power([4.6], 1), [0.1], atol=0.1)
+    True
     """
     try:
         from scipy import stats
@@ -293,12 +306,18 @@ def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
 
     epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
                                     2 * n_summed_spectra * n_rebin)
-    return 1 - epsilon
+    return epsilon
 
 
 def gti_len(gti):
-    """Return the total good time from a list of GTIs."""
-    return np.sum([g[1] - g[0] for g in gti])
+    """Return the total good time from a list of GTIs.
+
+    Examples
+    --------
+    >>> gti_len([[0, 1], [2, 4]])
+    3
+    """
+    return np.sum(np.diff(gti, axis=1))
 
 
 def deorbit_events(events, parameter_file=None):

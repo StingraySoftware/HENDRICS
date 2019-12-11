@@ -25,6 +25,8 @@ try:
     import pint
     HAS_PINT = True
 except ImportError:
+    log.warning("PINT is not installed. "
+                "Some pulsar functionality will not be available")
     HAS_PINT = False
 from .base import deorbit_events
 
