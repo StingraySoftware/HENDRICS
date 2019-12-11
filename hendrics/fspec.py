@@ -27,6 +27,21 @@ def _wrap_fun_pds(argdict):
     return calc_pds(fname, **argdict)
 
 
+def sync_gtis(lc1, lc2):
+    """Sync gtis between light curves.
+
+    Has to work with new and old versions of stingray."""
+    gti = cross_gtis([lc1.gti, lc2.gti])
+    lc1.gti = gti
+    lc2.gti = gti
+    if hasattr(lc1, '_apply_gtis'):
+        # Compatibility with old versions of stingray
+        lc1.apply_gtis = lc1._apply_gtis
+        lc2.apply_gtis = lc2._apply_gtis
+    lc1.apply_gtis()
+    lc2.apply_gtis()
+    return lc1, lc2
+
 def calc_pds(lcfile, fftlen,
              save_dyn=False,
              bintime=1,
@@ -143,15 +158,11 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     lc2 = load_lcurve(lcfile2)
     instr1 = lc1.instr
     instr2 = lc2.instr
-    gti = cross_gtis([lc1.gti, lc2.gti])
 
     assert lc1.dt == lc2.dt, 'Light curves are sampled differently'
     dt = lc1.dt
 
-    lc1.gti = gti
-    lc2.gti = gti
-    lc1.apply_gtis()
-    lc2.apply_gtis()
+    lc1, lc2 = sync_gtis(lc1, lc2)
     if lc1.tseg != lc2.tseg:  # compatibility with old versions of stingray
         lc1.tseg = np.max(gti) - np.min(gti)
         lc2.tseg = np.max(gti) - np.min(gti)
