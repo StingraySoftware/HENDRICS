@@ -136,6 +136,16 @@ class TestEFsearch():
         assert efperiod.N == 2
         os.unlink(outfile)
 
+    def test_zsearch_fdots_transient(self):
+        evfile = self.dum
+        main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                      '--fdotmin', ' -0.1', '--fdotmax', '0.1',
+                      '--transient'])
+        outfile = 'events_transient.gif'
+
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
     def test_zsearch_fdots_fast(self):
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
