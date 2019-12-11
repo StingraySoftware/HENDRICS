@@ -20,6 +20,11 @@ from .io import load_events, EFPeriodogram, save_folding, \
 from .base import hen_root
 from .fold import filter_energy
 
+try:
+    import imageio
+    HAS_IMAGEIO = True
+except ImportError:
+    HAS_IMAGEIO = False
 
 try:
     from .base import hist2d_numba_seq as histogram2d_nb
@@ -470,11 +475,7 @@ def transient_search(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
 def plot_transient_search(results, gif_name=None):
     import matplotlib.pyplot as plt
     from hendrics.fold import z2_n_detection_level
-    try:
-        import imageio
-        HAS_IMAGEIO = True
-    except ImportError:
-        HAS_IMAGEIO = False
+
     if gif_name is None:
         gif_name = 'transients.gif'
 
@@ -545,6 +546,9 @@ def plot_transient_search(results, gif_name=None):
 
     if HAS_IMAGEIO:
         imageio.mimsave(gif_name, all_images, fps=1)
+    else:
+        warnings.warn("imageio needed to save the transient search results "
+                      "into a gif image.")
 
     return all_images
 

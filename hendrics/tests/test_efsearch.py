@@ -18,6 +18,7 @@ except ImportError:
     HAS_PD = False
 
 from hendrics.fold import HAS_PINT
+from hendrics.efsearch import HAS_IMAGEIO
 
 
 class TestEFsearch():
@@ -136,15 +137,25 @@ class TestEFsearch():
         assert efperiod.N == 2
         os.unlink(outfile)
 
-    def test_zsearch_fdots_transient(self):
+    @pytest.mark.skipif("not HAS_IMAGEIO")
+    def test_transient(self):
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fdotmin', ' -0.1', '--fdotmax', '0.1',
                       '--transient'])
         outfile = 'events_transient.gif'
-
         assert os.path.exists(outfile)
         os.unlink(outfile)
+
+    @pytest.mark.skipif("HAS_IMAGEIO")
+    def test_transient_warn_if_no_imageio(self):
+        evfile = self.dum
+        with pytest.warns(UserWarning) as record:
+            main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                          '--fdotmin', ' -0.1', '--fdotmax', '0.1',
+                          '--transient'])
+        assert np.any(["imageio needed" in r.message.args[0]
+                       for r in record])
 
     def test_zsearch_fdots_fast(self):
         evfile = self.dum
