@@ -231,8 +231,8 @@ interpreted as a geometric binning.
 
 ::
 
-    $ HENrebin cpds_002_3-30_0.nc -r 1.03
-    Saving cpds to cpds_002_3-30_0_rebin1.03.nc
+    $ HENrebin cpds_002_3-30_0.nc -r 0.03
+    Saving cpds to cpds_002_3-30_0_rebin0.03.nc
 
 Calculating the cospectrum and phase/time lags
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -251,7 +251,7 @@ give the command
 
 ::
 
-    $ HEN2xspec cpds_002_3-30_0_rebin1.03.nc --flx2xsp
+    $ HEN2xspec cpds_002_3-30_0_rebin0.03.nc --flx2xsp
 
 Open and fit in XSpec!
 ~~~~~~~~~~~~~~~~~~~~~~
