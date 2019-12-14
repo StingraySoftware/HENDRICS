@@ -1,18 +1,12 @@
 name: hendrics
 
-channels:
-  - conda-forge
-
 dependencies:
   - python==3.6
-  - sphinx>=1.4
-  - pandoc
-  - nbconvert
-  - ipykernel
-  - numpy
-  - scipy
-  - matplotlib
   - pip:
     - nbsphinx
-    - stingray >= 0.1rc1
     - sphinx-astropy
+    - sphinx>=1.4
+    - astropy
+    - stingray
+    - numpy
+    - scipy
