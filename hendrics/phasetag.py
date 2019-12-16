@@ -161,7 +161,9 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     return results
 
 
-def phase_tag_fits(filename, parameter_info, **kwargs):
+def phase_tag_fits(filename, parameter_info, gtistring='GTI,STDGTI',
+                   gti_file=None, hduname='EVENTS', column='TIME',
+                   **kwargs):
     """Phase-tag events in a FITS file with a given ephemeris.
 
     Parameters
@@ -188,11 +190,19 @@ def phase_tag_fits(filename, parameter_info, **kwargs):
         Plot diagnostics
     expocorr : bool
         Use exposure correction when calculating the profile
-
+    gtistring : str
+        Comma-separated list of accepted GTI extensions (default GTI,STDGTI),
+        with or without appended integer number denoting the detector
+    gti_file : str, default None
+        External GTI file
+    hduname : str, default 'EVENTS'
+        Name of the HDU containing the event list
     """
 
     outfile = outfile_name(filename)
-    evreturns = load_events_and_gtis(filename)
+    evreturns = load_events_and_gtis(filename, gtistring=gtistring,
+                                     gti_file=gti_file, hduname=hduname,
+                                     column=column)
     mjdref = ref_mjd(filename)
 
     results = phase_tag(evreturns.ev_list, parameter_info,
@@ -209,9 +219,9 @@ def phase_tag_fits(filename, parameter_info, **kwargs):
 
     # Save results to fits file
     hdulist = pf.open(filename, checksum=True)
-    tbhdu = hdulist["EVENTS"]
+    tbhdu = hdulist[hduname]
     table = tbhdu.data
-    order = np.argsort(table['TIME'])
+    order = np.argsort(table[column])
     # load_events_and_gtis sorts the data automatically. This is not the case
     # of the other operations done here. So, let's sort the table first.
     for col in table.names:
@@ -271,17 +281,19 @@ def phase_tag_fits(filename, parameter_info, **kwargs):
     # and new hdu
     newtbhdu = pf.BinTableHDU(data=newrec,
                               header=tbhdu.header.copy(),
-                              name='EVENTS', uint=False)
+                              name=hduname, uint=False)
 
     # Copy primary HDU from old file
     prihdu = hdulist[0].copy()
 
     # define new hdulist
-    newhdulist = pf.HDUList([prihdu, newtbhdu])
+    newhdulist = pf.HDUList([prihdu])
 
     # Copy remaining HDUs from old file
-    if len(hdulist) > 2:
-        for h in hdulist[2:]:
+    for h in hdulist[1:]:
+        if h.name == hduname:
+            newhdulist.append(newtbhdu)
+        else:
             newhdulist.append(h.copy())
 
     newhdulist.writeto(outfile, overwrite=True)

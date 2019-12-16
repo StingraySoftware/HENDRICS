@@ -1052,11 +1052,21 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     Parameters
     ----------
     fits_file : str
-    return_limits: bool, optional
-        Return the TSTART and TSTOP keyword values
+
+    Other parameters
+    ----------------
     additional_columns: list of str, optional
         A list of keys corresponding to the additional columns to extract from
         the event HDU (ex.: ['PI', 'X'])
+    gtistring : str
+        Comma-separated list of accepted GTI extensions (default GTI,STDGTI),
+        with or without appended integer number denoting the detector
+    gti_file : str, default None
+        External GTI file
+    hduname : str, default 'EVENTS'
+        Name of the HDU containing the event list
+    return_limits: bool, optional
+        Return the TSTART and TSTOP keyword values
 
     Returns
     -------
