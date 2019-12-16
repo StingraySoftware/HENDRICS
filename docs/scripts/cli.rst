@@ -807,7 +807,7 @@ HENsumfspec
       -h, --help            show this help message and exit
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_(c)pds.p
+                            tot_(c)pds.nc
 
 
 HENvarenergy
