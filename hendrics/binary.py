@@ -5,6 +5,7 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from .io import high_precision_keyword_read, get_file_type, HEN_FILE_EXTENSION
 from .base import deorbit_events, interpret_bintime
+from stingray.gti import create_gti_mask
 
 MAXBIN = 100000000
 
@@ -90,7 +91,7 @@ def save_lc_to_binary(lc, filename):
 
 
 def save_events_to_binary(events, filename, bin_time, tstart=None,
-                          emin=None, emax=None):
+                          emin=None, emax=None, median_fill=False):
     """Save an event list to binary format.
 
     Parameters
@@ -110,6 +111,8 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
         Minimum energy of the photons
     emax : float
         Maximum energy of the photons
+    median_fill : bool
+        Fill data gaps with the median
 
     Returns
     -------
@@ -146,6 +149,12 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
         goodev = events.time[good]
         hist, times = \
             np.histogram(goodev, bins=np.linspace(t0, t1, lastbin + 1))
+
+        if median_fill:
+            dt = times[1] - times[0]
+            mask = create_gti_mask(times[:-1] + dt / 2, events.gti)
+            bad_mask = ~mask
+            hist[bad_mask] = np.median(hist[mask])
 
         lclen += lastbin
         s = struct.pack('f' * len(hist), *hist)
@@ -236,6 +245,9 @@ def main_presto(args=None):
     parser.add_argument("-l", "--max-length", help="Maximum length of light "
                                                    "curves (split otherwise)",
                         type=np.longdouble, default=1e32)
+    parser.add_argument("--median-fill",
+                        help="Fill gaps with the median, not with zeroes",
+                        default=False, action='store_true')
 
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['bintime', 'energies', 'deorbit',
@@ -265,7 +277,8 @@ def main_presto(args=None):
                 lcinfo = save_events_to_binary(contents, outfile,
                                                bin_time=bintime,
                                                emin=args.energy_interval[0],
-                                               emax=args.energy_interval[1])
+                                               emax=args.energy_interval[1],
+                                               median_fill=args.median_fill)
             else:
                 raise ValueError('File type not recognized')
 
