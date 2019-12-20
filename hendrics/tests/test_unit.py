@@ -197,6 +197,7 @@ class TestAll(unittest.TestCase):
         os.unlink('bububu')
 
     def test_cpds_fails_noclobber_exists(self):
+        hen.base.touch('bububu')
         with pytest.warns(UserWarning) as record:
             hen.fspec.calc_cpds("bla.p", "blu.p", 512, outname='bububu',
                                 noclobber=True)
