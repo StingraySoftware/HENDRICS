@@ -263,7 +263,6 @@ def lcurve_from_events(f, safe_interval=0,
     total_lc = evdata.to_lc(100)
     total_lc.instr = instr
 
-    print(e_interval, e_interval is not None)
     # Then, apply filters
     if pi_interval is not None and np.all(np.array(pi_interval) > 0):
         pis = evdata.pi

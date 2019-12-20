@@ -209,7 +209,7 @@ def calculate_shifts(
     shifts = np.linspace(-1., 1., nprof) ** order
     return nshift * shifts
 
-@njit
+@njit()
 def mod(num, n2):
     return np.mod(num, n2)
 
