@@ -25,7 +25,7 @@ def join_lightcurve_objs(lclist):
 
     Parameters
     ----------
-    lclist : list of :class:`stingray.lightcurve.Lightcurve`s
+    lclist : list of :class:`Lightcurve` objects
         The list of light curves to join
 
     Returns
@@ -129,7 +129,7 @@ def scrunch_lightcurve_objs(lclist):
 
     Parameters
     ----------
-    lcfilelist : list of :class:`stingray.lightcurve.Lightcurve`s
+    lcfilelist : list of :class:`stingray.lightcurve.Lightcurve` objects
         The list of light curves to scrunch
 
     Returns
