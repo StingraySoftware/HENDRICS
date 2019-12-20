@@ -429,8 +429,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             if hasattr(events, 'mjdref') and events.mjdref is not None:
                 phascommand += " --pepoch {}".format(pepoch)
 
-            print("To see the detailed phaseogram, "
-                  "run {}".format(phascommand))
+            log.info("To see the detailed phaseogram, "
+                     "run {}".format(phascommand))
 
         elif not os.path.exists(ef.filename):
             warnings.warn(ef.filename + " does not exist")

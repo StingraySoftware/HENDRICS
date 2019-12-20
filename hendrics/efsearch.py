@@ -103,7 +103,7 @@ def decide_binary_parameters(length, freq_range, porb_range, asini_range,
         'best_T0']
 
     df = 1 / length
-    print('Recommended frequency steps: {}'.format(
+    log.info('Recommended frequency steps: {}'.format(
         int(np.diff(freq_range)[0] // df + 1)))
     while count < NMAX:
         # In any case, only the first loop deletes the file
@@ -820,10 +820,10 @@ def folding_search(events, fmin, fmax, step=None,
     fdotepsilon = 1e-2 * fdotstep
     trial_fdots = np.arange(fdotmin, fdotmax + fdotepsilon, fdotstep)
     if len(trial_fdots) > 1:
-        print("Searching {} frequencies and {} fdots".format(len(trial_freqs),
-                                                             len(trial_fdots)))
+        log.info("Searching {} frequencies and {} fdots".format(len(trial_freqs),
+                                                                len(trial_fdots)))
     else:
-        print("Searching {} frequencies".format(len(trial_freqs)))
+        log.info("Searching {} frequencies".format(len(trial_freqs)))
 
     results = func(times, trial_freqs, fdots=trial_fdots,
                    expocorr=expocorr, gti=gti, **kwargs)

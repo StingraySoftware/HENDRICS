@@ -276,7 +276,7 @@ def save_as_netcdf(vars, varnames, formats, fname):
             else:
                 vnc[:] = v
         except Exception:
-            print("Error:", varnames[iv], formats[iv], dimspec, v)
+            log.error("Bad variable:", varnames[iv], formats[iv], dimspec, v)
             raise
     rootgrp.close()
 

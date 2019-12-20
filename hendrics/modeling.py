@@ -77,6 +77,6 @@ def main_model(args=None):
 
             save_model(res.model, root + '_bestfit.p')
             spectrum.best_fits = [res.model]
-            print('Best-fit model:')
-            print(res.model)
+            log.info('Best-fit model:')
+            log.info(res.model)
             save_pds(spectrum, root + '_fit' + HEN_FILE_EXTENSION)
