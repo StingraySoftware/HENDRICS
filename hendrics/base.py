@@ -204,7 +204,7 @@ def common_name(str1, str2, default='common'):
     common_str = common_str.lstrip('_').lstrip('-')
     if common_str == '':
         common_str = default
-    log.debug('common_name: %s %s -> %s', str1, str2, common_str)
+    # log.debug('common_name: %s %s -> %s', str1, str2, common_str)
     return common_str
 
 

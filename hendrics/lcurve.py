@@ -16,6 +16,67 @@ from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
 
 
+def join_lightcurve_objs(lclist):
+    """Join light curves.
+
+    Light curves from different instruments are put in different channels.
+    Light curves from the same time interval and instrument raise
+    a ValueError.
+
+    Parameters
+    ----------
+    lclist : list of :class:`stingray.lightcurve.Lightcurve`s
+        The list of light curves to join
+
+    Returns
+    -------
+    lcoutlist : joint light curves, one per instrument
+
+    See Also
+    --------
+        scrunch_lightcurves : Create a single light curve from input light
+                                 curves.
+
+    Examples
+    --------
+    >>> lcA = Lightcurve(np.arange(4), np.zeros(4))
+    >>> lcA.instr='bu'
+    >>> lcB = Lightcurve(np.arange(4) + 4, [1, 3, 4, 5])
+    >>> lcB.instr='bu'
+    >>> lcC = join_lightcurve_objs((lcA, lcB))
+    >>> np.all(lcC['bu'].time == np.arange(8))
+    True
+    >>> np.all(lcC['bu'].counts == [0, 0, 0, 0, 1, 3, 4, 5])
+    True
+    """
+    # --------------- Check consistency of data --------------
+    lcdts = [lcdata.dt for lcdata in lclist]
+    # Find unique elements. If multiple bin times are used, throw an exception
+    lcdts = list(set(lcdts))
+    assert len(lcdts) == 1, 'Light curves must have same dt for joining'
+
+    instrs = [lcdata.instr for lcdata in lclist if hasattr(lcdata, 'instr')]
+
+    # Find unique elements. A lightcurve will be produced for each instrument
+    instrs = list(set(instrs))
+    if instrs == []:
+        instrs = ['unknown']
+
+    outlcs = {}
+    for instr in instrs:
+        outlcs[instr] = None
+    # -------------------------------------------------------
+
+    for lcdata in lclist:
+        instr = assign_value_if_none(lcdata.instr, 'unknown')
+        if outlcs[instr] is None:
+            outlcs[instr] = lcdata
+        else:
+            outlcs[instr] = outlcs[instr].join(lcdata)
+
+    return outlcs
+
+
 def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
     """Join light curves from different files.
 
@@ -42,32 +103,10 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
         lcdatas.append(lcdata)
         del lcdata
 
-    # --------------- Check consistency of data --------------
-    lcdts = [lcdata.dt for lcdata in lcdatas]
-    # Find unique elements. If multiple bin times are used, throw an exception
-    lcdts = list(set(lcdts))
-    assert len(lcdts) == 1, 'Light curves must have same dt for joining'
-
-    instrs = [lcdata.instr for lcdata in lcdatas if hasattr(lcdata, 'instr')]
-
-    # Find unique elements. A lightcurve will be produced for each instrument
-    instrs = list(set(instrs))
-    if instrs == []:
-        instrs = ['unknown']
-
-    outlcs = {}
-    for instr in instrs:
-        outlcs[instr] = None
-    # -------------------------------------------------------
-
-    for lcdata in lcdatas:
-        instr = assign_value_if_none(lcdata.instr, 'unknown')
-        if outlcs[instr] is None:
-            outlcs[instr] = lcdata
-        else:
-            outlcs[instr] = outlcs[instr].join(lcdata)
+    outlcs = join_lightcurve_objs(lcdatas)
 
     if outfile is not None:
+        instrs = list(outlcs.keys())
         for instr in instrs:
             if len(instrs) == 1:
                 tag = ""
@@ -79,6 +118,62 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
             save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
 
     return outlcs
+
+
+def scrunch_lightcurve_objs(lclist):
+    """Create a single light curve from input light curves.
+
+    Light curves are appended when they cover different times, and summed when
+    they fall in the same time range. This is done regardless of the channel
+    or the instrument.
+
+    Parameters
+    ----------
+    lcfilelist : list of :class:`stingray.lightcurve.Lightcurve`s
+        The list of light curves to scrunch
+
+    Returns
+    -------
+    lc : scrunched light curve
+
+    See Also
+    --------
+        join_lightcurves : Join light curves from different files
+
+    Examples
+    --------
+    >>> lcA = Lightcurve(np.arange(4), np.ones(4))
+    >>> lcA.instr='bu1'
+    >>> lcB = Lightcurve(np.arange(4), [1, 3, 4, 5])
+    >>> lcB.instr='bu2'
+    >>> lcC = scrunch_lightcurve_objs((lcA, lcB))
+    >>> np.all(lcC.time == np.arange(4))
+    True
+    >>> np.all(lcC.counts == [2, 4, 5, 6])
+    True
+    >>> np.all(lcC.instr == 'bu1,bu2')
+    True
+    """
+
+    instrs = [lc.instr for lc in lclist]
+    gti_lists = [lc.gti for lc in lclist]
+    gti = cross_gtis(gti_lists)
+    for lc in lclist:
+        lc.gti = gti
+        if hasattr(lc, '_apply_gtis'): # pragma: no cover
+            # Compatibility with old versions of stingray
+            lc.apply_gtis = lc._apply_gtis
+        lc.apply_gtis()
+    # Determine limits
+
+    lc0 = lclist[0]
+
+    for lc in lclist[1:]:
+        lc0 = lc0 + lc
+
+    lc0.instr = ",".join(instrs)
+
+    return lc0
 
 
 def scrunch_lightcurves(lcfilelist, outfile='out_scrlc' + HEN_FILE_EXTENSION,
@@ -119,18 +214,7 @@ def scrunch_lightcurves(lcfilelist, outfile='out_scrlc' + HEN_FILE_EXTENSION,
     else:
         lcdata = join_lightcurves(lcfilelist, outfile=None)
 
-    instrs = list(lcdata.keys())
-    gti_lists = [lcdata[inst].gti for inst in instrs]
-    gti = cross_gtis(gti_lists)
-    # Determine limits
-
-    lc0 = lcdata[instrs[0]]
-
-    for inst in instrs[1:]:
-        lc0 = lc0 + lcdata[inst]
-
-    lc0.instr = ",".join(instrs)
-
+    lc0 = scrunch_lightcurve_objs(list(lcdata.values()))
     log.info('Saving scrunched light curve to %s' % outfile)
     save_lcurve(lc0, outfile)
 
