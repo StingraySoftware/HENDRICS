@@ -80,9 +80,10 @@ def calc_pds(lcfile, fftlen,
         will have the same root as the input light curve and the '_pds' suffix
     """
     root = hen_root(lcfile)
-    outname = root + '_pds' + HEN_FILE_EXTENSION
+    if outname is None:
+        outname = root + '_pds' + HEN_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
-        print('File exists, and noclobber option used. Skipping')
+        warnings.warn('File exists, and noclobber option used. Skipping')
         return
 
     log.info("Loading file %s..." % lcfile)
@@ -92,7 +93,9 @@ def calc_pds(lcfile, fftlen,
     if bintime > lc.dt:
         lcrebin = np.rint(bintime / lc.dt)
         log.info("Rebinning lcs by a factor %d" % lcrebin)
-        lc = lc.rebin(lcrebin)
+        lc = lc.rebin(bintime)
+        # To fix problem with float128
+        lc.counts = lc.counts.astype(float)
         lc.instr = instr
 
     pds = AveragedPowerspectrum(lc, segment_size=fftlen,
@@ -149,7 +152,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
         Output file name for the cpds. Default: cpds.[nc|p]
     """
     if noclobber and os.path.exists(outname):
-        print('File exists, and noclobber option used. Skipping')
+        warnings.warn('File exists, and noclobber option used. Skipping')
         return
 
     log.info("Loading file %s..." % lcfile1)
@@ -164,21 +167,22 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
 
     lc1, lc2 = sync_gtis(lc1, lc2)
     if lc1.tseg != lc2.tseg:  # compatibility with old versions of stingray
-        lc1.tseg = np.max(gti) - np.min(gti)
-        lc2.tseg = np.max(gti) - np.min(gti)
+        lc1.tseg = np.max(lc1.gti) - np.min(lc1.gti)
+        lc2.tseg = np.max(lc1.gti) - np.min(lc1.gti)
 
     if bintime > dt:
         lcrebin = np.rint(bintime / dt)
         log.info("Rebinning lcs by a factor %d" % lcrebin)
-        lc1 = lc1.rebin(lcrebin)
+        lc1 = lc1.rebin(bintime)
+        # To fix problem with float128
+        lc1.counts = lc1.counts.astype(float)
         lc1.instr = instr1
-        lc2 = lc2.rebin(lcrebin)
+        lc2 = lc2.rebin(bintime)
+        lc2.counts = lc2.counts.astype(float)
         lc2.instr = instr2
 
     if lc1.mjdref != lc2.mjdref:
         lc2 = lc2.change_mjdref(lc1.mjdref)
-
-    ctrate = np.sqrt(lc1.meanrate * lc2.meanrate)
 
     cpds = AveragedCrossspectrum(lc1, lc2, segment_size=fftlen,
                                  norm=normalization.lower())
