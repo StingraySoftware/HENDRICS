@@ -430,6 +430,7 @@ def load_lcurve(fname):
                             mjdref=data['mjdref'], dt=data['dt'],
                             skip_checks=True)
     except TypeError:
+        warnings.warn("Old version of stingray. Please update")
         # Old stingray version
         lcurve = Lightcurve(data['time'], data['counts'],
                             err=data['counts_err'], gti=data['gti'],

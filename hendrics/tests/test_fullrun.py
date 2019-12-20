@@ -177,12 +177,22 @@ class TestFullRun(object):
 
     @remote_data
     @pytest.mark.skipif('not HAS_PINT')
-    def test_save_binary_calibrated_events(self):
+    def test_save_binary_calibrated_events_deorbit(self):
         f = os.path.join(self.datadir,
                          'monol_testA_nustar_fpma_ev_calib' +
                          HEN_FILE_EXTENSION)
         hen.binary.main_presto(
             "{} -b 0.1 -e 3 59 --debug --deorbit-par {}".format(
+                f, self.par).split())
+        assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.dat'))
+        assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.inf'))
+
+    def test_save_binary_calibrated_events(self):
+        f = os.path.join(self.datadir,
+                         'monol_testA_nustar_fpma_ev_calib' +
+                         HEN_FILE_EXTENSION)
+        hen.binary.main_presto(
+            "{} -b 0.1 -e 3 59 --debug --median-fill".format(
                 f, self.par).split())
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.dat'))
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, '.inf'))

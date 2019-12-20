@@ -23,3 +23,31 @@ if not _ASTROPY_SETUP_:
         HEN_FILE_EXTENSION = '.p'
         HAS_NETCDF = False
         pass
+
+    from . import base
+    from . import binary
+    from . import calibrate
+    from . import colors
+    from . import conftest
+    from . import create_gti
+    from . import cython_version
+    from . import efsearch
+    from . import exposure
+    from . import exvar
+    from . import fake
+    from . import fold
+    from . import fspec
+    from . import io
+    from . import lcurve
+    from . import modeling
+    from . import phaseogram
+    from . import phasetag
+    from . import plot
+    from . import read_events
+    from . import rebin
+    from . import save_as_xspec
+    from . import setup_package
+    from . import sum_fspec
+    from . import timelags
+    from . import varenergy
+    from . import version
