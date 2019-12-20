@@ -10,9 +10,9 @@ from stingray.events import EventList
 from stingray.gti import cross_two_gtis
 from .io import load_events
 from .base import common_name
-from .base import hen_root, read_header_key
+from .base import hen_root
 from .io import save_events, load_events_and_gtis
-from .io import HEN_FILE_EXTENSION
+from .io import HEN_FILE_EXTENSION, read_header_key
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,

@@ -103,7 +103,7 @@ def decide_binary_parameters(length, freq_range, porb_range, asini_range,
         'best_T0']
 
     df = 1 / length
-    print('Recommended frequency steps: {}'.format(
+    log.info('Recommended frequency steps: {}'.format(
         int(np.diff(freq_range)[0] // df + 1)))
     while count < NMAX:
         # In any case, only the first loop deletes the file
@@ -209,18 +209,69 @@ def calculate_shifts(
     shifts = np.linspace(-1., 1., nprof) ** order
     return nshift * shifts
 
+@njit()
+def mod(num, n2):
+    return np.mod(num, n2)
+
 
 @njit()
-def shift_and_select(repeated_profiles, lshift, qshift, newprof):
-    nprof = len(repeated_profiles)
-    nbin = len(newprof[0])
-    lshifts = calculate_shifts(nprof, nbin, lshift, 1)
-    qshifts = calculate_shifts(nprof, nbin, qshift, 2)
+def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift, quadbaseshift):
+    nprof = repeated_profiles.shape[0]
+    nbin = splat_prof.size
+    twonbin = nbin * 2
+    splat_prof[:] = 0.
     for k in range(nprof):
-        total_shift = int(np.rint(lshifts[k] + qshifts[k])) % nbin
-        newprof[k, :] = repeated_profiles[k, nbin -
-                                          total_shift: 2 * nbin - total_shift]
-    return newprof
+        total_shift = base_shift[k] * lshift + quadbaseshift[k] * qshift
+        total_shift = mod(np.rint(total_shift), nbin)
+        total_shift_int = np.int(total_shift)
+
+        splat_prof[:] += \
+                repeated_profiles[k, nbin - total_shift_int:twonbin - total_shift_int]
+
+    return splat_prof
+
+
+@njit()
+def z_n_fast_cached(norm, cached_sin, cached_cos, n=2):
+    '''Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
+
+    Here in a fast implementation based on numba.
+    Assumes that nbin != 0 and norm is an array.
+
+    Parameters
+    ----------
+    norm : array of floats
+        The pulse profile
+    n : int, default 2
+        The ``n`` in $Z^2_n$.
+
+    Returns
+    -------
+    z2_n : float
+        The Z^2_n statistics of the events.
+
+    Examples
+    --------
+    >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
+    >>> norm = np.sin(phase) + 1
+    >>> cached_sin = np.sin(np.concatenate((phase, phase, phase, phase)))
+    >>> cached_cos = np.cos(np.concatenate((phase, phase, phase, phase)))
+    >>> np.isclose(z_n_fast_cached(norm, cached_sin, cached_cos, n=4), 50)
+    True
+    >>> np.isclose(z_n_fast_cached(norm, cached_sin, cached_cos, n=2), 50)
+    True
+    '''
+
+    total_norm = np.sum(norm)
+
+    result = 0
+    N = norm.size
+
+    for k in range(1, n + 1):
+        result += np.sum(cached_cos[:N*k:k] * norm) ** 2 + \
+            np.sum(cached_sin[:N*k:k] * norm) ** 2
+
+    return 2 / total_norm * result
 
 
 @njit(fastmath=True)
@@ -556,19 +607,29 @@ def plot_transient_search(results, gif_name=None):
 @njit(parallel=True, nogil=True)
 def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
+
+    cached_cos = np.zeros(n * nbin)
+    cached_sin = np.zeros(n * nbin)
+    for i in range(n):
+        cached_cos[i * nbin: (i + 1) * nbin] = np.cos(twopiphases)
+        cached_sin[i * nbin: (i + 1) * nbin] = np.sin(twopiphases)
+
     stats = np.zeros_like(L)
     repeated_profiles = np.hstack((profiles, profiles, profiles))
 
-    for i in prange(len(linbinshifts)):
+    nprof = repeated_profiles.shape[0]
+
+    base_shift = np.linspace(-1, 1, nprof)
+    quad_base_shift = base_shift ** 2
+
+    for i in prange(linbinshifts.size):
         # This zeros needs to be here, not outside the parallel loop, or
         # the threads will try to write it all at the same time
-        newprof = np.zeros(profiles.shape)
-        for j in range(len(quabinshifts)):
-            newprof = shift_and_select(repeated_profiles, L[i, j], Q[i, j],
-                                       newprof)
-            splat_prof = np.sum(newprof, axis=0)
-            local_stat = z_n_fast(twopiphases, norm=splat_prof, n=n)
-            # local_stat = stat(splat_prof)
+        splat_prof = np.zeros(nbin)
+        for j in range(quabinshifts.size):
+            splat_prof = shift_and_sum(repeated_profiles, L[i, j], Q[i, j],
+                                       splat_prof, base_shift, quad_base_shift)
+            local_stat = z_n_fast_cached(splat_prof, cached_cos, cached_sin, n=n)
             stats[i, j] = local_stat
 
     return stats
@@ -759,10 +820,10 @@ def folding_search(events, fmin, fmax, step=None,
     fdotepsilon = 1e-2 * fdotstep
     trial_fdots = np.arange(fdotmin, fdotmax + fdotepsilon, fdotstep)
     if len(trial_fdots) > 1:
-        print("Searching {} frequencies and {} fdots".format(len(trial_freqs),
-                                                             len(trial_fdots)))
+        log.info("Searching {} frequencies and {} fdots".format(len(trial_freqs),
+                                                                len(trial_fdots)))
     else:
-        print("Searching {} frequencies".format(len(trial_freqs)))
+        log.info("Searching {} frequencies".format(len(trial_freqs)))
 
     results = func(times, trial_freqs, fdots=trial_fdots,
                    expocorr=expocorr, gti=gti, **kwargs)

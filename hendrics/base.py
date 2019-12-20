@@ -7,6 +7,7 @@ import os
 import warnings
 from functools import wraps
 from collections.abc import Iterable
+from pathlib import Path
 
 import numpy as np
 from astropy import log
@@ -104,6 +105,14 @@ def _assign_value_if_none(value, default):
 
 
 def _look_for_array_in_array(array1, array2):
+    """
+    Examples
+    --------
+    >>> _look_for_array_in_array([1, 2], [2, 3, 4])
+    2
+    >>> _look_for_array_in_array([1, 2], [3, 4, 5]) is None
+    True
+    """
     for a1 in array1:
         if a1 in array2:
             return a1
@@ -116,11 +125,28 @@ def is_string(s):
 
 
 def _order_list_of_arrays(data, order):
+    """
+    Examples
+    --------
+    >>> order = [1, 2, 0]
+    >>> new = _order_list_of_arrays({'a': [4, 5, 6], 'b':[7, 8, 9]}, order)
+    >>> np.all(new['a'] == [5, 6, 4])
+    True
+    >>> np.all(new['b'] == [8, 9, 7])
+    True
+    >>> new = _order_list_of_arrays([[4, 5, 6], [7, 8, 9]], order)
+    >>> np.all(new[0] == [5, 6, 4])
+    True
+    >>> np.all(new[1] == [8, 9, 7])
+    True
+    >>> _order_list_of_arrays(2, order) is None
+    True
+    """
     if hasattr(data, 'items'):
-        data = dict((i[0], i[1][order])
+        data = dict((i[0], np.asarray(i[1])[order])
                     for i in data.items())
     elif hasattr(data, 'index'):
-        data = [i[order] for i in data]
+        data = [np.asarray(i)[order] for i in data]
     else:
         data = None
     return data
@@ -134,62 +160,6 @@ class _empty():
 def mkdir_p(path):
     """Safe mkdir function."""
     return os.makedirs(path, exist_ok=True)
-
-
-def read_header_key(fits_file, key, hdu=1):
-    """Read the header key key from HDU hdu of the file fits_file.
-
-    Parameters
-    ----------
-    fits_file: str
-    key: str
-        The keyword to be read
-
-    Other Parameters
-    ----------------
-    hdu : int
-    """
-    from astropy.io import fits as pf
-
-    hdulist = pf.open(fits_file)
-    try:
-        value = hdulist[hdu].header[key]
-    except KeyError:  # pragma: no cover
-        value = ''
-    hdulist.close()
-    return value
-
-
-def ref_mjd(fits_file, hdu=1):
-    """Read MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header.
-
-    Parameters
-    ----------
-    fits_file : str
-
-    Returns
-    -------
-    mjdref : numpy.longdouble
-        the reference MJD
-
-    Other Parameters
-    ----------------
-    hdu : int
-    """
-    if isinstance(fits_file, Iterable) and\
-            not is_string(fits_file):
-        fits_file = fits_file[0]
-        log.info("opening %s", fits_file)
-
-    try:
-        ref_mjd_int = np.long(read_header_key(fits_file, 'MJDREFI', hdu=hdu))
-        ref_mjd_float = \
-            np.longdouble(read_header_key(fits_file, 'MJDREFF', hdu=hdu))
-        ref_mjd_val = ref_mjd_int + ref_mjd_float
-    except KeyError:
-        ref_mjd_val = \
-            np.longdouble(read_header_key(fits_file, 'MJDREF', hdu=hdu))
-    return ref_mjd_val
 
 
 def common_name(str1, str2, default='common'):
@@ -211,6 +181,15 @@ def common_name(str1, str2, default='common'):
     ----------------
     default : str
         The string to return if common_str is empty
+
+    Examples
+    --------
+    >>> common_name('strAfpma', 'strBfpmb')
+    'strfpm'
+    >>> common_name('strAfpma', 'strBfpmba')
+    'common'
+    >>> common_name('asdfg', 'qwerr')
+    'common'
     """
     if not len(str1) == len(str2):
         return default
@@ -226,7 +205,7 @@ def common_name(str1, str2, default='common'):
     common_str = common_str.lstrip('_').lstrip('-')
     if common_str == '':
         common_str = default
-    log.debug('common_name: %s %s -> %s', str1, str2, common_str)
+    # log.debug('common_name: %s %s -> %s', str1, str2, common_str)
     return common_str
 
 
@@ -250,8 +229,15 @@ def optimal_bin_time(fftlen, tbin):
     Given an FFT length and a proposed bin time, return a bin time
     slightly shorter than the original, that will produce a power-of-two number
     of FFT bins.
+
+    Examples
+    --------
+    >>> optimal_bin_time(512, 1.1)
+    1.0
     """
-    return fftlen / (2 ** np.ceil(np.log2(fftlen / tbin)))
+    current_nbin = fftlen / tbin
+    new_nbin = 2 ** np.ceil(np.log2(current_nbin))
+    return fftlen / new_nbin
 
 
 def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
@@ -333,6 +319,8 @@ def deorbit_events(events, parameter_file=None):
     """
     events = copy.deepcopy(events)
     if parameter_file is None:
+        warnings.warn("No parameter file specified for deorbit. Returning"
+                      " unaltered event list")
         return events
     if not os.path.exists(parameter_file):
         raise FileNotFoundError(
@@ -538,3 +526,16 @@ def histnd_numba_seq(tracks, bins, ranges):
     slice_int = np.zeros(len(bins), dtype=np.uint64)
 
     return _histnd_numba_seq(H, tracks, bins, ranges, slice_int)
+
+
+def touch(fname):
+    """Mimick the same shell command.
+
+    Examples
+    --------
+    >>> touch('bububu')
+    >>> os.path.exists('bububu')
+    True
+    >>> os.unlink('bububu')
+    """
+    Path(fname).touch()

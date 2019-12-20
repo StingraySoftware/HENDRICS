@@ -180,12 +180,12 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
             toa_list.table['clkcorr'] = 0
             toa_list.write_TOA_file(timfile, name=label, format='Tempo2')
 
-        print('TOA(MJD)  TOAerr(us)')
+        log.info('TOA(MJD)  TOAerr(us)')
     else:
-        print('TOA(MET)  TOAerr(us)')
+        log.info('TOA(MET)  TOAerr(us)')
 
     for t, e in zip(toas, toa_errs):
-        print(t, e)
+        log.info(t, e)
 
     return toas, toa_errs
 
@@ -279,8 +279,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
     startidx = 0
     if baseline:
         guess_pars = [np.mean(profile)] + guess_pars
-        if debug:
-            print(guess_pars)
+        log.debug(guess_pars)
         startidx = 1
     chisq_save = 1e32
     fit_pars_save = guess_pars

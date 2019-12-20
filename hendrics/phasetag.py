@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.io.fits as pf
+from astropy import log
 from astropy.logger import AstropyUserWarning
 from stingray.io import load_events_and_gtis, ref_mjd
 from stingray.pulse.pulsar import pulse_phase, phase_exposure
@@ -77,7 +78,7 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
 
     # ------- now apply period derivatives ------
 
-    print("Calculating phases...", end='')
+    log.info("Calculating phases...")
     ref_phase = 0
     ref_time = 0
 

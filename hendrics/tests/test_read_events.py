@@ -5,7 +5,7 @@ import numpy as np
 import os
 from hendrics.read_events import treat_event_file
 from hendrics.io import HEN_FILE_EXTENSION, load_data
-from hendrics.base import ref_mjd
+from hendrics.io import ref_mjd
 import hendrics as hen
 
 
