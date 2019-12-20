@@ -136,6 +136,54 @@ def high_precision_keyword_read(hdr, keyword):
         return None
 
 
+def read_header_key(fits_file, key, hdu=1):
+    """Read the header key ``key`` from HDU ``hdu`` of a fits file.
+
+    Parameters
+    ----------
+    fits_file: str
+    key: str
+        The keyword to be read
+
+    Other Parameters
+    ----------------
+    hdu : int
+    """
+    from astropy.io import fits as pf
+    hdulist = pf.open(fits_file)
+    try:
+        value = hdulist[hdu].header[key]
+    except KeyError:  # pragma: no cover
+        value = ''
+    hdulist.close()
+    return value
+
+
+def ref_mjd(fits_file, hdu=1):
+    """Read MJDREFF+ MJDREFI or, if failed, MJDREF, from the FITS header.
+
+    Parameters
+    ----------
+    fits_file : str
+
+    Returns
+    -------
+    mjdref : numpy.longdouble
+        the reference MJD
+
+    Other Parameters
+    ----------------
+    hdu : int
+    """
+    from astropy.io import fits as pf
+    if isinstance(fits_file, Iterable) and\
+            not is_string(fits_file):
+        fits_file = fits_file[0]
+        log.info("opening %s", fits_file)
+    with pf.open(fits_file) as hdul:
+        return high_precision_keyword_read(hdul[hdu].header, 'MJDREF')
+
+
 def get_file_extension(fname):
     """Get the file extension."""
     return os.path.splitext(fname)[1]
