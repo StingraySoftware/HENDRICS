@@ -7,6 +7,7 @@ import os
 import warnings
 from functools import wraps
 from collections.abc import Iterable
+from pathlib import Path
 
 import numpy as np
 from astropy import log
@@ -525,3 +526,16 @@ def histnd_numba_seq(tracks, bins, ranges):
     slice_int = np.zeros(len(bins), dtype=np.uint64)
 
     return _histnd_numba_seq(H, tracks, bins, ranges, slice_int)
+
+
+def touch(fname):
+    """Mimick the same shell command.
+
+    Examples
+    --------
+    >>> touch('bububu')
+    >>> os.path.exists('bububu')
+    True
+    >>> os.unlink('bububu')
+    """
+    Path(fname).touch()
