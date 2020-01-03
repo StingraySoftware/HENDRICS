@@ -80,7 +80,7 @@ def check_phase_error_after_casting_to_double(tref, f, fdot=0):
     """Check the maximum error expected in the phase when casting to double."""
     times = np.array(np.random.normal(tref, 0.1, 1000), dtype=np.longdouble)
     times_dbl = times.astype(np.double)
-    phase = times * f + 0.5 * times * fdot ** 2
+    phase = times * f + 0.5 * times ** 2 * fdot
     phase_dbl = times_dbl * np.double(f) + \
         0.5 * times_dbl ** 2 * np.double(fdot)
     return np.max(np.abs(phase_dbl - phase))
@@ -658,7 +658,6 @@ def search_with_qffa_step(
         n=1,
         search_fdot=True):
     """Single step of quasi-fast folding algorithm."""
-
     # Cast to standard double, or the fast_histogram.histogram2d will fail
     # horribly.
 
@@ -742,9 +741,9 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     times -= meantime
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
-    log.info(
-        f"Maximum error on the phase expected when casting to double: {maxerr}")
     if maxerr > 1 / nbin / 10:
+        warnings.warn(
+            f"Maximum error on the phase expected when casting to double: {maxerr}")
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
             "Please use shorter light curves.",

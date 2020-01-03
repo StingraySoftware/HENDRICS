@@ -110,7 +110,7 @@ def calc_pds(lcfile, fftlen,
     pds.mjdref = lc.mjdref
 
     log.info('Saving PDS to %s' % outname)
-    save_pds(pds, outname)
+    save_pds(pds, outname, save_all=False)
 
 
 def calc_cpds(lcfile1, lcfile2, fftlen,
@@ -199,7 +199,7 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     cpds.lag_err = lags
 
     log.info('Saving CPDS to %s' % outname)
-    save_pds(cpds, outname)
+    save_pds(cpds, outname, save_all=False)
 
 
 def calc_fspec(files, fftlen,
@@ -259,6 +259,7 @@ def calc_fspec(files, fftlen,
     """
 
     log.info('Using %s normalization' % normalization)
+    log.info('Using %s processors' % nproc)
 
     if do_calc_pds:
         wrapped_file_dicts = []
@@ -433,6 +434,7 @@ def main(args=None):
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
+    log.info("Starting")
 
     if args.debug:
         args.loglevel = 'DEBUG'
