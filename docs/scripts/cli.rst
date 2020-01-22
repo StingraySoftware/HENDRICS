@@ -228,10 +228,10 @@ HENefsearch
 
     usage: HENefsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
                        [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
-                       [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
-                       [--oversample OVERSAMPLE] [--fast] [--transient]
-                       [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
-                       [--fit-candidates] [--curve CURVE]
+                       [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
+                       [--step STEP] [--oversample OVERSAMPLE] [--fast]
+                       [--transient] [--expocorr] [--find-candidates]
+                       [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
                        [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                        [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
@@ -250,6 +250,7 @@ HENefsearch
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
+      --npfact NPFACT       Size of search parameter space
       -n NBIN, --nbin NBIN  Number of phase bins of the profile
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
@@ -860,10 +861,10 @@ HENzsearch
 
     usage: HENzsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
                       [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
-                      [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
-                      [--oversample OVERSAMPLE] [--fast] [--transient]
-                      [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
-                      [--fit-candidates] [--curve CURVE]
+                      [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
+                      [--step STEP] [--oversample OVERSAMPLE] [--fast]
+                      [--transient] [--expocorr] [--find-candidates]
+                      [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
                       [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                       [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
@@ -882,6 +883,7 @@ HENzsearch
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
+      --npfact NPFACT       Size of search parameter space
       -n NBIN, --nbin NBIN  Number of phase bins of the profile
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
