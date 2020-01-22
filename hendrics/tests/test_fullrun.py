@@ -514,7 +514,7 @@ class TestFullRun(object):
                           'monol_testA_E3-50_lc') + HEN_FILE_EXTENSION
         hen.io.main([lc])
         command = \
-            '{0} -f 128 -k PDS --norm leahy -b {1}'.format(lc, 1)
+            '{0} -f 128 -k PDS --save-all --norm leahy -b {1}'.format(lc, 1)
         hen.fspec.main(command.split())
 
         assert os.path.exists(
@@ -527,7 +527,7 @@ class TestFullRun(object):
                           'monol_testA_E3-50_lc') + HEN_FILE_EXTENSION
         hen.io.main([lc])
         command = \
-            '{0} -f 128 -k PDS --norm leahy'.format(lc)
+            '{0} -f 128 -k PDS --save-all --norm leahy'.format(lc)
         hen.fspec.main(command.split())
 
         assert os.path.exists(
@@ -537,7 +537,8 @@ class TestFullRun(object):
     def test_pds(self):
         """Test PDS production."""
         command = \
-            '{0} {1} -f 128 --save-dyn -k PDS --norm frac --nproc 2 '.format(
+            '{0} {1} -f 128 --save-all --save-dyn -k PDS ' \
+            '--norm frac --nproc 2 '.format(
                 os.path.join(self.datadir,
                              'monol_testA_E3-50_lc') + HEN_FILE_EXTENSION,
                 os.path.join(self.datadir,
@@ -556,7 +557,7 @@ class TestFullRun(object):
         lcurve_ftools = os.path.join(self.datadir,
                                      'lcurve_ftools_lc' +
                                      HEN_FILE_EXTENSION)
-        command = '{0} -f 128'.format(lcurve_ftools)
+        command = '{0} --save-all -f 128'.format(lcurve_ftools)
         hen.fspec.main(command.split())
 
     def test_pds_txt(self):
@@ -564,13 +565,14 @@ class TestFullRun(object):
         lcurve_txt = os.path.join(self.datadir,
                                   'lcurve_txt_lc' +
                                   HEN_FILE_EXTENSION)
-        command = '{0} -f 128'.format(lcurve_txt)
+        command = '{0} --save-all -f 128'.format(lcurve_txt)
         hen.fspec.main(command.split())
 
     def test_cpds_rms_norm(self):
         """Test CPDS production."""
         command = \
-            '{0} {1} -f 128 --save-dyn -k CPDS --norm rms -o {2}'.format(
+            '{0} {1} -f 128 --save-dyn -k CPDS --save-all ' \
+            '--norm rms -o {2}'.format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
                 HEN_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
@@ -597,7 +599,8 @@ class TestFullRun(object):
     def test_cpds_dtbig(self):
         """Test CPDS production."""
         command = \
-            '{0} {1} -f 128 --save-dyn -k CPDS --norm frac -o {2}'.format(
+            '{0} {1} -f 128 --save-dyn -k CPDS --norm --save-all ' \
+            'frac -o {2}'.format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
                 HEN_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
@@ -609,7 +612,8 @@ class TestFullRun(object):
     def test_cpds(self):
         """Test CPDS production."""
         command = \
-            '{0} {1} -f 128 --save-dyn -k CPDS --norm frac -o {2}'.format(
+            '{0} {1} -f 128 --save-dyn -k CPDS --save-all ' \
+            '--norm frac -o {2}'.format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
                 HEN_FILE_EXTENSION,
                 os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
@@ -620,7 +624,7 @@ class TestFullRun(object):
     def test_cpds_2cpus(self):
         """Test CPDS production."""
         command = \
-            ('{0} {1} -f 128 --save-dyn -k '
+            ('{0} {1} -f 128 --save-dyn --save-all -k '
              'CPDS --norm frac -o {2} --nproc 2').format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
                 HEN_FILE_EXTENSION,
