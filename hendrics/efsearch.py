@@ -1073,7 +1073,7 @@ def _common_main(args, func):
         if args.emin is not None or args.emax is not None:
             emin = assign_value_if_none(args.emin, '**')
             emax = assign_value_if_none(args.emax, '**')
-            out_fname += f'_{emin}-{emax}keV'
+            out_fname += f'_{emin:g}-{emax:g}keV'
 
         save_folding(efperiodogram,
                      out_fname + HEN_FILE_EXTENSION)
