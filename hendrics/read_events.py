@@ -175,7 +175,7 @@ def main_join(args=None):
                         default=None)
     args = parser.parse_args(args)
 
-    join_eventlists(args.file1, args.file2, new_event_file=args.output)
+    return join_eventlists(args.file1, args.file2, new_event_file=args.output)
 
 
 def main(args=None):

@@ -883,9 +883,9 @@ def _common_parser(args=None):
                         help="Minimum frequency to fold")
     parser.add_argument("-F", "--fmax", type=float, required=True,
                         help="Maximum frequency to fold")
-    parser.add_argument("--emin", default=None, type=int,
+    parser.add_argument("--emin", default=None, type=float,
                         help="Minimum energy (or PI if uncalibrated) to plot")
-    parser.add_argument("--emax", default=None, type=int,
+    parser.add_argument("--emax", default=None, type=float,
                         help="Maximum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--fdotmin", type=float, required=False,
                         help="Minimum fdot to fold", default=0)
@@ -893,6 +893,8 @@ def _common_parser(args=None):
                         help="Maximum fdot to fold", default=0)
     parser.add_argument("--dynstep", type=int, required=False,
                         help="Dynamical EF step", default=128)
+    parser.add_argument("--npfact", type=int, required=False,
+                        help="Size of search parameter space", default=2)
     parser.add_argument('-n', "--nbin", default=128, type=int,
                         help="Number of phase bins of the profile")
     parser.add_argument("--segment-size", default=1e32, type=float,
@@ -1012,7 +1014,7 @@ def _common_main(args, func):
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
                                  nbin=args.nbin, n=n,
-                                 nprof=None, npfact=2, oversample=oversample)
+                                 nprof=None, npfact=args.npfact, oversample=oversample)
             ref_time = (events.time[-1] + events.time[0]) / 2
 
         length = events.time.max() - events.time.min()
