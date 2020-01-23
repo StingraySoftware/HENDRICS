@@ -671,10 +671,10 @@ def search_with_qffa_step(
 
     # dn = max(1, int(nbin / oversample))
     linbinshifts = np.linspace(-nbin * npfact, nbin * npfact,
-                               oversample * npfact)
+                               int(oversample * npfact))
     if search_fdot:
         quabinshifts = np.linspace(-nbin * npfact, nbin * npfact,
-                                   oversample * npfact)
+                                   int(oversample * npfact))
     else:
         quabinshifts = [0]
 

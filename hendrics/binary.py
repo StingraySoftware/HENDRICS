@@ -138,7 +138,7 @@ def save_events_to_binary(events, filename, bin_time, tstart=None,
     for i in np.arange(0, nbin, MAXBIN):
         t0 = i * bin_time + tstart
 
-        lastbin = np.min([MAXBIN, (nbin - i) // 4 * 4])
+        lastbin = int(np.min([MAXBIN, (nbin - i) // 4 * 4]))
         t1 = t0 + lastbin * bin_time
 
         good = (events.time >= t0) & (events.time < t1)
