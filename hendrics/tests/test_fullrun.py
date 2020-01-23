@@ -15,6 +15,9 @@ from astropy.logger import AstropyUserWarning
 from astropy.tests.helper import remote_data
 from hendrics.tests import _dummy_par
 from hendrics.fold import HAS_PINT
+from hendrics import fake, fspec, base, binary, calibrate, colors, create_gti,\
+    exposure, exvar, io, lcurve, modeling, plot, read_events, rebin, \
+    save_as_xspec, timelags, varenergy, sum_fspec
 
 try:
     FileNotFoundError
@@ -423,10 +426,13 @@ class TestFullRun(object):
                            'monol_test_scrunchlc' + HEN_FILE_EXTENSION)
         command = '{0} {1} -o {2}'.format(a_in, b_in, out)
 
-        hen.lcurve.scrunch_main(command.split())
         a_lc = hen.io.load_lcurve(a_in)
         b_lc = hen.io.load_lcurve(b_in)
+        a_lc.apply_gtis()
+        b_lc.apply_gtis()
+        hen.lcurve.scrunch_main(command.split())
         out_lc = hen.io.load_lcurve(out)
+        out_lc.apply_gtis()
         assert np.all(out_lc.counts == a_lc.counts + b_lc.counts)
         gti_to_test = hen.io.load_events(self.first_event_file).gti
         assert np.allclose(gti_to_test, out_lc.gti)
@@ -599,7 +605,7 @@ class TestFullRun(object):
     def test_cpds_dtbig(self):
         """Test CPDS production."""
         command = \
-            '{0} {1} -f 128 --save-dyn -k CPDS --norm --save-all ' \
+            '{0} {1} -f 128 --save-dyn -k CPDS --save-all --norm ' \
             'frac -o {2}'.format(
                 os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
                 HEN_FILE_EXTENSION,

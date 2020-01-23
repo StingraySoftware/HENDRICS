@@ -437,7 +437,7 @@ def main(args=None):
     parser.add_argument("--ignore-instr",
                         help="Ignore instrument names in channels",
                         default=False, action='store_true')
-    parser.add_argument("--save_all",
+    parser.add_argument("--save-all",
                         help="Save all information contained in spectra,"
                              " including single pdss and light curves.",
                         default=False, action='store_true')
