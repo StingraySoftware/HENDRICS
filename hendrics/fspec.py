@@ -49,7 +49,8 @@ def calc_pds(lcfile, fftlen,
              normalization='leahy',
              back_ctrate=0.,
              noclobber=False,
-             outname=None):
+             outname=None,
+             save_all=True):
     """Calculate the PDS from an input light curve file.
 
     Parameters
@@ -110,7 +111,8 @@ def calc_pds(lcfile, fftlen,
     pds.mjdref = lc.mjdref
 
     log.info('Saving PDS to %s' % outname)
-    save_pds(pds, outname)
+    save_pds(pds, outname, save_all=save_all)
+    return outname
 
 
 def calc_cpds(lcfile1, lcfile2, fftlen,
@@ -120,7 +122,8 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
               outname='cpds' + HEN_FILE_EXTENSION,
               normalization='leahy',
               back_ctrate=0.,
-              noclobber=False):
+              noclobber=False,
+              save_all=True):
     """Calculate the CPDS from a pair of input light curve files.
 
     Parameters
@@ -199,7 +202,8 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     cpds.lag_err = lags
 
     log.info('Saving CPDS to %s' % outname)
-    save_pds(cpds, outname)
+    save_pds(cpds, outname, save_all=save_all)
+    return outname
 
 
 def calc_fspec(files, fftlen,
@@ -215,7 +219,8 @@ def calc_fspec(files, fftlen,
                nproc=1,
                back_ctrate=0.,
                noclobber=False,
-               ignore_instr=False):
+               ignore_instr=False,
+               save_all=True):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
     Parameters
@@ -259,6 +264,7 @@ def calc_fspec(files, fftlen,
     """
 
     log.info('Using %s normalization' % normalization)
+    log.info('Using %s processors' % nproc)
 
     if do_calc_pds:
         wrapped_file_dicts = []
@@ -269,7 +275,8 @@ def calc_fspec(files, fftlen,
                    "pdsrebin": pdsrebin,
                    "normalization": normalization.lower(),
                    "back_ctrate": back_ctrate,
-                   "noclobber": noclobber}
+                   "noclobber": noclobber,
+                   "save_all": save_all}
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
 
@@ -308,7 +315,8 @@ def calc_fspec(files, fftlen,
                "pdsrebin": pdsrebin,
                "normalization": normalization.lower(),
                "back_ctrate": back_ctrate,
-               "noclobber": noclobber}
+               "noclobber": noclobber,
+               "save_all": save_all}
 
     funcargs = []
 
@@ -429,10 +437,15 @@ def main(args=None):
     parser.add_argument("--ignore-instr",
                         help="Ignore instrument names in channels",
                         default=False, action='store_true')
+    parser.add_argument("--save-all",
+                        help="Save all information contained in spectra,"
+                             " including single pdss and light curves.",
+                        default=False, action='store_true')
     _add_default_args(parser, ['nproc', 'loglevel', 'debug'])
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
+    log.info("Starting")
 
     if args.debug:
         args.loglevel = 'DEBUG'
@@ -479,4 +492,5 @@ def main(args=None):
                    nproc=args.nproc,
                    back_ctrate=args.back,
                    noclobber=args.noclobber,
-                   ignore_instr=args.ignore_instr)
+                   ignore_instr=args.ignore_instr,
+                   save_all=args.save_all)

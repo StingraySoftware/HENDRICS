@@ -310,7 +310,10 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                  output_data_file=None):
     from .fold import z2_n_detection_level
     from .io import find_file_in_allowed_paths
-    from stingray.pulse.pulsar import fold_detection_level
+    try:
+        from stingray.pulse.pulsar import fold_detection_level
+    except:
+        from stingray.stats import fold_detection_level
     from matplotlib import gridspec
     import matplotlib.pyplot as plt
 

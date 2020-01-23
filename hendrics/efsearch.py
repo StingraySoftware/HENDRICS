@@ -80,7 +80,7 @@ def check_phase_error_after_casting_to_double(tref, f, fdot=0):
     """Check the maximum error expected in the phase when casting to double."""
     times = np.array(np.random.normal(tref, 0.1, 1000), dtype=np.longdouble)
     times_dbl = times.astype(np.double)
-    phase = times * f + 0.5 * times * fdot ** 2
+    phase = times * f + 0.5 * times ** 2 * fdot
     phase_dbl = times_dbl * np.double(f) + \
         0.5 * times_dbl ** 2 * np.double(fdot)
     return np.max(np.abs(phase_dbl - phase))
@@ -658,7 +658,6 @@ def search_with_qffa_step(
         n=1,
         search_fdot=True):
     """Single step of quasi-fast folding algorithm."""
-
     # Cast to standard double, or the fast_histogram.histogram2d will fail
     # horribly.
 
@@ -672,10 +671,10 @@ def search_with_qffa_step(
 
     # dn = max(1, int(nbin / oversample))
     linbinshifts = np.linspace(-nbin * npfact, nbin * npfact,
-                               oversample * npfact)
+                               int(oversample * npfact))
     if search_fdot:
         quabinshifts = np.linspace(-nbin * npfact, nbin * npfact,
-                                   oversample * npfact)
+                                   int(oversample * npfact))
     else:
         quabinshifts = [0]
 
@@ -742,9 +741,9 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     times -= meantime
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
-    log.info(
-        f"Maximum error on the phase expected when casting to double: {maxerr}")
     if maxerr > 1 / nbin / 10:
+        warnings.warn(
+            f"Maximum error on the phase expected when casting to double: {maxerr}")
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
             "Please use shorter light curves.",
@@ -884,9 +883,9 @@ def _common_parser(args=None):
                         help="Minimum frequency to fold")
     parser.add_argument("-F", "--fmax", type=float, required=True,
                         help="Maximum frequency to fold")
-    parser.add_argument("--emin", default=None, type=int,
+    parser.add_argument("--emin", default=None, type=float,
                         help="Minimum energy (or PI if uncalibrated) to plot")
-    parser.add_argument("--emax", default=None, type=int,
+    parser.add_argument("--emax", default=None, type=float,
                         help="Maximum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--fdotmin", type=float, required=False,
                         help="Minimum fdot to fold", default=0)
@@ -894,6 +893,8 @@ def _common_parser(args=None):
                         help="Maximum fdot to fold", default=0)
     parser.add_argument("--dynstep", type=int, required=False,
                         help="Dynamical EF step", default=128)
+    parser.add_argument("--npfact", type=int, required=False,
+                        help="Size of search parameter space", default=2)
     parser.add_argument('-n', "--nbin", default=128, type=int,
                         help="Number of phase bins of the profile")
     parser.add_argument("--segment-size", default=1e32, type=float,
@@ -1013,7 +1014,7 @@ def _common_main(args, func):
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
                                  nbin=args.nbin, n=n,
-                                 nprof=None, npfact=2, oversample=oversample)
+                                 nprof=None, npfact=args.npfact, oversample=oversample)
             ref_time = (events.time[-1] + events.time[0]) / 2
 
         length = events.time.max() - events.time.min()
@@ -1072,7 +1073,7 @@ def _common_main(args, func):
         if args.emin is not None or args.emax is not None:
             emin = assign_value_if_none(args.emin, '**')
             emax = assign_value_if_none(args.emax, '**')
-            out_fname += f'_{emin}-{emax}keV'
+            out_fname += f'_{emin:g}-{emax:g}keV'
 
         save_folding(efperiodogram,
                      out_fname + HEN_FILE_EXTENSION)

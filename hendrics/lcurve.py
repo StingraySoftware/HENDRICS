@@ -14,6 +14,7 @@ from .base import _look_for_array_in_array, hen_root, mkdir_p, \
     interpret_bintime
 from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
+from .base import deorbit_events
 
 
 def join_lightcurve_objs(lclist):
@@ -281,7 +282,8 @@ def lcurve_from_events(f, safe_interval=0,
                        bintime=1.,
                        outdir=None,
                        outfile=None,
-                       noclobber=False):
+                       noclobber=False,
+                       deorbit_par=None):
     """Bin an event list in a light curve.
 
     Parameters
@@ -327,6 +329,11 @@ def lcurve_from_events(f, safe_interval=0,
     evdata = load_events(f)
     log.info("Done.")
 
+    deorbit_tag = ""
+    if deorbit_par is not None:
+        evdata = deorbit_events(evdata, deorbit_par)
+        deorbit_tag = '_deorb'
+
     bintime = np.longdouble(interpret_bintime(bintime))
 
     tag = ''
@@ -368,10 +375,10 @@ def lcurve_from_events(f, safe_interval=0,
         pass
 
     if tag != "":
-        save_lcurve(total_lc, hen_root(f) + '_std_lc' + HEN_FILE_EXTENSION)
+        save_lcurve(total_lc, hen_root(f) + '_std_lc' + deorbit_tag + HEN_FILE_EXTENSION)
 
     # Assign default value if None
-    outfile = assign_value_if_none(outfile, hen_root(f) + tag + '_lc')
+    outfile = assign_value_if_none(outfile, hen_root(f) + tag + deorbit_tag + '_lc')
 
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
@@ -755,7 +762,9 @@ def _execute_lcurve(args):
                    "min_length": args.minlen,
                    "gti_split": args.gti_split,
                    "ignore_gtis": args.ignore_gtis,
-                   "bintime": bintime, "outdir": args.outdir}
+                   "bintime": bintime,
+                   "outdir": args.outdir,
+                   "deorbit_par": args.deorbit_par}
 
     arglist = [[f, argdict.copy()] for f in args.files]
     na = len(arglist)
@@ -835,7 +844,7 @@ def main(args=None):
     parser.add_argument("--txt-input",
                         help="Input files are light curves in txt format",
                         default=False, action='store_true')
-    parser = _add_default_args(parser, ['output',
+    parser = _add_default_args(parser, ['deorbit', 'output',
                                         'loglevel', 'debug', 'nproc'])
 
     args = check_negative_numbers_in_args(args)
