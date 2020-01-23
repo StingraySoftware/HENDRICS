@@ -484,6 +484,10 @@ def load_lcurve(fname):
                             err_dist=data['err_dist'],
                             mjdref=data['mjdref'], dt=data['dt'])
 
+    if hasattr(lcurve, '_apply_gtis'): # pragma: no cover
+        # Compatibility with old versions of stingray
+        lcurve.apply_gtis = lcurve._apply_gtis
+
     if 'instr' in list(data.keys()):
         lcurve.instr = data["instr"]
     if 'expo' in list(data.keys()):
