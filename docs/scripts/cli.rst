@@ -426,7 +426,7 @@ HENfspec
 
     usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
                     [--norm NORM] [--noclobber] [-o OUTROOT] [--back BACK]
-                    [--save-dyn] [--ignore-instr] [--save_all] [--nproc NPROC]
+                    [--save-dyn] [--ignore-instr] [--save-all] [--nproc NPROC]
                     [--loglevel LOGLEVEL] [--debug]
                     files [files ...]
 
@@ -456,7 +456,7 @@ HENfspec
       --back BACK           Estimated background (non-source) count rate
       --save-dyn            save dynamical power spectrum
       --ignore-instr        Ignore instrument names in channels
-      --save_all            Save all information contained in spectra, including
+      --save-all            Save all information contained in spectra, including
                             single pdss and light curves.
       --nproc NPROC         Number of processors to use
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
