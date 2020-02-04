@@ -78,6 +78,7 @@ class TestIO():
         events = EventList([0, 2, 3.], pi=[1, 2, 3], mjdref=54385.3254923845,
                            gti=np.longdouble([[-0.5, 3.5]]))
         events.energy = np.array([3., 4., 5.])
+        events.mission = 'nustar'
         save_events(events, self.dum)
         events2 = load_events(self.dum)
         assert np.allclose(events.time, events2.time)
@@ -85,6 +86,7 @@ class TestIO():
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
         assert np.allclose(events.energy, events2.energy)
+        assert events2.mission == events.mission
 
     def test_load_and_save_lcurve(self):
         lcurve = Lightcurve(np.linspace(0, 10, 15), np.random.poisson(30, 15),
