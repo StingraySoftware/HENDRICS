@@ -544,6 +544,77 @@ def hist3d_numba_seq(tracks, bins, ranges):
 
 
 @njit(nogil=True, parallel=False)
+def _hist2d_numba_seq_weight(H, tracks, weights, bins, ranges):
+    delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
+
+    for t in range(tracks.shape[1]):
+        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
+        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+            H[int(i), int(j)] += weights[t]
+
+    return H
+
+
+def hist2d_numba_seq_weight(x, y, weights, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> weight = np.random.uniform(0, 1, 100)
+    >>> H, xedges, yedges = np.histogram2d(x, y, bins=(5, 5),
+    ...                                    range=[(0., 1.), (2., 3.)],
+    ...                                    weights=weight)
+    >>> Hn = hist2d_numba_seq_weight(x, y, bins=(5, 5),
+    ...                              ranges=[[0., 1.], [2., 3.]],
+    ...                              weights=weight)
+    >>> assert np.all(H == Hn)
+    """
+    H = np.zeros((bins[0], bins[1]), dtype=np.double)
+    return _hist2d_numba_seq_weight(
+        H, np.array([x, y]), weights, np.asarray(list(bins)),
+        np.asarray(ranges))
+
+
+@njit(nogil=True, parallel=False)
+def _hist3d_numba_seq_weight(H, tracks, weights, bins, ranges):
+    delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
+
+    for t in range(tracks.shape[1]):
+        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
+        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+        k = (tracks[2, t] - ranges[2, 0]) * delta[2]
+        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+            H[int(i), int(j), int(k)] += weights[t]
+
+    return H
+
+
+def hist3d_numba_seq_weight(tracks, weights, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> z = np.random.uniform(4., 5., 100)
+    >>> weights = np.random.uniform(0, 1., 100)
+    >>> H, _ = np.histogramdd((x, y, z), bins=(5, 6, 7),
+    ...                       range=[(0., 1.), (2., 3.), (4., 5)],
+    ...                       weights=weights)
+    >>> Hn = hist3d_numba_seq_weight(
+    ...    (x, y, z), weights, bins=(5, 6, 7),
+    ...    ranges=[[0., 1.], [2., 3.], [4., 5.]])
+    >>> assert np.all(H == Hn)
+    """
+
+    H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.double)
+    return _hist3d_numba_seq_weight(
+        H, np.asarray(tracks), weights, np.asarray(list(bins)),
+        np.asarray(ranges))
+
+
+@njit(nogil=True, parallel=False)
 def index_arr(a, ix_arr):
     strides = np.array(a.strides) / a.itemsize
     ix = int((ix_arr * strides).sum())
