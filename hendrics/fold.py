@@ -580,9 +580,9 @@ def main_fold(args=None):
                         help="Number of phase bins (X axis) of the profile")
     parser.add_argument("--nebin", default=16, type=int,
                         help="Number of energy bins (Y axis) of the profile")
-    parser.add_argument("--emin", default=None, type=int,
+    parser.add_argument("--emin", default=None, type=float,
                         help="Minimum energy (or PI if uncalibrated) to plot")
-    parser.add_argument("--emax", default=None, type=int,
+    parser.add_argument("--emax", default=None, type=float,
                         help="Maximum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--norm", default='to1',
                         help="--norm to1: Normalize hist so that the maximum "
