@@ -467,7 +467,6 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     ...                       use_memmap=True)
     >>> assert np.all(H == Hn)
     >>> assert os.path.exists('out.npy')
-    >>> os.unlink('out.npy')
     """
     if bins > 10**7 and use_memmap:
         if tmp is None:
