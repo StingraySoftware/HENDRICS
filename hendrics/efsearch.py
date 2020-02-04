@@ -887,6 +887,8 @@ def _common_parser(args=None):
                         help="Minimum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--emax", default=None, type=float,
                         help="Maximum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--mean-fdot", type=float, required=False,
+                        help="Mean fdot to fold (only useful when using --fast)", default=0)
     parser.add_argument("--fdotmin", type=float, required=False,
                         help="Minimum fdot to fold", default=0)
     parser.add_argument("--fdotmax", type=float, required=False,
@@ -1012,7 +1014,7 @@ def _common_main(args, func):
             ref_time = (events.gti[0, 0])
         else:
             results = \
-                search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
+                search_with_qffa(events.time, args.fmin, args.fmax, fdot=args.mean_fdot,
                                  nbin=args.nbin, n=n,
                                  nprof=None, npfact=args.npfact, oversample=oversample)
             ref_time = (events.time[-1] + events.time[0]) / 2
