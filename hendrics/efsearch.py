@@ -215,7 +215,8 @@ def mod(num, n2):
 
 
 @njit()
-def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift, quadbaseshift):
+def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift,
+                  quadbaseshift):
     nprof = repeated_profiles.shape[0]
     nbin = splat_prof.size
     twonbin = nbin * 2
@@ -225,8 +226,8 @@ def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift, qua
         total_shift = mod(np.rint(total_shift), nbin)
         total_shift_int = np.int(total_shift)
 
-        splat_prof[:] += \
-                repeated_profiles[k, nbin - total_shift_int:twonbin - total_shift_int]
+        splat_prof[:] += repeated_profiles[
+                k, nbin - total_shift_int:twonbin - total_shift_int]
 
     return splat_prof
 
@@ -371,7 +372,8 @@ def _average_and_z_sub_search(profiles, n=2):
         shape_0 = np.int(profiles.shape[0] / n_ave_i)
         # new_profiles = np.zeros((shape_0, profiles.shape[1]))
         for i in range(shape_0):
-            new_profiles = np.sum(profiles[i * n_ave_i: (i + 1) * n_ave_i], axis=0)
+            new_profiles = np.sum(profiles[i * n_ave_i: (i + 1) * n_ave_i],
+                                  axis=0)
             if np.max(new_profiles) == 0:
                 continue
 
@@ -465,7 +467,8 @@ def transient_search(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
     log.info(
-        f"Maximum error on the phase expected when casting to double: {maxerr}")
+        f"Maximum error on the phase expected when casting to double: "
+        f"{maxerr}")
     if maxerr > 1 / nbin / 10:
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
@@ -518,7 +521,8 @@ def transient_search(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
     results.nave = nave
     results.freqs = all_freqs
     results.times = times
-    results.stats = np.array([all_results[:, i, :].T for i in range(nave.size)])
+    results.stats = np.array([all_results[:, i, :].T
+                              for i in range(nave.size)])
 
     return results
 
@@ -566,7 +570,8 @@ def plot_transient_search(results, gif_name=None):
             maxline = mean_line[maxidx]
             best_f = f[maxidx]
             for il, line in enumerate(ima / detl * 3):
-                axf.plot(f, line, lw=0.2, ls='-', c='grey', alpha=0.5, label=f"{il}")
+                axf.plot(f, line, lw=0.2, ls='-', c='grey', alpha=0.5,
+                         label=f"{il}")
                 maxidx = np.argmax(mean_line)
                 if line[maxidx] > maxline:
                     best_f = f[maxidx]
@@ -629,7 +634,8 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
         for j in range(quabinshifts.size):
             splat_prof = shift_and_sum(repeated_profiles, L[i, j], Q[i, j],
                                        splat_prof, base_shift, quad_base_shift)
-            local_stat = z_n_fast_cached(splat_prof, cached_cos, cached_sin, n=n)
+            local_stat = z_n_fast_cached(splat_prof, cached_cos, cached_sin,
+                                         n=n)
             stats[i, j] = local_stat
 
     return stats
@@ -743,7 +749,8 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
     if maxerr > 1 / nbin / 10:
         warnings.warn(
-            f"Maximum error on the phase expected when casting to double: {maxerr}")
+            f"Maximum error on the phase expected when casting to "
+            f"double: {maxerr}")
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
             "Please use shorter light curves.",
@@ -819,8 +826,8 @@ def folding_search(events, fmin, fmax, step=None,
     fdotepsilon = 1e-2 * fdotstep
     trial_fdots = np.arange(fdotmin, fdotmax + fdotepsilon, fdotstep)
     if len(trial_fdots) > 1:
-        log.info("Searching {} frequencies and {} fdots".format(len(trial_freqs),
-                                                                len(trial_fdots)))
+        log.info("Searching {} frequencies and {} fdots".format(
+            len(trial_freqs), len(trial_fdots)))
     else:
         log.info("Searching {} frequencies".format(len(trial_freqs)))
 
@@ -887,6 +894,9 @@ def _common_parser(args=None):
                         help="Minimum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--emax", default=None, type=float,
                         help="Maximum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--mean-fdot", type=float, required=False,
+                        help="Mean fdot to fold "
+                             "(only useful when using --fast)", default=0)
     parser.add_argument("--fdotmin", type=float, required=False,
                         help="Minimum fdot to fold", default=0)
     parser.add_argument("--fdotmax", type=float, required=False,
@@ -989,13 +999,14 @@ def _common_main(args, func):
             events = deorbit_events(events, args.deorbit_par)
 
         if args.fast:
-            oversample = assign_value_if_none(args.oversample, 8)
+            oversample = assign_value_if_none(args.oversample, 4 * n)
 
         else:
             oversample = assign_value_if_none(args.oversample, 2)
 
         if args.transient:
-            results = transient_search(events.time, args.fmin, args.fmax, fdot=0,
+            results = transient_search(events.time, args.fmin, args.fmax,
+                                       fdot=0,
                                        nbin=args.nbin, n=n,
                                        nprof=None, oversample=oversample)
             plot_transient_search(results, hen_root(fname) + '_transient.gif')
@@ -1012,9 +1023,11 @@ def _common_main(args, func):
             ref_time = (events.gti[0, 0])
         else:
             results = \
-                search_with_qffa(events.time, args.fmin, args.fmax, fdot=0,
+                search_with_qffa(events.time, args.fmin, args.fmax,
+                                 fdot=args.mean_fdot,
                                  nbin=args.nbin, n=n,
-                                 nprof=None, npfact=args.npfact, oversample=oversample)
+                                 nprof=None, npfact=args.npfact,
+                                 oversample=oversample)
             ref_time = (events.time[-1] + events.time[0]) / 2
 
         length = events.time.max() - events.time.min()

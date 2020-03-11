@@ -8,6 +8,7 @@ import warnings
 from functools import wraps
 from collections.abc import Iterable
 from pathlib import Path
+import tempfile
 
 import numpy as np
 from astropy import log
@@ -406,6 +407,101 @@ def interpret_bintime(bintime):
 
 
 @njit(nogil=True, parallel=False)
+def get_bin_edges(a, bins):
+    """
+
+    Examples
+    --------
+    >>> array = np.array([0, 10])
+    >>> bins = 2
+    >>> np.allclose(get_bin_edges(array, bins), [0, 5, 10])
+    True
+    """
+    bin_edges = np.zeros((bins+1,), dtype=np.float64)
+    a_min = a.min()
+    a_max = a.max()
+    delta = (a_max - a_min) / bins
+    for i in range(bin_edges.shape[0]):
+        bin_edges[i] = a_min + i * delta
+
+    bin_edges[-1] = a_max  # Avoid roundoff error on last point
+    return bin_edges
+
+
+@njit(nogil=True, parallel=False)
+def compute_bin(x, bin_edges):
+    """
+
+    Examples
+    --------
+    >>> bin_edges = np.array([0, 5, 10])
+    >>> compute_bin(1, bin_edges)
+    0
+    >>> compute_bin(5, bin_edges)
+    1
+    >>> compute_bin(10, bin_edges)
+    1
+    """
+
+    # assuming uniform bins for now
+    n = bin_edges.shape[0] - 1
+    a_min = bin_edges[0]
+    a_max = bin_edges[-1]
+
+    # special case to mirror NumPy behavior for last bin
+    if x == a_max:
+        return n - 1 # a_max always in last bin
+
+    bin = int(n * (x - a_min) / (a_max - a_min))
+
+    if bin < 0 or bin >= n:
+        return None
+    else:
+        return bin
+
+
+@njit(nogil=True, parallel=False)
+def _hist1d_numba_seq(H, tracks, bins, ranges):
+    delta = 1 / ((ranges[1] - ranges[0]) / bins)
+
+    for t in range(tracks.size):
+        i = (tracks[t] - ranges[0]) * delta
+        if 0 <= i < bins:
+            H[int(i)] += 1
+
+    return H
+
+
+def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
+    """
+    Examples
+    --------
+    >>> if os.path.exists('out.npy'): os.unlink('out.npy')
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> H, xedges = np.histogram(x, bins=5, range=[0., 1.])
+    >>> Hn = hist1d_numba_seq(x, bins=5, ranges=[0., 1.], tmp='out.npy',
+    ...                       use_memmap=True)
+    >>> assert np.all(H == Hn)
+    >>> # The number of bins is small, memory map was not used!
+    >>> assert not os.path.exists('out.npy')
+    >>> H, xedges = np.histogram(x, bins=10**8, range=[0., 1.])
+    >>> Hn = hist1d_numba_seq(x, bins=10**8, ranges=[0., 1.], tmp='out.npy',
+    ...                       use_memmap=True)
+    >>> assert np.all(H == Hn)
+    >>> assert os.path.exists('out.npy')
+    """
+    if bins > 10**7 and use_memmap:
+        if tmp is None:
+            tmp = tempfile.NamedTemporaryFile('w+')
+        hist_arr = np.lib.format.open_memmap(
+            tmp, mode='w+', dtype=a.dtype, shape=(bins,))
+    else:
+        hist_arr = np.zeros((bins,), dtype=a.dtype)
+
+    return _hist1d_numba_seq(hist_arr, a, bins, np.asarray(ranges))
+
+
+@njit(nogil=True, parallel=False)
 def _hist2d_numba_seq(H, tracks, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
@@ -466,6 +562,77 @@ def hist3d_numba_seq(tracks, bins, ranges):
     H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.uint64)
     return _hist3d_numba_seq(H, np.asarray(tracks), np.asarray(list(bins)),
                              np.asarray(ranges))
+
+
+@njit(nogil=True, parallel=False)
+def _hist2d_numba_seq_weight(H, tracks, weights, bins, ranges):
+    delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
+
+    for t in range(tracks.shape[1]):
+        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
+        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+            H[int(i), int(j)] += weights[t]
+
+    return H
+
+
+def hist2d_numba_seq_weight(x, y, weights, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> weight = np.random.uniform(0, 1, 100)
+    >>> H, xedges, yedges = np.histogram2d(x, y, bins=(5, 5),
+    ...                                    range=[(0., 1.), (2., 3.)],
+    ...                                    weights=weight)
+    >>> Hn = hist2d_numba_seq_weight(x, y, bins=(5, 5),
+    ...                              ranges=[[0., 1.], [2., 3.]],
+    ...                              weights=weight)
+    >>> assert np.all(H == Hn)
+    """
+    H = np.zeros((bins[0], bins[1]), dtype=np.double)
+    return _hist2d_numba_seq_weight(
+        H, np.array([x, y]), weights, np.asarray(list(bins)),
+        np.asarray(ranges))
+
+
+@njit(nogil=True, parallel=False)
+def _hist3d_numba_seq_weight(H, tracks, weights, bins, ranges):
+    delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
+
+    for t in range(tracks.shape[1]):
+        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
+        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+        k = (tracks[2, t] - ranges[2, 0]) * delta[2]
+        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+            H[int(i), int(j), int(k)] += weights[t]
+
+    return H
+
+
+def hist3d_numba_seq_weight(tracks, weights, bins, ranges):
+    """
+    Examples
+    --------
+    >>> x = np.random.uniform(0., 1., 100)
+    >>> y = np.random.uniform(2., 3., 100)
+    >>> z = np.random.uniform(4., 5., 100)
+    >>> weights = np.random.uniform(0, 1., 100)
+    >>> H, _ = np.histogramdd((x, y, z), bins=(5, 6, 7),
+    ...                       range=[(0., 1.), (2., 3.), (4., 5)],
+    ...                       weights=weights)
+    >>> Hn = hist3d_numba_seq_weight(
+    ...    (x, y, z), weights, bins=(5, 6, 7),
+    ...    ranges=[[0., 1.], [2., 3.], [4., 5.]])
+    >>> assert np.all(H == Hn)
+    """
+
+    H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.double)
+    return _hist3d_numba_seq_weight(
+        H, np.asarray(tracks), weights, np.asarray(list(bins)),
+        np.asarray(ranges))
 
 
 @njit(nogil=True, parallel=False)

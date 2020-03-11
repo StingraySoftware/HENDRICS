@@ -739,9 +739,9 @@ def main_phaseogram(args=None):
     parser.add_argument("--binary-parameters",
                         help="Initial values for binary parameters",
                         default=[None, 0, None], nargs=3, type=float)
-    parser.add_argument("--emin", default=None, type=int,
+    parser.add_argument("--emin", default=None, type=float,
                         help="Minimum energy (or PI if uncalibrated) to plot")
-    parser.add_argument("--emax", default=None, type=int,
+    parser.add_argument("--emax", default=None, type=float,
                         help="Maximum energy (or PI if uncalibrated) to plot")
     parser.add_argument(
         "--norm",

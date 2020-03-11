@@ -387,6 +387,8 @@ def save_events(eventlist, fname):
         out['energy'] = eventlist.energy
     if hasattr(eventlist, 'header') and eventlist.header is not None:
         out["header"] = eventlist.header
+    if hasattr(eventlist, 'mission') and eventlist.mission is not None:
+        out["mission"] = eventlist.mission
 
     if get_file_format(fname) == 'pickle':
         _save_data_pickle(out, fname)
@@ -413,6 +415,9 @@ def load_events(fname):
         eventlist.energy = out["energy"]
     if 'header' in list(out.keys()):
         eventlist.header = out["header"]
+    if 'mission' in list(out.keys()):
+        eventlist.mission = out["mission"]
+
     return eventlist
 
 
