@@ -1,6 +1,7 @@
 import numpy as np
 
 from .base import jit, vectorize, HAS_NUMBA
+from .efsearch import z_n_fast_cached
 
 """
 prof_n  step0  step1  step2
@@ -208,7 +209,7 @@ def ffa_step_old(array, step, ntables):
     return array_reshaped_dum
 
 
-@jit(nopython=True)
+@jit(nopython=True, parallel=True)
 def ffa(array, bin_period, nave=1):
     """Fast folding algorithm search
     """
@@ -235,13 +236,39 @@ def ffa(array, bin_period, nave=1):
     for step in range(0, np.int(np.log2(ntables))):
         array_reshaped = ffa_step(array_reshaped, step, ntables)
 
+    twopiphases = np.pi * 2 * np.arange(0, 1, 1 / array_reshaped.shape[1])
+    n = 2
+    nbin = twopiphases.size
+    cached_cos = np.zeros(n * nbin)
+    cached_sin = np.zeros(n * nbin)
+    for i in range(n):
+        cached_cos[i * nbin: (i + 1) * nbin] = np.cos(twopiphases)
+        cached_sin[i * nbin: (i + 1) * nbin] = np.sin(twopiphases)
+
     stats = np.zeros(ntables)
     for i in range(array_reshaped.shape[0]):
-        stats[i] = stat(array_reshaped[i, :])
-
+        # stats[i] = stat(array_reshaped[i, :])
+        stats[i] = \
+            z_n_fast_cached(array_reshaped[i, :], cached_cos, cached_sin, n=n)
     # Here I'm subtracting the degrees of freedom from stats to flatten the
     # periodogram
-    return periods, stats - bin_period + 1
+    return periods, stats# - bin_period + 1
+
+
+def _quick_rebin(counts, current_rebin):
+    """
+
+    Examples
+    --------
+    >>> counts = np.arange(1, 11)
+    >>> reb = _quick_rebin(counts, 2)
+    >>> np.allclose(reb, [1.5, 3.5, 5.5, 7.5, 9.5])
+    True
+    """
+    n = int(counts.size // current_rebin)
+    rebinned_counts = np.sum(
+        counts[:n * current_rebin].reshape(n, current_rebin), axis=1)
+    return rebinned_counts
 
 
 def ffa_search(counts, dt, period_min, period_max, nave=1):
@@ -250,15 +277,33 @@ def ffa_search(counts, dt, period_min, period_max, nave=1):
     bin_periods = None
     stats = None
 
-    for bin_period in np.arange(pmin, pmax + 1, dtype=int):
-        per, st = ffa(counts, bin_period, nave=nave)
+    import tqdm
+
+    current_rebin = 1
+    rebinned_counts = counts
+    for bin_period in tqdm.tqdm(np.arange(pmin, pmax + 1, dtype=int)):
+        # Only powers of two
+        rebin = int(2**np.floor(np.log2(bin_period / pmin)))
+        if rebin > current_rebin:
+            current_rebin = rebin
+            rebinned_counts = _quick_rebin(counts, current_rebin)
+
+        # When rebinning, bin_period // current_rebin is the same for nearby
+        # periods
+        if bin_period % current_rebin != 0:
+            continue
+
+        per, st = ffa(rebinned_counts, bin_period // current_rebin, nave=nave)
+
+        per *= current_rebin
+
         if per[0] == 0:
             continue
         elif bin_periods is None:
-            bin_periods = per
-            stats = st
+            bin_periods = per[:-1] * dt
+            stats = st[:-1]
         else:
-            bin_periods = np.concatenate((bin_periods, per))
-            stats = np.concatenate((stats, st))
+            bin_periods = np.concatenate((bin_periods, per[:-1] * dt))
+            stats = np.concatenate((stats, st[:-1]))
 
-    return bin_periods * dt, stats
+    return bin_periods, stats
