@@ -24,7 +24,7 @@ def test_ffa():
     ev.simulate_times(lc_cont)
     lc = Lightcurve.make_lightcurve(ev.time, dt=dt, tstart=0, tseg=length)
 
-    per, st = ffa_search(lc.counts, dt, pmin, pmax, nave=1)
+    per, st = ffa_search(lc.counts, dt, pmin, pmax)
     #  fit_sinc wants frequencies, not periods
     model = fit(1/per[::-1], st[::-1], 1/period, obs_length=10)
     assert np.isclose(1/model.mean, period, atol=1e-6)
@@ -54,7 +54,7 @@ def test_ffa_vs_folding_search():
     lc = Lightcurve.make_lightcurve(ev.time, dt=dt, tstart=0, tseg=length)
 
     t0 = time.time()
-    per, st = ffa_search(lc.counts, dt, pmin, pmax, nave=1)
+    per, st = ffa_search(lc.counts, dt, pmin, pmax)
     t1 = time.time()
     print("FFA completed in {:.1e} s".format(t1 - t0))
     t1 = time.time()

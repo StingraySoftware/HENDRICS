@@ -22,8 +22,7 @@ def default_nustar_rmf():
               on observing time
     """
     log.warning(
-        "Rmf not specified. Using default NuSTAR rmf.",
-        AstropyUserWarning)
+        "Rmf not specified. Using default NuSTAR rmf.")
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split('/')
     newpath = os.path.join(os.environ['CALDB'], *path)

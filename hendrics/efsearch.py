@@ -375,7 +375,9 @@ def _average_and_z_sub_search(profiles, n=2):
         for i in range(shape_0):
             new_profiles = np.sum(profiles[i * n_ave_i: (i + 1) * n_ave_i],
                                   axis=0)
-            if np.max(new_profiles) == 0:
+
+            #Work around strange numba bug. Will reinstate np.max when it's solved
+            if np.sum(new_profiles) == 0:
                 continue
 
             z = z_n_fast(twopiphases, norm=new_profiles, n=n)
@@ -610,7 +612,7 @@ def plot_transient_search(results, gif_name=None):
     return all_images
 
 
-@njit(parallel=True, nogil=True)
+@njit(nogil=True)
 def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
 
@@ -986,6 +988,7 @@ def _common_main(args, func):
         raise ValueError('The fast option is only available for z searches')
 
     for i_f, fname in enumerate(files):
+        mjdref = 0
         kwargs = {}
         baseline = args.nbin
         kind = 'EF'
@@ -999,7 +1002,7 @@ def _common_main(args, func):
         ftype, events = get_file_type(fname)
 
         if ftype == 'events':
-            mjdref = events.mjdref
+            if hasattr(events, 'mjdref'): mjdref = events.mjdref
             if args.emin is not None or args.emax is not None:
                 events, elabel = filter_energy(events, args.emin, args.emax)
 

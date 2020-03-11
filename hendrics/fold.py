@@ -399,8 +399,7 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     if elabel.lower() == 'pi' and emax is not None or emin is not None:
         log.warning(f"No energy information in event list "
                     f"while filtering between {emin} and {emax}. "
-                    "Definition of events.energy is now based on PI.",
-                    AstropyUserWarning)
+                    "Definition of events.energy is now based on PI.")
     if emin is None:
         emin = np.min(energy)
     if emax is None:

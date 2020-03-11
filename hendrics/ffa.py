@@ -1,7 +1,7 @@
 import numpy as np
 
-from .base import jit, vectorize, HAS_NUMBA
-from .efsearch import z_n_fast_cached
+from .base import jit, vectorize, HAS_NUMBA, float32, float64, int32, int64
+from .efsearch import z_n_fast_cached, show_progress
 
 """
 prof_n  step0  step1  step2
@@ -20,7 +20,7 @@ prof_n  step0  step1  step2
 ...
 
 Each element is a full profile.
-Each profile number in the sums refers to the profile created in the _previous_ 
+Each profile number in the sums refers to the profile created in the _previous_
 step. Primes indicate the amount of shift.
 
 Let's call step_pow the quantity (2**(step+1)) So, in each sum:
@@ -140,7 +140,10 @@ def start_value(prof_n, step):
     return val
 
 
-@vectorize
+@vectorize([(float64, float64),
+            (int64, int64),
+            (float32, float32),
+            (int32, int32)])
 def sum_arrays(arr1, arr2):
     return arr1 + arr2
 
@@ -209,8 +212,38 @@ def ffa_step_old(array, step, ntables):
     return array_reshaped_dum
 
 
-@jit(nopython=True, parallel=True)
-def ffa(array, bin_period, nave=1):
+@jit(nopython=True)
+def _ffa(array, bin_period, array_reshaped, ntables, z_n_n=2):
+    """Fast folding algorithm search
+    """
+
+    periods = \
+        np.array([bin_period + n / (ntables - 1) for n in range(ntables)])
+
+    for step in range(0, np.int(np.log2(ntables))):
+        array_reshaped = ffa_step(array_reshaped, step, ntables)
+
+    twopiphases = np.pi * 2 * np.arange(0, 1, 1 / array_reshaped.shape[1])
+
+    nbin = twopiphases.size
+    cached_cos = np.zeros(z_n_n * nbin)
+    cached_sin = np.zeros(z_n_n * nbin)
+    for i in range(z_n_n):
+        cached_cos[i * nbin: (i + 1) * nbin] = np.cos(twopiphases)
+        cached_sin[i * nbin: (i + 1) * nbin] = np.sin(twopiphases)
+
+    stats = np.zeros(ntables)
+    for i in range(array_reshaped.shape[0]):
+        # stats[i] = stat(array_reshaped[i, :])
+        stats[i] = \
+            z_n_fast_cached(array_reshaped[i, :], cached_cos, cached_sin,
+                            n=z_n_n)
+    # Here I'm subtracting the degrees of freedom from stats to flatten the
+    # periodogram
+    return periods, stats# - bin_period + 1
+
+
+def ffa(array, bin_period, z_n_n=2):
     """Fast folding algorithm search
     """
     N_raw = len(array)
@@ -220,39 +253,10 @@ def ffa(array, bin_period, nave=1):
     N = ntables * bin_period
     new_arr = np.zeros(N)
     new_arr[:N_raw] = array
-    nave = int(2**np.rint(np.log2(nave)))
 
-    if nave > 1:
-        array_reshaped = \
-            new_arr.reshape(ntables // nave, nave, bin_period).sum(axis=1)
-        # array_reshaped = array_reshaped
-        ntables = ntables // nave
-    else:
-        array_reshaped = new_arr.reshape((ntables, bin_period))
+    array_reshaped = new_arr.reshape([ntables, bin_period])
 
-    periods = \
-        np.array([bin_period + n / (ntables - 1) for n in range(ntables)])
-
-    for step in range(0, np.int(np.log2(ntables))):
-        array_reshaped = ffa_step(array_reshaped, step, ntables)
-
-    twopiphases = np.pi * 2 * np.arange(0, 1, 1 / array_reshaped.shape[1])
-    n = 2
-    nbin = twopiphases.size
-    cached_cos = np.zeros(n * nbin)
-    cached_sin = np.zeros(n * nbin)
-    for i in range(n):
-        cached_cos[i * nbin: (i + 1) * nbin] = np.cos(twopiphases)
-        cached_sin[i * nbin: (i + 1) * nbin] = np.sin(twopiphases)
-
-    stats = np.zeros(ntables)
-    for i in range(array_reshaped.shape[0]):
-        # stats[i] = stat(array_reshaped[i, :])
-        stats[i] = \
-            z_n_fast_cached(array_reshaped[i, :], cached_cos, cached_sin, n=n)
-    # Here I'm subtracting the degrees of freedom from stats to flatten the
-    # periodogram
-    return periods, stats# - bin_period + 1
+    return _ffa(array, bin_period, array_reshaped, ntables, z_n_n=z_n_n)
 
 
 def _quick_rebin(counts, current_rebin):
@@ -262,7 +266,7 @@ def _quick_rebin(counts, current_rebin):
     --------
     >>> counts = np.arange(1, 11)
     >>> reb = _quick_rebin(counts, 2)
-    >>> np.allclose(reb, [1.5, 3.5, 5.5, 7.5, 9.5])
+    >>> np.allclose(reb, [3, 7, 11, 15, 19])
     True
     """
     n = int(counts.size // current_rebin)
@@ -271,17 +275,16 @@ def _quick_rebin(counts, current_rebin):
     return rebinned_counts
 
 
-def ffa_search(counts, dt, period_min, period_max, nave=1):
+def ffa_search(counts, dt, period_min, period_max):
+    counts = np.array(counts)
     pmin = np.floor(period_min / dt)
     pmax = np.ceil(period_max / dt)
     bin_periods = None
     stats = None
 
-    import tqdm
-
     current_rebin = 1
     rebinned_counts = counts
-    for bin_period in tqdm.tqdm(np.arange(pmin, pmax + 1, dtype=int)):
+    for bin_period in show_progress(np.arange(pmin, pmax + 1, dtype=int)):
         # Only powers of two
         rebin = int(2**np.floor(np.log2(bin_period / pmin)))
         if rebin > current_rebin:
@@ -293,7 +296,7 @@ def ffa_search(counts, dt, period_min, period_max, nave=1):
         if bin_period % current_rebin != 0:
             continue
 
-        per, st = ffa(rebinned_counts, bin_period // current_rebin, nave=nave)
+        per, st = ffa(rebinned_counts, bin_period // current_rebin)
 
         per *= current_rebin
 

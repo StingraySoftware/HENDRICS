@@ -407,8 +407,10 @@ def load_events(fname):
 
     eventlist.time = out['time']
     eventlist.gti = out['gti']
-    eventlist.pi = out['pi']
-    eventlist.mjdref = out['mjdref']
+    if 'pi' in list(out.keys()):
+        eventlist.pi = out['pi']
+    if 'mjdref' in list(out.keys()):
+        eventlist.mjdref = out['mjdref']
     if 'instr' in list(out.keys()):
         eventlist.instr = out["instr"]
     if 'energy' in list(out.keys()):

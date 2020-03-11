@@ -544,7 +544,7 @@ class TestFullRun(object):
         """Test PDS production."""
         command = \
             '{0} {1} -f 128 --save-all --save-dyn -k PDS ' \
-            '--norm frac --nproc 2 '.format(
+            '--norm frac'.format(
                 os.path.join(self.datadir,
                              'monol_testA_E3-50_lc') + HEN_FILE_EXTENSION,
                 os.path.join(self.datadir,
@@ -627,17 +627,6 @@ class TestFullRun(object):
                 os.path.join(self.datadir, 'monol_test_E3-50'))
         hen.fspec.main(command.split())
 
-    def test_cpds_2cpus(self):
-        """Test CPDS production."""
-        command = \
-            ('{0} {1} -f 128 --save-dyn --save-all -k '
-             'CPDS --norm frac -o {2} --nproc 2').format(
-                os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-                HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-                HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, 'monol_test_E3-50'))
-        hen.fspec.main(command.split())
 
     def test_dumpdynpds(self):
         """Test dump dynamical PDSs."""

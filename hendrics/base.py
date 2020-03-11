@@ -16,6 +16,7 @@ from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 try:
     from numba import jit, njit, prange, vectorize
+    from numba import float32, float64, int32, int64
 
     HAS_NUMBA = True
 except ImportError:
@@ -419,25 +420,30 @@ def interpret_bintime(bintime):
 
 
 @njit(nogil=True, parallel=False)
+def _get_bin_edges(a, bins, a_min, a_max):
+    bin_edges = np.zeros(bins+1, dtype=np.float64)
+
+    delta = (a_max - a_min) / bins
+    for i in range(bin_edges.size):
+        bin_edges[i] = a_min + i * delta
+
+    bin_edges[-1] = a_max  # Avoid roundoff error on last point
+    return bin_edges
+
+
 def get_bin_edges(a, bins):
     """
 
     Examples
     --------
-    >>> array = np.array([0, 10])
+    >>> array = np.array([0., 10.])
     >>> bins = 2
     >>> np.allclose(get_bin_edges(array, bins), [0, 5, 10])
     True
     """
-    bin_edges = np.zeros((bins+1,), dtype=np.float64)
-    a_min = a.min()
-    a_max = a.max()
-    delta = (a_max - a_min) / bins
-    for i in range(bin_edges.shape[0]):
-        bin_edges[i] = a_min + i * delta
-
-    bin_edges[-1] = a_max  # Avoid roundoff error on last point
-    return bin_edges
+    a_min = np.min(a)
+    a_max = np.max(a)
+    return _get_bin_edges(a, bins, a_min, a_max)
 
 
 @njit(nogil=True, parallel=False)
