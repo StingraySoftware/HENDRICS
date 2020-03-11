@@ -408,6 +408,15 @@ def interpret_bintime(bintime):
 
 @njit(nogil=True, parallel=False)
 def get_bin_edges(a, bins):
+    """
+
+    Examples
+    --------
+    >>> array = np.array([0, 10])
+    >>> bins = 2
+    >>> np.allclose(get_bin_edges(array, bins), [0, 5, 10])
+    True
+    """
     bin_edges = np.zeros((bins+1,), dtype=np.float64)
     a_min = a.min()
     a_max = a.max()
@@ -421,6 +430,19 @@ def get_bin_edges(a, bins):
 
 @njit(nogil=True, parallel=False)
 def compute_bin(x, bin_edges):
+    """
+
+    Examples
+    --------
+    >>> bin_edges = np.array([0, 5, 10])
+    >>> compute_bin(1, bin_edges)
+    0
+    >>> compute_bin(5, bin_edges)
+    1
+    >>> compute_bin(10, bin_edges)
+    1
+    """
+
     # assuming uniform bins for now
     n = bin_edges.shape[0] - 1
     a_min = bin_edges[0]
