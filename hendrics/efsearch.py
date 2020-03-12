@@ -37,19 +37,8 @@ try:
 except ImportError:
     HAS_NUMBA_HIST = False
 
-try:
-    from fast_histogram import histogram2d as histogram2d_fh
-    HAS_FAST_HIST = True
-except ImportError:
-    HAS_FAST_HIST = False
 
-
-if not HAS_NUMBA_HIST and HAS_FAST_HIST:
-    histogram2d = histogram2d_fh
-
-
-if not HAS_NUMBA_HIST and not HAS_FAST_HIST:
-
+if not HAS_NUMBA_HIST:
     def histogram2d(*args, **kwargs):
         return histogram2d_np(*args, **kwargs)[0]
 
@@ -395,7 +384,7 @@ def _transient_search_step(
         n=1):
     """Single step of transient search."""
 
-    # Cast to standard double, or the fast_histogram.histogram2d will fail
+    # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
 
     phases = _fast_phase_fdot(times, mean_f, mean_fdot)
@@ -667,7 +656,7 @@ def search_with_qffa_step(
         n=1,
         search_fdot=True):
     """Single step of quasi-fast folding algorithm."""
-    # Cast to standard double, or the fast_histogram.histogram2d will fail
+    # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
 
     phases = _fast_phase_fdot(times, mean_f, mean_fdot)

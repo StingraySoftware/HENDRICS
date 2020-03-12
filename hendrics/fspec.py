@@ -40,7 +40,12 @@ def sync_gtis(lc1, lc2):
         lc2.apply_gtis = lc2._apply_gtis
     lc1.apply_gtis()
     lc2.apply_gtis()
+    # compatibility with old versions of stingray
+    if lc1.tseg != lc2.tseg:  # pragma: no cover
+        lc1.tseg = np.max(lc1.gti) - np.min(lc1.gti)
+        lc2.tseg = np.max(lc1.gti) - np.min(lc1.gti)
     return lc1, lc2
+
 
 def calc_pds(lcfile, fftlen,
              save_dyn=False,
@@ -169,9 +174,6 @@ def calc_cpds(lcfile1, lcfile2, fftlen,
     dt = lc1.dt
 
     lc1, lc2 = sync_gtis(lc1, lc2)
-    if lc1.tseg != lc2.tseg:  # compatibility with old versions of stingray
-        lc1.tseg = np.max(lc1.gti) - np.min(lc1.gti)
-        lc2.tseg = np.max(lc1.gti) - np.min(lc1.gti)
 
     if bintime > dt:
         lcrebin = np.rint(bintime / dt)
@@ -280,13 +282,7 @@ def calc_fspec(files, fftlen,
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
 
-        if os.name == 'nt' or nproc == 1:
-            [_wrap_fun_pds(w) for w in wrapped_file_dicts]
-        else:
-            pool = Pool(processes=nproc)
-            for i in pool.imap_unordered(_wrap_fun_pds, wrapped_file_dicts):
-                pass
-            pool.close()
+        [_wrap_fun_pds(w) for w in wrapped_file_dicts]
 
     if not do_calc_cpds or len(files) < 2:
         return
@@ -337,13 +333,7 @@ def calc_fspec(files, fftlen,
 
         funcargs.append([f1, f2, outname, argdict])
 
-    if os.name == 'nt' or nproc == 1:
-        [_wrap_fun_cpds(fa) for fa in funcargs]
-    else:
-        pool = Pool(processes=nproc)
-        for i in pool.imap_unordered(_wrap_fun_cpds, funcargs):
-            pass
-        pool.close()
+    [_wrap_fun_cpds(fa) for fa in funcargs]
 
 
 def _normalize(array, ref=0):
@@ -441,7 +431,7 @@ def main(args=None):
                         help="Save all information contained in spectra,"
                              " including single pdss and light curves.",
                         default=False, action='store_true')
-    _add_default_args(parser, ['nproc', 'loglevel', 'debug'])
+    _add_default_args(parser, ['loglevel', 'debug'])
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)

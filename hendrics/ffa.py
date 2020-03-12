@@ -30,38 +30,12 @@ Let's call step_pow the quantity (2**(step+1)) So, in each sum:
 + The starting number is obtained as prof_n // step_pow * step_pow + (prof_n - prof_n // step_pow) // 2
 """
 
-@jit(nopython=True)
-def stat(profile):
-    """Calculate the epoch folding statistics \'a la Leahy et al. (1983).
-
-    Parameters
-    ----------
-    profile : array
-        The pulse profile
-
-    Other Parameters
-    ----------------
-    err : float or array
-        The uncertainties on the pulse profile
-
-    Returns
-    -------
-    stat : float
-        The epoch folding statistics
-    """
-    mean = np.mean(profile)
-    err = np.sqrt(mean)
-    sum = 0
-    for p in profile:
-        sum += (p - mean) ** 2
-    return sum / err ** 2
-
 
 if HAS_NUMBA:
     from numba import types
     from numba.extending import overload_method
 
-    @overload_method(types.Array, 'take')
+    @overload_method(types.Array, 'take') #  pragma: no cover
     def array_take(arr, indices):
         if isinstance(indices, types.Array):
             def take_impl(arr, indices):
@@ -81,8 +55,8 @@ def roll(a, shift):
     n = a.size
     reshape = True
 
-    if n == 0:
-        return a
+    if n == 0: return a
+
     shift %= n
 
     indexes = np.concatenate((np.arange(n - shift, n), np.arange(n - shift)))
@@ -96,11 +70,6 @@ def roll(a, shift):
 @jit(nopython=True)
 def step_pow(step):
     return 2 ** (step + 1)
-
-
-@jit(nopython=True)
-def jump(step):
-    return 2 ** step
 
 
 @jit(nopython=True)
@@ -193,25 +162,6 @@ def ffa_step(array, step, ntables):
     return array_reshaped_dum
 
 
-def ffa_step_old(array, step, ntables):
-    array_reshaped_dum = np.copy(array)
-    jump = 2 ** step
-    for chunk_no in range(ntables // 2):
-        for half in [0, 1]:
-            prof_n = 2 * chunk_no + half
-            start = start_value(prof_n, step)
-            sh = shift(prof_n, step)
-            if sh == 0:
-                array_reshaped_dum[prof_n, :] = \
-                    sum_arrays(array[start, :], array[start + jump, :])
-            else:
-                rolled = roll(array[start + jump, :], -sh)
-                array_reshaped_dum[prof_n, :] = \
-                    sum_arrays(array[start, :], rolled[:])
-
-    return array_reshaped_dum
-
-
 @jit(nopython=True)
 def _ffa(array, bin_period, array_reshaped, ntables, z_n_n=2):
     """Fast folding algorithm search
@@ -248,8 +198,7 @@ def ffa(array, bin_period, z_n_n=2):
     """
     N_raw = len(array)
     ntables = np.int(2**np.ceil(np.log2(N_raw // bin_period + 1)))
-    if ntables <= 1:
-        return np.zeros(1), np.zeros(1)
+    if ntables <= 1: return np.zeros(1), np.zeros(1)
     N = ntables * bin_period
     new_arr = np.zeros(N)
     new_arr[:N_raw] = array
@@ -300,8 +249,7 @@ def ffa_search(counts, dt, period_min, period_max):
 
         per *= current_rebin
 
-        if per[0] == 0:
-            continue
+        if per[0] == 0: continue
         elif bin_periods is None:
             bin_periods = per[:-1] * dt
             stats = st[:-1]
