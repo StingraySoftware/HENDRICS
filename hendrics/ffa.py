@@ -163,10 +163,8 @@ def ffa_step(array, step, ntables):
 
 
 @jit(nopython=True)
-def _ffa(array, bin_period, array_reshaped, ntables, z_n_n=2):
-    """Fast folding algorithm search
-    """
-
+def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
+    """Fast folding algorithm search."""
     periods = \
         np.array([bin_period + n / (ntables - 1) for n in range(ntables)])
 
@@ -188,9 +186,8 @@ def _ffa(array, bin_period, array_reshaped, ntables, z_n_n=2):
         stats[i] = \
             z_n_fast_cached(array_reshaped[i, :], cached_cos, cached_sin,
                             n=z_n_n)
-    # Here I'm subtracting the degrees of freedom from stats to flatten the
-    # periodogram
-    return periods, stats# - bin_period + 1
+
+    return periods, stats
 
 
 def ffa(array, bin_period, z_n_n=2):
@@ -205,7 +202,7 @@ def ffa(array, bin_period, z_n_n=2):
 
     array_reshaped = new_arr.reshape([ntables, bin_period])
 
-    return _ffa(array, bin_period, array_reshaped, ntables, z_n_n=z_n_n)
+    return _ffa(array_reshaped, bin_period, ntables, z_n_n=z_n_n)
 
 
 def _quick_rebin(counts, current_rebin):
