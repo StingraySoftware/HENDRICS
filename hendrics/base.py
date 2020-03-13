@@ -11,12 +11,29 @@ from pathlib import Path
 import tempfile
 
 import numpy as np
+from numpy import histogram2d as histogram2d_np
+from numpy import histogram as histogram_np
 from astropy.logger import AstropyUserWarning
+
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 try:
     from numba import jit, njit, prange, vectorize
     from numba import float32, float64, int32, int64
+    from numba import types
+    from numba.extending import overload_method
+
+    @overload_method(types.Array, 'take') #  pragma: no cover
+    def array_take(arr, indices):
+        if isinstance(indices, types.Array):
+            def take_impl(arr, indices):
+                n = indices.shape[0]
+                res = np.empty(n, arr.dtype)
+                for i in range(n):
+                    res[i] = arr[indices[i]]
+                return res
+
+            return take_impl
 
     HAS_NUMBA = True
 except ImportError:
@@ -47,6 +64,16 @@ except ImportError:
 
             return wrapped_f
     float32 = float64 = int32 = int64 = lambda x, y: None
+
+    array_take = np.take
+
+
+try:
+    from tqdm import tqdm as show_progress
+except ImportError:
+    def show_progress(a):
+        return a
+
 
 DEFAULT_PARSER_ARGS = {}
 DEFAULT_PARSER_ARGS['loglevel'] = dict(
@@ -711,6 +738,23 @@ def histnd_numba_seq(tracks, bins, ranges):
     slice_int = np.zeros(len(bins), dtype=np.uint64)
 
     return _histnd_numba_seq(H, tracks, bins, ranges, slice_int)
+
+
+if HAS_NUMBA:
+    def histogram2d(*args, **kwargs):
+        if 'range' in kwargs:
+            kwargs['ranges'] = kwargs.pop('range')
+        return hist2d_numba_seq(*args, **kwargs)
+
+    def histogram(*args, **kwargs):
+        if 'range' in kwargs:
+            kwargs['ranges'] = kwargs.pop('range')
+        return hist1d_numba_seq(*args, **kwargs)
+else:
+    def histogram2d(*args, **kwargs):
+        return histogram2d_np(*args, **kwargs)[0]
+    def histogram(*args, **kwargs):
+        return histogram_np(*args, **kwargs)[0]
 
 
 def touch(fname):

@@ -8,7 +8,6 @@ import copy
 
 import numpy as np
 from astropy import log
-from numpy import histogram2d as histogram2d_np
 from astropy.logger import AstropyUserWarning
 from .io import get_file_type
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
@@ -18,38 +17,17 @@ from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
 from .io import load_events, EFPeriodogram, save_folding, \
     HEN_FILE_EXTENSION
-from .base import hen_root
+from .base import hen_root, show_progress
+from .base import deorbit_events, njit, prange
+from .base import histogram2d, histogram
 from .fold import filter_energy
+from .ffa import z_n_fast_cached, ffa_search
 
 try:
     import imageio
     HAS_IMAGEIO = True
 except ImportError:
     HAS_IMAGEIO = False
-
-try:
-    from .base import hist2d_numba_seq as histogram2d_nb
-    HAS_NUMBA_HIST = True
-    def histogram2d(*args, **kwargs):
-        if 'range' in kwargs:
-            kwargs['ranges'] = kwargs.pop('range')
-        return histogram2d_nb(*args, **kwargs)
-except ImportError:
-    HAS_NUMBA_HIST = False
-
-
-if not HAS_NUMBA_HIST:
-    def histogram2d(*args, **kwargs):
-        return histogram2d_np(*args, **kwargs)[0]
-
-
-from .base import deorbit_events, njit, prange
-
-try:
-    from tqdm import tqdm as show_progress
-except ImportError:
-    def show_progress(a):
-        return a
 
 
 D_OMEGA_FACTOR = 2 * np.sqrt(3)
@@ -220,49 +198,6 @@ def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift,
                 k, nbin - total_shift_int:twonbin - total_shift_int]
 
     return splat_prof
-
-
-@njit()
-def z_n_fast_cached(norm, cached_sin, cached_cos, n=2):
-    '''Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
-
-    Here in a fast implementation based on numba.
-    Assumes that nbin != 0 and norm is an array.
-
-    Parameters
-    ----------
-    norm : array of floats
-        The pulse profile
-    n : int, default 2
-        The ``n`` in $Z^2_n$.
-
-    Returns
-    -------
-    z2_n : float
-        The Z^2_n statistics of the events.
-
-    Examples
-    --------
-    >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
-    >>> norm = np.sin(phase) + 1
-    >>> cached_sin = np.sin(np.concatenate((phase, phase, phase, phase)))
-    >>> cached_cos = np.cos(np.concatenate((phase, phase, phase, phase)))
-    >>> np.isclose(z_n_fast_cached(norm, cached_sin, cached_cos, n=4), 50)
-    True
-    >>> np.isclose(z_n_fast_cached(norm, cached_sin, cached_cos, n=2), 50)
-    True
-    '''
-
-    total_norm = np.sum(norm)
-
-    result = 0
-    N = norm.size
-
-    for k in range(1, n + 1):
-        result += np.sum(cached_cos[:N*k:k] * norm) ** 2 + \
-            np.sum(cached_sin[:N*k:k] * norm) ** 2
-
-    return 2 / total_norm * result
 
 
 @njit(fastmath=True)
@@ -797,6 +732,52 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     return all_fgrid.T, all_fdotgrid.T, all_stats.T, step, fdotstep, length
 
 
+def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
+    """'Quite fast folding' algorithm.
+
+    Parameters
+    ----------
+    times : array of floats
+        Arrival times of photons
+    f0 : float
+        Minimum frequency to search
+    f1 : float
+        Maximum frequency to search
+
+    Other parameters
+    ----------------
+    nbin : int
+        Number of bins to divide the profile into
+    nprof : int, default None
+        number of slices of the dataset to use. If None, we use 8 times nbin.
+        Motivation in the comments.
+    npfact : int, default 2
+        maximum "sliding" of the dataset, in phase.
+    oversample : int, default 8
+        Oversampling wrt the standard FFT delta f = 1/T
+    search_fdot : bool, default False
+        Switch fdot search on or off
+    t0 : float, default min(times)
+        starting time
+    t1 : float, default max(times)
+        stop time
+    """
+    if t0 is None:
+        t0 = times[0]
+    if t1 is None:
+        t1 = times[-1]
+
+    length = (t1 - t0).astype(np.double)
+
+    p0 = 1 / f1
+    p1 = 1 / f0
+    dt = p0 / nbin
+    counts = histogram((times - t0).astype(np.double), ranges=[0, length],
+                       bins=int(np.rint(length / dt)))
+    bin_periods, stats = ffa_search(counts, dt, p0, p1)
+    return 1 / bin_periods, stats, None, length
+
+
 def folding_search(events, fmin, fmax, step=None,
                    func=epoch_folding_search, oversample=2, fdotmin=0,
                    fdotmax=0, fdotstep=None, expocorr=False, **kwargs):
@@ -920,6 +901,11 @@ def _common_parser(args=None):
                              "This option ignores expocorr, fdotmin/max, "
                              "segment-size, and step",
                         default=False, action='store_true')
+    parser.add_argument("--ffa",
+                        help="Use *the* Fast Folding Algorithm by Staelin+69. "
+                             "No accelerated search allowed at the moment. "
+                             "Only recommended to search for slow pulsars.",
+                        default=False, action='store_true')
     parser.add_argument("--transient",
                         help="Look for transient emission (produces an animated"
                              " GIF with the dynamic Z search)",
@@ -1012,8 +998,7 @@ def _common_main(args, func):
             plot_transient_search(results, hen_root(fname) + '_transient.gif')
             continue
 
-
-        if not args.fast:
+        if not args.fast and not args.ffa:
             results = \
                 folding_search(events, args.fmin, args.fmax, step=args.step,
                                func=func,
@@ -1022,7 +1007,7 @@ def _common_main(args, func):
                                fdotmax=args.fdotmax,
                                segment_size=args.segment_size, **kwargs)
             ref_time = (events.gti[0, 0])
-        else:
+        elif args.fast:
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax,
                                  fdot=args.mean_fdot,
@@ -1030,6 +1015,11 @@ def _common_main(args, func):
                                  nprof=None, npfact=args.npfact,
                                  oversample=oversample)
             ref_time = (events.time[-1] + events.time[0]) / 2
+        elif args.ffa:
+            results = \
+                search_with_ffa(events.time, args.fmin, args.fmax,
+                                nbin=args.nbin, n=n)
+            ref_time = events.time[0]
 
         length = events.time.max() - events.time.min()
         segment_size = np.min([length, args.segment_size])
@@ -1041,7 +1031,7 @@ def _common_main(args, func):
         elif len(results) == 6:
             frequencies, fdots, stats, step, fdotsteps, length = results
 
-        if length > args.dynstep and not args.fast:
+        if length > args.dynstep and not (args.fast or args.ffa):
             _ = dyn_folding_search(events, args.fmin, args.fmax, step=step,
                                    func=func, oversample=oversample,
                                    time_step=args.dynstep, **kwargs)
@@ -1066,7 +1056,7 @@ def _common_main(args, func):
 
         best_models = []
 
-        if args.fit_candidates:
+        if args.fit_candidates and not (args.fast or args.ffa):
             search_width = 5 * oversample * step
             for f in best_peaks:
                 good = np.abs(frequencies - f) < search_width

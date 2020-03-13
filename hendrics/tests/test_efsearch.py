@@ -202,6 +202,20 @@ class TestEFsearch():
         assert efperiod.N == 2
         os.unlink(outfile)
 
+    def test_zsearch_fdots_ffa(self):
+        evfile = self.dum
+        main_zsearch([evfile, '-f', '9.89', '-F', '9.92', '-n', '64',
+                      '--ffa', '--find-candidates'])
+        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True, output_data_file='bla_ffa.qdp')
+        efperiod = load_folding(outfile)
+
+        assert efperiod.N == 2
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
+                          atol=1/25.25)
+        os.unlink(outfile)
+
     def test_fold_fast_fails(self):
         evfile = self.dum
 

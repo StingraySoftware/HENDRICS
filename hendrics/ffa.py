@@ -1,7 +1,7 @@
 import numpy as np
 
-from .base import jit, vectorize, HAS_NUMBA, float32, float64, int32, int64
-from .efsearch import z_n_fast_cached, show_progress
+from .base import njit, vectorize, HAS_NUMBA, float32, float64, int32, int64
+from .base import show_progress
 
 """
 prof_n  step0  step1  step2
@@ -31,26 +31,50 @@ Let's call step_pow the quantity (2**(step+1)) So, in each sum:
 """
 
 
-if HAS_NUMBA:
-    from numba import types
-    from numba.extending import overload_method
+@njit()
+def z_n_fast_cached(norm, cached_sin, cached_cos, n=2):
+    '''Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
 
-    @overload_method(types.Array, 'take') #  pragma: no cover
-    def array_take(arr, indices):
-        if isinstance(indices, types.Array):
-            def take_impl(arr, indices):
-                n = indices.shape[0]
-                res = np.empty(n, arr.dtype)
-                for i in range(n):
-                    res[i] = arr[indices[i]]
-                return res
+    Here in a fast implementation based on numba.
+    Assumes that nbin != 0 and norm is an array.
 
-            return take_impl
-else:
-    array_take = np.take
+    Parameters
+    ----------
+    norm : array of floats
+        The pulse profile
+    n : int, default 2
+        The ``n`` in $Z^2_n$.
+
+    Returns
+    -------
+    z2_n : float
+        The Z^2_n statistics of the events.
+
+    Examples
+    --------
+    >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
+    >>> norm = np.sin(phase) + 1
+    >>> cached_sin = np.sin(np.concatenate((phase, phase, phase, phase)))
+    >>> cached_cos = np.cos(np.concatenate((phase, phase, phase, phase)))
+    >>> np.isclose(z_n_fast_cached(norm, cached_sin, cached_cos, n=4), 50)
+    True
+    >>> np.isclose(z_n_fast_cached(norm, cached_sin, cached_cos, n=2), 50)
+    True
+    '''
+
+    total_norm = np.sum(norm)
+
+    result = 0
+    N = norm.size
+
+    for k in range(1, n + 1):
+        result += np.sum(cached_cos[:N*k:k] * norm) ** 2 + \
+            np.sum(cached_sin[:N*k:k] * norm) ** 2
+
+    return 2 / total_norm * result
 
 
-@jit(nopython=True)
+@njit()
 def roll(a, shift):
     n = a.size
     reshape = True
@@ -67,17 +91,17 @@ def roll(a, shift):
     return res
 
 
-@jit(nopython=True)
+@njit()
 def step_pow(step):
     return 2 ** (step + 1)
 
 
-@jit(nopython=True)
+@njit()
 def shift(prof_n, step):
     return (prof_n % step_pow(step) + 1) // 2
 
 
-@jit(nopython=True)
+@njit()
 def start_value(prof_n, step):
     """
 
@@ -136,7 +160,7 @@ def sum_rolled(arr1, arr2, out, shift):
     return out
 
 
-@jit(nopython=True)
+@njit()
 def ffa_step(array, step, ntables):
     array_reshaped_dum = np.copy(array)
     jump = 2 ** step
@@ -147,10 +171,6 @@ def ffa_step(array, step, ntables):
         sh = shift(prof_n, step)
         jumpstart = start + jump
         if sh > 0:
-            # FOR SOME REASON THIS DOESN'T WORK. DAMN
-            # array_reshaped_dum[prof_n, :] = \
-            #     sum_rolled(array[start, :], array[jumpstart, :], dum, sh)
-
             rolled = roll(array[start + jump, :], -sh)
             array_reshaped_dum[prof_n, :] = \
                 sum_arrays(array[start, :], rolled[:])
@@ -162,7 +182,7 @@ def ffa_step(array, step, ntables):
     return array_reshaped_dum
 
 
-@jit(nopython=True)
+@njit()
 def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
     """Fast folding algorithm search."""
     periods = \
@@ -227,6 +247,7 @@ def ffa_search(counts, dt, period_min, period_max):
     pmax = np.ceil(period_max / dt)
     bin_periods = None
     stats = None
+    steps = None
 
     current_rebin = 1
     rebinned_counts = counts
