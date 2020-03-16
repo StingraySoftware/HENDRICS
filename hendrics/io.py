@@ -1250,6 +1250,10 @@ def main(args=None):
         'Print the content of HENDRICS files'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
+    parser.add_argument("--print-header",
+                        help="Print the full FITS header if present in the "
+                             "meta data.",
+                        default=False, action='store_true')
 
     args = parser.parse_args(args)
 
@@ -1265,15 +1269,28 @@ def main(args=None):
             continue
         ftype, contents = get_file_type(fname, raw_data=True)
         print('This file contains:', end='\n\n')
+        mjdref = 0. * u.d
         if 'mjdref' in contents:
             mjdref = Time(contents['mjdref'], format='mjd')
 
+        tstart = None
+        tstop = None
+        tseg = None
+
         for k in sorted(contents.keys()):
+            if k == "header" and not args.print_header:
+                continue
             if k == 'tstart':
                 timeval = contents[k] * u.s
-                val = '{0} (MJD {1})'.format(contents[k], mjdref + timeval)
-            if k == 'tseg':
-                val = '{0} s'.format(contents[k])
+                val = f'MET {contents[k]} s (MJD {mjdref + timeval.to(u.d)})'
+                tstart = timeval
+            elif k == 'tstop':
+                timeval = contents[k] * u.s
+                val = f'MET {contents[k]} s (MJD {mjdref + timeval.to(u.d)})'
+                tstop = timeval
+            elif k == 'tseg':
+                val = '{contents[k]} s'
+                tseg = contents[k] * u.s
             else:
                 val = contents[k]
             if isinstance(val, Iterable) and not is_string(val):
@@ -1284,6 +1301,9 @@ def main(args=None):
                     val = repr(list(val[:4])).replace(']', '') + '...]'
                     val = '{} (len {})'.format(val, length)
             print((k + ':').ljust(15), val, end='\n\n')
+
+        if tseg is None and (tstart is not None and tstop is not None):
+            print(('length:').ljust(15), tstop - tstart, end='\n\n')
 
         print('-' * len(fname))
 
