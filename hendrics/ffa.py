@@ -328,10 +328,9 @@ def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
 
     stats = np.zeros(ntables)
     for i in range(array_reshaped.shape[0]):
-        # stats[i] = stat(array_reshaped[i, :])
         stats[i] = \
-            z_n_fast_cached(array_reshaped[i, :], cached_cos, cached_sin,
-                            n=z_n_n)
+            _z_n_fast_cached(array_reshaped[i, :], cached_cos, cached_sin,
+                             n=z_n_n)
 
     return periods, stats
 
