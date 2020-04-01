@@ -21,7 +21,7 @@ from .base import hen_root, show_progress
 from .base import deorbit_events, njit, prange
 from .base import histogram2d, histogram
 from .fold import filter_energy
-from .ffa import z_n_fast_cached, ffa_search
+from .ffa import _z_n_fast_cached, ffa_search
 
 try:
     import imageio
@@ -561,8 +561,8 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
         for j in range(quabinshifts.size):
             splat_prof = shift_and_sum(repeated_profiles, L[i, j], Q[i, j],
                                        splat_prof, base_shift, quad_base_shift)
-            local_stat = z_n_fast_cached(splat_prof, cached_cos, cached_sin,
-                                         n=n)
+            local_stat = _z_n_fast_cached(splat_prof, cached_cos, cached_sin,
+                                          n=n)
             stats[i, j] = local_stat
 
     return stats
@@ -609,7 +609,7 @@ def search_with_qffa_step(
         quabinshifts = np.linspace(-nbin * npfact, nbin * npfact,
                                    int(oversample * npfact))
     else:
-        quabinshifts = [0]
+        quabinshifts = np.array([0])
 
     dphi = 1 / nbin
     delta_t = (t1 - t0) / 2

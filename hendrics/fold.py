@@ -396,7 +396,7 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
         return ev, elabel
     # For some reason the doctest doesn't work if I don't do this instead
     # of using warnings.warn
-    if elabel.lower() == 'pi' and emax is not None or emin is not None:
+    if elabel.lower() == 'pi' and (emax is not None or emin is not None):
         log.warning(f"No energy information in event list "
                     f"while filtering between {emin} and {emax}. "
                     "Definition of events.energy is now based on PI.")
