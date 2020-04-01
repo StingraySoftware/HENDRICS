@@ -772,7 +772,7 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
     p0 = 1 / f1
     p1 = 1 / f0
     dt = p0 / nbin
-    counts = histogram((times - t0).astype(np.double), ranges=[0, length],
+    counts = histogram((times - t0).astype(np.double), range=[0, length],
                        bins=int(np.rint(length / dt)))
     bin_periods, stats = ffa_search(counts, dt, p0, p1)
     return 1 / bin_periods, stats, None, length
