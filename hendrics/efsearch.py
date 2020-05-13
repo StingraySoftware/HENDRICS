@@ -729,7 +729,10 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
 
     step = np.median(np.diff(all_fgrid[:, 0]))
     fdotstep = np.median(np.diff(all_fdotgrid[0]))
-    return all_fgrid.T, all_fdotgrid.T, all_stats.T, step, fdotstep, length
+    if search_fdot:
+        return all_fgrid.T, all_fdotgrid.T, all_stats.T, step, fdotstep, length
+    else:
+        return all_fgrid.T[0], all_stats.T[0], step, length
 
 
 def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
@@ -875,9 +878,9 @@ def _common_parser(args=None):
                         help="Mean fdot to fold "
                              "(only useful when using --fast)", default=0)
     parser.add_argument("--fdotmin", type=float, required=False,
-                        help="Minimum fdot to fold", default=0)
+                        help="Minimum fdot to fold", default=None)
     parser.add_argument("--fdotmax", type=float, required=False,
-                        help="Maximum fdot to fold", default=0)
+                        help="Maximum fdot to fold", default=None)
     parser.add_argument("--dynstep", type=int, required=False,
                         help="Dynamical EF step", default=128)
     parser.add_argument("--npfact", type=int, required=False,
@@ -999,21 +1002,30 @@ def _common_main(args, func):
             continue
 
         if not args.fast and not args.ffa:
+            fdotmin = args.fdotmin if args.fdotmin is not None else 0
+            fdotmax = args.fdotmax if args.fdotmax is not None else 0
             results = \
                 folding_search(events, args.fmin, args.fmax, step=args.step,
                                func=func,
                                oversample=oversample, nbin=args.nbin,
-                               expocorr=args.expocorr, fdotmin=args.fdotmin,
-                               fdotmax=args.fdotmax,
+                               expocorr=args.expocorr, fdotmin=fdotmin,
+                               fdotmax=fdotmax,
                                segment_size=args.segment_size, **kwargs)
             ref_time = (events.gti[0, 0])
         elif args.fast:
+            fdotmin = args.fdotmin if args.fdotmin is not None else 0
+            fdotmin = args.fdotmax if args.fdotmax is not None else 0
+            search_fdot = True
+            if args.fdotmax is not None and fdotmax <= fdotmin:
+                search_fdot = False
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax,
                                  fdot=args.mean_fdot,
                                  nbin=args.nbin, n=n,
                                  nprof=None, npfact=args.npfact,
-                                 oversample=oversample)
+                                 oversample=oversample,
+                                 search_fdot=search_fdot)
+
             ref_time = (events.time[-1] + events.time[0]) / 2
         elif args.ffa:
             results = \

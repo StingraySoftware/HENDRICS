@@ -348,7 +348,6 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
         elif len(ef.stat.shape) == 1:
             f = ef.freq[ef.stat.argmax()]
             df = np.min(np.diff(ef.freq))
-
             fdot = 0
             dfdot = 1
         else:
@@ -389,12 +388,13 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                             expocorr=False, nbin=nbin)
             ax = plt.subplot(external_gs[0])
 
-            # noinspection PyPackageRequirements
-            ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
-                round(f, -np.int(np.floor(np.log10(np.abs(df))))),
-                round(fdot, -np.int(np.floor(np.log10(np.abs(dfdot)))))),
-                horizontalalignment='left', verticalalignment='center',
-                transform=ax.transAxes)
+            # print(df, dfdot)
+            # # noinspection PyPackageRequirements
+            # ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
+            #     round(f, -np.int(np.floor(np.log10(np.abs(df))))),
+            #     round(fdot, -np.int(np.floor(np.log10(np.abs(dfdot)))))),
+            #     horizontalalignment='left', verticalalignment='center',
+            #     transform=ax.transAxes)
             ax.plot(np.concatenate((phase, phase + 1)),
                     np.concatenate((profile, profile)), drawstyle='steps-mid')
 
