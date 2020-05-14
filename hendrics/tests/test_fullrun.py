@@ -878,12 +878,32 @@ model = models.Const1D()
 
     def test_create_gti(self):
         """Test creating a GTI file."""
+        fname = os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev') + \
+            HEN_FILE_EXTENSION
+        command = "{0} -f time>0 -c --debug".format(fname)
+        hen.create_gti.main(command.split())
+
+    def test_apply_gti(self):
+        """Test applying a GTI file."""
+        fname = os.path.join(self.datadir, 'monol_testA_nustar_fpma_gti') + \
+            HEN_FILE_EXTENSION
+        lcfname = os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev') + \
+            HEN_FILE_EXTENSION
+        lcoutname = os.path.join(self.datadir,
+                                 'monol_testA_nustar_fpma_ev_gtifilt') + \
+            HEN_FILE_EXTENSION
+        command = "{0} -a {1} --debug".format(lcfname, fname)
+        hen.create_gti.main(command.split())
+        hen.io.load_events(lcoutname)
+
+    def test_create_gti_lc(self):
+        """Test creating a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
             HEN_FILE_EXTENSION
         command = "{0} -f counts>0 -c --debug".format(fname)
         hen.create_gti.main(command.split())
 
-    def test_apply_gti(self):
+    def test_apply_gti_lc(self):
         """Test applying a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
             HEN_FILE_EXTENSION
