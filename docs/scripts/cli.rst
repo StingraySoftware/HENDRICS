@@ -227,11 +227,12 @@ HENefsearch
 ::
 
     usage: HENefsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
-                       [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
-                       [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
-                       [--step STEP] [--oversample OVERSAMPLE] [--fast]
-                       [--transient] [--expocorr] [--find-candidates]
-                       [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+                       [--mean-fdot MEAN_FDOT] [--fdotmin FDOTMIN]
+                       [--fdotmax FDOTMAX] [--dynstep DYNSTEP] [--npfact NPFACT]
+                       [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
+                       [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
+                       [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
+                       [--fit-candidates] [--curve CURVE]
                        [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                        [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
@@ -247,6 +248,8 @@ HENefsearch
       -F FMAX, --fmax FMAX  Maximum frequency to fold
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
+      --mean-fdot MEAN_FDOT
+                            Mean fdot to fold (only useful when using --fast)
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
@@ -264,6 +267,9 @@ HENefsearch
                             searches for the first spin derivative using an
                             optimized step.This option ignores expocorr,
                             fdotmin/max, segment-size, and step
+      --ffa                 Use *the* Fast Folding Algorithm by Staelin+69. No
+                            accelerated search allowed at the moment. Only
+                            recommended to search for slow pulsars.
       --transient           Look for transient emission (produces an animated GIF
                             with the dynamic Z search)
       --expocorr            Correct for the exposure of the profile bins. This
@@ -359,7 +365,7 @@ HENfake
     optional arguments:
       -h, --help            show this help message and exit
       -e EVENT_LIST, --event-list EVENT_LIST
-                            File containint event list
+                            File containing event list
       -l LC, --lc LC        File containing light curve
       -c CTRATE, --ctrate CTRATE
                             Count rate for simulated events
@@ -426,7 +432,7 @@ HENfspec
 
     usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
                     [--norm NORM] [--noclobber] [-o OUTROOT] [--back BACK]
-                    [--save-dyn] [--ignore-instr] [--save-all] [--nproc NPROC]
+                    [--save-dyn] [--ignore-instr] [--save-all]
                     [--loglevel LOGLEVEL] [--debug]
                     files [files ...]
 
@@ -458,7 +464,6 @@ HENfspec
       --ignore-instr        Ignore instrument names in channels
       --save-all            Save all information contained in spectra, including
                             single pdss and light curves.
-      --nproc NPROC         Number of processors to use
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
@@ -740,15 +745,16 @@ HENreadfile
 
 ::
 
-    usage: HENreadfile [-h] files [files ...]
+    usage: HENreadfile [-h] [--print-header] files [files ...]
 
     Print the content of HENDRICS files
 
     positional arguments:
-      files       List of files
+      files           List of files
 
     optional arguments:
-      -h, --help  show this help message and exit
+      -h, --help      show this help message and exit
+      --print-header  Print the full FITS header if present in the meta data.
 
 
 HENrebin
@@ -771,6 +777,38 @@ HENrebin
                             (C)PDS, it is possible to specify a non-integer rebin
                             factor, in which case it is interpreted as a
                             geometrical binning factor
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               set DEBUG logging level
+
+
+HENscramble
+-----------
+
+::
+
+    usage: HENscramble [-h] [--smooth-kind {smooth,flat,pulsed}]
+                       [--deadtime DEADTIME] [--dt DT]
+                       [--pulsed-fraction PULSED_FRACTION [PULSED_FRACTION ...]]
+                       [--loglevel LOGLEVEL] [--debug]
+                       fname
+
+    Scramble the events inside an event list, maintaining the same energies and
+    GTIs
+
+    positional arguments:
+      fname                 File containing input event list
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --smooth-kind {smooth,flat,pulsed}
+                            Special testing value
+      --deadtime DEADTIME   Dead time magnitude. Can be specified as a single
+                            number, or two. In this last case, the second value is
+                            used as sigma of the dead time distribution
+      --dt DT               Time resolution of smoothed light curve
+      --pulsed-fraction PULSED_FRACTION [PULSED_FRACTION ...]
+                            Pulsed fraction of simulated pulsations
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
@@ -865,11 +903,12 @@ HENzsearch
 ::
 
     usage: HENzsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
-                      [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
-                      [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
-                      [--step STEP] [--oversample OVERSAMPLE] [--fast]
-                      [--transient] [--expocorr] [--find-candidates]
-                      [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+                      [--mean-fdot MEAN_FDOT] [--fdotmin FDOTMIN]
+                      [--fdotmax FDOTMAX] [--dynstep DYNSTEP] [--npfact NPFACT]
+                      [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
+                      [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
+                      [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
+                      [--fit-candidates] [--curve CURVE]
                       [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                       [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
@@ -885,6 +924,8 @@ HENzsearch
       -F FMAX, --fmax FMAX  Maximum frequency to fold
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
+      --mean-fdot MEAN_FDOT
+                            Mean fdot to fold (only useful when using --fast)
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
@@ -902,6 +943,9 @@ HENzsearch
                             searches for the first spin derivative using an
                             optimized step.This option ignores expocorr,
                             fdotmin/max, segment-size, and step
+      --ffa                 Use *the* Fast Folding Algorithm by Staelin+69. No
+                            accelerated search allowed at the moment. Only
+                            recommended to search for slow pulsars.
       --transient           Look for transient emission (produces an animated GIF
                             with the dynamic Z search)
       --expocorr            Correct for the exposure of the profile bins. This
