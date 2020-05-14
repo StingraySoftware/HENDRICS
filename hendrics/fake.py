@@ -8,11 +8,14 @@ import numpy as np
 import numpy.random as ra
 from astropy import log
 from astropy.logger import AstropyUserWarning
+from stingray.gti import gti_border_bins
+from stingray.simulator.base import simulate_times
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
-from .io import get_file_format, load_data, load_lcurve
-from .base import _empty, jit, njit
+from .io import get_file_format, load_lcurve
+from .io import load_events, save_events, HEN_FILE_EXTENSION
+from .base import _empty, jit, njit, r_in
 
 from .lcurve import lcurve_from_fits
 from .base import njit
@@ -338,6 +341,229 @@ def _read_light_curve(filename):
     return lc
 
 
+def acceptance_rejection(dt, counts_per_bin, t0=0, poissonize_n_events=False,
+                         deadtime=0):
+    """
+    Examples
+    --------
+    >>> counts_per_bin = [10, 5, 5]
+    >>> dt = 0.1
+    >>> ev = acceptance_rejection(dt, counts_per_bin)
+    >>> ev.size == 20
+    True
+    >>> ev.max() < 0.3
+    True
+    >>> ev.min() > 0
+    True
+    >>> np.all(np.diff(ev) >= 0)
+    True
+    """
+    counts_per_bin = np.asarray(counts_per_bin)
+    rates = counts_per_bin / dt
+    dead_time_corrected_rates = r_in(deadtime, rates)
+    counts_per_bin = dead_time_corrected_rates * dt
+
+    n_events = np.rint(np.sum(counts_per_bin)).astype(int)
+    if poissonize_n_events:
+        n_events = np.random.poisson(n_events)
+
+    n_bins = counts_per_bin.size
+    event_times = np.zeros(n_events)
+    n_missing = n_events
+    M = np.max(counts_per_bin)
+
+    while n_missing > 0:
+        stats = np.random.uniform(0, M, n_missing)
+        float_bin = np.random.uniform(0, n_bins, n_missing)
+
+        int_bin = np.floor(float_bin).astype(int)
+        good = stats < counts_per_bin[int_bin]
+        n = np.count_nonzero(good)
+        if n == 0:
+            continue
+        start_bin = -n_missing
+        end_bin = -n_missing + n
+        if end_bin == 0:
+            end_bin = event_times.size
+
+        event_times[start_bin:end_bin] = float_bin[good] * dt + t0
+        n_missing -= n
+
+    return filter_for_deadtime(np.sort(event_times), deadtime)
+
+
+def make_counts_pulsed(nevents, t_start, t_stop, pulsed_fraction=0.):
+    """
+
+    Examples
+    --------
+    >>> nevents = 10
+    >>> dt, counts = make_counts_pulsed(nevents, 0, 100)
+    >>> np.isclose(np.sum(counts), nevents)
+    True
+    >>> dt, counts = make_counts_pulsed(nevents, 0, 100, pulsed_fraction=1)
+    >>> np.isclose(np.sum(counts), nevents)
+    True
+    """
+    dt = 0.0546372810934756
+    length = t_start - t_stop
+    n_bins = int(np.ceil(length / dt))
+    # make dt an exact divisor of the length
+    dt = length / n_bins
+
+    times = np.arange(t_start, t_stop, dt)
+    sinusoid = pulsed_fraction / 2 * np.sin(np.pi * 2 * times)
+
+    lc = 1 - pulsed_fraction / 2 + sinusoid
+
+    counts = lc * nevents / np.sum(lc)
+    return dt, counts
+
+
+def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
+             deadtime=0.):
+    """Scramble event list, GTI by GTI.
+
+    Parameters
+    ----------
+    event_list: :class:`stingray.events.Eventlist` object
+        Input event list
+
+    Other parameters
+    ----------------
+    smooth_kind: str in ['flat', 'smooth', 'pulsed']
+        if 'flat', count the events GTI by GTI without caring about long-term
+        variability; if 'smooth', try to calculate smooth light curve first
+    dt: float
+        If ``smooth_kind`` is 'smooth', bin the light curve with this bin time.
+        Ignored for other values of ``smooth_kind``
+    pulsed_fraction: float
+        If ``smooth_kind`` is 'pulsed', use this pulse fraction, defined as the
+        2 A / B, where A is the amplitude of the sinusoid and B the maximum
+        flux. Ignored for other values of ``smooth_kind``
+    deadtime: float
+        Dead time in the data.
+
+    Returns
+    -------
+    new_event_list: :class:`stingray.events.Eventlist` object
+        "Scrambled" event list
+
+    Examples
+    --------
+    >>> nevents = 3003
+    >>> times = np.sort(np.random.uniform(0, 1000, nevents))
+    >>> event_list = EventList(times, gti=[[0, 123.], [125.123, 1000]])
+    >>> new_event_list = scramble(event_list, 'smooth')
+    >>> new_event_list.time.size == nevents
+    True
+    >>> np.all(new_event_list.gti == event_list.gti)
+    True
+    >>> new_event_list = scramble(event_list, 'flat')
+    >>> new_event_list.time.size == nevents
+    True
+    >>> np.all(new_event_list.gti == event_list.gti)
+    True
+    """
+    new_event_list = copy.deepcopy(event_list)
+    idxs_start, idxs_stop = gti_border_bins(
+        time=new_event_list.time, gtis=new_event_list.gti)
+
+    for i_start, i_stop, gti_boundary in zip(idxs_start, idxs_stop,
+                                             new_event_list.gti):
+        nevents = i_stop - i_start
+        t_start, t_stop = gti_boundary[0], gti_boundary[1]
+        length = t_stop - t_start
+
+        if smooth_kind == 'flat':
+            rate = nevents / length
+            input_rate = r_in(deadtime, rate)
+            new_events = np.sort(np.random.uniform(
+                t_start, t_stop,
+                np.rint(nevents * input_rate / rate).astype(int)))
+            new_events = filter_for_deadtime(new_events, deadtime)
+            new_event_list.time[i_start:i_stop] = new_events[:i_stop - i_start]
+            continue
+        elif smooth_kind == 'smooth':
+            if dt is None:
+                # Try to have at least 20 counts per bin on average
+                dt = min(length / (nevents / 20), length)
+            # make dt an exact divisor of the length
+            n_bins = int(np.ceil(length / dt))
+            dt = length / n_bins
+
+            counts, _ = np.histogram(new_event_list.time[i_start:i_stop],
+                                     range=[t_start, t_stop],
+                                     bins=n_bins)
+
+        elif smooth_kind == 'pulsed':
+            dt = 0.0987654321
+            n_bins = int(np.ceil(length / dt))
+            # make dt an exact divisor of the length
+            dt = length / n_bins
+
+            times = np.arange(t_start, t_stop, dt)
+            sinusoid = pulsed_fraction / 2 * np.sin(np.pi * 2 * times)
+
+            lc = 1 - pulsed_fraction / 2 + sinusoid
+
+            counts = lc * nevents / np.sum(lc)
+        else:
+            raise ValueError('Unknown value for `smooth_kind`')
+
+        new_event_list.time[i_start:i_stop] = \
+            acceptance_rejection(dt, counts, t0=t_start,
+                                 poissonize_n_events=False,
+                                 deadtime=deadtime)
+
+    return new_event_list
+
+
+def main_scramble(args=None):
+    """Main function called by the `HENscramble` command line script."""
+    import argparse
+    from .base import _add_default_args, check_negative_numbers_in_args
+    description = (
+        'Scramble the events inside an event list, maintaining the same '
+        'energies and GTIs')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("fname", type=str, default=None,
+                        help="File containing input event list")
+    parser.add_argument('--smooth-kind',
+                        choices=['smooth', 'flat', 'pulsed'],
+                        help='Special testing value', default='flat')
+    parser.add_argument("--deadtime", type=float, default=0,
+                        help="Dead time magnitude. Can be specified as a "
+                             "single number, or two. In this last case, the "
+                             "second value is used as sigma of the dead time "
+                             "distribution")
+    parser.add_argument("--dt", type=float, default=0,
+                        help="Time resolution of smoothed light curve")
+    parser.add_argument("--pulsed-fraction", type=float, default=0, nargs='+',
+                        help="Pulsed fraction of simulated pulsations")
+    args = check_negative_numbers_in_args(args)
+    _add_default_args(parser, ['loglevel', 'debug'])
+
+    args = parser.parse_args(args)
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    log.setLevel(args.loglevel)
+
+    event_list = load_events(args.fname)
+    new_event_list = scramble(event_list, smooth_kind=args.smooth_kind,
+                              dt=args.dt,
+                              pulsed_fraction=args.pulsed_fraction,
+                              deadtime=args.deadtime)
+
+    outfile = args.fname.replace(HEN_FILE_EXTENSION,
+                                 '_scramble' + HEN_FILE_EXTENSION)
+    save_events(new_event_list, outfile)
+    return outfile
+
+
 def main(args=None):
     """Main function called by the `HENfake` command line script."""
     import argparse
@@ -349,7 +575,7 @@ def main(args=None):
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("-e", "--event-list", type=str, default=None,
-                        help="File containint event list")
+                        help="File containing event list")
     parser.add_argument("-l", "--lc", type=str, default=None,
                         help="File containing light curve")
     parser.add_argument("-c", "--ctrate", type=float, default=None,

@@ -1,18 +1,20 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Test a full run of the codes from the command line."""
 
-import hendrics as hen
-from astropy import log
+import shutil
 import os
 import glob
 import subprocess as sp
+
 import numpy as np
+from astropy import log
 from astropy.tests.helper import catch_warnings
 from astropy.io import fits
-import pytest
-from stingray.lightcurve import Lightcurve
 from astropy.logger import AstropyUserWarning
 from astropy.tests.helper import remote_data
+import pytest
+from stingray.lightcurve import Lightcurve
+import hendrics as hen
 from hendrics.tests import _dummy_par
 from hendrics.fold import HAS_PINT
 from hendrics import fake, fspec, base, binary, calibrate, colors, create_gti,\
@@ -96,6 +98,11 @@ class TestFullRun(object):
         ev = hen.io.load_events(new_filename)
         assert hasattr(ev, 'header')
         assert hasattr(ev, 'gti')
+
+    def test_scramble_events(self):
+        command = f'{self.first_event_file}'
+        newfile = hen.fake.main_scramble(command.split())
+        assert os.path.exists(newfile)
 
     def test_load_events_with_2_cpus(self):
         """Test event file reading."""
@@ -1078,25 +1085,42 @@ model = models.Const1D()
     def teardown_class(self):
         """Test a full run of the scripts (command lines)."""
 
-        file_list = \
-            glob.glob(os.path.join(self.datadir,
-                                   '*monol_test*') + HEN_FILE_EXTENSION) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*lcurve*') + HEN_FILE_EXTENSION) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*lcurve*.txt')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*.log')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*monol_test*.dat')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*monol_test*.png')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*monol_test*.txt')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   'monol_test_fake*.evt')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   'bubu*'))
+        def find_file_pattern_in_dir(pattern, directory):
+            return glob.glob(os.path.join(directory, pattern))
+
+        patterns = [
+            '*monol_test*' + HEN_FILE_EXTENSION,
+            '*lcurve*' + HEN_FILE_EXTENSION,
+            '*lcurve*.txt',
+            '*.log',
+            '*monol_test*.dat',
+            '*monol_test*.png',
+            '*monol_test*.txt',
+            '*monol_test_fake*.evt',
+            '*bubu*',
+            '*.p',
+            '*.qdp',
+            '*.inf'
+        ]
+
+        file_list = []
+        for pattern in patterns:
+            file_list.extend(
+                find_file_pattern_in_dir(pattern, self.datadir)
+            )
+
         for f in file_list:
-            print("Removing " + f)
-            os.remove(f)
+            if os.path.exists(f):
+                print("Removing " + f)
+                os.remove(f)
+
+        patterns = ['*_pds*/', '*_cpds*/', '*_sum/']
+
+        dir_list = []
+        for pattern in patterns:
+            dir_list.extend(
+                find_file_pattern_in_dir(pattern, self.datadir)
+            )
+        for f in dir_list:
+            if os.path.exists(f):
+                shutil.rmtree(f)
