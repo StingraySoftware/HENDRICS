@@ -14,6 +14,7 @@ import numpy as np
 from numpy import histogram2d as histogram2d_np
 from numpy import histogram as histogram_np
 from astropy.logger import AstropyUserWarning
+from astropy import log
 
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
@@ -768,3 +769,105 @@ def touch(fname):
     >>> os.unlink('bububu')
     """
     Path(fname).touch()
+
+
+def log_x(a, base):
+    # Logb x = Loga x/Loga b
+    return np.log(a) / np.log(base)
+
+
+def get_list_of_small_powers(maxno=100000000000):
+    powers_of_two = 2 ** np.arange(0, np.ceil(np.log2(maxno)))
+    powers_of_three = 3 ** np.arange(0, np.ceil(log_x(maxno, 3)))
+    powers_of_five = 5 ** np.arange(0, np.ceil(log_x(maxno, 5)))
+    list_of_powers = []
+    for p2 in powers_of_two:
+        for p3 in powers_of_three:
+            for p5 in powers_of_five:
+                newno = p2 * p3 * p5
+                if newno > maxno:
+                    break
+                list_of_powers.append(p2 * p3 * p5)
+    return sorted(list_of_powers)
+
+
+def adjust_dt_for_power_of_two(dt, length, strict=False):
+    """
+    Examples
+    --------
+    >>> length, dt = 10, 0.1
+    >>> # There are 100 bins there. I want them to be 128.
+    >>> new_dt = adjust_dt_for_power_of_two(dt, length)
+    INFO: ...
+    INFO: ...
+    >>> np.isclose(new_dt, 0.078125)
+    True
+    >>> length / new_dt == 128
+    True
+    """
+    log.info("Adjusting bin time to closest power of 2 of bins.")
+    nbin = length / dt
+    closest_to_pow2 = 2**np.ceil(np.log2(nbin))
+    if closest_to_pow2 > 1.5 * nbin and not strict:
+        log.info("Too many bins: using powers of 2, 3, and 5.")
+        return adjust_dt_for_small_power(dt, length)
+    new_dt = length / closest_to_pow2
+    log.info(f"New bin time: {new_dt} (nbin {nbin} -> {closest_to_pow2})")
+    return new_dt
+
+
+def adjust_dt_for_small_power(dt, length):
+    """
+    Examples
+    --------
+    >>> length, dt = 9.9, 0.1
+    >>> # There are 99 bins there. I want them to be 100 (2**2 * 5**2).
+    >>> new_dt = adjust_dt_for_small_power(dt, length)
+    INFO:...
+    >>> np.isclose(new_dt, 0.099)
+    True
+    >>> np.isclose(length / new_dt, 100)
+    True
+    """
+    nbin = length / dt
+    losp = get_list_of_small_powers(2 * nbin)
+    nbin_new = np.searchsorted(losp, nbin)
+    if losp[nbin_new] < nbin:
+        nbin_new += 1
+
+    new_dt = length / losp[nbin_new]
+    log.info(f"New bin time: {new_dt} (nbin {nbin} -> {losp[nbin_new]})")
+    return new_dt
+
+
+def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7,
+                     dtype=float):
+    """Arange plus memory mapping.
+
+    Examples
+    --------
+    >>> i0, i1, istep = 0, 10, 1e-2
+    >>> np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
+    True
+    >>> i0, i1, istep = 0, 10, 1e-7
+    >>> np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
+    True
+
+    """
+    import tempfile
+    chunklen=10**6
+    Nbins = int((i1 - i0) / istep)
+    if Nbins < nbin_threshold:
+        return np.arange(i0, i1, istep)
+    if fname is None:
+        _, fname = tempfile.mkstemp(suffix='.npy')
+
+    hist_arr = np.lib.format.open_memmap(
+        fname, mode='w+', dtype=dtype, shape=(Nbins,))
+
+    for start in range(0, Nbins, chunklen):
+        stop = min(start + chunklen, Nbins)
+        hist_arr[start:stop] = \
+            np.arange(start, stop) * istep
+
+    return hist_arr
