@@ -99,6 +99,20 @@ class TestFullRun(object):
         assert hasattr(ev, 'header')
         assert hasattr(ev, 'gti')
 
+    def test_load_events_randomize(self):
+        """Test event file reading."""
+        # command = '{0} --randomize-by 0.073'.format(
+        #     os.path.join(self.datadir, 'monol_testA.evt'))
+        newfiles = hen.read_events.treat_event_file(
+            os.path.join(self.datadir, 'monol_testA.evt'),
+            randomize_by=0.073)
+        clean_file = self.first_event_file
+        ev_clean = hen.io.load_events(clean_file)
+        ev = hen.io.load_events(newfiles[0])
+        diff = ev.time - ev_clean.time
+        assert np.all(np.abs(diff) <= 0.073 / 2)
+        assert np.all(np.abs(diff) > 0.)
+
     def test_scramble_events(self):
         command = f'{self.first_event_file}'
         newfile = hen.fake.main_scramble(command.split())

@@ -341,8 +341,8 @@ def _read_light_curve(filename):
     return lc
 
 
-def acceptance_rejection(dt, counts_per_bin, t0=0, poissonize_n_events=False,
-                         deadtime=0):
+def acceptance_rejection(dt, counts_per_bin, t0=0., poissonize_n_events=False,
+                         deadtime=0.):
     """
     Examples
     --------
@@ -497,7 +497,17 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
                                      bins=n_bins)
 
         elif smooth_kind == 'pulsed':
-            dt = 0.0987654321
+            df = 1 / length
+            # Frequency is one, but can be anywhere in the frequency bin (for
+            # sensitivity losses)
+            frequency = 1 + np.random.uniform(-df, df)
+            # dt must be sufficiently small so that the frequency can be
+            # detected with no loss of sensitivity. Moreover, not exactly a
+            # multiple of the frequency, to increase randomness in the
+            # detection sensitivity. I take a random Nyquist frequency between
+            # 10 and 15 times the pulse frequency
+            nyq = np.random.uniform(frequency * 10, frequency * 15)
+            dt = 0.5 / nyq
             n_bins = int(np.ceil(length / dt))
             # make dt an exact divisor of the length
             dt = length / n_bins
@@ -540,8 +550,10 @@ def main_scramble(args=None):
                              "distribution")
     parser.add_argument("--dt", type=float, default=0,
                         help="Time resolution of smoothed light curve")
-    parser.add_argument("--pulsed-fraction", type=float, default=0, nargs='+',
+    parser.add_argument("--pulsed-fraction", type=float, default=0,
                         help="Pulsed fraction of simulated pulsations")
+    parser.add_argument("--outfile", type=str, default=None,
+                        help="Output file name")
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['loglevel', 'debug'])
 
@@ -558,8 +570,21 @@ def main_scramble(args=None):
                               pulsed_fraction=args.pulsed_fraction,
                               deadtime=args.deadtime)
 
-    outfile = args.fname.replace(HEN_FILE_EXTENSION,
-                                 '_scramble' + HEN_FILE_EXTENSION)
+    if args.outfile is not None:
+        outfile = args.outfile
+    else:
+        label = '_scramble'
+
+        if args.smooth_kind == 'pulsed':
+            label += f'_pulsed_df{args.pulsed_fraction:g}'
+        elif args.smooth_kind == 'smooth':
+            label += f'_smooth_dt{args.dt:g}s'
+
+        if args.deadtime > 0:
+            label += f'_deadtime_{args.deadtime:g}'
+
+        outfile = args.fname.replace(HEN_FILE_EXTENSION,
+                                     '_scramble' + HEN_FILE_EXTENSION)
     save_events(new_event_list, outfile)
     return outfile
 
