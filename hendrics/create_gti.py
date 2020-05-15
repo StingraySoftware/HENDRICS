@@ -98,7 +98,6 @@ def apply_gti(fname, gti, outname=None,
 
     newgtis = filter_gti_by_length(newgtis, minimum_length)
 
-    data['__sr__class__type__'] = 'gti'
     data['gti'] = newgtis
     good = create_gti_mask(data['time'], newgtis)
 
