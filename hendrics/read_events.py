@@ -16,7 +16,8 @@ from .io import HEN_FILE_EXTENSION, read_header_key
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,
-                     min_length=4, gtistring=None, length_split=None):
+                     min_length=4, gtistring=None, length_split=None,
+                     randomize_by=None):
     """Read data from an event file, with no external GTI information.
 
     Parameters
@@ -49,12 +50,20 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
     gtis = events.gti
     detector_id = data.detector_id
 
+    if randomize_by is not None:
+        events.time += np.random.uniform(-randomize_by / 2,
+                                         randomize_by / 2,
+                                         events.time.size)
+
     if detector_id is not None:
         detectors = np.array(list(set(detector_id)))
     else:
         detectors = [None]
     outfile_root = \
         hen_root(filename) + '_' + mission.lower() + '_' + instr.lower()
+
+    if randomize_by is not None:
+        outfile_root += f'_randomize_by_{randomize_by:g}s'
 
     output_files = []
     for d in detectors:
@@ -206,6 +215,10 @@ def main(args=None):
     parser.add_argument("--gti-string", type=str,
                         help="GTI string",
                         default=None)
+    parser.add_argument("--randomize-by", type=float,
+                        help="Randomize event arrival times by this amount "
+                             "(e.g. it might be the 0.073-s frame time in "
+                             "XMM)", default=None)
 
     _add_default_args(parser, ['output',
                                'loglevel', 'debug', 'nproc'])
@@ -222,7 +235,8 @@ def main(args=None):
     with log.log_to_file('HENreadevents.log'):
         argdict = {"noclobber": args.noclobber, "gti_split": args.gti_split,
                    "min_length": args.min_length, "gtistring": args.gti_string,
-                   "length_split": args.length_split}
+                   "length_split": args.length_split,
+                   "randomize_by": args.randomize_by}
 
         arglist = [[f, argdict] for f in files]
 
