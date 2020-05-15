@@ -8,6 +8,7 @@ import copy
 
 import numpy as np
 from astropy import log
+from astropy.table import Table
 from astropy.logger import AstropyUserWarning
 from .io import get_file_type
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
@@ -15,13 +16,21 @@ from stingray.pulse.search import epoch_folding_search, z_n_search, \
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
+from stingray.pulse.accelsearch import accelsearch
 from .io import load_events, EFPeriodogram, save_folding, \
     HEN_FILE_EXTENSION
-from .base import hen_root, show_progress
+from .base import hen_root, show_progress, adjust_dt_for_power_of_two
 from .base import deorbit_events, njit, prange
-from .base import histogram2d, histogram
+from .base import histogram2d, histogram, memmapped_arange
 from .fold import filter_energy
 from .ffa import _z_n_fast_cached, ffa_search
+from .fake import scramble
+try:
+    import matplotlib.pyplot as plt
+    HAS_MPL=True
+except ImportError:
+    HAS_MPL = False
+
 
 try:
     import imageio
@@ -624,7 +633,8 @@ def search_with_qffa_step(
 
 
 def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
-                     oversample=8, n=1, search_fdot=True, t0=None, t1=None):
+                     oversample=8, n=1, search_fdot=True, t0=None, t1=None,
+                     silent=False):
     """'Quite fast folding' algorithm.
 
     Parameters
@@ -703,7 +713,11 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     all_fdotgrid = []
     all_stats = []
 
-    for ii, i in enumerate(show_progress(allvalues)):
+    local_show_progress = show_progress
+    if silent:
+        local_show_progress = lambda x: x
+
+    for ii, i in enumerate(local_show_progress(allvalues)):
         offset = step * i
         fdot_offset = 0
 
@@ -979,6 +993,7 @@ def _common_main(args, func):
 
         ftype, events = get_file_type(fname)
 
+        print(events, ftype)
         if ftype == 'events':
             if hasattr(events, 'mjdref'): mjdref = events.mjdref
             if args.emin is not None or args.emax is not None:
@@ -1107,3 +1122,179 @@ def main_zsearch(args=None):
 
     with log.log_to_file('HENzsearch.log'):
         _common_main(args, z_n_search)
+
+
+def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None):
+    length = event_list.gti[-1, 1] - event_list.gti[0, 0]
+    df = 1/length
+
+    result_table = Table(names=['pf', 'z2'], dtype=[float, float])
+    for i in show_progress(range(ntrials)):
+        pf = np.random.uniform(0, 1)
+        new_event_list = scramble(event_list, deadtime=deadtime,
+                                  smooth_kind='pulsed', pulsed_fraction=pf)
+
+        frequencies, stats, _, _ = \
+            search_with_qffa(new_event_list.time, 1 - df * 2, 1 + df * 2,
+                             fdot=0, nbin=32, oversample=16, search_fdot=False,
+                             silent=True)
+        result_table.add_row([pf, np.max(stats)])
+    if outfile is None:
+        outfile = 'z2_vs_pf.csv'
+    result_table.write(outfile)
+    return result_table
+
+
+def main_z2vspf(args=None):
+    from .base import _add_default_args, check_negative_numbers_in_args
+    description = ('Get Z2 vs pulsed fraction for a given observation. Takes'
+                   ' the original event list, scrambles the event arrival time,'
+                   ' adds a pulsation with random pulsed fraction, and takes'
+                   ' the maximum value of Z2 in a small interval around the'
+                   ' pulsation. Does this ntrial times, and plots.')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("fname", help="Input file name")
+    parser.add_argument('--ntrial', default=100, type=int,
+                        help="Number of trial values for the pulsed fraction")
+    parser.add_argument('--outfile', default=None, type=str,
+                        help="Output table file name")
+    parser.add_argument("--emin", default=None, type=float,
+                        help="Minimum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--emax", default=None, type=float,
+                        help="Maximum energy (or PI if uncalibrated) to plot")
+
+    args = check_negative_numbers_in_args(args)
+    _add_default_args(parser, ['loglevel', 'debug'])
+
+    args = parser.parse_args(args)
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    log.setLevel(args.loglevel)
+
+    outfile = args.outfile
+    if outfile is None:
+        outfile = hen_root(args.fname) + '_z2vspf.csv'
+
+    events = load_events(args.fname)
+    if args.emin is not None or args.emax is not None:
+        events, elabel = filter_energy(events, args.emin, args.emax)
+
+    result_table = z2_vs_pf(events,
+                            deadtime=0., ntrials=args.ntrial,
+                            outfile=outfile)
+    if HAS_MPL:
+        plt.figure("Results", figsize=(10, 6))
+        plt.scatter(result_table['pf'] * 100, result_table['z2'])
+        plt.semilogy()
+        plt.grid(True)
+        plt.xlabel("Pulsed fraction (\%)")
+        plt.ylabel(r"$Z^2_2$")
+        # plt.show()
+        plt.savefig(outfile.replace('.csv', '.png'))
+
+
+def main_accelsearch(args=None):
+    from .base import _add_default_args, check_negative_numbers_in_args
+    description = ('Run the accelerated search on pulsar data.')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("fname", help="Input file name")
+    parser.add_argument('--ntrial', default=100, type=int,
+                        help="Number of trial values for the pulsed fraction")
+    parser.add_argument('--outfile', default=None, type=str,
+                        help="Output table file name")
+    parser.add_argument("--emin", default=None, type=float,
+                        help="Minimum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--emax", default=None, type=float,
+                        help="Maximum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--fmin", default=0.1, type=float,
+                        help="Minimum frequency to search, in Hz")
+    parser.add_argument("--fmax", default=1000, type=float,
+                        help="Maximum frequency to search, in Hz")
+    parser.add_argument("--nproc", default=1, type=int,
+                        help="Number of processors to use")
+    parser.add_argument("--zmax", default=100, type=int,
+                        help="Maximum acceleration (in spectral bins)")
+    parser.add_argument("--delta-z", default=1, type=int,
+                        help="Fdot step for search")
+    parser.add_argument("--interbin", default=False, action='store_true',
+                        help="Use interbinning")
+
+    args = check_negative_numbers_in_args(args)
+    _add_default_args(parser, ['loglevel', 'debug'])
+
+    args = parser.parse_args(args)
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    log.setLevel(args.loglevel)
+
+    outfile = args.outfile
+    if outfile is None:
+        outfile = hen_root(args.fname) + '_accelsearch.csv'
+
+    emin = args.emin
+    emax = args.emax
+    debug = args.debug
+    interbin = args.interbin
+    zmax = args.zmax
+    fmax = args.fmax
+    fmin = args.fmin
+    delta_z = args.delta_z
+    nproc = args.nproc
+
+    log.info(f"Opening file {args.fname}")
+    events = load_events(args.fname)
+    nyq = fmax * 5
+    dt = 0.5 / nyq
+    log.info(f"Searching using dt={dt}")
+
+    if emin is not None or emax is not None:
+        events, elabel = filter_energy(events, emin, emax)
+
+    tstart = events.gti[0, 0]
+    GTI = events.gti
+    max_length = GTI.max() - tstart
+    event_times = events.time
+
+    t0 = GTI[0, 0]
+    Nbins = int(np.rint(max_length / dt))
+    if Nbins > 10 ** 8:
+        log.info(f"The number of bins is more than 100 millions: {Nbins}. "
+                 "Using memmap.")
+
+    dt = adjust_dt_for_power_of_two(dt, max_length)
+
+    times = memmapped_arange(0, max_length, dt)
+    counts = histogram((event_times - t0).astype(np.double), bins=times.size,
+                       range=[0, np.double(max_length - dt)])
+
+    log.info(f"Times and counts have {times.size} bins")
+    # Note: det_p_value was calculated as
+    # pds_probability(pds_detection_level(0.015) * 0.64) => 0.068
+    # where 0.64 indicates the 36% detection level drop at the bin edges.
+    results = accelsearch(
+        times, counts, delta_z=delta_z,
+        fmin=fmin, fmax=fmax,
+        gti=GTI - t0, zmax=zmax,
+        ref_time=t0,
+        debug=False, interbin=interbin,
+        nproc=nproc, det_p_value=0.068)
+
+    if len(results) > 0:
+        results['emin'] = emin if emin else -1.
+        results['emax'] = emax if emax else -1.
+        results['fmin'] = fmin
+        results['fmax'] = fmax
+        results['zmax'] = zmax
+        if hasattr(events, 'mission'):
+            results['mission'] = events.mission
+        results['instr'] = events.instr
+        results['mjdref'] = np.double(events.mjdref)
+        results['pepoch'] = events.mjdref + results['time'] / 86400.0
+
+    results.write(outfile)
