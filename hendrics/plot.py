@@ -353,7 +353,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
         else:
             raise ValueError("Did not understand stats shape.")
 
-        plt.figure(fname, figsize=(10, 10))
+        plt.figure(fname, figsize=(8, 8))
 
         if hasattr(ef, "filename") and ef.filename is not None and \
                 os.path.exists(ef.filename):
@@ -417,7 +417,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             ax.set_xlabel("Phase")
             ax.set_ylabel("Counts")
             ax.set_xlim([0, 2])
-            ax.legend()
+            ax.legend(loc=4)
             phascommand = "HENphaseogram -f {} " \
                           "--fdot {} {} -n {} --norm to1".format(f, fdot,
                                                                  ef.filename, nbin)
@@ -492,13 +492,13 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             axffdot.set_ylim([np.min(ef.fdots), np.max(ef.fdots)])
             axffdot.axvline(f, ls='--', color='white')
             axffdot.axhline(fdot, ls='--', color='white')
-            axf.legend()
+            axf.legend(loc=4)
         else:
             axf = plt.subplot(external_gs[search_gs_no])
             axf.plot(ef.freq, ef.stat, drawstyle='steps-mid', label=fname)
             axf.set_xlabel('Frequency (Hz)')
             axf.set_ylabel(ef.kind + ' stat')
-            axf.legend()
+            axf.legend(loc=4)
 
         if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
                 not len(ef.stat.shape) > 1:
@@ -529,6 +529,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
         ax.set_xscale('log', nonposx='clip')
     if ylog:
         ax.set_yscale('log', nonposy='clip')
+    plt.tight_layout()
 
     if figname is not None:
         plt.savefig(figname)
