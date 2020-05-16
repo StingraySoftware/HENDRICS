@@ -23,6 +23,39 @@ HEN2xspec
       --debug              set DEBUG logging level
 
 
+HENaccelsearch
+--------------
+
+::
+
+    usage: HENaccelsearch [-h] [--ntrial NTRIAL] [--outfile OUTFILE] [--emin EMIN]
+                          [--emax EMAX] [--fmin FMIN] [--fmax FMAX]
+                          [--nproc NPROC] [--zmax ZMAX] [--delta-z DELTA_Z]
+                          [--interbin] [--loglevel LOGLEVEL] [--debug]
+                          fname
+
+    Run the accelerated search on pulsar data.
+
+    positional arguments:
+      fname                Input file name
+
+    optional arguments:
+      -h, --help           show this help message and exit
+      --ntrial NTRIAL      Number of trial values for the pulsed fraction
+      --outfile OUTFILE    Output table file name
+      --emin EMIN          Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX          Maximum energy (or PI if uncalibrated) to plot
+      --fmin FMIN          Minimum frequency to search, in Hz
+      --fmax FMAX          Maximum frequency to search, in Hz
+      --nproc NPROC        Number of processors to use
+      --zmax ZMAX          Maximum acceleration (in spectral bins)
+      --delta-z DELTA_Z    Fdot step for search
+      --interbin           Use interbinning
+      --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
+                           ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug              set DEBUG logging level
+
+
 HENbaseline
 -----------
 
@@ -712,8 +745,8 @@ HENreadevents
 
     usage: HENreadevents [-h] [--noclobber] [-g] [-l LENGTH_SPLIT]
                          [--min-length MIN_LENGTH] [--gti-string GTI_STRING]
-                         [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
-                         [--nproc NPROC]
+                         [--randomize-by RANDOMIZE_BY] [-o OUTFILE]
+                         [--loglevel LOGLEVEL] [--debug] [--nproc NPROC]
                          files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
@@ -732,6 +765,9 @@ HENreadevents
                             Minimum length of GTIs to consider
       --gti-string GTI_STRING
                             GTI string
+      --randomize-by RANDOMIZE_BY
+                            Randomize event arrival times by this amount (e.g. it
+                            might be the 0.073-s frame time in XMM)
       -o OUTFILE, --outfile OUTFILE
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -789,7 +825,7 @@ HENscramble
 
     usage: HENscramble [-h] [--smooth-kind {smooth,flat,pulsed}]
                        [--deadtime DEADTIME] [--dt DT]
-                       [--pulsed-fraction PULSED_FRACTION [PULSED_FRACTION ...]]
+                       [--pulsed-fraction PULSED_FRACTION] [--outfile OUTFILE]
                        [--loglevel LOGLEVEL] [--debug]
                        fname
 
@@ -807,8 +843,9 @@ HENscramble
                             number, or two. In this last case, the second value is
                             used as sigma of the dead time distribution
       --dt DT               Time resolution of smoothed light curve
-      --pulsed-fraction PULSED_FRACTION [PULSED_FRACTION ...]
+      --pulsed-fraction PULSED_FRACTION
                             Pulsed fraction of simulated pulsations
+      --outfile OUTFILE     Output file name
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
@@ -895,6 +932,34 @@ HENvarenergy
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
+
+
+HENz2vspf
+---------
+
+::
+
+    usage: HENz2vspf [-h] [--ntrial NTRIAL] [--outfile OUTFILE] [--emin EMIN]
+                     [--emax EMAX] [--loglevel LOGLEVEL] [--debug]
+                     fname
+
+    Get Z2 vs pulsed fraction for a given observation. Takes the original event
+    list, scrambles the event arrival time, adds a pulsation with random pulsed
+    fraction, and takes the maximum value of Z2 in a small interval around the
+    pulsation. Does this ntrial times, and plots.
+
+    positional arguments:
+      fname                Input file name
+
+    optional arguments:
+      -h, --help           show this help message and exit
+      --ntrial NTRIAL      Number of trial values for the pulsed fraction
+      --outfile OUTFILE    Output table file name
+      --emin EMIN          Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX          Maximum energy (or PI if uncalibrated) to plot
+      --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
+                           ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug              set DEBUG logging level
 
 
 HENzsearch
