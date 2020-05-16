@@ -6,6 +6,7 @@ import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding, \
     load_events, get_file_type, save_lcurve
 from hendrics.efsearch import main_efsearch, main_zsearch
+from hendrics.efsearch import main_accelsearch, main_z2vspf
 from hendrics.efsearch import decide_binary_parameters, folding_orbital_search
 from hendrics.fold import main_fold
 from hendrics.plot import plot_folding
@@ -16,6 +17,14 @@ try:
     HAS_PD = True
 except ImportError:
     HAS_PD = False
+
+try:
+    from stingray.pulse.accelsearch import accelsearch
+    HAS_ACCEL = True
+except ImportError:
+    print("This version of stingray has no accelerated search. Please "
+          "update")
+    HAS_ACCEL = False
 
 from hendrics.fold import HAS_PINT
 from hendrics.efsearch import HAS_IMAGEIO
@@ -278,6 +287,21 @@ class TestEFsearch():
             ip = main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                                '--deorbit-par', "nonexistent.par"])
         assert "Parameter file" in str(excinfo.value)
+
+    @pytest.mark.skipif('HAS_ACCEL')
+    def test_accelsearch_missing_raises(self):
+        evfile = self.dum
+        with pytest.raises(ImportError) as excinfo:
+            ip = main_accelsearch([evfile])
+
+    @pytest.mark.skipif('not HAS_ACCEL')
+    def test_accelsearch_missing_raises(self):
+        evfile = self.dum
+        ip = main_accelsearch([evfile])
+
+    def test_z2vspf(self):
+        evfile = self.dum
+        ip = main_z2vspf([evfile])
 
     @classmethod
     def teardown_class(cls):

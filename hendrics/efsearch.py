@@ -16,7 +16,6 @@ from stingray.pulse.search import epoch_folding_search, z_n_search, \
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
-from stingray.pulse.accelsearch import accelsearch
 from .io import load_events, EFPeriodogram, save_folding, \
     HEN_FILE_EXTENSION
 from .base import hen_root, show_progress, adjust_dt_for_power_of_two
@@ -1197,7 +1196,14 @@ def main_z2vspf(args=None):
 
 
 def main_accelsearch(args=None):
+    try:
+        from stingray.pulse.accelsearch import accelsearch
+    except ImportError:
+        print("This version of stingray has no accelerated search. Please "
+              "update")
+        return
     from .base import _add_default_args, check_negative_numbers_in_args
+
     description = ('Run the accelerated search on pulsar data.')
     parser = argparse.ArgumentParser(description=description)
 
