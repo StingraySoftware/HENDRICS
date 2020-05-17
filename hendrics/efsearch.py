@@ -1028,7 +1028,7 @@ def _common_main(args, func):
             ref_time = (events.gti[0, 0])
         elif args.fast:
             fdotmin = args.fdotmin if args.fdotmin is not None else 0
-            fdotmin = args.fdotmax if args.fdotmax is not None else 0
+            fdotmax = args.fdotmax if args.fdotmax is not None else 0
             search_fdot = True
             if args.fdotmax is not None and fdotmax <= fdotmin:
                 search_fdot = False
