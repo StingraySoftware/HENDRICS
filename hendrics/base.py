@@ -871,3 +871,21 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7,
             np.arange(start, stop) * istep
 
     return hist_arr
+
+
+def nchars_in_int_value(value):
+    """Number of characters to write an integer number
+
+    Examples
+    --------
+    >>> nchars_in_int_value(2)
+    1
+    >>> nchars_in_int_value(1356)
+    4
+    >>> nchars_in_int_value(9999)
+    4
+    >>> nchars_in_int_value(10000)
+    5
+    """
+    #  "+1" because, e.g., 10000 would return 4
+    return int(np.ceil(np.log10(value + 1)))
