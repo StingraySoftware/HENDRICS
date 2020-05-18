@@ -164,12 +164,62 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
 
     events1 = load_events(event_file1)
     events2 = load_events(event_file2)
+    if events2.mjdref != events1.mjdref:
+        log.warning("Different missions detected; changing MJDREF")
+        time_diff = (events1.mjdref - events2.mjdref) * 86400
+        events2.time -= time_diff
+        events2.mjdref = events1.mjdref
+        events2.gti -= time_diff
+
     events = events1.join(events2)
     events.header = events1.header
     if events1.instr != events2.instr:
         events.instr = ",".join([e.instr for e in [events1, events2]])
     save_events(events, new_event_file)
     return new_event_file
+
+
+def split_eventlist(fname, max_length, overlap=None):
+        root = hen_root(fname)
+        ev = load_events(fname)
+
+        if overlap is None:
+            overlap = 0
+        if overlap >= 1:
+            raise ValueError("Overlap cannot be >=1. Exiting.")
+
+        event_times = ev.time
+        GTI = ev.gti
+        t0 = GTI[0, 0]
+        count = 0
+        from .base import nchars_in_int_value
+        nchars = nchars_in_int_value((GTI.max() - t0) / max_length)
+
+        while t0 < GTI.max():
+            t1 = min(t0 + max_length, GTI.max())
+            if t1 - t0 < max_length / 2:
+                break
+            idx_start = np.searchsorted(event_times, t0)
+            idx_stop = np.searchsorted(event_times, t1)
+            gti_local = cross_two_gtis(GTI, [[t0, t1]])
+
+            local_times = event_times[idx_start:idx_stop]
+            new_ev = EventList(time=local_times, gti=gti_local)
+            for attr in ['pi', 'energy']:
+                if hasattr(ev, attr) and getattr(ev, attr) is not None:
+                    setattr(new_ev, attr,
+                            getattr(ev, attr)[idx_start:idx_stop])
+            for attr in ['mission', 'instr', 'mjdref']:
+                if hasattr(ev, attr) and getattr(ev, attr) is not None:
+                    setattr(new_ev, attr,
+                            getattr(ev, attr))
+            newfname = \
+                root + f'_{count:0{nchars}d}' + HEN_FILE_EXTENSION
+
+            save_events(new_ev, newfname)
+
+            t0 = t0 + max_length * (1. - overlap)
+            count += 1
 
 
 def main_join(args=None):
@@ -187,6 +237,29 @@ def main_join(args=None):
     args = parser.parse_args(args)
 
     return join_eventlists(args.file1, args.file2, new_event_file=args.output)
+
+
+def main_splitevents(args=None):
+    """Main function called by the `HENsplitevents` command line script."""
+    import argparse
+
+    description = ('Reads a cleaned event files and splits the file into '
+                   'overlapping multiple chunks of fixed length')
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("fname", help="File 1", type=str)
+    parser.add_argument("-l", "--length-split",
+                        help="Split event list by GTI",
+                        default=None, type=float)
+    parser.add_argument("--overlap", type=float,
+                        help="Overlap factor. 0 for no overlap, 0.5 for "
+                             "half-interval overlap, and so on.",
+                        default=None)
+
+
+    args = parser.parse_args(args)
+
+    return split_eventlist(args.fname, max_length=args.length_split,
+                           overlap=args.overlap)
 
 
 def main(args=None):
