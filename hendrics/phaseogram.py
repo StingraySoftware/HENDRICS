@@ -34,10 +34,13 @@ else:
 def get_z2_label(phas, prof):
     good = phas < 1
     z2 = z_n(phas[good], n=2, norm=prof[good])
-    z2_detlev = z2_n_detection_level(n=2)
-    z2_label = r'$Z_2^2 = {:.1f} (90\% det. lev. {:.1f})$'.format(
-        z2, z2_detlev)
+    # z2_detlev = z2_n_detection_level(n=2)
+    z2_label = r'$Z_2^2 = {:.1f}$'.format(z2)
     return z2_label
+
+
+def sec_to_mjd(time, mjdref):
+    return time / 86400 + mjdref
 
 
 class SliderOnSteroids(Slider):
@@ -128,6 +131,7 @@ class BasePhaseogram(object):
         self.test = test
 
         self.pepoch = assign_value_if_none(pepoch, ev_times[0])
+
         self.time_corr = \
             assign_value_if_none(time_corr, np.zeros_like(ev_times))
         self.ev_times = ev_times
@@ -145,13 +149,13 @@ class BasePhaseogram(object):
                                           bounds_error=False,
                                           fill_value="extrapolate")
 
-        self.fig = plt.figure(label, figsize=plt.figaspect(1.2))
-        gs = GridSpec(2, 2, width_ratios=[15, 1], height_ratios=[2, 3])
-        plt.subplots_adjust(left=0.25, bottom=0.30)
-        ax = plt.subplot(gs[1, 0])
-        self.profax = plt.subplot(gs[0, 0], sharex=ax)
+        self.fig = plt.figure(label, figsize=(6,8))
+        gs = GridSpec(3, 1, height_ratios=[2, 3, 0.2])
+        plt.subplots_adjust(left=0.1, bottom=0.30, top=0.95, right=0.95)
+        ax = plt.subplot(gs[1])
+        self.profax = plt.subplot(gs[0], sharex=ax)
         self.profax.set_xticks([])
-        colorbax = plt.subplot(gs[1, 1])
+        colorbax = plt.subplot(gs[2])
 
         corrected_times = self.ev_times - self._delay_fun(self.ev_times)
         self.unnorm_phaseogr, phases, times, additional_info = \
@@ -165,11 +169,27 @@ class BasePhaseogram(object):
                                   fddot=fddot, plot=False, pepoch=pepoch)
 
         self.phases, self.times = phases, times
-        self.pcolor = ax.pcolormesh(phases, times, self.phaseogr.T,
+        self.pcolor = ax.pcolormesh(phases, times,
+                                    self.phaseogr.T,
                                     cmap=DEFAULT_COLORMAP)
-        self.colorbar = plt.colorbar(self.pcolor, cax=colorbax)
+        self.colorbar = plt.colorbar(self.pcolor, cax=colorbax,
+                                     orientation='horizontal')
         ax.set_xlabel('Phase')
-        ax.set_ylabel('Time')
+
+        def s2d(x):
+            return (x - pepoch) /86400
+
+        def d2s(x):
+            return (x - mjdref) * 86400
+
+        secax = ax.secondary_yaxis('left', functions=(s2d, d2s))
+        secax.set_ylabel(f'd from MJD {pepoch / 86400 + mjdref}')
+
+        plt.setp(ax.get_yticklabels(), visible=False)
+        ax.set_yticks([])
+        # plt.setp(ax.get_yticks(), visible=False)
+
+        # ax.set_ylabel('MJD')
         # plt.colorbar()
         self.lines = []
         self.line_phases = np.arange(-2, 3, 0.5)
@@ -191,11 +211,11 @@ class BasePhaseogram(object):
                 ax = plt.axes(*args, axis_bgcolor=axcolor)
             return ax
 
-        self.slider_axes.append(newax_fn([0.25, 0.1, 0.5, 0.03],
+        self.slider_axes.append(newax_fn([0.15, 0.1, 0.75, 0.03],
                                          facecolor=axcolor))
-        self.slider_axes.append(newax_fn([0.25, 0.15, 0.5, 0.03],
+        self.slider_axes.append(newax_fn([0.15, 0.15, 0.75, 0.03],
                                          facecolor=axcolor))
-        self.slider_axes.append(newax_fn([0.25, 0.2, 0.5, 0.03],
+        self.slider_axes.append(newax_fn([0.15, 0.2, 0.75, 0.03],
                                          facecolor=axcolor))
 
         self._construct_widgets(**kwargs)
@@ -237,9 +257,9 @@ class BasePhaseogram(object):
         nbin = len(prof)
         phas = np.linspace(0, 2, nbin + 1)[:-1]
         self.profile_fixed, = \
-            self.profax.plot(phas, prof, drawstyle='steps-mid', color='grey')
+            self.profax.plot(phas, prof, drawstyle='steps-post', color='grey')
         self.profile, = \
-            self.profax.plot(phas, prof, drawstyle='steps-mid', color='k')
+            self.profax.plot(phas, prof, drawstyle='steps-post', color='k')
         mean = np.mean(prof)
         low, high = \
             poisson_conf_interval(mean,
@@ -410,22 +430,27 @@ class InteractivePhaseogram(BasePhaseogram):
         self.dfddot_order_of_mag = np.int(np.log10(delta_dfddot_start))
         delta_dfddot = delta_dfddot_start / 10 ** self.dfddot_order_of_mag
 
+        freq_str = r'$\Delta$ F0' + \
+                   'x$10^{' + f'{self.df_order_of_mag}' + r'}$'
+        fdot_str = r'$\Delta$ F1' + \
+                   r'x$10^{' + f'{self.dfdot_order_of_mag}' + r'}$'
+        fddot_str = r'$\Delta$ F2' + \
+                   r'x$10^{' + f'{self.dfddot_order_of_mag}' + r'}$'
+
         self.sfreq = \
             SliderOnSteroids(
                 self.slider_axes[0],
-                'Delta freq x$10^{}$'.format(self.df_order_of_mag),
+                freq_str,
                 -delta_df, delta_df, valinit=self.df,
                 hardvalmin=0)
         self.sfdot = \
             SliderOnSteroids(
-                self.slider_axes[1],
-                'Delta fdot x$10^{}$'.format(self.dfdot_order_of_mag),
+                self.slider_axes[1], fdot_str,
                 -delta_dfdot, delta_dfdot, valinit=self.dfdot)
 
         self.sfddot = \
             SliderOnSteroids(
-                self.slider_axes[2],
-                'Delta fddot x$10^{}$'.format(self.dfddot_order_of_mag),
+                self.slider_axes[2], fddot_str,
                 -delta_dfddot, delta_dfddot, valinit=self.dfddot)
 
         self.sfreq.on_changed(self.update)
@@ -567,7 +592,7 @@ class BinaryPhaseogram(BasePhaseogram):
         self.speriod = \
             SliderOnSteroids(
                 self.slider_axes[0],
-                'Orb. PEr. (s)',
+                'PB (s)',
                 np.max([0, self.orbital_period - delta_period]),
                 self.orbital_period + delta_period,
                 valinit=self.orbital_period,
@@ -576,7 +601,7 @@ class BinaryPhaseogram(BasePhaseogram):
         self.sasini = \
             SliderOnSteroids(
                 self.slider_axes[1],
-                'a sin i / c (l-sec)', 0, self.asini + delta_asini,
+                'A1 (l-s)', 0, self.asini + delta_asini,
                 valinit=self.asini,
                 hardvalmin=0)
 
