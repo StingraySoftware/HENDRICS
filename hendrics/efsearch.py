@@ -1228,6 +1228,9 @@ def main_accelsearch(args=None):
                         help="Fdot step for search")
     parser.add_argument("--interbin", default=False, action='store_true',
                         help="Use interbinning")
+    parser.add_argument("--pad-to-double", default=False, action='store_true',
+                        help="Pad to the double of bins "
+                             "(sort-of interbinning)")
 
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['loglevel', 'debug'])
@@ -1241,7 +1244,13 @@ def main_accelsearch(args=None):
 
     outfile = args.outfile
     if outfile is None:
-        outfile = hen_root(args.fname) + '_accelsearch.csv'
+        label = '_accelsearch'
+        if args.interbin:
+            label += '_interbin'
+        elif args.pad_to_double:
+            label += '_pad'
+
+        outfile = hen_root(args.fname) + label + '.csv'
 
     emin = args.emin
     emax = args.emax
@@ -1275,21 +1284,38 @@ def main_accelsearch(args=None):
 
     dt = adjust_dt_for_power_of_two(dt, max_length)
 
-    times = memmapped_arange(0, max_length, dt)
-    counts = histogram((event_times - t0).astype(np.double), bins=times.size,
-                       range=[0, np.double(max_length - dt)])
+    if args.pad_to_double:
+        times = memmapped_arange(-0.5 * max_length, 1.5 * max_length, dt)
+        counts = histogram((event_times - t0).astype(np.double),
+                           bins=times.size,
+                           range=[-np.double(max_length) * 0.5,
+                                  np.double(max_length - dt) * 1.5])
+    else:
+        times = memmapped_arange(0, max_length, dt)
+        counts = histogram((event_times - t0).astype(np.double),
+                           bins=times.size,
+                           range=[0, np.double(max_length - dt)])
 
     log.info(f"Times and counts have {times.size} bins")
     # Note: det_p_value was calculated as
     # pds_probability(pds_detection_level(0.015) * 0.64) => 0.068
     # where 0.64 indicates the 36% detection level drop at the bin edges.
+    # Interbin multiplies the number of candidates, hence use the standard
+    # detection level
+    det_p_value = 0.068
+    if interbin:
+        det_p_value = 0.015
+    elif args.pad_to_double:
+        # Half of the bins are zeros.
+        det_p_value = 0.068 * 2
+
     results = accelsearch(
         times, counts, delta_z=delta_z,
         fmin=fmin, fmax=fmax,
         gti=GTI - t0, zmax=zmax,
         ref_time=t0,
         debug=False, interbin=interbin,
-        nproc=nproc, det_p_value=0.068)
+        nproc=nproc, det_p_value=det_p_value)
 
     if len(results) > 0:
         results['emin'] = emin if emin else -1.
