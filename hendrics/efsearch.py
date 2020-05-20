@@ -992,7 +992,6 @@ def _common_main(args, func):
 
         ftype, events = get_file_type(fname)
 
-        print(events, ftype)
         if ftype == 'events':
             if hasattr(events, 'mjdref'): mjdref = events.mjdref
             if args.emin is not None or args.emax is not None:
@@ -1104,6 +1103,14 @@ def _common_main(args, func):
             emin = assign_value_if_none(args.emin, '**')
             emax = assign_value_if_none(args.emax, '**')
             out_fname += f'_{emin:g}-{emax:g}keV'
+        if args.fmin is not None or args.fmax is not None:
+            fmin = assign_value_if_none(args.fmin, '**')
+            fmax = assign_value_if_none(args.fmax, '**')
+            out_fname += f'_{fmin:g}-{fmax:g}Hz'
+        if args.fast:
+            out_fname += '_fast'
+        if args.ffa:
+            out_fname += '_ffa'
 
         save_folding(efperiodogram,
                      out_fname + HEN_FILE_EXTENSION)
