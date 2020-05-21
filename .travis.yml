@@ -55,15 +55,6 @@ matrix:
 
     include:
 
-        # Try MacOS X, usually enough only to run from cron as hardly there are
-        # issues that are not picked up by a linux worker. We set language to
-        # 'c' since 'python' doesn't work on non-Linux platforms.
-        - os: osx
-          language: c
-          name: Python 3.7 with required dependencies
-          stage: Cron tests
-          env: PYTHON_VERSION=3.7 TOXENV=py37-test
-
         # Do a regular build on Linux with Python 3.8, with cov
         # For Linux we use language: python to avoid using conda.
         - os: linux
@@ -72,6 +63,13 @@ matrix:
           stage: Initial tests
           env: TOXENV=py38-test-cov
 
+        # Do a code style check
+        - os: linux
+          python: 3.8
+          name: Code style checks
+          stage: Initial tests
+          env: TOXENV=codestyle
+
         # Check for sphinx doc build warnings
         - os: linux
           python: 3.8
@@ -79,28 +77,19 @@ matrix:
           stage: Comprehensive tests
           env: TOXENV=build_docs
 
+        # Now all dependencies with the latest Python
+        - os: linux
+          python: 3.8
+          name: Python 3.8 with a version of everything
+          stage: Comprehensive tests
+          env: TOXENV=py38-test-alldeps-cov
+
         # Now try Astropy dev with the latest Python
         - os: linux
           python: 3.8
           name: Python 3.8 with developer version of everything
           stage: Comprehensive tests
-          env: TOXENV=py38-test-devdeps
-
-        # And with an older Python, Astropy LTS, and the oldest supported Numpy
-        - os: linux
-          python: 3.6
-          name: Python 3.6 astropy LTS and Numpy 1.16
-          stage: Comprehensive tests
-          env: TOXENV=py36-test-astropylts-numpy116
-
-        # Add a job that runs from cron only and tests against astropy dev and
-        # numpy dev to give a change for early discovery of issues and feedback
-        # for both developer teams.
-        - os: linux
-          python: 3.8
-          name: Python 3.8 latest developer version of key dependencies
-          stage: Cron tests
-          env: TOXENV=py38-test-devdeps
+          env: TOXENV=py38-test-devdeps-cov
 
         # Try on Windows.
         - os: windows
@@ -118,23 +107,66 @@ matrix:
           python: 3.7
           name: Python 3.7 with astropy 3.0 and Numpy 1.17
           stage: Comprehensive tests
-          env: TOXENV=py37-test-astropy30-numpy117
+          env: TOXENV=py37-test-astropy30-numpy117-cov
 
-        # Do a code style check
+        # And with an older Python, Astropy LTS, and the oldest supported Numpy
+        - os: linux
+          python: 3.6
+          name: Python 3.6 astropy LTS and Numpy 1.16
+          stage: Comprehensive tests
+          env: TOXENV=py36-test-astropylts-numpy116-cov
+
+        # Try MacOS X, usually enough only to run from cron as hardly there are
+        # issues that are not picked up by a linux worker. We set language to
+        # 'c' since 'python' doesn't work on non-Linux platforms.
+        - os: osx
+          language: c
+          name: Python 3.7 with required dependencies
+          stage: Cron tests
+          env: PYTHON_VERSION=3.7 TOXENV=py37-test
+
+        # Add a job that runs from cron only and tests against astropy dev and
+        # numpy dev to give a change for early discovery of issues and feedback
+        # for both developer teams.
+        - os: linux
+          python: 3.8
+          name: Python 3.8 latest developer version of key dependencies
+          stage: Cron tests
+          env: TOXENV=py38-test-devdeps
+
+    allow_failures:
+        # Do a PEP8 test with flake8
+        # (do allow to fail unless your code completely compliant)
         - os: linux
           python: 3.8
           name: Code style checks
           stage: Initial tests
           env: TOXENV=codestyle
 
-    allow_failures:
-        # Do a PEP8 test with flake8
-        # (do allow to fail unless your code completely compliant)
-         - os: linux
-           python: 3.8
-           name: Code style checks
-           stage: Initial tests
-           env: TOXENV=codestyle
+        # Now try Astropy dev with the latest Python
+        - os: linux
+          python: 3.8
+          name: Python 3.8 with developer version of everything
+          stage: Comprehensive tests
+          env: TOXENV=py38-test-devdeps-cov
+
+        # Add a job that runs from cron only and tests against astropy dev and
+        # numpy dev to give a change for early discovery of issues and feedback
+        # for both developer teams.
+        - os: linux
+          python: 3.8
+          name: Python 3.8 latest developer version of key dependencies
+          stage: Cron tests
+          env: TOXENV=py38-test-devdeps
+
+before_install:
+    - if [[ $TOXENV == *-cov ]]; then
+        export TOXPOSARGS=$TOXPOSARGS" --cov-report=xml:"$TRAVIS_BUILD_DIR"/coverage.xml";
+      fi
+
+    - echo "TOXENV="$TOXENV
+    - echo "TOXARGS="$TOXARGS
+    - echo "TOXPOSARGS="$TOXPOSARGS
 
 install:
 
@@ -154,8 +186,10 @@ script:
 
 after_success:
     # If coveralls.io is set up for this package, uncomment the two lines below.
-    # pip install coveralls
-    # coveralls
+    # - pip install coveralls
+    # - coveralls
     # If codecov is set up for this package, uncomment the two lines below
-    # pip install codecov
-    # codecov
+    - if [[ $TOXENV == *-cov ]]; then
+        pip install codecov;
+        codecov;
+      fi
