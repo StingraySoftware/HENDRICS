@@ -15,7 +15,7 @@ __pycache__
 htmlcov
 .coverage
 MANIFEST
-	
+
 # Sphinx
 docs/api
 docs/_build
@@ -52,6 +52,7 @@ distribute-*.tar.gz
 *.nc
 *.qdp
 *.prof
+pip-wheel-metadata/
 
 # Mac OSX
 .DS_Store
