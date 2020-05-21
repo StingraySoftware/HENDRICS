@@ -69,11 +69,15 @@ What's new
 ----------
 HENDRICS 5.0
 ~~~~~~~~~~~~
-More improvements to pulsar functionalities;
-.. Note ::
 
-    A much faster folding algorithm is now available, allowing to reduce the computing time
-    of Z searches by a factor ~10. See pulsar tutorial for details.
+More improvements to pulsar functionalities:
+
++ The accelerated search from Ransom+2002 is now available, to search the f-fdot space through Fourier analysis. It is highly performant but still needs some work. Please consider it experimental.
++ A much faster folding algorithm (See Bachetti+2020, ApJ) is now available, allowing to reduce the computing time of Z searches by a factor ~10, while simultaneously searching a 2D space of frequency and fdot. Select with ``--fast`` option
++ The classic Fast Folding Algorithm (Staelin 1969) is also available, to allow for extra-fast searches at low frequencies. However, this does not allow for "accelerated" searches on fdot. Also experimental and probably worth of further optimization.
+
+Developed as part of CICLOPS -- Citizen Computing Pulsar Search, a project supported by *POR FESR Sardegna 2014 – 2020 Asse 1 Azione 1.1.3* (code RICERCA_1C-181), call for proposal "Aiuti per Progetti di Ricerca e Sviluppo 2017" managed by Sardegna Ricerche.
+
 
 HENDRICS 4.0
 ~~~~~~~~~~~~
