@@ -1109,7 +1109,7 @@ def _common_main(args, func):
             out_fname += f'_{fmin:g}-{fmax:g}Hz'
         if args.fast:
             out_fname += '_fast'
-        if args.ffa:
+        elif args.ffa:
             out_fname += '_ffa'
 
         save_folding(efperiodogram,
