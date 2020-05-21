@@ -10,13 +10,6 @@ HENDRICS documentation
 ======================
 |Build Status| |Build status| |Coverage Status| |Documentation Status|
 
-.. Note ::
-
-    This repository contains an evolution of MaLTPyNT. This software is
-    being heavily rewritten in order to use Stingray's classes and functions
-    whenever possible. To use the original MaLTPyNT, please go to
-    `matteobachetti/MaLTPyNT <https://github.com/matteobachetti/MaLTPyNT>`__.
-
 .. |Build Status| image:: https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=master
    :target: https://travis-ci.org/StingraySoftware/HENDRICS
 .. |Build status| image:: https://ci.appveyor.com/api/projects/status/ifm0iydpu6gd7vwk/branch/master?svg=true
@@ -82,6 +75,7 @@ Developed as part of CICLOPS -- Citizen Computing Pulsar Search, a project suppo
 HENDRICS 4.0
 ~~~~~~~~~~~~
 Lots of improvements to pulsar functionalities;
+
 .. Note ::
 
     Windows support for Python <3.6 was dropped. Most of the code will still work on old versions,
