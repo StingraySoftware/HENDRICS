@@ -19,7 +19,7 @@ from hendrics.tests import _dummy_par
 from hendrics.fold import HAS_PINT
 from hendrics import fake, fspec, base, binary, calibrate, colors, create_gti,\
     exposure, exvar, io, lcurve, modeling, plot, read_events, rebin, \
-    save_as_xspec, timelags, varenergy, sum_fspec
+    save_as_xspec, timelags, varenergy
 
 try:
     FileNotFoundError

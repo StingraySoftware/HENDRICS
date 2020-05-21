@@ -6,6 +6,7 @@ import os
 from hendrics.read_events import treat_event_file
 from hendrics.io import HEN_FILE_EXTENSION, load_data
 from hendrics.io import ref_mjd
+from hendrics.fake import main
 import hendrics as hen
 
 
@@ -17,9 +18,9 @@ class TestReadEvents():
         cls.datadir = os.path.join(curdir, 'data')
         cls.fits_fileA = os.path.join(cls.datadir, 'monol_testA.evt')
         cls.fits_file = os.path.join(cls.datadir, 'monol_test_fake.evt')
-        hen.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
-                       '--ctrate', '2000',
-                       '-o', cls.fits_file])
+        main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
+              '--ctrate', '2000',
+              '-o', cls.fits_file])
 
     def test_treat_event_file_nustar(self):
         treat_event_file(self.fits_fileA)

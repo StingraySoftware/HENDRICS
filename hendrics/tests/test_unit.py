@@ -12,6 +12,7 @@ from astropy.tests.helper import remote_data
 from stingray.events import EventList
 from hendrics.tests import _dummy_par
 from hendrics.fold import HAS_PINT
+from hendrics import fake, exposure, base, fspec, io
 
 HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
