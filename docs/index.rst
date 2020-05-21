@@ -62,7 +62,6 @@ What's new
 ----------
 HENDRICS 5.0
 ~~~~~~~~~~~~
-
 More improvements to pulsar functionalities:
 
 + The accelerated search from Ransom+2002 is now available, to search the f-fdot space through Fourier analysis. It is highly performant but still needs some work. Please consider it experimental.
