@@ -30,6 +30,8 @@ which in turn depends on
 
 9. `emcee <http://dfm.io/emcee/current/>`__
 
+10. `pint <http://github.com/nanograv/pint/>`__
+
 You should also
 have a working `HEASoft <http://heasarc.nasa.gov/lheasoft/>`__
 installation to produce the cleaned event files and to use
@@ -37,20 +39,9 @@ installation to produce the cleaned event files and to use
 
 Installing releases
 -------------------
-
-If you use the Anaconda python distribution, you are well off with:
-
 ::
 
-    $ conda install numba emcee statsmodels netcdf4
-    $ conda install -c conda-forge hendrics
-
-
-Otherwise, you might want to install
-
-::
-
-    $ pip install hendrics numba emcee statsmodels netcdf4
+    $ pip install hendrics numba emcee statsmodels netcdf4 matplotlib stingray>=0.1
 
 
 Installing the Development version
@@ -87,7 +78,7 @@ Install the dependencies above; then, enter the distribution directory and run
 
 ::
 
-    $ python setup.py install
+    $ pip install .
 
 this will check for the existing dependencies and install the files in a
 proper way. From that point on, executables will be somewhere in your

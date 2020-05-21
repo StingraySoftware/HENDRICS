@@ -28,32 +28,7 @@ HENaccelsearch
 
 ::
 
-    usage: HENaccelsearch [-h] [--ntrial NTRIAL] [--outfile OUTFILE] [--emin EMIN]
-                          [--emax EMAX] [--fmin FMIN] [--fmax FMAX]
-                          [--nproc NPROC] [--zmax ZMAX] [--delta-z DELTA_Z]
-                          [--interbin] [--loglevel LOGLEVEL] [--debug]
-                          fname
-
-    Run the accelerated search on pulsar data.
-
-    positional arguments:
-      fname                Input file name
-
-    optional arguments:
-      -h, --help           show this help message and exit
-      --ntrial NTRIAL      Number of trial values for the pulsed fraction
-      --outfile OUTFILE    Output table file name
-      --emin EMIN          Minimum energy (or PI if uncalibrated) to plot
-      --emax EMAX          Maximum energy (or PI if uncalibrated) to plot
-      --fmin FMIN          Minimum frequency to search, in Hz
-      --fmax FMAX          Maximum frequency to search, in Hz
-      --nproc NPROC        Number of processors to use
-      --zmax ZMAX          Maximum acceleration (in spectral bins)
-      --delta-z DELTA_Z    Fdot step for search
-      --interbin           Use interbinning
-      --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
-                           ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug              set DEBUG logging level
+    This version of stingray has no accelerated search. Please update
 
 
 HENbaseline
@@ -872,6 +847,27 @@ HENscrunchlc
       --debug              use DEBUG logging level
 
 
+HENsplitevents
+--------------
+
+::
+
+    usage: HENsplitevents [-h] [-l LENGTH_SPLIT] [--overlap OVERLAP] fname
+
+    Reads a cleaned event files and splits the file into overlapping multiple
+    chunks of fixed length
+
+    positional arguments:
+      fname                 File 1
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -l LENGTH_SPLIT, --length-split LENGTH_SPLIT
+                            Split event list by GTI
+      --overlap OVERLAP     Overlap factor. 0 for no overlap, 0.5 for half-
+                            interval overlap, and so on.
+
+
 HENsumfspec
 -----------
 
@@ -888,7 +884,7 @@ HENsumfspec
       -h, --help            show this help message and exit
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_(c)pds.nc
+                            tot_(c)pds.p
 
 
 HENvarenergy
