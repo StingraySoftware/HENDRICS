@@ -1219,7 +1219,8 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     # Sort event list
     order = np.argsort(ev_list)
     ev_list = ev_list[order]
-    detector_id = detector_id[order]
+    if detector_id is not None:
+        detector_id = detector_id[order]
 
     additional_data = _order_list_of_arrays(additional_data, order)
     pi = additional_data['PI'][order]
