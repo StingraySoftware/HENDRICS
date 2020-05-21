@@ -180,47 +180,48 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
 
 
 def split_eventlist(fname, max_length, overlap=None):
-        root = hen_root(fname)
-        ev = load_events(fname)
+    root = hen_root(fname)
+    ev = load_events(fname)
 
-        if overlap is None:
-            overlap = 0
-        if overlap >= 1:
-            raise ValueError("Overlap cannot be >=1. Exiting.")
+    if overlap is None:
+        overlap = 0
+    if overlap >= 1:
+        raise ValueError("Overlap cannot be >=1. Exiting.")
 
-        event_times = ev.time
-        GTI = ev.gti
-        t0 = GTI[0, 0]
-        count = 0
-        from .base import nchars_in_int_value
-        nchars = nchars_in_int_value((GTI.max() - t0) / max_length)
+    event_times = ev.time
+    GTI = ev.gti
+    t0 = GTI[0, 0]
+    count = 0
+    from .base import nchars_in_int_value
+    nchars = nchars_in_int_value((GTI.max() - t0) / max_length)
 
-        while t0 < GTI.max():
-            t1 = min(t0 + max_length, GTI.max())
-            if t1 - t0 < max_length / 2:
-                break
-            idx_start = np.searchsorted(event_times, t0)
-            idx_stop = np.searchsorted(event_times, t1)
-            gti_local = cross_two_gtis(GTI, [[t0, t1]])
+    all_files = []
+    while t0 < GTI.max():
+        t1 = min(t0 + max_length, GTI.max())
+        if t1 - t0 < max_length / 2:
+            break
+        idx_start = np.searchsorted(event_times, t0)
+        idx_stop = np.searchsorted(event_times, t1)
+        gti_local = cross_two_gtis(GTI, [[t0, t1]])
 
-            local_times = event_times[idx_start:idx_stop]
-            new_ev = EventList(time=local_times, gti=gti_local)
-            for attr in ['pi', 'energy']:
-                if hasattr(ev, attr) and getattr(ev, attr) is not None:
-                    setattr(new_ev, attr,
-                            getattr(ev, attr)[idx_start:idx_stop])
-            for attr in ['mission', 'instr', 'mjdref']:
-                if hasattr(ev, attr) and getattr(ev, attr) is not None:
-                    setattr(new_ev, attr,
-                            getattr(ev, attr))
-            newfname = \
-                root + f'_{count:0{nchars}d}' + HEN_FILE_EXTENSION
+        local_times = event_times[idx_start:idx_stop]
+        new_ev = EventList(time=local_times, gti=gti_local)
+        for attr in ['pi', 'energy']:
+            if hasattr(ev, attr) and getattr(ev, attr) is not None:
+                setattr(new_ev, attr,
+                        getattr(ev, attr)[idx_start:idx_stop])
+        for attr in ['mission', 'instr', 'mjdref']:
+            if hasattr(ev, attr) and getattr(ev, attr) is not None:
+                setattr(new_ev, attr,
+                        getattr(ev, attr))
+        newfname = \
+            root + f'_{count:0{nchars}d}' + HEN_FILE_EXTENSION
 
-            save_events(new_ev, newfname)
-
-            t0 = t0 + max_length * (1. - overlap)
-            count += 1
-
+        save_events(new_ev, newfname)
+        all_files.append(newfname)
+        t0 = t0 + max_length * (1. - overlap)
+        count += 1
+    return all_files
 
 def main_join(args=None):
     """Main function called by the `HENjoinevents` command line script."""
