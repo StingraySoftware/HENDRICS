@@ -481,7 +481,7 @@ def plot_transient_search(results, gif_name=None):
         # 2. the frequency axis is oversampled by at least nprof / nave
         ntrial = ima.size / nave / (nprof / nave) / oversample
 
-        detl = z2_n_detection_level(0.0015, n=2,
+        detl = z2_n_detection_level(epsilon=0.0015, n=2,
                                     ntrial=ntrial)
 
         # To calculate ntrial from the summed image, we use the
@@ -489,7 +489,7 @@ def plot_transient_search(results, gif_name=None):
         # nprof / nave:
         ntrial_sum = f.size / nave / (nprof / nave) / oversample
 
-        sum_detl = z2_n_detection_level(0.0015, n=2,
+        sum_detl = z2_n_detection_level(epsilon=0.0015, n=2,
                                         ntrial=ntrial_sum,
                                         n_summed_spectra=nprof/nave)
         fig = plt.figure(figsize=(10, 10))

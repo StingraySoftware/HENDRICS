@@ -325,13 +325,13 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
         if ef.kind == "Z2n":
             vmin = ef.N - 1
-            vmax = z2_n_detection_level(0.001, n=ef.N,
+            vmax = z2_n_detection_level(epsilon=0.001, n=ef.N,
                                         ntrial=max(ef.stat.shape),
                                         n_summed_spectra=ef.M)
             nbin = ef.N * 8
         else:
             vmin = ef.nbin
-            vmax = fold_detection_level(ef.nbin, 0.001,
+            vmax = fold_detection_level(nbin=ef.nbin, epsilon=0.001,
                                         ntrial=max(ef.stat.shape))
             nbin = ef.nbin
 
