@@ -3,13 +3,6 @@
 HENDRICS - High ENergy Data Reduction Interface from the Command Shell
 ======================================================================
 
-.. Note ::
-
-    This repository contains an evolution of MaLTPyNT. This software is
-    being heavily rewritten in order to use Stingray's classes and functions
-    whenever possible. To use the original MaLTPyNT, please go to
-    `matteobachetti/MaLTPyNT <https://github.com/matteobachetti/MaLTPyNT>`__.
-
 Description
 -----------
 
@@ -94,7 +87,7 @@ Development guidelines
 ----------------------
 
 Please follow the development workflow for
-`the Astropy project<http://docs.astropy.org/en/stable/development/workflow/development_workflow.html>`__.
+`the Astropy project <http://docs.astropy.org/en/stable/development/workflow/development_workflow.html>`__.
 In the hendrics/tests
 directory, there is a test suite called ``test_fullrun.py``. These tests
 use the actual command line scripts, and should always pass (albeit with
