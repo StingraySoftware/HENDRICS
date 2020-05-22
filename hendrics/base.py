@@ -76,6 +76,66 @@ except ImportError:
         return a
 
 
+try:
+    from stingray.stats import pds_probability, pds_detection_level
+except ImportError:
+
+    def pds_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
+        r"""Detection level for a PDS.
+
+        Return the detection level (with probability 1 - epsilon) for a Power
+        Density Spectrum of nbins bins, normalized a la Leahy (1983), based on
+        the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
+        and multiple PDS averaging (n_summed_spectra)
+        Examples
+        --------
+        >>> np.isclose(detection_level(1, 0.1), 4.6, atol=0.1)
+        True
+        >>> np.allclose(detection_level(1, 0.1, n_rebin=[1]), [4.6], atol=0.1)
+        True
+        """
+        try:
+            from scipy import stats
+        except Exception:  # pragma: no cover
+            raise Exception('You need Scipy to use this function')
+
+        if not isinstance(n_rebin, Iterable):
+            r = n_rebin
+            retlev = stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) \
+                     / (n_summed_spectra * r)
+        else:
+            retlev = [
+                stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) /
+                (n_summed_spectra * r) for r in n_rebin]
+            retlev = np.array(retlev)
+        return retlev
+
+
+    def pds_probability(level, nbins, n_summed_spectra=1, n_rebin=1):
+        r"""Give the probability of a given power level in PDS.
+
+        Return the probability of a certain power level in a Power Density
+        Spectrum of nbins bins, normalized a la Leahy (1983), based on
+        the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
+        and multiple PDS averaging (n_summed_spectra)
+
+        Examples
+        --------
+        >>> np.isclose(pds_probability(4.6, 1), 0.1, atol=0.1)
+        True
+        >>> np.allclose(pds_probability([4.6], 1), [0.1], atol=0.1)
+        True
+        """
+        try:
+            from scipy import stats
+        except Exception:  # pragma: no cover
+            raise Exception('You need Scipy to use this function')
+
+        epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
+                                        2 * n_summed_spectra * n_rebin)
+        return epsilon
+
+
 DEFAULT_PARSER_ARGS = {}
 DEFAULT_PARSER_ARGS['loglevel'] = dict(
     args=['--loglevel'],
@@ -280,61 +340,6 @@ def optimal_bin_time(fftlen, tbin):
     current_nbin = fftlen / tbin
     new_nbin = 2 ** np.ceil(np.log2(current_nbin))
     return fftlen / new_nbin
-
-
-def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
-    r"""Detection level for a PDS.
-
-    Return the detection level (with probability 1 - epsilon) for a Power
-    Density Spectrum of nbins bins, normalized a la Leahy (1983), based on
-    the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
-    and multiple PDS averaging (n_summed_spectra)
-    Examples
-    --------
-    >>> np.isclose(detection_level(1, 0.1), 4.6, atol=0.1)
-    True
-    >>> np.allclose(detection_level(1, 0.1, n_rebin=[1]), [4.6], atol=0.1)
-    True
-    """
-    try:
-        from scipy import stats
-    except Exception:  # pragma: no cover
-        raise Exception('You need Scipy to use this function')
-
-    if not isinstance(n_rebin, Iterable):
-        r = n_rebin
-        retlev = stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) \
-            / (n_summed_spectra * r)
-    else:
-        retlev = [stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) /
-                  (n_summed_spectra * r) for r in n_rebin]
-        retlev = np.array(retlev)
-    return retlev
-
-
-def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
-    r"""Give the probability of a given power level in PDS.
-
-    Return the probability of a certain power level in a Power Density
-    Spectrum of nbins bins, normalized a la Leahy (1983), based on
-    the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
-    and multiple PDS averaging (n_summed_spectra)
-
-    Examples
-    --------
-    >>> np.isclose(probability_of_power(4.6, 1), 0.1, atol=0.1)
-    True
-    >>> np.allclose(probability_of_power([4.6], 1), [0.1], atol=0.1)
-    True
-    """
-    try:
-        from scipy import stats
-    except Exception:  # pragma: no cover
-        raise Exception('You need Scipy to use this function')
-
-    epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
-                                    2 * n_summed_spectra * n_rebin)
-    return epsilon
 
 
 def gti_len(gti):

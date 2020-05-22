@@ -13,13 +13,16 @@ from astropy.stats import poisson_conf_interval
 from astropy import log
 
 from .fold import fold_events, filter_energy
+from .fold import z2_n_detection_level
+from .fold import fold_detection_level
 from .base import deorbit_events
 from .io import load_events
 from .io import load_data, get_file_type, load_pds
 from .io import is_string, save_as_qdp, load_folding
 from .io import HEN_FILE_EXTENSION
+from .io import find_file_in_allowed_paths
 from .base import _assign_value_if_none
-from .base import detection_level
+from .base import pds_detection_level as detection_level
 
 
 def _next_color(ax):
@@ -308,12 +311,6 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
 
 def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                  output_data_file=None):
-    from .fold import z2_n_detection_level
-    from .io import find_file_in_allowed_paths
-    try:
-        from stingray.pulse.pulsar import fold_detection_level
-    except:
-        from stingray.stats import fold_detection_level
     from matplotlib import gridspec
     import matplotlib.pyplot as plt
 
