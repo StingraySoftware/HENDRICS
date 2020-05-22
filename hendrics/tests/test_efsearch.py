@@ -8,9 +8,10 @@ from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding, \
 from hendrics.efsearch import main_efsearch, main_zsearch
 from hendrics.efsearch import main_accelsearch, main_z2vspf
 from hendrics.efsearch import decide_binary_parameters, folding_orbital_search
-from hendrics.fold import main_fold
+from hendrics.fold import main_fold, main_deorbit
 from hendrics.plot import plot_folding
 from hendrics.tests import _dummy_par
+from hendrics.base import hen_root
 from astropy.tests.helper import remote_data
 try:
     import pandas as pd
@@ -278,6 +279,15 @@ class TestEFsearch():
                    '--test', '--norm', 'ratios', '--deorbit-par', self.par,
                    '--pepoch', str(self.mjdref)])
         outfile = 'Energyprofile_ratios.png'
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    @remote_data
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_deorbit(self):
+        evfile = self.dum
+        main_deorbit([evfile, '--deorbit-par', self.par])
+        outfile = hen_root(evfile) + '_deorb' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
