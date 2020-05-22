@@ -8,8 +8,9 @@ import copy
 
 import numpy as np
 from astropy import log
-from numpy import histogram2d as histogram2d_np
+from astropy.table import Table
 from astropy.logger import AstropyUserWarning
+from .io import get_file_type
 from stingray.pulse.search import epoch_folding_search, z_n_search, \
     search_best_peaks
 from stingray.gti import time_intervals_from_gtis
@@ -17,49 +18,25 @@ from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
 from .io import load_events, EFPeriodogram, save_folding, \
     HEN_FILE_EXTENSION
-from .base import hen_root
+from .base import hen_root, show_progress, adjust_dt_for_power_of_two
+from .base import deorbit_events, njit, prange
+from .base import histogram2d, histogram, memmapped_arange
+from .base import z2_n_detection_level
 from .fold import filter_energy
+from .ffa import _z_n_fast_cached, ffa_search
+from .fake import scramble
+try:
+    import matplotlib.pyplot as plt
+    HAS_MPL = True
+except ImportError:
+    HAS_MPL = False
+
 
 try:
     import imageio
     HAS_IMAGEIO = True
 except ImportError:
     HAS_IMAGEIO = False
-
-try:
-    from .base import hist2d_numba_seq as histogram2d_nb
-    HAS_NUMBA_HIST = True
-    def histogram2d(*args, **kwargs):
-        if 'range' in kwargs:
-            kwargs['ranges'] = kwargs.pop('range')
-        return histogram2d_nb(*args, **kwargs)
-except ImportError:
-    HAS_NUMBA_HIST = False
-
-try:
-    from fast_histogram import histogram2d as histogram2d_fh
-    HAS_FAST_HIST = True
-except ImportError:
-    HAS_FAST_HIST = False
-
-
-if not HAS_NUMBA_HIST and HAS_FAST_HIST:
-    histogram2d = histogram2d_fh
-
-
-if not HAS_NUMBA_HIST and not HAS_FAST_HIST:
-
-    def histogram2d(*args, **kwargs):
-        return histogram2d_np(*args, **kwargs)[0]
-
-
-from .base import deorbit_events, njit, prange
-
-try:
-    from tqdm import tqdm as show_progress
-except ImportError:
-    def show_progress(a):
-        return a
 
 
 D_OMEGA_FACTOR = 2 * np.sqrt(3)
@@ -209,6 +186,7 @@ def calculate_shifts(
     shifts = np.linspace(-1., 1., nprof) ** order
     return nshift * shifts
 
+
 @njit()
 def mod(num, n2):
     return np.mod(num, n2)
@@ -230,49 +208,6 @@ def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift,
                 k, nbin - total_shift_int:twonbin - total_shift_int]
 
     return splat_prof
-
-
-@njit()
-def z_n_fast_cached(norm, cached_sin, cached_cos, n=2):
-    '''Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
-
-    Here in a fast implementation based on numba.
-    Assumes that nbin != 0 and norm is an array.
-
-    Parameters
-    ----------
-    norm : array of floats
-        The pulse profile
-    n : int, default 2
-        The ``n`` in $Z^2_n$.
-
-    Returns
-    -------
-    z2_n : float
-        The Z^2_n statistics of the events.
-
-    Examples
-    --------
-    >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
-    >>> norm = np.sin(phase) + 1
-    >>> cached_sin = np.sin(np.concatenate((phase, phase, phase, phase)))
-    >>> cached_cos = np.cos(np.concatenate((phase, phase, phase, phase)))
-    >>> np.isclose(z_n_fast_cached(norm, cached_sin, cached_cos, n=4), 50)
-    True
-    >>> np.isclose(z_n_fast_cached(norm, cached_sin, cached_cos, n=2), 50)
-    True
-    '''
-
-    total_norm = np.sum(norm)
-
-    result = 0
-    N = norm.size
-
-    for k in range(1, n + 1):
-        result += np.sum(cached_cos[:N*k:k] * norm) ** 2 + \
-            np.sum(cached_sin[:N*k:k] * norm) ** 2
-
-    return 2 / total_norm * result
 
 
 @njit(fastmath=True)
@@ -361,7 +296,6 @@ def _average_and_z_sub_search(profiles, n=2):
     n_log_ave_max = int(np.log2(nprof))
 
     results = np.zeros((n_log_ave_max, nprof))
-    all_nave = np.zeros((n_log_ave_max, nprof))
 
     twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
 
@@ -374,7 +308,10 @@ def _average_and_z_sub_search(profiles, n=2):
         for i in range(shape_0):
             new_profiles = np.sum(profiles[i * n_ave_i: (i + 1) * n_ave_i],
                                   axis=0)
-            if np.max(new_profiles) == 0:
+
+            # Work around strange numba bug. Will reinstate np.max when it's
+            # solved
+            if np.sum(new_profiles) == 0:
                 continue
 
             z = z_n_fast(twopiphases, norm=new_profiles, n=n)
@@ -392,7 +329,7 @@ def _transient_search_step(
         n=1):
     """Single step of transient search."""
 
-    # Cast to standard double, or the fast_histogram.histogram2d will fail
+    # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
 
     phases = _fast_phase_fdot(times, mean_f, mean_fdot)
@@ -529,7 +466,6 @@ def transient_search(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
 
 def plot_transient_search(results, gif_name=None):
     import matplotlib.pyplot as plt
-    from hendrics.fold import z2_n_detection_level
 
     if gif_name is None:
         gif_name = 'transients.gif'
@@ -544,17 +480,17 @@ def plot_transient_search(results, gif_name=None):
         # To calculate ntrial, we need to take into account that
         # 1. the image has nave equal pixels
         # 2. the frequency axis is oversampled by at least nprof / nave
-        ntrial = ima.size / nave / (nprof / nave) / oversample
+        ntrial = max(int(ima.size / nave / (nprof / nave) / oversample), 1)
 
-        detl = z2_n_detection_level(0.0015, n=2,
+        detl = z2_n_detection_level(epsilon=0.0015, n=2,
                                     ntrial=ntrial)
 
         # To calculate ntrial from the summed image, we use the
         # length of the frequency axis, considering oversample by
         # nprof / nave:
-        ntrial_sum = f.size / nave / (nprof / nave) / oversample
+        ntrial_sum = max(int(f.size / nave / (nprof / nave) / oversample), 1)
 
-        sum_detl = z2_n_detection_level(0.0015, n=2,
+        sum_detl = z2_n_detection_level(epsilon=0.0015, n=2,
                                         ntrial=ntrial_sum,
                                         n_summed_spectra=nprof/nave)
         fig = plt.figure(figsize=(10, 10))
@@ -609,7 +545,7 @@ def plot_transient_search(results, gif_name=None):
     return all_images
 
 
-@njit(parallel=True, nogil=True)
+@njit(nogil=True)
 def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
 
@@ -634,8 +570,8 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
         for j in range(quabinshifts.size):
             splat_prof = shift_and_sum(repeated_profiles, L[i, j], Q[i, j],
                                        splat_prof, base_shift, quad_base_shift)
-            local_stat = z_n_fast_cached(splat_prof, cached_cos, cached_sin,
-                                         n=n)
+            local_stat = _z_n_fast_cached(splat_prof, cached_cos, cached_sin,
+                                          n=n)
             stats[i, j] = local_stat
 
     return stats
@@ -664,7 +600,7 @@ def search_with_qffa_step(
         n=1,
         search_fdot=True):
     """Single step of quasi-fast folding algorithm."""
-    # Cast to standard double, or the fast_histogram.histogram2d will fail
+    # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
 
     phases = _fast_phase_fdot(times, mean_f, mean_fdot)
@@ -682,7 +618,7 @@ def search_with_qffa_step(
         quabinshifts = np.linspace(-nbin * npfact, nbin * npfact,
                                    int(oversample * npfact))
     else:
-        quabinshifts = [0]
+        quabinshifts = np.array([0])
 
     dphi = 1 / nbin
     delta_t = (t1 - t0) / 2
@@ -697,7 +633,8 @@ def search_with_qffa_step(
 
 
 def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
-                     oversample=8, n=1, search_fdot=True, t0=None, t1=None):
+                     oversample=8, n=1, search_fdot=True, t0=None, t1=None,
+                     silent=False):
     """'Quite fast folding' algorithm.
 
     Parameters
@@ -776,7 +713,12 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
     all_fdotgrid = []
     all_stats = []
 
-    for ii, i in enumerate(show_progress(allvalues)):
+    local_show_progress = show_progress
+    if silent:
+        def local_show_progress(x):
+            return x
+
+    for ii, i in enumerate(local_show_progress(allvalues)):
         offset = step * i
         fdot_offset = 0
 
@@ -802,7 +744,56 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
 
     step = np.median(np.diff(all_fgrid[:, 0]))
     fdotstep = np.median(np.diff(all_fdotgrid[0]))
-    return all_fgrid.T, all_fdotgrid.T, all_stats.T, step, fdotstep, length
+    if search_fdot:
+        return all_fgrid.T, all_fdotgrid.T, all_stats.T, step, fdotstep, length
+    else:
+        return all_fgrid.T[0], all_stats.T[0], step, length
+
+
+def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
+    """'Quite fast folding' algorithm.
+
+    Parameters
+    ----------
+    times : array of floats
+        Arrival times of photons
+    f0 : float
+        Minimum frequency to search
+    f1 : float
+        Maximum frequency to search
+
+    Other parameters
+    ----------------
+    nbin : int
+        Number of bins to divide the profile into
+    nprof : int, default None
+        number of slices of the dataset to use. If None, we use 8 times nbin.
+        Motivation in the comments.
+    npfact : int, default 2
+        maximum "sliding" of the dataset, in phase.
+    oversample : int, default 8
+        Oversampling wrt the standard FFT delta f = 1/T
+    search_fdot : bool, default False
+        Switch fdot search on or off
+    t0 : float, default min(times)
+        starting time
+    t1 : float, default max(times)
+        stop time
+    """
+    if t0 is None:
+        t0 = times[0]
+    if t1 is None:
+        t1 = times[-1]
+
+    length = (t1 - t0).astype(np.double)
+
+    p0 = 1 / f1
+    p1 = 1 / f0
+    dt = p0 / nbin
+    counts = histogram((times - t0).astype(np.double), range=[0, length],
+                       bins=int(np.rint(length / dt)))
+    bin_periods, stats = ffa_search(counts, dt, p0, p1)
+    return 1 / bin_periods, stats, None, length
 
 
 def folding_search(events, fmin, fmax, step=None,
@@ -810,6 +801,10 @@ def folding_search(events, fmin, fmax, step=None,
                    fdotmax=0, fdotstep=None, expocorr=False, **kwargs):
 
     times = (events.time - events.gti[0, 0]).astype(np.float64)
+    weights = 1
+    if hasattr(events, 'counts'):
+        weights = events.counts
+
     length = times[-1]
 
     if step is None:
@@ -832,7 +827,7 @@ def folding_search(events, fmin, fmax, step=None,
         log.info("Searching {} frequencies".format(len(trial_freqs)))
 
     results = func(times, trial_freqs, fdots=trial_fdots,
-                   expocorr=expocorr, gti=gti, **kwargs)
+                   expocorr=expocorr, gti=gti, weights=weights, **kwargs)
     if len(results) == 2:
         frequencies, stats = results
         return frequencies, stats, step, length
@@ -898,9 +893,9 @@ def _common_parser(args=None):
                         help="Mean fdot to fold "
                              "(only useful when using --fast)", default=0)
     parser.add_argument("--fdotmin", type=float, required=False,
-                        help="Minimum fdot to fold", default=0)
+                        help="Minimum fdot to fold", default=None)
     parser.add_argument("--fdotmax", type=float, required=False,
-                        help="Maximum fdot to fold", default=0)
+                        help="Maximum fdot to fold", default=None)
     parser.add_argument("--dynstep", type=int, required=False,
                         help="Dynamical EF step", default=128)
     parser.add_argument("--npfact", type=int, required=False,
@@ -923,6 +918,11 @@ def _common_parser(args=None):
                              "derivative using an optimized step."
                              "This option ignores expocorr, fdotmin/max, "
                              "segment-size, and step",
+                        default=False, action='store_true')
+    parser.add_argument("--ffa",
+                        help="Use *the* Fast Folding Algorithm by Staelin+69. "
+                             "No accelerated search allowed at the moment. "
+                             "Only recommended to search for slow pulsars.",
                         default=False, action='store_true')
     parser.add_argument("--transient",
                         help="Look for transient emission (produces an animated"
@@ -981,6 +981,7 @@ def _common_main(args, func):
         raise ValueError('The fast option is only available for z searches')
 
     for i_f, fname in enumerate(files):
+        mjdref = 0
         kwargs = {}
         baseline = args.nbin
         kind = 'EF'
@@ -990,45 +991,66 @@ def _common_main(args, func):
             kwargs = {'nharm': args.N}
             baseline = args.N
             kind = 'Z2n'
-        events = load_events(fname)
-        mjdref = events.mjdref
-        if args.emin is not None or args.emax is not None:
-            events, elabel = filter_energy(events, args.emin, args.emax)
 
-        if args.deorbit_par is not None:
-            events = deorbit_events(events, args.deorbit_par)
+        ftype, events = get_file_type(fname)
+
+        if ftype == 'events':
+            if hasattr(events, 'mjdref'):
+                mjdref = events.mjdref
+            if args.emin is not None or args.emax is not None:
+                events, elabel = filter_energy(events, args.emin, args.emax)
+
+            if args.deorbit_par is not None:
+                events = deorbit_events(events, args.deorbit_par)
 
         if args.fast:
             oversample = assign_value_if_none(args.oversample, 4 * n)
-
         else:
             oversample = assign_value_if_none(args.oversample, 2)
 
-        if args.transient:
+        if args.transient and ftype == 'lc':
+            log.error("Transient search not yet available for light curves")
+        if args.transient and ftype == 'events':
             results = transient_search(events.time, args.fmin, args.fmax,
-                                       fdot=0,
-                                       nbin=args.nbin, n=n,
+                                       fdot=0, nbin=args.nbin, n=n,
                                        nprof=None, oversample=oversample)
             plot_transient_search(results, hen_root(fname) + '_transient.gif')
             continue
 
-        if not args.fast:
+        if not args.fast and not args.ffa:
+            fdotmin = args.fdotmin if args.fdotmin is not None else 0
+            fdotmax = args.fdotmax if args.fdotmax is not None else 0
             results = \
                 folding_search(events, args.fmin, args.fmax, step=args.step,
                                func=func,
                                oversample=oversample, nbin=args.nbin,
-                               expocorr=args.expocorr, fdotmin=args.fdotmin,
-                               fdotmax=args.fdotmax,
+                               expocorr=args.expocorr, fdotmin=fdotmin,
+                               fdotmax=fdotmax,
                                segment_size=args.segment_size, **kwargs)
             ref_time = (events.gti[0, 0])
-        else:
+        elif args.fast:
+            fdotmin = args.fdotmin if args.fdotmin is not None else 0
+            fdotmax = args.fdotmax if args.fdotmax is not None else 0
+            search_fdot = True
+            if args.fdotmax is not None and fdotmax <= fdotmin:
+                search_fdot = False
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax,
                                  fdot=args.mean_fdot,
                                  nbin=args.nbin, n=n,
                                  nprof=None, npfact=args.npfact,
-                                 oversample=oversample)
+                                 oversample=oversample,
+                                 search_fdot=search_fdot)
+
             ref_time = (events.time[-1] + events.time[0]) / 2
+        elif args.ffa:
+            log.warning(
+                "The Fast Folding Algorithm functionality is experimental. Use"
+                " with care, and feel free to report any issues.")
+            results = \
+                search_with_ffa(events.time, args.fmin, args.fmax,
+                                nbin=args.nbin, n=n)
+            ref_time = events.time[0]
 
         length = events.time.max() - events.time.min()
         segment_size = np.min([length, args.segment_size])
@@ -1040,7 +1062,7 @@ def _common_main(args, func):
         elif len(results) == 6:
             frequencies, fdots, stats, step, fdotsteps, length = results
 
-        if length > args.dynstep and not args.fast:
+        if length > args.dynstep and not (args.fast or args.ffa):
             _ = dyn_folding_search(events, args.fmin, args.fmax, step=step,
                                    func=func, oversample=oversample,
                                    time_step=args.dynstep, **kwargs)
@@ -1065,7 +1087,7 @@ def _common_main(args, func):
 
         best_models = []
 
-        if args.fit_candidates:
+        if args.fit_candidates and not (args.fast or args.ffa):
             search_width = 5 * oversample * step
             for f in best_peaks:
                 good = np.abs(frequencies - f) < search_width
@@ -1087,6 +1109,14 @@ def _common_main(args, func):
             emin = assign_value_if_none(args.emin, '**')
             emax = assign_value_if_none(args.emax, '**')
             out_fname += f'_{emin:g}-{emax:g}keV'
+        if args.fmin is not None or args.fmax is not None:
+            fmin = assign_value_if_none(args.fmin, '**')
+            fmax = assign_value_if_none(args.fmax, '**')
+            out_fname += f'_{fmin:g}-{fmax:g}Hz'
+        if args.fast:
+            out_fname += '_fast'
+        elif args.ffa:
+            out_fname += '_ffa'
 
         save_folding(efperiodogram,
                      out_fname + HEN_FILE_EXTENSION)
@@ -1104,3 +1134,218 @@ def main_zsearch(args=None):
 
     with log.log_to_file('HENzsearch.log'):
         _common_main(args, z_n_search)
+
+
+def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None):
+    length = event_list.gti[-1, 1] - event_list.gti[0, 0]
+    df = 1/length
+
+    result_table = Table(names=['pf', 'z2'], dtype=[float, float])
+    for i in show_progress(range(ntrials)):
+        pf = np.random.uniform(0, 1)
+        new_event_list = scramble(event_list, deadtime=deadtime,
+                                  smooth_kind='pulsed', pulsed_fraction=pf)
+
+        frequencies, stats, _, _ = \
+            search_with_qffa(new_event_list.time, 1 - df * 2, 1 + df * 2,
+                             fdot=0, nbin=32, oversample=16, search_fdot=False,
+                             silent=True)
+        result_table.add_row([pf, np.max(stats)])
+    if outfile is None:
+        outfile = 'z2_vs_pf.csv'
+    result_table.write(outfile, overwrite=True)
+    return result_table
+
+
+def main_z2vspf(args=None):
+    from .base import _add_default_args, check_negative_numbers_in_args
+    description = ('Get Z2 vs pulsed fraction for a given observation. Takes'
+                   ' the original event list, scrambles the event arrival time,'
+                   ' adds a pulsation with random pulsed fraction, and takes'
+                   ' the maximum value of Z2 in a small interval around the'
+                   ' pulsation. Does this ntrial times, and plots.')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("fname", help="Input file name")
+    parser.add_argument('--ntrial', default=100, type=int,
+                        help="Number of trial values for the pulsed fraction")
+    parser.add_argument('--outfile', default=None, type=str,
+                        help="Output table file name")
+    parser.add_argument("--emin", default=None, type=float,
+                        help="Minimum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--emax", default=None, type=float,
+                        help="Maximum energy (or PI if uncalibrated) to plot")
+
+    args = check_negative_numbers_in_args(args)
+    _add_default_args(parser, ['loglevel', 'debug'])
+
+    args = parser.parse_args(args)
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    log.setLevel(args.loglevel)
+
+    outfile = args.outfile
+    if outfile is None:
+        outfile = hen_root(args.fname) + '_z2vspf.csv'
+
+    events = load_events(args.fname)
+    if args.emin is not None or args.emax is not None:
+        events, elabel = filter_energy(events, args.emin, args.emax)
+
+    result_table = z2_vs_pf(events,
+                            deadtime=0., ntrials=args.ntrial,
+                            outfile=outfile)
+    if HAS_MPL:
+        plt.figure("Results", figsize=(10, 6))
+        plt.scatter(result_table['pf'] * 100, result_table['z2'])
+        plt.semilogy()
+        plt.grid(True)
+        plt.xlabel(r"Pulsed fraction (%)")
+        plt.ylabel(r"$Z^2_2$")
+        # plt.show()
+        plt.savefig(outfile.replace('.csv', '.png'))
+
+
+def main_accelsearch(args=None):
+    try:
+        from stingray.pulse.accelsearch import accelsearch
+    except ImportError:
+        print("This version of stingray has no accelerated search. Please "
+              "update")
+        return
+    from .base import _add_default_args, check_negative_numbers_in_args
+    log.warning("The accelsearch functionality is experimental. Use with care,"
+                " and feel free to report any issues.")
+    description = ('Run the accelerated search on pulsar data.')
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("fname", help="Input file name")
+    parser.add_argument('--ntrial', default=100, type=int,
+                        help="Number of trial values for the pulsed fraction")
+    parser.add_argument('--outfile', default=None, type=str,
+                        help="Output table file name")
+    parser.add_argument("--emin", default=None, type=float,
+                        help="Minimum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--emax", default=None, type=float,
+                        help="Maximum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("--fmin", default=0.1, type=float,
+                        help="Minimum frequency to search, in Hz")
+    parser.add_argument("--fmax", default=1000, type=float,
+                        help="Maximum frequency to search, in Hz")
+    parser.add_argument("--nproc", default=1, type=int,
+                        help="Number of processors to use")
+    parser.add_argument("--zmax", default=100, type=int,
+                        help="Maximum acceleration (in spectral bins)")
+    parser.add_argument("--delta-z", default=1, type=int,
+                        help="Fdot step for search")
+    parser.add_argument("--interbin", default=False, action='store_true',
+                        help="Use interbinning")
+    parser.add_argument("--pad-to-double", default=False, action='store_true',
+                        help="Pad to the double of bins "
+                             "(sort-of interbinning)")
+
+    args = check_negative_numbers_in_args(args)
+    _add_default_args(parser, ['loglevel', 'debug'])
+
+    args = parser.parse_args(args)
+
+    if args.debug:
+        args.loglevel = 'DEBUG'
+
+    log.setLevel(args.loglevel)
+
+    outfile = args.outfile
+    if outfile is None:
+        label = '_accelsearch'
+        if args.interbin:
+            label += '_interbin'
+        elif args.pad_to_double:
+            label += '_pad'
+
+        outfile = hen_root(args.fname) + label + '.csv'
+
+    emin = args.emin
+    emax = args.emax
+    debug = args.debug
+    interbin = args.interbin
+    zmax = args.zmax
+    fmax = args.fmax
+    fmin = args.fmin
+    delta_z = args.delta_z
+    nproc = args.nproc
+
+    log.info(f"Opening file {args.fname}")
+    events = load_events(args.fname)
+    nyq = fmax * 5
+    dt = 0.5 / nyq
+    log.info(f"Searching using dt={dt}")
+
+    if emin is not None or emax is not None:
+        events, elabel = filter_energy(events, emin, emax)
+
+    tstart = events.gti[0, 0]
+    GTI = events.gti
+    max_length = GTI.max() - tstart
+    event_times = events.time
+
+    t0 = GTI[0, 0]
+    Nbins = int(np.rint(max_length / dt))
+    if Nbins > 10 ** 8:
+        log.info(f"The number of bins is more than 100 millions: {Nbins}. "
+                 "Using memmap.")
+
+    dt = adjust_dt_for_power_of_two(dt, max_length)
+
+    if args.pad_to_double:
+        times = memmapped_arange(-0.5 * max_length, 1.5 * max_length, dt)
+        counts = histogram((event_times - t0).astype(np.double),
+                           bins=times.size,
+                           range=[-np.double(max_length) * 0.5,
+                                  np.double(max_length - dt) * 1.5])
+    else:
+        times = memmapped_arange(0, max_length, dt)
+        counts = histogram((event_times - t0).astype(np.double),
+                           bins=times.size,
+                           range=[0, np.double(max_length - dt)])
+
+    log.info(f"Times and counts have {times.size} bins")
+    # Note: det_p_value was calculated as
+    # pds_probability(pds_detection_level(0.015) * 0.64) => 0.068
+    # where 0.64 indicates the 36% detection level drop at the bin edges.
+    # Interbin multiplies the number of candidates, hence use the standard
+    # detection level
+    det_p_value = 0.068
+    if interbin:
+        det_p_value = 0.015
+    elif args.pad_to_double:
+        # Half of the bins are zeros.
+        det_p_value = 0.068 * 2
+
+    results = accelsearch(
+        times, counts, delta_z=delta_z,
+        fmin=fmin, fmax=fmax,
+        gti=GTI - t0, zmax=zmax,
+        ref_time=t0,
+        debug=debug, interbin=interbin,
+        nproc=nproc, det_p_value=det_p_value)
+
+    if len(results) > 0:
+        results['emin'] = emin if emin else -1.
+        results['emax'] = emax if emax else -1.
+        results['fmin'] = fmin
+        results['fmax'] = fmax
+        results['zmax'] = zmax
+        if hasattr(events, 'mission'):
+            results['mission'] = events.mission
+        results['instr'] = events.instr
+        results['mjdref'] = np.double(events.mjdref)
+        results['pepoch'] = events.mjdref + results['time'] / 86400.0
+
+    results.sort('power', reverse=True)
+    results.write(outfile, overwrite=True)
+    print("Best candidates:")
+    results['time', 'frequency', 'fdot', 'power', 'pepoch'][:10].pprint()
+    print(f"See all {len(results)} candidates in {outfile}")
+    return outfile

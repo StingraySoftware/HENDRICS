@@ -72,9 +72,46 @@ We can plot the results of this search with `HENplot`, as such:
 .. |zn_search.png| image:: ../images/zn_search.png
 
 
-NEW: Fast searches
-~~~~~~~~~~~~~~~~~~
-HENDRICS now implements a much faster, experimental algorithm for pulsation searches.
+NEW: Accelerated searches
+~~~~~~~~~~~~~~~~~~~~~~~~~
+HENDRICS now implements the accelerated search à la Ransom+2002: starting from a single
+FFT, we convolve it with responses corresponding to different values of "acceleration",
+or spin-up/down. It is an extremely fast technique to find binary pulsars, albeit less
+sensitive than a focused Z search if the pulsations are known. The method
+is experimental, and detections should be assessed through simulations. Use with care.
+
+Example with a *NuSTAR* observation of a famous X-ray binary pulsar:
+
+::
+
+    $ HENaccelsearch mistery_psrA_nustar_fpma_ev.nc --fmin 0.01 --fmax 5
+    WARNING: The accelsearch functionality is experimental. Use with care, and feel free to report any issues. [hendrics.efsearch]
+    100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 200/200 [00:00<00:00, 7416.52it/s]
+    100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 200/200 [00:20<00:00,  9.63it/s]
+
+    Best candidates:
+
+           time           frequency                fdot                power             pepoch
+    ----------------- ------------------ ----------------------- ----------------- ------------------
+    81916106.03609267 2.8520477603166845  -5.024586630979715e-08 8771.116170366908 56145.103845139965
+    81916106.03609267  2.852015406199768  -4.815228854688893e-08 8194.657124664562 56145.103845139965
+    81916106.03609267  2.852080114433601  -5.233944407270536e-08 6016.665557776852 56145.103845139965
+    81916106.03609267  1.426007703099884 -2.4076144273444466e-08 5460.323423255257 56145.103845139965
+    81916106.03609267 2.8520477603166845 -4.9199077428343043e-08 5329.925664622505 56145.103845139965
+    81916106.03609267 1.4260400572168006  -2.616972203635268e-08 5142.912459419216 56145.103845139965
+    81916106.03609267 2.8519830520828515  -4.605871078398072e-08 4846.570816537878 56145.103845139965
+    81916106.03609267  2.852015406199768  -4.710549966543483e-08 4618.153190476991 56145.103845139965
+    81916106.03609267  2.852080114433601  -5.338623295415947e-08  4228.74089043784 56145.103845139965
+    81916106.03609267  2.852080114433601  -5.129265519125125e-08 3847.880659073288 56145.103845139965
+    See all 24740 candidates in mistery_psrA_nustar_fpma_accelsearch.csv
+
+See ``HENaccelsearch -h`` for more details.
+
+
+NEW: Fast Z2n searches
+~~~~~~~~~~~~~~~~~~~~~~
+HENDRICS now implements a much faster, experimental algorithm for pulsation searches
+with the Z^2_n statistics.
 Select this algorithm with the ``--fast`` option on the command line of `HENzsearch`.
 Instead of calculating the phase of all photons at each trial value of frequency and
 derivative, we pre-bin the data in small chunks and shift the different chunks to the
@@ -104,20 +141,15 @@ no automatic fitting being performed as in the slow option.
 .. |fast_zsearch.jpeg| image:: ../images/fast_zsearch.jpeg
 
 
-Searching for pulsars and measuring frequency derivatives interactively
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Measuring frequency derivatives interactively
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``HENphaseogram`` is an interactive phaseogram to adjust the values of the frequency and frequency derivatives of pulsars.
 
-|phaseogram1.png|
+|phaseogram.jpeg|
 
 
-.. |phaseogram1.png| image:: ../images/phaseogram-1.png
-
-|phaseogram2.png|
-
-
-.. |phaseogram2.png| image:: ../images/phaseogram-2.png
+.. |phaseogram.jpeg| image:: ../images/phaseogram.jpeg
 
 
 .. raw:: html

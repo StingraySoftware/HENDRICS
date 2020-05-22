@@ -98,7 +98,6 @@ def apply_gti(fname, gti, outname=None,
 
     newgtis = filter_gti_by_length(newgtis, minimum_length)
 
-    data['__sr__class__type__'] = 'gti'
     data['gti'] = newgtis
     good = create_gti_mask(data['time'], newgtis)
 
@@ -107,7 +106,10 @@ def apply_gti(fname, gti, outname=None,
         data['counts'] = data['counts'][good]
         data['counts_err'] = data['counts_err'][good]
     elif ftype == 'events':
-        data['PI'] = data['PI'][good]
+        for key in ['pi', 'energy']:
+            if key in data:
+                data[key] = data[key][good]
+
         if data['instr'] == 'PCA':  # pragma: no cover
             data['PCU'] = data['PCU'][good]
 

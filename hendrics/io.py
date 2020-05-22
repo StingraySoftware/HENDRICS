@@ -325,8 +325,6 @@ def get_file_type(fname, raw_data=False):
     """
     contents = load_data(fname)
 
-    keys = list(contents.keys())
-
     ftype_raw = contents['__sr__class__type__']
     if 'Lightcurve' in ftype_raw:
         ftype = 'lc'
@@ -407,8 +405,10 @@ def load_events(fname):
 
     eventlist.time = out['time']
     eventlist.gti = out['gti']
-    eventlist.pi = out['pi']
-    eventlist.mjdref = out['mjdref']
+    if 'pi' in list(out.keys()):
+        eventlist.pi = out['pi']
+    if 'mjdref' in list(out.keys()):
+        eventlist.mjdref = out['mjdref']
     if 'instr' in list(out.keys()):
         eventlist.instr = out["instr"]
     if 'energy' in list(out.keys()):
@@ -489,7 +489,7 @@ def load_lcurve(fname):
                             err_dist=data['err_dist'],
                             mjdref=data['mjdref'], dt=data['dt'])
 
-    if hasattr(lcurve, '_apply_gtis'): # pragma: no cover
+    if hasattr(lcurve, '_apply_gtis'):  # pragma: no cover
         # Compatibility with old versions of stingray
         lcurve.apply_gtis = lcurve._apply_gtis
 
@@ -904,8 +904,8 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp", mode='w'):
         print_header = False
     outfile = open(filename, mode)
     if print_header:
-        for l in list_of_errs:
-            i, kind = l
+        for lerr in list_of_errs:
+            i, kind = lerr
             print('READ %s' % kind + 'ERR %d' % (i + 1), file=outfile)
 
     length = len(data_to_write[0])
@@ -1046,7 +1046,6 @@ def _get_additional_data(lctable, additional_columns):
 def load_gtis(fits_file, gtistring=None, data_hduname='EVENTS'):
     """Load GTI from HDU EVENTS of file fits_file."""
     from astropy.io import fits as pf
-    import numpy as np
 
     gtistring = assign_value_if_none(gtistring, 'GTI')
     accepted_gtistrings = gtistring.split(',')
@@ -1217,6 +1216,8 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     # Sort event list
     order = np.argsort(ev_list)
     ev_list = ev_list[order]
+    if detector_id is not None:
+        detector_id = detector_id[order]
 
     additional_data = _order_list_of_arrays(additional_data, order)
     pi = additional_data['PI'][order]
@@ -1248,6 +1249,10 @@ def main(args=None):
         'Print the content of HENDRICS files'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs='+')
+    parser.add_argument("--print-header",
+                        help="Print the full FITS header if present in the "
+                             "meta data.",
+                        default=False, action='store_true')
 
     args = parser.parse_args(args)
 
@@ -1263,15 +1268,28 @@ def main(args=None):
             continue
         ftype, contents = get_file_type(fname, raw_data=True)
         print('This file contains:', end='\n\n')
+        mjdref = 0. * u.d
         if 'mjdref' in contents:
             mjdref = Time(contents['mjdref'], format='mjd')
 
+        tstart = None
+        tstop = None
+        tseg = None
+
         for k in sorted(contents.keys()):
+            if k == "header" and not args.print_header:
+                continue
             if k == 'tstart':
                 timeval = contents[k] * u.s
-                val = '{0} (MJD {1})'.format(contents[k], mjdref + timeval)
-            if k == 'tseg':
-                val = '{0} s'.format(contents[k])
+                val = f'MET {contents[k]} s (MJD {mjdref + timeval.to(u.d)})'
+                tstart = timeval
+            elif k == 'tstop':
+                timeval = contents[k] * u.s
+                val = f'MET {contents[k]} s (MJD {mjdref + timeval.to(u.d)})'
+                tstop = timeval
+            elif k == 'tseg':
+                val = '{contents[k]} s'
+                tseg = contents[k] * u.s
             else:
                 val = contents[k]
             if isinstance(val, Iterable) and not is_string(val):
@@ -1282,6 +1300,9 @@ def main(args=None):
                     val = repr(list(val[:4])).replace(']', '') + '...]'
                     val = '{} (len {})'.format(val, length)
             print((k + ':').ljust(15), val, end='\n\n')
+
+        if tseg is None and (tstart is not None and tstop is not None):
+            print(('length:').ljust(15), tstop - tstart, end='\n\n')
 
         print('-' * len(fname))
 

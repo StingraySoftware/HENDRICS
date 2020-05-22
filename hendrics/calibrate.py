@@ -1,12 +1,9 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Calibrate event lists by looking in rmf files."""
 
-import sys
 import os
-import warnings
 import numpy as np
 from astropy import log
-from astropy.logger import AstropyUserWarning
 from .io import load_events, save_events, get_file_extension
 from .io import HEN_FILE_EXTENSION
 
@@ -22,8 +19,7 @@ def default_nustar_rmf():
               on observing time
     """
     log.warning(
-        "Rmf not specified. Using default NuSTAR rmf.",
-        AstropyUserWarning)
+        "Rmf not specified. Using default NuSTAR rmf.")
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split('/')
     newpath = os.path.join(os.environ['CALDB'], *path)

@@ -10,19 +10,12 @@ HENDRICS documentation
 ======================
 |Build Status| |Build status| |Coverage Status| |Documentation Status|
 
-.. Note ::
-
-    This repository contains an evolution of MaLTPyNT. This software is
-    being heavily rewritten in order to use Stingray's classes and functions
-    whenever possible. To use the original MaLTPyNT, please go to
-    `matteobachetti/MaLTPyNT <https://github.com/matteobachetti/MaLTPyNT>`__.
-
 .. |Build Status| image:: https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=master
    :target: https://travis-ci.org/StingraySoftware/HENDRICS
 .. |Build status| image:: https://ci.appveyor.com/api/projects/status/ifm0iydpu6gd7vwk/branch/master?svg=true
    :target: https://ci.appveyor.com/project/matteobachetti/hendrics/branch/master
-.. |Coverage Status| image:: https://coveralls.io/repos/github/StingraySoftware/HENDRICS/badge.svg?branch=master&cache-control=no-cache
-   :target: https://coveralls.io/github/StingraySoftware/HENDRICS?branch=master
+.. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/StingraySoftware/HENDRICS
 .. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=master
    :target: http://hendrics.readthedocs.io/en/master/?badge=master
 
@@ -69,15 +62,19 @@ What's new
 ----------
 HENDRICS 5.0
 ~~~~~~~~~~~~
-More improvements to pulsar functionalities;
-.. Note ::
+More improvements to pulsar functionalities:
 
-    A much faster folding algorithm is now available, allowing to reduce the computing time
-    of Z searches by a factor ~10. See pulsar tutorial for details.
++ The accelerated search from Ransom+2002 is now available, to search the f-fdot space through Fourier analysis. It is highly performant but still needs some work. Please consider it experimental.
++ A much faster folding algorithm (See Bachetti+2020, ApJ) is now available, allowing to reduce the computing time of Z searches by a factor ~10, while simultaneously searching a 2D space of frequency and fdot. Select with ``--fast`` option
++ The classic Fast Folding Algorithm (Staelin 1969) is also available, to allow for extra-fast searches at low frequencies. However, this does not allow for "accelerated" searches on fdot. Also experimental and probably worth of further optimization.
+
+Developed as part of CICLOPS -- Citizen Computing Pulsar Search, a project supported by *POR FESR Sardegna 2014 – 2020 Asse 1 Azione 1.1.3* (code RICERCA_1C-181), call for proposal "Aiuti per Progetti di Ricerca e Sviluppo 2017" managed by Sardegna Ricerche.
+
 
 HENDRICS 4.0
 ~~~~~~~~~~~~
 Lots of improvements to pulsar functionalities;
+
 .. Note ::
 
     Windows support for Python <3.6 was dropped. Most of the code will still work on old versions,

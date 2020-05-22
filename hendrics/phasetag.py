@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import astropy.io.fits as pf
 from astropy import log
 from astropy.logger import AstropyUserWarning
+
 from stingray.io import load_events_and_gtis, ref_mjd
 from stingray.pulse.pulsar import pulse_phase, phase_exposure
 from .io import is_string, save_as_qdp

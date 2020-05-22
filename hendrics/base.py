@@ -11,13 +11,35 @@ from pathlib import Path
 import tempfile
 
 import numpy as np
-from astropy import log
+from numpy import histogram2d as histogram2d_np
+from numpy import histogram as histogram_np
 from astropy.logger import AstropyUserWarning
+from astropy import log
+
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 try:
-    from numba import jit, njit, prange
+    from numba import jit, njit, prange, vectorize
+    from numba import float32, float64, int32, int64
+    from numba import types
+    from numba.extending import overload_method
+
+    @overload_method(types.Array, 'take')  # pragma: no cover
+    def array_take(arr, indices):
+        if isinstance(indices, types.Array):
+            def take_impl(arr, indices):
+                n = indices.shape[0]
+                res = np.empty(n, arr.dtype)
+                for i in range(n):
+                    res[i] = arr[indices[i]]
+                return res
+
+            return take_impl
+
+    HAS_NUMBA = True
 except ImportError:
+    HAS_NUMBA = False
+
     def njit(**kwargs):
         """Dummy decorator in case jit cannot be imported."""
         def true_decorator(func):
@@ -33,6 +55,213 @@ except ImportError:
     def prange(*args):
         """Dummy decorator in case jit cannot be imported."""
         return range(*args)
+
+    class vectorize(object):
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __call__(self, func):
+            wrapped_f = np.vectorize(func)
+
+            return wrapped_f
+    float32 = float64 = int32 = int64 = lambda x, y: None
+
+    array_take = np.take
+
+
+try:
+    from tqdm import tqdm as show_progress
+except ImportError:
+    def show_progress(a):
+        return a
+
+
+try:
+    from stingray.stats import pds_probability, pds_detection_level
+    from stingray.stats import z2_n_detection_level, z2_n_probability
+    from stingray.stats import fold_detection_level, fold_profile_probability
+except ImportError:
+    from stingray.pulse.pulsar import fold_detection_level
+    from stingray.pulse.pulsar import fold_profile_probability
+
+    def z2_n_detection_level(n=2, epsilon=0.01, n_summed_spectra=1, ntrial=1):
+        """Return the detection level for the Z^2_n statistics.
+
+        See Buccheri et al. (1983), Bendat and Piersol (1971).
+
+        Parameters
+        ----------
+        n : int, default 2
+            The ``n`` in $Z^2_n$
+        epsilon : float, default 0.01
+            The fractional probability that the signal has been produced by noise
+
+        Other Parameters
+        ----------------
+        ntrial : int
+            The number of trials executed to find this profile
+        n_summed_spectra : int
+            Number of Z_2^n periodograms that are being averaged
+
+        Returns
+        -------
+        detlev : float
+            The epoch folding statistics corresponding to a probability
+            epsilon * 100 % that the signal has been produced by noise
+
+        Examples
+        --------
+        >>> np.isclose(z2_n_detection_level(2), 13.276704135987625)
+        True
+        """
+
+        from scipy import stats
+        retlev = stats.chi2.isf(
+            epsilon / ntrial,
+            2 * int(n_summed_spectra) * n) / (n_summed_spectra)
+
+        return retlev
+
+    def z2_n_probability(z2, n=2, ntrial=1, n_summed_spectra=1):
+        """Calculate the probability of a certain folded profile, due to noise.
+
+        Parameters
+        ----------
+        z2 : float
+            A Z^2_n statistics value
+        n : int, default 2
+            The ``n`` in $Z^2_n$
+
+        Other Parameters
+        ----------------
+        ntrial : int
+            The number of trials executed to find this profile
+        n_summed_spectra : int
+            Number of Z_2^n periodograms that were averaged to obtain z2
+
+        Returns
+        -------
+        p : float
+            The probability that the Z^2_n value has been produced by noise
+
+        Examples
+        --------
+        >>> detlev = z2_n_detection_level(2, 0.1)
+        >>> np.isclose(z2_n_probability(detlev, 2), 0.1)
+        True
+        """
+        if ntrial > 1:
+            import warnings
+            warnings.warn("Z2_n: The treatment of ntrial is very rough. "
+                          "Use with caution", AstropyUserWarning)
+        from scipy import stats
+
+        epsilon = ntrial * stats.chi2.sf(z2 * n_summed_spectra,
+                                         2 * n * n_summed_spectra)
+        return epsilon
+
+    def pds_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
+        r"""Detection level for a PDS.
+
+        Return the detection level (with probability 1 - epsilon) for a Power
+        Density Spectrum of nbins bins, normalized a la Leahy (1983), based on
+        the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
+        and multiple PDS averaging (n_summed_spectra)
+        Examples
+        --------
+        >>> np.isclose(pds_detection_level(1, 0.1), 4.6, atol=0.1)
+        True
+        >>> np.allclose(pds_detection_level(1, 0.1, n_rebin=[1]), [4.6],
+        ...                                 atol=0.1)
+        True
+        """
+        try:
+            from scipy import stats
+        except Exception:  # pragma: no cover
+            raise Exception('You need Scipy to use this function')
+
+        if not isinstance(n_rebin, Iterable):
+            r = n_rebin
+            retlev = stats.chi2.isf(
+                epsilon / nbins,
+                2 * n_summed_spectra * r) / (n_summed_spectra * r)
+        else:
+            retlev = [
+                stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) /
+                (n_summed_spectra * r) for r in n_rebin]
+            retlev = np.array(retlev)
+        return retlev
+
+    def pds_probability(level, nbins, n_summed_spectra=1, n_rebin=1):
+        r"""Give the probability of a given power level in PDS.
+
+        Return the probability of a certain power level in a Power Density
+        Spectrum of nbins bins, normalized a la Leahy (1983), based on
+        the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
+        and multiple PDS averaging (n_summed_spectra)
+
+        Examples
+        --------
+        >>> np.isclose(pds_probability(4.6, 1), 0.1, atol=0.1)
+        True
+        >>> np.allclose(pds_probability([4.6], 1), [0.1], atol=0.1)
+        True
+        """
+        try:
+            from scipy import stats
+        except Exception:  # pragma: no cover
+            raise Exception('You need Scipy to use this function')
+
+        epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
+                                        2 * n_summed_spectra * n_rebin)
+        return epsilon
+
+
+__all__ = [
+    'array_take',
+    'njit',
+    'prange',
+    'show_progress',
+    'z2_n_detection_level',
+    'z2_n_probability',
+    'pds_detection_level',
+    'pds_probability',
+    'fold_detection_level',
+    'fold_profile_probability',
+    'r_in',
+    'r_det',
+    '_assign_value_if_none',
+    '_look_for_array_in_array',
+    'is_string',
+    '_order_list_of_arrays',
+    'mkdir_p',
+    'common_name',
+    'hen_root',
+    'optimal_bin_time',
+    'gti_len',
+    'deorbit_events',
+    '_add_default_args',
+    'check_negative_numbers_in_args',
+    'interpret_bintime',
+    'get_bin_edges',
+    'compute_bin',
+    'hist1d_numba_seq',
+    'hist2d_numba_seq',
+    'hist3d_numba_seq',
+    'hist2d_numba_seq_weight',
+    'hist3d_numba_seq_weight',
+    'index_arr',
+    'index_set_arr',
+    'histnd_numba_seq',
+    'histogram2d',
+    'histogram',
+    'touch',
+    'log_x',
+    'get_list_of_small_powers',
+    'adjust_dt_for_power_of_two',
+    'adjust_dt_for_small_power',
+    'memmapped_arange',
+    'nchars_in_int_value']
 
 
 DEFAULT_PARSER_ARGS = {}
@@ -241,61 +470,6 @@ def optimal_bin_time(fftlen, tbin):
     return fftlen / new_nbin
 
 
-def detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
-    r"""Detection level for a PDS.
-
-    Return the detection level (with probability 1 - epsilon) for a Power
-    Density Spectrum of nbins bins, normalized a la Leahy (1983), based on
-    the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
-    and multiple PDS averaging (n_summed_spectra)
-    Examples
-    --------
-    >>> np.isclose(detection_level(1, 0.1), 4.6, atol=0.1)
-    True
-    >>> np.allclose(detection_level(1, 0.1, n_rebin=[1]), [4.6], atol=0.1)
-    True
-    """
-    try:
-        from scipy import stats
-    except Exception:  # pragma: no cover
-        raise Exception('You need Scipy to use this function')
-
-    if not isinstance(n_rebin, Iterable):
-        r = n_rebin
-        retlev = stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) \
-            / (n_summed_spectra * r)
-    else:
-        retlev = [stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) /
-                  (n_summed_spectra * r) for r in n_rebin]
-        retlev = np.array(retlev)
-    return retlev
-
-
-def probability_of_power(level, nbins, n_summed_spectra=1, n_rebin=1):
-    r"""Give the probability of a given power level in PDS.
-
-    Return the probability of a certain power level in a Power Density
-    Spectrum of nbins bins, normalized a la Leahy (1983), based on
-    the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
-    and multiple PDS averaging (n_summed_spectra)
-
-    Examples
-    --------
-    >>> np.isclose(probability_of_power(4.6, 1), 0.1, atol=0.1)
-    True
-    >>> np.allclose(probability_of_power([4.6], 1), [0.1], atol=0.1)
-    True
-    """
-    try:
-        from scipy import stats
-    except Exception:  # pragma: no cover
-        raise Exception('You need Scipy to use this function')
-
-    epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
-                                    2 * n_summed_spectra * n_rebin)
-    return epsilon
-
-
 def gti_len(gti):
     """Return the total good time from a list of GTIs.
 
@@ -407,25 +581,30 @@ def interpret_bintime(bintime):
 
 
 @njit(nogil=True, parallel=False)
+def _get_bin_edges(a, bins, a_min, a_max):
+    bin_edges = np.zeros(bins+1, dtype=np.float64)
+
+    delta = (a_max - a_min) / bins
+    for i in range(bin_edges.size):
+        bin_edges[i] = a_min + i * delta
+
+    bin_edges[-1] = a_max  # Avoid roundoff error on last point
+    return bin_edges
+
+
 def get_bin_edges(a, bins):
     """
 
     Examples
     --------
-    >>> array = np.array([0, 10])
+    >>> array = np.array([0., 10.])
     >>> bins = 2
     >>> np.allclose(get_bin_edges(array, bins), [0, 5, 10])
     True
     """
-    bin_edges = np.zeros((bins+1,), dtype=np.float64)
-    a_min = a.min()
-    a_max = a.max()
-    delta = (a_max - a_min) / bins
-    for i in range(bin_edges.shape[0]):
-        bin_edges[i] = a_min + i * delta
-
-    bin_edges[-1] = a_max  # Avoid roundoff error on last point
-    return bin_edges
+    a_min = np.min(a)
+    a_max = np.max(a)
+    return _get_bin_edges(a, bins, a_min, a_max)
 
 
 @njit(nogil=True, parallel=False)
@@ -450,7 +629,7 @@ def compute_bin(x, bin_edges):
 
     # special case to mirror NumPy behavior for last bin
     if x == a_max:
-        return n - 1 # a_max always in last bin
+        return n - 1  # a_max always in last bin
 
     bin = int(n * (x - a_min) / (a_max - a_min))
 
@@ -695,6 +874,24 @@ def histnd_numba_seq(tracks, bins, ranges):
     return _histnd_numba_seq(H, tracks, bins, ranges, slice_int)
 
 
+if HAS_NUMBA:
+    def histogram2d(*args, **kwargs):
+        if 'range' in kwargs:
+            kwargs['ranges'] = kwargs.pop('range')
+        return hist2d_numba_seq(*args, **kwargs)
+
+    def histogram(*args, **kwargs):
+        if 'range' in kwargs:
+            kwargs['ranges'] = kwargs.pop('range')
+        return hist1d_numba_seq(*args, **kwargs)
+else:
+    def histogram2d(*args, **kwargs):
+        return histogram2d_np(*args, **kwargs)[0]
+
+    def histogram(*args, **kwargs):
+        return histogram_np(*args, **kwargs)[0]
+
+
 def touch(fname):
     """Mimick the same shell command.
 
@@ -706,3 +903,123 @@ def touch(fname):
     >>> os.unlink('bububu')
     """
     Path(fname).touch()
+
+
+def log_x(a, base):
+    # Logb x = Loga x/Loga b
+    return np.log(a) / np.log(base)
+
+
+def get_list_of_small_powers(maxno=100000000000):
+    powers_of_two = 2 ** np.arange(0, np.ceil(np.log2(maxno)))
+    powers_of_three = 3 ** np.arange(0, np.ceil(log_x(maxno, 3)))
+    powers_of_five = 5 ** np.arange(0, np.ceil(log_x(maxno, 5)))
+    list_of_powers = []
+    for p2 in powers_of_two:
+        for p3 in powers_of_three:
+            for p5 in powers_of_five:
+                newno = p2 * p3 * p5
+                if newno > maxno:
+                    break
+                list_of_powers.append(p2 * p3 * p5)
+    return sorted(list_of_powers)
+
+
+def adjust_dt_for_power_of_two(dt, length, strict=False):
+    """
+    Examples
+    --------
+    >>> length, dt = 10, 0.1
+    >>> # There are 100 bins there. I want them to be 128.
+    >>> new_dt = adjust_dt_for_power_of_two(dt, length)
+    INFO: ...
+    INFO: ...
+    >>> np.isclose(new_dt, 0.078125)
+    True
+    >>> length / new_dt == 128
+    True
+    """
+    log.info("Adjusting bin time to closest power of 2 of bins.")
+    nbin = length / dt
+    closest_to_pow2 = 2**np.ceil(np.log2(nbin))
+    if closest_to_pow2 > 1.5 * nbin and not strict:
+        log.info("Too many bins: using powers of 2, 3, and 5.")
+        return adjust_dt_for_small_power(dt, length)
+    new_dt = length / closest_to_pow2
+    log.info(f"New bin time: {new_dt} (nbin {nbin} -> {closest_to_pow2})")
+    return new_dt
+
+
+def adjust_dt_for_small_power(dt, length):
+    """
+    Examples
+    --------
+    >>> length, dt = 9.9, 0.1
+    >>> # There are 99 bins there. I want them to be 100 (2**2 * 5**2).
+    >>> new_dt = adjust_dt_for_small_power(dt, length)
+    INFO:...
+    >>> np.isclose(new_dt, 0.099)
+    True
+    >>> np.isclose(length / new_dt, 100)
+    True
+    """
+    nbin = length / dt
+    losp = get_list_of_small_powers(2 * nbin)
+    nbin_new = np.searchsorted(losp, nbin)
+    if losp[nbin_new] < nbin:
+        nbin_new += 1
+
+    new_dt = length / losp[nbin_new]
+    log.info(f"New bin time: {new_dt} (nbin {nbin} -> {losp[nbin_new]})")
+    return new_dt
+
+
+def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7,
+                     dtype=float):
+    """Arange plus memory mapping.
+
+    Examples
+    --------
+    >>> i0, i1, istep = 0, 10, 1e-2
+    >>> np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
+    True
+    >>> i0, i1, istep = 0, 10, 1e-7
+    >>> np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
+    True
+
+    """
+    import tempfile
+    chunklen = 10**6
+    Nbins = int((i1 - i0) / istep)
+    if Nbins < nbin_threshold:
+        return np.arange(i0, i1, istep)
+    if fname is None:
+        _, fname = tempfile.mkstemp(suffix='.npy')
+
+    hist_arr = np.lib.format.open_memmap(
+        fname, mode='w+', dtype=dtype, shape=(Nbins,))
+
+    for start in range(0, Nbins, chunklen):
+        stop = min(start + chunklen, Nbins)
+        hist_arr[start:stop] = \
+            np.arange(start, stop) * istep
+
+    return hist_arr
+
+
+def nchars_in_int_value(value):
+    """Number of characters to write an integer number
+
+    Examples
+    --------
+    >>> nchars_in_int_value(2)
+    1
+    >>> nchars_in_int_value(1356)
+    4
+    >>> nchars_in_int_value(9999)
+    4
+    >>> nchars_in_int_value(10000)
+    5
+    """
+    #  "+1" because, e.g., 10000 would return 4
+    return int(np.ceil(np.log10(value + 1)))

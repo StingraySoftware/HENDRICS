@@ -1,23 +1,25 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Test a full run of the codes from the command line."""
 
-import hendrics as hen
-from astropy import log
+import shutil
 import os
 import glob
 import subprocess as sp
+
 import numpy as np
+from astropy import log
 from astropy.tests.helper import catch_warnings
 from astropy.io import fits
-import pytest
-from stingray.lightcurve import Lightcurve
 from astropy.logger import AstropyUserWarning
 from astropy.tests.helper import remote_data
+import pytest
+from stingray.lightcurve import Lightcurve
+import hendrics as hen
 from hendrics.tests import _dummy_par
 from hendrics.fold import HAS_PINT
 from hendrics import fake, fspec, base, binary, calibrate, colors, create_gti,\
     exposure, exvar, io, lcurve, modeling, plot, read_events, rebin, \
-    save_as_xspec, timelags, varenergy, sum_fspec
+    save_as_xspec, timelags, varenergy
 
 try:
     FileNotFoundError
@@ -97,6 +99,25 @@ class TestFullRun(object):
         assert hasattr(ev, 'header')
         assert hasattr(ev, 'gti')
 
+    def test_load_events_randomize(self):
+        """Test event file reading."""
+        # command = '{0} --randomize-by 0.073'.format(
+        #     os.path.join(self.datadir, 'monol_testA.evt'))
+        newfiles = hen.read_events.treat_event_file(
+            os.path.join(self.datadir, 'monol_testA.evt'),
+            randomize_by=0.073)
+        clean_file = self.first_event_file
+        ev_clean = hen.io.load_events(clean_file)
+        ev = hen.io.load_events(newfiles[0])
+        diff = ev.time - ev_clean.time
+        assert np.all(np.abs(diff) <= 0.073 / 2)
+        assert np.all(np.abs(diff) > 0.)
+
+    def test_scramble_events(self):
+        command = f'{self.first_event_file}'
+        newfile = hen.fake.main_scramble(command.split())
+        assert os.path.exists(newfile)
+
     def test_load_events_with_2_cpus(self):
         """Test event file reading."""
         command = '{0} {1} --nproc 2'.format(
@@ -115,18 +136,6 @@ class TestFullRun(object):
                                     'monol_testB_nustar_fpmb_gti000_ev' +
                                     HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
-
-    def test_merge_events(self):
-        filea = os.path.join(self.datadir,
-                             'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION)
-        fileb = os.path.join(self.datadir,
-                             'monol_testB_nustar_fpmb_ev' + HEN_FILE_EXTENSION)
-
-        hen.read_events.main_join([filea, fileb])
-
-        out = os.path.join(self.datadir,
-                           'monol_test_nustar_fpm_ev' + HEN_FILE_EXTENSION)
-        assert os.path.exists(out)
 
     def test_save_binary_events(self):
         f = self.first_event_file
@@ -544,7 +553,7 @@ class TestFullRun(object):
         """Test PDS production."""
         command = \
             '{0} {1} -f 128 --save-all --save-dyn -k PDS ' \
-            '--norm frac --nproc 2 '.format(
+            '--norm frac'.format(
                 os.path.join(self.datadir,
                              'monol_testA_E3-50_lc') + HEN_FILE_EXTENSION,
                 os.path.join(self.datadir,
@@ -627,17 +636,6 @@ class TestFullRun(object):
                 os.path.join(self.datadir, 'monol_test_E3-50'))
         hen.fspec.main(command.split())
 
-    def test_cpds_2cpus(self):
-        """Test CPDS production."""
-        command = \
-            ('{0} {1} -f 128 --save-dyn --save-all -k '
-             'CPDS --norm frac -o {2} --nproc 2').format(
-                os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
-                HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, 'monol_testB_E3-50_lc') +
-                HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, 'monol_test_E3-50'))
-        hen.fspec.main(command.split())
 
     def test_dumpdynpds(self):
         """Test dump dynamical PDSs."""
@@ -889,12 +887,32 @@ model = models.Const1D()
 
     def test_create_gti(self):
         """Test creating a GTI file."""
+        fname = os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev') + \
+            HEN_FILE_EXTENSION
+        command = "{0} -f time>0 -c --debug".format(fname)
+        hen.create_gti.main(command.split())
+
+    def test_apply_gti(self):
+        """Test applying a GTI file."""
+        fname = os.path.join(self.datadir, 'monol_testA_nustar_fpma_gti') + \
+            HEN_FILE_EXTENSION
+        lcfname = os.path.join(self.datadir, 'monol_testA_nustar_fpma_ev') + \
+            HEN_FILE_EXTENSION
+        lcoutname = os.path.join(self.datadir,
+                                 'monol_testA_nustar_fpma_ev_gtifilt') + \
+            HEN_FILE_EXTENSION
+        command = "{0} -a {1} --debug".format(lcfname, fname)
+        hen.create_gti.main(command.split())
+        hen.io.load_events(lcoutname)
+
+    def test_create_gti_lc(self):
+        """Test creating a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_lc_rebin4') + \
             HEN_FILE_EXTENSION
         command = "{0} -f counts>0 -c --debug".format(fname)
         hen.create_gti.main(command.split())
 
-    def test_apply_gti(self):
+    def test_apply_gti_lc(self):
         """Test applying a GTI file."""
         fname = os.path.join(self.datadir, 'monol_testA_E3-50_rebin4_gti') + \
             HEN_FILE_EXTENSION
@@ -1069,25 +1087,42 @@ model = models.Const1D()
     def teardown_class(self):
         """Test a full run of the scripts (command lines)."""
 
-        file_list = \
-            glob.glob(os.path.join(self.datadir,
-                                   '*monol_test*') + HEN_FILE_EXTENSION) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*lcurve*') + HEN_FILE_EXTENSION) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*lcurve*.txt')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*.log')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*monol_test*.dat')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*monol_test*.png')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   '*monol_test*.txt')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   'monol_test_fake*.evt')) + \
-            glob.glob(os.path.join(self.datadir,
-                                   'bubu*'))
+        def find_file_pattern_in_dir(pattern, directory):
+            return glob.glob(os.path.join(directory, pattern))
+
+        patterns = [
+            '*monol_test*' + HEN_FILE_EXTENSION,
+            '*lcurve*' + HEN_FILE_EXTENSION,
+            '*lcurve*.txt',
+            '*.log',
+            '*monol_test*.dat',
+            '*monol_test*.png',
+            '*monol_test*.txt',
+            '*monol_test_fake*.evt',
+            '*bubu*',
+            '*.p',
+            '*.qdp',
+            '*.inf'
+        ]
+
+        file_list = []
+        for pattern in patterns:
+            file_list.extend(
+                find_file_pattern_in_dir(pattern, self.datadir)
+            )
+
         for f in file_list:
-            print("Removing " + f)
-            os.remove(f)
+            if os.path.exists(f):
+                print("Removing " + f)
+                os.remove(f)
+
+        patterns = ['*_pds*/', '*_cpds*/', '*_sum/']
+
+        dir_list = []
+        for pattern in patterns:
+            dir_list.extend(
+                find_file_pattern_in_dir(pattern, self.datadir)
+            )
+        for f in dir_list:
+            if os.path.exists(f):
+                shutil.rmtree(f)

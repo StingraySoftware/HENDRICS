@@ -4,18 +4,28 @@ from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding, \
-    load_events, get_file_type
+    load_events, get_file_type, save_lcurve
 from hendrics.efsearch import main_efsearch, main_zsearch
+from hendrics.efsearch import main_accelsearch, main_z2vspf
 from hendrics.efsearch import decide_binary_parameters, folding_orbital_search
-from hendrics.fold import main_fold
+from hendrics.fold import main_fold, main_deorbit
 from hendrics.plot import plot_folding
 from hendrics.tests import _dummy_par
+from hendrics.base import hen_root
 from astropy.tests.helper import remote_data
 try:
     import pandas as pd
     HAS_PD = True
 except ImportError:
     HAS_PD = False
+
+try:
+    from stingray.pulse.accelsearch import accelsearch
+    HAS_ACCEL = True
+except ImportError:
+    print("This version of stingray has no accelerated search. Please "
+          "update")
+    HAS_ACCEL = False
 
 from hendrics.fold import HAS_PINT
 from hendrics.efsearch import HAS_IMAGEIO
@@ -32,8 +42,11 @@ class TestEFsearch():
         cls.counts = \
             100 + 20 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
         cls.mjdref = 56000
+
         lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]],
                         dt=cls.dt)
+        cls.lcfile = 'lcurve' + HEN_FILE_EXTENSION
+        save_lcurve(lc, cls.lcfile)
         events = EventList()
         events.mjdref = cls.mjdref
         events.simulate_times(lc)
@@ -94,7 +107,7 @@ class TestEFsearch():
         main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                        '--emin', '3', '--emax', '79',
                        '--fit-candidates'])
-        outfile = 'events_EF_3-79keV' + HEN_FILE_EXTENSION
+        outfile = 'events_EF_3-79keV_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         ftype, efperiod = get_file_type(outfile)
@@ -103,6 +116,18 @@ class TestEFsearch():
                           atol=1/25.25)
         os.unlink(outfile)
 
+    def test_efsearch_from_lc(self):
+        evfile = self.lcfile
+
+        main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                       '--fit-candidates'])
+        outfile = 'lcurve_EF_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True)
+        efperiod = load_folding(outfile)
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
+                          atol=1/25.25)
+
     def test_zsearch(self):
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
@@ -110,7 +135,24 @@ class TestEFsearch():
                        '--fit-candidates', '--fit-frequency',
                        str(self.pulse_frequency),
                        '--dynstep', '5'])
-        outfile = 'events_Z2n_3-79keV' + HEN_FILE_EXTENSION
+        outfile = 'events_Z2n_3-79keV_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True)
+        efperiod = load_folding(outfile)
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
+                          atol=1/25.25)
+        # Defaults to 2 harmonics
+        assert efperiod.N == 2
+        os.unlink(outfile)
+
+    def test_zsearch_from_lc(self):
+        evfile = self.lcfile
+
+        main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                      '--fit-candidates', '--fit-frequency',
+                      str(self.pulse_frequency),
+                      '--dynstep', '5'])
+        outfile = 'lcurve_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
@@ -126,7 +168,7 @@ class TestEFsearch():
                       '--fdotmin', ' -0.1', '--fdotmax', '0.1',
                       '--fit-candidates', '--fit-frequency',
                       str(self.pulse_frequency)])
-        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
+        outfile = 'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
         efperiod = load_folding(outfile)
@@ -161,13 +203,27 @@ class TestEFsearch():
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fast'])
-        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
+        outfile = 'events_Z2n_9.85-9.95Hz_fast' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
         efperiod = load_folding(outfile)
 
         assert len(efperiod.fdots) > 1
         assert efperiod.N == 2
+        os.unlink(outfile)
+
+    def test_zsearch_fdots_ffa(self):
+        evfile = self.dum
+        main_zsearch([evfile, '-f', '9.89', '-F', '9.92', '-n', '64',
+                      '--ffa', '--find-candidates'])
+        outfile = 'events_Z2n_9.89-9.92Hz_ffa' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True, output_data_file='bla_ffa.qdp')
+        efperiod = load_folding(outfile)
+
+        assert efperiod.N == 2
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency,
+                          atol=1/25.25)
         os.unlink(outfile)
 
     def test_fold_fast_fails(self):
@@ -210,7 +266,7 @@ class TestEFsearch():
         ip = main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                            '--deorbit-par', self.par])
 
-        outfile = 'events_Z2n' + HEN_FILE_EXTENSION
+        outfile = 'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
 
@@ -226,12 +282,38 @@ class TestEFsearch():
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
+    @remote_data
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_deorbit(self):
+        evfile = self.dum
+        main_deorbit([evfile, '--deorbit-par', self.par])
+        outfile = hen_root(evfile) + '_deorb' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
     def test_efsearch_deorbit_invalid(self):
         evfile = self.dum
         with pytest.raises(FileNotFoundError) as excinfo:
             ip = main_efsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                                '--deorbit-par', "nonexistent.par"])
         assert "Parameter file" in str(excinfo.value)
+
+    @pytest.mark.skipif('HAS_ACCEL')
+    def test_accelsearch_missing_raises(self):
+        evfile = self.dum
+        with pytest.raises(ImportError) as excinfo:
+            ip = main_accelsearch([evfile])
+
+    @pytest.mark.skipif('not HAS_ACCEL')
+    def test_accelsearch_missing_raises(self):
+        evfile = self.dum
+        outfile = main_accelsearch([evfile])
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    def test_z2vspf(self):
+        evfile = self.dum
+        ip = main_z2vspf([evfile])
 
     @classmethod
     def teardown_class(cls):

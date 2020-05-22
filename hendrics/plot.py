@@ -13,13 +13,16 @@ from astropy.stats import poisson_conf_interval
 from astropy import log
 
 from .fold import fold_events, filter_energy
+from .base import z2_n_detection_level
+from .base import fold_detection_level
 from .base import deorbit_events
 from .io import load_events
 from .io import load_data, get_file_type, load_pds
 from .io import is_string, save_as_qdp, load_folding
 from .io import HEN_FILE_EXTENSION
+from .io import find_file_in_allowed_paths
 from .base import _assign_value_if_none
-from .base import detection_level
+from .base import pds_detection_level as detection_level
 
 
 def _next_color(ax):
@@ -49,7 +52,7 @@ def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None,
         fnames = [fnames]
     figname = _assign_value_if_none(figname,
                                     '{0} vs {1}'.format(vars[1], vars[0]))
-    fig = plt.figure(figname)
+    plt.figure(figname)
     ax = plt.gca()
     if xlog:
         ax.set_xscale('log', nonposx='clip')
@@ -308,12 +311,6 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None,
 
 def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                  output_data_file=None):
-    from .fold import z2_n_detection_level
-    from .io import find_file_in_allowed_paths
-    try:
-        from stingray.pulse.pulsar import fold_detection_level
-    except:
-        from stingray.stats import fold_detection_level
     from matplotlib import gridspec
     import matplotlib.pyplot as plt
 
@@ -328,33 +325,32 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
         if ef.kind == "Z2n":
             vmin = ef.N - 1
-            vmax = z2_n_detection_level(0.001, n=ef.N,
+            vmax = z2_n_detection_level(epsilon=0.001, n=ef.N,
                                         ntrial=max(ef.stat.shape),
                                         n_summed_spectra=ef.M)
             nbin = ef.N * 8
         else:
             vmin = ef.nbin
-            vmax = fold_detection_level(ef.nbin, 0.001,
+            vmax = fold_detection_level(nbin=ef.nbin, epsilon=0.001,
                                         ntrial=max(ef.stat.shape))
             nbin = ef.nbin
 
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-            df = np.median(np.diff(ef.freq[0]))
-            dfdot = np.median(np.diff(ef.fdots[:, 0]))
+            # df = np.median(np.diff(ef.freq[0]))
+            # dfdot = np.median(np.diff(ef.fdots[:, 0]))
             idx = ef.stat.argmax()
             # ix, iy = np.unravel_index(np.argmax(ef.stat, axis=None),
             #                           ef.stat.shape)
             f, fdot = ef.freq.flatten()[idx], ef.fdots.flatten()[idx]
         elif len(ef.stat.shape) == 1:
             f = ef.freq[ef.stat.argmax()]
-            df = np.min(np.diff(ef.freq))
-
+            # df = np.min(np.diff(ef.freq))
             fdot = 0
-            dfdot = 1
+            # dfdot = 1
         else:
             raise ValueError("Did not understand stats shape.")
 
-        plt.figure(fname, figsize=(10, 10))
+        plt.figure(fname, figsize=(8, 8))
 
         if hasattr(ef, "filename") and ef.filename is not None and \
                 os.path.exists(ef.filename):
@@ -389,12 +385,13 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                             expocorr=False, nbin=nbin)
             ax = plt.subplot(external_gs[0])
 
-            # noinspection PyPackageRequirements
-            ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
-                round(f, -np.int(np.floor(np.log10(np.abs(df))))),
-                round(fdot, -np.int(np.floor(np.log10(np.abs(dfdot)))))),
-                horizontalalignment='left', verticalalignment='center',
-                transform=ax.transAxes)
+            # print(df, dfdot)
+            # # noinspection PyPackageRequirements
+            # ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
+            #     round(f, -np.int(np.floor(np.log10(np.abs(df))))),
+            #     round(fdot, -np.int(np.floor(np.log10(np.abs(dfdot)))))),
+            #     horizontalalignment='left', verticalalignment='center',
+            #     transform=ax.transAxes)
             ax.plot(np.concatenate((phase, phase + 1)),
                     np.concatenate((profile, profile)), drawstyle='steps-mid')
 
@@ -417,7 +414,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             ax.set_xlabel("Phase")
             ax.set_ylabel("Counts")
             ax.set_xlim([0, 2])
-            ax.legend()
+            ax.legend(loc=4)
             phascommand = "HENphaseogram -f {} " \
                           "--fdot {} {} -n {} --norm to1".format(f, fdot,
                                                                  ef.filename, nbin)
@@ -492,13 +489,13 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             axffdot.set_ylim([np.min(ef.fdots), np.max(ef.fdots)])
             axffdot.axvline(f, ls='--', color='white')
             axffdot.axhline(fdot, ls='--', color='white')
-            axf.legend()
+            axf.legend(loc=4)
         else:
             axf = plt.subplot(external_gs[search_gs_no])
             axf.plot(ef.freq, ef.stat, drawstyle='steps-mid', label=fname)
             axf.set_xlabel('Frequency (Hz)')
             axf.set_ylabel(ef.kind + ' stat')
-            axf.legend()
+            axf.legend(loc=4)
 
         if hasattr(ef, 'best_fits') and ef.best_fits is not None and \
                 not len(ef.stat.shape) > 1:
@@ -529,6 +526,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
         ax.set_xscale('log', nonposx='clip')
     if ylog:
         ax.set_yscale('log', nonposy='clip')
+    plt.tight_layout()
 
     if figname is not None:
         plt.savefig(figname)

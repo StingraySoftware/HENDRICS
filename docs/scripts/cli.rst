@@ -23,6 +23,14 @@ HEN2xspec
       --debug              set DEBUG logging level
 
 
+HENaccelsearch
+--------------
+
+::
+
+    This version of stingray has no accelerated search. Please update
+
+
 HENbaseline
 -----------
 
@@ -227,11 +235,12 @@ HENefsearch
 ::
 
     usage: HENefsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
-                       [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
-                       [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
-                       [--step STEP] [--oversample OVERSAMPLE] [--fast]
-                       [--transient] [--expocorr] [--find-candidates]
-                       [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+                       [--mean-fdot MEAN_FDOT] [--fdotmin FDOTMIN]
+                       [--fdotmax FDOTMAX] [--dynstep DYNSTEP] [--npfact NPFACT]
+                       [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
+                       [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
+                       [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
+                       [--fit-candidates] [--curve CURVE]
                        [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                        [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
@@ -247,6 +256,8 @@ HENefsearch
       -F FMAX, --fmax FMAX  Maximum frequency to fold
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
+      --mean-fdot MEAN_FDOT
+                            Mean fdot to fold (only useful when using --fast)
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
@@ -264,6 +275,9 @@ HENefsearch
                             searches for the first spin derivative using an
                             optimized step.This option ignores expocorr,
                             fdotmin/max, segment-size, and step
+      --ffa                 Use *the* Fast Folding Algorithm by Staelin+69. No
+                            accelerated search allowed at the moment. Only
+                            recommended to search for slow pulsars.
       --transient           Look for transient emission (produces an animated GIF
                             with the dynamic Z search)
       --expocorr            Correct for the exposure of the profile bins. This
@@ -359,7 +373,7 @@ HENfake
     optional arguments:
       -h, --help            show this help message and exit
       -e EVENT_LIST, --event-list EVENT_LIST
-                            File containint event list
+                            File containing event list
       -l LC, --lc LC        File containing light curve
       -c CTRATE, --ctrate CTRATE
                             Count rate for simulated events
@@ -426,7 +440,7 @@ HENfspec
 
     usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
                     [--norm NORM] [--noclobber] [-o OUTROOT] [--back BACK]
-                    [--save-dyn] [--ignore-instr] [--save-all] [--nproc NPROC]
+                    [--save-dyn] [--ignore-instr] [--save-all]
                     [--loglevel LOGLEVEL] [--debug]
                     files [files ...]
 
@@ -458,7 +472,6 @@ HENfspec
       --ignore-instr        Ignore instrument names in channels
       --save-all            Save all information contained in spectra, including
                             single pdss and light curves.
-      --nproc NPROC         Number of processors to use
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
@@ -707,8 +720,8 @@ HENreadevents
 
     usage: HENreadevents [-h] [--noclobber] [-g] [-l LENGTH_SPLIT]
                          [--min-length MIN_LENGTH] [--gti-string GTI_STRING]
-                         [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
-                         [--nproc NPROC]
+                         [--randomize-by RANDOMIZE_BY] [-o OUTFILE]
+                         [--loglevel LOGLEVEL] [--debug] [--nproc NPROC]
                          files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
@@ -727,6 +740,9 @@ HENreadevents
                             Minimum length of GTIs to consider
       --gti-string GTI_STRING
                             GTI string
+      --randomize-by RANDOMIZE_BY
+                            Randomize event arrival times by this amount (e.g. it
+                            might be the 0.073-s frame time in XMM)
       -o OUTFILE, --outfile OUTFILE
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -740,15 +756,16 @@ HENreadfile
 
 ::
 
-    usage: HENreadfile [-h] files [files ...]
+    usage: HENreadfile [-h] [--print-header] files [files ...]
 
     Print the content of HENDRICS files
 
     positional arguments:
-      files       List of files
+      files           List of files
 
     optional arguments:
-      -h, --help  show this help message and exit
+      -h, --help      show this help message and exit
+      --print-header  Print the full FITS header if present in the meta data.
 
 
 HENrebin
@@ -776,6 +793,39 @@ HENrebin
       --debug               set DEBUG logging level
 
 
+HENscramble
+-----------
+
+::
+
+    usage: HENscramble [-h] [--smooth-kind {smooth,flat,pulsed}]
+                       [--deadtime DEADTIME] [--dt DT]
+                       [--pulsed-fraction PULSED_FRACTION] [--outfile OUTFILE]
+                       [--loglevel LOGLEVEL] [--debug]
+                       fname
+
+    Scramble the events inside an event list, maintaining the same energies and
+    GTIs
+
+    positional arguments:
+      fname                 File containing input event list
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --smooth-kind {smooth,flat,pulsed}
+                            Special testing value
+      --deadtime DEADTIME   Dead time magnitude. Can be specified as a single
+                            number, or two. In this last case, the second value is
+                            used as sigma of the dead time distribution
+      --dt DT               Time resolution of smoothed light curve
+      --pulsed-fraction PULSED_FRACTION
+                            Pulsed fraction of simulated pulsations
+      --outfile OUTFILE     Output file name
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               set DEBUG logging level
+
+
 HENscrunchlc
 ------------
 
@@ -797,6 +847,27 @@ HENscrunchlc
       --debug              use DEBUG logging level
 
 
+HENsplitevents
+--------------
+
+::
+
+    usage: HENsplitevents [-h] [-l LENGTH_SPLIT] [--overlap OVERLAP] fname
+
+    Reads a cleaned event files and splits the file into overlapping multiple
+    chunks of fixed length
+
+    positional arguments:
+      fname                 File 1
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -l LENGTH_SPLIT, --length-split LENGTH_SPLIT
+                            Split event list by GTI
+      --overlap OVERLAP     Overlap factor. 0 for no overlap, 0.5 for half-
+                            interval overlap, and so on.
+
+
 HENsumfspec
 -----------
 
@@ -813,7 +884,7 @@ HENsumfspec
       -h, --help            show this help message and exit
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_(c)pds.nc
+                            tot_(c)pds.p
 
 
 HENvarenergy
@@ -859,17 +930,46 @@ HENvarenergy
       --debug               set DEBUG logging level
 
 
+HENz2vspf
+---------
+
+::
+
+    usage: HENz2vspf [-h] [--ntrial NTRIAL] [--outfile OUTFILE] [--emin EMIN]
+                     [--emax EMAX] [--loglevel LOGLEVEL] [--debug]
+                     fname
+
+    Get Z2 vs pulsed fraction for a given observation. Takes the original event
+    list, scrambles the event arrival time, adds a pulsation with random pulsed
+    fraction, and takes the maximum value of Z2 in a small interval around the
+    pulsation. Does this ntrial times, and plots.
+
+    positional arguments:
+      fname                Input file name
+
+    optional arguments:
+      -h, --help           show this help message and exit
+      --ntrial NTRIAL      Number of trial values for the pulsed fraction
+      --outfile OUTFILE    Output table file name
+      --emin EMIN          Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX          Maximum energy (or PI if uncalibrated) to plot
+      --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
+                           ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug              set DEBUG logging level
+
+
 HENzsearch
 ----------
 
 ::
 
     usage: HENzsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
-                      [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
-                      [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
-                      [--step STEP] [--oversample OVERSAMPLE] [--fast]
-                      [--transient] [--expocorr] [--find-candidates]
-                      [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+                      [--mean-fdot MEAN_FDOT] [--fdotmin FDOTMIN]
+                      [--fdotmax FDOTMAX] [--dynstep DYNSTEP] [--npfact NPFACT]
+                      [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
+                      [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
+                      [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
+                      [--fit-candidates] [--curve CURVE]
                       [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                       [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
@@ -885,6 +985,8 @@ HENzsearch
       -F FMAX, --fmax FMAX  Maximum frequency to fold
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
+      --mean-fdot MEAN_FDOT
+                            Mean fdot to fold (only useful when using --fast)
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
@@ -902,6 +1004,9 @@ HENzsearch
                             searches for the first spin derivative using an
                             optimized step.This option ignores expocorr,
                             fdotmin/max, segment-size, and step
+      --ffa                 Use *the* Fast Folding Algorithm by Staelin+69. No
+                            accelerated search allowed at the moment. Only
+                            recommended to search for slow pulsars.
       --transient           Look for transient emission (produces an animated GIF
                             with the dynamic Z search)
       --expocorr            Correct for the exposure of the profile bins. This
