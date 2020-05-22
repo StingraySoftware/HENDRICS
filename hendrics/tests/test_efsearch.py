@@ -297,7 +297,9 @@ class TestEFsearch():
     @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_missing_raises(self):
         evfile = self.dum
-        ip = main_accelsearch([evfile])
+        outfile = main_accelsearch([evfile])
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
 
     def test_z2vspf(self):
         evfile = self.dum

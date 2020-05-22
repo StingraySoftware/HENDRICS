@@ -480,7 +480,7 @@ def plot_transient_search(results, gif_name=None):
         # To calculate ntrial, we need to take into account that
         # 1. the image has nave equal pixels
         # 2. the frequency axis is oversampled by at least nprof / nave
-        ntrial = ima.size / nave / (nprof / nave) / oversample
+        ntrial = int(ima.size / nave / (nprof / nave) / oversample)
 
         detl = z2_n_detection_level(epsilon=0.0015, n=2,
                                     ntrial=ntrial)
@@ -488,7 +488,7 @@ def plot_transient_search(results, gif_name=None):
         # To calculate ntrial from the summed image, we use the
         # length of the frequency axis, considering oversample by
         # nprof / nave:
-        ntrial_sum = f.size / nave / (nprof / nave) / oversample
+        ntrial_sum = int(f.size / nave / (nprof / nave) / oversample)
 
         sum_detl = z2_n_detection_level(epsilon=0.0015, n=2,
                                         ntrial=ntrial_sum,
@@ -1153,7 +1153,7 @@ def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None):
         result_table.add_row([pf, np.max(stats)])
     if outfile is None:
         outfile = 'z2_vs_pf.csv'
-    result_table.write(outfile)
+    result_table.write(outfile, overwrite=True)
     return result_table
 
 
@@ -1344,7 +1344,8 @@ def main_accelsearch(args=None):
         results['pepoch'] = events.mjdref + results['time'] / 86400.0
 
     results.sort('power', reverse=True)
-    results.write(outfile)
+    results.write(outfile, overwrite=True)
     print("Best candidates:")
     results['time', 'frequency', 'fdot', 'power', 'pepoch'][:10].pprint()
     print(f"See all {len(results)} candidates in {outfile}")
+    return outfile
