@@ -21,6 +21,7 @@ from .io import load_events, EFPeriodogram, save_folding, \
 from .base import hen_root, show_progress, adjust_dt_for_power_of_two
 from .base import deorbit_events, njit, prange
 from .base import histogram2d, histogram, memmapped_arange
+from .base import z2_n_detection_level
 from .fold import filter_energy
 from .ffa import _z_n_fast_cached, ffa_search
 from .fake import scramble
@@ -465,7 +466,6 @@ def transient_search(times, f0, f1, fdot=0, nbin=16, nprof=None, n=1,
 
 def plot_transient_search(results, gif_name=None):
     import matplotlib.pyplot as plt
-    from hendrics.fold import z2_n_detection_level
 
     if gif_name is None:
         gif_name = 'transients.gif'

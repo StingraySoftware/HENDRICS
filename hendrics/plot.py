@@ -13,8 +13,8 @@ from astropy.stats import poisson_conf_interval
 from astropy import log
 
 from .fold import fold_events, filter_energy
-from .fold import z2_n_detection_level
-from .fold import fold_detection_level
+from .base import z2_n_detection_level
+from .base import fold_detection_level
 from .base import deorbit_events
 from .io import load_events
 from .io import load_data, get_file_type, load_pds
