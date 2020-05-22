@@ -136,22 +136,13 @@ matrix:
           env: TOXENV=py38-test-devdeps
 
     allow_failures:
-
-        # Now try Astropy dev with the latest Python
+        # Do a code style check
         - os: linux
           python: 3.8
-          name: Python 3.8 with developer version of everything
-          stage: Comprehensive tests
-          env: TOXENV=py38-test-devdeps-cov
+          name: Code style checks
+          stage: Initial tests
+          env: TOXENV=codestyle
 
-        # Add a job that runs from cron only and tests against astropy dev and
-        # numpy dev to give a change for early discovery of issues and feedback
-        # for both developer teams.
-        - os: linux
-          python: 3.8
-          name: Python 3.8 latest developer version of key dependencies
-          stage: Cron tests
-          env: TOXENV=py38-test-devdeps
 
 before_install:
     - if [[ $TOXENV == *-cov ]]; then
