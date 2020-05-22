@@ -24,7 +24,7 @@ try:
     from numba import types
     from numba.extending import overload_method
 
-    @overload_method(types.Array, 'take') #  pragma: no cover
+    @overload_method(types.Array, 'take')  # pragma: no cover
     def array_take(arr, indices):
         if isinstance(indices, types.Array):
             def take_impl(arr, indices):
@@ -78,7 +78,87 @@ except ImportError:
 
 try:
     from stingray.stats import pds_probability, pds_detection_level
+    from stingray.stats import z2_n_detection_level, z2_n_probability
+    from stingray.stats import fold_detection_level, fold_profile_probability
 except ImportError:
+    from stingray.pulse.pulsar import fold_detection_level
+    from stingray.pulse.pulsar import fold_profile_probability
+
+    def z2_n_detection_level(n=2, epsilon=0.01, n_summed_spectra=1, ntrial=1):
+        """Return the detection level for the Z^2_n statistics.
+
+        See Buccheri et al. (1983), Bendat and Piersol (1971).
+
+        Parameters
+        ----------
+        n : int, default 2
+            The ``n`` in $Z^2_n$
+        epsilon : float, default 0.01
+            The fractional probability that the signal has been produced by noise
+
+        Other Parameters
+        ----------------
+        ntrial : int
+            The number of trials executed to find this profile
+        n_summed_spectra : int
+            Number of Z_2^n periodograms that are being averaged
+
+        Returns
+        -------
+        detlev : float
+            The epoch folding statistics corresponding to a probability
+            epsilon * 100 % that the signal has been produced by noise
+
+        Examples
+        --------
+        >>> np.isclose(z2_n_detection_level(2), 13.276704135987625)
+        True
+        """
+
+        from scipy import stats
+        retlev = stats.chi2.isf(
+            epsilon / ntrial,
+            2 * int(n_summed_spectra) * n) / (n_summed_spectra)
+
+        return retlev
+
+    def z2_n_probability(z2, n=2, ntrial=1, n_summed_spectra=1):
+        """Calculate the probability of a certain folded profile, due to noise.
+
+        Parameters
+        ----------
+        z2 : float
+            A Z^2_n statistics value
+        n : int, default 2
+            The ``n`` in $Z^2_n$
+
+        Other Parameters
+        ----------------
+        ntrial : int
+            The number of trials executed to find this profile
+        n_summed_spectra : int
+            Number of Z_2^n periodograms that were averaged to obtain z2
+
+        Returns
+        -------
+        p : float
+            The probability that the Z^2_n value has been produced by noise
+
+        Examples
+        --------
+        >>> detlev = z2_n_detection_level(2, 0.1)
+        >>> np.isclose(z2_n_probability(detlev, 2), 0.1)
+        True
+        """
+        if ntrial > 1:
+            import warnings
+            warnings.warn("Z2_n: The treatment of ntrial is very rough. "
+                          "Use with caution", AstropyUserWarning)
+        from scipy import stats
+
+        epsilon = ntrial * stats.chi2.sf(z2 * n_summed_spectra,
+                                         2 * n * n_summed_spectra)
+        return epsilon
 
     def pds_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
         r"""Detection level for a PDS.
@@ -112,7 +192,6 @@ except ImportError:
             retlev = np.array(retlev)
         return retlev
 
-
     def pds_probability(level, nbins, n_summed_spectra=1, n_rebin=1):
         r"""Give the probability of a given power level in PDS.
 
@@ -136,6 +215,53 @@ except ImportError:
         epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
                                         2 * n_summed_spectra * n_rebin)
         return epsilon
+
+
+__all__ = [
+    'array_take',
+    'njit',
+    'prange',
+    'show_progress',
+    'z2_n_detection_level',
+    'z2_n_probability',
+    'pds_detection_level',
+    'pds_probability',
+    'fold_detection_level',
+    'fold_profile_probability',
+    'r_in',
+    'r_det',
+    '_assign_value_if_none',
+    '_look_for_array_in_array',
+    'is_string',
+    '_order_list_of_arrays',
+    'mkdir_p',
+    'common_name',
+    'hen_root',
+    'optimal_bin_time',
+    'gti_len',
+    'deorbit_events',
+    '_add_default_args',
+    'check_negative_numbers_in_args',
+    'interpret_bintime',
+    'get_bin_edges',
+    'compute_bin',
+    'hist1d_numba_seq',
+    'hist2d_numba_seq',
+    'hist3d_numba_seq',
+    'hist2d_numba_seq_weight',
+    'hist3d_numba_seq_weight',
+    'index_arr',
+    'index_set_arr',
+    'histnd_numba_seq',
+    'histogram2d',
+    'histogram',
+    'touch',
+    'log_x',
+    'get_list_of_small_powers',
+    'adjust_dt_for_power_of_two',
+    'adjust_dt_for_small_power',
+    'memmapped_arange',
+    'nchars_in_int_value']
 
 
 DEFAULT_PARSER_ARGS = {}
@@ -503,7 +629,7 @@ def compute_bin(x, bin_edges):
 
     # special case to mirror NumPy behavior for last bin
     if x == a_max:
-        return n - 1 # a_max always in last bin
+        return n - 1  # a_max always in last bin
 
     bin = int(n * (x - a_min) / (a_max - a_min))
 
@@ -761,6 +887,7 @@ if HAS_NUMBA:
 else:
     def histogram2d(*args, **kwargs):
         return histogram2d_np(*args, **kwargs)[0]
+
     def histogram(*args, **kwargs):
         return histogram_np(*args, **kwargs)[0]
 
@@ -862,7 +989,7 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7,
 
     """
     import tempfile
-    chunklen=10**6
+    chunklen = 10**6
     Nbins = int((i1 - i0) / istep)
     if Nbins < nbin_threshold:
         return np.arange(i0, i1, istep)

@@ -26,7 +26,7 @@ from .ffa import _z_n_fast_cached, ffa_search
 from .fake import scramble
 try:
     import matplotlib.pyplot as plt
-    HAS_MPL=True
+    HAS_MPL = True
 except ImportError:
     HAS_MPL = False
 
@@ -185,6 +185,7 @@ def calculate_shifts(
     shifts = np.linspace(-1., 1., nprof) ** order
     return nshift * shifts
 
+
 @njit()
 def mod(num, n2):
     return np.mod(num, n2)
@@ -294,7 +295,6 @@ def _average_and_z_sub_search(profiles, n=2):
     n_log_ave_max = int(np.log2(nprof))
 
     results = np.zeros((n_log_ave_max, nprof))
-    all_nave = np.zeros((n_log_ave_max, nprof))
 
     twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
 
@@ -308,7 +308,8 @@ def _average_and_z_sub_search(profiles, n=2):
             new_profiles = np.sum(profiles[i * n_ave_i: (i + 1) * n_ave_i],
                                   axis=0)
 
-            #Work around strange numba bug. Will reinstate np.max when it's solved
+            # Work around strange numba bug. Will reinstate np.max when it's
+            # solved
             if np.sum(new_profiles) == 0:
                 continue
 
@@ -714,7 +715,8 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
 
     local_show_progress = show_progress
     if silent:
-        local_show_progress = lambda x: x
+        def local_show_progress(x):
+            return x
 
     for ii, i in enumerate(local_show_progress(allvalues)):
         offset = step * i
@@ -993,7 +995,8 @@ def _common_main(args, func):
         ftype, events = get_file_type(fname)
 
         if ftype == 'events':
-            if hasattr(events, 'mjdref'): mjdref = events.mjdref
+            if hasattr(events, 'mjdref'):
+                mjdref = events.mjdref
             if args.emin is not None or args.emax is not None:
                 events, elabel = filter_energy(events, args.emin, args.emax)
 
@@ -1005,11 +1008,11 @@ def _common_main(args, func):
         else:
             oversample = assign_value_if_none(args.oversample, 2)
 
-        if args.transient and ftype =='lc':
+        if args.transient and ftype == 'lc':
             log.error("Transient search not yet available for light curves")
         if args.transient and ftype == 'events':
-            results = transient_search(events.time, args.fmin, args.fmax, fdot=0,
-                                       nbin=args.nbin, n=n,
+            results = transient_search(events.time, args.fmin, args.fmax,
+                                       fdot=0, nbin=args.nbin, n=n,
                                        nprof=None, oversample=oversample)
             plot_transient_search(results, hen_root(fname) + '_transient.gif')
             continue
@@ -1199,7 +1202,7 @@ def main_z2vspf(args=None):
         plt.scatter(result_table['pf'] * 100, result_table['z2'])
         plt.semilogy()
         plt.grid(True)
-        plt.xlabel("Pulsed fraction (\%)")
+        plt.xlabel(r"Pulsed fraction (%)")
         plt.ylabel(r"$Z^2_2$")
         # plt.show()
         plt.savefig(outfile.replace('.csv', '.png'))
@@ -1325,7 +1328,7 @@ def main_accelsearch(args=None):
         fmin=fmin, fmax=fmax,
         gti=GTI - t0, zmax=zmax,
         ref_time=t0,
-        debug=False, interbin=interbin,
+        debug=debug, interbin=interbin,
         nproc=nproc, det_p_value=det_p_value)
 
     if len(results) > 0:

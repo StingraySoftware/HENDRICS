@@ -1,7 +1,7 @@
 import functools
 import numpy as np
 
-from .base import njit, vectorize, HAS_NUMBA, float32, float64, int32, int64
+from .base import njit, vectorize, float32, float64, int32, int64
 from .base import show_progress
 
 """
@@ -28,7 +28,8 @@ Let's call step_pow the quantity (2**(step+1)) So, in each sum:
 
 + The _jump_ between the summed profiles is equal to step_pow / 2
 + The _shift_ in each element is equal to (prof_n % step_pow(step) + 1) // 2
-+ The starting number is obtained as prof_n // step_pow * step_pow + (prof_n - prof_n // step_pow) // 2
++ The starting number is obtained as
+    prof_n // step_pow * step_pow + (prof_n - prof_n // step_pow) // 2
 """
 
 
@@ -177,8 +178,8 @@ def z_n_fast_cached_all(norm, nmax=20):
     ks = np.arange(1, nmax + 1, dtype=int)
 
     for k in ks:
-        all_zs[k - 1]= np.sum(cached_cos[:N*k:k] * norm) ** 2 + \
-            np.sum(cached_sin[:N*k:k] * norm) ** 2
+        all_zs[k - 1] = np.sum(cached_cos[:N * k:k] * norm) ** 2 + \
+            np.sum(cached_sin[:N * k:k] * norm) ** 2
 
     result = 2 / total_norm * np.cumsum(all_zs)
 
@@ -205,7 +206,8 @@ def roll(a, shift):
     n = a.size
     reshape = True
 
-    if n == 0: return a
+    if n == 0:
+        return a
 
     shift %= n
 
@@ -340,7 +342,8 @@ def ffa(array, bin_period, z_n_n=2):
     """
     N_raw = len(array)
     ntables = np.int(2**np.ceil(np.log2(N_raw // bin_period + 1)))
-    if ntables <= 1: return np.zeros(1), np.zeros(1)
+    if ntables <= 1:
+        return np.zeros(1), np.zeros(1)
     N = ntables * bin_period
     new_arr = np.zeros(N)
     new_arr[:N_raw] = array
@@ -372,7 +375,6 @@ def ffa_search(counts, dt, period_min, period_max):
     pmax = np.ceil(period_max / dt)
     bin_periods = None
     stats = None
-    steps = None
 
     current_rebin = 1
     rebinned_counts = counts
@@ -392,7 +394,8 @@ def ffa_search(counts, dt, period_min, period_max):
 
         per *= current_rebin
 
-        if per[0] == 0: continue
+        if per[0] == 0:
+            continue
         elif bin_periods is None:
             bin_periods = per[:-1] * dt
             stats = st[:-1]

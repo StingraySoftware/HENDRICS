@@ -18,10 +18,9 @@ from matplotlib.widgets import Slider, Button
 import matplotlib
 from matplotlib.gridspec import GridSpec
 
-from .fold import z2_n_detection_level
 from .fold import filter_energy
 from .io import load_events, load_folding
-from .fold import get_TOAs_from_events, HAS_PINT
+from .fold import get_TOAs_from_events
 from .base import hen_root, deorbit_events
 
 
@@ -149,7 +148,7 @@ class BasePhaseogram(object):
                                           bounds_error=False,
                                           fill_value="extrapolate")
 
-        self.fig = plt.figure(label, figsize=(6,8))
+        self.fig = plt.figure(label, figsize=(6, 8))
         gs = GridSpec(3, 1, height_ratios=[2, 3, 0.2])
         plt.subplots_adjust(left=0.1, bottom=0.30, top=0.95, right=0.95)
         ax = plt.subplot(gs[1])
@@ -177,7 +176,7 @@ class BasePhaseogram(object):
         ax.set_xlabel('Phase')
 
         def s2d(x):
-            return (x - pepoch) /86400
+            return (x - pepoch) / 86400
 
         def d2s(x):
             return (x - mjdref) * 86400
@@ -251,7 +250,7 @@ class BasePhaseogram(object):
         self.button_toa.on_clicked(self.toa)
         self.button_recalc.on_clicked(self.recalculate)
         self.button_close.on_clicked(self.quit)
-        #self.profax = plt.axes([0.25, 0.75, 0.5, 0.2])
+        # self.profax = plt.axes([0.25, 0.75, 0.5, 0.2])
 
         prof = np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1)
         nbin = len(prof)
@@ -430,12 +429,12 @@ class InteractivePhaseogram(BasePhaseogram):
         self.dfddot_order_of_mag = np.int(np.log10(delta_dfddot_start))
         delta_dfddot = delta_dfddot_start / 10 ** self.dfddot_order_of_mag
 
-        freq_str = r'$\Delta$ F0' + \
-                   'x$10^{' + f'{self.df_order_of_mag}' + r'}$'
-        fdot_str = r'$\Delta$ F1' + \
-                   r'x$10^{' + f'{self.dfdot_order_of_mag}' + r'}$'
-        fddot_str = r'$\Delta$ F2' + \
-                   r'x$10^{' + f'{self.dfddot_order_of_mag}' + r'}$'
+        freq_str = (r'$\Delta$ F0'
+                    'x$10^{' + f'{self.df_order_of_mag}' + r'}$')
+        fdot_str = (r'$\Delta$ F1'
+                    r'x$10^{' + f'{self.dfdot_order_of_mag}' + r'}$')
+        fddot_str = (r'$\Delta$ F2'
+                     r'x$10^{' + f'{self.dfddot_order_of_mag}' + r'}$')
 
         self.sfreq = \
             SliderOnSteroids(
@@ -807,7 +806,7 @@ def main_phaseogram(args=None):
             fdot = args.fdot
             fddot = args.fddot
 
-        ip = run_interactive_phaseogram(
+        _ = run_interactive_phaseogram(
             args.file,
             freq=frequency,
             fdot=fdot,

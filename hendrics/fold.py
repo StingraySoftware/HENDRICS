@@ -11,7 +11,6 @@ from scipy.signal import savgol_filter
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
 from astropy import log
-from astropy.logger import AstropyUserWarning
 from .io import load_events
 
 try:
@@ -22,96 +21,13 @@ except ImportError:
 
 try:
     import pint.toa as toa
-    import pint
+    # import pint
     HAS_PINT = True
 except ImportError:
     log.warning("PINT is not installed. "
                 "Some pulsar functionality will not be available")
     HAS_PINT = False
 from .base import deorbit_events
-
-try:
-    from stingray.stats import z2_n_detection_level, z2_n_probability
-    from stingray.stats import fold_detection_level
-except ImportError:
-    from stingray.pulse.pulsar import fold_detection_level
-
-    def z2_n_detection_level(n=2, epsilon=0.01, n_summed_spectra=1, ntrial=1):
-        """Return the detection level for the Z^2_n statistics.
-
-        See Buccheri et al. (1983), Bendat and Piersol (1971).
-
-        Parameters
-        ----------
-        n : int, default 2
-            The ``n`` in $Z^2_n$
-        epsilon : float, default 0.01
-            The fractional probability that the signal has been produced by noise
-
-        Other Parameters
-        ----------------
-        ntrial : int
-            The number of trials executed to find this profile
-        n_summed_spectra : int
-            Number of Z_2^n periodograms that are being averaged
-
-        Returns
-        -------
-        detlev : float
-            The epoch folding statistics corresponding to a probability
-            epsilon * 100 % that the signal has been produced by noise
-
-        Examples
-        --------
-        >>> np.isclose(z2_n_detection_level(2), 13.276704135987625)
-        True
-        """
-
-        from scipy import stats
-        retlev = stats.chi2.isf(epsilon / ntrial,
-                                2 * int(n_summed_spectra) * n) \
-                 / (n_summed_spectra)
-
-        return retlev
-
-
-    def z2_n_probability(z2, n=2, ntrial=1, n_summed_spectra=1):
-        """Calculate the probability of a certain folded profile, due to noise.
-
-        Parameters
-        ----------
-        z2 : float
-            A Z^2_n statistics value
-        n : int, default 2
-            The ``n`` in $Z^2_n$
-
-        Other Parameters
-        ----------------
-        ntrial : int
-            The number of trials executed to find this profile
-        n_summed_spectra : int
-            Number of Z_2^n periodograms that were averaged to obtain z2
-
-        Returns
-        -------
-        p : float
-            The probability that the Z^2_n value has been produced by noise
-
-        Examples
-        --------
-        >>> detlev = z2_n_detection_level(2, 0.1)
-        >>> np.isclose(z2_n_probability(detlev, 2), 0.1)
-        True
-        """
-        if ntrial > 1:
-            import warnings
-            warnings.warn("Z2_n: The treatment of ntrial is very rough. "
-                          "Use with caution", AstropyUserWarning)
-        from scipy import stats
-
-        epsilon = ntrial * stats.chi2.sf(z2 * n_summed_spectra,
-                                         2 * n * n_summed_spectra)
-        return epsilon
 
 
 def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE405"):
@@ -181,7 +97,6 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
     gti = kwargs['gti'] if 'gti' in kwargs else None
     label = kwargs['label'] if 'label' in kwargs else None
     quick = kwargs['quick'] if 'quick' in kwargs else False
-    position = kwargs['position'] if 'position' in kwargs else None
 
     pepoch = assign_value_if_none(pepoch, events[0])
     gti = assign_value_if_none(gti, [[events[0], events[-1]]])
@@ -506,7 +421,6 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
     if deorbit_par is not None:
         ev = deorbit_events(ev, deorbit_par)
 
-    gtis = ev.gti
     plot_energy = True
     ev, elabel = filter_energy(ev, emin, emax)
     times, energy = ev.time, ev.energy
@@ -630,7 +544,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
             pf = 100 * (max - min) / max
             ax2.plot(meanbins, prof, drawstyle='steps-mid',
                      label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],
-                                                     biny[i + 1], pf))
+                                                     biny[i + 1]))
             std = np.max(prof - smooth)
             ax2.set_xlabel('Phase')
             ax2.set_ylabel('Counts')

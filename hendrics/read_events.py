@@ -12,7 +12,7 @@ from .io import load_events
 from .base import common_name
 from .base import hen_root
 from .io import save_events, load_events_and_gtis
-from .io import HEN_FILE_EXTENSION, read_header_key
+from .io import HEN_FILE_EXTENSION
 
 
 def treat_event_file(filename, noclobber=False, gti_split=False,
@@ -223,6 +223,7 @@ def split_eventlist(fname, max_length, overlap=None):
         count += 1
     return all_files
 
+
 def main_join(args=None):
     """Main function called by the `HENjoinevents` command line script."""
     import argparse
@@ -255,7 +256,6 @@ def main_splitevents(args=None):
                         help="Overlap factor. 0 for no overlap, 0.5 for "
                              "half-interval overlap, and so on.",
                         default=None)
-
 
     args = parser.parse_args(args)
 

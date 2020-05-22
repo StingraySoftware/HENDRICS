@@ -27,6 +27,7 @@ except ImportError:
 else:
     matplotlib.use('Agg')
 
+
 def pytest_configure(config):
 
     if ASTROPY_HEADER:

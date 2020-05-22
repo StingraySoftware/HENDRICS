@@ -9,16 +9,16 @@ import numpy.random as ra
 from astropy import log
 from astropy.logger import AstropyUserWarning
 from stingray.gti import gti_border_bins
-from stingray.simulator.base import simulate_times
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from .io import get_file_format, load_lcurve
 from .io import load_events, save_events, HEN_FILE_EXTENSION
-from .base import _empty, jit, njit, r_in
+from .base import _empty, r_in
 
 from .lcurve import lcurve_from_fits
 from .base import njit
+
 
 def _paralyzable_dead_time(event_list, dead_time):
     mask = np.ones(len(event_list), dtype=bool)

@@ -52,7 +52,7 @@ def plot_generic(fnames, vars, errs=None, figname=None, xlog=None, ylog=None,
         fnames = [fnames]
     figname = _assign_value_if_none(figname,
                                     '{0} vs {1}'.format(vars[1], vars[0]))
-    fig = plt.figure(figname)
+    plt.figure(figname)
     ax = plt.gca()
     if xlog:
         ax.set_xscale('log', nonposx='clip')
@@ -336,17 +336,17 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             nbin = ef.nbin
 
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-            df = np.median(np.diff(ef.freq[0]))
-            dfdot = np.median(np.diff(ef.fdots[:, 0]))
+            # df = np.median(np.diff(ef.freq[0]))
+            # dfdot = np.median(np.diff(ef.fdots[:, 0]))
             idx = ef.stat.argmax()
             # ix, iy = np.unravel_index(np.argmax(ef.stat, axis=None),
             #                           ef.stat.shape)
             f, fdot = ef.freq.flatten()[idx], ef.fdots.flatten()[idx]
         elif len(ef.stat.shape) == 1:
             f = ef.freq[ef.stat.argmax()]
-            df = np.min(np.diff(ef.freq))
+            # df = np.min(np.diff(ef.freq))
             fdot = 0
-            dfdot = 1
+            # dfdot = 1
         else:
             raise ValueError("Did not understand stats shape.")
 

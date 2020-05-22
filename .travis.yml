@@ -135,13 +135,6 @@ matrix:
           env: TOXENV=py38-test-devdeps
 
     allow_failures:
-        # Do a PEP8 test with flake8
-        # (do allow to fail unless your code completely compliant)
-        - os: linux
-          python: 3.8
-          name: Code style checks
-          stage: Initial tests
-          env: TOXENV=codestyle
 
         # Now try Astropy dev with the latest Python
         - os: linux

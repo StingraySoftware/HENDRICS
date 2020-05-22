@@ -12,7 +12,7 @@ from stingray.utils import assign_value_if_none
 from stingray.gti import create_gti_mask, cross_gtis, contiguous_regions
 from .base import _look_for_array_in_array, hen_root, mkdir_p, \
     interpret_bintime
-from .io import load_events, load_data, save_data, save_lcurve, load_lcurve
+from .io import load_events, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
 from .base import deorbit_events
 
@@ -161,7 +161,7 @@ def scrunch_lightcurve_objs(lclist):
     gti = cross_gtis(gti_lists)
     for lc in lclist:
         lc.gti = gti
-        if hasattr(lc, '_apply_gtis'): # pragma: no cover
+        if hasattr(lc, '_apply_gtis'):  # pragma: no cover
             # Compatibility with old versions of stingray
             lc.apply_gtis = lc._apply_gtis
         lc.apply_gtis()

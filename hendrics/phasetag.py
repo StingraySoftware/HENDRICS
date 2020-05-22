@@ -12,7 +12,7 @@ from stingray.io import load_events_and_gtis, ref_mjd
 from stingray.pulse.pulsar import pulse_phase, phase_exposure
 from .io import is_string, save_as_qdp
 from .base import _assign_value_if_none, hen_root
-from .fold import fit_profile, std_fold_fit_func, get_energy_from_events
+from .fold import fit_profile, std_fold_fit_func
 
 
 def outfile_name(file):

@@ -325,8 +325,6 @@ def get_file_type(fname, raw_data=False):
     """
     contents = load_data(fname)
 
-    keys = list(contents.keys())
-
     ftype_raw = contents['__sr__class__type__']
     if 'Lightcurve' in ftype_raw:
         ftype = 'lc'
@@ -491,7 +489,7 @@ def load_lcurve(fname):
                             err_dist=data['err_dist'],
                             mjdref=data['mjdref'], dt=data['dt'])
 
-    if hasattr(lcurve, '_apply_gtis'): # pragma: no cover
+    if hasattr(lcurve, '_apply_gtis'):  # pragma: no cover
         # Compatibility with old versions of stingray
         lcurve.apply_gtis = lcurve._apply_gtis
 
@@ -906,8 +904,8 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp", mode='w'):
         print_header = False
     outfile = open(filename, mode)
     if print_header:
-        for l in list_of_errs:
-            i, kind = l
+        for lerr in list_of_errs:
+            i, kind = lerr
             print('READ %s' % kind + 'ERR %d' % (i + 1), file=outfile)
 
     length = len(data_to_write[0])
@@ -1048,7 +1046,6 @@ def _get_additional_data(lctable, additional_columns):
 def load_gtis(fits_file, gtistring=None, data_hduname='EVENTS'):
     """Load GTI from HDU EVENTS of file fits_file."""
     from astropy.io import fits as pf
-    import numpy as np
 
     gtistring = assign_value_if_none(gtistring, 'GTI')
     accepted_gtistrings = gtistring.split(',')
