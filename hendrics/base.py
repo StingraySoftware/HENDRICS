@@ -89,9 +89,10 @@ except ImportError:
         and multiple PDS averaging (n_summed_spectra)
         Examples
         --------
-        >>> np.isclose(detection_level(1, 0.1), 4.6, atol=0.1)
+        >>> np.isclose(pds_detection_level(1, 0.1), 4.6, atol=0.1)
         True
-        >>> np.allclose(detection_level(1, 0.1, n_rebin=[1]), [4.6], atol=0.1)
+        >>> np.allclose(pds_detection_level(1, 0.1, n_rebin=[1]), [4.6],
+        ...                                 atol=0.1)
         True
         """
         try:
@@ -101,8 +102,9 @@ except ImportError:
 
         if not isinstance(n_rebin, Iterable):
             r = n_rebin
-            retlev = stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) \
-                     / (n_summed_spectra * r)
+            retlev = stats.chi2.isf(
+                epsilon / nbins,
+                2 * n_summed_spectra * r) / (n_summed_spectra * r)
         else:
             retlev = [
                 stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) /
