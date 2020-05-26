@@ -5,6 +5,7 @@ import sys
 import os
 import glob
 import copy
+import re
 
 from collections.abc import Iterable
 import importlib
@@ -992,7 +993,7 @@ def print_fits_info(fits_file, hdu=1):
     return info
 
 
-def _get_gti_from_extension(lchdulist, accepted_gtistrings=['GTI']):
+def _get_gti_extensions_from_pattern(lchdulist, name_pattern='GTI'):
     """Gets the GTIs from the first available extension.
 
     Examples
@@ -1002,28 +1003,40 @@ def _get_gti_from_extension(lchdulist, accepted_gtistrings=['GTI']):
     >>> stop = start + 50.
     >>> s1 = fits.Column(name='START', array=start, format='D')
     >>> s2 = fits.Column(name='STOP', array=stop, format='D')
-    >>> hdu1 = fits.TableHDU.from_columns([s1, s2], name='GTI00005')
-    >>> s1 = fits.Column(name='START', array=start[:1], format='D')
-    >>> s2 = fits.Column(name='STOP', array=stop[:1], format='D')
-    >>> hdu2 = fits.TableHDU.from_columns([s1, s2], name='STDGTI05')
-    >>> lchdulist = fits.HDUList([hdu1, hdu2])
-    >>> gti = _get_gti_from_extension(
-    ...     lchdulist, accepted_gtistrings=['GTI00005'])
-    >>> np.allclose(gti, [[0, 50], [100, 150], [200, 250]])
-    True
-    >>> gti = _get_gti_from_extension(
-    ...     lchdulist, accepted_gtistrings=['STDGTI05'])
-    >>> np.allclose(gti, [[0, 50]])
+    >>> hdu1 = fits.TableHDU.from_columns([s1, s2], name='GTI005XX')
+    >>> hdu2 = fits.TableHDU.from_columns([s1, s2], name='GTI00501')
+    >>> lchdulist = fits.HDUList([hdu1])
+    >>> gtiextn = _get_gti_extensions_from_pattern(
+    ...     lchdulist, name_pattern='GTI005[0-9]+')
+    >>> np.allclose(gtiextn, [1])
     True
     """
     hdunames = [h.name for h in lchdulist]
-    gtiextn = [ix for ix, x in enumerate(hdunames)
-               if x in accepted_gtistrings]
-    if len(gtiextn) == 0:
-        return None
+    pattern_re = re.compile("^" + name_pattern + '$')
+    gtiextn = []
+    for ix, extname in enumerate(hdunames):
+        if pattern_re.match(extname):
+            gtiextn.append(ix)
+    return gtiextn
 
-    gtiext = lchdulist[gtiextn[0]]
-    gtitable = gtiext.data
+
+def _get_gti_from_hdu(gtihdu):
+
+    """Get the GTIs from a given extension.
+
+    Examples
+    --------
+    >>> from astropy.io import fits
+    >>> start = np.arange(0, 300, 100)
+    >>> stop = start + 50.
+    >>> s1 = fits.Column(name='START', array=start, format='D')
+    >>> s2 = fits.Column(name='STOP', array=stop, format='D')
+    >>> hdu1 = fits.TableHDU.from_columns([s1, s2], name='GTI00501')
+    >>> gti = _get_gti_from_hdu(hdu1)
+    >>> np.allclose(gti, [[0, 50], [100, 150], [200, 250]])
+    True
+    """
+    gtitable = gtihdu.data
 
     colnames = [col.name for col in gtitable.columns.columns]
     # Default: NuSTAR: START, STOP. Otherwise, try RXTE: Start, Stop
@@ -1050,33 +1063,32 @@ def _get_gti_from_all_extensions(lchdulist, accepted_gtistrings=['GTI'],
     >>> from astropy.io import fits
     >>> s1 = fits.Column(name='START', array=[0, 100, 200], format='D')
     >>> s2 = fits.Column(name='STOP', array=[50, 150, 250], format='D')
-    >>> hdu1 = fits.TableHDU.from_columns([s1, s2], name='GTI00005')
+    >>> hdu1 = fits.TableHDU.from_columns([s1, s2], name='GTI00501')
     >>> s1 = fits.Column(name='START', array=[200, 300], format='D')
     >>> s2 = fits.Column(name='STOP', array=[250, 350], format='D')
     >>> hdu2 = fits.TableHDU.from_columns([s1, s2], name='STDGTI05')
     >>> lchdulist = fits.HDUList([hdu1, hdu2])
     >>> gti = _get_gti_from_all_extensions(
-    ...     lchdulist, accepted_gtistrings=['GTI000', 'STDGTI'],
+    ...     lchdulist, accepted_gtistrings=['GTI0', 'STDGTI'],
     ...     det_numbers=[5])
     >>> np.allclose(gti, [[200, 250]])
     True
     """
-    if det_numbers is None:
-        return _get_gti_from_extension(lchdulist, accepted_gtistrings)
-
+    acc_gti_strs = copy.deepcopy(accepted_gtistrings)
+    if det_numbers is not None:
+        for i in det_numbers:
+            acc_gti_strs += [x + '{:02d}'.format(i) for x in
+                             accepted_gtistrings]
+            acc_gti_strs += [x + '{:02d}.*'.format(i) for x in
+                             accepted_gtistrings]
+    gtiextn = []
+    for pattern in acc_gti_strs:
+        gtiextn.extend(_get_gti_extensions_from_pattern(lchdulist, pattern))
+    gtiextn = list(set(gtiextn))
     gti_lists = []
-    for i in det_numbers:
-        acc_gti_strs = [x + '{:02d}'.format(i) for x in accepted_gtistrings]
-        acc_gti_strs += [x + '{:d}'.format(i) for x in accepted_gtistrings]
-        local_gti_list = []
-        for acc_gti_str in acc_gti_strs:
-            newg = _get_gti_from_extension(lchdulist, [acc_gti_str])
-            if newg is not None:
-                local_gti_list.append(newg)
-        if len(local_gti_list) > 1:
-            gti_lists.append(cross_gtis(local_gti_list))
-        elif len(local_gti_list) == 1:
-            gti_lists.append(local_gti_list[0])
+    for extn in gtiextn:
+        gtihdu = lchdulist[extn]
+        gti_lists.append(_get_gti_from_hdu(gtihdu))
     return cross_gtis(gti_lists)
 
 
@@ -1149,7 +1161,7 @@ def _get_detector_id(lctable):
 
 
 def load_events_and_gtis(fits_file, additional_columns=None,
-                         gtistring='GTI,STDGTI',
+                         gtistring='GTI,GTI0,STDGTI',
                          gti_file=None, hduname='EVENTS', column='TIME'):
     """Load event lists and GTIs from one or more files.
 
@@ -1189,7 +1201,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     """
     from astropy.io import fits as pf
 
-    gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
+    gtistring = assign_value_if_none(gtistring, 'GTI,GTI0,STDGTI')
     lchdulist = pf.open(fits_file)
 
     # Load data table
