@@ -26,7 +26,6 @@ except ImportError:
 from astropy.modeling.core import Model
 from astropy import log
 from astropy.logger import AstropyUserWarning
-from astropy.io import fits
 from stingray.utils import assign_value_if_none
 from stingray.gti import cross_gtis
 from stingray.events import EventList
@@ -998,6 +997,7 @@ def _get_gti_extensions_from_pattern(lchdulist, name_pattern='GTI'):
 
     Examples
     --------
+    >>> from astropy.io import fits
     >>> start = np.arange(0, 300, 100)
     >>> stop = start + 50.
     >>> s1 = fits.Column(name='START', array=start, format='D')
@@ -1025,6 +1025,7 @@ def _get_gti_from_hdu(gtihdu):
 
     Examples
     --------
+    >>> from astropy.io import fits
     >>> start = np.arange(0, 300, 100)
     >>> stop = start + 50.
     >>> s1 = fits.Column(name='START', array=start, format='D')
@@ -1058,6 +1059,7 @@ def _get_gti_from_all_extensions(lchdulist, accepted_gtistrings=['GTI'],
 
     Examples
     --------
+    >>> from astropy.io import fits
     >>> s1 = fits.Column(name='START', array=[0, 100, 200], format='D')
     >>> s2 = fits.Column(name='STOP', array=[50, 150, 250], format='D')
     >>> hdu1 = fits.TableHDU.from_columns([s1, s2], name='GTI00501')
@@ -1132,6 +1134,8 @@ def _get_detector_id(lctable):
 
     Examples
     --------
+    >>> from astropy.io import fits
+    >>> import numpy as np
     >>> a = fits.Column(name='CCDNR', array=np.array([1, 2]), format='K')
     >>> t = fits.TableHDU.from_columns([a])
     >>> det_id1 = _get_detector_id(t.data)
