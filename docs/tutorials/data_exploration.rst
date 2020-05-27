@@ -17,14 +17,38 @@ Data exploration
 In this tutorial, we will explore a NuSTAR dataset and try to get a general view
 of the observed source.
 
-First of all, let us load the event list in a more manageable file, and calibrate it.
+Load events and GTIs
+~~~~~~~~~~~~~~~~~~~~
+
+First of all, let us load the event list in a more manageable file
 
     $ HENreadevents mistery_source_1_00.evt --min-length 512
+
+Note that the understanding of good time intervals extensions is sometimes difficult to do automatically,
+as different missions have different standard naming of these extensions. Most NASA missions should be
+correctly handled, plus XMM-Newton; however, if you notice something strange in the GTI extension
+reading, or if you are using non-standard user GTI extensions, please specify explicitly the extension
+names or regular expressions. For example, to read the user-defined GTIs and the standard GTIs for
+detector 01 of XMM-Newton/EPIC-pn the command might be something like:
+
+    $ HENreadevents mistery_source_xmm.fits --gtistring 'GTI001.*,STDGTI01'
+
+See the help of ``HENreadevents`` for more details.
+
+Calibrate events
+~~~~~~~~~~~~~~~~
+Then we can "calibrate" it, which means that we are measuring the energy of each photon in units
+of kilo-electronVolts (keV).
+
     $ HENcalibrate mistery_source_1_00_nustar_fpma_ev.nc
 
-The latter works only if the official rmf files are in the CALDB. Otherwise, the ``--rmf`` option
-has to be used (see ``HENcalibrate -h`` for details).
+The latter works only for *NuSTAR*, and if the official rmf files are in the CALDB. Otherwise,
+the ``--rmf`` option has to be used, providing a redistribution matrix file (see ``HENcalibrate -h``
+for details).
 The ``min-length`` option says to discard GTIs shorter than 512.
+
+Create and plot a light curve
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Then, let's calculate and plot a light curve binned at 10 s, between 3 and 5 keV, and taking a "safe"
 interval around GTIs of 100 s (for example, to account for increased particle background close to
 SAA)
@@ -39,6 +63,8 @@ This plot shows the GTI borders in red, and the light curve before (grey) and af
 for safe intervals around GTIs. Some intervals with decreasing flux can be seen in the grey light curve,
 a sign that a filtering _was_ needed.
 
+Color-color diagram
+~~~~~~~~~~~~~~~~~~~
 Now, let's produce a color-color diagram.
 
 First of all, we need to produce two color light curves:

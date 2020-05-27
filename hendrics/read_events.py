@@ -38,7 +38,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
         minimum length of GTIs accepted (only if gti_split is True or
         length_split is not None)
     """
-    gtistring = assign_value_if_none(gtistring, 'GTI,STDGTI')
+    gtistring = assign_value_if_none(gtistring, 'GTI,GTI0,STDGTI')
     log.info('Opening %s' % filename)
 
     data = load_events_and_gtis(filename,
