@@ -1,4 +1,4 @@
-|Build Status| |Build status| |Coverage Status| |Documentation Status|
+|Build Status| |Coverage Status| |Documentation Status|
 
 HENDRICS - High ENergy Data Reduction Interface from the Command Shell
 ======================================================================
@@ -96,8 +96,6 @@ the API.
 
 .. |Build Status| image:: https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=master
    :target: https://travis-ci.org/StingraySoftware/HENDRICS
-.. |Build status| image:: https://ci.appveyor.com/api/projects/status/ifm0iydpu6gd7vwk/branch/master?svg=true
-   :target: https://ci.appveyor.com/project/matteobachetti/hendrics/branch/master
 .. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/StingraySoftware/HENDRICS
 .. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=master
