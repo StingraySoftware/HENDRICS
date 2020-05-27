@@ -70,6 +70,13 @@ matrix:
           stage: Initial tests
           env: TOXENV=codestyle
 
+        # Check for sphinx doc build warnings
+        - os: linux
+          python: 3.8
+          name: Documentation build
+          stage: Initial tests
+          env: TOXENV=build_docs
+
         # Now try Astropy dev with the latest Python
         - os: linux
           python: 3.8
@@ -109,13 +116,6 @@ matrix:
           name: Python 3.6 astropy LTS and Numpy 1.16
           stage: Comprehensive tests
           env: TOXENV=py36-test-astropylts-numpy116-cov
-
-        # Check for sphinx doc build warnings
-        - os: linux
-          python: 3.8
-          name: Documentation build
-          stage: Comprehensive tests
-          env: TOXENV=build_docs
 
         # Try MacOS X, usually enough only to run from cron as hardly there are
         # issues that are not picked up by a linux worker. We set language to
