@@ -99,7 +99,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
     quick = kwargs['quick'] if 'quick' in kwargs else False
 
     pepoch = assign_value_if_none(pepoch, events[0])
-    gti = assign_value_if_none(gti, [[events[0], events[-1]]])
+    gti = np.asarray(assign_value_if_none(gti, [[events[0], events[-1]]]))
     # run exposure correction only if there are less than 1000 pulsations
     # in the interval
     length = gti.max() - gti.min()

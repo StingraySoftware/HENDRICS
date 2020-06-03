@@ -11,6 +11,7 @@ from astropy.modeling.models import Const1D
 from astropy.modeling import Model
 from astropy.stats import poisson_conf_interval
 from astropy import log
+from astropy.table import Table
 
 from .fold import fold_events, filter_energy
 from .base import z2_n_detection_level
@@ -325,31 +326,35 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
         if ef.kind == "Z2n":
             vmin = ef.N - 1
-            vmax = z2_n_detection_level(epsilon=0.001, n=ef.N,
+            vmax = z2_n_detection_level(epsilon=0.001, n=int(ef.N),
                                         ntrial=max(ef.stat.shape),
-                                        n_summed_spectra=ef.M)
+                                        n_summed_spectra=int(ef.M))
             nbin = ef.N * 8
         else:
             vmin = ef.nbin
-            vmax = fold_detection_level(nbin=ef.nbin, epsilon=0.001,
+            vmax = fold_detection_level(nbin=int(ef.nbin), epsilon=0.001,
                                         ntrial=max(ef.stat.shape))
             nbin = ef.nbin
 
-        if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-            # df = np.median(np.diff(ef.freq[0]))
-            # dfdot = np.median(np.diff(ef.fdots[:, 0]))
-            idx = ef.stat.argmax()
-            # ix, iy = np.unravel_index(np.argmax(ef.stat, axis=None),
-            #                           ef.stat.shape)
-            f, fdot = ef.freq.flatten()[idx], ef.fdots.flatten()[idx]
-        elif len(ef.stat.shape) == 1:
-            f = ef.freq[ef.stat.argmax()]
-            # df = np.min(np.diff(ef.freq))
-            fdot = 0
-            # dfdot = 1
-        else:
-            raise ValueError("Did not understand stats shape.")
+        best_cands = np.sort(np.argpartition(ef.stat.flatten(), -5)[-5:])
+        __best_stats = ef.stat.flatten()[best_cands]
+        best_cands = best_cands[np.argsort(__best_stats)]
 
+        print("Best candidates:")
+        best_cand_table = Table(names=['mjd', 'power', 'f', 'fdot'])
+        for idx in best_cands:
+            if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+                f, fdot = ef.freq.flatten()[idx], ef.fdots.flatten()[idx]
+            elif len(ef.stat.shape) == 1:
+                f = ef.freq[idx]
+                fdot = 0
+            else:
+                raise ValueError("Did not understand stats shape.")
+            best_cand_table.add_row([ef.pepoch,
+                                     ef.stat.flatten()[idx], f, fdot])
+
+        print(best_cand_table)
+        best_cand_table.write(fname + '_best_cands.csv', overwrite=True)
         plt.figure(fname, figsize=(8, 8))
 
         if hasattr(ef, "filename") and ef.filename is not None and \

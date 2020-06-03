@@ -1117,6 +1117,8 @@ def _common_main(args, func):
             out_fname += '_fast'
         elif args.ffa:
             out_fname += '_ffa'
+        if args.mean_fdot is not None:
+            out_fname += f'_{args.mean_fdot:e}s-2'
 
         save_folding(efperiodogram,
                      out_fname + HEN_FILE_EXTENSION)
