@@ -215,6 +215,7 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
             common_name(event_file1,
                         event_file2) + '_ev' + HEN_FILE_EXTENSION
 
+    events1 = load_events(event_file1)
     events2 = load_events(event_file2)
     if events2.time.size == 0 or events2.gti.size == 0:
         log.warning(f"{event_file2} has no good events")
@@ -227,7 +228,7 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
         events2.mjdref = events1.mjdref
         events2.gti -= time_diff
 
-    events = events.join(events2)
+    events = events1.join(events2)
     events.header = events1.header
     if events1.instr != events2.instr:
         events.instr = ",".join([e.instr for e in [events1, events2]])
