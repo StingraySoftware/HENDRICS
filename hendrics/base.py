@@ -514,7 +514,7 @@ def deorbit_events(events, parameter_file=None):
                       "correct?", AstropyUserWarning)
 
     length = np.max(events.time) - np.min(events.time)
-    if length > 100000:
+    if length > 200000:
         log.warning("The observation is very long. The barycentric correction "
                     "will be rough")
     length_d = length / 86400
@@ -945,6 +945,14 @@ def adjust_dt_for_power_of_two(dt, length, strict=False):
     >>> np.isclose(new_dt, 0.078125)
     True
     >>> length / new_dt == 128
+    True
+    >>> length, dt = 6.5, 0.1
+    >>> # There are 100 bins there. I want them to be 128.
+    >>> new_dt = adjust_dt_for_power_of_two(dt, length)
+    INFO: ...
+    INFO: Too many ...
+    INFO: ...
+    >>> length / new_dt == 72
     True
     """
     log.info("Adjusting bin time to closest power of 2 of bins.")
