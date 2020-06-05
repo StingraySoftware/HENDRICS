@@ -229,7 +229,8 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
         events2.gti -= time_diff
 
     events = events1.join(events2)
-    events.header = events1.header
+    if hasattr(events2, 'header'):
+        events.header = events1.header
     if events1.instr != events2.instr:
         events.instr = ",".join([e.instr for e in [events1, events2]])
 
@@ -266,15 +267,13 @@ def join_many_eventlists(eventfiles, new_event_file=None):
         log.info(f"Reading {event_file} ({i + 1}/{N})")
         events = load_events(event_file)
         if not np.isclose(events.mjdref, first_events.mjdref):
-            log.warning(f"{event_file} has a different MJDREF")
+            warnings.warn(f"{event_file} has a different MJDREF")
             continue
-
         if hasattr(events, 'instr') and not events.instr == first_events.instr:
-            log.warning(f"{event_file} is from a different instrument")
+            warnings.warn(f"{event_file} is from a different instrument")
             continue
-
         if events.time.size == 0 or events.gti.size == 0:
-            log.warning(f"{event_file} has no good events")
+            warnings.warn(f"{event_file} has no good events")
             continue
 
         all_events.append(events)
