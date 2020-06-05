@@ -584,12 +584,14 @@ def _fast_phase_fdot(ts, mean_f, mean_fdot=0):
 
 
 ONE_SIXTH = 1 / 6
+
+
 @njit(parallel=True)
 def _fast_phase_fddot(ts, mean_f, mean_fdot=0, mean_fddot=0):
     tssq = ts * ts
     phases = ts * mean_f + \
-             0.5 * tssq * mean_fdot + \
-             ONE_SIXTH * tssq * ts * mean_fddot
+         0.5 * tssq * mean_fdot + \
+         ONE_SIXTH * tssq * ts * mean_fddot
     return phases - np.floor(phases)
 
 
@@ -649,7 +651,7 @@ def search_with_qffa_step(
 
 
 def search_with_qffa(times, f0, f1,
-                     fdot=0, fddot=0,nbin=16, nprof=None, npfact=2,
+                     fdot=0, fddot=0, nbin=16, nprof=None, npfact=2,
                      oversample=8, n=1, search_fdot=True, t0=None, t1=None,
                      silent=False):
     """'Quite fast folding' algorithm.
@@ -1056,11 +1058,16 @@ def _common_main(args, func):
             search_fdot = True
             if args.fdotmax is not None and fdotmax <= fdotmin:
                 search_fdot = False
+            nbin = args.nbin
+            if nbin / n < 8:
+                nbin = n * 8
+                warnings.warn(f"The number of bins is too small for Z search."
+                               "Increasing to {nbin}")
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax,
                                  fdot=args.mean_fdot,
                                  fddot=args.mean_fddot,
-                                 nbin=args.nbin, n=n,
+                                 nbin=nbin, n=n,
                                  nprof=None, npfact=args.npfact,
                                  oversample=oversample,
                                  search_fdot=search_fdot)

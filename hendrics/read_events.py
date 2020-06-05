@@ -344,11 +344,13 @@ def main_join(args=None):
     args = parser.parse_args(args)
 
     if len(args.files) == 2:
-        return join_eventlists(args.files[0], args.files[1], new_event_file=args.output)
+        return join_eventlists(args.files[0], args.files[1],
+                               new_event_file=args.output)
     else:
         return join_many_eventlists(
             args.files,
             new_event_file=args.output)
+
 
 def main_splitevents(args=None):
     """Main function called by the `HENsplitevents` command line script."""
