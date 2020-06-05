@@ -52,7 +52,7 @@ if HAS_C256:
 class EFPeriodogram(object):
     def __init__(self, freq=None, stat=None, kind=None, nbin=None, N=None,
                  M=None, pepoch=None, mjdref=None,
-                 peaks=None, peak_stat=None, best_fits=None, fdots=0,
+                 peaks=None, peak_stat=None, best_fits=None, fdots=0, fddots=0,
                  segment_size=1e32, filename="", parfile=None,
                  emin=None, emax=None):
         self.freq = freq
@@ -64,6 +64,7 @@ class EFPeriodogram(object):
         self.peak_stat = peak_stat
         self.best_fits = best_fits
         self.fdots = fdots
+        self.fddots = fddots
         self.M = M
         self.segment_size = segment_size
         self.filename = filename
