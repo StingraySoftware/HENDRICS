@@ -514,13 +514,15 @@ def deorbit_events(events, parameter_file=None):
                       "correct?", AstropyUserWarning)
 
     length = np.max(events.time) - np.min(events.time)
+    if length > 100000:
+        log.warning("The observation is very long. The barycentric correction "
+                    "will be rough")
     length_d = length / 86400
     results = get_orbital_correction_from_ephemeris_file(
         pepoch_mjd - 1,
         pepoch_mjd + length_d + 1,
         parameter_file,
-        ntimes=int(
-            length // 10))
+        ntimes=min(int(length // 10), 10000))
     orbital_correction_fun = results[0]
     events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
     events.gti = orbital_correction_fun(events.gti, mjdref=events.mjdref)
