@@ -22,7 +22,7 @@ from .io import load_data, get_file_type, load_pds
 from .io import is_string, save_as_qdp, load_folding
 from .io import HEN_FILE_EXTENSION
 from .io import find_file_in_allowed_paths
-from .base import _assign_value_if_none
+from .base import _assign_value_if_none, find_peaks_in_image
 from .base import pds_detection_level as detection_level
 
 
@@ -336,22 +336,25 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                                         ntrial=max(ef.stat.shape))
             nbin = ef.nbin
 
-        best_cands = np.sort(np.argpartition(ef.stat.flatten(), -5)[-5:])
-        __best_stats = ef.stat.flatten()[best_cands]
-        best_cands = best_cands[np.argsort(__best_stats)]
+        best_cands = find_peaks_in_image(ef.stat, n=5)
+
+        fddot = 0
+        if hasattr(ef, 'fddots') and ef.fddots is not None:
+            fddot = ef.fddots
 
         print("Best candidates:")
-        best_cand_table = Table(names=['mjd', 'power', 'f', 'fdot'])
-        for idx in best_cands:
+        best_cand_table = Table(names=['mjd', 'power', 'f', 'fdot', 'fddot'])
+        for idx in best_cands[::-1]:
             if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-                f, fdot = ef.freq.flatten()[idx], ef.fdots.flatten()[idx]
+                f, fdot = ef.freq[idx[0], idx[1]], ef.fdots[idx[0], idx[1]]
+                max_stat = ef.stat[idx[0], idx[1]]
             elif len(ef.stat.shape) == 1:
-                f = ef.freq[idx]
+                f = ef.freq[idx[0]]
+                max_stat = ef.stat[idx[0]]
                 fdot = 0
             else:
                 raise ValueError("Did not understand stats shape.")
-            best_cand_table.add_row([ef.pepoch,
-                                     ef.stat.flatten()[idx], f, fdot])
+            best_cand_table.add_row([ef.pepoch, max_stat, f, fdot, fddot])
 
         print(best_cand_table)
         best_cand_table.write(fname + '_best_cands.csv', overwrite=True)
