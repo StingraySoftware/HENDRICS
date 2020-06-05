@@ -383,8 +383,12 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
             if hasattr(ef, 'ref_time') and ef.ref_time is not None:
                 ref_time = ef.ref_time
+            elif hasattr(ef, 'pepoch') and ef.pepoch is not None:
+                ref_time = (ef.pepoch - events.mjdref) * 86400
             else:
                 ref_time = (events.time[0] + events.time[-1]) / 2
+
+            pepoch = ref_time / 86400 + events.mjdref
 
             phase, profile, profile_err = \
                 fold_events(copy.deepcopy(events.time), f, fdot,
@@ -432,7 +436,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                 phascommand += " --emin {}".format(ef.emin)
             if hasattr(ef, 'emin') and ef.emin is not None:
                 phascommand += " --emax {}".format(ef.emax)
-            pepoch = ref_time / 86400 + events.mjdref
+
 
             if hasattr(events, 'mjdref') and events.mjdref is not None:
                 phascommand += " --pepoch {}".format(pepoch)
