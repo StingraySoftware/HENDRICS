@@ -590,8 +590,8 @@ ONE_SIXTH = 1 / 6
 def _fast_phase_fddot(ts, mean_f, mean_fdot=0, mean_fddot=0):
     tssq = ts * ts
     phases = ts * mean_f + \
-         0.5 * tssq * mean_fdot + \
-         ONE_SIXTH * tssq * ts * mean_fddot
+        0.5 * tssq * mean_fdot + \
+        ONE_SIXTH * tssq * ts * mean_fddot
     return phases - np.floor(phases)
 
 
@@ -1062,7 +1062,7 @@ def _common_main(args, func):
             if nbin / n < 8:
                 nbin = n * 8
                 warnings.warn(f"The number of bins is too small for Z search."
-                               "Increasing to {nbin}")
+                              f"Increasing to {nbin}")
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax,
                                  fdot=args.mean_fdot,
