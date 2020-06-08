@@ -1248,9 +1248,8 @@ def main_accelsearch(args=None):
     try:
         from stingray.pulse.accelsearch import accelsearch
     except ImportError:
-        print("This version of stingray has no accelerated search. Please "
-              "update")
-        return
+        raise ImportError("This version of stingray has no accelerated search."
+                          " Please update")
     from .base import _add_default_args, check_negative_numbers_in_args
     log.warning("The accelsearch functionality is experimental. Use with care,"
                 " and feel free to report any issues.")
