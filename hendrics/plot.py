@@ -11,6 +11,7 @@ from astropy.modeling.models import Const1D
 from astropy.modeling import Model
 from astropy.stats import poisson_conf_interval
 from astropy import log
+from astropy.table import Table
 
 from .fold import fold_events, filter_energy
 from .base import z2_n_detection_level
@@ -21,7 +22,7 @@ from .io import load_data, get_file_type, load_pds
 from .io import is_string, save_as_qdp, load_folding
 from .io import HEN_FILE_EXTENSION
 from .io import find_file_in_allowed_paths
-from .base import _assign_value_if_none
+from .base import _assign_value_if_none, find_peaks_in_image
 from .base import pds_detection_level as detection_level
 
 
@@ -325,31 +326,38 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
         if ef.kind == "Z2n":
             vmin = ef.N - 1
-            vmax = z2_n_detection_level(epsilon=0.001, n=ef.N,
+            vmax = z2_n_detection_level(epsilon=0.001, n=int(ef.N),
                                         ntrial=max(ef.stat.shape),
-                                        n_summed_spectra=ef.M)
+                                        n_summed_spectra=int(ef.M))
             nbin = ef.N * 8
         else:
             vmin = ef.nbin
-            vmax = fold_detection_level(nbin=ef.nbin, epsilon=0.001,
+            vmax = fold_detection_level(nbin=int(ef.nbin), epsilon=0.001,
                                         ntrial=max(ef.stat.shape))
             nbin = ef.nbin
 
-        if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-            # df = np.median(np.diff(ef.freq[0]))
-            # dfdot = np.median(np.diff(ef.fdots[:, 0]))
-            idx = ef.stat.argmax()
-            # ix, iy = np.unravel_index(np.argmax(ef.stat, axis=None),
-            #                           ef.stat.shape)
-            f, fdot = ef.freq.flatten()[idx], ef.fdots.flatten()[idx]
-        elif len(ef.stat.shape) == 1:
-            f = ef.freq[ef.stat.argmax()]
-            # df = np.min(np.diff(ef.freq))
-            fdot = 0
-            # dfdot = 1
-        else:
-            raise ValueError("Did not understand stats shape.")
+        best_cands = find_peaks_in_image(ef.stat, n=5)
 
+        fddot = 0
+        if hasattr(ef, 'fddots') and ef.fddots is not None:
+            fddot = ef.fddots
+
+        print("Best candidates:")
+        best_cand_table = Table(names=['mjd', 'power', 'f', 'fdot', 'fddot'])
+        for idx in best_cands[::-1]:
+            if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+                f, fdot = ef.freq[idx[0], idx[1]], ef.fdots[idx[0], idx[1]]
+                max_stat = ef.stat[idx[0], idx[1]]
+            elif len(ef.stat.shape) == 1:
+                f = ef.freq[idx[0]]
+                max_stat = ef.stat[idx[0]]
+                fdot = 0
+            else:
+                raise ValueError("Did not understand stats shape.")
+            best_cand_table.add_row([ef.pepoch, max_stat, f, fdot, fddot])
+
+        print(best_cand_table)
+        best_cand_table.write(fname + '_best_cands.csv', overwrite=True)
         plt.figure(fname, figsize=(8, 8))
 
         if hasattr(ef, "filename") and ef.filename is not None and \
@@ -375,8 +383,12 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
             if hasattr(ef, 'ref_time') and ef.ref_time is not None:
                 ref_time = ef.ref_time
+            elif hasattr(ef, 'pepoch') and ef.pepoch is not None:
+                ref_time = (ef.pepoch - events.mjdref) * 86400
             else:
                 ref_time = (events.time[0] + events.time[-1]) / 2
+
+            pepoch = ref_time / 86400 + events.mjdref
 
             phase, profile, profile_err = \
                 fold_events(copy.deepcopy(events.time), f, fdot,
@@ -424,7 +436,6 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                 phascommand += " --emin {}".format(ef.emin)
             if hasattr(ef, 'emin') and ef.emin is not None:
                 phascommand += " --emax {}".format(ef.emax)
-            pepoch = ref_time / 86400 + events.mjdref
 
             if hasattr(events, 'mjdref') and events.mjdref is not None:
                 phascommand += " --pepoch {}".format(pepoch)

@@ -19,6 +19,12 @@ from astropy import log
 from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 try:
+    from skimage.feature import peak_local_max
+    HAS_SKIMAGE = True
+except ImportError:
+    HAS_SKIMAGE = False
+
+try:
     from numba import jit, njit, prange, vectorize
     from numba import float32, float64, int32, int64
     from numba import types
@@ -508,13 +514,15 @@ def deorbit_events(events, parameter_file=None):
                       "correct?", AstropyUserWarning)
 
     length = np.max(events.time) - np.min(events.time)
+    if length > 200000:
+        log.warning("The observation is very long. The barycentric correction "
+                    "will be rough")
     length_d = length / 86400
     results = get_orbital_correction_from_ephemeris_file(
         pepoch_mjd - 1,
         pepoch_mjd + length_d + 1,
         parameter_file,
-        ntimes=int(
-            length // 10))
+        ntimes=min(int(length // 10), 10000))
     orbital_correction_fun = results[0]
     events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
     events.gti = orbital_correction_fun(events.gti, mjdref=events.mjdref)
@@ -938,6 +946,14 @@ def adjust_dt_for_power_of_two(dt, length, strict=False):
     True
     >>> length / new_dt == 128
     True
+    >>> length, dt = 6.5, 0.1
+    >>> # There are 100 bins there. I want them to be 128.
+    >>> new_dt = adjust_dt_for_power_of_two(dt, length)
+    INFO: ...
+    INFO: Too many ...
+    INFO: ...
+    >>> length / new_dt == 72
+    True
     """
     log.info("Adjusting bin time to closest power of 2 of bins.")
     nbin = length / dt
@@ -1023,3 +1039,47 @@ def nchars_in_int_value(value):
     """
     #  "+1" because, e.g., 10000 would return 4
     return int(np.ceil(np.log10(value + 1)))
+
+
+def find_peaks_in_image(image, n=5, rough=False, **kwargs):
+    """
+
+    Parameters
+    ----------
+    image : :class:`np.array`
+        An image
+
+    Other Parameters
+    ----------------
+    n: int
+        Number of best peaks to find
+    kwargs: dict
+        Additional parameters to be passed to skimage
+
+    Returns
+    -------
+    idxs : list of tuples
+        List of indices of the maxima
+
+    Examples
+    --------
+    >>> image = np.random.normal(0, 0.01, (10, 10))
+    >>> image[5, 5] = 2
+    >>> image[7, 2] = 1
+    >>> image[8, 1] = 3
+    >>> idxs = find_peaks_in_image(image, n=2)
+    >>> np.allclose(idxs, [(8, 1), (5, 5)])
+    True
+    >>> idxs = find_peaks_in_image(image, n=2, rough=True)
+    >>> np.allclose(idxs, [(8, 1), (5, 5)])
+    True
+    """
+    if not HAS_SKIMAGE or rough:
+        best_cands = \
+            [np.unravel_index(idx, image.shape)
+             for idx in np.argpartition(image.flatten(), -n)[-n:]]
+        __best_stats = [image[bci] for bci in best_cands]
+        best_cands = np.asarray(best_cands)[np.argsort(__best_stats)][::-1]
+        return best_cands
+
+    return peak_local_max(image, num_peaks=n, **kwargs)

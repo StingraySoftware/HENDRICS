@@ -583,6 +583,18 @@ def _fast_phase_fdot(ts, mean_f, mean_fdot=0):
     return phases - np.floor(phases)
 
 
+ONE_SIXTH = 1 / 6
+
+
+@njit(parallel=True)
+def _fast_phase_fddot(ts, mean_f, mean_fdot=0, mean_fddot=0):
+    tssq = ts * ts
+    phases = ts * mean_f + \
+        0.5 * tssq * mean_fdot + \
+        ONE_SIXTH * tssq * ts * mean_fddot
+    return phases - np.floor(phases)
+
+
 @njit(parallel=True)
 def _fast_phase(ts, mean_f):
     phases = ts * mean_f
@@ -593,6 +605,7 @@ def search_with_qffa_step(
         times: np.double,
         mean_f: np.double,
         mean_fdot=0,
+        mean_fddot=0,
         nbin=16,
         nprof=64,
         npfact=2,
@@ -603,7 +616,12 @@ def search_with_qffa_step(
     # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
 
-    phases = _fast_phase_fdot(times, mean_f, mean_fdot)
+    if mean_fddot != 0:
+        phases = _fast_phase_fddot(times, mean_f, mean_fdot, mean_fddot)
+    elif mean_fdot != 0:
+        phases = _fast_phase_fdot(times, mean_f, mean_fdot)
+    else:
+        phases = _fast_phase(times, mean_f)
 
     profiles = histogram2d(phases, times, range=[
         [0, 1], [times[0], times[-1]]], bins=(nbin, nprof)).T
@@ -632,7 +650,8 @@ def search_with_qffa_step(
     return L * bin_to_frequency + mean_f, Q * bin_to_fdot + mean_fdot, stats
 
 
-def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
+def search_with_qffa(times, f0, f1,
+                     fdot=0, fddot=0, nbin=16, nprof=None, npfact=2,
                      oversample=8, n=1, search_fdot=True, t0=None, t1=None,
                      silent=False):
     """'Quite fast folding' algorithm.
@@ -724,8 +743,10 @@ def search_with_qffa(times, f0, f1, fdot=0, nbin=16, nprof=None, npfact=2,
 
         mean_f = np.double(frequency + offset + 0.12 * step)
         mean_fdot = np.double(fdot + fdot_offset)
+        mean_fddot = np.double(fddot)
         fgrid, fdotgrid, stats = \
             search_with_qffa_step(times, mean_f, mean_fdot=mean_fdot,
+                                  mean_fddot=mean_fddot,
                                   nbin=nbin, nprof=nprof, npfact=npfact,
                                   oversample=oversample, n=n,
                                   search_fdot=search_fdot)
@@ -892,6 +913,9 @@ def _common_parser(args=None):
     parser.add_argument("--mean-fdot", type=float, required=False,
                         help="Mean fdot to fold "
                              "(only useful when using --fast)", default=0)
+    parser.add_argument("--mean-fddot", type=float, required=False,
+                        help="Mean fddot to fold "
+                             "(only useful when using --fast)", default=0)
     parser.add_argument("--fdotmin", type=float, required=False,
                         help="Minimum fdot to fold", default=None)
     parser.add_argument("--fdotmax", type=float, required=False,
@@ -980,6 +1004,7 @@ def _common_main(args, func):
     if func != z_n_search and args.fast:
         raise ValueError('The fast option is only available for z searches')
 
+    outfiles = []
     for i_f, fname in enumerate(files):
         mjdref = 0
         kwargs = {}
@@ -1034,10 +1059,16 @@ def _common_main(args, func):
             search_fdot = True
             if args.fdotmax is not None and fdotmax <= fdotmin:
                 search_fdot = False
+            nbin = args.nbin
+            if nbin / n < 8:
+                nbin = n * 8
+                warnings.warn(f"The number of bins is too small for Z search."
+                              f"Increasing to {nbin}")
             results = \
                 search_with_qffa(events.time, args.fmin, args.fmax,
                                  fdot=args.mean_fdot,
-                                 nbin=args.nbin, n=n,
+                                 fddot=args.mean_fddot,
+                                 nbin=nbin, n=n,
                                  nprof=None, npfact=args.npfact,
                                  oversample=oversample,
                                  search_fdot=search_fdot)
@@ -1117,23 +1148,31 @@ def _common_main(args, func):
             out_fname += '_fast'
         elif args.ffa:
             out_fname += '_ffa'
+        if args.mean_fdot is not None \
+                and not np.isclose(args.mean_fdot * 1e10, 0):
+            out_fname += f'_fd{args.mean_fdot * 1e10:g}e-10s-2'
+        if args.mean_fddot is not None \
+                and not np.isclose(args.mean_fdot * 1e13, 0):
+            out_fname += f'_fdd{args.mean_fddot * 1e13:g}e-13s-3'
 
         save_folding(efperiodogram,
                      out_fname + HEN_FILE_EXTENSION)
+        outfiles.append(out_fname + HEN_FILE_EXTENSION)
+    return outfiles
 
 
 def main_efsearch(args=None):
     """Main function called by the `HENefsearch` command line script."""
 
     with log.log_to_file('HENefsearch.log'):
-        _common_main(args, epoch_folding_search)
+        return _common_main(args, epoch_folding_search)
 
 
 def main_zsearch(args=None):
     """Main function called by the `HENzsearch` command line script."""
 
     with log.log_to_file('HENzsearch.log'):
-        _common_main(args, z_n_search)
+        return _common_main(args, z_n_search)
 
 
 def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None):
@@ -1212,9 +1251,8 @@ def main_accelsearch(args=None):
     try:
         from stingray.pulse.accelsearch import accelsearch
     except ImportError:
-        print("This version of stingray has no accelerated search. Please "
-              "update")
-        return
+        raise ImportError("This version of stingray has no accelerated search."
+                          " Please update")
     from .base import _add_default_args, check_negative_numbers_in_args
     log.warning("The accelsearch functionality is experimental. Use with care,"
                 " and feel free to report any issues.")

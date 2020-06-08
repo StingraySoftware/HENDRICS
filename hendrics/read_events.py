@@ -134,7 +134,59 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
 
 def _wrap_fun(arglist):
     f, kwargs = arglist
-    return treat_event_file(f, **kwargs)
+    try:
+        return treat_event_file(f, **kwargs)
+    except IndexError:
+        log.error(f"Empty or corrupt event file: {f}")
+    except Exception as e:
+        log.error(f"Unknown error: {f}")
+        log.error(f"{str(e)}")
+
+
+def multiple_event_concatenate(event_lists):
+    """
+    Join multiple :class:`EventList` objects into one.
+
+    If both are empty, an empty :class:`EventList` is returned.
+
+    GTIs are crossed if the event lists are over a common time interval,
+    and appended otherwise.
+
+    ``pi`` and ``pha`` remain ``None`` if they are ``None`` in both.
+    Otherwise, 0 is used as a default value for the :class:`EventList` where
+    they were None.
+
+    Parameters
+    ----------
+    event_lists : list of :class:`EventList` object
+        :class:`EventList` objects that we are joining
+
+    Returns
+    -------
+    `ev_new` : :class:`EventList` object
+        The resulting :class:`EventList` object.
+    """
+
+    ev_new = EventList()
+
+    gtis = np.concatenate([ev.gti for ev in event_lists])
+    order = np.argsort(gtis[:, 0])
+    gtis = gtis[order]
+
+    ev_new.time = np.concatenate([ev.time for ev in event_lists])
+    order = np.argsort(ev_new.time)
+    ev_new.time = ev_new.time[order]
+
+    if hasattr(event_lists[0], 'pi') and event_lists[0].pi is not None:
+        ev_new.pi = np.concatenate([ev.pi for ev in event_lists])[order]
+    if hasattr(event_lists[0], 'energy') and event_lists[0].energy is not None:
+        ev_new.energy = np.concatenate(
+            [ev.energy for ev in event_lists])[order]
+
+    ev_new.mjdref = event_lists[0].mjdref
+    ev_new.gtis = gtis
+
+    return ev_new
 
 
 def join_eventlists(event_file1, event_file2, new_event_file=None):
@@ -160,10 +212,15 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
     """
     if new_event_file is None:
         new_event_file = \
-            common_name(event_file1, event_file2) + '_ev' + HEN_FILE_EXTENSION
+            common_name(event_file1,
+                        event_file2) + '_ev' + HEN_FILE_EXTENSION
 
     events1 = load_events(event_file1)
     events2 = load_events(event_file2)
+    if events2.time.size == 0 or events2.gti.size == 0:
+        log.warning(f"{event_file2} has no good events")
+        return None
+
     if events2.mjdref != events1.mjdref:
         log.warning("Different missions detected; changing MJDREF")
         time_diff = (events1.mjdref - events2.mjdref) * 86400
@@ -172,9 +229,58 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
         events2.gti -= time_diff
 
     events = events1.join(events2)
-    events.header = events1.header
+    if hasattr(events2, 'header'):
+        events.header = events1.header
     if events1.instr != events2.instr:
         events.instr = ",".join([e.instr for e in [events1, events2]])
+
+    save_events(events, new_event_file)
+
+    return new_event_file
+
+
+def join_many_eventlists(eventfiles, new_event_file=None):
+    """Join two event files.
+
+    Parameters
+    ----------
+    event_files : list of str
+        List of event files
+
+    Other parameters
+    ----------------
+    new_event_file : str, default None
+        Output event file. If not specified ``joint_ev`` + HEN_FILE_EXTENSION
+
+    Returns
+    -------
+    new_event_file : str
+        Output event file
+    """
+    if new_event_file is None:
+        new_event_file = 'joint_ev' + HEN_FILE_EXTENSION
+
+    N = len(eventfiles)
+    first_events = load_events(eventfiles[0])
+    all_events = [first_events]
+    for i, event_file in enumerate(eventfiles[1:]):
+        log.info(f"Reading {event_file} ({i + 1}/{N})")
+        events = load_events(event_file)
+        if not np.isclose(events.mjdref, first_events.mjdref):
+            warnings.warn(f"{event_file} has a different MJDREF")
+            continue
+        if hasattr(events, 'instr') and not events.instr == first_events.instr:
+            warnings.warn(f"{event_file} is from a different instrument")
+            continue
+        if events.time.size == 0 or events.gti.size == 0 \
+                or not np.all([events.time[0] < events.gti.max(),
+                               events.time[-1] > events.gti.min()]):
+            warnings.warn(f"{event_file} has no good events")
+            continue
+
+        all_events.append(events)
+
+    events = multiple_event_concatenate(all_events)
     save_events(events, new_event_file)
     return new_event_file
 
@@ -231,14 +337,20 @@ def main_join(args=None):
     description = ('Read a cleaned event files and saves the relevant '
                    'information in a standard format')
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("file1", help="File 1", type=str)
-    parser.add_argument("file2", help="File 2", type=str)
+    parser.add_argument("files", help="Files to join", type=str,
+                        nargs='+')
     parser.add_argument("-o", "--output", type=str,
                         help="Name of output file",
                         default=None)
     args = parser.parse_args(args)
 
-    return join_eventlists(args.file1, args.file2, new_event_file=args.output)
+    if len(args.files) == 2:
+        return join_eventlists(args.files[0], args.files[1],
+                               new_event_file=args.output)
+    else:
+        return join_many_eventlists(
+            args.files,
+            new_event_file=args.output)
 
 
 def main_splitevents(args=None):

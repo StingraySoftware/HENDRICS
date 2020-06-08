@@ -235,12 +235,12 @@ HENefsearch
 ::
 
     usage: HENefsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
-                       [--mean-fdot MEAN_FDOT] [--fdotmin FDOTMIN]
-                       [--fdotmax FDOTMAX] [--dynstep DYNSTEP] [--npfact NPFACT]
-                       [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
-                       [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
-                       [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
-                       [--fit-candidates] [--curve CURVE]
+                       [--mean-fdot MEAN_FDOT] [--mean-fddot MEAN_FDDOT]
+                       [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
+                       [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
+                       [--step STEP] [--oversample OVERSAMPLE] [--fast] [--ffa]
+                       [--transient] [--expocorr] [--find-candidates]
+                       [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
                        [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                        [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
@@ -258,6 +258,8 @@ HENefsearch
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --mean-fdot MEAN_FDOT
                             Mean fdot to fold (only useful when using --fast)
+      --mean-fddot MEAN_FDDOT
+                            Mean fddot to fold (only useful when using --fast)
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
@@ -482,14 +484,13 @@ HENjoinevents
 
 ::
 
-    usage: HENjoinevents [-h] [-o OUTPUT] file1 file2
+    usage: HENjoinevents [-h] [-o OUTPUT] files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
     format
 
     positional arguments:
-      file1                 File 1
-      file2                 File 2
+      files                 Files to join
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -964,12 +965,12 @@ HENzsearch
 ::
 
     usage: HENzsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
-                      [--mean-fdot MEAN_FDOT] [--fdotmin FDOTMIN]
-                      [--fdotmax FDOTMAX] [--dynstep DYNSTEP] [--npfact NPFACT]
-                      [-n NBIN] [--segment-size SEGMENT_SIZE] [--step STEP]
-                      [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
-                      [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
-                      [--fit-candidates] [--curve CURVE]
+                      [--mean-fdot MEAN_FDOT] [--mean-fddot MEAN_FDDOT]
+                      [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
+                      [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
+                      [--step STEP] [--oversample OVERSAMPLE] [--fast] [--ffa]
+                      [--transient] [--expocorr] [--find-candidates]
+                      [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
                       [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                       [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
@@ -987,6 +988,8 @@ HENzsearch
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --mean-fdot MEAN_FDOT
                             Mean fdot to fold (only useful when using --fast)
+      --mean-fddot MEAN_FDDOT
+                            Mean fddot to fold (only useful when using --fast)
       --fdotmin FDOTMIN     Minimum fdot to fold
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step

@@ -1,4 +1,6 @@
 import os
+from collections.abc import Iterable
+
 import pytest
 from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
@@ -8,7 +10,8 @@ from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding, \
 from hendrics.efsearch import main_efsearch, main_zsearch
 from hendrics.efsearch import main_accelsearch, main_z2vspf
 from hendrics.efsearch import decide_binary_parameters, folding_orbital_search
-from hendrics.fold import main_fold, main_deorbit
+from hendrics.fold import main_fold, main_deorbit, std_fold_fit_func
+from hendrics.fold import fit_profile_with_sinusoids, get_TOAs_from_events
 from hendrics.plot import plot_folding
 from hendrics.tests import _dummy_par
 from hendrics.base import hen_root
@@ -33,14 +36,15 @@ from hendrics.efsearch import HAS_IMAGEIO
 
 class TestEFsearch():
     def setup_class(cls):
-        cls.pulse_frequency = 1/0.101
+        cls.pulse_period = 0.101
+        cls.pulse_frequency = 1 / cls.pulse_period
         cls.tstart = 0
         cls.tend = 25.25
         cls.tseg = cls.tend - cls.tstart
         cls.dt = 0.00606
         cls.times = np.arange(cls.tstart, cls.tend, cls.dt) + cls.dt / 2
         cls.counts = \
-            100 + 20 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
+            200 + 40 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
         cls.mjdref = 56000
 
         lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]],
@@ -61,6 +65,56 @@ class TestEFsearch():
         save_events(events, cls.dum)
         cls.par = 'bububububu.par'
         _dummy_par(cls.par)
+
+    def test_get_TOAs(self):
+        events = load_events(self.dum)
+        toas, toaerrs = get_TOAs_from_events(events.time, self.tseg,
+                                             self.pulse_frequency,
+                                             gti=events.gti, nbin=32,
+                                             mjdref=events.mjdref,
+                                             template=None)
+
+        possible_toas = events.mjdref + \
+                        np.arange(-1, 3) * self.pulse_period / 86400
+        closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
+
+        delta_toa_s = (toas[0] - closest) * 86400
+        toa_err_s = toaerrs[0] / 1e6
+
+        assert np.abs(delta_toa_s) < toa_err_s * 3
+
+    def test_get_TOAs_template(self):
+        nbin = 32
+        phases = np.arange(0, 1, 1 / nbin)
+        template=np.cos(2*np.pi * phases)
+        events = load_events(self.dum)
+        toas, toaerrs = get_TOAs_from_events(events.time, self.tseg,
+                                             self.pulse_frequency,
+                                             gti=events.gti,
+                                             mjdref=events.mjdref,
+                                             template=template,
+                                             nbin=nbin)
+        possible_toas = events.mjdref + \
+                        np.arange(2) * self.pulse_period / 86400
+        closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
+
+        assert (toas[0] - closest) < toaerrs[0] / 86400000000
+
+    def test_fit_profile_with_sinusoids(self):
+        nbin = 32
+        phases = np.arange(0, 1, 1 / nbin)
+        prof_smooth = np.cos(2 * np.pi * phases) + \
+            0.5 * np.cos(4 * np.pi * (phases + 0.5))
+        prof_smooth = (prof_smooth + 5) * 64
+        prof = np.random.poisson(prof_smooth)
+        baseline = np.mean(prof)
+        proferr = np.sqrt(baseline)
+        fit_pars_save, success_save, chisq_save = \
+            fit_profile_with_sinusoids(prof, proferr, debug=True,
+                                       baseline=True)
+        assert np.allclose(
+            std_fold_fit_func(fit_pars_save, phases),
+            prof_smooth, atol=3 * proferr)
 
     def test_fold(self):
         evfile = self.dum
@@ -199,11 +253,64 @@ class TestEFsearch():
         assert np.any(["imageio needed" in r.message.args[0]
                        for r in record])
 
-    def test_zsearch_fdots_fast(self):
+    def test_zsearch_fast(self):
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fast'])
         outfile = 'events_Z2n_9.85-9.95Hz_fast' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
+        efperiod = load_folding(outfile)
+
+        assert len(efperiod.fdots) > 1
+        assert efperiod.N == 2
+        os.unlink(outfile)
+
+    def test_zsearch_fast_nofdot(self):
+        evfile = self.dum
+        outfiles = \
+            main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                          '--fast', '--fdotmin', 0, '--fdotmax', '0'])
+        outfile = outfiles[0]
+        assert os.path.exists(outfile)
+        efperiod = load_folding(outfile)
+
+        assert not isinstance(efperiod.fdots, Iterable) or \
+               len(efperiod.fdots) <= 1
+        assert efperiod.N == 2
+        os.unlink(outfile)
+
+    def test_zsearch_fast_nbin_small_warns(self):
+        evfile = self.dum
+        with pytest.warns(UserWarning) as record:
+            _ = \
+                main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '2',
+                              '--fast',])
+        assert np.any(["The number of bins is too small" in r.message.args[0]
+                       for r in record])
+
+    def test_zsearch_fdots_fast(self):
+        evfile = self.dum
+        outfiles = main_zsearch([
+            evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+            '--fast', '--mean-fdot', '1e-10'])
+
+        outfile = outfiles[0]
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
+        efperiod = load_folding(outfile)
+
+        assert len(efperiod.fdots) > 1
+        assert efperiod.N == 2
+        os.unlink(outfile)
+
+    def test_zsearch_fddots_fast(self):
+        evfile = self.dum
+        outfiles = main_zsearch([
+            evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+            '--fast', '--mean-fdot', '0', '--mean-fddot', '1e-13'])
+
+        outfile = outfiles[0]
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
         efperiod = load_folding(outfile)
@@ -305,9 +412,23 @@ class TestEFsearch():
             ip = main_accelsearch([evfile])
 
     @pytest.mark.skipif('not HAS_ACCEL')
-    def test_accelsearch_missing_raises(self):
+    def test_accelsearch(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile])
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    @pytest.mark.skipif('not HAS_ACCEL')
+    def test_accelsearch_pad(self):
+        evfile = self.dum
+        outfile = main_accelsearch([evfile, '--pad-to-double'])
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    @pytest.mark.skipif('not HAS_ACCEL')
+    def test_accelsearch_interbin(self):
+        evfile = self.dum
+        outfile = main_accelsearch([evfile, '--interbin'])
         assert os.path.exists(outfile)
         os.unlink(outfile)
 

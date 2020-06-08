@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 import matplotlib
 from matplotlib.gridspec import GridSpec
+from scipy.ndimage import gaussian_filter1d
 
 from .fold import filter_energy
 from .io import load_events, load_folding
@@ -69,10 +70,20 @@ def normalized_phaseogram(norm, *args, **kwargs):
         medarr = np.median(phas, axis=0)
         for i in range(phas.shape[0]):
             phas[i][:] -= medarr
+    elif norm == 'mediannorm':
+        medarr = np.median(phas, axis=0)
+        for i in range(phas.shape[0]):
+            phas[i][:] -= medarr
+        phas[i][:] /= medarr
     elif norm == 'meansub':
         medarr = np.mean(phas, axis=0)
         for i in range(phas.shape[0]):
             phas[i][:] -= medarr
+    elif norm == 'meannorm':
+        medarr = np.mean(phas, axis=0)
+        for i in range(phas.shape[0]):
+            phas[i][:] -= medarr
+        phas[i][:] /= medarr
     else:
         warnings.warn('Profile normalization '
                       '{} not known. Using default'.format(norm))
@@ -508,10 +519,14 @@ class InteractivePhaseogram(BasePhaseogram):
         dfreq, dfdot, dfddot = self._read_sliders()
         freqs = [self.freq - dfreq, self.fdot - dfdot, self.fddot - dfddot]
         folding_length = np.median(np.diff(self.times))
+        template = gaussian_filter1d(
+            np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1),
+            sigma=1)
+        template = np.roll(template[:template.size // 2], -np.argmax(template)) / self.nt
 
         toa, toaerr = \
             get_TOAs_from_events(self.ev_times, folding_length, * freqs,
-                                 gti=self.gti, template=None,
+                                 gti=self.gti, template=template,
                                  mjdref=self.mjdref, nbin=self.nph,
                                  pepoch=self.pepoch,
                                  timfile=self.label + '.tim',

@@ -46,6 +46,108 @@ def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE405"):
     return toalist
 
 
+def create_template_from_profile_sins(phase, profile, profile_err,
+                                      imagefile='template.png', norm=1):
+    """
+    Parameters
+    ----------
+    phase: :class:`np.array`
+    profile: :class:`np.array`
+    profile_err: :class:`np.array`
+        Phase, pulse profile, and error bars
+    imagefile: str
+    norm: float or :class:`np.array`
+
+    Returns
+    -------
+    template: :class:`np.array`
+        The calculated template
+    additional_phase: float
+
+    Examples
+    --------
+    >>> phase = np.arange(0.0, 1, 0.001)
+    >>> profile = np.cos(2 * np.pi * phase)
+    >>> profile_err = profile * 0
+    >>> template, additional_phase = create_template_from_profile_sins(
+    ...     phase, profile, profile_err)
+    ...
+    >>> np.allclose(template, profile, atol=0.01)
+    True
+    """
+    import matplotlib.pyplot as plt
+
+    prof = np.concatenate((profile, profile, profile))
+    proferr = np.concatenate((profile_err, profile_err, profile_err))
+    fit_pars_save, _, _ = \
+        fit_profile_with_sinusoids(prof, proferr, nperiods=3,
+                                   baseline=True, debug=False)
+    template = std_fold_fit_func(fit_pars_save, phase)
+    fig = plt.figure()
+    plt.plot(phase, profile, drawstyle='steps-mid')
+    plt.plot(phase, template, drawstyle='steps-mid')
+    plt.savefig(imagefile)
+    plt.close(fig)
+    # start template from highest bin!
+    template *= norm
+    template_fine = std_fold_fit_func(fit_pars_save,
+                                      np.arange(0, 1, 0.001))
+    additional_phase = np.argmax(template_fine) / len(template_fine)
+    return template, additional_phase
+
+
+def create_template_from_profile(phase, profile, profile_err,
+                                 imagefile='template.png', norm=1):
+    """
+    Parameters
+    ----------
+    phase: :class:`np.array`
+    profile: :class:`np.array`
+    profile_err: :class:`np.array`
+        Phase, pulse profile, and error bars
+    imagefile: str
+    norm: float or :class:`np.array`
+
+    Returns
+    -------
+    template: :class:`np.array`
+        The calculated template
+    additional_phase: float
+
+    Examples
+    --------
+    >>> phase = np.arange(0.0, 1, 0.01)
+    >>> profile = np.cos(2 * np.pi * phase)
+    >>> profile_err = profile * 0
+    >>> template, additional_phase = create_template_from_profile(
+    ...     phase, profile, profile_err)
+    ...
+    >>> np.allclose(template, profile, atol=0.001)
+    True
+    """
+    from scipy.interpolate import splrep, splev
+    import matplotlib.pyplot as plt
+    ph = np.concatenate((phase - 1, phase, phase + 1))
+    prof = np.concatenate((profile, profile, profile))
+    proferr = np.concatenate((profile_err, profile_err, profile_err))
+
+    weights = 1/proferr if np.all(proferr != 0) else None
+    # template = savgol_filter(profile, 5, 3, mode='wrap')
+    spl = splrep(ph, prof, w=weights, s=0)
+    phases_fine = np.arange(0, 1, 0.001)
+    template_fine = splev(phases_fine, spl)
+    template = splev(phase, spl)
+
+    fig = plt.figure()
+    plt.plot(phase, profile, drawstyle='steps-mid')
+    plt.plot(phase, template, drawstyle='steps-mid')
+    plt.savefig(imagefile)
+    plt.close(fig)
+
+    additional_phase = np.argmax(template_fine) / len(template_fine)
+    return template, additional_phase
+
+
 def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
                          **kwargs):
     """Get TOAs of pulsation.
@@ -88,7 +190,6 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
     toa_err : array-like
         errorbars on TOAs, in the same units as TOAs.
     """
-    import matplotlib.pyplot as plt
     template = kwargs['template'] if 'template' in kwargs else None
     mjdref = kwargs['mjdref'] if 'mjdref' in kwargs else None
     nbin = kwargs['nbin'] if 'nbin' in kwargs else 16
@@ -99,7 +200,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
     quick = kwargs['quick'] if 'quick' in kwargs else False
 
     pepoch = assign_value_if_none(pepoch, events[0])
-    gti = assign_value_if_none(gti, [[events[0], events[-1]]])
+    gti = np.asarray(assign_value_if_none(gti, [[events[0], events[-1]]]))
     # run exposure correction only if there are less than 1000 pulsations
     # in the interval
     length = gti.max() - gti.min()
@@ -113,20 +214,11 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
             fold_events(copy.deepcopy(events), *frequency_derivatives,
                         ref_time=pepoch, gtis=copy.deepcopy(gti),
                         expocorr=expocorr, nbin=nbin)
-        fit_pars_save, _, _ = \
-            fit_profile_with_sinusoids(profile, profile_err, nperiods=1,
-                                       baseline=True)
-        template = std_fold_fit_func(fit_pars_save, phase)
-        fig = plt.figure()
-        plt.plot(phase, profile, drawstyle='steps-mid')
-        plt.plot(phase, template, drawstyle='steps-mid')
-        plt.savefig(timfile.replace('.tim', '') + '.png')
-        plt.close(fig)
-        # start template from highest bin!
-        template *= folding_length / length
-        template_fine = std_fold_fit_func(fit_pars_save,
-                                          np.arange(0, 1, 0.001))
-        additional_phase = np.argmax(template_fine) / len(template_fine)
+
+        template, additional_phase = create_template_from_profile(
+            phase, profile, profile_err,
+            imagefile=timfile.replace('.tim', '') + '.png',
+            norm=folding_length / length)
 
     starts = np.arange(gti[0, 0], gti[-1, 1], folding_length)
 
@@ -183,7 +275,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         log.info('TOA(MET)  TOAerr(us)')
 
     for t, e in zip(toas, toa_errs):
-        log.info(t, e)
+        log.info(f"{t}, {e}")
 
     return toas, toa_errs
 
@@ -272,12 +364,13 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
     '''
     x = np.arange(0, len(profile) * nperiods, nperiods) / float(len(profile))
     guess_pars = [max(profile) - np.mean(profile),
-                  x[np.argmax(profile[:len(profile) // nperiods])] - 0.25,
-                  (max(profile) - np.mean(profile)) / 2., 0.]
+                  x[np.argmax(profile[:len(profile) // nperiods])],
+                  0, 0.25]
     startidx = 0
     if baseline:
         guess_pars = [np.mean(profile)] + guess_pars
-        log.debug(guess_pars)
+        if debug:
+            log.debug(guess_pars)
         startidx = 1
     chisq_save = 1e32
     fit_pars_save = guess_pars
@@ -286,13 +379,14 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
         import matplotlib.pyplot as plt
 
         fig = plt.figure('Debug profile')
+        plt.title("Debug profile")
         plt.errorbar(x, profile, yerr=profile_err, drawstyle='steps-mid')
         plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
 
     for phase in np.arange(0., 1., 0.1):
         guess_pars[3 + startidx] = phase
-        log.debug(guess_pars)
         if debug:
+            log.debug(guess_pars)
             plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
         fit_pars, success = optimize.leastsq(std_residuals, guess_pars[:],
                                              args=(x, profile))
@@ -627,17 +721,6 @@ def main_deorbit(args=None):
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="Input event file", type=str, nargs='+')
-    # parser.add_argument("--debug", help="use DEBUG logging level",
-    #                     default=False, action='store_true')
-    # parser.add_argument("--test",
-    #                     help="Just a test. Destroys the window immediately",
-    #                     default=False, action='store_true')
-    # parser.add_argument("--loglevel",
-    #                     help=("use given logging level (one between INFO, "
-    #                           "WARNING, ERROR, CRITICAL, DEBUG; "
-    #                           "default:WARNING)"),
-    #                     default='WARNING',
-    #                     type=str)
 
     _add_default_args(
         parser, ['deorbit', 'loglevel', 'debug'])
