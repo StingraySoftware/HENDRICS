@@ -354,9 +354,23 @@ class TestEFsearch():
             ip = main_accelsearch([evfile])
 
     @pytest.mark.skipif('not HAS_ACCEL')
-    def test_accelsearch_missing_raises(self):
+    def test_accelsearch(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile])
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    @pytest.mark.skipif('not HAS_ACCEL')
+    def test_accelsearch_pad(self):
+        evfile = self.dum
+        outfile = main_accelsearch([evfile, '--pad-to-double'])
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    @pytest.mark.skipif('not HAS_ACCEL')
+    def test_accelsearch_interbin(self):
+        evfile = self.dum
+        outfile = main_accelsearch([evfile, '--interbin'])
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
