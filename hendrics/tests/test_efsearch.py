@@ -42,7 +42,7 @@ class TestEFsearch():
         cls.dt = 0.00606
         cls.times = np.arange(cls.tstart, cls.tend, cls.dt) + cls.dt / 2
         cls.counts = \
-            100 + 20 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
+            200 + 40 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
         cls.mjdref = 56000
 
         lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]],
@@ -68,15 +68,18 @@ class TestEFsearch():
         events = load_events(self.dum)
         toas, toaerrs = get_TOAs_from_events(events.time, self.tseg,
                                              self.pulse_frequency,
-                                             gti=events.gti,
+                                             gti=events.gti, nbin=32,
                                              mjdref=events.mjdref,
                                              template=None)
 
         possible_toas = events.mjdref + \
-                        np.arange(2) * self.pulse_period / 86400
+                        np.arange(-1, 3) * self.pulse_period / 86400
         closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
 
-        assert (toas[0] - closest) < toaerrs[0] / 86400000000
+        delta_toa_s = (toas[0] - closest) * 86400
+        toa_err_s = toaerrs[0] / 1e6
+
+        assert np.abs(delta_toa_s) < toa_err_s * 3
 
     def test_get_TOAs_template(self):
         nbin = 32
