@@ -1,4 +1,6 @@
 import os
+from collections.abc import Iterable
+
 import pytest
 from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
@@ -251,11 +253,64 @@ class TestEFsearch():
         assert np.any(["imageio needed" in r.message.args[0]
                        for r in record])
 
-    def test_zsearch_fdots_fast(self):
+    def test_zsearch_fast(self):
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fast'])
         outfile = 'events_Z2n_9.85-9.95Hz_fast' + HEN_FILE_EXTENSION
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
+        efperiod = load_folding(outfile)
+
+        assert len(efperiod.fdots) > 1
+        assert efperiod.N == 2
+        os.unlink(outfile)
+
+    def test_zsearch_fast_nofdot(self):
+        evfile = self.dum
+        outfiles = \
+            main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+                          '--fast', '--fdotmin', 0, '--fdotmax', '0'])
+        outfile = outfiles[0]
+        assert os.path.exists(outfile)
+        efperiod = load_folding(outfile)
+
+        assert not isinstance(efperiod.fdots, Iterable) or \
+               len(efperiod.fdots) <= 1
+        assert efperiod.N == 2
+        os.unlink(outfile)
+
+    def test_zsearch_fast_nbin_small_warns(self):
+        evfile = self.dum
+        with pytest.warns(UserWarning) as record:
+            _ = \
+                main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '2',
+                              '--fast',])
+        assert np.any(["The number of bins is too small" in r.message.args[0]
+                       for r in record])
+
+    def test_zsearch_fdots_fast(self):
+        evfile = self.dum
+        outfiles = main_zsearch([
+            evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+            '--fast', '--mean-fdot', '1e-10'])
+
+        outfile = outfiles[0]
+        assert os.path.exists(outfile)
+        plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
+        efperiod = load_folding(outfile)
+
+        assert len(efperiod.fdots) > 1
+        assert efperiod.N == 2
+        os.unlink(outfile)
+
+    def test_zsearch_fddots_fast(self):
+        evfile = self.dum
+        outfiles = main_zsearch([
+            evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
+            '--fast', '--mean-fdot', '0', '--mean-fddot', '1e-13'])
+
+        outfile = outfiles[0]
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
         efperiod = load_folding(outfile)

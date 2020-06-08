@@ -1004,6 +1004,7 @@ def _common_main(args, func):
     if func != z_n_search and args.fast:
         raise ValueError('The fast option is only available for z searches')
 
+    outfiles = []
     for i_f, fname in enumerate(files):
         mjdref = 0
         kwargs = {}
@@ -1156,20 +1157,22 @@ def _common_main(args, func):
 
         save_folding(efperiodogram,
                      out_fname + HEN_FILE_EXTENSION)
+        outfiles.append(out_fname + HEN_FILE_EXTENSION)
+    return outfiles
 
 
 def main_efsearch(args=None):
     """Main function called by the `HENefsearch` command line script."""
 
     with log.log_to_file('HENefsearch.log'):
-        _common_main(args, epoch_folding_search)
+        return _common_main(args, epoch_folding_search)
 
 
 def main_zsearch(args=None):
     """Main function called by the `HENzsearch` command line script."""
 
     with log.log_to_file('HENzsearch.log'):
-        _common_main(args, z_n_search)
+        return _common_main(args, z_n_search)
 
 
 def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None):
