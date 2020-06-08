@@ -383,8 +383,8 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
 
     for phase in np.arange(0., 1., 0.1):
         guess_pars[3 + startidx] = phase
-        log.debug(guess_pars)
         if debug:
+            log.debug(guess_pars)
             plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
         fit_pars, success = optimize.leastsq(std_residuals, guess_pars[:],
                                              args=(x, profile))
