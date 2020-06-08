@@ -216,7 +216,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
                         expocorr=expocorr, nbin=nbin)
 
         template, additional_phase = create_template_from_profile(
-            phase, phase, profile, profile_err,
+            phase, profile, profile_err,
             imagefile=timfile.replace('.tim', '') + '.png',
             norm=folding_length / length)
 
@@ -275,7 +275,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives,
         log.info('TOA(MET)  TOAerr(us)')
 
     for t, e in zip(toas, toa_errs):
-        log.info(t, e)
+        log.info(f"{t}, {e}")
 
     return toas, toa_errs
 
@@ -378,6 +378,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
         import matplotlib.pyplot as plt
 
         fig = plt.figure('Debug profile')
+        plt.title("Debug profile")
         plt.errorbar(x, profile, yerr=profile_err, drawstyle='steps-mid')
         plt.plot(x, std_fold_fit_func(guess_pars, x), 'r--')
 
