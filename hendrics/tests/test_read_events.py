@@ -28,7 +28,7 @@ class TestMergeEvents():
                         gti=np.array([[600., 700]]), mjdref=1)
         ev4 = EventList(time=np.sort(np.random.uniform(0, 100, 10)),
                         gti=np.array([[600., 700]]), mjdref=1)
-        ev4.gti = 0
+
         for ev in [ev0, ev1, ev2, ev3]:
             ev.pi = np.random.randint(0, 10, ev.time.size)
             ev.energy = np.random.uniform(3, 79, ev.time.size)
