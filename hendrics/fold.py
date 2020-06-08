@@ -81,7 +81,7 @@ def create_template_from_profile_sins(phase, profile, profile_err,
     proferr = np.concatenate((profile_err, profile_err, profile_err))
     fit_pars_save, _, _ = \
         fit_profile_with_sinusoids(prof, proferr, nperiods=3,
-                                   baseline=True)
+                                   baseline=True, debug=False)
     template = std_fold_fit_func(fit_pars_save, phase)
     fig = plt.figure()
     plt.plot(phase, profile, drawstyle='steps-mid')
@@ -369,7 +369,8 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1,
     startidx = 0
     if baseline:
         guess_pars = [np.mean(profile)] + guess_pars
-        log.debug(guess_pars)
+        if debug:
+            log.debug(guess_pars)
         startidx = 1
     chisq_save = 1e32
     fit_pars_save = guess_pars
