@@ -12,6 +12,93 @@ from hendrics.fake import main
 import hendrics as hen
 
 
+class TestMergeEvents():
+    @classmethod
+    def setup_class(cls):
+        curdir = os.path.abspath(os.path.dirname(__file__))
+        cls.datadir = os.path.join(curdir, 'data')
+
+        ev0 = EventList(time=np.sort(np.random.uniform(0, 100, 10)),
+                        gti=np.array([[0., 100]]), mjdref=1)
+        ev1 = EventList(time=np.sort(np.random.uniform(200, 300, 10)),
+                        gti=np.array([[200., 300]]), mjdref=2)
+        ev2 = EventList(time=np.sort(np.random.uniform(400, 500, 10)),
+                        gti=np.array([[400., 500]]), mjdref=1)
+        ev3 = EventList(time=np.sort(np.random.uniform(600, 700, 10)),
+                        gti=np.array([[600., 700]]), mjdref=1)
+        ev4 = EventList(time=np.sort(np.random.uniform(0, 100, 10)),
+                        gti=np.array([[600., 700]]), mjdref=1)
+        ev4.gti = 0
+        for ev in [ev0, ev1, ev2, ev3]:
+            ev.pi = np.random.randint(0, 10, ev.time.size)
+            ev.energy = np.random.uniform(3, 79, ev.time.size)
+
+        ev0.instr = ev1.instr = ev2.instr = ev4.instr = 'BA'
+        ev3.instr = 'BU'
+        f0 = os.path.join(cls.datadir, 'ev0_ev' + HEN_FILE_EXTENSION)
+        f1 = os.path.join(cls.datadir, 'ev1_ev' + HEN_FILE_EXTENSION)
+        f2 = os.path.join(cls.datadir, 'ev2_ev' + HEN_FILE_EXTENSION)
+        f3 = os.path.join(cls.datadir, 'ev3_ev' + HEN_FILE_EXTENSION)
+        f4 = os.path.join(cls.datadir, 'ev4_ev' + HEN_FILE_EXTENSION)
+
+        save_events(ev0, f0)
+        save_events(ev1, f1)
+        save_events(ev2, f2)
+        save_events(ev3, f3)
+        save_events(ev4, f4)
+
+        cls.f0, cls.f1, cls.f2, cls.f3, cls.f4 = f0, f1, f2, f3, f4
+
+    def test_merge_events(self):
+        hen.read_events.main_join([
+            self.f0, self.f1, "-o",
+            os.path.join(self.datadir, "monol_merg_ev" + HEN_FILE_EXTENSION)])
+
+        out = os.path.join(self.datadir,
+                           "monol_merg_ev" + HEN_FILE_EXTENSION)
+        assert os.path.exists(out)
+        os.unlink(out)
+
+    def test_merge_events_no_out_fname(self):
+        hen.read_events.main_join([
+            self.f0, self.f1])
+
+        out = os.path.join(self.datadir,
+                           "ev_ev" + HEN_FILE_EXTENSION)
+        assert os.path.exists(out)
+        os.unlink(out)
+
+    def test_merge_many_events(self):
+
+        out = os.path.join(self.datadir,
+                           "monol_merg_many_ev" + HEN_FILE_EXTENSION)
+        with pytest.warns(UserWarning) as record:
+            hen.read_events.main_join([
+                self.f0, self.f1, self.f2, "-o", out])
+        assert np.any([f"{self.f1} has a different MJDREF" in r.message.args[0]
+                       for r in record])
+        assert os.path.exists(out)
+        os.unlink(out)
+        with pytest.warns(UserWarning) as record:
+            hen.read_events.main_join([
+                self.f0, self.f2, self.f3, "-o", out])
+        assert np.any([f"{self.f3} is from a different" in r.message.args[0]
+                       for r in record])
+        assert os.path.exists(out)
+        os.unlink(out)
+        with pytest.warns(UserWarning) as record:
+            hen.read_events.main_join([
+                self.f0, self.f2, self.f4, "-o", out])
+        assert np.any([f"{self.f4} has no good events" in r.message.args[0]
+                       for r in record])
+        assert os.path.exists(out)
+        os.unlink(out)
+        hen.read_events.main_join([
+            self.f0, self.f2, self.f3, self.f4])
+        assert os.path.exists('joint_ev' + HEN_FILE_EXTENSION)
+        os.unlink('joint_ev' + HEN_FILE_EXTENSION)
+
+
 class TestReadEvents():
     """Real unit tests."""
     @classmethod
@@ -72,72 +159,6 @@ class TestReadEvents():
         gtis = data['gti']
         lengths = np.array([g1 - g0 for (g0, g1) in gtis])
         assert np.all(lengths <= 10)
-
-    def test_merge_events(self):
-        treat_event_file(self.fits_fileA)
-
-        filea = os.path.join(self.datadir,
-                             'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION)
-        fileb = os.path.join(
-            self.datadir,
-            'monol_test_fake_xmm_epn_det01_ev' + HEN_FILE_EXTENSION)
-
-        hen.read_events.main_join([
-            filea, fileb, "-o",
-            os.path.join(self.datadir, "monol_merg_ev" + HEN_FILE_EXTENSION)])
-
-        out = os.path.join(self.datadir,
-                           "monol_merg_ev" + HEN_FILE_EXTENSION)
-        assert os.path.exists(out)
-
-    def test_merge_many_events(self):
-        ev0 = EventList(time=np.sort(np.random.uniform(0, 100, 10)),
-                        gti=np.array([[0., 100]]), mjdref=1)
-        ev1 = EventList(time=np.sort(np.random.uniform(200, 300, 10)),
-                        gti=np.array([[200., 300]]), mjdref=2)
-        ev2 = EventList(time=np.sort(np.random.uniform(400, 500, 10)),
-                        gti=np.array([[400., 500]]), mjdref=1)
-        ev3 = EventList(time=np.sort(np.random.uniform(600, 700, 10)),
-                        gti=np.array([[600., 700]]), mjdref=1)
-        ev4 = EventList(time=np.sort(np.random.uniform(600, 700, 10)),
-                        gti=np.array([[600., 700]]), mjdref=1)
-        ev4.gti = 0
-        ev0.instr = ev1.instr = ev2.instr = 'BA'
-        ev3.instr = 'BU'
-        f0 = 'ev0_ev' + HEN_FILE_EXTENSION
-        f1 = 'ev1_ev' + HEN_FILE_EXTENSION
-        f2 = 'ev2_ev' + HEN_FILE_EXTENSION
-        f3 = 'ev3_ev' + HEN_FILE_EXTENSION
-        f4 = 'ev4_ev' + HEN_FILE_EXTENSION
-
-        save_events(ev0, f0)
-        save_events(ev1, f1)
-        save_events(ev2, f2)
-        save_events(ev3, f3)
-        save_events(ev4, f4)
-
-        out = os.path.join(self.datadir,
-                           "monol_merg_many_ev" + HEN_FILE_EXTENSION)
-        with pytest.warns(UserWarning) as record:
-            hen.read_events.main_join([
-                f0, f1, f2, "-o", out])
-        assert np.any([f"{f1} has a different MJDREF" in r.message.args[0]
-                       for r in record])
-        with pytest.warns(UserWarning) as record:
-            hen.read_events.main_join([
-                f0, f2, f3, "-o", out])
-        assert np.any([f"{f3} is from a different" in r.message.args[0]
-                       for r in record])
-        # with pytest.warns(UserWarning) as record:
-        #     hen.read_events.main_join([
-        #         f0, f2, f4, "-o", out])
-        # assert np.any([f"{f4} has no good events" in r.message.args[0]
-        #                for r in record])
-        # with pytest.warns(UserWarning) as record:
-        hen.read_events.main_join([
-            f0, f2, f3, f4, "-o", out])
-
-        assert os.path.exists(out)
 
     def test_split_events(self):
         treat_event_file(self.fits_fileA)

@@ -272,7 +272,9 @@ def join_many_eventlists(eventfiles, new_event_file=None):
         if hasattr(events, 'instr') and not events.instr == first_events.instr:
             warnings.warn(f"{event_file} is from a different instrument")
             continue
-        if events.time.size == 0 or events.gti.size == 0:
+        if events.time.size == 0 or events.gti.size == 0 \
+                or not np.all([events.time[0] < events.gti.max(),
+                               events.time[-1] > events.gti.min()]):
             warnings.warn(f"{event_file} has no good events")
             continue
 

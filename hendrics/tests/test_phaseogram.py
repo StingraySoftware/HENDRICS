@@ -63,19 +63,17 @@ class TestPhaseogram():
                          'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION,
                          '--test'])
 
-    def test_phaseogram_input_norm(self):
+    @pytest.mark.parametrize('norm', ["to1", "mediansub", "mediannorm",
+                                      "meansub", "meannorm"])
+    def test_phaseogram_input_norm(self, norm):
         evfile = self.dum
-        # to1
         main_phaseogram([evfile, '--periodogram',
                          'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION,
                          '--test',
-                         '--norm', 'to1'])
-        # mediansub
-        main_phaseogram([evfile, '--periodogram',
-                         'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION,
-                         '--test',
-                         '--norm', 'mediansub'])
-        # garbage
+                         '--norm', norm])
+
+    def test_phaseogram_input_norm_invalid(self):
+        evfile = self.dum
         with pytest.warns(UserWarning) as record:
             main_phaseogram([evfile, '--periodogram',
                              'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION,
