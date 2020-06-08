@@ -437,7 +437,6 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
             if hasattr(ef, 'emin') and ef.emin is not None:
                 phascommand += " --emax {}".format(ef.emax)
 
-
             if hasattr(events, 'mjdref') and events.mjdref is not None:
                 phascommand += " --pepoch {}".format(pepoch)
 
