@@ -8,7 +8,8 @@ from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding, \
 from hendrics.efsearch import main_efsearch, main_zsearch
 from hendrics.efsearch import main_accelsearch, main_z2vspf
 from hendrics.efsearch import decide_binary_parameters, folding_orbital_search
-from hendrics.fold import main_fold, main_deorbit
+from hendrics.fold import main_fold, main_deorbit, std_fold_fit_func
+from hendrics.fold import fit_profile_with_sinusoids, get_TOAs_from_events
 from hendrics.plot import plot_folding
 from hendrics.tests import _dummy_par
 from hendrics.base import hen_root
@@ -33,7 +34,8 @@ from hendrics.efsearch import HAS_IMAGEIO
 
 class TestEFsearch():
     def setup_class(cls):
-        cls.pulse_frequency = 1/0.101
+        cls.pulse_period = 0.101
+        cls.pulse_frequency = 1 / cls.pulse_period
         cls.tstart = 0
         cls.tend = 25.25
         cls.tseg = cls.tend - cls.tstart
@@ -61,6 +63,53 @@ class TestEFsearch():
         save_events(events, cls.dum)
         cls.par = 'bububububu.par'
         _dummy_par(cls.par)
+
+    def test_get_TOAs(self):
+        events = load_events(self.dum)
+        toas, toaerrs = get_TOAs_from_events(events.time, self.tseg,
+                                             self.pulse_frequency,
+                                             gti=events.gti,
+                                             mjdref=events.mjdref,
+                                             template=None)
+
+        possible_toas = events.mjdref + \
+                        np.arange(2) * self.pulse_period / 86400
+        closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
+
+        assert (toas[0] - closest) < toaerrs[0] / 86400000000
+
+    def test_get_TOAs_template(self):
+        nbin = 32
+        phases = np.arange(0, 1, 1 / nbin)
+        template=np.cos(2*np.pi * phases)
+        events = load_events(self.dum)
+        toas, toaerrs = get_TOAs_from_events(events.time, self.tseg,
+                                             self.pulse_frequency,
+                                             gti=events.gti,
+                                             mjdref=events.mjdref,
+                                             template=template,
+                                             nbin=nbin)
+        possible_toas = events.mjdref + \
+                        np.arange(2) * self.pulse_period / 86400
+        closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
+
+        assert (toas[0] - closest) < toaerrs[0] / 86400000000
+
+    def test_fit_profile_with_sinusoids(self):
+        nbin = 32
+        phases = np.arange(0, 1, 1 / nbin)
+        prof_smooth = np.cos(2 * np.pi * phases) + \
+            0.5 * np.cos(4 * np.pi * (phases + 0.5))
+        prof_smooth = (prof_smooth + 5) * 64
+        prof = np.random.poisson(prof_smooth)
+        baseline = np.mean(prof)
+        proferr = np.sqrt(baseline)
+        fit_pars_save, success_save, chisq_save = \
+            fit_profile_with_sinusoids(prof, proferr, debug=True,
+                                       baseline=True)
+        assert np.allclose(
+            std_fold_fit_func(fit_pars_save, phases),
+            prof_smooth, atol=3 * proferr)
 
     def test_fold(self):
         evfile = self.dum
