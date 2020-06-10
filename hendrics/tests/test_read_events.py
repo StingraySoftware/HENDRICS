@@ -68,7 +68,7 @@ class TestMergeEvents():
         assert os.path.exists(out)
         os.unlink(out)
 
-    def test_merge_many_events(self):
+    def test_merge_many_events_warnings(self):
 
         out = os.path.join(self.datadir,
                            "monol_merg_many_ev" + HEN_FILE_EXTENSION)
@@ -93,10 +93,25 @@ class TestMergeEvents():
                        for r in record])
         assert os.path.exists(out)
         os.unlink(out)
+
+    def test_merge_many_events(self):
+        outfile = 'joint_ev' + HEN_FILE_EXTENSION
+        # Note that only 0 and 2 are valid
         hen.read_events.main_join([
-            self.f0, self.f2, self.f3, self.f4])
-        assert os.path.exists('joint_ev' + HEN_FILE_EXTENSION)
-        os.unlink('joint_ev' + HEN_FILE_EXTENSION)
+            self.f0, self.f2, self.f3])
+        assert os.path.exists(outfile)
+
+        data = load_events(outfile)
+        assert hasattr(data, 'gti')
+        assert data.gti is not None
+        allgtis = []
+        # Note that only 0 and 2 are valid
+        for evfile in [self.f0, self.f2]:
+            ev = load_events(evfile)
+            allgtis.append(ev.gti)
+        allgtis = np.sort(np.concatenate(allgtis))
+        assert np.allclose(data.gti, allgtis)
+        os.unlink(outfile)
 
 
 class TestReadEvents():
