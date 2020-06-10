@@ -533,11 +533,12 @@ def deorbit_events(events, parameter_file=None):
         raise FileNotFoundError(
             "Parameter file {} does not exist".format(parameter_file))
 
-    pepoch = events.gti[0, 0]
-    pepoch_mjd = pepoch / 86400 + events.mjdref
     if events.mjdref < 10000:
         warnings.warn("MJDREF is very low. Are you sure everything is "
                       "correct?", AstropyUserWarning)
+
+    pepoch = events.gti[0, 0]
+    pepoch_mjd = pepoch / 86400 + events.mjdref
 
     length = np.max(events.time) - np.min(events.time)
     if length > 200000:
