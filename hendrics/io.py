@@ -569,6 +569,9 @@ def save_pds(cpds, fname, save_all=True):
     if not hasattr(cpds, 'instr'):
         outdata["instr"] = 'unknown'
 
+    if hasattr(cpds, 'show_progress'):
+        outdata['show_progress'] = 'T' if cpds.show_progress else 'F'
+
     if hasattr(cpds, 'amplitude'):
         outdata['amplitude'] = int(cpds.amplitude)
 
@@ -651,6 +654,9 @@ def load_pds(fname, nosub=False):
 
     if 'amplitude' in list(data.keys()):
         cpds.amplitude = bool(data["amplitude"])
+
+    if 'show_progress' in list(data.keys()):
+        cpds.show_progress = data['show_progress'] == 'T'
 
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
     modelfiles = glob.glob(
@@ -1352,7 +1358,7 @@ def main(args=None):
                 val = f'MET {contents[k]} s (MJD {mjdref + timeval.to(u.d)})'
                 tstop = timeval
             elif k == 'tseg':
-                val = '{contents[k]} s'
+                val = f'{contents[k]} s'
                 tseg = contents[k] * u.s
             else:
                 val = contents[k]
