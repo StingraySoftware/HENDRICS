@@ -166,9 +166,10 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
         npds = pds_obj.m
         norm = pds_obj.norm
 
-        nbin = len(pds[1:])
+        lev = detection_level(epsilon=0.015,
+                              n_summed_spectra=npds,
+                              ntrial=pds.size)
 
-        lev = detection_level(nbin, n_summed_spectra=npds)
         if norm == "rms":
             # we need the unnormalized power
             lev = lev / 2 * pds_obj.nphots
@@ -192,8 +193,8 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
 
         if norm.lower() == 'leahy' or (norm.lower() in ['rms', 'frac'] and
                                        (not xlog or not ylog)):
-            plt.errorbar(freq[1:], y, yerr=yerr, fmt='-',
-                         drawstyle='steps-mid', color=color, label=fname)
+            plt.plot(freq[1:], y,
+                     drawstyle='steps-mid', color=color, label=fname)
             for i, func in enumerate(models):
                 plt.plot(freq, func(freq),
                          label='Model {}'.format(i + 1), zorder=20, color='k')
@@ -212,9 +213,8 @@ def plot_pds(fnames, figname=None, xlog=None, ylog=None,
 
             y = pds[1:] * freq[1:]
             yerr = epds[1:] * freq[1:]
-            plt.errorbar(freq[1:], y,
-                         yerr=yerr, fmt='-',
-                         drawstyle='steps-mid', color=color, label=fname)
+            plt.plot(freq[1:], y,
+                     drawstyle='steps-mid', color=color, label=fname)
             level *= freq
             for i, func in enumerate(models):
                 const = _get_const(func)
