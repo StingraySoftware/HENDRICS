@@ -203,7 +203,6 @@ except ImportError:
         epsilon = epsilon_1 * ntrial
         return epsilon
 
-
     def pds_detection_level(epsilon=0.01, ntrial=1, n_summed_spectra=1,
                             n_rebin=1):
         r"""Detection level for a PDS.
@@ -246,7 +245,7 @@ except ImportError:
         else:
             r = n_rebin
             retlev = stats.chi2.isf(epsilon, 2 * n_summed_spectra * r) \
-                     / (n_summed_spectra * r)
+                / (n_summed_spectra * r)
         return retlev
 
 
