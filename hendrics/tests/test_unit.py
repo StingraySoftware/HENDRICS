@@ -123,6 +123,7 @@ class TestAll(unittest.TestCase):
     def test_deorbit_bad_mjdref(self):
         from hendrics.base import deorbit_events
         ev = EventList(np.arange(100), gti=np.asarray([[0, 2]]))
+        ev.mjdref = 2
         par = _dummy_par('bububu.par')
         with pytest.warns(UserWarning) as record:
             _ = deorbit_events(ev, par)
