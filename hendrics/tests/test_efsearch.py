@@ -419,6 +419,15 @@ class TestEFsearch():
         os.unlink(outfile)
 
     @pytest.mark.skipif('not HAS_ACCEL')
+    def test_accelsearch_energy_and_freq_filt(self):
+        evfile = self.dum
+        outfile = main_accelsearch([evfile,
+                                    '--emin', '3', '--emax', '80',
+                                    '--fmin', '0.1', '--fmax', '1'])
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_pad(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile, '--pad-to-double'])
