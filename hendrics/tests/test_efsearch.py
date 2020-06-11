@@ -1,4 +1,5 @@
 import os
+import copy
 from collections.abc import Iterable
 
 import pytest
@@ -53,9 +54,8 @@ class TestEFsearch():
         save_lcurve(lc, cls.lcfile)
         events = EventList()
         events.mjdref = cls.mjdref
-        events.mission = 'nusboh'
         events.simulate_times(lc)
-        import copy
+        events.mission = 'nusboh'
         cls.event_times = events.time
         cls.dum_noe = 'events_noe' + HEN_FILE_EXTENSION
         save_events(events, cls.dum_noe)
@@ -421,14 +421,16 @@ class TestEFsearch():
     @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch(self):
         evfile = self.dum
-        outfile = main_accelsearch([evfile])
+        outfile = main_accelsearch([evfile, '--fmin', '1', '--fmax', '10',
+                                    '--zmax', '1'])
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_nodetections(self):
         evfile = self.dum_scramble
-        outfile = main_accelsearch([evfile])
+        outfile = main_accelsearch([evfile, '--fmin', '1', '--fmax', '1.1',
+                                    '--zmax', '1'])
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
@@ -437,21 +439,22 @@ class TestEFsearch():
         evfile = self.dum
         outfile = main_accelsearch([evfile,
                                     '--emin', '3', '--emax', '80',
-                                    '--fmin', '0.1', '--fmax', '1'])
+                                    '--fmin', '0.1', '--fmax', '1',
+                                    '--zmax', '5'])
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_pad(self):
         evfile = self.dum
-        outfile = main_accelsearch([evfile, '--pad-to-double'])
+        outfile = main_accelsearch([evfile, '--pad-to-double', '--zmax', '1'])
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_interbin(self):
         evfile = self.dum
-        outfile = main_accelsearch([evfile, '--interbin'])
+        outfile = main_accelsearch([evfile, '--interbin', '--zmax', '1'])
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
