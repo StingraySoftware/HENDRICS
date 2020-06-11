@@ -123,11 +123,11 @@ class TestAll(unittest.TestCase):
     def test_deorbit_bad_mjdref(self):
         from hendrics.base import deorbit_events
         ev = EventList(np.arange(100), gti=np.asarray([[0, 2]]))
+        ev.mjdref = 2
         par = _dummy_par('bububu.par')
-        with pytest.warns(UserWarning) as record:
+        with pytest.raises(ValueError) as excinfo:
             _ = deorbit_events(ev, par)
-        assert np.any(["MJDREF is very low. Are you " in r.message.args[0]
-                       for r in record])
+        assert "MJDREF is very low (<01-01-1950), " in str(excinfo.value)
 
     def test_filter_for_deadtime_nonpar(self):
         """Test dead time filter, non-paralyzable case."""

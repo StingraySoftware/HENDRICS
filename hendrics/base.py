@@ -166,39 +166,7 @@ except ImportError:
                                          2 * n * n_summed_spectra)
         return epsilon
 
-    def pds_detection_level(nbins, epsilon=0.01, n_summed_spectra=1, n_rebin=1):
-        r"""Detection level for a PDS.
-
-        Return the detection level (with probability 1 - epsilon) for a Power
-        Density Spectrum of nbins bins, normalized a la Leahy (1983), based on
-        the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
-        and multiple PDS averaging (n_summed_spectra)
-        Examples
-        --------
-        >>> np.isclose(pds_detection_level(1, 0.1), 4.6, atol=0.1)
-        True
-        >>> np.allclose(pds_detection_level(1, 0.1, n_rebin=[1]), [4.6],
-        ...                                 atol=0.1)
-        True
-        """
-        try:
-            from scipy import stats
-        except Exception:  # pragma: no cover
-            raise Exception('You need Scipy to use this function')
-
-        if not isinstance(n_rebin, Iterable):
-            r = n_rebin
-            retlev = stats.chi2.isf(
-                epsilon / nbins,
-                2 * n_summed_spectra * r) / (n_summed_spectra * r)
-        else:
-            retlev = [
-                stats.chi2.isf(epsilon / nbins, 2 * n_summed_spectra * r) /
-                (n_summed_spectra * r) for r in n_rebin]
-            retlev = np.array(retlev)
-        return retlev
-
-    def pds_probability(level, nbins, n_summed_spectra=1, n_rebin=1):
+    def pds_probability(level, ntrial=1, n_summed_spectra=1, n_rebin=1):
         r"""Give the probability of a given power level in PDS.
 
         Return the probability of a certain power level in a Power Density
@@ -206,21 +174,79 @@ except ImportError:
         the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
         and multiple PDS averaging (n_summed_spectra)
 
+        Parameters
+        ----------
+        level : float or array of floats
+            The power level for which we are calculating the probability
+
+        Other Parameters
+        ----------------
+        ntrial : int
+            The number of *independent* trials (the independent bins of the PDS)
+        n_summed_spectra : int
+            The number of power density spectra that have been averaged to obtain
+            this power level
+        n_rebin : int
+            The number of power density bins that have been averaged to obtain
+            this power level
+
+        Returns
+        -------
+        epsilon : float
+            The probability value(s)
+        """
+        from scipy import stats
+
+        epsilon_1 = stats.chi2.sf(level * n_summed_spectra * n_rebin,
+                                  2 * n_summed_spectra * n_rebin)
+
+        epsilon = epsilon_1 * ntrial
+        return epsilon
+
+    def pds_detection_level(epsilon=0.01, ntrial=1, n_summed_spectra=1,
+                            n_rebin=1):
+        r"""Detection level for a PDS.
+
+        Return the detection level (with probability 1 - epsilon) for a Power
+        Density Spectrum of nbins bins, normalized a la Leahy (1983), based on
+        the 2-dof :math:`{\chi}^2` statistics, corrected for rebinning (n_rebin)
+        and multiple PDS averaging (n_summed_spectra)
+
+        Parameters
+        ----------
+        epsilon : float
+            The single-trial probability value(s)
+
+        Other Parameters
+        ----------------
+        ntrial : int
+            The number of *independent* trials (the independent bins of the PDS)
+        n_summed_spectra : int
+            The number of power density spectra that have been averaged to obtain
+            this power level
+        n_rebin : int
+            The number of power density bins that have been averaged to obtain
+            this power level
+
         Examples
         --------
-        >>> np.isclose(pds_probability(4.6, 1), 0.1, atol=0.1)
+        >>> np.isclose(pds_detection_level(0.1), 4.6, atol=0.1)
         True
-        >>> np.allclose(pds_probability([4.6], 1), [0.1], atol=0.1)
+        >>> np.allclose(pds_detection_level(0.1, n_rebin=[1]), [4.6], atol=0.1)
         True
         """
-        try:
-            from scipy import stats
-        except Exception:  # pragma: no cover
-            raise Exception('You need Scipy to use this function')
+        from scipy import stats
 
-        epsilon = nbins * stats.chi2.sf(level * n_summed_spectra * n_rebin,
-                                        2 * n_summed_spectra * n_rebin)
-        return epsilon
+        epsilon = epsilon / ntrial
+        if isinstance(n_rebin, Iterable):
+            retlev = [stats.chi2.isf(epsilon, 2 * n_summed_spectra * r) /
+                      (n_summed_spectra * r) for r in n_rebin]
+            retlev = np.array(retlev)
+        else:
+            r = n_rebin
+            retlev = stats.chi2.isf(epsilon, 2 * n_summed_spectra * r) \
+                / (n_summed_spectra * r)
+        return retlev
 
 
 __all__ = [
@@ -507,11 +533,12 @@ def deorbit_events(events, parameter_file=None):
         raise FileNotFoundError(
             "Parameter file {} does not exist".format(parameter_file))
 
+    if events.mjdref < 33282.0:
+        raise ValueError("MJDREF is very low (<01-01-1950), "
+                         "this is unsupported.")
+
     pepoch = events.gti[0, 0]
     pepoch_mjd = pepoch / 86400 + events.mjdref
-    if events.mjdref < 10000:
-        warnings.warn("MJDREF is very low. Are you sure everything is "
-                      "correct?", AstropyUserWarning)
 
     length = np.max(events.time) - np.min(events.time)
     if length > 200000:

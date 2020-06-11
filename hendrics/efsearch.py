@@ -1152,7 +1152,7 @@ def _common_main(args, func):
                 and not np.isclose(args.mean_fdot * 1e10, 0):
             out_fname += f'_fd{args.mean_fdot * 1e10:g}e-10s-2'
         if args.mean_fddot is not None \
-                and not np.isclose(args.mean_fdot * 1e13, 0):
+                and not np.isclose(args.mean_fddot * 1e13, 0):
             out_fname += f'_fdd{args.mean_fddot * 1e13:g}e-13s-3'
 
         save_folding(efperiodogram,
@@ -1297,6 +1297,10 @@ def main_accelsearch(args=None):
     outfile = args.outfile
     if outfile is None:
         label = '_accelsearch'
+        if args.emin is not None or args.emax is not None:
+            emin = assign_value_if_none(args.emin, '**')
+            emax = assign_value_if_none(args.emax, '**')
+            label += f'_{emin:g}-{emax:g}keV'
         if args.interbin:
             label += '_interbin'
         elif args.pad_to_double:
@@ -1381,9 +1385,14 @@ def main_accelsearch(args=None):
         results['mjdref'] = np.double(events.mjdref)
         results['pepoch'] = events.mjdref + results['time'] / 86400.0
 
-    results.sort('power', reverse=True)
+        results.sort('power', reverse=True)
+
+        print("Best candidates:")
+        results['time', 'frequency', 'fdot', 'power', 'pepoch'][:10].pprint()
+        print(f"See all {len(results)} candidates in {outfile}")
+    else:
+        print("No candidates found")
+
     results.write(outfile, overwrite=True)
-    print("Best candidates:")
-    results['time', 'frequency', 'fdot', 'power', 'pepoch'][:10].pprint()
-    print(f"See all {len(results)} candidates in {outfile}")
+
     return outfile

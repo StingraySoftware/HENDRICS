@@ -184,7 +184,7 @@ def multiple_event_concatenate(event_lists):
             [ev.energy for ev in event_lists])[order]
 
     ev_new.mjdref = event_lists[0].mjdref
-    ev_new.gtis = gtis
+    ev_new.gti = gtis
 
     return ev_new
 
