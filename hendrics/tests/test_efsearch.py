@@ -53,7 +53,9 @@ class TestEFsearch():
         save_lcurve(lc, cls.lcfile)
         events = EventList()
         events.mjdref = cls.mjdref
+        events.mission = 'nusboh'
         events.simulate_times(lc)
+        import copy
         cls.event_times = events.time
         cls.dum_noe = 'events_noe' + HEN_FILE_EXTENSION
         save_events(events, cls.dum_noe)
@@ -62,7 +64,12 @@ class TestEFsearch():
         save_events(events, cls.dum_pi)
         events.energy = np.random.uniform(3, 79, len(events.time))
         cls.dum = 'events' + HEN_FILE_EXTENSION
+        cls.dum_scramble = 'events_scramble' + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
+        events_scramble = copy.deepcopy(events)
+        events_scramble.time = \
+            np.sort(np.random.uniform(cls.tstart, cls.tend, events.time.size))
+        save_events(events_scramble, cls.dum_scramble)
         cls.par = 'bububububu.par'
         _dummy_par(cls.par)
 
@@ -419,6 +426,13 @@ class TestEFsearch():
         os.unlink(outfile)
 
     @pytest.mark.skipif('not HAS_ACCEL')
+    def test_accelsearch_nodetections(self):
+        evfile = self.dum_scramble
+        outfile = main_accelsearch([evfile])
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_energy_and_freq_filt(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile,
@@ -447,5 +461,7 @@ class TestEFsearch():
 
     @classmethod
     def teardown_class(cls):
-        os.unlink(cls.dum)
+        os.unlink(cls.dum_scramble)
+        os.unlink(cls.dum_noe)
+        os.unlink(cls.dum_pi)
         os.unlink(cls.par)
