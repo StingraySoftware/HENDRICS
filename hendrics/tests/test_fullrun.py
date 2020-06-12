@@ -210,6 +210,14 @@ class TestFullRun(object):
                                            'monol_testB_nustar_fpmb_ev_calib' +
                                            HEN_FILE_EXTENSION))
 
+    def test_calibrate_raises_missing_mission(self):
+        """Test event file calibration."""
+        command = '{0} --rough'.format(
+            os.path.join(self.datadir,
+                         'monol_testB_nustar_fpmb_ev' + HEN_FILE_EXTENSION))
+        with pytest.raises(ValueError):
+            hen.calibrate.main(command.split())
+
     def test_save_varen_rms(self):
         fname = os.path.join(self.datadir,
                              'monol_testA_nustar_fpma_ev_calib' +

@@ -419,6 +419,8 @@ def load_events(fname):
         eventlist.header = out["header"]
     if 'mission' in list(out.keys()):
         eventlist.mission = out["mission"]
+    else:
+        eventlist.mission = ""
 
     return eventlist
 
@@ -804,7 +806,7 @@ def _save_data_nc(struct, fname, kind="data"):
         var = struct[k]
 
         probe = var
-        if isinstance(var, Iterable):
+        if isinstance(var, Iterable) and len(var) > 1:
             probe = var[0]
 
         if is_string(var):
