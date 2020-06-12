@@ -141,7 +141,6 @@ def calibrate(fname, outname, rmf_file=None, rough=False):
     log.info("Done.")
     pis = evdata.pi
 
-    print(pis, evdata.time)
     if rough:
         cal_pis = evdata.pi
         if hasattr(evdata, 'cal_pi') and evdata.cal_pi is not None:
