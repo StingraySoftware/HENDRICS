@@ -212,11 +212,16 @@ class TestFullRun(object):
 
     def test_calibrate_raises_missing_mission(self):
         """Test event file calibration."""
-        command = '{0} --rough'.format(
-            os.path.join(self.datadir,
-                         'monol_testB_nustar_fpmb_ev' + HEN_FILE_EXTENSION))
+        from hendrics.io import load_events, save_events
+        ev = load_events('monol_testB_nustar_fpmb_ev' + HEN_FILE_EXTENSION)
+        ev.mission = None
+        save_events(ev, 'budidum' + HEN_FILE_EXTENSION)
+
+        command = '{0} --rough'.format('budidum' + HEN_FILE_EXTENSION)
+
         with pytest.raises(ValueError):
             hen.calibrate.main(command.split())
+        os.unlink('budidum' + HEN_FILE_EXTENSION)
 
     def test_save_varen_rms(self):
         fname = os.path.join(self.datadir,
