@@ -118,6 +118,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                                         mjdref=events.mjdref)
                 events_filt.instr = events.instr
                 events_filt.header = events.header
+                events_filt.mission = events.mission
                 save_events(events_filt, outfile_local)
                 output_files.append(outfile_local)
         else:
@@ -126,6 +127,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                                     gti=events.gti, mjdref=events.mjdref)
             events_filt.instr = events.instr
             events_filt.header = events.header
+            events_filt.mission = events.mission
 
             save_events(events_filt, outfile)
             output_files.append(outfile)

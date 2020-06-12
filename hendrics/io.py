@@ -1237,7 +1237,7 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     except Exception:
         instr = 'unknown'
     try:
-        mission = header['TELESCOP']
+        mission = header['TELESCOP'].strip()
     except Exception:
         mission = 'unknown'
 
