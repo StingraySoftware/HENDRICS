@@ -410,15 +410,15 @@ def load_events(fname):
     eventlist.time = out['time']
     eventlist.gti = out['gti']
     if 'pi' in list(out.keys()):
-        eventlist.pi = _force_iterable(out['pi'])
+        eventlist.pi = force_iterable(out['pi'])
     if 'mjdref' in list(out.keys()):
         eventlist.mjdref = out['mjdref']
     if 'instr' in list(out.keys()):
         eventlist.instr = out["instr"]
     if 'energy' in list(out.keys()):
-        eventlist.energy = _force_iterable(out["energy"])
+        eventlist.energy = force_iterable(out["energy"])
     if 'cal_pi' in list(out.keys()):
-        eventlist.cal_pi = _force_iterable(out["cal_pi"])
+        eventlist.cal_pi = force_iterable(out["cal_pi"])
     if 'header' in list(out.keys()):
         eventlist.header = out["header"]
     if 'mission' in list(out.keys()):
