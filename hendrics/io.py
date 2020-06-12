@@ -806,7 +806,7 @@ def _save_data_nc(struct, fname, kind="data"):
         var = struct[k]
 
         probe = var
-        if isinstance(var, Iterable) and len(var) > 1:
+        if isinstance(var, Iterable) and len(var) >= 1:
             probe = var[0]
 
         if is_string(var):

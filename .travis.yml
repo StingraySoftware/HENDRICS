@@ -88,6 +88,7 @@ matrix:
           name: Python 3.8 with developer version of everything
           stage: Comprehensive tests
           env: TOXENV=py38-test-devdeps-cov
+               TOXPOSARGS="--remote-data"
 
         # Now all dependencies with the latest Python
         - os: linux
