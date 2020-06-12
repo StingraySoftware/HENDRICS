@@ -33,7 +33,7 @@ from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
 from stingray.pulse.modeling import SincSquareModel
-from .base import _order_list_of_arrays, _empty, is_string
+from .base import _order_list_of_arrays, _empty, is_string, force_iterable
 
 
 try:
@@ -389,6 +389,8 @@ def save_events(eventlist, fname):
         out["header"] = eventlist.header
     if hasattr(eventlist, 'mission') and eventlist.mission is not None:
         out["mission"] = eventlist.mission
+    if hasattr(eventlist, 'cal_pi') and eventlist.cal_pi is not None:
+        out["cal_pi"] = eventlist.cal_pi
 
     if get_file_format(fname) == 'pickle':
         _save_data_pickle(out, fname)
@@ -408,20 +410,21 @@ def load_events(fname):
     eventlist.time = out['time']
     eventlist.gti = out['gti']
     if 'pi' in list(out.keys()):
-        eventlist.pi = out['pi']
+        eventlist.pi = _force_iterable(out['pi'])
     if 'mjdref' in list(out.keys()):
         eventlist.mjdref = out['mjdref']
     if 'instr' in list(out.keys()):
         eventlist.instr = out["instr"]
     if 'energy' in list(out.keys()):
-        eventlist.energy = out["energy"]
+        eventlist.energy = _force_iterable(out["energy"])
+    if 'cal_pi' in list(out.keys()):
+        eventlist.cal_pi = _force_iterable(out["cal_pi"])
     if 'header' in list(out.keys()):
         eventlist.header = out["header"]
     if 'mission' in list(out.keys()):
         eventlist.mission = out["mission"]
     else:
         eventlist.mission = ""
-
     return eventlist
 
 
@@ -1233,11 +1236,11 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         timezero = np.longdouble(0.)
 
     try:
-        instr = header['INSTRUME']
+        instr = header['INSTRUME'].lower()
     except Exception:
         instr = 'unknown'
     try:
-        mission = header['TELESCOP'].strip()
+        mission = header['TELESCOP'].strip().lower()
     except Exception:
         mission = 'unknown'
 
@@ -1280,6 +1283,8 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         additional_columns = ['PI']
     if 'PI' not in additional_columns:
         additional_columns.append('PI')
+    if 'PHA' not in additional_columns and mission.lower() in ['swift', 'xmm']:
+        additional_columns.append('PHA')
 
     additional_data = _get_additional_data(lctable, additional_columns)
 
@@ -1292,13 +1297,21 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         detector_id = detector_id[order]
 
     additional_data = _order_list_of_arrays(additional_data, order)
-    pi = additional_data['PI'][order]
+
+    cal_pi = None
+    pi = additional_data['PI']
+
+    if mission.lower() in ['xmm', 'swift']:
+        pi = additional_data['PHA']
+        cal_pi = additional_data['PI']
+        additional_data.pop('PHA')
+
     additional_data.pop('PI')
 
     returns = _empty()
 
     returns.ev_list = EventList(ev_list, gti=gti_list, pi=pi)
-
+    returns.ev_list.cal_pi = cal_pi
     returns.ev_list.instr = instr
     returns.ev_list.mission = mission
     returns.ev_list.mjdref = mjdref

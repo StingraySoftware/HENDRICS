@@ -210,6 +210,24 @@ class TestFullRun(object):
                                            'monol_testB_nustar_fpmb_ev_calib' +
                                            HEN_FILE_EXTENSION))
 
+    def test_calibrate_xmm(self):
+        """Test event file calibration."""
+        xmm_file = glob.glob(
+            os.path.join(self.datadir,
+                         'monol_test_fake*_xmm*ev' + HEN_FILE_EXTENSION))[0]
+        command = '{0} -r {1} --nproc 2'.format(
+            xmm_file,
+            os.path.join(self.datadir, 'test.rmf'))
+        hen.calibrate.main(command.split())
+
+    def test_calibrate_xmm_normf(self):
+        """Test event file calibration."""
+        xmm_file = glob.glob(
+            os.path.join(self.datadir,
+                         'monol_test_fake*_xmm*ev' + HEN_FILE_EXTENSION))[0]
+        command = '{0} --rough --nproc 2'.format(xmm_file)
+        hen.calibrate.main(command.split())
+
     def test_calibrate_raises_missing_mission(self):
         """Test event file calibration."""
         from hendrics.io import load_events, save_events

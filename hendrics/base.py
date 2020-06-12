@@ -1110,3 +1110,22 @@ def find_peaks_in_image(image, n=5, rough=False, **kwargs):
         return best_cands
 
     return peak_local_max(image, num_peaks=n, **kwargs)
+
+
+def force_iterable(val):
+    """Force a number to become an array with one element.
+
+    Arrays are preserved.
+
+    Examples
+    --------
+    >>> val = 5.
+    >>> force_iterable(val)[0] == val
+    True
+    >>> val = np.array([5., 5])
+    >>> np.all(force_iterable(val) == val)
+    True
+    """
+    if not isinstance(val, Iterable):
+        return np.array([val])
+    return np.asarray(val)

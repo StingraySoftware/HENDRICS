@@ -119,6 +119,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                 events_filt.instr = events.instr
                 events_filt.header = events.header
                 events_filt.mission = events.mission
+                if hasattr(events, 'cal_pi') and events.cal_pi is not None:
+                    events_filt.cal_pi = events.cal_pi[all_good]
                 save_events(events_filt, outfile_local)
                 output_files.append(outfile_local)
         else:
@@ -128,7 +130,8 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             events_filt.instr = events.instr
             events_filt.header = events.header
             events_filt.mission = events.mission
-
+            if hasattr(events, 'cal_pi') and events.cal_pi is not None:
+                events_filt.cal_pi = events.cal_pi[good_det]
             save_events(events_filt, outfile)
             output_files.append(outfile)
     return output_files
