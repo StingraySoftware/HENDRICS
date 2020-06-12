@@ -1122,10 +1122,17 @@ def force_iterable(val):
     >>> val = 5.
     >>> force_iterable(val)[0] == val
     True
+    >>> val = None
+    >>> force_iterable(val) is None
+    True
     >>> val = np.array([5., 5])
     >>> np.all(force_iterable(val) == val)
     True
     """
+    if val is None:
+        return val
+
     if not isinstance(val, Iterable):
         return np.array([val])
+
     return np.asarray(val)
