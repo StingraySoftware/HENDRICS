@@ -11,6 +11,7 @@ from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
 from hendrics.io import _get_additional_data, find_file_in_allowed_paths
+from hendrics.io import save_as_ascii, save_as_qdp
 
 import pytest
 import glob
@@ -62,6 +63,8 @@ class TestIO():
     @classmethod
     def setup_class(cls):
         cls.dum = 'bubu' + HEN_FILE_EXTENSION
+        curdir = os.path.abspath(os.path.dirname(__file__))
+        cls.datadir = os.path.join(curdir, 'data')
 
     def test_save_data(self):
         struct = {'a': 0.1, 'b': np.longdouble('123.4567890123456789'),
@@ -206,6 +209,27 @@ class TestIO():
         data_out = load_data('bubu' + HEN_FILE_EXTENSION)
 
         assert np.allclose(data['val'], data_out['val'])
+
+    def test_save_as_qdp(self):
+        """Test saving arrays in a qdp file."""
+        arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
+        errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
+        save_as_qdp(arrays, errors,
+                    filename=os.path.join(self.datadir,
+                                          "bububu.txt"))
+        save_as_qdp(arrays, errors,
+                    filename=os.path.join(self.datadir,
+                                          "bububu.txt"),
+                    mode='a')
+
+    def test_save_as_ascii(self):
+        """Test saving arrays in a ascii file."""
+        array = np.array([0, 1, 3])
+        errors = np.array([1, 1, 1])
+        save_as_ascii(
+            [array, errors],
+            filename=os.path.join(self.datadir, "bububu.txt"),
+            colnames=["array", "err"])
 
     @classmethod
     def teardown_class(cls):
