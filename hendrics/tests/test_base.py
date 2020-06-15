@@ -3,9 +3,11 @@ from astropy.tests.helper import remote_data
 import numpy as np
 from hendrics.base import deorbit_events
 from stingray.events import EventList
+from hendrics.tests import _dummy_par
+from hendrics.fold import HAS_PINT
 
 
-def test_deorbit_badpar(self):
+def test_deorbit_badpar():
     ev = np.asarray(1)
     with pytest.warns(UserWarning) as record:
         ev_deor = deorbit_events(ev, None)
@@ -14,7 +16,7 @@ def test_deorbit_badpar(self):
     assert ev_deor == ev
 
 
-def test_deorbit_non_existing_par(self):
+def test_deorbit_non_existing_par():
     ev = np.asarray(1)
     with pytest.raises(FileNotFoundError) as excinfo:
         ev_deor = deorbit_events(ev, "warjladsfjqpeifjsdk.par")
@@ -24,7 +26,7 @@ def test_deorbit_non_existing_par(self):
 
 @remote_data
 @pytest.mark.skipif('not HAS_PINT')
-def test_deorbit_bad_mjdref(self):
+def test_deorbit_bad_mjdref():
     from hendrics.base import deorbit_events
     ev = EventList(np.arange(100), gti=np.asarray([[0, 2]]))
     ev.mjdref = 2

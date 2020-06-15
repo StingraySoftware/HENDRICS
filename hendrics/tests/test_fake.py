@@ -24,7 +24,7 @@ log.setLevel('DEBUG')
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
-def test_filter_for_deadtime_nonpar(self):
+def test_filter_for_deadtime_nonpar():
     """Test dead time filter, non-paralyzable case."""
     events = np.array([1, 1.05, 1.07, 1.08, 1.1, 2, 2.2, 3, 3.1, 3.2])
     filt_events = hen.fake.filter_for_deadtime(events, 0.11)
@@ -33,7 +33,7 @@ def test_filter_for_deadtime_nonpar(self):
         "Wrong: {} vs {}".format(filt_events, expected)
 
 
-def test_filter_for_deadtime_nonpar_bkg(self):
+def test_filter_for_deadtime_nonpar_bkg():
     """Test dead time filter, non-paralyzable case, with background."""
     events = np.array([1.1, 2, 2.2, 3, 3.2])
     bkg_events = np.array([1, 3.1])
@@ -48,14 +48,14 @@ def test_filter_for_deadtime_nonpar_bkg(self):
         "Wrong: {} vs {}".format(info.bkg, expected_bk)
 
 
-def test_filter_for_deadtime_par(self):
+def test_filter_for_deadtime_par():
     """Test dead time filter, paralyzable case."""
     events = np.array([1, 1.1, 2, 2.2, 3, 3.1, 3.2])
     assert np.all(hen.fake.filter_for_deadtime(
         events, 0.11, paralyzable=True) == np.array([1, 2, 2.2, 3]))
 
 
-def test_filter_for_deadtime_par_bkg(self):
+def test_filter_for_deadtime_par_bkg():
     """Test dead time filter, paralyzable case, with background."""
     events = np.array([1.1, 2, 2.2, 3, 3.2])
     bkg_events = np.array([1, 3.1])
@@ -70,7 +70,7 @@ def test_filter_for_deadtime_par_bkg(self):
         "Wrong: {} vs {}".format(info.bkg, expected_bk)
 
 
-def test_deadtime_mask_par(self):
+def test_deadtime_mask_par():
     """Test dead time filter, paralyzable case, with background."""
     events = np.array([1.1, 2, 2.2, 3, 3.2])
     bkg_events = np.array([1, 3.1])
@@ -81,7 +81,7 @@ def test_deadtime_mask_par(self):
     assert np.all(filt_events == events[info.mask])
 
 
-def test_deadtime_conversion(self):
+def test_deadtime_conversion():
     """Test the functions for count rate conversion."""
     original_rate = np.arange(1, 1000, 10)
     deadtime = 2.5e-3

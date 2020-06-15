@@ -2,7 +2,7 @@ import numpy as np
 from hendrics import exposure
 
 
-def test_exposure_calculation1(self):
+def test_exposure_calculation1():
     """Test if the exposure calculator works correctly."""
     times = np.array([1., 2., 3.])
     events = np.array([2.])
@@ -13,7 +13,7 @@ def test_exposure_calculation1(self):
     np.testing.assert_almost_equal(expo, np.array([1, 0.5, 0.]))
 
 
-def test_exposure_calculation2(self):
+def test_exposure_calculation2():
     """Test if the exposure calculator works correctly."""
     times = np.array([1., 2.])
     events = np.array([2.1])
@@ -24,7 +24,7 @@ def test_exposure_calculation2(self):
     np.testing.assert_almost_equal(expo, np.array([0, 0.3]))
 
 
-def test_exposure_calculation3(self):
+def test_exposure_calculation3():
     """Test if the exposure calculator works correctly."""
     times = np.array([1., 2., 3.])
     events = np.array([2.1])
@@ -35,7 +35,7 @@ def test_exposure_calculation3(self):
     np.testing.assert_almost_equal(expo, np.array([0.1, 0.6, 0.]))
 
 
-def test_exposure_calculation4(self):
+def test_exposure_calculation4():
     """Test if the exposure calculator works correctly."""
     times = np.array([1., 1.5, 2., 2.5, 3.])
     events = np.array([2.6])
@@ -47,7 +47,7 @@ def test_exposure_calculation4(self):
     np.testing.assert_almost_equal(expo, expected_expo)
 
 
-def test_exposure_calculation5(self):
+def test_exposure_calculation5():
     """Test if the exposure calculator works correctly."""
     times = np.array([1., 2., 3.])
     events = np.array([1.1, 1.2, 1.4, 1.5, 1.8, 4])

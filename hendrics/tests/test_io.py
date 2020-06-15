@@ -59,7 +59,7 @@ def test_find_files_in_allowed_paths(capsys):
     os.unlink("bu")
 
 
-def test_high_precision_keyword(self):
+def test_high_precision_keyword():
     """Test high precision FITS keyword read."""
     from hendrics.io import high_precision_keyword_read
     hdr = {"MJDTESTI": 100, "MJDTESTF": np.longdouble(0.5),

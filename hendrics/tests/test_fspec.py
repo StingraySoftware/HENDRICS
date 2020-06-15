@@ -26,7 +26,7 @@ log.setLevel('DEBUG')
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
-def test_pds_fails_noclobber_exists(self):
+def test_pds_fails_noclobber_exists():
     touch('bububu')
     with pytest.warns(UserWarning) as record:
         calc_pds("bla.p", 512, outname='bububu', noclobber=True)
@@ -35,7 +35,7 @@ def test_pds_fails_noclobber_exists(self):
     os.unlink('bububu')
 
 
-def test_cpds_fails_noclobber_exists(self):
+def test_cpds_fails_noclobber_exists():
     touch('bububu')
     with pytest.warns(UserWarning) as record:
         calc_cpds("bla.p", "blu.p", 512, outname='bububu', noclobber=True)
