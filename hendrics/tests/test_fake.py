@@ -108,12 +108,20 @@ class TestFake(object):
                                             'monol_testA_nustar_fpma_ev' +
                                             HEN_FILE_EXTENSION)
         cls.par = _dummy_par("bubububu.par")
-
-    def test_scripts_are_installed(self):
-        """Test only once that command line scripts are installed correctly."""
-        fits_file = os.path.join(self.datadir, 'monol_testA.evt')
-        command = 'HENreadfile {0}'.format(fits_file)
-        sp.check_call(command.split())
+        cls.fits_fileA = os.path.join(cls.datadir, 'monol_testA.evt')
+        command = '{0}'.format(cls.fits_fileA)
+        hen.read_events.main(command.split())
+        cls.xmm_fits_file = \
+            os.path.join(cls.datadir, 'monol_test_fake_lc_xmm.evt')
+        hen.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
+                       '--ctrate', '2000',
+                       '-o', cls.xmm_fits_file])
+        command = '{0}'.format(cls.xmm_fits_file)
+        hen.read_events.main(command.split())
+        cls.xmm_ev_file = \
+            os.path.join(
+                cls.datadir,
+                'monol_test_fake_xmm_xmm_epn_det01_ev' + HEN_FILE_EXTENSION)
 
     def test_fake_file(self):
         """Test produce a fake event file."""
@@ -137,29 +145,17 @@ class TestFake(object):
 
     def test_fake_file_xmm(self):
         """Test produce a fake event file and apply deadtime."""
-        fits_file = os.path.join(self.datadir, 'monol_test_fake_lc_xmm.evt')
-        hen.fake.main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
-                       '--ctrate', '2000',
-                       '-o', fits_file])
-        hdu_list = fits.open(fits_file)
+        hdu_list = fits.open(self.xmm_fits_file)
         hdunames = [hdu.name for hdu in hdu_list]
         assert 'STDGTI01' in hdunames
         assert 'STDGTI02' in hdunames
         assert 'STDGTI07' in hdunames
-
-    def test_load_events_xmm(self):
-        """Test event file reading."""
-        command = '{0}'.format(
-            os.path.join(self.datadir, 'monol_test_fake_lc_xmm.evt'))
-        hen.read_events.main(command.split())
+        assert os.path.exists(self.xmm_ev_file)
 
     def test_load_events_randomize(self):
         """Test event file reading."""
-        # command = '{0} --randomize-by 0.073'.format(
-        #     os.path.join(self.datadir, 'monol_testA.evt'))
         newfiles = hen.read_events.treat_event_file(
-            os.path.join(self.datadir, 'monol_testA.evt'),
-            randomize_by=0.073)
+            self.fits_fileA, randomize_by=0.073)
         clean_file = self.first_event_file
         ev_clean = hen.io.load_events(clean_file)
         ev = hen.io.load_events(newfiles[0])
@@ -174,9 +170,7 @@ class TestFake(object):
 
     def test_calibrate_xmm(self):
         """Test event file calibration."""
-        xmm_file = glob.glob(
-            os.path.join(self.datadir,
-                         'monol_test_fake*_xmm*ev' + HEN_FILE_EXTENSION))[0]
+        xmm_file = self.xmm_ev_file
         command = '{0} -r {1} --nproc 2'.format(
             xmm_file,
             os.path.join(self.datadir, 'test.rmf'))
@@ -184,9 +178,7 @@ class TestFake(object):
 
     def test_calibrate_xmm_normf(self):
         """Test event file calibration."""
-        xmm_file = glob.glob(
-            os.path.join(self.datadir,
-                         'monol_test_fake*_xmm*ev' + HEN_FILE_EXTENSION))[0]
+        xmm_file = self.xmm_ev_file
         command = '{0} --rough --nproc 2'.format(xmm_file)
         hen.calibrate.main(command.split())
 
