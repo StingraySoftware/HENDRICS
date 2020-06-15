@@ -123,13 +123,15 @@ class TestReadEvents():
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, 'data')
         cls.fits_fileA = os.path.join(cls.datadir, 'monol_testA.evt')
-        cls.fits_fileB = os.path.join(cls.datadir, 'monol_testA.evt')
+        cls.fits_fileB = os.path.join(cls.datadir, 'monol_testB.evt')
         cls.fits_file = os.path.join(cls.datadir, 'monol_test_fake.evt')
         main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
               '--ctrate', '2000', '--mjdref', "50814.0",
               '-o', cls.fits_file])
-        cls.ev_fileA = 'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION
-        cls.ev_fileB = 'monol_testB_nustar_fpmb_ev' + HEN_FILE_EXTENSION
+        cls.ev_fileA = os.path.join(
+            cls.datadir, 'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION)
+        cls.ev_fileB = os.path.join(
+            cls.datadir, 'monol_testB_nustar_fpmb_ev' + HEN_FILE_EXTENSION)
 
     def test_treat_event_file_nustar(self):
         treat_event_file(self.fits_fileA)
@@ -191,8 +193,7 @@ class TestReadEvents():
 
     def test_load_events(self):
         """Test event file reading."""
-        command = '{}'.format(
-            os.path.join(self.datadir, 'monol_testA.evt'))
+        command = '{}'.format(self.fits_fileA)
         hen.read_events.main(command.split())
         ev = hen.io.load_events(self.ev_fileA)
         assert hasattr(ev, 'header')
@@ -208,7 +209,7 @@ class TestReadEvents():
     def test_load_events_split(self):
         """Test event file splitting."""
         command = \
-            '{0} -g --min-length 0'.format(self.fits_fileA)
+            '{0} -g --min-length 0'.format(self.fits_fileB)
         hen.read_events.main(command.split())
         new_filename = os.path.join(self.datadir,
                                     'monol_testB_nustar_fpmb_gti000_ev' +
@@ -221,7 +222,7 @@ class TestReadEvents():
                                     HEN_FILE_EXTENSION)
         assert os.path.exists(new_filename)
         lc = hen.io.load_lcurve(new_filename)
-        gti_to_test = hen.io.load_events(self.ev_fileA).gti[0]
+        gti_to_test = hen.io.load_events(self.ev_fileB).gti[0]
         assert np.allclose(gti_to_test, lc.gti)
 
     def test_load_gtis(self):
@@ -238,7 +239,6 @@ class TestReadEvents():
         assert str(w[0].message).strip().endswith(
             "exists and using noclobber. Skipping"), \
             "Unexpected warning output"
-
 
     @classmethod
     def teardown_class(cls):

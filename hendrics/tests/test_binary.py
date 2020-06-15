@@ -1,4 +1,4 @@
- # Licensed under a 3-clause BSD style license - see LICENSE.rst
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Test a full run of the codes from the command line."""
 
 import os
@@ -17,6 +17,7 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
+
 class TestBinary(object):
     """Test how command lines work.
 
@@ -31,9 +32,8 @@ class TestBinary(object):
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, 'data')
-        cls.ev_fileA = os.path.join(cls.datadir,
-                                            'monol_testA_nustar_fpma_ev' +
-                                            HEN_FILE_EXTENSION)
+        cls.ev_fileA = os.path.join(
+            cls.datadir, 'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION)
         cls.par = _dummy_par("bubububu.par")
 
         cls.ev_fileA = os.path.join(

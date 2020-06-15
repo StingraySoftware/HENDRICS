@@ -3,11 +3,9 @@
 import shutil
 import os
 import glob
-import subprocess as sp
 
 import numpy as np
 from astropy import log
-from astropy.tests.helper import catch_warnings
 from astropy.logger import AstropyUserWarning
 from astropy.tests.helper import remote_data
 import pytest
@@ -15,9 +13,8 @@ from stingray.lightcurve import Lightcurve
 import hendrics as hen
 from hendrics.tests import _dummy_par
 from hendrics.fold import HAS_PINT
-from hendrics import fake, fspec, base, binary, calibrate, colors, create_gti,\
-    exposure, exvar, io, lcurve, modeling, plot, read_events, rebin, \
-    save_as_xspec, timelags, varenergy, sum_fspec
+from hendrics import fake, fspec, base, calibrate, create_gti,\
+    exposure, exvar, io, lcurve, plot, read_events, rebin
 
 from hendrics.read_events import treat_event_file
 from hendrics.io import HEN_FILE_EXTENSION, get_file_type
@@ -162,9 +159,9 @@ class TestFullRun(object):
                                       HEN_FILE_EXTENSION))
 
         with pytest.warns(AstropyUserWarning) as record:
-           command = ('{0} -o {1} --noclobber').format(
-               input_file, new_filename)
-           hen.lcurve.main(command.split())
+            command = ('{0} -o {1} --noclobber').format(
+                input_file, new_filename)
+            hen.lcurve.main(command.split())
         assert ["File exists, and noclobber" in r.message.args[0]
                 for r in record]
 
@@ -271,11 +268,13 @@ class TestFullRun(object):
         # because join_lightcurves separates by instrument
         new_actual_filename = os.path.join(
             self.datadir, 'FPMAmonol_test_joinlc' + HEN_FILE_EXTENSION)
+        lcA_pattern = 'monol_testA_nustar_fpma_gti[0-9][0-9][0-9]_lc*'
+        lcB_pattern = 'monol_testB_nustar_fpmb_gti[0-9][0-9][0-9]_lc*'
         hen.lcurve.join_lightcurves(
-            glob.glob(os.path.join(self.datadir,
-                                   'monol_testA_nustar_fpma_gti[0-9][0-9][0-9]_lc*')) +
-            glob.glob(os.path.join(self.datadir,
-                                   'monol_testB_nustar_fpmb_gti[0-9][0-9][0-9]_lc*')),
+            glob.glob(os.path.join(
+                self.datadir, lcA_pattern + HEN_FILE_EXTENSION)) +
+            glob.glob(os.path.join(
+                self.datadir, lcB_pattern + HEN_FILE_EXTENSION)),
             new_filename)
 
         lc = hen.io.load_lcurve(new_actual_filename)
@@ -351,7 +350,14 @@ class TestFullRun(object):
 
         hen.lcurve.main(command.split())
 
-    def test_save_fvar(self):
+    def test_rebinlc(self):
+        """Test LC rebinning."""
+        command = '{0} -r 4'.format(
+            os.path.join(self.datadir, 'monol_testA_E3-50_lc') +
+            HEN_FILE_EXTENSION)
+        hen.rebin.main(command.split())
+
+    def test_save_fvar_from_lc(self):
         fname = os.path.join(self.datadir,
                              'monol_testA_E3-50_lc' + HEN_FILE_EXTENSION)
         hen.exvar.main([fname, "-c", "10", "--fraction-step", "0.6",
@@ -359,7 +365,7 @@ class TestFullRun(object):
         out = hen.base.hen_root(fname) + "_fvar" + '.qdp'
         os.path.exists(out)
 
-    def test_save_excvar(self):
+    def test_save_excvar_from_lc(self):
         fname = os.path.join(self.datadir,
                              'monol_testA_E3-50_lc' +
                              HEN_FILE_EXTENSION)
@@ -367,7 +373,7 @@ class TestFullRun(object):
         out = hen.base.hen_root(fname) + "_excvar" + '.qdp'
         os.path.exists(out)
 
-    def test_save_excvar_norm(self):
+    def test_save_excvar_norm_from_lc(self):
         fname = os.path.join(self.datadir,
                              'monol_testA_E3-50_lc' +
                              HEN_FILE_EXTENSION)
@@ -375,7 +381,7 @@ class TestFullRun(object):
         out = hen.base.hen_root(fname) + "_norm_excvar" + '.qdp'
         os.path.exists(out)
 
-    def test_save_excvar_wrong_norm(self):
+    def test_save_excvar_wrong_norm_from_lc(self):
         fname = os.path.join(self.datadir,
                              'monol_testA_E3-50_lc' +
                              HEN_FILE_EXTENSION)
@@ -412,6 +418,38 @@ class TestFullRun(object):
         filedata = np.genfromtxt('dummy_base.qdp')
 
         assert filedata.shape[1] == 3
+
+    def test_pds_fits(self):
+        """Test PDS production with light curves obtained from FITS files."""
+        lcurve_ftools = os.path.join(self.datadir,
+                                     'lcurve_ftools_lc' +
+                                     HEN_FILE_EXTENSION)
+        command = '{0} --save-all -f 128'.format(lcurve_ftools)
+        hen.fspec.main(command.split())
+
+    def test_pds_txt(self):
+        """Test PDS production with light curves obtained from txt files."""
+        lcurve_txt = os.path.join(self.datadir,
+                                  'lcurve_txt_lc' +
+                                  HEN_FILE_EXTENSION)
+        command = '{0} --save-all -f 128'.format(lcurve_txt)
+        hen.fspec.main(command.split())
+
+    def test_exposure(self):
+        """Test exposure calculations from unfiltered files."""
+        lcname = os.path.join(self.datadir,
+                              'monol_testA_E3-50_lc' + HEN_FILE_EXTENSION)
+        ufname = os.path.join(self.datadir, 'monol_testA_uf.evt')
+        command = "{0} {1}".format(lcname, ufname)
+
+        hen.exposure.main(command.split())
+        fname = os.path.join(self.datadir,
+                             'monol_testA_E3-50_lccorr' + HEN_FILE_EXTENSION)
+        assert os.path.exists(fname)
+        ftype, contents = hen.io.get_file_type(fname)
+
+        assert isinstance(contents, Lightcurve)
+        assert hasattr(contents, 'expo')
 
     @classmethod
     def teardown_class(self):

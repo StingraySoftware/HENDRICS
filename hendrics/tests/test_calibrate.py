@@ -26,9 +26,8 @@ class TestCalibrate(object):
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, 'data')
-        cls.ev_fileA = os.path.join(cls.datadir,
-                                            'monol_testA_nustar_fpma_ev' +
-                                            HEN_FILE_EXTENSION)
+        cls.ev_fileA = os.path.join(
+            cls.datadir, 'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION)
         cls.par = _dummy_par("bubububu.par")
 
         cls.ev_fileA = os.path.join(
