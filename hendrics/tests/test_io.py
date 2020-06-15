@@ -58,6 +58,19 @@ def test_find_files_in_allowed_paths(capsys):
 
     os.unlink("bu")
 
+
+def test_high_precision_keyword(self):
+    """Test high precision FITS keyword read."""
+    from hendrics.io import high_precision_keyword_read
+    hdr = {"MJDTESTI": 100, "MJDTESTF": np.longdouble(0.5),
+           "CIAO": np.longdouble(0.)}
+    assert \
+        high_precision_keyword_read(hdr,
+                                    "MJDTEST") == np.longdouble(100.5)
+    assert \
+        high_precision_keyword_read(hdr, "CIAO") == np.longdouble(0.)
+
+
 class TestIO():
     """Real unit tests."""
     @classmethod

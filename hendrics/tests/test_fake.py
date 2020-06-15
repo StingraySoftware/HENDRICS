@@ -24,6 +24,72 @@ log.setLevel('DEBUG')
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
+def test_filter_for_deadtime_nonpar(self):
+    """Test dead time filter, non-paralyzable case."""
+    events = np.array([1, 1.05, 1.07, 1.08, 1.1, 2, 2.2, 3, 3.1, 3.2])
+    filt_events = hen.fake.filter_for_deadtime(events, 0.11)
+    expected = np.array([1, 2, 2.2, 3, 3.2])
+    assert np.all(filt_events == expected), \
+        "Wrong: {} vs {}".format(filt_events, expected)
+
+
+def test_filter_for_deadtime_nonpar_bkg(self):
+    """Test dead time filter, non-paralyzable case, with background."""
+    events = np.array([1.1, 2, 2.2, 3, 3.2])
+    bkg_events = np.array([1, 3.1])
+    filt_events, info = \
+        hen.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
+                                     return_all=True)
+    expected_ev = np.array([2, 2.2, 3, 3.2])
+    expected_bk = np.array([1])
+    assert np.all(filt_events == expected_ev), \
+        "Wrong: {} vs {}".format(filt_events, expected_ev)
+    assert np.all(info.bkg == expected_bk), \
+        "Wrong: {} vs {}".format(info.bkg, expected_bk)
+
+
+def test_filter_for_deadtime_par(self):
+    """Test dead time filter, paralyzable case."""
+    events = np.array([1, 1.1, 2, 2.2, 3, 3.1, 3.2])
+    assert np.all(hen.fake.filter_for_deadtime(
+        events, 0.11, paralyzable=True) == np.array([1, 2, 2.2, 3]))
+
+
+def test_filter_for_deadtime_par_bkg(self):
+    """Test dead time filter, paralyzable case, with background."""
+    events = np.array([1.1, 2, 2.2, 3, 3.2])
+    bkg_events = np.array([1, 3.1])
+    filt_events, info = \
+        hen.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
+                                     paralyzable=True, return_all=True)
+    expected_ev = np.array([2, 2.2, 3])
+    expected_bk = np.array([1])
+    assert np.all(filt_events == expected_ev), \
+        "Wrong: {} vs {}".format(filt_events, expected_ev)
+    assert np.all(info.bkg == expected_bk), \
+        "Wrong: {} vs {}".format(info.bkg, expected_bk)
+
+
+def test_deadtime_mask_par(self):
+    """Test dead time filter, paralyzable case, with background."""
+    events = np.array([1.1, 2, 2.2, 3, 3.2])
+    bkg_events = np.array([1, 3.1])
+    filt_events, info = \
+        hen.fake.filter_for_deadtime(events, 0.11, bkg_ev_list=bkg_events,
+                                     paralyzable=True, return_all=True)
+
+    assert np.all(filt_events == events[info.mask])
+
+
+def test_deadtime_conversion(self):
+    """Test the functions for count rate conversion."""
+    original_rate = np.arange(1, 1000, 10)
+    deadtime = 2.5e-3
+    rdet = hen.base.r_det(deadtime, original_rate)
+    rin = hen.base.r_in(deadtime, rdet)
+    np.testing.assert_almost_equal(rin, original_rate)
+
+
 class TestFake(object):
     """Test how command lines work.
 

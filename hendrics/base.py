@@ -452,6 +452,8 @@ def common_name(str1, str2, default='common'):
     'common'
     >>> common_name('asdfg', 'qwerr')
     'common'
+    >>> common_name('A_3-50_A.nc', 'B_3-50_B.nc')
+    '3-50'
     """
     if not len(str1) == len(str2):
         return default
