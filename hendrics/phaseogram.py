@@ -15,7 +15,6 @@ from stingray.utils import assign_value_if_none
 from stingray.pulse.pulsar import z_n
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
-import matplotlib
 from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter1d
 
@@ -183,7 +182,7 @@ class BasePhaseogram(object):
         self.pcolor = ax.pcolormesh(phases, times,
                                     self.phaseogr.T,
                                     cmap=DEFAULT_COLORMAP,
-                                    vmin = 0)
+                                    vmin=vmin)
         self.colorbar = plt.colorbar(self.pcolor, cax=colorbax,
                                      orientation='horizontal')
         ax.set_xlabel('Phase')

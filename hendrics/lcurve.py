@@ -56,7 +56,9 @@ def join_lightcurve_objs(lclist):
     lcdts = list(set(lcdts))
     assert len(lcdts) == 1, 'Light curves must have same dt for joining'
 
-    instrs = [lcdata.instr.lower() for lcdata in lclist if (hasattr(lcdata, 'instr') and lcdata.instr is not None)]
+    instrs = [lcdata.instr.lower()
+              for lcdata in lclist
+              if (hasattr(lcdata, 'instr') and lcdata.instr is not None)]
 
     # Find unique elements. A lightcurve will be produced for each instrument
     instrs = list(set(instrs))
