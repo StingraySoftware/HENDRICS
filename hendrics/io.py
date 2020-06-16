@@ -460,9 +460,9 @@ def save_lcurve(lcurve, fname, lctype='Lightcurve'):
         out['base'] = lcurve.base
     if lctype == 'Color':
         out['e_intervals'] = lcurve.e_intervals
-        out['use_pi'] = int(lcurve.use_pi)
     elif hasattr(lcurve, 'e_interval') and lcurve.e_interval is not None:
         out['e_interval'] = lcurve.e_interval
+    if hasattr(lcurve, 'use_pi'):
         out['use_pi'] = int(lcurve.use_pi)
 
     if hasattr(lcurve, 'instr') and lcurve.instr is not None:
