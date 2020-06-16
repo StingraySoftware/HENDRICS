@@ -461,7 +461,7 @@ def save_lcurve(lcurve, fname, lctype='Lightcurve'):
     if lctype == 'Color':
         out['e_intervals'] = lcurve.e_intervals
         out['use_pi'] = int(lcurve.use_pi)
-    elif hasattr(lcurve, 'e_interval'):
+    elif hasattr(lcurve, 'e_interval') and lcurve.e_interval is not None:
         out['e_interval'] = lcurve.e_interval
         out['use_pi'] = int(lcurve.use_pi)
 
@@ -939,20 +939,22 @@ def save_as_ascii(cols, filename="out.txt", colnames=None,
     """Save arrays as TXT file with respective errors."""
     import numpy as np
 
+    shape = np.shape(cols)
+    ndim = len(shape)
+    print(shape, ndim)
+
+    if ndim == 1:
+        cols = [cols]
+    elif ndim >= 3 or ndim == 0:
+        log.error("Only one- or two-dim arrays accepted")
+        return -1
+    lcol = len(cols[0])
+
     log.debug('%s %s' % (repr(cols), repr(np.shape(cols))))
     if append:
         txtfile = open(filename, "a")
     else:
         txtfile = open(filename, "w")
-    shape = np.shape(cols)
-    ndim = len(shape)
-
-    if ndim == 1:
-        cols = [cols]
-    elif ndim > 3 or ndim == 0:
-        log.error("Only one- or two-dim arrays accepted")
-        return -1
-    lcol = len(cols[0])
 
     if colnames is not None:
         print("#", file=txtfile, end=' ')

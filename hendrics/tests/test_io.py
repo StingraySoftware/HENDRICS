@@ -244,6 +244,27 @@ class TestIO():
             filename=os.path.join(self.datadir, "bububu.txt"),
             colnames=["array", "err"])
 
+    def test_save_as_ascii_too_many_dims(self):
+        """Test saving arrays in a ascii file."""
+        array = np.array([0, 1, 3])
+        errors = np.array([1, 1, 1])
+        dummy_out = "bububu_bad.txt"
+        retval = save_as_ascii(
+            np.array([[array], [errors]]),
+            filename=dummy_out,
+            colnames=["array", "err"])
+        assert not os.path.exists(dummy_out)
+        assert retval == -1
+
+    def test_save_as_ascii_simple_array(self):
+        """Test saving arrays in a ascii file."""
+        array = np.array([0, 1, 3])
+        dummy_out = "bububu_good.txt"
+        retval = save_as_ascii(array, filename=dummy_out,
+            colnames=["array"])
+        assert os.path.exists(dummy_out)
+        os.unlink(dummy_out)
+
     @classmethod
     def teardown_class(cls):
         import shutil
