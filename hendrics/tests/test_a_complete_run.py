@@ -174,27 +174,6 @@ class TestFullRun(object):
 
         hen.io.main(command.split())
 
-    def test_save_as_qdp(self):
-        """Test saving arrays in a qdp file."""
-        arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
-        errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
-        hen.io.save_as_qdp(arrays, errors,
-                           filename=os.path.join(self.datadir,
-                                                 "monol_test_qdp.txt"))
-        hen.io.save_as_qdp(arrays, errors,
-                           filename=os.path.join(self.datadir,
-                                                 "monol_test_qdp.txt"),
-                           mode='a')
-
-    def test_save_as_ascii(self):
-        """Test saving arrays in a ascii file."""
-        array = np.array([0, 1, 3])
-        errors = np.array([1, 1, 1])
-        hen.io.save_as_ascii(
-            [array, errors],
-            filename=os.path.join(self.datadir, "monol_test.txt"),
-            colnames=["array", "err"])
-
     def test_plot_color(self):
         """Test plotting with linear axes."""
         lname = os.path.join(self.datadir,
