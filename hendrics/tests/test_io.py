@@ -11,6 +11,7 @@ from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
 from hendrics.io import _get_additional_data, find_file_in_allowed_paths
+from hendrics.io import save_as_ascii, save_as_qdp
 
 import pytest
 import glob
@@ -57,11 +58,26 @@ def test_find_files_in_allowed_paths(capsys):
 
     os.unlink("bu")
 
+
+def test_high_precision_keyword():
+    """Test high precision FITS keyword read."""
+    from hendrics.io import high_precision_keyword_read
+    hdr = {"MJDTESTI": 100, "MJDTESTF": np.longdouble(0.5),
+           "CIAO": np.longdouble(0.)}
+    assert \
+        high_precision_keyword_read(hdr,
+                                    "MJDTEST") == np.longdouble(100.5)
+    assert \
+        high_precision_keyword_read(hdr, "CIAO") == np.longdouble(0.)
+
+
 class TestIO():
     """Real unit tests."""
     @classmethod
     def setup_class(cls):
         cls.dum = 'bubu' + HEN_FILE_EXTENSION
+        curdir = os.path.abspath(os.path.dirname(__file__))
+        cls.datadir = os.path.join(curdir, 'data')
 
     def test_save_data(self):
         struct = {'a': 0.1, 'b': np.longdouble('123.4567890123456789'),
@@ -206,6 +222,48 @@ class TestIO():
         data_out = load_data('bubu' + HEN_FILE_EXTENSION)
 
         assert np.allclose(data['val'], data_out['val'])
+
+    def test_save_as_qdp(self):
+        """Test saving arrays in a qdp file."""
+        arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
+        errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
+        save_as_qdp(arrays, errors,
+                    filename=os.path.join(self.datadir,
+                                          "bububu.txt"))
+        save_as_qdp(arrays, errors,
+                    filename=os.path.join(self.datadir,
+                                          "bububu.txt"),
+                    mode='a')
+
+    def test_save_as_ascii(self):
+        """Test saving arrays in a ascii file."""
+        array = np.array([0, 1, 3])
+        errors = np.array([1, 1, 1])
+        save_as_ascii(
+            [array, errors],
+            filename=os.path.join(self.datadir, "bububu.txt"),
+            colnames=["array", "err"])
+
+    def test_save_as_ascii_too_many_dims(self):
+        """Test saving arrays in a ascii file."""
+        array = np.array([0, 1, 3])
+        errors = np.array([1, 1, 1])
+        dummy_out = "bububu_bad.txt"
+        retval = save_as_ascii(
+            np.array([[array], [errors]]),
+            filename=dummy_out,
+            colnames=["array", "err"])
+        assert not os.path.exists(dummy_out)
+        assert retval == -1
+
+    def test_save_as_ascii_simple_array(self):
+        """Test saving arrays in a ascii file."""
+        array = np.array([0, 1, 3])
+        dummy_out = "bububu_good.txt"
+        retval = save_as_ascii(array, filename=dummy_out,
+            colnames=["array"])
+        assert os.path.exists(dummy_out)
+        os.unlink(dummy_out)
 
     @classmethod
     def teardown_class(cls):

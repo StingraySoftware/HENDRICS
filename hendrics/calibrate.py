@@ -86,7 +86,40 @@ def read_calibration(pis, rmf_file=None):
     return es
 
 
-def calibrate(fname, outname, rmf_file=None):
+def rough_calibration(pis, mission):
+    """
+
+    Parameters
+    ----------
+    pis: float or array of floats
+        PI channels in data
+    mission: str
+        Mission name
+
+    Returns
+    -------
+    energies : float or array of floats
+        Energy values
+
+    Examples
+    --------
+    >>> rough_calibration(0, 'nustar')
+    1.6
+    >>> rough_calibration(1200, 'xmm')
+    1.2
+    >>> rough_calibration(10, 'nicer')
+    Traceback (most recent call last):
+        ...
+    ValueError: Mission not recognized
+    """
+    if mission.lower() == 'nustar':
+        return pis * 0.04 + 1.6
+    elif mission.lower() == 'xmm':
+        return pis / 1000.
+    raise ValueError("Mission not recognized")
+
+
+def calibrate(fname, outname, rmf_file=None, rough=False):
     """Do calibration of an event list.
 
     Parameters
@@ -108,15 +141,22 @@ def calibrate(fname, outname, rmf_file=None):
     log.info("Done.")
     pis = evdata.pi
 
-    es = read_calibration(pis, rmf_file)
+    if rough:
+        cal_pis = evdata.pi
+        if hasattr(evdata, 'cal_pi') and evdata.cal_pi is not None:
+            cal_pis = evdata.cal_pi
+        es = rough_calibration(cal_pis, evdata.mission)
+    else:
+        es = read_calibration(pis, rmf_file)
+
     evdata.energy = es
     log.info('Saving calibrated data to %s' % outname)
     save_events(evdata, outname)
 
 
 def _calib_wrap(args):
-    f, outname, rmf = args
-    return calibrate(f, outname, rmf)
+    f, outname, rmf, rough = args
+    return calibrate(f, outname, rmf, rough)
 
 
 def main(args=None):
@@ -133,6 +173,9 @@ def main(args=None):
     parser.add_argument("files", help="List of files", nargs='+')
     parser.add_argument("-r", "--rmf", help="rmf file used for calibration",
                         default=None, type=str)
+    parser.add_argument("--rough", help="Rough calibration, without rmf file "
+                                        "(only for NuSTAR and XMM)",
+                        default=False, action="store_true")
     parser.add_argument("-o", "--overwrite",
                         help="Overwrite; default: no",
                         default=False,
@@ -151,9 +194,12 @@ def main(args=None):
         for i_f, f in enumerate(files):
             outname = f
             if args.overwrite is False:
-                outname = f.replace(get_file_extension(f), '_calib' +
+                label = '_calib'
+                if args.rough:
+                    label = '_rough_calib'
+                outname = f.replace(get_file_extension(f), label +
                                     HEN_FILE_EXTENSION)
-            funcargs.append([f, outname, args.rmf])
+            funcargs.append([f, outname, args.rmf, args.rough])
 
         if os.name == 'nt' or args.nproc == 1:
             [_calib_wrap(fa) for fa in funcargs]

@@ -3,8 +3,10 @@
 import os
 import glob
 import pytest
-from stingray.events import EventList
 import numpy as np
+from astropy.tests.helper import catch_warnings
+
+from stingray.events import EventList
 from hendrics.read_events import treat_event_file
 from hendrics.io import HEN_FILE_EXTENSION, load_data, save_events, load_events
 from hendrics.io import ref_mjd
@@ -121,11 +123,15 @@ class TestReadEvents():
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, 'data')
         cls.fits_fileA = os.path.join(cls.datadir, 'monol_testA.evt')
-        cls.fits_fileB = os.path.join(cls.datadir, 'monol_testA.evt')
+        cls.fits_fileB = os.path.join(cls.datadir, 'monol_testB.evt')
         cls.fits_file = os.path.join(cls.datadir, 'monol_test_fake.evt')
         main(['--deadtime', '1e-4', '-m', 'XMM', '-i', 'epn',
               '--ctrate', '2000', '--mjdref', "50814.0",
               '-o', cls.fits_file])
+        cls.ev_fileA = os.path.join(
+            cls.datadir, 'monol_testA_nustar_fpma_ev' + HEN_FILE_EXTENSION)
+        cls.ev_fileB = os.path.join(
+            cls.datadir, 'monol_testB_nustar_fpmb_ev' + HEN_FILE_EXTENSION)
 
     def test_treat_event_file_nustar(self):
         treat_event_file(self.fits_fileA)
@@ -184,6 +190,55 @@ class TestReadEvents():
         files = hen.read_events.main_splitevents([filea, "-l", "50"])
         for f in files:
             assert os.path.exists(f)
+
+    def test_load_events(self):
+        """Test event file reading."""
+        command = '{}'.format(self.fits_fileA)
+        hen.read_events.main(command.split())
+        ev = hen.io.load_events(self.ev_fileA)
+        assert hasattr(ev, 'header')
+        assert hasattr(ev, 'gti')
+
+    def test_load_events_with_2_cpus(self):
+        """Test event file reading."""
+        command = '{} {} --nproc 2'.format(
+            os.path.join(self.datadir, 'monol_testB.evt'),
+            os.path.join(self.datadir, 'monol_testA_timezero.evt'))
+        hen.read_events.main(command.split())
+
+    def test_load_events_split(self):
+        """Test event file splitting."""
+        command = \
+            '{0} -g --min-length 0'.format(self.fits_fileB)
+        hen.read_events.main(command.split())
+        new_filename = os.path.join(self.datadir,
+                                    'monol_testB_nustar_fpmb_gti000_ev' +
+                                    HEN_FILE_EXTENSION)
+        assert os.path.exists(new_filename)
+        command = '{0}'.format(new_filename)
+        hen.lcurve.main(command.split())
+        new_filename = os.path.join(self.datadir,
+                                    'monol_testB_nustar_fpmb_gti000_lc' +
+                                    HEN_FILE_EXTENSION)
+        assert os.path.exists(new_filename)
+        lc = hen.io.load_lcurve(new_filename)
+        gti_to_test = hen.io.load_events(self.ev_fileB).gti[0]
+        assert np.allclose(gti_to_test, lc.gti)
+
+    def test_load_gtis(self):
+        """Test loading of GTIs from FITS files."""
+        fits_file = os.path.join(self.datadir, 'monol_testA.evt')
+        hen.io.load_gtis(fits_file)
+
+    def test_load_events_noclobber(self):
+        """Test event file reading w. noclobber option."""
+        with catch_warnings() as w:
+            command = \
+                '{0} --noclobber'.format(self.fits_fileB)
+            hen.read_events.main(command.split())
+        assert str(w[0].message).strip().endswith(
+            "exists and using noclobber. Skipping"), \
+            "Unexpected warning output"
 
     @classmethod
     def teardown_class(cls):

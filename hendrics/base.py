@@ -452,6 +452,8 @@ def common_name(str1, str2, default='common'):
     'common'
     >>> common_name('asdfg', 'qwerr')
     'common'
+    >>> common_name('A_3-50_A.nc', 'B_3-50_B.nc')
+    '3-50'
     """
     if not len(str1) == len(str2):
         return default
@@ -1110,3 +1112,29 @@ def find_peaks_in_image(image, n=5, rough=False, **kwargs):
         return best_cands
 
     return peak_local_max(image, num_peaks=n, **kwargs)
+
+
+def force_iterable(val):
+    """Force a number to become an array with one element.
+
+    Arrays are preserved.
+
+    Examples
+    --------
+    >>> val = 5.
+    >>> force_iterable(val)[0] == val
+    True
+    >>> val = None
+    >>> force_iterable(val) is None
+    True
+    >>> val = np.array([5., 5])
+    >>> np.all(force_iterable(val) == val)
+    True
+    """
+    if val is None:
+        return val
+
+    if not isinstance(val, Iterable):
+        return np.array([val])
+
+    return np.asarray(val)

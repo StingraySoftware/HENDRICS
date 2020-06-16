@@ -15,7 +15,6 @@ from stingray.utils import assign_value_if_none
 from stingray.pulse.pulsar import z_n
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
-import matplotlib
 from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter1d
 
@@ -25,10 +24,7 @@ from .fold import get_TOAs_from_events
 from .base import hen_root, deorbit_events
 
 
-if int(matplotlib.__version__.split('.')[0]) < 2:
-    DEFAULT_COLORMAP = 'afmhot'
-else:
-    DEFAULT_COLORMAP = 'gnuplot2'
+DEFAULT_COLORMAP = 'viridis'
 
 
 def get_z2_label(phas, prof):
@@ -179,9 +175,14 @@ class BasePhaseogram(object):
                                   fddot=fddot, plot=False, pepoch=pepoch)
 
         self.phases, self.times = phases, times
+        vmin = None
+        if self.norm is not None and \
+                ('sub' in self.norm or 'to1' in self.norm):
+            vmin = 0
         self.pcolor = ax.pcolormesh(phases, times,
                                     self.phaseogr.T,
-                                    cmap=DEFAULT_COLORMAP)
+                                    cmap=DEFAULT_COLORMAP,
+                                    vmin=vmin)
         self.colorbar = plt.colorbar(self.pcolor, cax=colorbax,
                                      orientation='horizontal')
         ax.set_xlabel('Phase')

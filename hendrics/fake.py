@@ -210,10 +210,15 @@ def generate_fake_fits_observation(event_list=None, filename=None,
     else:
         ev_list = event_list.time
 
-    if hasattr(event_list, 'pi'):
+    if hasattr(event_list, 'pi') and event_list.pi is not None:
         pi = event_list.pi
     else:
         pi = ra.randint(0, 1024, len(ev_list))
+
+    if hasattr(event_list, 'cal_pi') and event_list.cal_pi is not None:
+        cal_pi = event_list.cal_pi
+    else:
+        cal_pi = pi / 3
 
     tstart = assign_value_if_none(tstart, np.floor(ev_list[0]))
     tstop = assign_value_if_none(tstop, np.ceil(ev_list[-1]))
@@ -234,9 +239,8 @@ def generate_fake_fits_observation(event_list=None, filename=None,
 
     # Write events to table
     col1 = fits.Column(name='TIME', format='1D', array=ev_list)
-    col2 = fits.Column(name='PI', format='1J', array=pi)
 
-    allcols = [col1, col2]
+    allcols = [col1]
 
     if mission.lower().strip() == 'xmm':
         ccdnr = np.zeros(len(ev_list)) + 1
@@ -244,6 +248,13 @@ def generate_fake_fits_observation(event_list=None, filename=None,
         ccdnr[10] = 7
         allcols.append(fits.Column(name='CCDNR', format='1J',
                                    array=ccdnr))
+
+    if mission.lower().strip() in ['xmm', 'swift']:
+        allcols.append(fits.Column(name='PHA', format='1J',
+                                   array=pi))
+        allcols.append(fits.Column(name='PI', format='1J', array=cal_pi))
+    else:
+        allcols.append(fits.Column(name='PI', format='1J', array=pi))
 
     for c in additional_columns.keys():
         col = fits.Column(name=c, array=additional_columns[c]["data"],

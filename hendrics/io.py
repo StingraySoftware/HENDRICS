@@ -33,7 +33,7 @@ from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
 from stingray.pulse.modeling import SincSquareModel
-from .base import _order_list_of_arrays, _empty, is_string
+from .base import _order_list_of_arrays, _empty, is_string, force_iterable
 
 
 try:
@@ -380,7 +380,7 @@ def save_events(eventlist, fname):
     out['__sr__class__type__'] = str(type(eventlist))
 
     if hasattr(eventlist, 'instr') and eventlist.instr is not None:
-        out["instr"] = eventlist.instr
+        out["instr"] = eventlist.instr.lower()
     else:
         out["instr"] = 'unknown'
     if hasattr(eventlist, 'energy') and eventlist.energy is not None:
@@ -388,7 +388,9 @@ def save_events(eventlist, fname):
     if hasattr(eventlist, 'header') and eventlist.header is not None:
         out["header"] = eventlist.header
     if hasattr(eventlist, 'mission') and eventlist.mission is not None:
-        out["mission"] = eventlist.mission
+        out["mission"] = eventlist.mission.lower()
+    if hasattr(eventlist, 'cal_pi') and eventlist.cal_pi is not None:
+        out["cal_pi"] = eventlist.cal_pi
 
     if get_file_format(fname) == 'pickle':
         _save_data_pickle(out, fname)
@@ -408,18 +410,21 @@ def load_events(fname):
     eventlist.time = out['time']
     eventlist.gti = out['gti']
     if 'pi' in list(out.keys()):
-        eventlist.pi = out['pi']
+        eventlist.pi = force_iterable(out['pi'])
     if 'mjdref' in list(out.keys()):
         eventlist.mjdref = out['mjdref']
     if 'instr' in list(out.keys()):
-        eventlist.instr = out["instr"]
+        eventlist.instr = out["instr"].lower()
     if 'energy' in list(out.keys()):
-        eventlist.energy = out["energy"]
+        eventlist.energy = force_iterable(out["energy"])
+    if 'cal_pi' in list(out.keys()):
+        eventlist.cal_pi = force_iterable(out["cal_pi"])
     if 'header' in list(out.keys()):
         eventlist.header = out["header"]
     if 'mission' in list(out.keys()):
-        eventlist.mission = out["mission"]
-
+        eventlist.mission = out["mission"].lower()
+    else:
+        eventlist.mission = ""
     return eventlist
 
 
@@ -455,15 +460,17 @@ def save_lcurve(lcurve, fname, lctype='Lightcurve'):
         out['base'] = lcurve.base
     if lctype == 'Color':
         out['e_intervals'] = lcurve.e_intervals
-        out['use_pi'] = int(lcurve.use_pi)
-    elif hasattr(lcurve, 'e_interval'):
+    elif hasattr(lcurve, 'e_interval') and lcurve.e_interval is not None:
         out['e_interval'] = lcurve.e_interval
+    if hasattr(lcurve, 'use_pi'):
         out['use_pi'] = int(lcurve.use_pi)
 
-    if hasattr(lcurve, 'instr'):
-        out["instr"] = lcurve.instr
+    if hasattr(lcurve, 'instr') and lcurve.instr is not None:
+        out["instr"] = lcurve.instr.lower()
     else:
         out["instr"] = 'unknown'
+    if hasattr(lcurve, 'mission') and lcurve.mission is not None:
+        out["mission"] = lcurve.mission.lower()
 
     if get_file_format(fname) == 'pickle':
         return _save_data_pickle(out, fname)
@@ -495,8 +502,10 @@ def load_lcurve(fname):
         # Compatibility with old versions of stingray
         lcurve.apply_gtis = lcurve._apply_gtis
 
-    if 'instr' in list(data.keys()):
-        lcurve.instr = data["instr"]
+    if 'instr' in list(data.keys()) and data['instr'] is not None:
+        lcurve.instr = data["instr"].lower()
+    if 'mission' in list(data.keys()) and data['mission'] is not None:
+        lcurve.instr = data["mission"].lower()
     if 'expo' in list(data.keys()):
         lcurve.expo = data["expo"]
     if 'e_intervals' in list(data.keys()):
@@ -804,7 +813,7 @@ def _save_data_nc(struct, fname, kind="data"):
         var = struct[k]
 
         probe = var
-        if isinstance(var, Iterable):
+        if isinstance(var, Iterable) and len(var) >= 1:
             probe = var[0]
 
         if is_string(var):
@@ -930,20 +939,22 @@ def save_as_ascii(cols, filename="out.txt", colnames=None,
     """Save arrays as TXT file with respective errors."""
     import numpy as np
 
+    shape = np.shape(cols)
+    ndim = len(shape)
+    print(shape, ndim)
+
+    if ndim == 1:
+        cols = [cols]
+    elif ndim >= 3 or ndim == 0:
+        log.error("Only one- or two-dim arrays accepted")
+        return -1
+    lcol = len(cols[0])
+
     log.debug('%s %s' % (repr(cols), repr(np.shape(cols))))
     if append:
         txtfile = open(filename, "a")
     else:
         txtfile = open(filename, "w")
-    shape = np.shape(cols)
-    ndim = len(shape)
-
-    if ndim == 1:
-        cols = [cols]
-    elif ndim > 3 or ndim == 0:
-        log.error("Only one- or two-dim arrays accepted")
-        return -1
-    lcol = len(cols[0])
 
     if colnames is not None:
         print("#", file=txtfile, end=' ')
@@ -1231,11 +1242,11 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         timezero = np.longdouble(0.)
 
     try:
-        instr = header['INSTRUME']
+        instr = header['INSTRUME'].lower()
     except Exception:
         instr = 'unknown'
     try:
-        mission = header['TELESCOP']
+        mission = header['TELESCOP'].strip().lower()
     except Exception:
         mission = 'unknown'
 
@@ -1278,6 +1289,8 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         additional_columns = ['PI']
     if 'PI' not in additional_columns:
         additional_columns.append('PI')
+    if 'PHA' not in additional_columns and mission.lower() in ['swift', 'xmm']:
+        additional_columns.append('PHA')
 
     additional_data = _get_additional_data(lctable, additional_columns)
 
@@ -1290,13 +1303,21 @@ def load_events_and_gtis(fits_file, additional_columns=None,
         detector_id = detector_id[order]
 
     additional_data = _order_list_of_arrays(additional_data, order)
-    pi = additional_data['PI'][order]
+
+    cal_pi = None
+    pi = additional_data['PI']
+
+    if mission.lower() in ['xmm', 'swift']:
+        pi = additional_data['PHA']
+        cal_pi = additional_data['PI']
+        additional_data.pop('PHA')
+
     additional_data.pop('PI')
 
     returns = _empty()
 
     returns.ev_list = EventList(ev_list, gti=gti_list, pi=pi)
-
+    returns.ev_list.cal_pi = cal_pi
     returns.ev_list.instr = instr
     returns.ev_list.mission = mission
     returns.ev_list.mjdref = mjdref
