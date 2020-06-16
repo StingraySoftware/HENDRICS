@@ -323,13 +323,14 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
 
         if not hasattr(ef, 'M') or ef.M is None:
             ef.M = 1
-
+        label = "Stat"
         if ef.kind == "Z2n":
             vmin = ef.N - 1
             vmax = z2_n_detection_level(epsilon=0.001, n=int(ef.N),
                                         ntrial=max(ef.stat.shape),
                                         n_summed_spectra=int(ef.M))
             nbin = ef.N * 8
+            label = "$" + f"Z^2_{ef.N}" + "$"
         else:
             vmin = ef.nbin
             vmax = fold_detection_level(nbin=int(ef.nbin), epsilon=0.001,
@@ -490,8 +491,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
                 axfdot.plot(ef.stat[:, maximum_idx],
                             np.asarray(ef.fdots)[:, maximum_idx],
                             lw=1, color='k')
-            axf.set_ylabel(r"Stat")
-            axfdot.set_xlabel(r"Stat")
+            axf.set_ylabel(label)
+            axfdot.set_xlabel(label)
 
             # plt.colorbar()
             axffdot.set_xlabel('Frequency (Hz)')
