@@ -401,6 +401,7 @@ def lcurve_from_events(f, safe_interval=0,
                                     gti=gtis)
 
     lc.instr = instr
+    lc.e_interval = e_interval
 
     lc = filter_lc_gtis(lc, safe_interval=safe_interval,
                         delete=False,
