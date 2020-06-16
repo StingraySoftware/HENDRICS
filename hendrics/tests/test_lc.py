@@ -267,7 +267,7 @@ class TestFullRun(object):
             self.datadir, 'monol_test_joinlc' + HEN_FILE_EXTENSION)
         # because join_lightcurves separates by instrument
         new_actual_filename = os.path.join(
-            self.datadir, 'FPMAmonol_test_joinlc' + HEN_FILE_EXTENSION)
+            self.datadir, 'fpmamonol_test_joinlc' + HEN_FILE_EXTENSION)
         lcA_pattern = 'monol_testA_nustar_fpma_gti[0-9][0-9][0-9]_lc*'
         lcB_pattern = 'monol_testB_nustar_fpmb_gti[0-9][0-9][0-9]_lc*'
         hen.lcurve.join_lightcurves(

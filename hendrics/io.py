@@ -380,7 +380,7 @@ def save_events(eventlist, fname):
     out['__sr__class__type__'] = str(type(eventlist))
 
     if hasattr(eventlist, 'instr') and eventlist.instr is not None:
-        out["instr"] = eventlist.instr
+        out["instr"] = eventlist.instr.lower()
     else:
         out["instr"] = 'unknown'
     if hasattr(eventlist, 'energy') and eventlist.energy is not None:
@@ -388,7 +388,7 @@ def save_events(eventlist, fname):
     if hasattr(eventlist, 'header') and eventlist.header is not None:
         out["header"] = eventlist.header
     if hasattr(eventlist, 'mission') and eventlist.mission is not None:
-        out["mission"] = eventlist.mission
+        out["mission"] = eventlist.mission.lower()
     if hasattr(eventlist, 'cal_pi') and eventlist.cal_pi is not None:
         out["cal_pi"] = eventlist.cal_pi
 
@@ -414,7 +414,7 @@ def load_events(fname):
     if 'mjdref' in list(out.keys()):
         eventlist.mjdref = out['mjdref']
     if 'instr' in list(out.keys()):
-        eventlist.instr = out["instr"]
+        eventlist.instr = out["instr"].lower()
     if 'energy' in list(out.keys()):
         eventlist.energy = force_iterable(out["energy"])
     if 'cal_pi' in list(out.keys()):
@@ -422,7 +422,7 @@ def load_events(fname):
     if 'header' in list(out.keys()):
         eventlist.header = out["header"]
     if 'mission' in list(out.keys()):
-        eventlist.mission = out["mission"]
+        eventlist.mission = out["mission"].lower()
     else:
         eventlist.mission = ""
     return eventlist
@@ -465,10 +465,12 @@ def save_lcurve(lcurve, fname, lctype='Lightcurve'):
         out['e_interval'] = lcurve.e_interval
         out['use_pi'] = int(lcurve.use_pi)
 
-    if hasattr(lcurve, 'instr'):
-        out["instr"] = lcurve.instr
+    if hasattr(lcurve, 'instr') and lcurve.instr is not None:
+        out["instr"] = lcurve.instr.lower()
     else:
         out["instr"] = 'unknown'
+    if hasattr(lcurve, 'mission') and lcurve.mission is not None:
+        out["mission"] = lcurve.mission.lower()
 
     if get_file_format(fname) == 'pickle':
         return _save_data_pickle(out, fname)
@@ -500,8 +502,10 @@ def load_lcurve(fname):
         # Compatibility with old versions of stingray
         lcurve.apply_gtis = lcurve._apply_gtis
 
-    if 'instr' in list(data.keys()):
-        lcurve.instr = data["instr"]
+    if 'instr' in list(data.keys()) and data['instr'] is not None:
+        lcurve.instr = data["instr"].lower()
+    if 'mission' in list(data.keys()) and data['mission'] is not None:
+        lcurve.instr = data["mission"].lower()
     if 'expo' in list(data.keys()):
         lcurve.expo = data["expo"]
     if 'e_intervals' in list(data.keys()):

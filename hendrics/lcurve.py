@@ -41,7 +41,7 @@ def join_lightcurve_objs(lclist):
     Examples
     --------
     >>> lcA = Lightcurve(np.arange(4), np.zeros(4))
-    >>> lcA.instr='bu'
+    >>> lcA.instr='BU'  # Test also case sensitivity
     >>> lcB = Lightcurve(np.arange(4) + 4, [1, 3, 4, 5])
     >>> lcB.instr='bu'
     >>> lcC = join_lightcurve_objs((lcA, lcB))
@@ -56,7 +56,7 @@ def join_lightcurve_objs(lclist):
     lcdts = list(set(lcdts))
     assert len(lcdts) == 1, 'Light curves must have same dt for joining'
 
-    instrs = [lcdata.instr for lcdata in lclist if hasattr(lcdata, 'instr')]
+    instrs = [lcdata.instr.lower() for lcdata in lclist if (hasattr(lcdata, 'instr') and lcdata.instr is not None)]
 
     # Find unique elements. A lightcurve will be produced for each instrument
     instrs = list(set(instrs))
@@ -65,11 +65,11 @@ def join_lightcurve_objs(lclist):
 
     outlcs = {}
     for instr in instrs:
-        outlcs[instr] = None
+        outlcs[instr.lower()] = None
     # -------------------------------------------------------
 
     for lcdata in lclist:
-        instr = assign_value_if_none(lcdata.instr, 'unknown')
+        instr = assign_value_if_none(lcdata.instr, 'unknown').lower()
         if outlcs[instr] is None:
             outlcs[instr] = lcdata
         else:

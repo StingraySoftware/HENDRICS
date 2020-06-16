@@ -46,7 +46,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
 
     events = data.ev_list
     mission = events.mission
-    instr = events.instr
+    instr = events.instr.lower()
     gtis = events.gti
     detector_id = data.detector_id
 
@@ -116,7 +116,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
                                         pi=events.pi[all_good],
                                         gti=good_gtis,
                                         mjdref=events.mjdref)
-                events_filt.instr = events.instr
+                events_filt.instr = events.instr.lower()
                 events_filt.header = events.header
                 events_filt.mission = events.mission
                 if hasattr(events, 'cal_pi') and events.cal_pi is not None:
@@ -127,7 +127,7 @@ def treat_event_file(filename, noclobber=False, gti_split=False,
             events_filt = EventList(events.time[good_det],
                                     pi=events.pi[good_det],
                                     gti=events.gti, mjdref=events.mjdref)
-            events_filt.instr = events.instr
+            events_filt.instr = events.instr.lower()
             events_filt.header = events.header
             events_filt.mission = events.mission
             if hasattr(events, 'cal_pi') and events.cal_pi is not None:
@@ -236,8 +236,8 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
     events = events1.join(events2)
     if hasattr(events2, 'header'):
         events.header = events1.header
-    if events1.instr != events2.instr:
-        events.instr = ",".join([e.instr for e in [events1, events2]])
+    if events1.instr.lower() != events2.instr.lower():
+        events.instr = ",".join([e.instr.lower() for e in [events1, events2]])
 
     save_events(events, new_event_file)
 
