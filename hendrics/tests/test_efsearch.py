@@ -23,14 +23,6 @@ try:
 except ImportError:
     HAS_PD = False
 
-try:
-    from stingray.pulse.accelsearch import accelsearch
-    HAS_ACCEL = True
-except ImportError:
-    print("This version of stingray has no accelerated search. Please "
-          "update")
-    HAS_ACCEL = False
-
 from hendrics.fold import HAS_PINT
 from hendrics.efsearch import HAS_IMAGEIO
 
@@ -412,13 +404,6 @@ class TestEFsearch():
                                '--deorbit-par', "nonexistent.par"])
         assert "Parameter file" in str(excinfo.value)
 
-    @pytest.mark.skipif('HAS_ACCEL')
-    def test_accelsearch_missing_raises(self):
-        evfile = self.dum
-        with pytest.raises(ImportError) as excinfo:
-            ip = main_accelsearch([evfile])
-
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile, '--fmin', '1', '--fmax', '10',
@@ -426,7 +411,6 @@ class TestEFsearch():
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_nodetections(self):
         evfile = self.dum_scramble
         outfile = main_accelsearch([evfile, '--fmin', '1', '--fmax', '1.1',
@@ -434,7 +418,6 @@ class TestEFsearch():
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_energy_and_freq_filt(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile,
@@ -444,14 +427,12 @@ class TestEFsearch():
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_pad(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile, '--pad-to-double', '--zmax', '1'])
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_interbin(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile, '--interbin', '--zmax', '1'])

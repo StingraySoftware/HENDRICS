@@ -1248,11 +1248,8 @@ def main_z2vspf(args=None):
 
 
 def main_accelsearch(args=None):
-    try:
-        from stingray.pulse.accelsearch import accelsearch
-    except ImportError:
-        raise ImportError("This version of stingray has no accelerated search."
-                          " Please update")
+    from stingray.pulse.accelsearch import accelsearch
+
     from .base import _add_default_args, check_negative_numbers_in_args
     log.warning("The accelsearch functionality is experimental. Use with care,"
                 " and feel free to report any issues.")
