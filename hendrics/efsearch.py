@@ -1010,13 +1010,14 @@ def _common_main(args, func):
         kwargs = {}
         baseline = args.nbin
         kind = 'EF'
+        kind_label = kind
         n = 1
         if func == z_n_search:
             n = args.N
             kwargs = {'nharm': args.N}
             baseline = args.N
             kind = 'Z2n'
-
+            kind_label = f'Z2{n}'
         ftype, events = get_file_type(fname)
 
         if ftype == 'events':
@@ -1135,7 +1136,7 @@ def _common_main(args, func):
 
         efperiodogram.best_fits = best_models
 
-        out_fname = hen_root(fname) + '_{}'.format(kind)
+        out_fname = hen_root(fname) + '_{}'.format(kind_label)
         if args.emin is not None or args.emax is not None:
             emin = assign_value_if_none(args.emin, '**')
             emax = assign_value_if_none(args.emax, '**')

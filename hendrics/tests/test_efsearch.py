@@ -188,7 +188,7 @@ class TestEFsearch():
                        '--fit-candidates', '--fit-frequency',
                        str(self.pulse_frequency),
                        '--dynstep', '5'])
-        outfile = 'events_Z2n_3-79keV_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_3-79keV_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
@@ -205,7 +205,7 @@ class TestEFsearch():
                       '--fit-candidates', '--fit-frequency',
                       str(self.pulse_frequency),
                       '--dynstep', '5'])
-        outfile = 'lcurve_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        outfile = 'lcurve_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
@@ -221,7 +221,7 @@ class TestEFsearch():
                       '--fdotmin', ' -0.1', '--fdotmax', '0.1',
                       '--fit-candidates', '--fit-frequency',
                       str(self.pulse_frequency)])
-        outfile = 'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
         efperiod = load_folding(outfile)
@@ -256,7 +256,7 @@ class TestEFsearch():
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fast'])
-        outfile = 'events_Z2n_9.85-9.95Hz_fast' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_9.85-9.95Hz_fast' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
         efperiod = load_folding(outfile)
@@ -322,7 +322,7 @@ class TestEFsearch():
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.89', '-F', '9.92', '-n', '64',
                       '--ffa', '--find-candidates'])
-        outfile = 'events_Z2n_9.89-9.92Hz_ffa' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_9.89-9.92Hz_ffa' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla_ffa.qdp')
         efperiod = load_folding(outfile)
@@ -372,7 +372,7 @@ class TestEFsearch():
         ip = main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                            '--deorbit-par', self.par])
 
-        outfile = 'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
 
