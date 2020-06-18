@@ -23,7 +23,7 @@ from .base import deorbit_events, njit, prange
 from .base import histogram2d, histogram, memmapped_arange
 from .base import z2_n_detection_level
 from .fold import filter_energy
-from .ffa import _z_n_fast_cached, ffa_search
+from .ffa import _z_n_fast_cached, ffa_search, h_test
 from .fake import scramble
 try:
     import matplotlib.pyplot as plt

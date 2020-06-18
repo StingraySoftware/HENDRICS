@@ -138,6 +138,27 @@ def z_n_fast_cached(norm, n=2):
     return _z_n_fast_cached(norm, cached_sin, cached_cos, n=2)
 
 
+@njit
+def _z_n_fast_cached_all(norm, cached_sin, cached_cos, ks):
+    '''Numba-compiled core of z_n_fast_cached_all
+    '''
+
+    total_norm = np.sum(norm)
+    all_zs = np.zeros(ks.size)
+
+    N = norm.size
+
+    total_sum = 0
+    for k in ks:
+        local_z = np.sum(cached_cos[:N * k:k] * norm) ** 2 + \
+            np.sum(cached_sin[:N * k:k] * norm) ** 2
+        all_zs[k - 1] = local_z + total_sum
+        total_sum += local_z
+
+    result = 2 / total_norm * all_zs
+    return result
+
+
 def z_n_fast_cached_all(norm, nmax=20):
     '''Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
 
@@ -161,44 +182,42 @@ def z_n_fast_cached_all(norm, nmax=20):
     --------
     >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
     >>> norm = np.sin(phase) + 1
-    >>> allzs = z_n_fast_cached_all(norm, nmax=4)
-    >>> np.isclose(allzs['2'], 50)
+    >>> allks, allzs = z_n_fast_cached_all(norm, nmax=4)
+    >>> allks[1]
+    2
+    >>> np.isclose(allzs[1], 50)
     True
-    >>> np.isclose(allzs['4'], 50)
+    >>> np.isclose(allzs[3], 50)
     True
     '''
 
-    total_norm = np.sum(norm)
-    all_zs = np.zeros(nmax)
     cached_sin = cached_sin_harmonics(norm.size, nmax)
     cached_cos = cached_cos_harmonics(norm.size, nmax)
-
-    N = norm.size
-
     ks = np.arange(1, nmax + 1, dtype=int)
 
-    for k in ks:
-        all_zs[k - 1] = np.sum(cached_cos[:N * k:k] * norm) ** 2 + \
-            np.sum(cached_sin[:N * k:k] * norm) ** 2
+    all_zs = _z_n_fast_cached_all(norm, cached_sin, cached_cos, ks)
 
-    result = 2 / total_norm * np.cumsum(all_zs)
-
-    return dict([(str(key), res) for key, res in zip(ks, result)])
+    return ks, all_zs
 
 
 def h_test(norm, nmax=20):
     '''H statistics, a` la de Jager+89, A&A, 221, 180, eq. 11.
 
+
     Examples
     --------
     >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
     >>> norm = np.sin(phase) + 1
-    >>> h = h_test(norm, nmax=4)
+    >>> h, m = h_test(norm, nmax=4)
     >>> np.isclose(h, 50)
     True
+    >>> m
+    1
     '''
-    results = z_n_fast_cached_all(norm, nmax=nmax)
-    return np.max([z - 4 * int(m) + 4 for m, z in results.items()])
+    ks, zs = z_n_fast_cached_all(norm, nmax=nmax)
+    hs = zs - 4 * ks + 4
+    idx = np.argmax(hs)
+    return hs[idx], ks[idx]
 
 
 @njit()
