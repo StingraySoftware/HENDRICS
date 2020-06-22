@@ -23,7 +23,7 @@ from .base import deorbit_events, njit, prange
 from .base import histogram2d, histogram, memmapped_arange
 from .base import z2_n_detection_level
 from .fold import filter_energy
-from .ffa import _z_n_fast_cached, ffa_search
+from .ffa import _z_n_fast_cached, ffa_search, h_test
 from .fake import scramble
 try:
     import matplotlib.pyplot as plt
@@ -41,6 +41,30 @@ except ImportError:
 
 D_OMEGA_FACTOR = 2 * np.sqrt(3)
 TWOPI = 2 * np.pi
+
+
+__all__ = [
+    'check_phase_error_after_casting_to_double',
+    'decide_binary_parameters',
+    'folding_orbital_search',
+    'fit',
+    'calculate_shifts',
+    'mod',
+    'shift_and_sum',
+    'z_n_fast',
+    'transient_search',
+    'plot_transient_search',
+    'search_with_qffa_step',
+    'search_with_qffa',
+    'search_with_ffa',
+    'folding_search',
+    'dyn_folding_search',
+    'main_efsearch',
+    'main_zsearch',
+    'z2_vs_pf',
+    'main_z2vspf',
+    'main_accelsearch',
+    'h_test']
 
 
 def _save_df_to_csv(df, csv_file, reset=False):
