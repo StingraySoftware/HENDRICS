@@ -1159,6 +1159,7 @@ def _common_main(args, func):
                 best_models.append(best_fun)
 
         efperiodogram.best_fits = best_models
+        efperiodogram.oversample = oversample
 
         out_fname = hen_root(fname) + '_{}'.format(kind_label)
         if args.emin is not None or args.emax is not None:
@@ -1176,9 +1177,6 @@ def _common_main(args, func):
         if args.mean_fdot is not None \
                 and not np.isclose(args.mean_fdot * 1e10, 0):
             out_fname += f'_fd{args.mean_fdot * 1e10:g}e-10s-2'
-        if args.mean_fddot is not None \
-                and not np.isclose(args.mean_fddot * 1e13, 0):
-            out_fname += f'_fdd{args.mean_fddot * 1e13:g}e-13s-3'
 
         save_folding(efperiodogram,
                      out_fname + HEN_FILE_EXTENSION)
