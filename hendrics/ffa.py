@@ -138,7 +138,7 @@ def z_n_fast_cached(norm, n=2):
     return _z_n_fast_cached(norm, cached_sin, cached_cos, n=2)
 
 
-@njit
+@njit()
 def _z_n_fast_cached_all(norm, cached_sin, cached_cos, ks):
     '''Numba-compiled core of z_n_fast_cached_all
     '''
