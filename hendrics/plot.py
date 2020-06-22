@@ -327,7 +327,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
         ntrial = ef.stat.size
         if hasattr(ef, 'oversample') and ef.oversample is not None:
             ntrial /= ef.oversample
-
+            ntrial = np.int(ntrial)
         if ef.kind == "Z2n":
             vmin = ef.N - 1
             vmax = z2_n_detection_level(epsilon=0.001, n=int(ef.N),
