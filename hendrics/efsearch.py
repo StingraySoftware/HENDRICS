@@ -23,7 +23,7 @@ from .base import deorbit_events, njit, prange
 from .base import histogram2d, histogram, memmapped_arange
 from .base import z2_n_detection_level
 from .fold import filter_energy
-from .ffa import _z_n_fast_cached, ffa_search
+from .ffa import _z_n_fast_cached, ffa_search, h_test
 from .fake import scramble
 try:
     import matplotlib.pyplot as plt
@@ -41,6 +41,30 @@ except ImportError:
 
 D_OMEGA_FACTOR = 2 * np.sqrt(3)
 TWOPI = 2 * np.pi
+
+
+__all__ = [
+    'check_phase_error_after_casting_to_double',
+    'decide_binary_parameters',
+    'folding_orbital_search',
+    'fit',
+    'calculate_shifts',
+    'mod',
+    'shift_and_sum',
+    'z_n_fast',
+    'transient_search',
+    'plot_transient_search',
+    'search_with_qffa_step',
+    'search_with_qffa',
+    'search_with_ffa',
+    'folding_search',
+    'dyn_folding_search',
+    'main_efsearch',
+    'main_zsearch',
+    'z2_vs_pf',
+    'main_z2vspf',
+    'main_accelsearch',
+    'h_test']
 
 
 def _save_df_to_csv(df, csv_file, reset=False):
@@ -1010,13 +1034,14 @@ def _common_main(args, func):
         kwargs = {}
         baseline = args.nbin
         kind = 'EF'
+        kind_label = kind
         n = 1
         if func == z_n_search:
             n = args.N
             kwargs = {'nharm': args.N}
             baseline = args.N
             kind = 'Z2n'
-
+            kind_label = f'Z2{n}'
         ftype, events = get_file_type(fname)
 
         if ftype == 'events':
@@ -1135,7 +1160,7 @@ def _common_main(args, func):
 
         efperiodogram.best_fits = best_models
 
-        out_fname = hen_root(fname) + '_{}'.format(kind)
+        out_fname = hen_root(fname) + '_{}'.format(kind_label)
         if args.emin is not None or args.emax is not None:
             emin = assign_value_if_none(args.emin, '**')
             emax = assign_value_if_none(args.emax, '**')
@@ -1248,11 +1273,8 @@ def main_z2vspf(args=None):
 
 
 def main_accelsearch(args=None):
-    try:
-        from stingray.pulse.accelsearch import accelsearch
-    except ImportError:
-        raise ImportError("This version of stingray has no accelerated search."
-                          " Please update")
+    from stingray.pulse.accelsearch import accelsearch
+
     from .base import _add_default_args, check_negative_numbers_in_args
     log.warning("The accelsearch functionality is experimental. Use with care,"
                 " and feel free to report any issues.")
@@ -1385,10 +1407,11 @@ def main_accelsearch(args=None):
         results['mjdref'] = np.double(events.mjdref)
         results['pepoch'] = events.mjdref + results['time'] / 86400.0
 
-        results.sort('power', reverse=True)
+        results.sort('power')
 
         print("Best candidates:")
-        results['time', 'frequency', 'fdot', 'power', 'pepoch'][:10].pprint()
+        results['time', 'frequency', 'fdot',
+                'power', 'pepoch'][-10:][::-1].pprint()
         print(f"See all {len(results)} candidates in {outfile}")
     else:
         print("No candidates found")

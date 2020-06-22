@@ -543,11 +543,11 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
 
     profile, _ = np.histogram(phases, bins=binx)
     if smooth_window is None:
-        smooth_window = np.min([len(profile), np.max([len(profile) // 10, 5])])
+        smooth_window = np.min([len(profile), 10])
         smooth_window = _check_odd(smooth_window)
 
     smoothed_profile = savgol_filter(profile, window_length=smooth_window,
-                                     polyorder=2, mode='wrap')
+                                     polyorder=3, mode='wrap')
 
     profile = np.concatenate((profile, profile))
     smooth = np.concatenate((smoothed_profile, smoothed_profile))
@@ -576,9 +576,9 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
             hist2d /= factor
             file_label = '_to1'
 
-    plt.figure()
+    plt.figure(figsize=(8, 8))
     if plot_energy:
-        gs = GridSpec(2, 2, height_ratios=(1, 3))
+        gs = GridSpec(2, 2, height_ratios=(1.5, 3))
         ax0 = plt.subplot(gs[0, 0])
         ax1 = plt.subplot(gs[1, 0], sharex=ax0)
         ax2 = plt.subplot(gs[1, 1], sharex=ax0)
@@ -618,9 +618,11 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
     ax0.axhline(mean, ls='--')
     ax0.legend()
     ax0.set_ylim([0, None])
+    ax0.set_ylabel('Counts')
+    ax0.set_xlabel('Phase')
 
     if plot_energy:
-        ax1.pcolormesh(X, Y, hist2d.T)
+        ax1.pcolormesh(X, Y, hist2d.T, cmap='Greys')
         ax1.semilogy()
 
         ax1.set_xlabel('Phase')
@@ -632,19 +634,25 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
         meannrgs = (biny[:-1] + biny[1:]) / 2
         for i, prof in enumerate(hist2d_save.T):
             smooth = savgol_filter(prof, window_length=smooth_window,
-                                   polyorder=2, mode='wrap')
+                                   polyorder=3, mode='wrap')
+            mean = np.mean(smooth)
+            shift = 3 * np.sqrt(mean)
             max = np.max(smooth)
             min = np.min(smooth)
             pf = 100 * (max - min) / max
-            ax2.plot(meanbins, prof, drawstyle='steps-mid',
+            ax2.plot(meanbins, prof - mean + i * shift, drawstyle='steps-mid',
+                     label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],
+                                                     biny[i + 1]),
+                     alpha=0.5, color='k')
+            ax2.plot(meanbins, smooth - mean + i * shift,
                      label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],
                                                      biny[i + 1]))
-            std = np.max(prof - smooth)
-            ax2.set_xlabel('Phase')
-            ax2.set_ylabel('Counts')
+            std = np.std(prof - smooth)
 
             pfs.append(pf)
-            errs.append(std / max)
+            errs.append(100 * std / max)
+        ax2.set_xlabel('Phase')
+        ax2.set_ylabel('Counts (shifted arbitrarily)')
 
         if len(meannrgs) < 6:
             ax2.legend()
@@ -653,9 +661,12 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
         ax3.errorbar(meannrgs, pfs, fmt='o', yerr=errs,
                      xerr=(biny[1:] - biny[:-1]) / 2)
         ax3.semilogx()
+        # labels = [float(item.get_text()) for item in ax3.get_xticklabels() if item.get_text()!='']
+        # ax3.set_xticklabels([f"{label:g}" for label in labels])
         ax3.set_xlabel('Energy')
         ax3.set_ylabel('Pulsed fraction')
 
+    plt.tight_layout()
     plt.savefig('Energyprofile' + file_label + '.png')
     if not test:  # pragma:no cover
         plt.show()

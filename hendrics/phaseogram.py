@@ -12,7 +12,6 @@ from astropy.logger import AstropyUserWarning
 from astropy.stats import poisson_conf_interval
 from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
-from stingray.pulse.pulsar import z_n
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 from matplotlib.gridspec import GridSpec
@@ -22,17 +21,19 @@ from .fold import filter_energy
 from .io import load_events, load_folding
 from .fold import get_TOAs_from_events
 from .base import hen_root, deorbit_events
+from .efsearch import h_test
 
 
 DEFAULT_COLORMAP = 'viridis'
 
 
-def get_z2_label(phas, prof):
+def get_H_label(phas, prof):
     good = phas < 1
-    z2 = z_n(phas[good], n=2, norm=prof[good])
+    nmax = max(len(prof[good]) // 3, 1)
+    prof_h, prof_m = h_test(prof[good], nmax=nmax)
     # z2_detlev = z2_n_detection_level(n=2)
-    z2_label = r'$Z_2^2 = {:.1f}$'.format(z2)
-    return z2_label
+    h_label = f'H test = {prof_h:.1f} (M={prof_m})'
+    return h_label
 
 
 def sec_to_mjd(time, mjdref):
@@ -276,7 +277,7 @@ class BasePhaseogram(object):
             poisson_conf_interval(mean,
                                   interval='frequentist-confidence', sigma=2)
         self.profax.fill_between(phas, low, high, alpha=0.5)
-        z2_label = get_z2_label(phas, prof)
+        z2_label = get_H_label(phas, prof)
         self.proftext = self.profax.text(0.1, 0.8, z2_label,
                                          transform=self.profax.transAxes)
         if not test and not plot_only:
@@ -308,7 +309,7 @@ class BasePhaseogram(object):
         prof = np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1)
         ph = np.linspace(0, 2, len(prof) + 1)[:-1]
         self.profile.set_ydata(prof)
-        self.proftext.set_text(get_z2_label(ph, prof))
+        self.proftext.set_text(get_H_label(ph, prof))
 
     def zoom_in(self, event):
         for s in self.sliders:

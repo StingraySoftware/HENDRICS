@@ -23,14 +23,6 @@ try:
 except ImportError:
     HAS_PD = False
 
-try:
-    from stingray.pulse.accelsearch import accelsearch
-    HAS_ACCEL = True
-except ImportError:
-    print("This version of stingray has no accelerated search. Please "
-          "update")
-    HAS_ACCEL = False
-
 from hendrics.fold import HAS_PINT
 from hendrics.efsearch import HAS_IMAGEIO
 
@@ -196,7 +188,7 @@ class TestEFsearch():
                        '--fit-candidates', '--fit-frequency',
                        str(self.pulse_frequency),
                        '--dynstep', '5'])
-        outfile = 'events_Z2n_3-79keV_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_3-79keV_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
@@ -213,7 +205,7 @@ class TestEFsearch():
                       '--fit-candidates', '--fit-frequency',
                       str(self.pulse_frequency),
                       '--dynstep', '5'])
-        outfile = 'lcurve_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        outfile = 'lcurve_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
@@ -229,7 +221,7 @@ class TestEFsearch():
                       '--fdotmin', ' -0.1', '--fdotmax', '0.1',
                       '--fit-candidates', '--fit-frequency',
                       str(self.pulse_frequency)])
-        outfile = 'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
         efperiod = load_folding(outfile)
@@ -264,7 +256,7 @@ class TestEFsearch():
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fast'])
-        outfile = 'events_Z2n_9.85-9.95Hz_fast' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_9.85-9.95Hz_fast' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla.qdp')
         efperiod = load_folding(outfile)
@@ -330,7 +322,7 @@ class TestEFsearch():
         evfile = self.dum
         main_zsearch([evfile, '-f', '9.89', '-F', '9.92', '-n', '64',
                       '--ffa', '--find-candidates'])
-        outfile = 'events_Z2n_9.89-9.92Hz_ffa' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_9.89-9.92Hz_ffa' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file='bla_ffa.qdp')
         efperiod = load_folding(outfile)
@@ -380,7 +372,7 @@ class TestEFsearch():
         ip = main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                            '--deorbit-par', self.par])
 
-        outfile = 'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
 
@@ -412,13 +404,6 @@ class TestEFsearch():
                                '--deorbit-par', "nonexistent.par"])
         assert "Parameter file" in str(excinfo.value)
 
-    @pytest.mark.skipif('HAS_ACCEL')
-    def test_accelsearch_missing_raises(self):
-        evfile = self.dum
-        with pytest.raises(ImportError) as excinfo:
-            ip = main_accelsearch([evfile])
-
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile, '--fmin', '1', '--fmax', '10',
@@ -426,7 +411,6 @@ class TestEFsearch():
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_nodetections(self):
         evfile = self.dum_scramble
         outfile = main_accelsearch([evfile, '--fmin', '1', '--fmax', '1.1',
@@ -434,7 +418,6 @@ class TestEFsearch():
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_energy_and_freq_filt(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile,
@@ -444,14 +427,12 @@ class TestEFsearch():
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_pad(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile, '--pad-to-double', '--zmax', '1'])
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
-    @pytest.mark.skipif('not HAS_ACCEL')
     def test_accelsearch_interbin(self):
         evfile = self.dum
         outfile = main_accelsearch([evfile, '--interbin', '--zmax', '1'])

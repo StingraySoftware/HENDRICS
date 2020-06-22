@@ -48,7 +48,7 @@ class TestPhaseogram():
         main_zsearch([evfile, '-f', '9.85', '-F', '9.95', '-n', '64',
                       '--fit-candidates', '--fit-frequency',
                       str(self.pulse_frequency)])
-        outfile = 'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION
+        outfile = 'events_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
@@ -60,7 +60,7 @@ class TestPhaseogram():
     def test_phaseogram_input_periodogram(self):
         evfile = self.dum
         main_phaseogram([evfile, '--periodogram',
-                         'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION,
+                         'events_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION,
                          '--test'])
 
     @pytest.mark.parametrize('norm', ["to1", "mediansub", "mediannorm",
@@ -68,7 +68,7 @@ class TestPhaseogram():
     def test_phaseogram_input_norm(self, norm):
         evfile = self.dum
         main_phaseogram([evfile, '--periodogram',
-                         'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION,
+                         'events_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION,
                          '--test',
                          '--norm', norm])
 
@@ -76,7 +76,7 @@ class TestPhaseogram():
         evfile = self.dum
         with pytest.warns(UserWarning) as record:
             main_phaseogram([evfile, '--periodogram',
-                             'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION,
+                             'events_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION,
                              '--test',
                              '--norm', 'arsdfajl'])
             assert np.any(
@@ -143,7 +143,7 @@ class TestPhaseogram():
     def test_phaseogram_input_periodogram_binary(self):
         evfile = self.dum
         main_phaseogram([evfile, '--binary', '--periodogram',
-                         'events_Z2n_9.85-9.95Hz' + HEN_FILE_EXTENSION,
+                         'events_Z22_9.85-9.95Hz' + HEN_FILE_EXTENSION,
                          '--test',
                          '--pepoch', '57000'])
 
