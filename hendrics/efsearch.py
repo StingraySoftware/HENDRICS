@@ -1407,10 +1407,11 @@ def main_accelsearch(args=None):
         results['mjdref'] = np.double(events.mjdref)
         results['pepoch'] = events.mjdref + results['time'] / 86400.0
 
-        results.sort('power', reverse=True)
+        results.sort('power')
 
         print("Best candidates:")
-        results['time', 'frequency', 'fdot', 'power', 'pepoch'][:10].pprint()
+        results['time', 'frequency', 'fdot',
+                'power', 'pepoch'][-10:][::-1].pprint()
         print(f"See all {len(results)} candidates in {outfile}")
     else:
         print("No candidates found")
