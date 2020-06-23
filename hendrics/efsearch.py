@@ -1280,10 +1280,8 @@ def main_accelsearch(args=None):
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("fname", help="Input file name")
-    parser.add_argument('--ntrial', default=100, type=int,
-                        help="Number of trial values for the pulsed fraction")
     parser.add_argument('--outfile', default=None, type=str,
-                        help="Output table file name")
+                        help="Output file name")
     parser.add_argument("--emin", default=None, type=float,
                         help="Minimum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--emax", default=None, type=float,
