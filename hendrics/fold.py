@@ -622,7 +622,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
     ax0.set_xlabel('Phase')
 
     if plot_energy:
-        ax1.pcolormesh(X, Y, hist2d.T, cmap='Greys')
+        ax1.pcolormesh(X, Y, hist2d.T, cmap='Greys_r')
         ax1.semilogy()
 
         ax1.set_xlabel('Phase')
@@ -641,8 +641,6 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
             min = np.min(smooth)
             pf = 100 * (max - min) / max
             ax2.plot(meanbins, prof - mean + i * shift, drawstyle='steps-mid',
-                     label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],
-                                                     biny[i + 1]),
                      alpha=0.5, color='k')
             ax2.plot(meanbins, smooth - mean + i * shift,
                      label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],
