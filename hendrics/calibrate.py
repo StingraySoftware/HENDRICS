@@ -105,18 +105,23 @@ def rough_calibration(pis, mission):
     --------
     >>> rough_calibration(0, 'nustar')
     1.6
-    >>> rough_calibration(1200, 'xmm')
+    >>> # It's case-insensitive
+    >>> rough_calibration(1200, 'XMm')
     1.2
-    >>> rough_calibration(10, 'nicer')
+    >>> rough_calibration(10, 'asDf')
     Traceback (most recent call last):
         ...
-    ValueError: Mission not recognized
+    ValueError: Mission asdf not recognized
+    >>> rough_calibration(100, 'nicer')
+    1.0
     """
     if mission.lower() == 'nustar':
-        return pis * 0.04 + 1.6
+        return pis.astype(np.float32) * 0.04 + 1.6
     elif mission.lower() == 'xmm':
-        return pis / 1000.
-    raise ValueError("Mission not recognized")
+        return pis.astype(np.float32) / 1000.
+    elif mission.lower() == 'nicer':
+        return pis.astype(np.float32) / 100.
+    raise ValueError(f"Mission {mission.lower()} not recognized")
 
 
 def calibrate(fname, outname, rmf_file=None, rough=False):
