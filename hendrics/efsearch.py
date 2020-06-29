@@ -1198,7 +1198,7 @@ def main_zsearch(args=None):
         return _common_main(args, z_n_search)
 
 
-def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None):
+def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None, N=2):
     length = event_list.gti[-1, 1] - event_list.gti[0, 0]
     df = 1/length
 
@@ -1207,11 +1207,10 @@ def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None):
         pf = np.random.uniform(0, 1)
         new_event_list = scramble(event_list, deadtime=deadtime,
                                   smooth_kind='pulsed', pulsed_fraction=pf)
-
         frequencies, stats, _, _ = \
             search_with_qffa(new_event_list.time, 1 - df * 2, 1 + df * 2,
                              fdot=0, nbin=32, oversample=16, search_fdot=False,
-                             silent=True)
+                             silent=True, n=N)
         result_table.add_row([pf, np.max(stats)])
     if outfile is None:
         outfile = 'z2_vs_pf.csv'
@@ -1237,6 +1236,8 @@ def main_z2vspf(args=None):
                         help="Minimum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--emax", default=None, type=float,
                         help="Maximum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("-N", default=2, type=int,
+                        help="The N in Z^2_N")
 
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['loglevel', 'debug'])
@@ -1258,7 +1259,7 @@ def main_z2vspf(args=None):
 
     result_table = z2_vs_pf(events,
                             deadtime=0., ntrials=args.ntrial,
-                            outfile=outfile)
+                            outfile=outfile, N=args.N)
     if HAS_MPL:
         plt.figure("Results", figsize=(10, 6))
         plt.scatter(result_table['pf'] * 100, result_table['z2'])

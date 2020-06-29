@@ -477,16 +477,28 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
     True
     """
     new_event_list = copy.deepcopy(event_list)
+    assert np.all(np.diff(new_event_list.time) > 0)
+    mean_diff = np.median(np.diff(new_event_list.time))
+    # print(new_event_list.time, new_event_list.gti)
+    gtilen = new_event_list.gti[:, 1] - new_event_list.gti[:, 0]
+    new_event_list.gti = new_event_list.gti[gtilen > 5 * mean_diff]
+
     idxs_start, idxs_stop = gti_border_bins(
-        time=new_event_list.time, gtis=new_event_list.gti)
+        gtis=new_event_list.gti, time=new_event_list.time, dt=0.1)
 
     for i_start, i_stop, gti_boundary in zip(idxs_start, idxs_stop,
                                              new_event_list.gti):
+        locally_flat = False
         nevents = i_stop - i_start
+        if nevents < 1:
+            continue
         t_start, t_stop = gti_boundary[0], gti_boundary[1]
         length = t_stop - t_start
+        if length <= 1:
+            # in very short GTIs, always assume a flat distribution.
+            locally_flat = True
 
-        if smooth_kind == 'flat':
+        if smooth_kind == 'flat' or locally_flat:
             rate = nevents / length
             input_rate = r_in(deadtime, rate)
             new_events = np.sort(np.random.uniform(
@@ -590,7 +602,6 @@ def main_scramble(args=None):
             label += f'_pulsed_df{args.pulsed_fraction:g}'
         elif args.smooth_kind == 'smooth':
             label += f'_smooth_dt{args.dt:g}s'
-
         if args.deadtime > 0:
             label += f'_deadtime_{args.deadtime:g}'
 
