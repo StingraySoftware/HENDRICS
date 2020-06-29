@@ -1306,10 +1306,10 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     additional_data = _order_list_of_arrays(additional_data, order)
 
     cal_pi = None
-    pi = additional_data['PI']
+    pi = additional_data['PI'].astype(np.float32)
 
     if mission.lower() in ['xmm', 'swift']:
-        pi = additional_data['PHA']
+        pi = additional_data['PHA'].astype(np.float32)
         cal_pi = additional_data['PI']
         additional_data.pop('PHA')
 
