@@ -464,7 +464,8 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
     --------
     >>> nevents = 3003
     >>> times = np.sort(np.random.uniform(0, 1000, nevents))
-    >>> event_list = EventList(times, gti=[[0, 123.], [125.123, 1000]])
+    >>> event_list = EventList(
+    ...     times, gti=np.array([[0, 123.], [125.123, 1000]]))
     >>> new_event_list = scramble(event_list, 'smooth')
     >>> new_event_list.time.size == nevents
     True
