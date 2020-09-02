@@ -16,8 +16,7 @@ from numpy import histogram as histogram_np
 from astropy.logger import AstropyUserWarning
 from astropy import log
 
-from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file, \
-    _load_and_prepare_TOAs, get_model
+from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 try:
     from skimage.feature import peak_local_max
