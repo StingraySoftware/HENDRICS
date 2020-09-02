@@ -2,6 +2,7 @@
 """Calibrate event lists by looking in rmf files."""
 
 import os
+import warnings
 import numpy as np
 from astropy import log
 from .io import load_events, save_events, get_file_extension
@@ -18,7 +19,7 @@ def default_nustar_rmf():
               name will be eventually replaced with a smarter choice based
               on observing time
     """
-    log.warning(
+    warnings.warn(
         "Rmf not specified. Using default NuSTAR rmf.")
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split('/')

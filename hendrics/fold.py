@@ -1,5 +1,6 @@
 """Interactive phaseogram."""
 
+import warnings
 import copy
 import argparse
 from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
@@ -24,8 +25,8 @@ try:
     # import pint
     HAS_PINT = True
 except ImportError:
-    log.warning("PINT is not installed. "
-                "Some pulsar functionality will not be available")
+    warnings.warn("PINT is not installed. "
+                  "Some pulsar functionality will not be available")
     HAS_PINT = False
 from .base import deorbit_events
 
@@ -489,9 +490,9 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     # For some reason the doctest doesn't work if I don't do this instead
     # of using warnings.warn
     if elabel.lower() == 'pi' and (emax is not None or emin is not None):
-        log.warning(f"No energy information in event list "
-                    f"while filtering between {emin} and {emax}. "
-                    "Definition of events.energy is now based on PI.")
+        warnings.warn(f"No energy information in event list "
+                      f"while filtering between {emin} and {emax}. "
+                      f"Definition of events.energy is now based on PI.")
     if emin is None:
         emin = np.min(energy)
     if emax is None:

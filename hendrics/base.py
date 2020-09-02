@@ -16,7 +16,8 @@ from numpy import histogram as histogram_np
 from astropy.logger import AstropyUserWarning
 from astropy import log
 
-from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
+from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file, \
+    _load_and_prepare_TOAs, get_model
 
 try:
     from skimage.feature import peak_local_max
@@ -544,8 +545,10 @@ def deorbit_events(events, parameter_file=None):
 
     length = np.max(events.time) - np.min(events.time)
     if length > 200000:
-        log.warning("The observation is very long. The barycentric correction "
-                    "will be rough")
+        warnings.warn(
+            "The observation is very long. The barycentric correction "
+            "will be rough")
+
     length_d = length / 86400
     results = get_orbital_correction_from_ephemeris_file(
         pepoch_mjd - 1,

@@ -1122,8 +1122,7 @@ def _get_additional_data(lctable, additional_columns):
 
         for a in additional_columns:
             if a not in colnames:
-                log.warning("Column {} not found".format(a),
-                            AstropyUserWarning)
+                warnings.warn(f"Column {a} not found")
                 additional_data[a] = np.zeros(len(lctable))
                 continue
             additional_data[a] = np.array(lctable.field(a))
@@ -1546,9 +1545,8 @@ def find_file_in_allowed_paths(fname, other_paths=None):
         for p in other_paths:
             fullpath = os.path.join(p, bname)
             if os.path.exists(fullpath):
-                log.warning("Parfile found at different path: {}".format(
-                    fullpath
-                ), AstropyUserWarning)
+                log.info(
+                    f"Parfile found at different path: {fullpath}")
                 return fullpath
 
     return False

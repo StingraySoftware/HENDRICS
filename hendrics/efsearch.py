@@ -1100,7 +1100,7 @@ def _common_main(args, func):
 
             ref_time = (events.time[-1] + events.time[0]) / 2
         elif args.ffa:
-            log.warning(
+            warnings.warn(
                 "The Fast Folding Algorithm functionality is experimental. Use"
                 " with care, and feel free to report any issues.")
             results = \
@@ -1275,8 +1275,9 @@ def main_accelsearch(args=None):
     from stingray.pulse.accelsearch import accelsearch
 
     from .base import _add_default_args, check_negative_numbers_in_args
-    log.warning("The accelsearch functionality is experimental. Use with care,"
-                " and feel free to report any issues.")
+    warnings.warn(
+        "The accelsearch functionality is experimental. Use with care, "
+        " and feel free to report any issues.")
     description = ('Run the accelerated search on pulsar data.')
     parser = argparse.ArgumentParser(description=description)
 

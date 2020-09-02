@@ -36,9 +36,10 @@ def test_get_additional_data(capsys):
     from astropy.table import Table
     lctable = Table({'a': [1, 2, 3], 'b': [4, 5, 6]})
     assert np.allclose(_get_additional_data(lctable, ['b'])['b'], [4, 5, 6])
-    add = _get_additional_data(lctable, ['c'])
-    stdout, stderr = capsys.readouterr()
-    assert "WARNING: Column c not found" in stderr
+    with pytest.warns(UserWarning) as record:
+        add = _get_additional_data(lctable, ['c'])
+    assert np.any(["Column c not found" in r.message.args[0]
+                   for r in record])
     assert np.allclose(add['c'], 0)
 
 
@@ -48,9 +49,10 @@ def test_get_additional_data_fits(capsys):
     table = Table({'a': [1, 2, 3], 'b': [4, 5, 6]})
     lctable = fits.BinTableHDU(table).data
     assert np.allclose(_get_additional_data(lctable, ['b'])['b'], [4, 5, 6])
-    add = _get_additional_data(lctable, ['c'])
-    stdout, stderr = capsys.readouterr()
-    assert "WARNING: Column c not found" in stderr
+    with pytest.warns(UserWarning) as record:
+        add = _get_additional_data(lctable, ['c'])
+    assert np.any(["Column c not found" in r.message.args[0]
+                   for r in record])
     assert np.allclose(add['c'], 0)
 
 def test_find_files_in_allowed_paths(capsys):
@@ -60,7 +62,7 @@ def test_find_files_in_allowed_paths(capsys):
     realpath = os.path.join('.', 'bu')
     foundpath = find_file_in_allowed_paths(fakepath, ["."])
     stdout, stderr = capsys.readouterr()
-    assert "WARNING: Parfile found at different path" in stderr
+    assert "Parfile found at different path" in stdout
     assert foundpath == realpath
     assert find_file_in_allowed_paths("bu") == "bu"
     assert not find_file_in_allowed_paths(
