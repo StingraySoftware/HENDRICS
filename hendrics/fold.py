@@ -453,9 +453,10 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     >>> elabel == 'Energy'
     True
     >>> events = EventList(time=time, pi=energy)
-    >>> with redirect_stderr(sys.stdout):
+    >>> with warnings.catch_warnings(record=True) as w:
     ...     ev_out, elabel = filter_energy(events, None, 20)  # doctest: +ELLIPSIS
-    WARNING: No energy information ...
+    >>> "No energy information in event list" in str(w[-1].message)
+    True
     >>> np.all(ev_out.time == [0, 1, 3, 4])
     True
     >>> elabel == 'PI'
