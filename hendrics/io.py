@@ -1115,12 +1115,12 @@ def _get_additional_data(lctable, additional_columns):
     additional_data = {}
     if additional_columns is not None:
         for a in additional_columns:
-            try:
-                additional_data[a] = np.array(lctable.field(a))
-            except KeyError:
+            if not a in lctable.columns:
                 log.warning("Column {} not found".format(a),
                             AstropyUserWarning)
                 additional_data[a] = np.zeros(len(lctable))
+                continue
+            additional_data[a] = np.array(lctable.field(a))
 
     return additional_data
 
