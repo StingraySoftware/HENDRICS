@@ -491,11 +491,9 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
                                              new_event_list.gti):
         locally_flat = False
         nevents = i_stop - i_start
-        if nevents < 1:
-            continue
         t_start, t_stop = gti_boundary[0], gti_boundary[1]
         length = t_stop - t_start
-        if length <= 1:
+        if nevents < 1 or length <= 1:
             # in very short GTIs, always assume a flat distribution.
             locally_flat = True
 
