@@ -42,6 +42,17 @@ def test_get_additional_data(capsys):
     assert np.allclose(add['c'], 0)
 
 
+def test_get_additional_data_fits(capsys):
+    from astropy.table import Table
+    from astropy.io import fits
+    table = Table({'a': [1, 2, 3], 'b': [4, 5, 6]})
+    lctable = fits.BinTableHDU(table).data
+    assert np.allclose(_get_additional_data(lctable, ['b'])['b'], [4, 5, 6])
+    add = _get_additional_data(lctable, ['c'])
+    stdout, stderr = capsys.readouterr()
+    assert "WARNING: Column c not found" in stderr
+    assert np.allclose(add['c'], 0)
+
 def test_find_files_in_allowed_paths(capsys):
 
     with open('bu', 'w') as fobj: print("blabla", file=fobj)

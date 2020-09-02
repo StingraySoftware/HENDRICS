@@ -26,6 +26,7 @@ except ImportError:
 from astropy.modeling.core import Model
 from astropy import log
 from astropy.logger import AstropyUserWarning
+from astropy.io import fits
 from stingray.utils import assign_value_if_none
 from stingray.gti import cross_gtis
 from stingray.events import EventList
@@ -1114,8 +1115,13 @@ def _get_additional_data(lctable, additional_columns):
     """Get columns from lctable"""
     additional_data = {}
     if additional_columns is not None:
+        if isinstance(lctable, fits.fitsrec.FITS_rec):
+            colnames = lctable.columns.names
+        else:
+            colnames = lctable.colnames
+
         for a in additional_columns:
-            if a not in lctable.columns.names:
+            if a not in colnames:
                 log.warning("Column {} not found".format(a),
                             AstropyUserWarning)
                 additional_data[a] = np.zeros(len(lctable))
