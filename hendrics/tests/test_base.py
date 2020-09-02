@@ -34,3 +34,16 @@ def test_deorbit_bad_mjdref():
     with pytest.raises(ValueError) as excinfo:
         _ = deorbit_events(ev, par)
     assert "MJDREF is very low (<01-01-1950), " in str(excinfo.value)
+
+
+@remote_data
+@pytest.mark.skipif('not HAS_PINT')
+def test_deorbit_run():
+    from hendrics.base import deorbit_events
+    ev = EventList(np.arange(0, 210000, 1000), gti=[[0., 210000]])
+    ev.mjdref = 56000.0
+    par = _dummy_par('bububu.par')
+    with pytest.warns(UserWarning) as record:
+        _ = deorbit_events(ev, par)
+    assert np.any(["The observation is very long." in r.message.args[0]
+                   for r in record])
