@@ -462,38 +462,34 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
 
     Examples
     --------
-    >>> nevents = 3003
-    >>> times = np.sort(np.random.uniform(0, 1000, nevents))
+    >>> times = np.array([0.5, 134, 246, 344, 867])
     >>> event_list = EventList(
-    ...     times, gti=np.array([[0, 123.], [125.123, 1000]]))
+    ...     times, gti=np.array([[0, 0.9], [111, 123.2], [125.123, 1000]]))
     >>> new_event_list = scramble(event_list, 'smooth')
-    >>> new_event_list.time.size == nevents
+    >>> new_event_list.time.size == times.size
     True
     >>> np.all(new_event_list.gti == event_list.gti)
     True
     >>> new_event_list = scramble(event_list, 'flat')
-    >>> new_event_list.time.size == nevents
+    >>> new_event_list.time.size == times.size
     True
     >>> np.all(new_event_list.gti == event_list.gti)
     True
     """
     new_event_list = copy.deepcopy(event_list)
     assert np.all(np.diff(new_event_list.time) > 0)
-    mean_diff = np.median(np.diff(new_event_list.time))
-    # print(new_event_list.time, new_event_list.gti)
-    gtilen = new_event_list.gti[:, 1] - new_event_list.gti[:, 0]
-    new_event_list.gti = new_event_list.gti[gtilen > 5 * mean_diff]
 
-    idxs_start, idxs_stop = gti_border_bins(
-        gtis=new_event_list.gti, time=new_event_list.time, dt=0.1)
+    idxs = np.searchsorted(new_event_list.time, new_event_list.gti)
 
-    for i_start, i_stop, gti_boundary in zip(idxs_start, idxs_stop,
+    for (i_start, i_stop), gti_boundary in zip(idxs,
                                              new_event_list.gti):
         locally_flat = False
         nevents = i_stop - i_start
         t_start, t_stop = gti_boundary[0], gti_boundary[1]
+        if nevents < 1:
+            continue
         length = t_stop - t_start
-        if nevents < 1 or length <= 1:
+        if length <= 1:
             # in very short GTIs, always assume a flat distribution.
             locally_flat = True
 
@@ -543,10 +539,11 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
         else:
             raise ValueError('Unknown value for `smooth_kind`')
 
-        new_event_list.time[i_start:i_stop] = \
-            acceptance_rejection(dt, counts, t0=t_start,
+        newev = acceptance_rejection(dt, counts, t0=t_start,
                                  poissonize_n_events=False,
                                  deadtime=deadtime)
+        new_event_list.time[i_start:i_stop] = \
+            newev
 
     return new_event_list
 
