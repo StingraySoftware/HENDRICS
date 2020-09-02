@@ -13,7 +13,7 @@ def sum_fspec(files, outname=None):
     """Take a bunch of (C)PDSs and sums them."""
     # Read first file
     ftype0, contents = get_file_type(files[0])
-    pdstype = ftype0.replace('reb', '')
+    pdstype = ftype0.replace("reb", "")
 
     freq0 = contents.freq
     pds0 = contents.power
@@ -26,12 +26,13 @@ def sum_fspec(files, outname=None):
     tot_epds = epds0 ** 2 * nchunks0
     tot_npds = nchunks0
     tot_contents = copy.copy(contents)
-    outname = _assign_value_if_none(outname,
-                                    'tot_' + ftype0 + HEN_FILE_EXTENSION)
+    outname = _assign_value_if_none(
+        outname, "tot_" + ftype0 + HEN_FILE_EXTENSION
+    )
 
     for f in files[1:]:
         ftype, contents = get_file_type(f)
-        pdstype = ftype.replace('reb', '')
+        pdstype = ftype.replace("reb", "")
 
         freq = contents.freq
         pds = contents.power
@@ -41,13 +42,17 @@ def sum_fspec(files, outname=None):
         norm = contents.norm
         fftlen = contents.fftlen
 
-        assert ftype == ftype0, 'Files must all be of the same kind'
-        assert np.all(rebin == rebin0), \
-            'Files must be rebinned in the same way'
+        assert ftype == ftype0, "Files must all be of the same kind"
+        assert np.all(
+            rebin == rebin0
+        ), "Files must be rebinned in the same way"
         np.testing.assert_array_almost_equal(
-            freq, freq0, decimal=int(-np.log10(1 / fftlen) + 2),
-            err_msg='Frequencies must coincide')
-        assert norm == norm0, 'Files must have the same normalization'
+            freq,
+            freq0,
+            decimal=int(-np.log10(1 / fftlen) + 2),
+            err_msg="Frequencies must coincide",
+        )
+        assert norm == norm0, "Files must have the same normalization"
 
         tot_pds += pds * nchunks
         tot_epds += epds ** 2 * nchunks ** 2
@@ -57,7 +62,7 @@ def sum_fspec(files, outname=None):
     tot_contents.power_err = np.sqrt(tot_epds) / tot_npds
     tot_contents.m = tot_npds
 
-    log.info('Saving %s to %s' % (pdstype, outname))
+    log.info("Saving %s to %s" % (pdstype, outname))
     save_pds(tot_contents, outname)
 
     return tot_contents
@@ -67,14 +72,20 @@ def main(args=None):
     """Main function called by the `HENsumfspec` command line script."""
     import argparse
 
-    description = 'Sum (C)PDSs contained in different files'
+    description = "Sum (C)PDSs contained in different files"
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("files", help="List of light curve files", nargs='+')
+    parser.add_argument("files", help="List of light curve files", nargs="+")
 
-    parser.add_argument("-o", "--outname", type=str, default=None,
-                        help='Output file name for summed (C)PDS. Default:' +
-                        ' tot_(c)pds' + HEN_FILE_EXTENSION)
+    parser.add_argument(
+        "-o",
+        "--outname",
+        type=str,
+        default=None,
+        help="Output file name for summed (C)PDS. Default:"
+        + " tot_(c)pds"
+        + HEN_FILE_EXTENSION,
+    )
 
     args = parser.parse_args(args)
 

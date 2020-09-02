@@ -35,28 +35,28 @@ Let's call step_pow the quantity (2**(step+1)) So, in each sum:
 
 @functools.lru_cache(maxsize=128)
 def cached_sin_harmonics(nbin, z_n_n):
-    twopiphases = np.pi * 2 * np.arange(0, 1, 1. / nbin)
+    twopiphases = np.pi * 2 * np.arange(0, 1, 1.0 / nbin)
 
     cached_sin = np.zeros(z_n_n * nbin)
     for i in range(z_n_n):
-        cached_sin[i * nbin: (i + 1) * nbin] = np.sin(twopiphases)
+        cached_sin[i * nbin : (i + 1) * nbin] = np.sin(twopiphases)
 
     return cached_sin
 
 
 @functools.lru_cache(maxsize=128)
 def cached_cos_harmonics(nbin, z_n_n):
-    twopiphases = np.pi * 2 * np.arange(0, 1, 1. / nbin)
+    twopiphases = np.pi * 2 * np.arange(0, 1, 1.0 / nbin)
     cached_cos = np.zeros(z_n_n * nbin)
     for i in range(z_n_n):
-        cached_cos[i * nbin: (i + 1) * nbin] = np.cos(twopiphases)
+        cached_cos[i * nbin : (i + 1) * nbin] = np.cos(twopiphases)
 
     return cached_cos
 
 
 @njit()
 def _z_n_fast_cached(norm, cached_sin, cached_cos, n=2):
-    '''Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
+    """Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
 
     Here in a fast implementation based on numba.
     Assumes that nbin != 0 and norm is an array.
@@ -89,7 +89,7 @@ def _z_n_fast_cached(norm, cached_sin, cached_cos, n=2):
     True
     >>> np.isclose(_z_n_fast_cached(norm, cached_sin, cached_cos, n=2), 50)
     True
-    '''
+    """
 
     total_norm = np.sum(norm)
 
@@ -97,14 +97,16 @@ def _z_n_fast_cached(norm, cached_sin, cached_cos, n=2):
     N = norm.size
 
     for k in range(1, n + 1):
-        result += np.sum(cached_cos[:N*k:k] * norm) ** 2 + \
-            np.sum(cached_sin[:N*k:k] * norm) ** 2
+        result += (
+            np.sum(cached_cos[: N * k : k] * norm) ** 2
+            + np.sum(cached_sin[: N * k : k] * norm) ** 2
+        )
 
     return 2 / total_norm * result
 
 
 def z_n_fast_cached(norm, n=2):
-    '''Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
+    """Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
 
     This allocates the cached_sin and cached_cos first, then calls
     `_z_n_fast_cached`
@@ -130,7 +132,7 @@ def z_n_fast_cached(norm, n=2):
     True
     >>> np.isclose(z_n_fast_cached(norm, n=2), 50)
     True
-    '''
+    """
 
     cached_sin = cached_sin_harmonics(norm.size, n)
     cached_cos = cached_cos_harmonics(norm.size, n)
@@ -140,8 +142,7 @@ def z_n_fast_cached(norm, n=2):
 
 @njit()
 def _z_n_fast_cached_all(norm, cached_sin, cached_cos, ks):
-    '''Numba-compiled core of z_n_fast_cached_all
-    '''
+    """Numba-compiled core of z_n_fast_cached_all"""
 
     total_norm = np.sum(norm)
     all_zs = np.zeros(ks.size)
@@ -150,8 +151,10 @@ def _z_n_fast_cached_all(norm, cached_sin, cached_cos, ks):
 
     total_sum = 0
     for k in ks:
-        local_z = np.sum(cached_cos[:N * k:k] * norm) ** 2 + \
-            np.sum(cached_sin[:N * k:k] * norm) ** 2
+        local_z = (
+            np.sum(cached_cos[: N * k : k] * norm) ** 2
+            + np.sum(cached_sin[: N * k : k] * norm) ** 2
+        )
         all_zs[k - 1] = local_z + total_sum
         total_sum += local_z
 
@@ -160,7 +163,7 @@ def _z_n_fast_cached_all(norm, cached_sin, cached_cos, ks):
 
 
 def z_n_fast_cached_all(norm, nmax=20):
-    '''Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
+    """Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
 
     Here in a fast implementation based on numba.
     Assumes that nbin != 0 and norm is an array.
@@ -189,7 +192,7 @@ def z_n_fast_cached_all(norm, nmax=20):
     True
     >>> np.isclose(allzs[3], 50)
     True
-    '''
+    """
 
     cached_sin = cached_sin_harmonics(norm.size, nmax)
     cached_cos = cached_cos_harmonics(norm.size, nmax)
@@ -201,7 +204,7 @@ def z_n_fast_cached_all(norm, nmax=20):
 
 
 def h_test(norm, nmax=20):
-    '''H statistics, a` la de Jager+89, A&A, 221, 180, eq. 11.
+    """H statistics, a` la de Jager+89, A&A, 221, 180, eq. 11.
 
 
     Examples
@@ -213,7 +216,7 @@ def h_test(norm, nmax=20):
     True
     >>> m
     1
-    '''
+    """
     ks, zs = z_n_fast_cached_all(norm, nmax=nmax)
     hs = zs - 4 * ks + 4
     idx = np.argmax(hs)
@@ -280,10 +283,9 @@ def start_value(prof_n, step):
     return val
 
 
-@vectorize([(float64, float64),
-            (int64, int64),
-            (float32, float32),
-            (int32, int32)])
+@vectorize(
+    [(float64, float64), (int64, int64), (float32, float32), (int32, int32)]
+)
 def sum_arrays(arr1, arr2):
     return arr1 + arr2
 
@@ -300,10 +302,8 @@ def sum_rolled(arr1, arr2, out, shift):
     >>> np.all(out == arr1 + np.roll(arr2, -shift))
     True
     """
-    out[:-shift] = \
-        sum_arrays(arr1[:-shift], arr2[shift:])
-    out[-shift:] = \
-        sum_arrays(arr1[-shift:], arr2[:shift])
+    out[:-shift] = sum_arrays(arr1[:-shift], arr2[shift:])
+    out[-shift:] = sum_arrays(arr1[-shift:], arr2[:shift])
     return out
 
 
@@ -319,12 +319,14 @@ def ffa_step(array, step, ntables):
         jumpstart = start + jump
         if sh > 0:
             rolled = roll(array[start + jump, :], -sh)
-            array_reshaped_dum[prof_n, :] = \
-                sum_arrays(array[start, :], rolled[:])
+            array_reshaped_dum[prof_n, :] = sum_arrays(
+                array[start, :], rolled[:]
+            )
 
         else:
-            array_reshaped_dum[prof_n, :] = \
-                sum_arrays(array[start, :], array[jumpstart, :])
+            array_reshaped_dum[prof_n, :] = sum_arrays(
+                array[start, :], array[jumpstart, :]
+            )
 
     return array_reshaped_dum
 
@@ -332,8 +334,9 @@ def ffa_step(array, step, ntables):
 @njit()
 def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
     """Fast folding algorithm search."""
-    periods = \
-        np.array([bin_period + n / (ntables - 1) for n in range(ntables)])
+    periods = np.array(
+        [bin_period + n / (ntables - 1) for n in range(ntables)]
+    )
 
     for step in range(0, np.int(np.log2(ntables))):
         array_reshaped = ffa_step(array_reshaped, step, ntables)
@@ -344,23 +347,22 @@ def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
     cached_cos = np.zeros(z_n_n * nbin)
     cached_sin = np.zeros(z_n_n * nbin)
     for i in range(z_n_n):
-        cached_cos[i * nbin: (i + 1) * nbin] = np.cos(twopiphases)
-        cached_sin[i * nbin: (i + 1) * nbin] = np.sin(twopiphases)
+        cached_cos[i * nbin : (i + 1) * nbin] = np.cos(twopiphases)
+        cached_sin[i * nbin : (i + 1) * nbin] = np.sin(twopiphases)
 
     stats = np.zeros(ntables)
     for i in range(array_reshaped.shape[0]):
-        stats[i] = \
-            _z_n_fast_cached(array_reshaped[i, :], cached_cos, cached_sin,
-                             n=z_n_n)
+        stats[i] = _z_n_fast_cached(
+            array_reshaped[i, :], cached_cos, cached_sin, n=z_n_n
+        )
 
     return periods, stats
 
 
 def ffa(array, bin_period, z_n_n=2):
-    """Fast folding algorithm search
-    """
+    """Fast folding algorithm search"""
     N_raw = len(array)
-    ntables = np.int(2**np.ceil(np.log2(N_raw // bin_period + 1)))
+    ntables = np.int(2 ** np.ceil(np.log2(N_raw // bin_period + 1)))
     if ntables <= 1:
         return np.zeros(1), np.zeros(1)
     N = ntables * bin_period
@@ -384,7 +386,8 @@ def _quick_rebin(counts, current_rebin):
     """
     n = int(counts.size // current_rebin)
     rebinned_counts = np.sum(
-        counts[:n * current_rebin].reshape(n, current_rebin), axis=1)
+        counts[: n * current_rebin].reshape(n, current_rebin), axis=1
+    )
     return rebinned_counts
 
 
@@ -399,7 +402,7 @@ def ffa_search(counts, dt, period_min, period_max):
     rebinned_counts = counts
     for bin_period in show_progress(np.arange(pmin, pmax + 1, dtype=int)):
         # Only powers of two
-        rebin = int(2**np.floor(np.log2(bin_period / pmin)))
+        rebin = int(2 ** np.floor(np.log2(bin_period / pmin)))
         if rebin > current_rebin:
             current_rebin = rebin
             rebinned_counts = _quick_rebin(counts, current_rebin)

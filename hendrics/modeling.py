@@ -1,4 +1,3 @@
-
 import os
 import copy
 
@@ -12,42 +11,56 @@ def main_model(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
     from .base import _add_default_args, check_negative_numbers_in_args
-    description = ('Fit frequency spectra (PDS, CPDS, cospectrum) '
-                   'with user-defined models')
+
+    description = (
+        "Fit frequency spectra (PDS, CPDS, cospectrum) "
+        "with user-defined models"
+    )
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("files", help="List of light curve files", nargs='+')
-    parser.add_argument("-m", "--modelfile", type=str,
-                        help="File containing an Astropy model with or without"
-                             " constraints")
-    parser.add_argument('--fitmethod', type=str, default="L-BFGS-B",
-                        help='Any scipy-compatible fit method')
-    parser.add_argument('--frequency-interval', type=float, nargs='+',
-                        default=None,
-                        help='Select frequency interval(s) to fit. Must be '
-                             'an even number of frequencies in Hz, like '
-                             '"--frequency-interval 0 2" or '
-                             '"--frequency-interval 0 2 5 10", meaning that '
-                             'the spectrum will be fitted between 0 and 2 Hz, '
-                             'or using the intervals 0-2 Hz and 5-10 Hz.')
+    parser.add_argument("files", help="List of light curve files", nargs="+")
+    parser.add_argument(
+        "-m",
+        "--modelfile",
+        type=str,
+        help="File containing an Astropy model with or without" " constraints",
+    )
+    parser.add_argument(
+        "--fitmethod",
+        type=str,
+        default="L-BFGS-B",
+        help="Any scipy-compatible fit method",
+    )
+    parser.add_argument(
+        "--frequency-interval",
+        type=float,
+        nargs="+",
+        default=None,
+        help="Select frequency interval(s) to fit. Must be "
+        "an even number of frequencies in Hz, like "
+        '"--frequency-interval 0 2" or '
+        '"--frequency-interval 0 2 5 10", meaning that '
+        "the spectrum will be fitted between 0 and 2 Hz, "
+        "or using the intervals 0-2 Hz and 5-10 Hz.",
+    )
 
-    _add_default_args(parser, ['loglevel', 'debug'])
+    _add_default_args(parser, ["loglevel", "debug"])
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
-        args.loglevel = 'DEBUG'
+        args.loglevel = "DEBUG"
 
     freqs = args.frequency_interval
     if freqs is not None and len(freqs) % 2 != 0:
         raise ValueError("Invalid number of frequencies specified")
 
     log.setLevel(args.loglevel)
-    with log.log_to_file('HENmodel.log'):
+    with log.log_to_file("HENmodel.log"):
         model, kind, constraints = load_model(args.modelfile)
-        if kind != 'Astropy':
-            raise TypeError('At the moment, only Astropy models are accepted')
+        if kind != "Astropy":
+            raise TypeError("At the moment, only Astropy models are accepted")
 
         for f in args.files:
             root = os.path.splitext(f)[0]
@@ -67,16 +80,21 @@ def main_model(args=None):
             priors = None
             max_post = False
 
-            if constraints is not None and 'priors' in constraints:
-                priors = constraints['priors']
+            if constraints is not None and "priors" in constraints:
+                priors = constraints["priors"]
                 max_post = True
 
-            parest, res = fit_powerspectrum(spectrum, model, model.parameters,
-                                            max_post=max_post, priors=priors,
-                                            fitmethod=args.fitmethod)
+            parest, res = fit_powerspectrum(
+                spectrum,
+                model,
+                model.parameters,
+                max_post=max_post,
+                priors=priors,
+                fitmethod=args.fitmethod,
+            )
 
-            save_model(res.model, root + '_bestfit.p')
+            save_model(res.model, root + "_bestfit.p")
             spectrum.best_fits = [res.model]
-            log.info('Best-fit model:')
+            log.info("Best-fit model:")
             log.info(res.model)
-            save_pds(spectrum, root + '_fit' + HEN_FILE_EXTENSION)
+            save_pds(spectrum, root + "_fit" + HEN_FILE_EXTENSION)

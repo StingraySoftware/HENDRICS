@@ -10,8 +10,12 @@ from astropy.logger import AstropyUserWarning
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from stingray.gti import create_gti_mask, cross_gtis, contiguous_regions
-from .base import _look_for_array_in_array, hen_root, mkdir_p, \
-    interpret_bintime
+from .base import (
+    _look_for_array_in_array,
+    hen_root,
+    mkdir_p,
+    interpret_bintime,
+)
 from .io import load_events, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
 from .base import deorbit_events
@@ -54,16 +58,18 @@ def join_lightcurve_objs(lclist):
     lcdts = [lcdata.dt for lcdata in lclist]
     # Find unique elements. If multiple bin times are used, throw an exception
     lcdts = list(set(lcdts))
-    assert len(lcdts) == 1, 'Light curves must have same dt for joining'
+    assert len(lcdts) == 1, "Light curves must have same dt for joining"
 
-    instrs = [lcdata.instr.lower()
-              for lcdata in lclist
-              if (hasattr(lcdata, 'instr') and lcdata.instr is not None)]
+    instrs = [
+        lcdata.instr.lower()
+        for lcdata in lclist
+        if (hasattr(lcdata, "instr") and lcdata.instr is not None)
+    ]
 
     # Find unique elements. A lightcurve will be produced for each instrument
     instrs = list(set(instrs))
     if instrs == []:
-        instrs = ['unknown']
+        instrs = ["unknown"]
 
     outlcs = {}
     for instr in instrs:
@@ -71,7 +77,7 @@ def join_lightcurve_objs(lclist):
     # -------------------------------------------------------
 
     for lcdata in lclist:
-        instr = assign_value_if_none(lcdata.instr, 'unknown').lower()
+        instr = assign_value_if_none(lcdata.instr, "unknown").lower()
         if outlcs[instr] is None:
             outlcs[instr] = lcdata
         else:
@@ -80,7 +86,7 @@ def join_lightcurve_objs(lclist):
     return outlcs
 
 
-def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
+def join_lightcurves(lcfilelist, outfile="out_lc" + HEN_FILE_EXTENSION):
     """Join light curves from different files.
 
     Light curves from different instruments are put in different channels.
@@ -115,7 +121,7 @@ def join_lightcurves(lcfilelist, outfile='out_lc' + HEN_FILE_EXTENSION):
                 tag = ""
             else:
                 tag = instr
-            log.info('Saving joined light curve to %s' % outfile)
+            log.info("Saving joined light curve to %s" % outfile)
 
             dname, fname = os.path.split(outfile)
             save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
@@ -163,7 +169,7 @@ def scrunch_lightcurve_objs(lclist):
     gti = cross_gtis(gti_lists)
     for lc in lclist:
         lc.gti = gti
-        if hasattr(lc, '_apply_gtis'):  # pragma: no cover
+        if hasattr(lc, "_apply_gtis"):  # pragma: no cover
             # Compatibility with old versions of stingray
             lc.apply_gtis = lc._apply_gtis
         lc.apply_gtis()
@@ -179,8 +185,9 @@ def scrunch_lightcurve_objs(lclist):
     return lc0
 
 
-def scrunch_lightcurves(lcfilelist, outfile='out_scrlc' + HEN_FILE_EXTENSION,
-                        save_joint=False):
+def scrunch_lightcurves(
+    lcfilelist, outfile="out_scrlc" + HEN_FILE_EXTENSION, save_joint=False
+):
     """Create a single light curve from input light curves.
 
     Light curves are appended when they cover different times, and summed when
@@ -218,14 +225,15 @@ def scrunch_lightcurves(lcfilelist, outfile='out_scrlc' + HEN_FILE_EXTENSION,
         lcdata = join_lightcurves(lcfilelist, outfile=None)
 
     lc0 = scrunch_lightcurve_objs(list(lcdata.values()))
-    log.info('Saving scrunched light curve to %s' % outfile)
+    log.info("Saving scrunched light curve to %s" % outfile)
     save_lcurve(lc0, outfile)
 
     return lc0
 
 
-def filter_lc_gtis(lc, safe_interval=None, delete=False,
-                   min_length=0, return_borders=False):
+def filter_lc_gtis(
+    lc, safe_interval=None, delete=False, min_length=0, return_borders=False
+):
     """Filter a light curve for GTIs.
 
     Parameters
@@ -256,10 +264,13 @@ def filter_lc_gtis(lc, safe_interval=None, delete=False,
         If True, return also the indexes of the light curve corresponding to
         the borders of the GTIs
     """
-    mask, newgtis = create_gti_mask(lc.time, lc.gti,
-                                    return_new_gtis=True,
-                                    safe_interval=safe_interval,
-                                    min_length=min_length)
+    mask, newgtis = create_gti_mask(
+        lc.time,
+        lc.gti,
+        return_new_gtis=True,
+        safe_interval=safe_interval,
+        min_length=min_length,
+    )
 
     nomask = np.logical_not(mask)
 
@@ -275,17 +286,20 @@ def filter_lc_gtis(lc, safe_interval=None, delete=False,
         return newlc
 
 
-def lcurve_from_events(f, safe_interval=0,
-                       pi_interval=None,
-                       e_interval=None,
-                       min_length=0,
-                       gti_split=False,
-                       ignore_gtis=False,
-                       bintime=1.,
-                       outdir=None,
-                       outfile=None,
-                       noclobber=False,
-                       deorbit_par=None):
+def lcurve_from_events(
+    f,
+    safe_interval=0,
+    pi_interval=None,
+    e_interval=None,
+    min_length=0,
+    gti_split=False,
+    ignore_gtis=False,
+    bintime=1.0,
+    outdir=None,
+    outfile=None,
+    noclobber=False,
+    deorbit_par=None,
+):
     """Bin an event list in a light curve.
 
     Parameters
@@ -334,17 +348,17 @@ def lcurve_from_events(f, safe_interval=0,
     deorbit_tag = ""
     if deorbit_par is not None:
         evdata = deorbit_events(evdata, deorbit_par)
-        deorbit_tag = '_deorb'
+        deorbit_tag = "_deorb"
 
     bintime = np.longdouble(interpret_bintime(bintime))
 
-    tag = ''
+    tag = ""
 
     gtis = evdata.gti
     tstart = np.min(gtis)
     tstop = np.max(gtis)
     events = evdata.time
-    if hasattr(evdata, 'instr') and evdata.instr is not None:
+    if hasattr(evdata, "instr") and evdata.instr is not None:
         instr = evdata.instr
     else:
         instr = "unknown"
@@ -359,34 +373,37 @@ def lcurve_from_events(f, safe_interval=0,
     # Then, apply filters
     if pi_interval is not None and np.all(np.array(pi_interval) > 0):
         pis = evdata.pi
-        good = np.logical_and(pis > pi_interval[0],
-                              pis <= pi_interval[1])
+        good = np.logical_and(pis > pi_interval[0], pis <= pi_interval[1])
         events = events[good]
-        tag = '_PI%g-%g' % (pi_interval[0], pi_interval[1])
+        tag = "_PI%g-%g" % (pi_interval[0], pi_interval[1])
     elif e_interval is not None and np.all(np.array(e_interval) > 0):
-        if not hasattr(evdata, 'energy') or evdata.energy is None:
-            raise \
-                ValueError("No energy information is present in the file." +
-                           " Did you run HENcalibrate?")
+        if not hasattr(evdata, "energy") or evdata.energy is None:
+            raise ValueError(
+                "No energy information is present in the file."
+                + " Did you run HENcalibrate?"
+            )
         es = evdata.energy
-        good = np.logical_and(es > e_interval[0],
-                              es <= e_interval[1])
+        good = np.logical_and(es > e_interval[0], es <= e_interval[1])
         events = events[good]
-        tag = '_E%g-%g' % (e_interval[0], e_interval[1])
+        tag = "_E%g-%g" % (e_interval[0], e_interval[1])
     else:
         pass
 
     if tag != "":
-        save_lcurve(total_lc, hen_root(f) + '_std_lc' + deorbit_tag + HEN_FILE_EXTENSION)
+        save_lcurve(
+            total_lc,
+            hen_root(f) + "_std_lc" + deorbit_tag + HEN_FILE_EXTENSION,
+        )
 
     # Assign default value if None
-    outfile = assign_value_if_none(outfile, hen_root(f) + tag + deorbit_tag + '_lc')
+    outfile = assign_value_if_none(
+        outfile, hen_root(f) + tag + deorbit_tag + "_lc"
+    )
 
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
-    outfile = outfile.replace(HEN_FILE_EXTENSION, '') + HEN_FILE_EXTENSION
-    outdir = assign_value_if_none(
-        outdir, os.path.dirname(os.path.abspath(f)))
+    outfile = outfile.replace(HEN_FILE_EXTENSION, "") + HEN_FILE_EXTENSION
+    outdir = assign_value_if_none(outdir, os.path.dirname(os.path.abspath(f)))
 
     _, outfile = os.path.split(outfile)
     mkdir_p(outdir)
@@ -394,28 +411,35 @@ def lcurve_from_events(f, safe_interval=0,
 
     if noclobber and os.path.exists(outfile):
         warnings.warn(
-            'File exists, and noclobber option used. Skipping',
-            AstropyUserWarning)
+            "File exists, and noclobber option used. Skipping",
+            AstropyUserWarning,
+        )
         return [outfile]
 
-    lc = Lightcurve.make_lightcurve(events, bintime, tstart=tstart,
-                                    tseg=tstop - tstart, mjdref=evdata.mjdref,
-                                    gti=gtis)
+    lc = Lightcurve.make_lightcurve(
+        events,
+        bintime,
+        tstart=tstart,
+        tseg=tstop - tstart,
+        mjdref=evdata.mjdref,
+        gti=gtis,
+    )
 
     lc.instr = instr
     lc.e_interval = e_interval
 
-    lc = filter_lc_gtis(lc, safe_interval=safe_interval,
-                        delete=False,
-                        min_length=min_length)
+    lc = filter_lc_gtis(
+        lc, safe_interval=safe_interval, delete=False, min_length=min_length
+    )
 
     if len(lc.gti) == 0:
         warnings.warn(
-            "No GTIs above min_length ({0}s) found.".format(min_length))
+            "No GTIs above min_length ({0}s) found.".format(min_length)
+        )
         return
 
     lc.header = None
-    if hasattr(evdata, 'header'):
+    if hasattr(evdata, "header"):
         lc.header = evdata.header
 
     if gti_split:
@@ -423,11 +447,12 @@ def lcurve_from_events(f, safe_interval=0,
         outfiles = []
 
         for ib, l0 in enumerate(lcs):
-            local_tag = tag + '_gti{:03d}'.format(ib)
-            outf = hen_root(outfile) + local_tag + '_lc' + HEN_FILE_EXTENSION
+            local_tag = tag + "_gti{:03d}".format(ib)
+            outf = hen_root(outfile) + local_tag + "_lc" + HEN_FILE_EXTENSION
             if noclobber and os.path.exists(outf):
                 warnings.warn(
-                    'File exists, and noclobber option used. Skipping')
+                    "File exists, and noclobber option used. Skipping"
+                )
                 outfiles.append(outf)
             l0.instr = lc.instr
             l0.header = lc.header
@@ -435,7 +460,7 @@ def lcurve_from_events(f, safe_interval=0,
             save_lcurve(l0, outf)
             outfiles.append(outf)
     else:
-        log.info('Saving light curve to %s' % outfile)
+        log.info("Saving light curve to %s" % outfile)
         save_lcurve(lc, outfile)
         outfiles = [outfile]
 
@@ -443,10 +468,17 @@ def lcurve_from_events(f, safe_interval=0,
     return outfiles
 
 
-def lcurve_from_fits(fits_file, gtistring='GTI',
-                     timecolumn='TIME', ratecolumn=None, ratehdu=1,
-                     fracexp_limit=0.9, outfile=None,
-                     noclobber=False, outdir=None):
+def lcurve_from_fits(
+    fits_file,
+    gtistring="GTI",
+    timecolumn="TIME",
+    ratecolumn=None,
+    ratehdu=1,
+    fracexp_limit=0.9,
+    outfile=None,
+    noclobber=False,
+    outdir=None,
+):
     """
     Load a lightcurve from a fits file and save it in HENDRICS format.
 
@@ -484,7 +516,8 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     """
     warnings.warn(
         """WARNING! FITS light curve handling is still under testing.
-        Absolute times might be incorrect.""")
+        Absolute times might be incorrect."""
+    )
     # TODO:
     # treat consistently TDB, UTC, TAI, etc. This requires some documentation
     # reading. For now, we assume TDB
@@ -493,10 +526,11 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
     import numpy as np
     from stingray.gti import create_gti_from_condition
 
-    outfile = assign_value_if_none(outfile, hen_root(fits_file) + '_lc')
-    outfile = outfile.replace(HEN_FILE_EXTENSION, '') + HEN_FILE_EXTENSION
+    outfile = assign_value_if_none(outfile, hen_root(fits_file) + "_lc")
+    outfile = outfile.replace(HEN_FILE_EXTENSION, "") + HEN_FILE_EXTENSION
     outdir = assign_value_if_none(
-        outdir, os.path.dirname(os.path.abspath(fits_file)))
+        outdir, os.path.dirname(os.path.abspath(fits_file))
+    )
 
     _, outfile = os.path.split(outfile)
     mkdir_p(outdir)
@@ -504,64 +538,70 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
     if noclobber and os.path.exists(outfile):
         warnings.warn(
-            'File exists, and noclobber option used. Skipping',
-            AstropyUserWarning)
+            "File exists, and noclobber option used. Skipping",
+            AstropyUserWarning,
+        )
         return [outfile]
 
     lchdulist = pf.open(fits_file)
     lctable = lchdulist[ratehdu].data
 
     # Units of header keywords
-    tunit = lchdulist[ratehdu].header['TIMEUNIT']
+    tunit = lchdulist[ratehdu].header["TIMEUNIT"]
 
     try:
-        mjdref = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                             'MJDREF')
-        mjdref = Time(mjdref, scale='tdb', format='mjd')
+        mjdref = high_precision_keyword_read(
+            lchdulist[ratehdu].header, "MJDREF"
+        )
+        mjdref = Time(mjdref, scale="tdb", format="mjd")
     except Exception:
         mjdref = None
 
     try:
-        instr = lchdulist[ratehdu].header['INSTRUME']
+        instr = lchdulist[ratehdu].header["INSTRUME"]
     except Exception:
-        instr = 'EXTERN'
+        instr = "EXTERN"
 
     # ----------------------------------------------------------------
     # Trying to comply with all different formats of fits light curves.
     # It's a madness...
     try:
-        tstart = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                             'TSTART')
-        tstop = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                            'TSTOP')
+        tstart = high_precision_keyword_read(
+            lchdulist[ratehdu].header, "TSTART"
+        )
+        tstop = high_precision_keyword_read(lchdulist[ratehdu].header, "TSTOP")
     except Exception:
-        raise(Exception('TSTART and TSTOP need to be specified'))
+        raise (Exception("TSTART and TSTOP need to be specified"))
 
     # For nulccorr lcs this whould work
 
-    timezero = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                           'TIMEZERO')
+    timezero = high_precision_keyword_read(
+        lchdulist[ratehdu].header, "TIMEZERO"
+    )
     # Sometimes timezero is "from tstart", sometimes it's an absolute time.
     # This tries to detect which case is this, and always consider it
     # referred to tstart
     timezero = assign_value_if_none(timezero, 0)
 
     # for lcurve light curves this should instead work
-    if tunit == 'd':
+    if tunit == "d":
         # TODO:
         # Check this. For now, I assume TD (JD - 2440000.5).
         # This is likely wrong
-        timezero = Time(2440000.5 + timezero, scale='tdb', format='jd')
-        tstart = Time(2440000.5 + tstart, scale='tdb', format='jd')
-        tstop = Time(2440000.5 + tstop, scale='tdb', format='jd')
+        timezero = Time(2440000.5 + timezero, scale="tdb", format="jd")
+        tstart = Time(2440000.5 + tstart, scale="tdb", format="jd")
+        tstop = Time(2440000.5 + tstop, scale="tdb", format="jd")
         # if None, use NuSTAR defaulf MJDREF
         mjdref = assign_value_if_none(
-            mjdref, Time(np.longdouble('55197.00076601852'), scale='tdb',
-                         format='mjd'))
+            mjdref,
+            Time(
+                np.longdouble("55197.00076601852"), scale="tdb", format="mjd"
+            ),
+        )
 
-        timezero = (timezero - mjdref).to('s').value
-        tstart = (tstart - mjdref).to('s').value
-        tstop = (tstop - mjdref).to('s').value
+        timezero = (timezero - mjdref).to("s").value
+        tstart = (tstart - mjdref).to("s").value
+        tstop = (tstop - mjdref).to("s").value
 
     if timezero > tstart:
         timezero -= tstart
@@ -573,40 +613,42 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
         time += timezero
 
     try:
-        dt = high_precision_keyword_read(lchdulist[ratehdu].header,
-                                         'TIMEDEL')
-        if tunit == 'd':
+        dt = high_precision_keyword_read(lchdulist[ratehdu].header, "TIMEDEL")
+        if tunit == "d":
             dt *= 86400
     except Exception:
         warnings.warn(
-            'Assuming that TIMEDEL is the median difference between the'
-            ' light curve times',
-            AstropyUserWarning)
+            "Assuming that TIMEDEL is the median difference between the"
+            " light curve times",
+            AstropyUserWarning,
+        )
         dt = np.median(np.diff(time))
 
     # ----------------------------------------------------------------
     ratecolumn = assign_value_if_none(
         ratecolumn,
-        _look_for_array_in_array(['RATE', 'RATE1', 'COUNTS'], lctable.names))
+        _look_for_array_in_array(["RATE", "RATE1", "COUNTS"], lctable.names),
+    )
 
     rate = np.array(lctable.field(ratecolumn), dtype=np.float)
 
     try:
-        rate_e = np.array(lctable.field('ERROR'), dtype=np.longdouble)
+        rate_e = np.array(lctable.field("ERROR"), dtype=np.longdouble)
     except Exception:
         rate_e = np.zeros_like(rate)
 
-    if 'RATE' in ratecolumn:
+    if "RATE" in ratecolumn:
         rate *= dt
         rate_e *= dt
 
     try:
-        fracexp = np.array(lctable.field('FRACEXP'), dtype=np.longdouble)
+        fracexp = np.array(lctable.field("FRACEXP"), dtype=np.longdouble)
     except Exception:
         fracexp = np.ones_like(rate)
 
-    good_intervals = (rate == rate) * (fracexp >= fracexp_limit) * \
-        (fracexp <= 1)
+    good_intervals = (
+        (rate == rate) * (fracexp >= fracexp_limit) * (fracexp <= 1)
+    )
 
     rate[good_intervals] /= fracexp[good_intervals]
     rate_e[good_intervals] /= fracexp[good_intervals]
@@ -615,29 +657,40 @@ def lcurve_from_fits(fits_file, gtistring='GTI',
 
     try:
         gtitable = lchdulist[gtistring].data
-        gti_list = np.array([[a, b]
-                             for a, b in zip(gtitable.field('START'),
-                                             gtitable.field('STOP'))],
-                            dtype=np.longdouble)
+        gti_list = np.array(
+            [
+                [a, b]
+                for a, b in zip(
+                    gtitable.field("START"), gtitable.field("STOP")
+                )
+            ],
+            dtype=np.longdouble,
+        )
     except Exception:
         gti_list = create_gti_from_condition(time, good_intervals)
 
     lchdulist.close()
 
-    lc = Lightcurve(time=time, counts=rate, err=rate_e, gti=gti_list,
-                    mjdref=mjdref.mjd, dt=dt)
+    lc = Lightcurve(
+        time=time,
+        counts=rate,
+        err=rate_e,
+        gti=gti_list,
+        mjdref=mjdref.mjd,
+        dt=dt,
+    )
 
     lc.instr = instr
     lc.header = lchdulist[ratehdu].header.tostring()
 
-    log.info('Saving light curve to %s' % outfile)
+    log.info("Saving light curve to %s" % outfile)
     save_lcurve(lc, outfile)
     return [outfile]
 
 
-def lcurve_from_txt(txt_file, outfile=None,
-                    noclobber=False, outdir=None,
-                    mjdref=None, gti=None):
+def lcurve_from_txt(
+    txt_file, outfile=None, noclobber=False, outdir=None, mjdref=None, gti=None
+):
     """
     Load a lightcurve from a text file.
 
@@ -666,14 +719,16 @@ def lcurve_from_txt(txt_file, outfile=None,
         Good Time Intervals
     """
     import numpy as np
-    if mjdref is None:
-        mjdref = np.longdouble('55197.00076601852')
 
-    outfile = assign_value_if_none(outfile, hen_root(txt_file) + '_lc')
-    outfile = outfile.replace(HEN_FILE_EXTENSION, '') + HEN_FILE_EXTENSION
+    if mjdref is None:
+        mjdref = np.longdouble("55197.00076601852")
+
+    outfile = assign_value_if_none(outfile, hen_root(txt_file) + "_lc")
+    outfile = outfile.replace(HEN_FILE_EXTENSION, "") + HEN_FILE_EXTENSION
 
     outdir = assign_value_if_none(
-        outdir, os.path.dirname(os.path.abspath(txt_file)))
+        outdir, os.path.dirname(os.path.abspath(txt_file))
+    )
 
     _, outfile = os.path.split(outfile)
     mkdir_p(outdir)
@@ -681,20 +736,20 @@ def lcurve_from_txt(txt_file, outfile=None,
 
     if noclobber and os.path.exists(outfile):
         warnings.warn(
-            'File exists, and noclobber option used. Skipping',
-            AstropyUserWarning)
+            "File exists, and noclobber option used. Skipping",
+            AstropyUserWarning,
+        )
         return [outfile]
 
-    time, counts = np.genfromtxt(txt_file, delimiter=' ', unpack=True)
+    time, counts = np.genfromtxt(txt_file, delimiter=" ", unpack=True)
     time = np.array(time, dtype=np.longdouble)
     counts = np.array(counts, dtype=np.float)
 
-    lc = Lightcurve(time=time, counts=counts, gti=gti,
-                    mjdref=mjdref)
+    lc = Lightcurve(time=time, counts=counts, gti=gti, mjdref=mjdref)
 
-    lc.instr = 'EXTERN'
+    lc.instr = "EXTERN"
 
-    log.info('Saving light curve to %s' % outfile)
+    log.info("Saving light curve to %s" % outfile)
     save_lcurve(lc, outfile)
     return [outfile]
 
@@ -703,9 +758,9 @@ def _baseline_lightcurves(lcurves, outroot, p, lam):
     outroot_save = outroot
     for i, f in enumerate(lcurves):
         if outroot is None:
-            outroot = hen_root(f) + '_lc_baseline'
+            outroot = hen_root(f) + "_lc_baseline"
         else:
-            outroot = outroot_save + '_{}'.format(i)
+            outroot = outroot_save + "_{}".format(i)
         ftype, lc = get_file_type(f)
         baseline = lc.baseline(p, lam)
         lc.base = baseline
@@ -741,6 +796,7 @@ def _wrap_fits(args):
 
 def _execute_lcurve(args):
     from multiprocessing import Pool
+
     bintime = args.bintime
 
     safe_interval = args.safe_interval
@@ -759,15 +815,18 @@ def _execute_lcurve(args):
         argdict = {"noclobber": args.noclobber}
     else:
         wrap_fun = _wrap_lc
-        argdict = {"noclobber": args.noclobber, "safe_interval": safe_interval,
-                   "pi_interval": pi_interval,
-                   "e_interval": e_interval,
-                   "min_length": args.minlen,
-                   "gti_split": args.gti_split,
-                   "ignore_gtis": args.ignore_gtis,
-                   "bintime": bintime,
-                   "outdir": args.outdir,
-                   "deorbit_par": args.deorbit_par}
+        argdict = {
+            "noclobber": args.noclobber,
+            "safe_interval": safe_interval,
+            "pi_interval": pi_interval,
+            "e_interval": e_interval,
+            "min_length": args.minlen,
+            "gti_split": args.gti_split,
+            "ignore_gtis": args.ignore_gtis,
+            "bintime": bintime,
+            "outdir": args.outdir,
+            "deorbit_par": args.deorbit_par,
+        }
 
     arglist = [[f, argdict.copy()] for f in args.files]
     na = len(arglist)
@@ -777,12 +836,12 @@ def _execute_lcurve(args):
         for i in range(na):
             if na > 1:
                 outname = outfile + "_{0}".format(i)
-            arglist[i][1]['outfile'] = outname
+            arglist[i][1]["outfile"] = outname
 
     # -------------------------------------------------------------------------
     outfiles = []
 
-    if os.name == 'nt' or args.nproc == 1:
+    if os.name == "nt" or args.nproc == 1:
         for a in arglist:
             outfiles.append(wrap_fun(a))
     else:
@@ -805,127 +864,191 @@ def main(args=None):
     import argparse
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = ('Create lightcurves starting from event files. It is '
-                   'possible to specify energy or channel filtering options')
+    description = (
+        "Create lightcurves starting from event files. It is "
+        "possible to specify energy or channel filtering options"
+    )
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("files", help="List of files", nargs='+')
+    parser.add_argument("files", help="List of files", nargs="+")
 
-    parser.add_argument("-b", "--bintime", type=float, default=1,
-                        help="Bin time; if negative, negative power of 2")
-    parser.add_argument("--safe-interval", nargs=2, type=float,
-                        default=[0, 0],
-                        help="Interval at start and stop of GTIs used" +
-                        " for filtering")
-    parser = _add_default_args(parser, ['energies', 'pi'])
-    parser.add_argument("-s", "--scrunch",
-                        help="Create scrunched light curve (single channel)",
-                        default=False,
-                        action="store_true")
-    parser.add_argument("-j", "--join",
-                        help="Create joint light curve (multiple channels)",
-                        default=False,
-                        action="store_true")
-    parser.add_argument("-g", "--gti-split",
-                        help="Split light curve by GTI",
-                        default=False,
-                        action="store_true")
-    parser.add_argument("--minlen",
-                        help="Minimum length of acceptable GTIs (default:4)",
-                        default=4, type=float)
-    parser.add_argument("--ignore-gtis",
-                        help="Ignore GTIs",
-                        default=False,
-                        action="store_true")
-    parser.add_argument("-d", "--outdir", type=str, default=None,
-                        help='Output directory')
-    parser.add_argument("--noclobber", help="Do not overwrite existing files",
-                        default=False, action='store_true')
-    parser.add_argument("--fits-input",
-                        help="Input files are light curves in FITS format",
-                        default=False, action='store_true')
-    parser.add_argument("--txt-input",
-                        help="Input files are light curves in txt format",
-                        default=False, action='store_true')
-    parser = _add_default_args(parser, ['deorbit', 'output',
-                                        'loglevel', 'debug', 'nproc'])
+    parser.add_argument(
+        "-b",
+        "--bintime",
+        type=float,
+        default=1,
+        help="Bin time; if negative, negative power of 2",
+    )
+    parser.add_argument(
+        "--safe-interval",
+        nargs=2,
+        type=float,
+        default=[0, 0],
+        help="Interval at start and stop of GTIs used" + " for filtering",
+    )
+    parser = _add_default_args(parser, ["energies", "pi"])
+    parser.add_argument(
+        "-s",
+        "--scrunch",
+        help="Create scrunched light curve (single channel)",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "-j",
+        "--join",
+        help="Create joint light curve (multiple channels)",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "-g",
+        "--gti-split",
+        help="Split light curve by GTI",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--minlen",
+        help="Minimum length of acceptable GTIs (default:4)",
+        default=4,
+        type=float,
+    )
+    parser.add_argument(
+        "--ignore-gtis", help="Ignore GTIs", default=False, action="store_true"
+    )
+    parser.add_argument(
+        "-d", "--outdir", type=str, default=None, help="Output directory"
+    )
+    parser.add_argument(
+        "--noclobber",
+        help="Do not overwrite existing files",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--fits-input",
+        help="Input files are light curves in FITS format",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--txt-input",
+        help="Input files are light curves in txt format",
+        default=False,
+        action="store_true",
+    )
+    parser = _add_default_args(
+        parser, ["deorbit", "output", "loglevel", "debug", "nproc"]
+    )
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
     if args.debug:
-        args.loglevel = 'DEBUG'
+        args.loglevel = "DEBUG"
     log.setLevel(args.loglevel)
 
-    with log.log_to_file('HENlcurve.log'):
+    with log.log_to_file("HENlcurve.log"):
         _execute_lcurve(args)
 
 
 def scrunch_main(args=None):
     """Main function called by the `HENscrunchlc` command line script."""
     import argparse
-    description = \
-        'Sum lightcurves from different instruments or energy ranges'
+
+    description = "Sum lightcurves from different instruments or energy ranges"
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument("-o", "--out", type=str,
-                        default="out_scrlc" + HEN_FILE_EXTENSION,
-                        help='Output file')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
+    parser.add_argument("files", help="List of files", nargs="+")
+    parser.add_argument(
+        "-o",
+        "--out",
+        type=str,
+        default="out_scrlc" + HEN_FILE_EXTENSION,
+        help="Output file",
+    )
+    parser.add_argument(
+        "--loglevel",
+        help=(
+            "use given logging level (one between INFO, "
+            "WARNING, ERROR, CRITICAL, DEBUG; "
+            "default:WARNING)"
+        ),
+        default="WARNING",
+        type=str,
+    )
+    parser.add_argument(
+        "--debug",
+        help="use DEBUG logging level",
+        default=False,
+        action="store_true",
+    )
 
     args = parser.parse_args(args)
     files = args.files
 
     if args.debug:
-        args.loglevel = 'DEBUG'
+        args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file('HENscrunchlc.log'):
+    with log.log_to_file("HENscrunchlc.log"):
         scrunch_lightcurves(files, args.out)
 
 
 def baseline_main(args=None):
     """Main function called by the `HENbaselinesub` command line script."""
     import argparse
-    description = \
-        ('Subtract a baseline from the lightcurve using the Asymmetric Least '
-         'Squares algorithm. The two parameters p and lambda control the '
-         'asymmetry and smoothness of the baseline. See below for details.')
+
+    description = (
+        "Subtract a baseline from the lightcurve using the Asymmetric Least "
+        "Squares algorithm. The two parameters p and lambda control the "
+        "asymmetry and smoothness of the baseline. See below for details."
+    )
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument("-o", "--out", type=str, default=None,
-                        help='Output file')
-    parser.add_argument("--loglevel",
-                        help=("use given logging level (one between INFO, "
-                              "WARNING, ERROR, CRITICAL, DEBUG; "
-                              "default:WARNING)"),
-                        default='WARNING',
-                        type=str)
-    parser.add_argument("--debug", help="use DEBUG logging level",
-                        default=False, action='store_true')
-    parser.add_argument("-p", '--asymmetry', type=float,
-                        help='"asymmetry" parameter. Smaller values make the '
-                             'baseline more "horizontal". Typically '
-                             '0.001 < p < 0.1, but not necessarily.',
-                        default=0.01)
-    parser.add_argument("-l", "--lam", type=float,
-                        help='lambda, or "smoothness", parameter. Larger'
-                        ' values make the baseline stiffer. Typically '
-                        '1e2 < lam < 1e9',
-                        default=1e5)
+    parser.add_argument("files", help="List of files", nargs="+")
+    parser.add_argument(
+        "-o", "--out", type=str, default=None, help="Output file"
+    )
+    parser.add_argument(
+        "--loglevel",
+        help=(
+            "use given logging level (one between INFO, "
+            "WARNING, ERROR, CRITICAL, DEBUG; "
+            "default:WARNING)"
+        ),
+        default="WARNING",
+        type=str,
+    )
+    parser.add_argument(
+        "--debug",
+        help="use DEBUG logging level",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "-p",
+        "--asymmetry",
+        type=float,
+        help='"asymmetry" parameter. Smaller values make the '
+        'baseline more "horizontal". Typically '
+        "0.001 < p < 0.1, but not necessarily.",
+        default=0.01,
+    )
+    parser.add_argument(
+        "-l",
+        "--lam",
+        type=float,
+        help='lambda, or "smoothness", parameter. Larger'
+        " values make the baseline stiffer. Typically "
+        "1e2 < lam < 1e9",
+        default=1e5,
+    )
 
     args = parser.parse_args(args)
     files = args.files
 
     if args.debug:
-        args.loglevel = 'DEBUG'
+        args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file('HENbaseline.log'):
+    with log.log_to_file("HENbaseline.log"):
         _baseline_lightcurves(files, args.out, args.asymmetry, args.lam)

@@ -20,6 +20,7 @@ from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
 
 try:
     from skimage.feature import peak_local_max
+
     HAS_SKIMAGE = True
 except ImportError:
     HAS_SKIMAGE = False
@@ -30,9 +31,10 @@ try:
     from numba import types
     from numba.extending import overload_method
 
-    @overload_method(types.Array, 'take')  # pragma: no cover
+    @overload_method(types.Array, "take")  # pragma: no cover
     def array_take(arr, indices):
         if isinstance(indices, types.Array):
+
             def take_impl(arr, indices):
                 n = indices.shape[0]
                 res = np.empty(n, arr.dtype)
@@ -48,12 +50,15 @@ except ImportError:
 
     def njit(**kwargs):
         """Dummy decorator in case jit cannot be imported."""
+
         def true_decorator(func):
             @wraps(func)
             def wrapped(*args, **kwargs):
                 r = func(*args, **kwargs)
                 return r
+
             return wrapped
+
         return true_decorator
 
     jit = njit
@@ -70,6 +75,7 @@ except ImportError:
             wrapped_f = np.vectorize(func)
 
             return wrapped_f
+
     float32 = float64 = int32 = int64 = lambda x, y: None
 
     array_take = np.take
@@ -78,6 +84,7 @@ except ImportError:
 try:
     from tqdm import tqdm as show_progress
 except ImportError:
+
     def show_progress(a):
         return a
 
@@ -122,9 +129,10 @@ except ImportError:
         """
 
         from scipy import stats
+
         retlev = stats.chi2.isf(
-            epsilon / ntrial,
-            2 * int(n_summed_spectra) * n) / (n_summed_spectra)
+            epsilon / ntrial, 2 * int(n_summed_spectra) * n
+        ) / (n_summed_spectra)
 
         return retlev
 
@@ -158,12 +166,17 @@ except ImportError:
         """
         if ntrial > 1:
             import warnings
-            warnings.warn("Z2_n: The treatment of ntrial is very rough. "
-                          "Use with caution", AstropyUserWarning)
+
+            warnings.warn(
+                "Z2_n: The treatment of ntrial is very rough. "
+                "Use with caution",
+                AstropyUserWarning,
+            )
         from scipy import stats
 
-        epsilon = ntrial * stats.chi2.sf(z2 * n_summed_spectra,
-                                         2 * n * n_summed_spectra)
+        epsilon = ntrial * stats.chi2.sf(
+            z2 * n_summed_spectra, 2 * n * n_summed_spectra
+        )
         return epsilon
 
     def pds_probability(level, ntrial=1, n_summed_spectra=1, n_rebin=1):
@@ -197,14 +210,16 @@ except ImportError:
         """
         from scipy import stats
 
-        epsilon_1 = stats.chi2.sf(level * n_summed_spectra * n_rebin,
-                                  2 * n_summed_spectra * n_rebin)
+        epsilon_1 = stats.chi2.sf(
+            level * n_summed_spectra * n_rebin, 2 * n_summed_spectra * n_rebin
+        )
 
         epsilon = epsilon_1 * ntrial
         return epsilon
 
-    def pds_detection_level(epsilon=0.01, ntrial=1, n_summed_spectra=1,
-                            n_rebin=1):
+    def pds_detection_level(
+        epsilon=0.01, ntrial=1, n_summed_spectra=1, n_rebin=1
+    ):
         r"""Detection level for a PDS.
 
         Return the detection level (with probability 1 - epsilon) for a Power
@@ -239,125 +254,162 @@ except ImportError:
 
         epsilon = epsilon / ntrial
         if isinstance(n_rebin, Iterable):
-            retlev = [stats.chi2.isf(epsilon, 2 * n_summed_spectra * r) /
-                      (n_summed_spectra * r) for r in n_rebin]
+            retlev = [
+                stats.chi2.isf(epsilon, 2 * n_summed_spectra * r)
+                / (n_summed_spectra * r)
+                for r in n_rebin
+            ]
             retlev = np.array(retlev)
         else:
             r = n_rebin
-            retlev = stats.chi2.isf(epsilon, 2 * n_summed_spectra * r) \
-                / (n_summed_spectra * r)
+            retlev = stats.chi2.isf(epsilon, 2 * n_summed_spectra * r) / (
+                n_summed_spectra * r
+            )
         return retlev
 
 
 __all__ = [
-    'array_take',
-    'njit',
-    'prange',
-    'show_progress',
-    'z2_n_detection_level',
-    'z2_n_probability',
-    'pds_detection_level',
-    'pds_probability',
-    'fold_detection_level',
-    'fold_profile_probability',
-    'r_in',
-    'r_det',
-    '_assign_value_if_none',
-    '_look_for_array_in_array',
-    'is_string',
-    '_order_list_of_arrays',
-    'mkdir_p',
-    'common_name',
-    'hen_root',
-    'optimal_bin_time',
-    'gti_len',
-    'deorbit_events',
-    '_add_default_args',
-    'check_negative_numbers_in_args',
-    'interpret_bintime',
-    'get_bin_edges',
-    'compute_bin',
-    'hist1d_numba_seq',
-    'hist2d_numba_seq',
-    'hist3d_numba_seq',
-    'hist2d_numba_seq_weight',
-    'hist3d_numba_seq_weight',
-    'index_arr',
-    'index_set_arr',
-    'histnd_numba_seq',
-    'histogram2d',
-    'histogram',
-    'touch',
-    'log_x',
-    'get_list_of_small_powers',
-    'adjust_dt_for_power_of_two',
-    'adjust_dt_for_small_power',
-    'memmapped_arange',
-    'nchars_in_int_value']
+    "array_take",
+    "njit",
+    "prange",
+    "show_progress",
+    "z2_n_detection_level",
+    "z2_n_probability",
+    "pds_detection_level",
+    "pds_probability",
+    "fold_detection_level",
+    "fold_profile_probability",
+    "r_in",
+    "r_det",
+    "_assign_value_if_none",
+    "_look_for_array_in_array",
+    "is_string",
+    "_order_list_of_arrays",
+    "mkdir_p",
+    "common_name",
+    "hen_root",
+    "optimal_bin_time",
+    "gti_len",
+    "deorbit_events",
+    "_add_default_args",
+    "check_negative_numbers_in_args",
+    "interpret_bintime",
+    "get_bin_edges",
+    "compute_bin",
+    "hist1d_numba_seq",
+    "hist2d_numba_seq",
+    "hist3d_numba_seq",
+    "hist2d_numba_seq_weight",
+    "hist3d_numba_seq_weight",
+    "index_arr",
+    "index_set_arr",
+    "histnd_numba_seq",
+    "histogram2d",
+    "histogram",
+    "touch",
+    "log_x",
+    "get_list_of_small_powers",
+    "adjust_dt_for_power_of_two",
+    "adjust_dt_for_small_power",
+    "memmapped_arange",
+    "nchars_in_int_value",
+]
 
 
 DEFAULT_PARSER_ARGS = {}
-DEFAULT_PARSER_ARGS['loglevel'] = dict(
-    args=['--loglevel'],
-    kwargs=dict(help=("use given logging level (one between INFO, "
-                      "WARNING, ERROR, CRITICAL, DEBUG; "
-                      "default:WARNING)"),
-                default='WARNING', type=str))
-DEFAULT_PARSER_ARGS['nproc'] = dict(
-    args=['--nproc'],
-    kwargs=dict(help=("Number of processors to use"),
-                default=1, type=int))
-DEFAULT_PARSER_ARGS['debug'] = dict(
-    args=['--debug'],
-    kwargs=dict(help=("set DEBUG logging level"),
-                default=False, action='store_true'))
-DEFAULT_PARSER_ARGS['bintime'] = dict(
+DEFAULT_PARSER_ARGS["loglevel"] = dict(
+    args=["--loglevel"],
+    kwargs=dict(
+        help=(
+            "use given logging level (one between INFO, "
+            "WARNING, ERROR, CRITICAL, DEBUG; "
+            "default:WARNING)"
+        ),
+        default="WARNING",
+        type=str,
+    ),
+)
+DEFAULT_PARSER_ARGS["nproc"] = dict(
+    args=["--nproc"],
+    kwargs=dict(help=("Number of processors to use"), default=1, type=int),
+)
+DEFAULT_PARSER_ARGS["debug"] = dict(
+    args=["--debug"],
+    kwargs=dict(
+        help=("set DEBUG logging level"), default=False, action="store_true"
+    ),
+)
+DEFAULT_PARSER_ARGS["bintime"] = dict(
     args=["-b", "--bintime"],
-    kwargs=dict(help="Bin time",
-                type=np.longdouble, default=1))
-DEFAULT_PARSER_ARGS['energies'] = dict(
+    kwargs=dict(help="Bin time", type=np.longdouble, default=1),
+)
+DEFAULT_PARSER_ARGS["energies"] = dict(
     args=["-e", "--energy-interval"],
-    kwargs=dict(help="Energy interval used for filtering",
-                nargs=2, type=float, default=None))
-DEFAULT_PARSER_ARGS['pi'] = dict(
+    kwargs=dict(
+        help="Energy interval used for filtering",
+        nargs=2,
+        type=float,
+        default=None,
+    ),
+)
+DEFAULT_PARSER_ARGS["pi"] = dict(
     args=["--pi-interval"],
-    kwargs=dict(help="PI interval used for filtering",
-                nargs=2, type=int, default=[-1, -1]))
-DEFAULT_PARSER_ARGS['deorbit'] = dict(
+    kwargs=dict(
+        help="PI interval used for filtering",
+        nargs=2,
+        type=int,
+        default=[-1, -1],
+    ),
+)
+DEFAULT_PARSER_ARGS["deorbit"] = dict(
     args=["-p", "--deorbit-par"],
     kwargs=dict(
-        help=("Deorbit data with this parameter file (requires PINT installed)"),
+        help=(
+            "Deorbit data with this parameter file (requires PINT installed)"
+        ),
         default=None,
-        type=str))
-DEFAULT_PARSER_ARGS['output'] = dict(
+        type=str,
+    ),
+)
+DEFAULT_PARSER_ARGS["output"] = dict(
     args=["-o", "--outfile"],
-    kwargs=dict(help='Output file',
-                default=None, type=str))
-DEFAULT_PARSER_ARGS['usepi'] = dict(
-    args=['--use-pi'],
-    kwargs=dict(help="Use the PI channel instead of energies",
-                default=False, action='store_true'))
-DEFAULT_PARSER_ARGS['test'] = dict(
+    kwargs=dict(help="Output file", default=None, type=str),
+)
+DEFAULT_PARSER_ARGS["usepi"] = dict(
+    args=["--use-pi"],
+    kwargs=dict(
+        help="Use the PI channel instead of energies",
+        default=False,
+        action="store_true",
+    ),
+)
+DEFAULT_PARSER_ARGS["test"] = dict(
     args=["--test"],
-    kwargs=dict(help="Only used for tests",
-                default=False, action='store_true'))
-DEFAULT_PARSER_ARGS['pepoch'] = dict(
+    kwargs=dict(
+        help="Only used for tests", default=False, action="store_true"
+    ),
+)
+DEFAULT_PARSER_ARGS["pepoch"] = dict(
     args=["--pepoch"],
-    kwargs=dict(type=float, required=False,
-                help="Reference epoch for timing parameters (MJD)",
-                default=None))
+    kwargs=dict(
+        type=float,
+        required=False,
+        help="Reference epoch for timing parameters (MJD)",
+        default=None,
+    ),
+)
 
 
 def r_in(td, r_0):
     """Calculate incident countrate given dead time and detected countrate."""
     tau = 1 / r_0
-    return 1. / (tau - td)
+    return 1.0 / (tau - td)
 
 
 def r_det(td, r_i):
     """Calculate detected countrate given dead time and incident countrate."""
     tau = 1 / r_i
-    return 1. / (tau + td)
+    return 1.0 / (tau + td)
 
 
 def _assign_value_if_none(value, default):
@@ -404,17 +456,16 @@ def _order_list_of_arrays(data, order):
     >>> _order_list_of_arrays(2, order) is None
     True
     """
-    if hasattr(data, 'items'):
-        data = dict((i[0], np.asarray(i[1])[order])
-                    for i in data.items())
-    elif hasattr(data, 'index'):
+    if hasattr(data, "items"):
+        data = dict((i[0], np.asarray(i[1])[order]) for i in data.items())
+    elif hasattr(data, "index"):
         data = [np.asarray(i)[order] for i in data]
     else:
         data = None
     return data
 
 
-class _empty():
+class _empty:
     def __init__(self):
         pass
 
@@ -424,7 +475,7 @@ def mkdir_p(path):
     return os.makedirs(path, exist_ok=True)
 
 
-def common_name(str1, str2, default='common'):
+def common_name(str1, str2, default="common"):
     """Strip two strings of the letters not in common.
 
     Filenames must be of same length and only differ by a few letters.
@@ -457,7 +508,7 @@ def common_name(str1, str2, default='common'):
     """
     if not len(str1) == len(str2):
         return default
-    common_str = ''
+    common_str = ""
     # Extract the HEN root of the name (in case they're event files)
     str1 = hen_root(str1)
     str2 = hen_root(str2)
@@ -465,9 +516,9 @@ def common_name(str1, str2, default='common'):
         if str2[i] == letter:
             common_str += letter
     # Remove leading and trailing underscores and dashes
-    common_str = common_str.rstrip('_').rstrip('-')
-    common_str = common_str.lstrip('_').lstrip('-')
-    if common_str == '':
+    common_str = common_str.rstrip("_").rstrip("-")
+    common_str = common_str.lstrip("_").lstrip("-")
+    if common_str == "":
         common_str = default
     # log.debug('common_name: %s %s -> %s', str1, str2, common_str)
     return common_str
@@ -480,10 +531,10 @@ def hen_root(filename):
     ----------
     filename : str
     """
-    fname = filename.replace('.gz', '')
+    fname = filename.replace(".gz", "")
     fname = os.path.splitext(fname)[0]
-    fname = fname.replace('_ev', '').replace('_lc', '')
-    fname = fname.replace('_calib', '')
+    fname = fname.replace("_ev", "").replace("_lc", "")
+    fname = fname.replace("_calib", "")
     return fname
 
 
@@ -528,16 +579,20 @@ def deorbit_events(events, parameter_file=None):
     """
     events = copy.deepcopy(events)
     if parameter_file is None:
-        warnings.warn("No parameter file specified for deorbit. Returning"
-                      " unaltered event list")
+        warnings.warn(
+            "No parameter file specified for deorbit. Returning"
+            " unaltered event list"
+        )
         return events
     if not os.path.exists(parameter_file):
         raise FileNotFoundError(
-            "Parameter file {} does not exist".format(parameter_file))
+            "Parameter file {} does not exist".format(parameter_file)
+        )
 
     if events.mjdref < 33282.0:
-        raise ValueError("MJDREF is very low (<01-01-1950), "
-                         "this is unsupported.")
+        raise ValueError(
+            "MJDREF is very low (<01-01-1950), " "this is unsupported."
+        )
 
     pepoch = events.gti[0, 0]
     pepoch_mjd = pepoch / 86400 + events.mjdref
@@ -546,14 +601,16 @@ def deorbit_events(events, parameter_file=None):
     if length > 200000:
         warnings.warn(
             "The observation is very long. The barycentric correction "
-            "will be rough")
+            "will be rough"
+        )
 
     length_d = length / 86400
     results = get_orbital_correction_from_ephemeris_file(
         pepoch_mjd - 1,
         pepoch_mjd + length_d + 1,
         parameter_file,
-        ntimes=min(int(length // 10), 10000))
+        ntimes=min(int(length // 10), 10000),
+    )
     orbital_correction_fun = results[0]
     events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
     events.gti = orbital_correction_fun(events.gti, mjdref=events.mjdref)
@@ -563,8 +620,8 @@ def deorbit_events(events, parameter_file=None):
 def _add_default_args(parser, list_of_args):
     for key in list_of_args:
         arg = DEFAULT_PARSER_ARGS[key]
-        a = arg['args']
-        k = arg['kwargs']
+        a = arg["args"]
+        k = arg["kwargs"]
         parser.add_argument(*a, **k)
 
     return parser
@@ -613,7 +670,7 @@ def interpret_bintime(bintime):
     ValueError: Bin time cannot be = 0
     """
     if bintime < 0:
-        return 2**bintime
+        return 2 ** bintime
     elif bintime > 0:
         return bintime
     raise ValueError("Bin time cannot be = 0")
@@ -621,7 +678,7 @@ def interpret_bintime(bintime):
 
 @njit(nogil=True, parallel=False)
 def _get_bin_edges(a, bins, a_min, a_max):
-    bin_edges = np.zeros(bins+1, dtype=np.float64)
+    bin_edges = np.zeros(bins + 1, dtype=np.float64)
 
     delta = (a_max - a_min) / bins
     for i in range(bin_edges.size):
@@ -708,11 +765,12 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     >>> assert np.all(H == Hn)
     >>> assert os.path.exists('out.npy')
     """
-    if bins > 10**7 and use_memmap:
+    if bins > 10 ** 7 and use_memmap:
         if tmp is None:
-            tmp = tempfile.NamedTemporaryFile('w+')
+            tmp = tempfile.NamedTemporaryFile("w+")
         hist_arr = np.lib.format.open_memmap(
-            tmp, mode='w+', dtype=a.dtype, shape=(bins,))
+            tmp, mode="w+", dtype=a.dtype, shape=(bins,)
+        )
     else:
         hist_arr = np.zeros((bins,), dtype=a.dtype)
 
@@ -745,8 +803,9 @@ def hist2d_numba_seq(x, y, bins, ranges):
     >>> assert np.all(H == Hn)
     """
     H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
-    return _hist2d_numba_seq(H, np.array([x, y]), np.asarray(list(bins)),
-                             np.asarray(ranges))
+    return _hist2d_numba_seq(
+        H, np.array([x, y]), np.asarray(list(bins)), np.asarray(ranges)
+    )
 
 
 @njit(nogil=True, parallel=False)
@@ -778,8 +837,9 @@ def hist3d_numba_seq(tracks, bins, ranges):
     """
 
     H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.uint64)
-    return _hist3d_numba_seq(H, np.asarray(tracks), np.asarray(list(bins)),
-                             np.asarray(ranges))
+    return _hist3d_numba_seq(
+        H, np.asarray(tracks), np.asarray(list(bins)), np.asarray(ranges)
+    )
 
 
 @njit(nogil=True, parallel=False)
@@ -812,8 +872,12 @@ def hist2d_numba_seq_weight(x, y, weights, bins, ranges):
     """
     H = np.zeros((bins[0], bins[1]), dtype=np.double)
     return _hist2d_numba_seq_weight(
-        H, np.array([x, y]), weights, np.asarray(list(bins)),
-        np.asarray(ranges))
+        H,
+        np.array([x, y]),
+        weights,
+        np.asarray(list(bins)),
+        np.asarray(ranges),
+    )
 
 
 @njit(nogil=True, parallel=False)
@@ -849,8 +913,12 @@ def hist3d_numba_seq_weight(tracks, weights, bins, ranges):
 
     H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.double)
     return _hist3d_numba_seq_weight(
-        H, np.asarray(tracks), weights, np.asarray(list(bins)),
-        np.asarray(ranges))
+        H,
+        np.asarray(tracks),
+        weights,
+        np.asarray(list(bins)),
+        np.asarray(ranges),
+    )
 
 
 @njit(nogil=True, parallel=False)
@@ -872,8 +940,12 @@ def _histnd_numba_seq(H, tracks, bins, ranges, slice_int):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
     for t in range(tracks.shape[1]):
-        slicearr = np.array([(tracks[dim, t] - ranges[dim, 0]) * delta[dim]
-                             for dim in range(tracks.shape[0])])
+        slicearr = np.array(
+            [
+                (tracks[dim, t] - ranges[dim, 0]) * delta[dim]
+                for dim in range(tracks.shape[0])
+            ]
+        )
 
         good = np.all((slicearr < bins) & (slicearr >= 0))
         slice_int[:] = slicearr
@@ -914,16 +986,20 @@ def histnd_numba_seq(tracks, bins, ranges):
 
 
 if HAS_NUMBA:
+
     def histogram2d(*args, **kwargs):
-        if 'range' in kwargs:
-            kwargs['ranges'] = kwargs.pop('range')
+        if "range" in kwargs:
+            kwargs["ranges"] = kwargs.pop("range")
         return hist2d_numba_seq(*args, **kwargs)
 
     def histogram(*args, **kwargs):
-        if 'range' in kwargs:
-            kwargs['ranges'] = kwargs.pop('range')
+        if "range" in kwargs:
+            kwargs["ranges"] = kwargs.pop("range")
         return hist1d_numba_seq(*args, **kwargs)
+
+
 else:
+
     def histogram2d(*args, **kwargs):
         return histogram2d_np(*args, **kwargs)[0]
 
@@ -988,7 +1064,7 @@ def adjust_dt_for_power_of_two(dt, length, strict=False):
     """
     log.info("Adjusting bin time to closest power of 2 of bins.")
     nbin = length / dt
-    closest_to_pow2 = 2**np.ceil(np.log2(nbin))
+    closest_to_pow2 = 2 ** np.ceil(np.log2(nbin))
     if closest_to_pow2 > 1.5 * nbin and not strict:
         log.info("Too many bins: using powers of 2, 3, and 5.")
         return adjust_dt_for_small_power(dt, length)
@@ -1021,8 +1097,9 @@ def adjust_dt_for_small_power(dt, length):
     return new_dt
 
 
-def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7,
-                     dtype=float):
+def memmapped_arange(
+    i0, i1, istep, fname=None, nbin_threshold=10 ** 7, dtype=float
+):
     """Arange plus memory mapping.
 
     Examples
@@ -1036,20 +1113,21 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7,
 
     """
     import tempfile
-    chunklen = 10**6
+
+    chunklen = 10 ** 6
     Nbins = int((i1 - i0) / istep)
     if Nbins < nbin_threshold:
         return np.arange(i0, i1, istep)
     if fname is None:
-        _, fname = tempfile.mkstemp(suffix='.npy')
+        _, fname = tempfile.mkstemp(suffix=".npy")
 
     hist_arr = np.lib.format.open_memmap(
-        fname, mode='w+', dtype=dtype, shape=(Nbins,))
+        fname, mode="w+", dtype=dtype, shape=(Nbins,)
+    )
 
     for start in range(0, Nbins, chunklen):
         stop = min(start + chunklen, Nbins)
-        hist_arr[start:stop] = \
-            np.arange(start, stop) * istep
+        hist_arr[start:stop] = np.arange(start, stop) * istep
 
     return hist_arr
 
@@ -1106,9 +1184,10 @@ def find_peaks_in_image(image, n=5, rough=False, **kwargs):
     True
     """
     if not HAS_SKIMAGE or rough:
-        best_cands = \
-            [np.unravel_index(idx, image.shape)
-             for idx in np.argpartition(image.flatten(), -n)[-n:]]
+        best_cands = [
+            np.unravel_index(idx, image.shape)
+            for idx in np.argpartition(image.flatten(), -n)[-n:]
+        ]
         __best_stats = [image[bci] for bci in best_cands]
         best_cands = np.asarray(best_cands)[np.argsort(__best_stats)][::-1]
         return best_cands
