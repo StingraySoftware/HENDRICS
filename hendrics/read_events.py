@@ -223,11 +223,11 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
     events1 = load_events(event_file1)
     events2 = load_events(event_file2)
     if events2.time.size == 0 or events2.gti.size == 0:
-        log.warning(f"{event_file2} has no good events")
+        warnings.warn(f"{event_file2} has no good events")
         return None
 
     if events2.mjdref != events1.mjdref:
-        log.warning("Different missions detected; changing MJDREF")
+        warnings.warn("Different missions detected; changing MJDREF")
         time_diff = (events1.mjdref - events2.mjdref) * 86400
         events2.time -= time_diff
         events2.mjdref = events1.mjdref

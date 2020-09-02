@@ -324,17 +324,21 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None,
         if not hasattr(ef, 'M') or ef.M is None:
             ef.M = 1
         label = "Stat"
+        ntrial = ef.stat.size
+        if hasattr(ef, 'oversample') and ef.oversample is not None:
+            ntrial /= ef.oversample
+            ntrial = np.int(ntrial)
         if ef.kind == "Z2n":
             vmin = ef.N - 1
             vmax = z2_n_detection_level(epsilon=0.001, n=int(ef.N),
-                                        ntrial=max(ef.stat.shape),
+                                        ntrial=ntrial,
                                         n_summed_spectra=int(ef.M))
             nbin = ef.N * 8
             label = "$" + f"Z^2_{ef.N}" + "$"
         else:
             vmin = ef.nbin
             vmax = fold_detection_level(nbin=int(ef.nbin), epsilon=0.001,
-                                        ntrial=max(ef.stat.shape))
+                                        ntrial=ntrial)
             nbin = ef.nbin
 
         best_cands = find_peaks_in_image(ef.stat, n=5)

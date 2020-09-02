@@ -1,5 +1,6 @@
 """Interactive phaseogram."""
 
+import warnings
 import copy
 import argparse
 from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
@@ -24,8 +25,8 @@ try:
     # import pint
     HAS_PINT = True
 except ImportError:
-    log.warning("PINT is not installed. "
-                "Some pulsar functionality will not be available")
+    warnings.warn("PINT is not installed. "
+                  "Some pulsar functionality will not be available")
     HAS_PINT = False
 from .base import deorbit_events
 
@@ -452,9 +453,10 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     >>> elabel == 'Energy'
     True
     >>> events = EventList(time=time, pi=energy)
-    >>> with redirect_stderr(sys.stdout):
+    >>> with warnings.catch_warnings(record=True) as w:
     ...     ev_out, elabel = filter_energy(events, None, 20)  # doctest: +ELLIPSIS
-    WARNING: No energy information ...
+    >>> "No energy information in event list" in str(w[-1].message)
+    True
     >>> np.all(ev_out.time == [0, 1, 3, 4])
     True
     >>> elabel == 'PI'
@@ -489,9 +491,9 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
     # For some reason the doctest doesn't work if I don't do this instead
     # of using warnings.warn
     if elabel.lower() == 'pi' and (emax is not None or emin is not None):
-        log.warning(f"No energy information in event list "
-                    f"while filtering between {emin} and {emax}. "
-                    "Definition of events.energy is now based on PI.")
+        warnings.warn(f"No energy information in event list "
+                      f"while filtering between {emin} and {emax}. "
+                      f"Definition of events.energy is now based on PI.")
     if emin is None:
         emin = np.min(energy)
     if emax is None:
@@ -622,7 +624,7 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
     ax0.set_xlabel('Phase')
 
     if plot_energy:
-        ax1.pcolormesh(X, Y, hist2d.T, cmap='Greys')
+        ax1.pcolormesh(X, Y, hist2d.T, cmap='Greys_r')
         ax1.semilogy()
 
         ax1.set_xlabel('Phase')
@@ -641,8 +643,6 @@ def run_folding(file, freq, fdot=0, fddot=0, nbin=16, nebin=16, tref=None,
             min = np.min(smooth)
             pf = 100 * (max - min) / max
             ax2.plot(meanbins, prof - mean + i * shift, drawstyle='steps-mid',
-                     label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],
-                                                     biny[i + 1]),
                      alpha=0.5, color='k')
             ax2.plot(meanbins, smooth - mean + i * shift,
                      label='{}={:.2f}-{:.2f}'.format(elabel, biny[i],

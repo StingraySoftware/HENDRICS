@@ -8,7 +8,6 @@ import numpy as np
 import numpy.random as ra
 from astropy import log
 from astropy.logger import AstropyUserWarning
-from stingray.gti import gti_border_bins
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
@@ -462,31 +461,38 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
 
     Examples
     --------
-    >>> nevents = 3003
-    >>> times = np.sort(np.random.uniform(0, 1000, nevents))
-    >>> event_list = EventList(times, gti=[[0, 123.], [125.123, 1000]])
+    >>> times = np.array([0.5, 134, 246, 344, 867])
+    >>> event_list = EventList(
+    ...     times, gti=np.array([[0, 0.9], [111, 123.2], [125.123, 1000]]))
     >>> new_event_list = scramble(event_list, 'smooth')
-    >>> new_event_list.time.size == nevents
+    >>> new_event_list.time.size == times.size
     True
     >>> np.all(new_event_list.gti == event_list.gti)
     True
     >>> new_event_list = scramble(event_list, 'flat')
-    >>> new_event_list.time.size == nevents
+    >>> new_event_list.time.size == times.size
     True
     >>> np.all(new_event_list.gti == event_list.gti)
     True
     """
     new_event_list = copy.deepcopy(event_list)
-    idxs_start, idxs_stop = gti_border_bins(
-        time=new_event_list.time, gtis=new_event_list.gti)
+    assert np.all(np.diff(new_event_list.time) > 0)
 
-    for i_start, i_stop, gti_boundary in zip(idxs_start, idxs_stop,
-                                             new_event_list.gti):
+    idxs = np.searchsorted(new_event_list.time, new_event_list.gti)
+
+    for (i_start, i_stop), gti_boundary in zip(idxs,
+                                               new_event_list.gti):
+        locally_flat = False
         nevents = i_stop - i_start
         t_start, t_stop = gti_boundary[0], gti_boundary[1]
+        if nevents < 1:
+            continue
         length = t_stop - t_start
+        if length <= 1:
+            # in very short GTIs, always assume a flat distribution.
+            locally_flat = True
 
-        if smooth_kind == 'flat':
+        if smooth_kind == 'flat' or locally_flat:
             rate = nevents / length
             input_rate = r_in(deadtime, rate)
             new_events = np.sort(np.random.uniform(
@@ -532,10 +538,11 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
         else:
             raise ValueError('Unknown value for `smooth_kind`')
 
+        newev = acceptance_rejection(dt, counts, t0=t_start,
+                                     poissonize_n_events=False,
+                                     deadtime=deadtime)
         new_event_list.time[i_start:i_stop] = \
-            acceptance_rejection(dt, counts, t0=t_start,
-                                 poissonize_n_events=False,
-                                 deadtime=deadtime)
+            newev
 
     return new_event_list
 
@@ -590,7 +597,6 @@ def main_scramble(args=None):
             label += f'_pulsed_df{args.pulsed_fraction:g}'
         elif args.smooth_kind == 'smooth':
             label += f'_smooth_dt{args.dt:g}s'
-
         if args.deadtime > 0:
             label += f'_deadtime_{args.deadtime:g}'
 

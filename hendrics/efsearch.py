@@ -1100,7 +1100,7 @@ def _common_main(args, func):
 
             ref_time = (events.time[-1] + events.time[0]) / 2
         elif args.ffa:
-            log.warning(
+            warnings.warn(
                 "The Fast Folding Algorithm functionality is experimental. Use"
                 " with care, and feel free to report any issues.")
             results = \
@@ -1159,6 +1159,7 @@ def _common_main(args, func):
                 best_models.append(best_fun)
 
         efperiodogram.best_fits = best_models
+        efperiodogram.oversample = oversample
 
         out_fname = hen_root(fname) + '_{}'.format(kind_label)
         if args.emin is not None or args.emax is not None:
@@ -1176,9 +1177,6 @@ def _common_main(args, func):
         if args.mean_fdot is not None \
                 and not np.isclose(args.mean_fdot * 1e10, 0):
             out_fname += f'_fd{args.mean_fdot * 1e10:g}e-10s-2'
-        if args.mean_fddot is not None \
-                and not np.isclose(args.mean_fddot * 1e13, 0):
-            out_fname += f'_fdd{args.mean_fddot * 1e13:g}e-13s-3'
 
         save_folding(efperiodogram,
                      out_fname + HEN_FILE_EXTENSION)
@@ -1200,7 +1198,7 @@ def main_zsearch(args=None):
         return _common_main(args, z_n_search)
 
 
-def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None):
+def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None, N=2):
     length = event_list.gti[-1, 1] - event_list.gti[0, 0]
     df = 1/length
 
@@ -1209,11 +1207,10 @@ def z2_vs_pf(event_list, deadtime=0., ntrials=100, outfile=None):
         pf = np.random.uniform(0, 1)
         new_event_list = scramble(event_list, deadtime=deadtime,
                                   smooth_kind='pulsed', pulsed_fraction=pf)
-
         frequencies, stats, _, _ = \
             search_with_qffa(new_event_list.time, 1 - df * 2, 1 + df * 2,
                              fdot=0, nbin=32, oversample=16, search_fdot=False,
-                             silent=True)
+                             silent=True, n=N)
         result_table.add_row([pf, np.max(stats)])
     if outfile is None:
         outfile = 'z2_vs_pf.csv'
@@ -1239,6 +1236,8 @@ def main_z2vspf(args=None):
                         help="Minimum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--emax", default=None, type=float,
                         help="Maximum energy (or PI if uncalibrated) to plot")
+    parser.add_argument("-N", default=2, type=int,
+                        help="The N in Z^2_N")
 
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ['loglevel', 'debug'])
@@ -1260,7 +1259,7 @@ def main_z2vspf(args=None):
 
     result_table = z2_vs_pf(events,
                             deadtime=0., ntrials=args.ntrial,
-                            outfile=outfile)
+                            outfile=outfile, N=args.N)
     if HAS_MPL:
         plt.figure("Results", figsize=(10, 6))
         plt.scatter(result_table['pf'] * 100, result_table['z2'])
@@ -1276,16 +1275,15 @@ def main_accelsearch(args=None):
     from stingray.pulse.accelsearch import accelsearch
 
     from .base import _add_default_args, check_negative_numbers_in_args
-    log.warning("The accelsearch functionality is experimental. Use with care,"
-                " and feel free to report any issues.")
+    warnings.warn(
+        "The accelsearch functionality is experimental. Use with care, "
+        " and feel free to report any issues.")
     description = ('Run the accelerated search on pulsar data.')
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("fname", help="Input file name")
-    parser.add_argument('--ntrial', default=100, type=int,
-                        help="Number of trial values for the pulsed fraction")
     parser.add_argument('--outfile', default=None, type=str,
-                        help="Output table file name")
+                        help="Output file name")
     parser.add_argument("--emin", default=None, type=float,
                         help="Minimum energy (or PI if uncalibrated) to plot")
     parser.add_argument("--emax", default=None, type=float,

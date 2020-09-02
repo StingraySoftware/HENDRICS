@@ -28,11 +28,10 @@ HENaccelsearch
 
 ::
 
-    usage: HENaccelsearch [-h] [--ntrial NTRIAL] [--outfile OUTFILE] [--emin EMIN]
-                          [--emax EMAX] [--fmin FMIN] [--fmax FMAX]
-                          [--nproc NPROC] [--zmax ZMAX] [--delta-z DELTA_Z]
-                          [--interbin] [--pad-to-double] [--loglevel LOGLEVEL]
-                          [--debug]
+    usage: HENaccelsearch [-h] [--outfile OUTFILE] [--emin EMIN] [--emax EMAX]
+                          [--fmin FMIN] [--fmax FMAX] [--nproc NPROC]
+                          [--zmax ZMAX] [--delta-z DELTA_Z] [--interbin]
+                          [--pad-to-double] [--loglevel LOGLEVEL] [--debug]
                           fname
 
     Run the accelerated search on pulsar data.
@@ -42,8 +41,7 @@ HENaccelsearch
 
     optional arguments:
       -h, --help           show this help message and exit
-      --ntrial NTRIAL      Number of trial values for the pulsed fraction
-      --outfile OUTFILE    Output table file name
+      --outfile OUTFILE    Output file name
       --emin EMIN          Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX          Maximum energy (or PI if uncalibrated) to plot
       --fmin FMIN          Minimum frequency to search, in Hz

@@ -544,8 +544,10 @@ def deorbit_events(events, parameter_file=None):
 
     length = np.max(events.time) - np.min(events.time)
     if length > 200000:
-        log.warning("The observation is very long. The barycentric correction "
-                    "will be rough")
+        warnings.warn(
+            "The observation is very long. The barycentric correction "
+            "will be rough")
+
     length_d = length / 86400
     results = get_orbital_correction_from_ephemeris_file(
         pepoch_mjd - 1,

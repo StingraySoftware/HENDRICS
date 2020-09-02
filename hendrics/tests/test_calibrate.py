@@ -14,10 +14,11 @@ def test_default_nustar_rmf(caplog):
     path_to_rmf = os.path.join(
         caldb_path,
         *"data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf".split('/'))
-    newpath = default_nustar_rmf()
+    with pytest.warns(UserWarning) as record:
+        newpath = default_nustar_rmf()
 
-    assert np.any(["Rmf not specified. Using default NuSTAR rmf." in r.msg
-            for r in caplog.records])
+    assert np.any(["Using default NuSTAR rmf." in r.message.args[0]
+            for r in record])
     assert newpath == path_to_rmf
 
 

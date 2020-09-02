@@ -10,8 +10,10 @@ import numpy as np
 from astropy import log
 from astropy.io import fits
 import hendrics as hen
+from stingray.events import EventList
 from hendrics.tests import _dummy_par
 from hendrics import fake, calibrate, read_events, io
+from hendrics.fake import scramble
 
 try:
     FileNotFoundError
@@ -163,10 +165,28 @@ class TestFake(object):
         assert np.all(np.abs(diff) <= 0.073 / 2)
         assert np.all(np.abs(diff) > 0.)
 
-    def test_scramble_events(self):
+    def test_scramble_events_file(self):
         command = f'{self.first_event_file}'
         newfile = hen.fake.main_scramble(command.split())
         assert os.path.exists(newfile)
+
+    def test_scramble_events(self):
+        nevents = 3003
+        times = np.random.uniform(0, 1000, nevents)
+        times = times[(times > 125.123)]
+        # Put exactly one photon inside a very short GTI
+        times[0] = 0.5
+        times = np.sort(times)
+        event_list = EventList(
+            times, gti=np.array([[0, 0.9], [111, 123.2], [125.123, 1000]]))
+
+        new_event_list = scramble(event_list, 'smooth')
+        assert new_event_list.time.size == times.size
+        assert np.all(new_event_list.gti == event_list.gti)
+
+        new_event_list = scramble(event_list, 'flat')
+        assert new_event_list.time.size == times.size
+        np.all(new_event_list.gti == event_list.gti)
 
     def test_calibrate_xmm(self):
         """Test event file calibration."""

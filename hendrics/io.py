@@ -26,6 +26,7 @@ except ImportError:
 from astropy.modeling.core import Model
 from astropy import log
 from astropy.logger import AstropyUserWarning
+from astropy.io import fits
 from stingray.utils import assign_value_if_none
 from stingray.gti import cross_gtis
 from stingray.events import EventList
@@ -51,7 +52,7 @@ if HAS_C256:
 
 class EFPeriodogram(object):
     def __init__(self, freq=None, stat=None, kind=None, nbin=None, N=None,
-                 M=None, pepoch=None, mjdref=None,
+                 oversample=None, M=None, pepoch=None, mjdref=None,
                  peaks=None, peak_stat=None, best_fits=None, fdots=0, fddots=0,
                  segment_size=1e32, filename="", parfile=None,
                  emin=None, emax=None):
@@ -59,6 +60,7 @@ class EFPeriodogram(object):
         self.stat = stat
         self.kind = kind
         self.nbin = nbin
+        self.oversample = oversample
         self.N = N
         self.peaks = peaks
         self.peak_stat = peak_stat
@@ -1055,7 +1057,7 @@ def _get_gti_from_hdu(gtihdu):
     """
     gtitable = gtihdu.data
 
-    colnames = [col.name for col in gtitable.columns.columns]
+    colnames = [col.name for col in gtitable.columns]
     # Default: NuSTAR: START, STOP. Otherwise, try RXTE: Start, Stop
     if 'START' in colnames:
         startstr, stopstr = 'START', 'STOP'
@@ -1113,13 +1115,17 @@ def _get_additional_data(lctable, additional_columns):
     """Get columns from lctable"""
     additional_data = {}
     if additional_columns is not None:
+        if isinstance(lctable, fits.fitsrec.FITS_rec):
+            colnames = lctable.columns.names
+        else:
+            colnames = lctable.colnames
+
         for a in additional_columns:
-            try:
-                additional_data[a] = np.array(lctable.field(a))
-            except KeyError:
-                log.warning("Column {} not found".format(a),
-                            AstropyUserWarning)
+            if a not in colnames:
+                warnings.warn(f"Column {a} not found")
                 additional_data[a] = np.zeros(len(lctable))
+                continue
+            additional_data[a] = np.array(lctable.field(a))
 
     return additional_data
 
@@ -1305,10 +1311,10 @@ def load_events_and_gtis(fits_file, additional_columns=None,
     additional_data = _order_list_of_arrays(additional_data, order)
 
     cal_pi = None
-    pi = additional_data['PI']
+    pi = additional_data['PI'].astype(np.float32)
 
     if mission.lower() in ['xmm', 'swift']:
-        pi = additional_data['PHA']
+        pi = additional_data['PHA'].astype(np.float32)
         cal_pi = additional_data['PI']
         additional_data.pop('PHA')
 
@@ -1539,9 +1545,8 @@ def find_file_in_allowed_paths(fname, other_paths=None):
         for p in other_paths:
             fullpath = os.path.join(p, bname)
             if os.path.exists(fullpath):
-                log.warning("Parfile found at different path: {}".format(
-                    fullpath
-                ), AstropyUserWarning)
+                log.info(
+                    f"Parfile found at different path: {fullpath}")
                 return fullpath
 
     return False

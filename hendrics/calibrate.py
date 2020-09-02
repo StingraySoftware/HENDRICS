@@ -2,6 +2,7 @@
 """Calibrate event lists by looking in rmf files."""
 
 import os
+import warnings
 import numpy as np
 from astropy import log
 from .io import load_events, save_events, get_file_extension
@@ -18,7 +19,7 @@ def default_nustar_rmf():
               name will be eventually replaced with a smarter choice based
               on observing time
     """
-    log.warning(
+    warnings.warn(
         "Rmf not specified. Using default NuSTAR rmf.")
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split('/')
@@ -105,18 +106,23 @@ def rough_calibration(pis, mission):
     --------
     >>> rough_calibration(0, 'nustar')
     1.6
-    >>> rough_calibration(1200, 'xmm')
+    >>> # It's case-insensitive
+    >>> rough_calibration(1200, 'XMm')
     1.2
-    >>> rough_calibration(10, 'nicer')
+    >>> rough_calibration(10, 'asDf')
     Traceback (most recent call last):
         ...
-    ValueError: Mission not recognized
+    ValueError: Mission asdf not recognized
+    >>> rough_calibration(100, 'nicer')
+    1.0
     """
     if mission.lower() == 'nustar':
         return pis * 0.04 + 1.6
     elif mission.lower() == 'xmm':
-        return pis / 1000.
-    raise ValueError("Mission not recognized")
+        return pis * 0.001
+    elif mission.lower() == 'nicer':
+        return pis * 0.01
+    raise ValueError(f"Mission {mission.lower()} not recognized")
 
 
 def calibrate(fname, outname, rmf_file=None, rough=False):
