@@ -1056,7 +1056,7 @@ def _get_gti_from_hdu(gtihdu):
     """
     gtitable = gtihdu.data
 
-    colnames = [col.name for col in gtitable.columns.columns]
+    colnames = [col.name for col in gtitable.columns]
     # Default: NuSTAR: START, STOP. Otherwise, try RXTE: Start, Stop
     if 'START' in colnames:
         startstr, stopstr = 'START', 'STOP'
@@ -1115,7 +1115,7 @@ def _get_additional_data(lctable, additional_columns):
     additional_data = {}
     if additional_columns is not None:
         for a in additional_columns:
-            if a not in lctable.columns:
+            if a not in lctable.columns.names:
                 log.warning("Column {} not found".format(a),
                             AstropyUserWarning)
                 additional_data[a] = np.zeros(len(lctable))
