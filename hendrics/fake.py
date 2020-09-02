@@ -8,7 +8,6 @@ import numpy as np
 import numpy.random as ra
 from astropy import log
 from astropy.logger import AstropyUserWarning
-from stingray.gti import gti_border_bins
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
@@ -482,7 +481,7 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
     idxs = np.searchsorted(new_event_list.time, new_event_list.gti)
 
     for (i_start, i_stop), gti_boundary in zip(idxs,
-                                             new_event_list.gti):
+                                               new_event_list.gti):
         locally_flat = False
         nevents = i_stop - i_start
         t_start, t_stop = gti_boundary[0], gti_boundary[1]
@@ -540,8 +539,8 @@ def scramble(event_list, smooth_kind='flat', dt=None, pulsed_fraction=0.,
             raise ValueError('Unknown value for `smooth_kind`')
 
         newev = acceptance_rejection(dt, counts, t0=t_start,
-                                 poissonize_n_events=False,
-                                 deadtime=deadtime)
+                                     poissonize_n_events=False,
+                                     deadtime=deadtime)
         new_event_list.time[i_start:i_stop] = \
             newev
 
