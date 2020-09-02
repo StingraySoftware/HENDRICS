@@ -116,11 +116,11 @@ def rough_calibration(pis, mission):
     1.0
     """
     if mission.lower() == 'nustar':
-        return pis.astype(np.float32) * 0.04 + 1.6
+        return pis * 0.04 + 1.6
     elif mission.lower() == 'xmm':
-        return pis.astype(np.float32) / 1000.
+        return pis * 0.001
     elif mission.lower() == 'nicer':
-        return pis.astype(np.float32) / 100.
+        return pis * 0.01
     raise ValueError(f"Mission {mission.lower()} not recognized")
 
 
