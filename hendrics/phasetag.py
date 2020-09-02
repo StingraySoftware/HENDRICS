@@ -19,9 +19,19 @@ def outfile_name(file):
     return file.replace(".evt", "_phasetag.evt")
 
 
-def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
-              nbin=10, ref_to_max=False, pepoch=None,
-              expocorr=True, pulse_ref_time=None, plot=True, test=False):
+def phase_tag(
+    ev_list,
+    parameter_info,
+    gtis=None,
+    mjdref=0,
+    nbin=10,
+    ref_to_max=False,
+    pepoch=None,
+    expocorr=True,
+    pulse_ref_time=None,
+    plot=True,
+    test=False,
+):
     """Phase-tag events in a FITS file with a given ephemeris.
 
     Parameters
@@ -63,9 +73,11 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
 
     # ------ Orbital DEMODULATION --------------------
     if is_string(parameter_info):
-        raise NotImplementedError('This part is not yet implemented. Please '
-                                  'use single frequencies and pepoch as '
-                                  'documented')
+        raise NotImplementedError(
+            "This part is not yet implemented. Please "
+            "use single frequencies and pepoch as "
+            "documented"
+        )
 
     else:
         frequency_derivatives = parameter_info
@@ -74,8 +86,9 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     f = frequency_derivatives[0]
 
     phase = pulse_phase(times, *frequency_derivatives, to_1=False)
-    gti_phases = pulse_phase((gtis_mjd - pepoch) * 86400,
-                             *frequency_derivatives, to_1=False)
+    gti_phases = pulse_phase(
+        (gtis_mjd - pepoch) * 86400, *frequency_derivatives, to_1=False
+    )
 
     # ------- now apply period derivatives ------
 
@@ -89,16 +102,18 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     elif ref_to_max:
         phase_to1 = phase - np.floor(phase)
 
-        raw_profile, bins = np.histogram(phase_to1,
-                                         bins=np.linspace(0, 1, nbin + 1))
-        exposure = phase_exposure(gti_phases[0, 0], gti_phases[-1, 1], 1,
-                                  nbin=nbin, gtis=gti_phases)
+        raw_profile, bins = np.histogram(
+            phase_to1, bins=np.linspace(0, 1, nbin + 1)
+        )
+        exposure = phase_exposure(
+            gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gtis=gti_phases
+        )
         profile = raw_profile / exposure
         profile_err = np.sqrt(raw_profile) / exposure
 
-        sinpars, bu, bu = fit_profile(profile, profile_err,
-                                      nperiods=2, baseline=True,
-                                      debug=test)
+        sinpars, bu, bu = fit_profile(
+            profile, profile_err, nperiods=2, baseline=True, debug=test
+        )
         fine_phases = np.linspace(0, 2, 1000 * 2)
         fitted_profile = std_fold_fit_func(sinpars, fine_phases)
         maxp = np.argmax(fitted_profile)
@@ -113,15 +128,18 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     gti_phases -= ref_phase
     phase_to1 = phase - np.floor(phase)
 
-    raw_profile, bins = np.histogram(phase_to1,
-                                     bins=np.linspace(0, 1, nbin + 1))
+    raw_profile, bins = np.histogram(
+        phase_to1, bins=np.linspace(0, 1, nbin + 1)
+    )
 
-    exposure = phase_exposure(gti_phases[0, 0], gti_phases[-1, 1], 1,
-                              nbin=nbin, gtis=gti_phases)
+    exposure = phase_exposure(
+        gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gtis=gti_phases
+    )
     if np.any(np.logical_or(exposure != exposure, exposure == 0)):
         warnings.warn(
-            'Exposure has NaNs or zeros. Profile is not normalized',
-            AstropyUserWarning)
+            "Exposure has NaNs or zeros. Profile is not normalized",
+            AstropyUserWarning,
+        )
         expocorr = False
 
     if not expocorr:
@@ -137,21 +155,21 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     fig = None
     if plot:
         fig = plt.figure()
-        plt.errorbar(phs, profile / exposure,
-                     yerr=profile_err / exposure, fmt='none')
-        plt.plot(phs, profile / exposure, 'k-',
-                 drawstyle='steps-mid')
+        plt.errorbar(
+            phs, profile / exposure, yerr=profile_err / exposure, fmt="none"
+        )
+        plt.plot(phs, profile / exposure, "k-", drawstyle="steps-mid")
         plt.xlabel("Phase")
         plt.ylabel("Counts")
         for i in range(20):
-            plt.axvline(i * 0.1, ls='--', color='b')
+            plt.axvline(i * 0.1, ls="--", color="b")
         if not test:  # pragma: no cover
             plt.show()
         else:
             plt.close(fig)
 
     # ------ WRITE RESULTS BACK TO FITS --------------
-    results = type('results', (object,), {})
+    results = type("results", (object,), {})
     results.ev_list = ev_list
     results.phase = phase
     results.frequency_derivatives = frequency_derivatives
@@ -163,9 +181,15 @@ def phase_tag(ev_list, parameter_info, gtis=None, mjdref=0,
     return results
 
 
-def phase_tag_fits(filename, parameter_info, gtistring='GTI,STDGTI',
-                   gti_file=None, hduname='EVENTS', column='TIME',
-                   **kwargs):
+def phase_tag_fits(
+    filename,
+    parameter_info,
+    gtistring="GTI,STDGTI",
+    gti_file=None,
+    hduname="EVENTS",
+    column="TIME",
+    **kwargs
+):
     """Phase-tag events in a FITS file with a given ephemeris.
 
     Parameters
@@ -202,17 +226,24 @@ def phase_tag_fits(filename, parameter_info, gtistring='GTI,STDGTI',
     """
 
     outfile = outfile_name(filename)
-    evreturns = load_events_and_gtis(filename, gtistring=gtistring,
-                                     gti_file=gti_file, hduname=hduname,
-                                     column=column)
+    evreturns = load_events_and_gtis(
+        filename,
+        gtistring=gtistring,
+        gti_file=gti_file,
+        hduname=hduname,
+        column=column,
+    )
     mjdref = ref_mjd(filename)
 
-    results = phase_tag(evreturns.ev_list, parameter_info,
-                        gtis=evreturns.gti_list,
-                        mjdref=mjdref,
-                        **kwargs)
+    results = phase_tag(
+        evreturns.ev_list,
+        parameter_info,
+        gtis=evreturns.gti_list,
+        mjdref=mjdref,
+        **kwargs
+    )
     if results.figure is not None:
-        results.figure.savefig(hen_root(filename) + '.pdf')
+        results.figure.savefig(hen_root(filename) + ".pdf")
     phase = results.phase
     frequency_derivatives = results.frequency_derivatives
     ref_time = results.ref_time
@@ -231,10 +262,11 @@ def phase_tag_fits(filename, parameter_info, gtistring='GTI,STDGTI',
 
     # If columns already exist, overwrite them. Else, create them
     create = False
-    if 'Orbit_bary' in table.names:
+    if "Orbit_bary" in table.names:
         table.field("Orbit_bary")[:] = evreturns.ev_list
-        table.field("TotPhase_s")[:] = \
+        table.field("TotPhase_s")[:] = (
             phase / frequency_derivatives[0] + ref_time
+        )
         table.field("Phase")[:] = phase_to1
     else:
         create = True
@@ -250,27 +282,27 @@ def phase_tag_fits(filename, parameter_info, gtistring='GTI,STDGTI',
 
     if create:
         # then, create new column with orbital demodulation
-        newcol = pf.Column(name='Orbit_bary',
-                           format='1D',
-                           unit='s',
-                           array=results.ev_list)
+        newcol = pf.Column(
+            name="Orbit_bary", format="1D", unit="s", array=results.ev_list
+        )
 
         # append it to new table
         newlist.append(newcol)
 
         # Do the same with total phase
-        newcol = pf.Column(name='TotPhase_s',
-                           format='1D',
-                           unit='s',
-                           array=phase / frequency_derivatives[0] + ref_time)
+        newcol = pf.Column(
+            name="TotPhase_s",
+            format="1D",
+            unit="s",
+            array=phase / frequency_derivatives[0] + ref_time,
+        )
 
         newlist.append(newcol)
 
         # Do the same with fractional phase
-        newcol = pf.Column(name='Phase',
-                           format='1D',
-                           unit='phase',
-                           array=phase_to1)
+        newcol = pf.Column(
+            name="Phase", format="1D", unit="phase", array=phase_to1
+        )
 
         newlist.append(newcol)
 
@@ -281,9 +313,9 @@ def phase_tag_fits(filename, parameter_info, gtistring='GTI,STDGTI',
     newrec = pf.FITS_rec.from_columns(coldefs)
 
     # and new hdu
-    newtbhdu = pf.BinTableHDU(data=newrec,
-                              header=tbhdu.header.copy(),
-                              name=hduname, uint=False)
+    newtbhdu = pf.BinTableHDU(
+        data=newrec, header=tbhdu.header.copy(), name=hduname, uint=False
+    )
 
     # Copy primary HDU from old file
     prihdu = hdulist[0].copy()
@@ -303,42 +335,72 @@ def phase_tag_fits(filename, parameter_info, gtistring='GTI,STDGTI',
 
     save_as_qdp(
         [results.plot_phase, results.plot_profile, results.plot_profile_err],
-        filename=outfile.replace('.evt', '') + '.qdp')
+        filename=outfile.replace(".evt", "") + ".qdp",
+    )
 
 
 def main_phasetag(args=None):
     from .base import check_negative_numbers_in_args
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("file", help="Event file", type=str)
-    parser.add_argument("--parfile", help="Parameter file", type=str,
-                        default=None)
-    parser.add_argument('-f', "--freqs", help="Frequency derivatives",
-                        type=float, default=None, nargs='+')
+    parser.add_argument(
+        "--parfile", help="Parameter file", type=str, default=None
+    )
+    parser.add_argument(
+        "-f",
+        "--freqs",
+        help="Frequency derivatives",
+        type=float,
+        default=None,
+        nargs="+",
+    )
     parser.add_argument("-n", "--nbin", type=int, default=16, help="Nbin")
-    parser.add_argument("--plot", action="store_true", default=False,
-                        dest="plot", help="Plot profile")
-    parser.add_argument("--tomax", action="store_true", default=False,
-                        dest="tomax",
-                        help="Refer phase to pulse max")
-    parser.add_argument("--test", action="store_true", default=False,
-                        dest="test",
-                        help="Only for unit tests! Do not use")
-    parser.add_argument("--refTOA", default=None, type=np.longdouble,
-                        help="Reference TOA in MJD (overrides --tomax) for "
-                             "reference pulse phase",
-                        dest='pulse_ref_time')
-    parser.add_argument("--pepoch", default=None, type=np.longdouble,
-                        help="Reference time for timing solution",
-                        dest='pepoch')
+    parser.add_argument(
+        "--plot",
+        action="store_true",
+        default=False,
+        dest="plot",
+        help="Plot profile",
+    )
+    parser.add_argument(
+        "--tomax",
+        action="store_true",
+        default=False,
+        dest="tomax",
+        help="Refer phase to pulse max",
+    )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        default=False,
+        dest="test",
+        help="Only for unit tests! Do not use",
+    )
+    parser.add_argument(
+        "--refTOA",
+        default=None,
+        type=np.longdouble,
+        help="Reference TOA in MJD (overrides --tomax) for "
+        "reference pulse phase",
+        dest="pulse_ref_time",
+    )
+    parser.add_argument(
+        "--pepoch",
+        default=None,
+        type=np.longdouble,
+        help="Reference time for timing solution",
+        dest="pepoch",
+    )
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.freqs is None and args.parfile is None:
-        raise ValueError('Specify one between --freqs or --parfile')
+        raise ValueError("Specify one between --freqs or --parfile")
     elif args.freqs is not None and args.parfile is not None:
-        raise ValueError('Specify only one between --freqs or --parfile')
+        raise ValueError("Specify only one between --freqs or --parfile")
     elif args.freqs is not None:
         parameter_info = args.freqs
     else:
@@ -347,6 +409,14 @@ def main_phasetag(args=None):
     plot = args.plot
     expocorr = True
 
-    phase_tag_fits(args.file, parameter_info, plot=plot, nbin=args.nbin,
-                   test=args.test, expocorr=expocorr, ref_to_max=args.tomax,
-                   pulse_ref_time=args.pulse_ref_time, pepoch=args.pepoch)
+    phase_tag_fits(
+        args.file,
+        parameter_info,
+        plot=plot,
+        nbin=args.nbin,
+        test=args.test,
+        expocorr=expocorr,
+        ref_to_max=args.tomax,
+        pulse_ref_time=args.pulse_ref_time,
+        pepoch=args.pepoch,
+    )

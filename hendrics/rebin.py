@@ -12,22 +12,23 @@ def rebin_file(filename, rebin):
     """Rebin the contents of a file, be it a light curve or a spectrum."""
     ftype, contents = get_file_type(filename)
 
-    if ftype not in ['lc', 'pds', 'cpds']:
-        raise ValueError('This format does not support rebin (yet):', ftype)
+    if ftype not in ["lc", "pds", "cpds"]:
+        raise ValueError("This format does not support rebin (yet):", ftype)
 
     if rebin == np.int(rebin):
         contents = contents.rebin(f=rebin)
     else:
         contents = contents.rebin_log(f=rebin)
 
-    if ftype == 'lc':
+    if ftype == "lc":
         func = save_lcurve
-    elif ftype in ['pds', 'cpds']:
+    elif ftype in ["pds", "cpds"]:
         func = save_pds
 
-    outfile = filename.replace(get_file_extension(filename),
-                               '_rebin%g' % rebin + HEN_FILE_EXTENSION)
-    log.info('Saving %s to %s' % (ftype, outfile))
+    outfile = filename.replace(
+        get_file_extension(filename), "_rebin%g" % rebin + HEN_FILE_EXTENSION
+    )
+    log.info("Saving %s to %s" % (ftype, outfile))
     func(contents, outfile)
 
 
@@ -35,27 +36,33 @@ def main(args=None):
     """Main function called by the `HENrebin` command line script."""
     import argparse
     from .base import _add_default_args, check_negative_numbers_in_args
-    description = 'Rebin light curves and frequency spectra. '
+
+    description = "Rebin light curves and frequency spectra. "
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("files", help="List of light curve files", nargs='+')
-    parser.add_argument("-r", "--rebin", type=float, default=1,
-                        help="Rebinning to apply. Only if the quantity to" +
-                        " rebin is a (C)PDS, it is possible to specify a" +
-                        " non-integer rebin factor, in which case it is" +
-                        " interpreted as a geometrical binning factor")
+    parser.add_argument("files", help="List of light curve files", nargs="+")
+    parser.add_argument(
+        "-r",
+        "--rebin",
+        type=float,
+        default=1,
+        help="Rebinning to apply. Only if the quantity to"
+        + " rebin is a (C)PDS, it is possible to specify a"
+        + " non-integer rebin factor, in which case it is"
+        + " interpreted as a geometrical binning factor",
+    )
 
-    _add_default_args(parser, ['loglevel', 'debug'])
+    _add_default_args(parser, ["loglevel", "debug"])
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
     files = args.files
 
     if args.debug:
-        args.loglevel = 'DEBUG'
+        args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file('HENrebin.log'):
+    with log.log_to_file("HENrebin.log"):
         rebin = args.rebin
         for f in files:
             rebin_file(f, rebin)

@@ -43,8 +43,9 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
          [[time[0] - dt[0]/2, time[-1] + dt[-1]/2]]
 
     """
-    assert len(events) == len(priors), \
-        "`events` and `priors` must be of the same length"
+    assert len(events) == len(
+        priors
+    ), "`events` and `priors` must be of the same length"
 
     dt = _assign_value_if_none(dt, np.median(np.diff(times)))
 
@@ -64,7 +65,8 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
     # after tstop
     tbins = np.array(
         np.append(times - dt / 2, [times[-1] + dt[-1] / 2]) - events[0],
-        dtype=np.float64)
+        dtype=np.float64,
+    )
 
     tbin_starts = tbins[:-1]
 
@@ -77,27 +79,28 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
     livetime_array = np.zeros_like(times)
 
     # ------ Normalize priors at the start and end of light curve ----------
-    before_start = \
-        (livetime_starts < tbin_starts[0]) & (ev_fl > tbin_starts[0])
+    before_start = (livetime_starts < tbin_starts[0]) & (
+        ev_fl > tbin_starts[0]
+    )
 
     livetime_starts[before_start] = tbins[0] + 1e-9
     pr_fl[before_start] = ev_fl[before_start] - livetime_starts[before_start]
 
-    after_end = \
-        (livetime_starts < tbins[-1]) & (ev_fl > tbins[-1])
+    after_end = (livetime_starts < tbins[-1]) & (ev_fl > tbins[-1])
     ev_fl[after_end] = tbins[-1] - 1e-9
     pr_fl[after_end] = ev_fl[after_end] - livetime_starts[after_end]
 
     # ----------------------------------------------------------------------
 
     # Find bins to which "livetime starts" and "events" belong
-    lts_bin = np.searchsorted(tbin_starts, livetime_starts, 'right') - 1
-    ev_bin = np.searchsorted(tbin_starts, ev_fl, 'right') - 1
+    lts_bin = np.searchsorted(tbin_starts, livetime_starts, "right") - 1
+    ev_bin = np.searchsorted(tbin_starts, ev_fl, "right") - 1
 
     # First of all, just consider livetimes and events inside the same bin.
     first_pass = ev_bin == lts_bin
-    expo, bins = np.histogram(ev_fl[first_pass], bins=tbins,
-                              weights=pr_fl[first_pass])
+    expo, bins = np.histogram(
+        ev_fl[first_pass], bins=tbins, weights=pr_fl[first_pass]
+    )
 
     assert np.all(expo) >= 0, expo
     livetime_array += expo
@@ -115,25 +118,28 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
         lt_good = livetime_starts[idxs]
 
         # find corresponding time bins
-        e_idx = np.searchsorted(tbin_starts, ev_good, 'right') - 1
+        e_idx = np.searchsorted(tbin_starts, ev_good, "right") - 1
         _tbins = tbin_starts[e_idx]
         livetime_array[ev_bin_good] += ev_good - _tbins
-        assert np.all(ev_good - _tbins >= 0), \
-            "Invalid boundaries. Contact the developer: {}".format(
-                ev_good - _tbins)
+        assert np.all(
+            ev_good - _tbins >= 0
+        ), "Invalid boundaries. Contact the developer: {}".format(
+            ev_good - _tbins
+        )
 
-        l_idx = np.searchsorted(tbin_starts, lt_good, 'right')
+        l_idx = np.searchsorted(tbin_starts, lt_good, "right")
         _tbins = tbin_starts[l_idx]
         livetime_array[lts_bin_good] += _tbins - lt_good
-        assert np.all(_tbins - lt_good >= 0), \
-            "Invalid boundaries. Contact the developer: {}".format(
-                _tbins - lt_good)
+        assert np.all(
+            _tbins - lt_good >= 0
+        ), "Invalid boundaries. Contact the developer: {}".format(
+            _tbins - lt_good
+        )
 
         # Complete bins
         if bin_diff > 1:
             for i in range(1, bin_diff):
-                livetime_array[lts_bin_good + i] += \
-                    dt[lts_bin_good + i]
+                livetime_array[lts_bin_good + i] += dt[lts_bin_good + i]
 
     return livetime_array
 
@@ -143,11 +149,9 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
     from matplotlib.gridspec import GridSpec
     from numpy import histogram
 
-    additional_columns = ["PRIOR", "SHIELD",
-                          "SHLD_T", "SHLD_HI"]
+    additional_columns = ["PRIOR", "SHIELD", "SHLD_T", "SHLD_HI"]
 
-    data = load_events_and_gtis(uf_file,
-                                additional_columns=additional_columns)
+    data = load_events_and_gtis(uf_file, additional_columns=additional_columns)
 
     events_obj = data.ev_list
     events = events_obj.time
@@ -162,12 +166,15 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
 
     bins = np.percentile(dead_times, np.linspace(0, 100, 1000))
     hist_all, bins_all = histogram(dead_times, bins=bins, density=True)
-    hist_shield, bins_shield = histogram(dead_times[shields > 0], bins=bins,
-                                         density=True)
-    hist_noshield, bins_noshield = histogram(dead_times[shields == 0],
-                                             bins=bins, density=True)
-    hist_shld_hi, bins_shld_hi = histogram(dead_times[shld_hi > 0],
-                                           bins=bins, density=True)
+    hist_shield, bins_shield = histogram(
+        dead_times[shields > 0], bins=bins, density=True
+    )
+    hist_noshield, bins_noshield = histogram(
+        dead_times[shields == 0], bins=bins, density=True
+    )
+    hist_shld_hi, bins_shld_hi = histogram(
+        dead_times[shld_hi > 0], bins=bins, density=True
+    )
 
     bin_centers = bins[:-1] + np.diff(bins) / 2
     fig = plt.figure("Dead time distribution", figsize=(10, 10))
@@ -175,18 +182,24 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
     ax1 = plt.subplot(gs[0])
     ax1.loglog(bin_centers, hist_all, drawstyle="steps-mid", label="all")
     ax1.loglog(bin_centers, hist_shield, drawstyle="steps-mid", label="shield")
-    ax1.loglog(bin_centers, hist_shld_hi, drawstyle="steps-mid",
-               label="shld_hi")
-    ax1.loglog(bin_centers, hist_noshield, drawstyle="steps-mid",
-               label="no shield")
+    ax1.loglog(
+        bin_centers, hist_shld_hi, drawstyle="steps-mid", label="shld_hi"
+    )
+    ax1.loglog(
+        bin_centers, hist_noshield, drawstyle="steps-mid", label="no shield"
+    )
     ax1.set_ylabel("Occurrences (arbitrary units)")
     ax1.legend()
     ax2 = plt.subplot(gs[1], sharex=ax1)
 
     for sht in set(shld_t[shld_t > 0]):
         hs, bs = histogram(dead_times[shld_t == sht], bins=bins, density=True)
-        ax2.loglog(bin_centers, hs, drawstyle="steps-mid",
-                   label="shield time {}".format(sht))
+        ax2.loglog(
+            bin_centers,
+            hs,
+            drawstyle="steps-mid",
+            label="shield time {}".format(sht),
+        )
     ax2.set_xlabel("Dead time (s)")
     ax2.set_ylabel("Occurrences (arbitrary units)")
     ax2.legend()
@@ -221,8 +234,7 @@ def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
 
     additional_columns = ["PRIOR"]
 
-    data = load_events_and_gtis(uf_file,
-                                additional_columns=additional_columns)
+    data = load_events_and_gtis(uf_file, additional_columns=additional_columns)
 
     events_obj = data.ev_list
     events = events_obj.time
@@ -243,13 +255,21 @@ def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
 
 def _plot_corrected_light_curve(time, lc, expo, gti=None, outroot="expo"):
     import matplotlib.pyplot as plt
+
     good = create_gti_mask(time, gti)
     fig = plt.figure("Exposure-corrected lc")
-    plt.plot(time[good], expo[good] / np.max(expo) * np.max(lc[good]),
-             label="Exposure (arbitrary units)", zorder=10)
+    plt.plot(
+        time[good],
+        expo[good] / np.max(expo) * np.max(lc[good]),
+        label="Exposure (arbitrary units)",
+        zorder=10,
+    )
     plt.plot(time[good], lc[good], label="Light curve", zorder=20)
-    plt.plot(time[good], lc[good] / expo[good],
-             label="Exposure-corrected Light curve")
+    plt.plot(
+        time[good],
+        lc[good] / expo[good],
+        label="Exposure-corrected Light curve",
+    )
     plt.legend()
     fig.savefig(outroot + "_corr_lc.png")
     plt.close(fig)
@@ -276,7 +296,8 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
         Output file name
     """
     outname = _assign_value_if_none(
-        outname, hen_root(lc_file) + "_lccorr" + HEN_FILE_EXTENSION)
+        outname, hen_root(lc_file) + "_lccorr" + HEN_FILE_EXTENSION
+    )
 
     ftype, contents = get_file_type(lc_file)
 
@@ -293,9 +314,15 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
     newlc_err = np.array(contents.counts_err / expo * dt, dtype=np.float64)
     newlc_err[expo < expo_limit] = 0
 
-    lcurve = Lightcurve(time, newlc, err=newlc_err,
-                        gti=gti, err_dist='gauss',
-                        mjdref=contents.mjdref, dt=dt)
+    lcurve = Lightcurve(
+        time,
+        newlc,
+        err=newlc_err,
+        gti=gti,
+        err_dist="gauss",
+        mjdref=contents.mjdref,
+        dt=dt,
+    )
 
     lcurve.expo = expo
 
@@ -307,26 +334,34 @@ def main(args=None):
     """Main function called by the `HENexposure` command line script."""
     import argparse
     from .base import _add_default_args, check_negative_numbers_in_args
+
     description = (
-        'Create exposure light curve based on unfiltered event files.')
+        "Create exposure light curve based on unfiltered event files."
+    )
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("lcfile", help="Light curve file (HENDRICS format)")
     parser.add_argument("uffile", help="Unfiltered event file (FITS)")
-    parser.add_argument("-o", "--outroot", type=str, default=None,
-                        help='Root of output file names')
-    parser.add_argument("--plot", help="Plot on window",
-                        default=False, action='store_true')
-    _add_default_args(parser, ['loglevel', 'debug'])
+    parser.add_argument(
+        "-o",
+        "--outroot",
+        type=str,
+        default=None,
+        help="Root of output file names",
+    )
+    parser.add_argument(
+        "--plot", help="Plot on window", default=False, action="store_true"
+    )
+    _add_default_args(parser, ["loglevel", "debug"])
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
 
     if args.debug:
-        args.loglevel = 'DEBUG'
+        args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file('HENexposure.log'):
+    with log.log_to_file("HENexposure.log"):
         lc_file = args.lcfile
         uf_file = args.uffile
 
@@ -338,7 +373,7 @@ def main(args=None):
 
         outdata = load_data(outfile)
         time = outdata["time"]
-        lc = outdata['counts']
+        lc = outdata["counts"]
         expo = outdata["expo"]
         gti = outdata["gti"]
 
@@ -351,4 +386,5 @@ def main(args=None):
 
         if args.plot:
             import matplotlib.pyplot as plt
+
             plt.show()

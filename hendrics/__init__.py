@@ -6,6 +6,7 @@
 # should keep this content at the top.
 # ----------------------------------------------------------------------------
 from ._astropy_init import *
+
 # ----------------------------------------------------------------------------
 
 # For egg_info test builds to pass, put package imports here.
@@ -16,9 +17,9 @@ if not _ASTROPY_SETUP_:
     try:
         import netCDF4 as nc
 
-        HEN_FILE_EXTENSION = '.nc'
+        HEN_FILE_EXTENSION = ".nc"
         HAS_NETCDF = True
     except ImportError:
-        HEN_FILE_EXTENSION = '.p'
+        HEN_FILE_EXTENSION = ".p"
         HAS_NETCDF = False
         pass

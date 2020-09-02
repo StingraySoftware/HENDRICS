@@ -19,11 +19,10 @@ def default_nustar_rmf():
               name will be eventually replaced with a smarter choice based
               on observing time
     """
-    warnings.warn(
-        "Rmf not specified. Using default NuSTAR rmf.")
+    warnings.warn("Rmf not specified. Using default NuSTAR rmf.")
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
-    path = rmf.split('/')
-    newpath = os.path.join(os.environ['CALDB'], *path)
+    path = rmf.split("/")
+    newpath = os.path.join(os.environ["CALDB"], *path)
     return newpath
 
 
@@ -49,15 +48,15 @@ def read_rmf(rmf_file=None):
     """
     from astropy.io import fits as pf
 
-    if rmf_file is None or rmf_file == '':
+    if rmf_file is None or rmf_file == "":
         rmf_file = default_nustar_rmf()
 
     lchdulist = pf.open(rmf_file, checksum=True)
-    lchdulist.verify('warn')
-    lctable = lchdulist['EBOUNDS'].data
-    pis = np.array(lctable.field('CHANNEL'))
-    e_mins = np.array(lctable.field('E_MIN'))
-    e_maxs = np.array(lctable.field('E_MAX'))
+    lchdulist.verify("warn")
+    lctable = lchdulist["EBOUNDS"].data
+    pis = np.array(lctable.field("CHANNEL"))
+    e_mins = np.array(lctable.field("E_MIN"))
+    e_maxs = np.array(lctable.field("E_MAX"))
     lchdulist.close()
     return pis, e_mins, e_maxs
 
@@ -116,11 +115,11 @@ def rough_calibration(pis, mission):
     >>> rough_calibration(100, 'nicer')
     1.0
     """
-    if mission.lower() == 'nustar':
+    if mission.lower() == "nustar":
         return pis * 0.04 + 1.6
-    elif mission.lower() == 'xmm':
+    elif mission.lower() == "xmm":
         return pis * 0.001
-    elif mission.lower() == 'nicer':
+    elif mission.lower() == "nicer":
         return pis * 0.01
     raise ValueError(f"Mission {mission.lower()} not recognized")
 
@@ -149,14 +148,14 @@ def calibrate(fname, outname, rmf_file=None, rough=False):
 
     if rough:
         cal_pis = evdata.pi
-        if hasattr(evdata, 'cal_pi') and evdata.cal_pi is not None:
+        if hasattr(evdata, "cal_pi") and evdata.cal_pi is not None:
             cal_pis = evdata.cal_pi
         es = rough_calibration(cal_pis, evdata.mission)
     else:
         es = read_calibration(pis, rmf_file)
 
     evdata.energy = es
-    log.info('Saving calibrated data to %s' % outname)
+    log.info("Saving calibrated data to %s" % outname)
     save_events(evdata, outname)
 
 
@@ -171,43 +170,58 @@ def main(args=None):
     from multiprocessing import Pool
     from .base import _add_default_args
 
-    description = ('Calibrate clean event files by associating the correct '
-                   'energy to each PI channel. Uses either a specified rmf '
-                   'file or (for NuSTAR only) an rmf file from the CALDB')
+    description = (
+        "Calibrate clean event files by associating the correct "
+        "energy to each PI channel. Uses either a specified rmf "
+        "file or (for NuSTAR only) an rmf file from the CALDB"
+    )
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("files", help="List of files", nargs='+')
-    parser.add_argument("-r", "--rmf", help="rmf file used for calibration",
-                        default=None, type=str)
-    parser.add_argument("--rough", help="Rough calibration, without rmf file "
-                                        "(only for NuSTAR and XMM)",
-                        default=False, action="store_true")
-    parser.add_argument("-o", "--overwrite",
-                        help="Overwrite; default: no",
-                        default=False,
-                        action="store_true")
-    _add_default_args(parser, ['nproc', 'loglevel', 'debug'])
+    parser.add_argument("files", help="List of files", nargs="+")
+    parser.add_argument(
+        "-r",
+        "--rmf",
+        help="rmf file used for calibration",
+        default=None,
+        type=str,
+    )
+    parser.add_argument(
+        "--rough",
+        help="Rough calibration, without rmf file "
+        "(only for NuSTAR and XMM)",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrite",
+        help="Overwrite; default: no",
+        default=False,
+        action="store_true",
+    )
+    _add_default_args(parser, ["nproc", "loglevel", "debug"])
 
     args = parser.parse_args(args)
     files = args.files
 
     if args.debug:
-        args.loglevel = 'DEBUG'
+        args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file('HENcalibrate.log'):
+    with log.log_to_file("HENcalibrate.log"):
         funcargs = []
         for i_f, f in enumerate(files):
             outname = f
             if args.overwrite is False:
-                label = '_calib'
+                label = "_calib"
                 if args.rough:
-                    label = '_rough_calib'
-                outname = f.replace(get_file_extension(f), label +
-                                    HEN_FILE_EXTENSION)
+                    label = "_rough_calib"
+                outname = f.replace(
+                    get_file_extension(f), label + HEN_FILE_EXTENSION
+                )
             funcargs.append([f, outname, args.rmf, args.rough])
 
-        if os.name == 'nt' or args.nproc == 1:
+        if os.name == "nt" or args.nproc == 1:
             [_calib_wrap(fa) for fa in funcargs]
         else:
             pool = Pool(processes=args.nproc)
