@@ -346,7 +346,7 @@ def split_eventlist(fname, max_length, overlap=None):
         for attr in ["pi", "energy"]:
             if hasattr(ev, attr) and getattr(ev, attr) is not None:
                 setattr(new_ev, attr, getattr(ev, attr)[idx_start:idx_stop])
-        for attr in ["mission", "instr", "mjdref"]:
+        for attr in ["mission", "instr", "mjdref", "header"]:
             if hasattr(ev, attr) and getattr(ev, attr) is not None:
                 setattr(new_ev, attr, getattr(ev, attr))
         newfname = root + f"_{count:0{nchars}d}" + HEN_FILE_EXTENSION
