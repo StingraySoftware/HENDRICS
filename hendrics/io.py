@@ -534,7 +534,7 @@ def load_lcurve(fname):
     if "instr" in list(data.keys()) and data["instr"] is not None:
         lcurve.instr = data["instr"].lower()
     if "mission" in list(data.keys()) and data["mission"] is not None:
-        lcurve.instr = data["mission"].lower()
+        lcurve.mission = data["mission"].lower()
     if "expo" in list(data.keys()):
         lcurve.expo = data["expo"]
     if "e_intervals" in list(data.keys()):
