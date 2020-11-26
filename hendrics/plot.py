@@ -405,17 +405,38 @@ def plot_folding(
 
         print("Best candidates:")
         best_cand_table = Table(names=["mjd", "power", "f", "fdot", "fddot"])
-        for idx in best_cands[::-1]:
+        for i, idx in enumerate(best_cands[::-1]):
             if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+                allfreqs = ef.freq[idx[0], :]
+                allfdots = ef.freq[:, idx[1]]
+                allstats_f = ef.stat[idx[0], :]
+                allstats_fdot = ef.stat[:, idx[1]]
                 f, fdot = ef.freq[idx[0], idx[1]], ef.fdots[idx[0], idx[1]]
                 max_stat = ef.stat[idx[0], idx[1]]
             elif len(ef.stat.shape) == 1:
+                allfreqs = ef.freq
+                allstats_f = ef.stat
                 f = ef.freq[idx[0]]
                 max_stat = ef.stat[idx[0]]
                 fdot = 0
+                allfdots = None
+                allstats_fdot = None
             else:
                 raise ValueError("Did not understand stats shape.")
             best_cand_table.add_row([ef.pepoch, max_stat, f, fdot, fddot])
+            Table({"freq": allfreqs, "stat": allstats_f}).write(
+                f'{fname.replace(HEN_FILE_EXTENSION, "")}_cand_{i}_fdot{fdot}.csv',
+                overwrite=True,
+                format="ascii",
+            )
+            if allfdots is None:
+                continue
+
+            Table({"fdot": allfdots, "stat": allstats_fdot}).write(
+                f'{fname.replace(HEN_FILE_EXTENSION, "")}_cand_{i}_f{f}.dat',
+                overwrite=True,
+                format="ascii",
+            )
 
         print(best_cand_table)
         best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
@@ -463,6 +484,17 @@ def plot_folding(
                 nbin=nbin,
             )
             ax = plt.subplot(external_gs[0])
+            Table(
+                {
+                    "phase": np.concatenate((phase, phase + 1)),
+                    "profile": np.concatenate((profile, profile)),
+                    "err": np.concatenate((profile_err, profile_err)),
+                }
+            ).write(
+                f'{fname.replace(HEN_FILE_EXTENSION, "")}_folded.csv',
+                overwrite=True,
+                format="ascii",
+            )
 
             # print(df, dfdot)
             # # noinspection PyPackageRequirements

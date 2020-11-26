@@ -534,7 +534,7 @@ def load_lcurve(fname):
     if "instr" in list(data.keys()) and data["instr"] is not None:
         lcurve.instr = data["instr"].lower()
     if "mission" in list(data.keys()) and data["mission"] is not None:
-        lcurve.instr = data["mission"].lower()
+        lcurve.mission = data["mission"].lower()
     if "expo" in list(data.keys()):
         lcurve.expo = data["expo"]
     if "e_intervals" in list(data.keys()):
@@ -1320,22 +1320,23 @@ def load_events_and_gtis(
     accepted_gtistrings = gtistring.split(",")
 
     if gti_file is None:
-        # Select first GTI with accepted name
-        try:
-            gti_list = _get_gti_from_all_extensions(
-                lchdulist,
-                accepted_gtistrings=accepted_gtistrings,
-                det_numbers=det_number,
-            )
-        except Exception:  # pragma: no cover
-            warnings.warn(
-                "No extensions found with a valid name. "
-                "Please check the `accepted_gtistrings` values.",
-                AstropyUserWarning,
-            )
-            gti_list = np.array([[t_start, t_stop]], dtype=np.longdouble)
+        gti_hdul = lchdulist
     else:
-        gti_list = load_gtis(gti_file, gtistring)
+        gti_hdul = fits.open(gti_file)
+    # Select first GTI with accepted name
+    try:
+        gti_list = _get_gti_from_all_extensions(
+            gti_hdul,
+            accepted_gtistrings=accepted_gtistrings,
+            det_numbers=det_number,
+        )
+    except Exception:  # pragma: no cover
+        warnings.warn(
+            "No extensions found with a valid name. "
+            "Please check the `accepted_gtistrings` values.",
+            AstropyUserWarning,
+        )
+        gti_list = np.array([[t_start, t_stop]], dtype=np.longdouble)
 
     if additional_columns is None:
         additional_columns = ["PI"]

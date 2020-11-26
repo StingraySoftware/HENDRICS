@@ -10,6 +10,7 @@ from stingray.events import EventList
 from hendrics.read_events import treat_event_file
 from hendrics.io import HEN_FILE_EXTENSION, load_data, save_events, load_events
 from hendrics.io import ref_mjd
+from hendrics.io import main as main_readfile
 from hendrics.fake import main
 import hendrics as hen
 
@@ -241,6 +242,8 @@ class TestReadEvents:
         ev = hen.io.load_events(self.ev_fileA)
         assert hasattr(ev, "header")
         assert hasattr(ev, "gti")
+
+        main_readfile([self.ev_fileA])
 
     def test_load_events_with_2_cpus(self):
         """Test event file reading."""
