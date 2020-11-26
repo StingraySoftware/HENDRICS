@@ -405,7 +405,7 @@ def plot_folding(
 
         print("Best candidates:")
         best_cand_table = Table(names=["mjd", "power", "f", "fdot", "fddot"])
-        for idx in best_cands[::-1]:
+        for i, idx in enumerate(best_cands[::-1]):
             if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
                 f, fdot = ef.freq[idx[0], idx[1]], ef.fdots[idx[0], idx[1]]
                 max_stat = ef.stat[idx[0], idx[1]]
@@ -416,6 +416,15 @@ def plot_folding(
             else:
                 raise ValueError("Did not understand stats shape.")
             best_cand_table.add_row([ef.pepoch, max_stat, f, fdot, fddot])
+            Table({'freq': ef.freq[idx[0], :], 'stat': ef.stat[idx[0], :]}
+                  ).write(
+                f'{fname.replace(HEN_FILE_EXTENSION, "")}_cand_{i}_fdot{fdot}.csv',
+                overwrite=True, format='ascii'
+            )
+            Table({'fdot': ef.fdots[:, idx[1]], 'stat': ef.stat[:, idx[1]]}).write(
+                f'{fname.replace(HEN_FILE_EXTENSION, "")}_cand_{i}_f{f}.dat',
+                overwrite=True, format='ascii'
+            )
 
         print(best_cand_table)
         best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
@@ -463,6 +472,13 @@ def plot_folding(
                 nbin=nbin,
             )
             ax = plt.subplot(external_gs[0])
+            Table({'phase': np.concatenate((phase, phase + 1)),
+                   'profile': np.concatenate((profile, profile)),
+                   'err': np.concatenate((profile_err, profile_err))}
+                  ).write(
+                f'{fname.replace(HEN_FILE_EXTENSION, "")}_folded.csv',
+                overwrite=True, format='ascii'
+            )
 
             # print(df, dfdot)
             # # noinspection PyPackageRequirements
