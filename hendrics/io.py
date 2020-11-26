@@ -1171,7 +1171,7 @@ def _get_additional_data(lctable, additional_columns):
     return additional_data
 
 
-def load_gtis(fits_file, gtistring=None, data_hduname='EVENTS'):
+def load_gtis(fits_file, gtistring=None, data_hduname="EVENTS"):
     """Load GTI from HDU EVENTS of file fits_file."""
     from astropy.io import fits as pf
 

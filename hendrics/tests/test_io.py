@@ -97,22 +97,22 @@ class TestIO:
         cls.datadir = os.path.join(curdir, "data")
 
     def test_readfile_event(self):
-        fname = os.path.join(self.datadir, 'monol_testA.evt')
+        fname = os.path.join(self.datadir, "monol_testA.evt")
         main([fname])
 
     def test_read_header_key(self):
-        fname = os.path.join(self.datadir, 'monol_testA.evt')
-        val = read_header_key(fname, 'TSTART')
+        fname = os.path.join(self.datadir, "monol_testA.evt")
+        val = read_header_key(fname, "TSTART")
         assert val == 80000000.0
 
     def test_ref_mjd(self):
-        fname = os.path.join(self.datadir, 'monol_testA.evt')
+        fname = os.path.join(self.datadir, "monol_testA.evt")
         val = ref_mjd([fname])
         assert np.isclose(val, 55197.00076601852, atol=0.00000000001)
 
     def test_load_events_gtis_gtifile(self):
-        fname = os.path.join(self.datadir, 'monol_testA_nomission.evt')
-        gtifname = os.path.join(self.datadir, 'monol_testA_timezero_gti.evt')
+        fname = os.path.join(self.datadir, "monol_testA_nomission.evt")
+        gtifname = os.path.join(self.datadir, "monol_testA_timezero_gti.evt")
         _ = load_events_and_gtis(fname, gti_file=gtifname)
         # assert np.isclose(val, 55197.00076601852, atol=0.00000000001)
 
