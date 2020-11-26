@@ -43,7 +43,8 @@ def test_deorbit_bad_mjdref():
 @pytest.mark.skipif("not HAS_PINT")
 def test_deorbit_run():
     from hendrics.base import deorbit_events
-    ev = EventList(np.arange(0, 210000, 1000), gti=np.asarray([[0., 210000]]))
+
+    ev = EventList(np.arange(0, 210000, 1000), gti=np.asarray([[0.0, 210000]]))
 
     ev.mjdref = 56000.0
     par = _dummy_par("bububu.par")
