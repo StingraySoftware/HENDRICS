@@ -1520,6 +1520,13 @@ def main_z2vspf(args=None):
         "--outfile", default=None, type=str, help="Output table file name"
     )
     parser.add_argument(
+        "--show-z-values",
+        nargs="+",
+        default=None,
+        type=float,
+        help="Show these Z values in the plot",
+    )
+    parser.add_argument(
         "--emin",
         default=None,
         type=float,
@@ -1555,14 +1562,18 @@ def main_z2vspf(args=None):
         events, deadtime=0.0, ntrials=args.ntrial, outfile=outfile, N=args.N
     )
     if HAS_MPL:
-        plt.figure("Results", figsize=(10, 6))
+        fig = plt.figure("Results", figsize=(10, 6))
         plt.scatter(result_table["pf"] * 100, result_table["z2"])
         plt.semilogy()
         plt.grid(True)
         plt.xlabel(r"Pulsed fraction (%)")
-        plt.ylabel(r"$Z^2_2$")
+        plt.ylabel(r"$Z^2_{}$".format(args.N))
         # plt.show()
+        if args.show_z_values is not None:
+            for z in args.show_z_values:
+                plt.axhline(z, alpha=0.5, color="r", ls="--")
         plt.savefig(outfile.replace(".csv", ".png"))
+        plt.close(fig)
 
 
 def main_accelsearch(args=None):

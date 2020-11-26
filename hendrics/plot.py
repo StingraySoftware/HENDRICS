@@ -416,14 +416,19 @@ def plot_folding(
             else:
                 raise ValueError("Did not understand stats shape.")
             best_cand_table.add_row([ef.pepoch, max_stat, f, fdot, fddot])
-            Table({'freq': ef.freq[idx[0], :], 'stat': ef.stat[idx[0], :]}
-                  ).write(
+            Table(
+                {"freq": ef.freq[idx[0], :], "stat": ef.stat[idx[0], :]}
+            ).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}_cand_{i}_fdot{fdot}.csv',
-                overwrite=True, format='ascii'
+                overwrite=True,
+                format="ascii",
             )
-            Table({'fdot': ef.fdots[:, idx[1]], 'stat': ef.stat[:, idx[1]]}).write(
+            Table(
+                {"fdot": ef.fdots[:, idx[1]], "stat": ef.stat[:, idx[1]]}
+            ).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}_cand_{i}_f{f}.dat',
-                overwrite=True, format='ascii'
+                overwrite=True,
+                format="ascii",
             )
 
         print(best_cand_table)
@@ -472,12 +477,16 @@ def plot_folding(
                 nbin=nbin,
             )
             ax = plt.subplot(external_gs[0])
-            Table({'phase': np.concatenate((phase, phase + 1)),
-                   'profile': np.concatenate((profile, profile)),
-                   'err': np.concatenate((profile_err, profile_err))}
-                  ).write(
+            Table(
+                {
+                    "phase": np.concatenate((phase, phase + 1)),
+                    "profile": np.concatenate((profile, profile)),
+                    "err": np.concatenate((profile_err, profile_err)),
+                }
+            ).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}_folded.csv',
-                overwrite=True, format='ascii'
+                overwrite=True,
+                format="ascii",
             )
 
             # print(df, dfdot)

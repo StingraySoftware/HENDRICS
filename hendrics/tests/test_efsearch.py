@@ -752,7 +752,7 @@ class TestEFsearch:
 
     def test_z2vspf(self):
         evfile = self.dum
-        ip = main_z2vspf([evfile])
+        ip = main_z2vspf([evfile, "--show-z-values", "30"])
 
     @classmethod
     def teardown_class(cls):
