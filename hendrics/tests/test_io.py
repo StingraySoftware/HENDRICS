@@ -12,7 +12,7 @@ from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
 from hendrics.io import _get_additional_data, find_file_in_allowed_paths
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
-from hendrics.io import load_events_and_gtis
+from hendrics.io import load_events_and_gtis, main
 
 import pytest
 import glob
@@ -95,6 +95,10 @@ class TestIO:
         cls.dum = "bubu" + HEN_FILE_EXTENSION
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
+
+    def test_readfile_event(self):
+        fname = os.path.join(self.datadir, 'monol_testA.evt')
+        main([fname])
 
     def test_read_header_key(self):
         fname = os.path.join(self.datadir, 'monol_testA.evt')

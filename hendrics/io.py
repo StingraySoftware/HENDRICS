@@ -1171,7 +1171,7 @@ def _get_additional_data(lctable, additional_columns):
     return additional_data
 
 
-def load_gtis(fits_file, gtistring=None, data_hduname="EVENTS"):
+def load_gtis(fits_file, gtistring=None, data_hduname='EVENTS'):
     """Load GTI from HDU EVENTS of file fits_file."""
     from astropy.io import fits as pf
 
@@ -1320,22 +1320,23 @@ def load_events_and_gtis(
     accepted_gtistrings = gtistring.split(",")
 
     if gti_file is None:
-        # Select first GTI with accepted name
-        try:
-            gti_list = _get_gti_from_all_extensions(
-                lchdulist,
-                accepted_gtistrings=accepted_gtistrings,
-                det_numbers=det_number,
-            )
-        except Exception:  # pragma: no cover
-            warnings.warn(
-                "No extensions found with a valid name. "
-                "Please check the `accepted_gtistrings` values.",
-                AstropyUserWarning,
-            )
-            gti_list = np.array([[t_start, t_stop]], dtype=np.longdouble)
+        gti_hdul = lchdulist
     else:
-        gti_list = load_gtis(gti_file, gtistring)
+        gti_hdul = fits.open(gti_file)
+    # Select first GTI with accepted name
+    try:
+        gti_list = _get_gti_from_all_extensions(
+            gti_hdul,
+            accepted_gtistrings=accepted_gtistrings,
+            det_numbers=det_number,
+        )
+    except Exception:  # pragma: no cover
+        warnings.warn(
+            "No extensions found with a valid name. "
+            "Please check the `accepted_gtistrings` values.",
+            AstropyUserWarning,
+        )
+        gti_list = np.array([[t_start, t_stop]], dtype=np.longdouble)
 
     if additional_columns is None:
         additional_columns = ["PI"]
