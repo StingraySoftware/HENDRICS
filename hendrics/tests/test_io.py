@@ -11,7 +11,7 @@ from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
 from hendrics.io import _get_additional_data, find_file_in_allowed_paths
-from hendrics.io import save_as_ascii, save_as_qdp
+from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
 
 import pytest
 import glob
@@ -94,6 +94,16 @@ class TestIO:
         cls.dum = "bubu" + HEN_FILE_EXTENSION
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
+
+    def test_read_header_key(self):
+        fname = os.path.join(self.datadir, 'monol_testA.evt')
+        val = read_header_key(fname, 'TSTART')
+        assert val == 80000000.0
+
+    def test_ref_mjd(self):
+        fname = os.path.join(self.datadir, 'monol_testA.evt')
+        val = ref_mjd([fname])
+        assert np.isclose(val, 55197.00076601852, atol=0.00000000001)
 
     def test_save_data(self):
         struct = {
