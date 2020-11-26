@@ -2,6 +2,8 @@ name: CI Tests
 
 on:
   push:
+    branches:
+    - master
   pull_request:
   schedule:
     # run every Monday at 6am UTC
@@ -34,15 +36,19 @@ jobs:
             python: '3.8'
             tox_env: 'py38-test-devdeps'
             use_remote_data: true
+          - os: ubuntu-latest
+            python: '3.6'
+            tox_env: 'py36-test-oldestdeps-cov'
+            use_remote_data: true
           - os: macos-latest
             python: '3.7'
             tox_env: 'py37-test'
           - os: windows-latest
             python: '3.8'
             tox_env: 'py38-test'
-          - os: ubuntu-latest
-            python: '3.7'
-            tox_env: 'py37-test-astropy30-numpy117'
+#          - os: ubuntu-latest
+#            python: '3.7'
+#            tox_env: 'py37-test-astropy30-numpy117'
           - os: ubuntu-latest
             python: '3.8'
             tox_env: 'codestyle'
