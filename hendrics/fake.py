@@ -642,7 +642,7 @@ def main_scramble(args=None):
         "--outfile", type=str, default=None, help="Output file name"
     )
     args = check_negative_numbers_in_args(args)
-    _add_default_args(parser, ["loglevel", "debug"])
+    _add_default_args(parser, ["deorbit", "loglevel", "debug"])
 
     args = parser.parse_args(args)
 
@@ -658,6 +658,7 @@ def main_scramble(args=None):
         dt=args.dt,
         pulsed_fraction=args.pulsed_fraction,
         deadtime=args.deadtime,
+        orbit_par=args.deorbit_par
     )
 
     if args.outfile is not None:
@@ -751,7 +752,7 @@ def main(args=None):
         "distribution",
     )
     args = check_negative_numbers_in_args(args)
-    _add_default_args(parser, ["deorbit", "loglevel", "debug"])
+    _add_default_args(parser, ["loglevel", "debug"])
 
     args = parser.parse_args(args)
 
@@ -804,10 +805,6 @@ def main(args=None):
             additional_columns["PRIOR"] = {"data": prior, "format": "D"}
             additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
             livetime = np.sum(prior)
-
-        if args.deorbit_par is not None:
-            event_list = \
-                deorbit_events(event_list, args.deorbit_par, invert=True)
 
         generate_fake_fits_observation(
             event_list=event_list,
