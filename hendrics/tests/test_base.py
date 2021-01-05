@@ -41,6 +41,17 @@ def test_deorbit_bad_mjdref():
 
 @remote_data
 @pytest.mark.skipif("not HAS_PINT")
+def test_deorbit_inverse():
+    from hendrics.base import deorbit_events
+
+    ev = EventList(np.sort(np.random.uniform(0, 1000, 10)), gti=np.asarray([[0, 1000]]), mjdref=55000)
+    par = _dummy_par("bububu.par", pb=1., a1=30)
+    ev2 = deorbit_events(ev, par)
+    ev3 = deorbit_events(ev, par, invert=True)
+    assert np.allclose(ev.time - ev2.time, -(ev.time - ev3.time), atol=1e-6)
+
+@remote_data
+@pytest.mark.skipif("not HAS_PINT")
 def test_deorbit_run():
     from hendrics.base import deorbit_events
 

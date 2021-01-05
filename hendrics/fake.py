@@ -16,7 +16,7 @@ from .io import load_events, save_events, HEN_FILE_EXTENSION
 from .base import _empty, r_in
 
 from .lcurve import lcurve_from_fits
-from .base import njit
+from .base import njit, deorbit_events
 
 
 def _paralyzable_dead_time(event_list, dead_time):
@@ -464,7 +464,8 @@ def make_counts_pulsed(nevents, t_start, t_stop, pulsed_fraction=0.0):
 
 
 def scramble(
-    event_list, smooth_kind="flat", dt=None, pulsed_fraction=0.0, deadtime=0.0
+    event_list, smooth_kind="flat", dt=None, pulsed_fraction=0.0, deadtime=0.0,
+    orbit_par=None
 ):
     """Scramble event list, GTI by GTI.
 
@@ -487,6 +488,8 @@ def scramble(
         flux. Ignored for other values of ``smooth_kind``
     deadtime: float
         Dead time in the data.
+    orbit_par: str
+        Parameter file for orbital modulation
 
     Returns
     -------
@@ -748,7 +751,7 @@ def main(args=None):
         "distribution",
     )
     args = check_negative_numbers_in_args(args)
-    _add_default_args(parser, ["loglevel", "debug"])
+    _add_default_args(parser, ["deorbit", "loglevel", "debug"])
 
     args = parser.parse_args(args)
 
@@ -801,6 +804,10 @@ def main(args=None):
             additional_columns["PRIOR"] = {"data": prior, "format": "D"}
             additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
             livetime = np.sum(prior)
+
+        if args.deorbit_par is not None:
+            event_list = \
+                deorbit_events(event_list, args.deorbit_par, invert=True)
 
         generate_fake_fits_observation(
             event_list=event_list,
