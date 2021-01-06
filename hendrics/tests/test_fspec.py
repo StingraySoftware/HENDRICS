@@ -18,6 +18,7 @@ from hendrics import (
     read_events,
     rebin,
     save_as_xspec,
+    sum_fspec,
     timelags,
     varenergy,
 )

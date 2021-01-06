@@ -18,7 +18,15 @@ from astropy import log
 from stingray.stats import pds_probability, pds_detection_level
 from stingray.stats import z2_n_detection_level, z2_n_probability
 from stingray.stats import fold_detection_level, fold_profile_probability
-from stingray.pulse.pulsar import get_orbital_correction_from_ephemeris_file
+from stingray.pulse.pulsar import _load_and_prepare_TOAs
+
+try:
+    import pint.toa as toa
+    import pint
+    from pint.models import get_model
+    HAS_PINT = True
+except ImportError:
+    HAS_PINT = False
 
 try:
     from skimage.feature import peak_local_max
@@ -389,7 +397,54 @@ def gti_len(gti):
     return np.sum(np.diff(gti, axis=1))
 
 
-def deorbit_events(events, parameter_file=None):
+def simple_orbit_fun_from_parfile(mjdstart, mjdstop, parfile,
+                                  ntimes=1000, ephem="DE421",
+                                  invert=False):
+    """Get a correction for orbital motion from pulsar parameter file.
+
+    Parameters
+    ----------
+    mjdstart, mjdstop : float
+        Start and end of the time interval where we want the orbital solution
+    parfile : str
+        Any parameter file understood by PINT (Tempo or Tempo2 format)
+
+    Other parameters
+    ----------------
+    ntimes : int
+        Number of time intervals to use for interpolation. Default 1000
+    invert : bool
+        Invert the solution (e.g. to apply an orbital model instead of
+        subtracting it)
+
+    Returns
+    -------
+    correction_mjd : function
+        Function that accepts times in MJDs and returns the deorbited times.
+    """
+    from scipy.interpolate import interp1d
+    from astropy import units
+
+    if not HAS_PINT:
+        raise ImportError("You need the optional dependency PINT to use this "
+                          "functionality: github.com/nanograv/pint")
+
+    mjds = np.linspace(mjdstart, mjdstop, ntimes)
+    toalist = _load_and_prepare_TOAs(mjds, ephem=ephem)
+    m = get_model(parfile)
+    delays = m.delay(toalist)
+    if invert:
+        delays = -delays
+
+    correction = \
+        interp1d(mjds,
+                 (toalist.table['tdbld'] * units.d - delays).to(units.d).value,
+                  fill_value="extrapolate")
+
+    return correction
+
+
+def deorbit_events(events, parameter_file=None, invert=False, ephem="DE421"):
     """Refer arrival times to the center of mass of binary system.
 
     Parameters
@@ -428,15 +483,23 @@ def deorbit_events(events, parameter_file=None):
         )
 
     length_d = length / 86400
-    results = get_orbital_correction_from_ephemeris_file(
+    orbital_correction_fun = simple_orbit_fun_from_parfile(
         pepoch_mjd - 1,
         pepoch_mjd + length_d + 1,
         parameter_file,
         ntimes=min(int(length // 10), 10000),
+        invert=invert,
+        ephem=ephem
     )
-    orbital_correction_fun = results[0]
-    events.time = orbital_correction_fun(events.time, mjdref=events.mjdref)
-    events.gti = orbital_correction_fun(events.gti, mjdref=events.mjdref)
+
+    mjdtimes = events.time / 86400 + events.mjdref
+    mjdgtis = events.gti / 86400 + events.mjdref
+
+    outtime = (orbital_correction_fun(mjdtimes) - events.mjdref) * 86400
+    outgtis = (orbital_correction_fun(mjdgtis) - events.mjdref) * 86400
+
+    events.time = outtime
+    events.gti = outgtis
     return events
 
 

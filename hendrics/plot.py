@@ -65,9 +65,9 @@ def plot_generic(
     plt.figure(figname)
     ax = plt.gca()
     if xlog:
-        ax.set_xscale("log", nonposx="clip")
+        ax.set_xscale("log", nonpositive="clip")
     if ylog:
-        ax.set_yscale("log", nonposy="clip")
+        ax.set_yscale("log", nonpositive="clip")
 
     xlabel, ylabel = vars
     xlabel_err, ylabel_err = None, None
@@ -214,9 +214,9 @@ def plot_pds(
         color = _next_color(ax)
 
         if xlog:
-            ax.set_xscale("log", nonposx="clip")
+            ax.set_xscale("log", nonpositive="clip")
         if ylog:
-            ax.set_yscale("log", nonposy="clip")
+            ax.set_yscale("log", nonpositive="clip")
 
         level = lev  # Can be modified below
         y = pds[1:]
@@ -329,9 +329,9 @@ def plot_cospectrum(
             plt.figure("Cospectrum " + figlabel)
         ax = plt.gca()
         if xlog:
-            ax.set_xscale("log", nonposx="clip")
+            ax.set_xscale("log", nonpositive="clip")
         if ylog:
-            ax.set_yscale("log", nonposy="clip")
+            ax.set_yscale("log", nonpositive="clip")
 
         plt.xlabel("Frequency")
         if xlog and ylog:
@@ -679,9 +679,9 @@ def plot_folding(
 
     ax = plt.gca()
     if xlog:
-        ax.set_xscale("log", nonposx="clip")
+        ax.set_xscale("log", nonpositive="clip")
     if ylog:
-        ax.set_yscale("log", nonposy="clip")
+        ax.set_yscale("log", nonpositive="clip")
     plt.tight_layout()
 
     if figname is not None:
@@ -723,9 +723,9 @@ def plot_color(
     plt.ylabel(ylabel)
     ax = plt.gca()
     if xlog:
-        ax.set_xscale("log", nonposx="clip")
+        ax.set_xscale("log", nonpositive="clip")
     if ylog:
-        ax.set_yscale("log", nonposy="clip")
+        ax.set_yscale("log", nonpositive="clip")
     if figname is not None:
         plt.savefig(figname)
 

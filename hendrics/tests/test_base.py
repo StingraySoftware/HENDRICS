@@ -1,3 +1,4 @@
+import os
 import pytest
 from astropy.tests.helper import remote_data
 import numpy as np
@@ -37,7 +38,20 @@ def test_deorbit_bad_mjdref():
     with pytest.raises(ValueError) as excinfo:
         _ = deorbit_events(ev, par)
     assert "MJDREF is very low (<01-01-1950), " in str(excinfo.value)
+    os.remove("bububu.par")
 
+
+@remote_data
+@pytest.mark.skipif("not HAS_PINT")
+def test_deorbit_inverse():
+    from hendrics.base import deorbit_events
+
+    ev = EventList(np.sort(np.random.uniform(0, 1000, 10)), gti=np.asarray([[0, 1000]]), mjdref=55000)
+    par = _dummy_par("bububu.par", pb=1., a1=30)
+    ev2 = deorbit_events(ev, par)
+    ev3 = deorbit_events(ev, par, invert=True)
+    assert np.allclose(ev.time - ev2.time, -(ev.time - ev3.time), atol=1e-6)
+    os.remove("bububu.par")
 
 @remote_data
 @pytest.mark.skipif("not HAS_PINT")
@@ -53,3 +67,4 @@ def test_deorbit_run():
     assert np.any(
         ["The observation is very long." in r.message.args[0] for r in record]
     )
+    os.remove("bububu.par")

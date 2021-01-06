@@ -5,15 +5,17 @@ import shutil
 import os
 import glob
 import subprocess as sp
-
+import pytest
 import numpy as np
 from astropy import log
 from astropy.io import fits
+from astropy.tests.helper import remote_data
 import hendrics as hen
 from stingray.events import EventList
 from hendrics.tests import _dummy_par
 from hendrics import fake, calibrate, read_events, io
 from hendrics.fake import scramble
+from hendrics.fold import HAS_PINT
 
 try:
     FileNotFoundError
@@ -188,6 +190,14 @@ class TestFake(object):
 
     def test_scramble_events_file(self):
         command = f"{self.first_event_file}"
+        newfile = hen.fake.main_scramble(command.split())
+        assert os.path.exists(newfile)
+
+    @remote_data
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_scramble_events_file_deorbit(self):
+        _ = _dummy_par("bububububu.par", pb=1., a1=30)
+        command = f"{self.first_event_file} --deorbit-par bububububu.par"
         newfile = hen.fake.main_scramble(command.split())
         assert os.path.exists(newfile)
 
