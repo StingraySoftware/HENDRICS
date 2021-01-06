@@ -23,3 +23,11 @@ if not _ASTROPY_SETUP_:
         HEN_FILE_EXTENSION = ".p"
         HAS_NETCDF = False
         pass
+
+    import stingray.utils
+    # Patch stingray.utils
+    def _root_squared_mean(array):
+        import numpy as np
+        array = np.asarray(array)
+        return np.sqrt(np.sum(array ** 2)) / len(array)
+    stingray.utils._root_squared_mean = _root_squared_mean
