@@ -123,6 +123,12 @@ class TestFake(object):
         cls.fits_fileA = os.path.join(cls.datadir, "monol_testA.evt")
         command = "{0}".format(cls.fits_fileA)
         hen.read_events.main(command.split())
+
+        cls.first_event_file_cal = "calibrated.nc"
+        hen.calibrate.calibrate(
+            cls.first_event_file, cls.first_event_file_cal, rough=True
+        )
+
         cls.xmm_fits_file = os.path.join(
             cls.datadir, "monol_test_fake_lc_xmm.evt"
         )
@@ -192,6 +198,19 @@ class TestFake(object):
         command = f"{self.first_event_file}"
         newfile = hen.fake.main_scramble(command.split())
         assert os.path.exists(newfile)
+        os.remove(newfile)
+
+    def test_scramble_uncalibrated_events_file_raises(self):
+        command = f"{self.first_event_file} -e 3 30"
+        with pytest.raises(ValueError):
+            _ = hen.fake.main_scramble(command.split())
+
+    def test_scramble_calibrated_events_file(self):
+        command = f"{self.first_event_file_cal} -e 3 30"
+        newfile = hen.fake.main_scramble(command.split())
+        assert "3-30" in newfile
+        assert os.path.exists(newfile)
+        os.remove(newfile)
 
     @remote_data
     @pytest.mark.skipif("not HAS_PINT")
@@ -200,6 +219,7 @@ class TestFake(object):
         command = f"{self.first_event_file} --deorbit-par bububububu.par"
         newfile = hen.fake.main_scramble(command.split())
         assert os.path.exists(newfile)
+        os.remove(newfile)
 
     def test_scramble_events(self):
         nevents = 3003

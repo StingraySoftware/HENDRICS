@@ -520,9 +520,6 @@ def scramble(
     new_event_list = copy.deepcopy(event_list)
     assert np.all(np.diff(new_event_list.time) > 0)
 
-    gti_length = event_list.gti[:, 1] - event_list.gti[:, 0]
-    good = gti_length > 10
-    new_event_list.gti = new_event_list.gti[good]
     idxs = np.searchsorted(new_event_list.time, new_event_list.gti)
 
     if smooth_kind == "pulsed":
@@ -539,6 +536,8 @@ def scramble(
         if nevents < 1:
             continue
         length = t_stop - t_start
+        if nevents < 10 and smooth_kind == "pulsed":
+            continue
         if length <= 1:
             # in very short GTIs, always assume a flat distribution.
             locally_flat = True
@@ -678,7 +677,11 @@ def main_scramble(args=None):
     emin = emax = None
     if args.energy_interval is not None:
         emin, emax = args.energy_interval
-        event_list, _ = filter_energy(event_list, emin, emax)
+        event_list, elabel = filter_energy(event_list, emin, emax)
+        if elabel != "Energy":
+            raise ValueError(
+                "You are filtering by energy but the data are not calibrated"
+            )
 
     new_event_list = scramble(
         event_list,
