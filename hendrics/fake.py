@@ -14,7 +14,7 @@ from stingray.utils import assign_value_if_none
 from .io import get_file_format, load_lcurve
 from .io import load_events, save_events, HEN_FILE_EXTENSION
 from .base import _empty, r_in
-
+from .fold import filter_energy
 from .lcurve import lcurve_from_fits
 from .base import njit, deorbit_events
 
@@ -665,7 +665,7 @@ def main_scramble(args=None):
         "--outfile", type=str, default=None, help="Output file name"
     )
     args = check_negative_numbers_in_args(args)
-    _add_default_args(parser, ["deorbit", "loglevel", "debug"])
+    _add_default_args(parser, ["deorbit", "energies", "loglevel", "debug"])
 
     args = parser.parse_args(args)
 
@@ -675,6 +675,11 @@ def main_scramble(args=None):
     log.setLevel(args.loglevel)
 
     event_list = load_events(args.fname)
+    emin = emax = None
+    if args.energy_interval is not None:
+        emin, emax = args.energy_interval
+        event_list, _ = filter_energy(event_list, emin, emax)
+
     new_event_list = scramble(
         event_list,
         smooth_kind=args.smooth_kind,
@@ -696,9 +701,11 @@ def main_scramble(args=None):
             label += f"_smooth_dt{args.dt:g}s"
         if args.deadtime > 0:
             label += f"_deadtime_{args.deadtime:g}"
+        if args.energy_interval is not None:
+            label += f"_{emin:g}-{emax:g}keV"
 
         outfile = args.fname.replace(
-            HEN_FILE_EXTENSION, "_scramble" + HEN_FILE_EXTENSION
+            HEN_FILE_EXTENSION, f"{label}" + HEN_FILE_EXTENSION
         )
     save_events(new_event_list, outfile)
     return outfile
