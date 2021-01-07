@@ -124,7 +124,7 @@ class TestFake(object):
         command = "{0}".format(cls.fits_fileA)
         hen.read_events.main(command.split())
 
-        cls.first_event_file_cal = "calibrated.nc"
+        cls.first_event_file_cal = "calibrated" + HEN_FILE_EXTENSION
         hen.calibrate.calibrate(
             cls.first_event_file, cls.first_event_file_cal, rough=True
         )
