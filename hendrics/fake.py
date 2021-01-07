@@ -464,8 +464,13 @@ def make_counts_pulsed(nevents, t_start, t_stop, pulsed_fraction=0.0):
 
 
 def scramble(
-    event_list, smooth_kind="flat", dt=None, pulsed_fraction=0.0, deadtime=0.0,
-    orbit_par=None
+    event_list,
+    smooth_kind="flat",
+    dt=None,
+    pulsed_fraction=0.0,
+    deadtime=0.0,
+    orbit_par=None,
+    frequency=1,
 ):
     """Scramble event list, GTI by GTI.
 
@@ -515,7 +520,17 @@ def scramble(
     new_event_list = copy.deepcopy(event_list)
     assert np.all(np.diff(new_event_list.time) > 0)
 
+    gti_length = event_list.gti[:, 1] - event_list.gti[:, 0]
+    good = gti_length > 10
+    new_event_list.gti = new_event_list.gti[good]
     idxs = np.searchsorted(new_event_list.time, new_event_list.gti)
+
+    if smooth_kind == "pulsed":
+        # Frequency is one, but can be anywhere in the frequency bin (for
+        # sensitivity losses)
+        length = new_event_list.gti.max() - new_event_list.gti.min()
+        df = 0.5 / length
+        frequency += np.random.uniform(-df, df)
 
     for (i_start, i_stop), gti_boundary in zip(idxs, new_event_list.gti):
         locally_flat = False
@@ -558,10 +573,6 @@ def scramble(
             )
 
         elif smooth_kind == "pulsed":
-            df = 1 / length
-            # Frequency is one, but can be anywhere in the frequency bin (for
-            # sensitivity losses)
-            frequency = 1 + np.random.uniform(-df, df)
             # dt must be sufficiently small so that the frequency can be
             # detected with no loss of sensitivity. Moreover, not exactly a
             # multiple of the frequency, to increase randomness in the
@@ -574,7 +585,9 @@ def scramble(
             dt = length / n_bins
 
             times = np.arange(t_start, t_stop, dt)
-            sinusoid = pulsed_fraction / 2 * np.sin(np.pi * 2 * times)
+            sinusoid = (
+                pulsed_fraction / 2 * np.sin(np.pi * 2 * times * frequency)
+            )
 
             lc = 1 - pulsed_fraction / 2 + sinusoid
 
@@ -590,6 +603,9 @@ def scramble(
             deadtime=deadtime,
         )
         new_event_list.time[i_start:i_stop] = newev
+
+    if orbit_par is not None:
+        new_event_list = deorbit_events(new_event_list, orbit_par, invert=True)
 
     return new_event_list
 
@@ -639,6 +655,13 @@ def main_scramble(args=None):
         help="Pulsed fraction of simulated pulsations",
     )
     parser.add_argument(
+        "-f",
+        "--frequency",
+        type=float,
+        default=1,
+        help="Pulsed fraction of simulated pulsations",
+    )
+    parser.add_argument(
         "--outfile", type=str, default=None, help="Output file name"
     )
     args = check_negative_numbers_in_args(args)
@@ -658,7 +681,8 @@ def main_scramble(args=None):
         dt=args.dt,
         pulsed_fraction=args.pulsed_fraction,
         deadtime=args.deadtime,
-        orbit_par=args.deorbit_par
+        orbit_par=args.deorbit_par,
+        frequency=args.frequency,
     )
 
     if args.outfile is not None:
