@@ -24,6 +24,7 @@ try:
     import pint.toa as toa
     import pint
     from pint.models import get_model
+
     HAS_PINT = True
 except ImportError:
     HAS_PINT = False
@@ -397,9 +398,9 @@ def gti_len(gti):
     return np.sum(np.diff(gti, axis=1))
 
 
-def simple_orbit_fun_from_parfile(mjdstart, mjdstop, parfile,
-                                  ntimes=1000, ephem="DE421",
-                                  invert=False):
+def simple_orbit_fun_from_parfile(
+    mjdstart, mjdstop, parfile, ntimes=1000, ephem="DE421", invert=False
+):
     """Get a correction for orbital motion from pulsar parameter file.
 
     Parameters
@@ -426,8 +427,10 @@ def simple_orbit_fun_from_parfile(mjdstart, mjdstop, parfile,
     from astropy import units
 
     if not HAS_PINT:
-        raise ImportError("You need the optional dependency PINT to use this "
-                          "functionality: github.com/nanograv/pint")
+        raise ImportError(
+            "You need the optional dependency PINT to use this "
+            "functionality: github.com/nanograv/pint"
+        )
 
     mjds = np.linspace(mjdstart, mjdstop, ntimes)
     toalist = _load_and_prepare_TOAs(mjds, ephem=ephem)
@@ -436,10 +439,11 @@ def simple_orbit_fun_from_parfile(mjdstart, mjdstop, parfile,
     if invert:
         delays = -delays
 
-    correction = \
-        interp1d(mjds,
-                 (toalist.table['tdbld'] * units.d - delays).to(units.d).value,
-                  fill_value="extrapolate")
+    correction = interp1d(
+        mjds,
+        (toalist.table["tdbld"] * units.d - delays).to(units.d).value,
+        fill_value="extrapolate",
+    )
 
     return correction
 
@@ -489,7 +493,7 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem="DE421"):
         parameter_file,
         ntimes=min(int(length // 10), 10000),
         invert=invert,
-        ephem=ephem
+        ephem=ephem,
     )
 
     mjdtimes = events.time / 86400 + events.mjdref

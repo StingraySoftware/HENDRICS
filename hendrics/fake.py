@@ -14,7 +14,7 @@ from stingray.utils import assign_value_if_none
 from .io import get_file_format, load_lcurve
 from .io import load_events, save_events, HEN_FILE_EXTENSION
 from .base import _empty, r_in
-
+from .fold import filter_energy
 from .lcurve import lcurve_from_fits
 from .base import njit, deorbit_events
 
@@ -464,8 +464,13 @@ def make_counts_pulsed(nevents, t_start, t_stop, pulsed_fraction=0.0):
 
 
 def scramble(
-    event_list, smooth_kind="flat", dt=None, pulsed_fraction=0.0, deadtime=0.0,
-    orbit_par=None
+    event_list,
+    smooth_kind="flat",
+    dt=None,
+    pulsed_fraction=0.0,
+    deadtime=0.0,
+    orbit_par=None,
+    frequency=1,
 ):
     """Scramble event list, GTI by GTI.
 
@@ -517,6 +522,13 @@ def scramble(
 
     idxs = np.searchsorted(new_event_list.time, new_event_list.gti)
 
+    if smooth_kind == "pulsed":
+        # Frequency is one, but can be anywhere in the frequency bin (for
+        # sensitivity losses)
+        length = new_event_list.gti.max() - new_event_list.gti.min()
+        df = 0.5 / length
+        frequency += np.random.uniform(-df, df)
+
     for (i_start, i_stop), gti_boundary in zip(idxs, new_event_list.gti):
         locally_flat = False
         nevents = i_stop - i_start
@@ -524,6 +536,8 @@ def scramble(
         if nevents < 1:
             continue
         length = t_stop - t_start
+        if nevents < 10 and smooth_kind == "pulsed":
+            continue
         if length <= 1:
             # in very short GTIs, always assume a flat distribution.
             locally_flat = True
@@ -558,10 +572,6 @@ def scramble(
             )
 
         elif smooth_kind == "pulsed":
-            df = 1 / length
-            # Frequency is one, but can be anywhere in the frequency bin (for
-            # sensitivity losses)
-            frequency = 1 + np.random.uniform(-df, df)
             # dt must be sufficiently small so that the frequency can be
             # detected with no loss of sensitivity. Moreover, not exactly a
             # multiple of the frequency, to increase randomness in the
@@ -574,7 +584,9 @@ def scramble(
             dt = length / n_bins
 
             times = np.arange(t_start, t_stop, dt)
-            sinusoid = pulsed_fraction / 2 * np.sin(np.pi * 2 * times)
+            sinusoid = (
+                pulsed_fraction / 2 * np.sin(np.pi * 2 * times * frequency)
+            )
 
             lc = 1 - pulsed_fraction / 2 + sinusoid
 
@@ -590,6 +602,9 @@ def scramble(
             deadtime=deadtime,
         )
         new_event_list.time[i_start:i_stop] = newev
+
+    if orbit_par is not None:
+        new_event_list = deorbit_events(new_event_list, orbit_par, invert=True)
 
     return new_event_list
 
@@ -639,10 +654,17 @@ def main_scramble(args=None):
         help="Pulsed fraction of simulated pulsations",
     )
     parser.add_argument(
+        "-f",
+        "--frequency",
+        type=float,
+        default=1,
+        help="Pulsed fraction of simulated pulsations",
+    )
+    parser.add_argument(
         "--outfile", type=str, default=None, help="Output file name"
     )
     args = check_negative_numbers_in_args(args)
-    _add_default_args(parser, ["deorbit", "loglevel", "debug"])
+    _add_default_args(parser, ["deorbit", "energies", "loglevel", "debug"])
 
     args = parser.parse_args(args)
 
@@ -652,13 +674,23 @@ def main_scramble(args=None):
     log.setLevel(args.loglevel)
 
     event_list = load_events(args.fname)
+    emin = emax = None
+    if args.energy_interval is not None:
+        emin, emax = args.energy_interval
+        event_list, elabel = filter_energy(event_list, emin, emax)
+        if elabel != "Energy":
+            raise ValueError(
+                "You are filtering by energy but the data are not calibrated"
+            )
+
     new_event_list = scramble(
         event_list,
         smooth_kind=args.smooth_kind,
         dt=args.dt,
         pulsed_fraction=args.pulsed_fraction,
         deadtime=args.deadtime,
-        orbit_par=args.deorbit_par
+        orbit_par=args.deorbit_par,
+        frequency=args.frequency,
     )
 
     if args.outfile is not None:
@@ -672,9 +704,11 @@ def main_scramble(args=None):
             label += f"_smooth_dt{args.dt:g}s"
         if args.deadtime > 0:
             label += f"_deadtime_{args.deadtime:g}"
+        if args.energy_interval is not None:
+            label += f"_{emin:g}-{emax:g}keV"
 
         outfile = args.fname.replace(
-            HEN_FILE_EXTENSION, "_scramble" + HEN_FILE_EXTENSION
+            HEN_FILE_EXTENSION, f"{label}" + HEN_FILE_EXTENSION
         )
     save_events(new_event_list, outfile)
     return outfile
