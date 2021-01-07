@@ -196,7 +196,7 @@ class TestFake(object):
     @remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_scramble_events_file_deorbit(self):
-        _ = _dummy_par("bububububu.par", pb=1., a1=30)
+        _ = _dummy_par("bububububu.par", pb=1.0, a1=30)
         command = f"{self.first_event_file} --deorbit-par bububububu.par"
         newfile = hen.fake.main_scramble(command.split())
         assert os.path.exists(newfile)
