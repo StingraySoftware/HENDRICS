@@ -15,8 +15,8 @@ from .base import (
     _assign_value_if_none,
     interpret_bintime,
 )
-from .io import sort_files, save_pds, load_lcurve
-from .io import HEN_FILE_EXTENSION
+from .io import sort_files, save_pds, load_lcurve, load_events
+from .io import HEN_FILE_EXTENSION, get_file_type
 
 
 def _wrap_fun_cpds(arglist):
@@ -27,7 +27,12 @@ def _wrap_fun_cpds(arglist):
 def _wrap_fun_pds(argdict):
     fname = argdict["fname"]
     argdict.pop("fname")
-    return calc_pds(fname, **argdict)
+    type, data = get_file_type(fname, raw_data=True)
+    if type == 'events':
+        return calc_pds_from_events(fname, **argdict)
+    elif type == 'lc':
+        return calc_pds(fname, **argdict)
+
 
 
 def sync_gtis(lc1, lc2):
@@ -48,6 +53,42 @@ def sync_gtis(lc1, lc2):
         lc1.tseg = np.max(lc1.gti) - np.min(lc1.gti)
         lc2.tseg = np.max(lc1.gti) - np.min(lc1.gti)
     return lc1, lc2
+
+
+def calc_pds_from_events(lcfile,
+    fftlen,
+    save_dyn=False,
+    bintime=1,
+    pdsrebin=1,
+    normalization="leahy",
+    back_ctrate=0.0,
+    noclobber=False,
+    outname=None,
+    save_all=True,):
+    root = hen_root(lcfile)
+    if outname is None:
+        outname = root + "_pds" + HEN_FILE_EXTENSION
+    if noclobber and os.path.exists(outname):
+        warnings.warn("File exists, and noclobber option used. Skipping")
+        return
+
+    log.info("Loading file %s..." % lcfile)
+    events = load_events(lcfile)
+    instr = events.instr
+    pds = AveragedPowerspectrum(
+        events, dt=bintime, segment_size=fftlen, norm=normalization.lower()
+    )
+    if pdsrebin is not None and pdsrebin != 1:
+        pds = pds.rebin(pdsrebin)
+
+    pds.instr = instr
+    pds.fftlen = fftlen
+    pds.back_phots = back_ctrate * fftlen
+    pds.mjdref = events.mjdref
+
+    log.info("Saving PDS to %s" % outname)
+    save_pds(pds, outname, save_all=save_all)
+    return outname
 
 
 def calc_pds(
