@@ -30,7 +30,6 @@ def _wrap_fun_pds(argdict):
     return calc_pds(fname, **argdict)
 
 
-
 def sync_gtis(lc1, lc2):
     """Sync gtis between light curves or event lists.
 
@@ -79,8 +78,8 @@ def sync_gtis(lc1, lc2):
     return lc1, lc2
 
 
-def _format_lc_data(data, type, fftlen=512., bintime=1.):
-    if type == 'events':
+def _format_lc_data(data, type, fftlen=512.0, bintime=1.0):
+    if type == "events":
         events = data
         gtilength = events.gti[:, 1] - events.gti[:, 0]
         events.gti = events.gti[gtilength >= fftlen]
@@ -223,8 +222,10 @@ def calc_cpds(
     instr2 = lc2.instr
 
     if ftype1 != ftype2:
-        raise ValueError("Please use similar data files for the two time "
-                         "series (e.g. both events or both light curves)")
+        raise ValueError(
+            "Please use similar data files for the two time "
+            "series (e.g. both events or both light curves)"
+        )
     if hasattr(lc1, "dt"):
         assert lc1.dt == lc2.dt, "Light curves are sampled differently"
 
