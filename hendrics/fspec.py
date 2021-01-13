@@ -231,6 +231,7 @@ def calc_cpds(
     lc1, lc2 = sync_gtis(lc1, lc2)
     if lc1.mjdref != lc2.mjdref:
         lc2 = lc2.change_mjdref(lc1.mjdref)
+    mjdref = lc1.mjdref
 
     lc1 = _format_lc_data(lc1, ftype1, fftlen=fftlen, bintime=bintime)
     lc2 = _format_lc_data(lc2, ftype2, fftlen=fftlen, bintime=bintime)
@@ -245,7 +246,7 @@ def calc_cpds(
     cpds.instrs = instr1 + "," + instr2
     cpds.fftlen = fftlen
     cpds.back_phots = back_ctrate * fftlen
-    cpds.mjdref = lc1.mjdref
+    cpds.mjdref = mjdref
     lags, lags_err = cpds.time_lag()
     cpds.lag = lags
     cpds.lag_err = lags
