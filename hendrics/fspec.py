@@ -74,9 +74,12 @@ def calc_pds_from_events(lcfile,
 
     log.info("Loading file %s..." % lcfile)
     events = load_events(lcfile)
+    gtilength = events.gti[:, 1] - events.gti[:, 0]
+    events.gti = events.gti[gtilength >= fftlen]
+    lc_list = list(events.to_lc_list(dt=bintime))
     instr = events.instr
     pds = AveragedPowerspectrum(
-        events, dt=bintime, segment_size=fftlen, norm=normalization.lower()
+        lc_list, segment_size=fftlen, norm=normalization.lower()
     )
     if pdsrebin is not None and pdsrebin != 1:
         pds = pds.rebin(pdsrebin)
