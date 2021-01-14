@@ -229,6 +229,22 @@ class TestFullRun(object):
             + HEN_FILE_EXTENSION
         )
 
+    def test_cpds_ignore_instr(self):
+        """Test CPDS production."""
+        command = (
+            "{0} {1} -f 128 --save-dyn -k CPDS,lag --save-all --ignore-instr"
+            " -o {2} --debug".format(
+                os.path.join(self.datadir, "monol_testA_E3-50_lc")
+                + HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, "monol_testB_E3-50_lc")
+                + HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, "ignore_instr")
+                + HEN_FILE_EXTENSION,
+            )
+        )
+
+        hen.fspec.main(command.split())
+
     def test_cpds_rms_norm(self):
         """Test CPDS production."""
         command = (
@@ -616,6 +632,8 @@ model = models.Const1D()
             "*.p",
             "*.qdp",
             "*.inf",
+            "*_cpds" + HEN_FILE_EXTENSION,
+            "*_ev" + HEN_FILE_EXTENSION
         ]
 
         file_list = []
