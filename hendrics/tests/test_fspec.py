@@ -72,9 +72,7 @@ class TestFullRun(object):
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+
         cls.par = _dummy_par("bubububu.par")
 
         cls.ev_fileA = os.path.join(
@@ -109,20 +107,38 @@ class TestFullRun(object):
         hen.calibrate.main(command.split())
         cls.lcA = os.path.join(
             os.path.join(
-                cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
+                cls.datadir, "monol_testA_nustar_fpma_lc" + HEN_FILE_EXTENSION
             )
         )
         cls.lcB = os.path.join(
+            os.path.join(
+                cls.datadir, "monol_testB_nustar_fpmb_lc" + HEN_FILE_EXTENSION
+            )
+        )
+        cls.lcAfilt = os.path.join(
+            os.path.join(
+                cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
+            )
+        )
+        cls.lcBfilt = os.path.join(
             os.path.join(
                 cls.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION
             )
         )
         command = (
             "{} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " "-o {}"
-        ).format(cls.ev_fileAcal, cls.lcA)
+        ).format(cls.ev_fileAcal, cls.lcAfilt)
         hen.lcurve.main(command.split())
         command = (
             "{} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " "-o {}"
+        ).format(cls.ev_fileBcal, cls.lcBfilt)
+        hen.lcurve.main(command.split())
+        command = (
+            "{} --nproc 2 -b 0.5 " "-o {}"
+        ).format(cls.ev_fileAcal, cls.lcA)
+        hen.lcurve.main(command.split())
+        command = (
+            "{}  --nproc 2 -b 0.5 " "-o {}"
         ).format(cls.ev_fileBcal, cls.lcB)
         hen.lcurve.main(command.split())
 
@@ -137,12 +153,12 @@ class TestFullRun(object):
         )
 
         command = "{} {} -f 128 -k PDS --save-all --norm leahy".format(
-            cls.lcA, cls.lcB
+            cls.lcAfilt, cls.lcBfilt
         )
         hen.fspec.main(command.split())
 
         command = "{} {} -f 128 -k CPDS --save-all --norm leahy".format(
-            cls.lcA, cls.lcB
+            cls.lcAfilt, cls.lcBfilt
         )
         hen.fspec.main(command.split())
         assert os.path.exists(cls.cpds)
@@ -151,7 +167,7 @@ class TestFullRun(object):
 
     def test_pds_leahy_dtbig(self):
         """Test PDS production."""
-        lc = self.lcA
+        lc = self.lcAfilt
         hen.io.main([lc])
         command = "{0} -f 128 -k PDS --save-all --norm leahy -b {1}".format(
             lc, 1
@@ -166,40 +182,50 @@ class TestFullRun(object):
 
     def test_pds_leahy(self):
         """Test PDS production."""
-        lc = (
-            os.path.join(self.datadir, "monol_testA_E3-50_lc")
-            + HEN_FILE_EXTENSION
-        )
-        hen.io.main([lc])
-        command = "{0} -f 128 -k PDS --save-all --norm leahy".format(lc)
+        evdata = self.ev_fileA
+        lcdata = self.lcA
+
+        command = "{0} -f 128 -k PDS --norm leahy -b 0.5".format(evdata)
+        hen.fspec.main(command.split())
+        command = "{0} -f 128 -k PDS --save-all --norm leahy".format(lcdata)
         hen.fspec.main(command.split())
 
-        assert os.path.exists(
-            os.path.join(
-                self.datadir, "monol_testA_E3-50_pds" + HEN_FILE_EXTENSION
-            )
-        )
+        evout = evdata.replace("_ev", "_pds")
+        lcout = lcdata.replace("_lc", "_pds")
+        assert os.path.exists(evout)
+        assert os.path.exists(lcout)
+        evpds = hen.io.load_pds(evout)
+        lcpds = hen.io.load_pds(lcout)
+        assert np.allclose(evpds.power, lcpds.power)
 
-    def test_pds(self):
+    @pytest.mark.parametrize("data_kind", ["events", "lc"])
+    def test_pds(self, data_kind):
         """Test PDS production."""
+        if data_kind == "events":
+            labelA = "nustar_fpma_ev"
+            labelB = "nustar_fpmb_ev"
+        else:
+            labelA = labelB = "E3-50_lc"
         command = (
             "{0} {1} -f 128 --save-all --save-dyn -k PDS "
             "--norm frac".format(
-                os.path.join(self.datadir, "monol_testA_E3-50_lc")
+                os.path.join(self.datadir, f"monol_testA_{labelA}")
                 + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, "monol_testB_E3-50_lc")
+                os.path.join(self.datadir, f"monol_testB_{labelB}")
                 + HEN_FILE_EXTENSION,
             )
         )
         hen.fspec.main(command.split())
 
+        out_labelA = labelA.replace("_ev", "_pds").replace("_lc", "_pds")
+        out_labelB = labelB.replace("_ev", "_pds").replace("_lc", "_pds")
         assert os.path.exists(
             os.path.join(
-                self.datadir, "monol_testB_E3-50_pds" + HEN_FILE_EXTENSION
+                self.datadir, f"monol_testB_{out_labelB}" + HEN_FILE_EXTENSION
             )
         )
         assert os.path.exists(
-            os.path.join(self.datadir, "monol_testA_E3-50_pds")
+            os.path.join(self.datadir, f"monol_testA_{out_labelA}")
             + HEN_FILE_EXTENSION
         )
 

@@ -20,16 +20,18 @@ def rebin_file(filename, rebin):
     else:
         contents = contents.rebin_log(f=rebin)
 
+    options = {}
     if ftype == "lc":
         func = save_lcurve
     elif ftype in ["pds", "cpds"]:
         func = save_pds
+        options = {'save_all': True}
 
     outfile = filename.replace(
         get_file_extension(filename), "_rebin%g" % rebin + HEN_FILE_EXTENSION
     )
     log.info("Saving %s to %s" % (ftype, outfile))
-    func(contents, outfile)
+    func(contents, outfile, **options)
 
 
 def main(args=None):

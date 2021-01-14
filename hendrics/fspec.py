@@ -106,7 +106,7 @@ def calc_pds(
     back_ctrate=0.0,
     noclobber=False,
     outname=None,
-    save_all=True,
+    save_all=False,
 ):
     """Calculate the PDS from an input light curve file.
 
@@ -178,7 +178,7 @@ def calc_cpds(
     normalization="leahy",
     back_ctrate=0.0,
     noclobber=False,
-    save_all=True,
+    save_all=False,
 ):
     """Calculate the CPDS from a pair of input light curve files.
 
@@ -273,7 +273,7 @@ def calc_fspec(
     back_ctrate=0.0,
     noclobber=False,
     ignore_instr=False,
-    save_all=True,
+    save_all=False,
 ):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
