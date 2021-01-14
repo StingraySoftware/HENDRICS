@@ -600,6 +600,7 @@ def load_folding(fname):
 def save_pds(cpds, fname, save_all=False):
     """Save PDS in a file."""
     from .base import mkdir_p
+
     outdata = copy.copy(cpds.__dict__)
     outdata["__sr__class__type__"] = str(type(cpds))
 

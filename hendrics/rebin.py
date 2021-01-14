@@ -25,7 +25,7 @@ def rebin_file(filename, rebin):
         func = save_lcurve
     elif ftype in ["pds", "cpds"]:
         func = save_pds
-        options = {'save_all': True}
+        options = {"save_all": True}
 
     outfile = filename.replace(
         get_file_extension(filename), "_rebin%g" % rebin + HEN_FILE_EXTENSION

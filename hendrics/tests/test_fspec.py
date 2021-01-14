@@ -133,13 +133,13 @@ class TestFullRun(object):
             "{} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " "-o {}"
         ).format(cls.ev_fileBcal, cls.lcBfilt)
         hen.lcurve.main(command.split())
-        command = (
-            "{} --nproc 2 -b 0.5 " "-o {}"
-        ).format(cls.ev_fileAcal, cls.lcA)
+        command = ("{} --nproc 2 -b 0.5 " "-o {}").format(
+            cls.ev_fileAcal, cls.lcA
+        )
         hen.lcurve.main(command.split())
-        command = (
-            "{}  --nproc 2 -b 0.5 " "-o {}"
-        ).format(cls.ev_fileBcal, cls.lcB)
+        command = ("{}  --nproc 2 -b 0.5 " "-o {}").format(
+            cls.ev_fileBcal, cls.lcB
+        )
         hen.lcurve.main(command.split())
 
         cls.pdsA = os.path.join(
