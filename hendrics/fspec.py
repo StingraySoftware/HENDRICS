@@ -15,8 +15,8 @@ from .base import (
     _assign_value_if_none,
     interpret_bintime,
 )
-from .io import sort_files, save_pds, load_lcurve
-from .io import HEN_FILE_EXTENSION
+from .io import sort_files, save_pds, load_data
+from .io import HEN_FILE_EXTENSION, get_file_type
 
 
 def _wrap_fun_cpds(arglist):
@@ -31,9 +31,34 @@ def _wrap_fun_pds(argdict):
 
 
 def sync_gtis(lc1, lc2):
-    """Sync gtis between light curves.
+    """Sync gtis between light curves or event lists.
 
-    Has to work with new and old versions of stingray."""
+    Has to work with new and old versions of stingray.
+
+    Examples
+    --------
+    >>> from stingray.events import EventList
+    >>> from stingray.lightcurve import Lightcurve
+    >>> ev1 = EventList(
+    ...     time=np.sort(np.random.uniform(1, 10, 3)), gti=[[1, 10]])
+    >>> ev2 = EventList(time=np.sort(np.random.uniform(0, 9, 4)), gti=[[0, 9]])
+    >>> e1, e2 = sync_gtis(ev1, ev2)
+    >>> np.allclose(e1.gti, [[1, 9]])
+    True
+    >>> np.allclose(e2.gti, [[1, 9]])
+    True
+    >>> lc1 = Lightcurve(
+    ...     time=[0.5, 1.5, 2.5], counts=[2, 2, 3], dt=1, gti=[[0, 3]])
+    >>> lc2 = Lightcurve(
+    ...     time=[1.5, 2.5, 3.5, 4.5], counts=[2, 2, 3, 3], dt=1, gti=[[1, 5]])
+    >>> lc1._apply_gtis = lc1.apply_gtis
+    >>> lc2._apply_gtis = lc2.apply_gtis
+    >>> l1, l2 = sync_gtis(lc1, lc2)
+    >>> np.allclose(l1.gti, [[1, 3]])
+    True
+    >>> np.allclose(l2.gti, [[1, 3]])
+    True
+    """
     gti = cross_gtis([lc1.gti, lc2.gti])
     lc1.gti = gti
     lc2.gti = gti
@@ -41,13 +66,34 @@ def sync_gtis(lc1, lc2):
         # Compatibility with old versions of stingray
         lc1.apply_gtis = lc1._apply_gtis
         lc2.apply_gtis = lc2._apply_gtis
-    lc1.apply_gtis()
-    lc2.apply_gtis()
+
+    if hasattr(lc1, "apply_gtis"):
+        lc1.apply_gtis()
+        lc2.apply_gtis()
+
     # compatibility with old versions of stingray
-    if lc1.tseg != lc2.tseg:  # pragma: no cover
+    if hasattr(lc1, "tseg") and lc1.tseg != lc2.tseg:
         lc1.tseg = np.max(lc1.gti) - np.min(lc1.gti)
         lc2.tseg = np.max(lc1.gti) - np.min(lc1.gti)
     return lc1, lc2
+
+
+def _format_lc_data(data, type, fftlen=512.0, bintime=1.0):
+    if type == "events":
+        events = data
+        gtilength = events.gti[:, 1] - events.gti[:, 0]
+        events.gti = events.gti[gtilength >= fftlen]
+        lc_data = list(events.to_lc_list(dt=bintime))
+    else:
+        lc = data
+        if bintime > lc.dt:
+            lcrebin = np.rint(bintime / lc.dt)
+            log.info("Rebinning lcs by a factor %d" % lcrebin)
+            lc = lc.rebin(bintime)
+            # To fix problem with float128
+            lc.counts = lc.counts.astype(float)
+        lc_data = lc
+    return lc_data
 
 
 def calc_pds(
@@ -60,7 +106,7 @@ def calc_pds(
     back_ctrate=0.0,
     noclobber=False,
     outname=None,
-    save_all=True,
+    save_all=False,
 ):
     """Calculate the PDS from an input light curve file.
 
@@ -98,20 +144,14 @@ def calc_pds(
         warnings.warn("File exists, and noclobber option used. Skipping")
         return
 
-    log.info("Loading file %s..." % lcfile)
-    lc = load_lcurve(lcfile)
-    instr = lc.instr
+    ftype, data = get_file_type(lcfile)
+    mjdref = data.instr
+    instr = data.instr
 
-    if bintime > lc.dt:
-        lcrebin = np.rint(bintime / lc.dt)
-        log.info("Rebinning lcs by a factor %d" % lcrebin)
-        lc = lc.rebin(bintime)
-        # To fix problem with float128
-        lc.counts = lc.counts.astype(float)
-        lc.instr = instr
+    lc_data = _format_lc_data(data, ftype, bintime=bintime, fftlen=fftlen)
 
     pds = AveragedPowerspectrum(
-        lc, segment_size=fftlen, norm=normalization.lower()
+        lc_data, segment_size=fftlen, norm=normalization.lower()
     )
 
     if pdsrebin is not None and pdsrebin != 1:
@@ -120,7 +160,7 @@ def calc_pds(
     pds.instr = instr
     pds.fftlen = fftlen
     pds.back_phots = back_ctrate * fftlen
-    pds.mjdref = lc.mjdref
+    pds.mjdref = mjdref
 
     log.info("Saving PDS to %s" % outname)
     save_pds(pds, outname, save_all=save_all)
@@ -138,7 +178,7 @@ def calc_cpds(
     normalization="leahy",
     back_ctrate=0.0,
     noclobber=False,
-    save_all=True,
+    save_all=False,
 ):
     """Calculate the CPDS from a pair of input light curve files.
 
@@ -175,30 +215,27 @@ def calc_cpds(
         return
 
     log.info("Loading file %s..." % lcfile1)
-    lc1 = load_lcurve(lcfile1)
+    ftype1, lc1 = get_file_type(lcfile1)
     log.info("Loading file %s..." % lcfile2)
-    lc2 = load_lcurve(lcfile2)
+    ftype2, lc2 = get_file_type(lcfile2)
     instr1 = lc1.instr
     instr2 = lc2.instr
 
-    assert lc1.dt == lc2.dt, "Light curves are sampled differently"
-    dt = lc1.dt
+    if ftype1 != ftype2:
+        raise ValueError(
+            "Please use similar data files for the two time "
+            "series (e.g. both events or both light curves)"
+        )
+    if hasattr(lc1, "dt"):
+        assert lc1.dt == lc2.dt, "Light curves are sampled differently"
 
     lc1, lc2 = sync_gtis(lc1, lc2)
-
-    if bintime > dt:
-        lcrebin = np.rint(bintime / dt)
-        log.info("Rebinning lcs by a factor %d" % lcrebin)
-        lc1 = lc1.rebin(bintime)
-        # To fix problem with float128
-        lc1.counts = lc1.counts.astype(float)
-        lc1.instr = instr1
-        lc2 = lc2.rebin(bintime)
-        lc2.counts = lc2.counts.astype(float)
-        lc2.instr = instr2
-
     if lc1.mjdref != lc2.mjdref:
         lc2 = lc2.change_mjdref(lc1.mjdref)
+    mjdref = lc1.mjdref
+
+    lc1 = _format_lc_data(lc1, ftype1, fftlen=fftlen, bintime=bintime)
+    lc2 = _format_lc_data(lc2, ftype2, fftlen=fftlen, bintime=bintime)
 
     cpds = AveragedCrossspectrum(
         lc1, lc2, segment_size=fftlen, norm=normalization.lower()
@@ -210,7 +247,7 @@ def calc_cpds(
     cpds.instrs = instr1 + "," + instr2
     cpds.fftlen = fftlen
     cpds.back_phots = back_ctrate * fftlen
-    cpds.mjdref = lc1.mjdref
+    cpds.mjdref = mjdref
     lags, lags_err = cpds.time_lag()
     cpds.lag = lags
     cpds.lag_err = lags
@@ -236,7 +273,7 @@ def calc_fspec(
     back_ctrate=0.0,
     noclobber=False,
     ignore_instr=False,
-    save_all=True,
+    save_all=False,
 ):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 

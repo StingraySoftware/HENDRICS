@@ -597,7 +597,7 @@ def load_folding(fname):
 
 
 # ---- Functions to save PDSs
-def save_pds(cpds, fname, save_all=True):
+def save_pds(cpds, fname, save_all=False):
     """Save PDS in a file."""
     from .base import mkdir_p
 
@@ -618,13 +618,13 @@ def save_pds(cpds, fname, save_all=True):
         mkdir_p(outdir)
 
     if "lc1" in outdata:
-        if save_all:
+        if save_all and isinstance(cpds.lc1, Lightcurve):
             save_lcurve(
                 cpds.lc1, os.path.join(outdir, "__lc1__" + HEN_FILE_EXTENSION)
             )
         outdata.pop("lc1")
     if "lc2" in outdata:
-        if save_all:
+        if save_all and isinstance(cpds.lc2, Lightcurve):
             save_lcurve(
                 cpds.lc2, os.path.join(outdir, "__lc2__" + HEN_FILE_EXTENSION)
             )
