@@ -192,7 +192,7 @@ class TestIO:
 
         xps = AveragedCrossspectrum(lcurve1, lcurve2, 1)
 
-        save_pds(xps, self.dum)
+        save_pds(xps, self.dum, save_all=True)
         xps2 = load_pds(self.dum)
         assert np.allclose(xps.gti, xps2.gti)
         assert xps.m == xps2.m
