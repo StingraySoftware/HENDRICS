@@ -1,5 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
+from astropy.io.fits import Header
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
@@ -139,6 +140,7 @@ class TestIO:
         )
         events.energy = np.array([3.0, 4.0, 5.0])
         events.mission = "nustar"
+        events.header = Header().tostring()
         save_events(events, self.dum)
         events2 = load_events(self.dum)
         assert np.allclose(events.time, events2.time)
@@ -146,6 +148,7 @@ class TestIO:
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
         assert np.allclose(events.energy, events2.energy)
+        assert events.header == events2.header
         assert events2.mission == events.mission
 
     def test_load_and_save_lcurve(self):

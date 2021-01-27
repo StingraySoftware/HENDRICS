@@ -1,3 +1,4 @@
+from astropy.io.fits import Header
 from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
 import numpy as np
@@ -32,7 +33,15 @@ class TestPhaseogram:
         events.mjdref = 57000.0
         cls.event_times = events.time
         cls.dum = "events" + HEN_FILE_EXTENSION
+        cls.dum_info = "events_info" + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
+        header = Header()
+        header["OBJECT"] = "BUBU"
+        header["RADECSYS"] = "FK5"
+        header["RA_OBJ"] = 0.4
+        header["DEC_OBJ"] = 30.4
+        events.header = header.tostring()
+        save_events(events, cls.dum_info)
 
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
@@ -70,8 +79,9 @@ class TestPhaseogram:
         # Defaults to 2 harmonics
         assert efperiod.N == 2
 
-    def test_phaseogram_input_periodogram(self):
-        evfile = self.dum
+    @pytest.mark.parametrize('label', ('', '_info'))
+    def test_phaseogram_input_periodogram(self, label):
+        evfile = getattr(self, "dum" + label)
         main_phaseogram(
             [
                 evfile,

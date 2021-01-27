@@ -871,17 +871,24 @@ def run_interactive_phaseogram(
     events = load_events(event_file)
     if emin is not None or emax is not None:
         events, elabel = filter_energy(events, emin, emax)
-    try:
+
+    position = name = None
+
+    if hasattr(events, 'header') and events.header is not None:
         header = Header.fromstring(events.header)
-        position = SkyCoord(
-            header["RA_OBJ"],
-            header["DEC_OBJ"],
-            unit="deg",
-            frame=header["RADECSYS"].lower(),
-        )
-        name = header["OBJECT"]
-    except (KeyError, AttributeError):
-        position = name = None
+
+        try:
+            position = SkyCoord(
+                header["RA_OBJ"],
+                header["DEC_OBJ"],
+                unit="deg",
+                frame=header["RADECSYS"].lower(),
+            )
+        except (KeyError, AttributeError):
+            position = None
+
+        if 'OBJECT' in header:
+            name = header["OBJECT"]
 
     pepoch_mjd = pepoch
     if pepoch is None:
