@@ -609,51 +609,40 @@ def save_pds(cpds, fname, save_all=False):
     if not hasattr(cpds, "instr"):
         outdata["instr"] = "unknown"
 
-    if hasattr(cpds, "show_progress"):
-        outdata["show_progress"] = cpds.show_progress
-
-    if hasattr(cpds, "amplitude"):
-        outdata["amplitude"] = cpds.amplitude
+    for attr in ['show_progress', 'amplitude']:
+        if hasattr(cpds, attr):
+            outdata[attr] = getattr(cpds, attr)
 
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
     if save_all:
         mkdir_p(outdir)
 
-    if "lc1" in outdata:
-        if save_all and isinstance(cpds.lc1, Lightcurve):
-            save_lcurve(
-                cpds.lc1, os.path.join(outdir, "__lc1__" + HEN_FILE_EXTENSION)
-            )
-        outdata.pop("lc1")
-    if "lc2" in outdata:
-        if save_all and isinstance(cpds.lc2, Lightcurve):
-            save_lcurve(
-                cpds.lc2, os.path.join(outdir, "__lc2__" + HEN_FILE_EXTENSION)
-            )
-        outdata.pop("lc2")
-    if "pds1" in outdata:
-        if save_all:
-            save_pds(
-                cpds.pds1,
-                os.path.join(outdir, "__pds1__" + HEN_FILE_EXTENSION),
-            )
-        outdata.pop("pds1")
-    if "pds2" in outdata:
-        if save_all:
-            save_pds(
-                cpds.pds2,
-                os.path.join(outdir, "__pds2__" + HEN_FILE_EXTENSION),
-            )
-        outdata.pop("pds2")
-    if "cs_all" in outdata:
-        if save_all:
-            for i, c in enumerate(cpds.cs_all):
-                save_pds(
-                    c,
-                    os.path.join(
-                        outdir, "__cs__{}__".format(i) + HEN_FILE_EXTENSION
-                    ),
+    for attr in ['lc1', 'lc2', 'pds1', 'pds2']:
+        if save_all and hasattr(cpds, attr):
+            value = getattr(cpds, attr)
+
+            outf = f"__{attr}__" + HEN_FILE_EXTENSION
+            if "lc" in attr and isinstance(value, Lightcurve):
+                save_lcurve(
+                    value,
+                    os.path.join(outdir, outf)
                 )
+            elif "pds" in attr and isinstance(value, Crossspectrum):
+                save_pds(
+                    value,
+                    os.path.join(outdir, outf),
+                    save_all=False
+                )
+        outdata.pop(attr, None)
+
+    if "cs_all" in outdata:
+        for i, c in enumerate(cpds.cs_all):
+            save_pds(
+                c,
+                os.path.join(
+                    outdir, "__cs__{}__".format(i) + HEN_FILE_EXTENSION
+                ),
+            )
         outdata.pop("cs_all")
 
     if "best_fits" in outdata and cpds.best_fits is not None:
@@ -695,12 +684,6 @@ def load_pds(fname, nosub=False):
     data.pop("__sr__class__type__")
     for key in data.keys():
         setattr(cpds, key, data[key])
-
-    if "amplitude" in list(data.keys()):
-        cpds.amplitude = data["amplitude"]
-
-    if "show_progress" in list(data.keys()):
-        cpds.show_progress = data["show_progress"] == "T"
 
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
     modelfiles = glob.glob(
