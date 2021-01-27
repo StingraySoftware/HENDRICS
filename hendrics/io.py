@@ -636,13 +636,14 @@ def save_pds(cpds, fname, save_all=False):
         outdata.pop(attr, None)
 
     if "cs_all" in outdata:
-        for i, c in enumerate(cpds.cs_all):
-            save_pds(
-                c,
-                os.path.join(
-                    outdir, "__cs__{}__".format(i) + HEN_FILE_EXTENSION
-                ),
-            )
+        if save_all:
+            for i, c in enumerate(cpds.cs_all):
+                save_pds(
+                    c,
+                    os.path.join(
+                        outdir, "__cs__{}__".format(i) + HEN_FILE_EXTENSION
+                    ),
+                )
         outdata.pop("cs_all")
 
     if "best_fits" in outdata and cpds.best_fits is not None:
