@@ -633,7 +633,7 @@ model = models.Const1D()
             "*.qdp",
             "*.inf",
             "*_cpds" + HEN_FILE_EXTENSION,
-            "*_ev" + HEN_FILE_EXTENSION
+            "*_ev" + HEN_FILE_EXTENSION,
         ]
 
         file_list = []

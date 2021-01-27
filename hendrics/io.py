@@ -326,6 +326,8 @@ def read_from_netcdf(fname):
             to_save = values[0]
         else:
             to_save = values
+        if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool_"):
+            to_save = eval(to_save.replace("__bool__", ""))
         out[k] = to_save
 
     rootgrp.close()
@@ -482,7 +484,7 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     elif hasattr(lcurve, "e_interval") and lcurve.e_interval is not None:
         out["e_interval"] = lcurve.e_interval
     if hasattr(lcurve, "use_pi"):
-        out["use_pi"] = int(lcurve.use_pi)
+        out["use_pi"] = lcurve.use_pi
 
     if hasattr(lcurve, "instr") and lcurve.instr is not None:
         out["instr"] = lcurve.instr.lower()
@@ -542,7 +544,7 @@ def load_lcurve(fname):
     if "e_interval" in list(data.keys()):
         lcurve.e_interval = data["e_interval"]
     if "use_pi" in list(data.keys()):
-        lcurve.use_pi = bool(data["use_pi"])
+        lcurve.use_pi = data["use_pi"]
     if "header" in list(data.keys()):
         lcurve.header = data["header"]
     if "base" in list(data.keys()):
@@ -608,10 +610,10 @@ def save_pds(cpds, fname, save_all=False):
         outdata["instr"] = "unknown"
 
     if hasattr(cpds, "show_progress"):
-        outdata["show_progress"] = "T" if cpds.show_progress else "F"
+        outdata["show_progress"] = cpds.show_progress
 
     if hasattr(cpds, "amplitude"):
-        outdata["amplitude"] = int(cpds.amplitude)
+        outdata["amplitude"] = cpds.amplitude
 
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
     if save_all:
@@ -695,7 +697,7 @@ def load_pds(fname, nosub=False):
         setattr(cpds, key, data[key])
 
     if "amplitude" in list(data.keys()):
-        cpds.amplitude = bool(data["amplitude"])
+        cpds.amplitude = data["amplitude"]
 
     if "show_progress" in list(data.keys()):
         cpds.show_progress = data["show_progress"] == "T"
@@ -847,8 +849,10 @@ def _save_data_nc(struct, fname, kind="data"):
 
     for k in struct.keys():
         var = struct[k]
-
+        if isinstance(var, bool):
+            var = f"__bool__{var}"
         probe = var
+
         if isinstance(var, Iterable) and len(var) >= 1:
             probe = var[0]
 

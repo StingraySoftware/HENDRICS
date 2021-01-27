@@ -49,6 +49,10 @@ log.setLevel("DEBUG")
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
+def find_file_pattern_in_dir(pattern, directory):
+    return glob.glob(os.path.join(directory, pattern))
+
+
 class TestFullRun(object):
     """Test how command lines work.
 
@@ -307,12 +311,16 @@ class TestFullRun(object):
             ]
         )
 
+    def test_all_files_get_read(self):
+        # Test that HENreadfile works with all file types
+        fnames = find_file_pattern_in_dir(
+            "*" + HEN_FILE_EXTENSION, self.datadir
+        )
+        io.main(fnames)
+
     @classmethod
     def teardown_class(self):
         """Test a full run of the scripts (command lines)."""
-
-        def find_file_pattern_in_dir(pattern, directory):
-            return glob.glob(os.path.join(directory, pattern))
 
         patterns = [
             "*monol_test*" + HEN_FILE_EXTENSION,
