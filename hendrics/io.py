@@ -326,6 +326,8 @@ def read_from_netcdf(fname):
             to_save = values[0]
         else:
             to_save = values
+        if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool_"):
+            to_save = eval(to_save.replace("__bool__", ""))
         out[k] = to_save
 
     rootgrp.close()
@@ -482,7 +484,7 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     elif hasattr(lcurve, "e_interval") and lcurve.e_interval is not None:
         out["e_interval"] = lcurve.e_interval
     if hasattr(lcurve, "use_pi"):
-        out["use_pi"] = int(lcurve.use_pi)
+        out["use_pi"] = lcurve.use_pi
 
     if hasattr(lcurve, "instr") and lcurve.instr is not None:
         out["instr"] = lcurve.instr.lower()
@@ -542,7 +544,7 @@ def load_lcurve(fname):
     if "e_interval" in list(data.keys()):
         lcurve.e_interval = data["e_interval"]
     if "use_pi" in list(data.keys()):
-        lcurve.use_pi = bool(data["use_pi"])
+        lcurve.use_pi = data["use_pi"]
     if "header" in list(data.keys()):
         lcurve.header = data["header"]
     if "base" in list(data.keys()):
@@ -607,42 +609,32 @@ def save_pds(cpds, fname, save_all=False):
     if not hasattr(cpds, "instr"):
         outdata["instr"] = "unknown"
 
-    if hasattr(cpds, "show_progress"):
-        outdata["show_progress"] = "T" if cpds.show_progress else "F"
-
-    if hasattr(cpds, "amplitude"):
-        outdata["amplitude"] = int(cpds.amplitude)
+    for attr in ['show_progress', 'amplitude']:
+        if hasattr(cpds, attr):
+            outdata[attr] = getattr(cpds, attr)
 
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
     if save_all:
         mkdir_p(outdir)
 
-    if "lc1" in outdata:
-        if save_all and isinstance(cpds.lc1, Lightcurve):
-            save_lcurve(
-                cpds.lc1, os.path.join(outdir, "__lc1__" + HEN_FILE_EXTENSION)
-            )
-        outdata.pop("lc1")
-    if "lc2" in outdata:
-        if save_all and isinstance(cpds.lc2, Lightcurve):
-            save_lcurve(
-                cpds.lc2, os.path.join(outdir, "__lc2__" + HEN_FILE_EXTENSION)
-            )
-        outdata.pop("lc2")
-    if "pds1" in outdata:
-        if save_all:
-            save_pds(
-                cpds.pds1,
-                os.path.join(outdir, "__pds1__" + HEN_FILE_EXTENSION),
-            )
-        outdata.pop("pds1")
-    if "pds2" in outdata:
-        if save_all:
-            save_pds(
-                cpds.pds2,
-                os.path.join(outdir, "__pds2__" + HEN_FILE_EXTENSION),
-            )
-        outdata.pop("pds2")
+    for attr in ['lc1', 'lc2', 'pds1', 'pds2']:
+        if save_all and hasattr(cpds, attr):
+            value = getattr(cpds, attr)
+
+            outf = f"__{attr}__" + HEN_FILE_EXTENSION
+            if "lc" in attr and isinstance(value, Lightcurve):
+                save_lcurve(
+                    value,
+                    os.path.join(outdir, outf)
+                )
+            elif "pds" in attr and isinstance(value, Crossspectrum):
+                save_pds(
+                    value,
+                    os.path.join(outdir, outf),
+                    save_all=False
+                )
+        outdata.pop(attr, None)
+
     if "cs_all" in outdata:
         if save_all:
             for i, c in enumerate(cpds.cs_all):
@@ -693,12 +685,6 @@ def load_pds(fname, nosub=False):
     data.pop("__sr__class__type__")
     for key in data.keys():
         setattr(cpds, key, data[key])
-
-    if "amplitude" in list(data.keys()):
-        cpds.amplitude = bool(data["amplitude"])
-
-    if "show_progress" in list(data.keys()):
-        cpds.show_progress = data["show_progress"] == "T"
 
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
     modelfiles = glob.glob(
@@ -847,8 +833,10 @@ def _save_data_nc(struct, fname, kind="data"):
 
     for k in struct.keys():
         var = struct[k]
-
+        if isinstance(var, bool):
+            var = f"__bool__{var}"
         probe = var
+
         if isinstance(var, Iterable) and len(var) >= 1:
             probe = var[0]
 

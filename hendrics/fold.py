@@ -276,7 +276,6 @@ def get_TOAs_from_events(
         # BAD!BAD!BAD!
         # [[Pay attention to time reference here.
         # We are folding wrt pepoch, and calculating TOAs wrt start]]
-
         toa, toaerr = get_TOA(
             profile,
             1 / frequency_derivatives[0],

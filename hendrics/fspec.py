@@ -145,7 +145,7 @@ def calc_pds(
         return
 
     ftype, data = get_file_type(lcfile)
-    mjdref = data.instr
+    mjdref = data.mjdref
     instr = data.instr
 
     lc_data = _format_lc_data(data, ftype, bintime=bintime, fftlen=fftlen)
@@ -551,7 +551,6 @@ def main(args=None):
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
-    log.info("Starting")
 
     if args.debug:
         args.loglevel = "DEBUG"

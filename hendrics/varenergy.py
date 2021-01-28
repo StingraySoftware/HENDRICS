@@ -7,7 +7,10 @@ import warnings
 from astropy import log
 from astropy.logger import AstropyUserWarning
 import numpy as np
-from stingray.varenergyspectrum import RmsEnergySpectrum
+from stingray.varenergyspectrum import (
+    RmsEnergySpectrum,
+    _decode_energy_specification,
+)
 from stingray.varenergyspectrum import LagEnergySpectrum
 
 # from stingray.covariancespectrum import AveragedCovariancespectrum
@@ -179,33 +182,26 @@ def main(args=None):
                 filelist.append(out2)
 
             if args.covariance:
-                try:
-                    from stingray.varenergyspectrum import (
-                        CovarianceEnergySpectrum,
-                    )
-                except Exception:
-                    warnings.warn(
-                        "This version of Stingray does not implement "
-                        "the correct version of Covariance Spectrum.",
-                        AstropyUserWarning,
-                    )
-                    continue
-                cov = CovarianceEnergySpectrum(
-                    events,
-                    args.freq_interval,
-                    energy_spec,
-                    args.ref_band,
-                    segment_size=args.segment_size,
-                    bin_time=args.bintime,
-                    events2=events2,
-                    use_pi=args.use_pi,
+                from stingray.covariancespectrum import (
+                    AveragedCovariancespectrum,
                 )
-                start_energy = np.asarray(cov.energy_intervals)[:, 0]
-                stop_energy = np.asarray(cov.energy_intervals)[:, 1]
+
+                energies = _decode_energy_specification(energy_spec)
+                energies = list(zip(energies[:-1], energies[1:]))
+                cov = AveragedCovariancespectrum(
+                    events,
+                    dt=args.bintime,
+                    band_interest=energies,
+                    ref_band_interest=args.ref_band,
+                    segment_size=args.segment_size,
+                )
+
+                start_energy = np.asarray(energies)[:, 0]
+                stop_energy = np.asarray(energies)[:, 1]
                 out2 = hen_root(fname) + "_cov" + ".qdp"
                 save_as_qdp(
-                    [start_energy, stop_energy, cov.spectrum],
-                    [None, None, cov.spectrum_error],
+                    [start_energy, stop_energy, cov.covar],
+                    [None, None, cov.covar_error],
                     filename=out2,
                 )
                 filelist.append(out2)

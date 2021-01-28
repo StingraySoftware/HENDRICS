@@ -1,5 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
+from astropy.io.fits import Header
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
@@ -139,6 +140,7 @@ class TestIO:
         )
         events.energy = np.array([3.0, 4.0, 5.0])
         events.mission = "nustar"
+        events.header = Header().tostring()
         save_events(events, self.dum)
         events2 = load_events(self.dum)
         assert np.allclose(events.time, events2.time)
@@ -146,6 +148,7 @@ class TestIO:
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
         assert np.allclose(events.energy, events2.energy)
+        assert events.header == events2.header
         assert events2.mission == events.mission
 
     def test_load_and_save_lcurve(self):
@@ -169,12 +172,13 @@ class TestIO:
         pds.power = np.random.poisson(30, 15)
         pds.mjdref = 54385.3254923845
         pds.gti = np.longdouble([[-0.5, 3.5]])
+        pds.show_progress = True
+        pds.amplitude = False
 
         save_pds(pds, self.dum)
         pds2 = load_pds(self.dum)
-        assert np.allclose(pds.gti, pds2.gti)
-        assert np.allclose(pds.mjdref, pds2.mjdref)
-        assert pds.m == pds2.m
+        for attr in ['gti', 'mjdref', 'm', 'show_progress', 'amplitude']:
+            assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
     def test_load_and_save_xps(self):
         lcurve1 = Lightcurve(

@@ -647,13 +647,24 @@ class InteractivePhaseogram(BasePhaseogram):
         dfreq, dfdot, dfddot = self._read_sliders()
         freqs = [self.freq - dfreq, self.fdot - dfdot, self.fddot - dfddot]
         folding_length = np.median(np.diff(self.times))
-        template = gaussian_filter1d(
-            np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1), sigma=1
-        )
-        template = (
-            np.roll(template[: template.size // 2], -np.argmax(template))
-            / self.nt
-        )
+        nbin = self.nph
+        template_raw = np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1)
+        template = gaussian_filter1d(template_raw, sigma=1)
+
+        if self.nph < 64:
+            warnings.warn("TOA calculation is not robust if the "
+                          "number of bins is < 64. Oversampling.")
+            nbin = 64
+            phases = np.arange(self.nph * 2 + 1) / (self.nph * 2)
+            fun = interp1d(phases,
+                           np.concatenate((template, [template[0]])),
+                           kind='cubic')
+            new_phases = np.arange(0, nbin * 2) / (nbin * 2)
+            template = fun(new_phases)
+
+        template = template[nbin // 2: nbin // 2 + template.size // 2]
+
+        template = (np.roll(template, -np.argmax(template)) / self.nt)
 
         toa, toaerr = get_TOAs_from_events(
             self.ev_times,
@@ -871,17 +882,24 @@ def run_interactive_phaseogram(
     events = load_events(event_file)
     if emin is not None or emax is not None:
         events, elabel = filter_energy(events, emin, emax)
-    try:
+
+    position = name = None
+
+    if hasattr(events, 'header') and events.header is not None:
         header = Header.fromstring(events.header)
-        position = SkyCoord(
-            header["RA_OBJ"],
-            header["DEC_OBJ"],
-            unit="deg",
-            frame=header["RADECSYS"].lower(),
-        )
-        name = header["OBJECT"]
-    except (KeyError, AttributeError):
-        position = name = None
+
+        try:
+            position = SkyCoord(
+                header["RA_OBJ"],
+                header["DEC_OBJ"],
+                unit="deg",
+                frame=header["RADECSYS"].lower(),
+            )
+        except (KeyError, AttributeError):
+            position = None
+
+        if 'OBJECT' in header:
+            name = header["OBJECT"]
 
     pepoch_mjd = pepoch
     if pepoch is None:

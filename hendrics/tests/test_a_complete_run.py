@@ -49,6 +49,10 @@ log.setLevel("DEBUG")
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
+def find_file_pattern_in_dir(pattern, directory):
+    return glob.glob(os.path.join(directory, pattern))
+
+
 class TestFullRun(object):
     """Test how command lines work.
 
@@ -185,6 +189,29 @@ class TestFullRun(object):
         out = hen.base.hen_root(fname) + "_rms" + ".qdp"
         os.path.exists(out)
 
+    def test_save_varen_rms(self):
+        fname = self.ev_fileAcal
+        hen.varenergy.main(
+            [
+                fname,
+                "-f",
+                "0",
+                "100",
+                "--energy-values",
+                "0.3",
+                "12",
+                "5",
+                "lin",
+                "--covariance",
+                "-b",
+                "0.5",
+                "--segment-size",
+                "128",
+            ]
+        )
+        out = hen.base.hen_root(fname) + "_cov" + ".qdp"
+        os.path.exists(out)
+
     def test_save_varen_lag(self):
         fname = self.ev_fileAcal
         hen.varenergy.main(
@@ -213,8 +240,9 @@ class TestFullRun(object):
         command = ("{0} -b 100 -e {1} {2} {2} {3}").format(
             self.ev_fileA, 3, 5, 10
         )
-        with pytest.raises(ValueError) as excinfo:
-            hen.colors.main(command.split())
+        with catch_warnings():
+            with pytest.raises(ValueError) as excinfo:
+                hen.colors.main(command.split())
 
         assert "No energy information is present " in str(excinfo.value)
 
@@ -307,12 +335,16 @@ class TestFullRun(object):
             ]
         )
 
+    def test_all_files_get_read(self):
+        # Test that HENreadfile works with all file types
+        fnames = find_file_pattern_in_dir(
+            "*" + HEN_FILE_EXTENSION, self.datadir
+        )
+        io.main(fnames)
+
     @classmethod
     def teardown_class(self):
         """Test a full run of the scripts (command lines)."""
-
-        def find_file_pattern_in_dir(pattern, directory):
-            return glob.glob(os.path.join(directory, pattern))
 
         patterns = [
             "*monol_test*" + HEN_FILE_EXTENSION,
