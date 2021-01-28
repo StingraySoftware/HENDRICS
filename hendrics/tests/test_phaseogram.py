@@ -33,7 +33,13 @@ class TestPhaseogram:
         events.mjdref = 57000.0
         cls.event_times = events.time
         cls.dum = "events" + HEN_FILE_EXTENSION
+        cls.dum_nohead = "events_nohead" + HEN_FILE_EXTENSION
         cls.dum_info = "events_info" + HEN_FILE_EXTENSION
+        save_events(events, cls.dum_nohead)
+
+        header = Header()
+        events.header = header.tostring()
+
         save_events(events, cls.dum)
         header = Header()
         header["OBJECT"] = "BUBU"
@@ -79,7 +85,7 @@ class TestPhaseogram:
         # Defaults to 2 harmonics
         assert efperiod.N == 2
 
-    @pytest.mark.parametrize('label', ('', '_info'))
+    @pytest.mark.parametrize('label', ('', '_info', '_nohead'))
     def test_phaseogram_input_periodogram(self, label):
         evfile = getattr(self, "dum" + label)
         main_phaseogram(
