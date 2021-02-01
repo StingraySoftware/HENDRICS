@@ -177,7 +177,7 @@ class TestIO:
 
         save_pds(pds, self.dum)
         pds2 = load_pds(self.dum)
-        for attr in ['gti', 'mjdref', 'm', 'show_progress', 'amplitude']:
+        for attr in ["gti", "mjdref", "m", "show_progress", "amplitude"]:
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
     def test_load_and_save_xps(self):

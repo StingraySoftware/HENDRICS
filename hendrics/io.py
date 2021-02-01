@@ -609,7 +609,7 @@ def save_pds(cpds, fname, save_all=False):
     if not hasattr(cpds, "instr"):
         outdata["instr"] = "unknown"
 
-    for attr in ['show_progress', 'amplitude']:
+    for attr in ["show_progress", "amplitude"]:
         if hasattr(cpds, attr):
             outdata[attr] = getattr(cpds, attr)
 
@@ -617,22 +617,15 @@ def save_pds(cpds, fname, save_all=False):
     if save_all:
         mkdir_p(outdir)
 
-    for attr in ['lc1', 'lc2', 'pds1', 'pds2']:
+    for attr in ["lc1", "lc2", "pds1", "pds2"]:
         if save_all and hasattr(cpds, attr):
             value = getattr(cpds, attr)
 
             outf = f"__{attr}__" + HEN_FILE_EXTENSION
             if "lc" in attr and isinstance(value, Lightcurve):
-                save_lcurve(
-                    value,
-                    os.path.join(outdir, outf)
-                )
+                save_lcurve(value, os.path.join(outdir, outf))
             elif "pds" in attr and isinstance(value, Crossspectrum):
-                save_pds(
-                    value,
-                    os.path.join(outdir, outf),
-                    save_all=False
-                )
+                save_pds(value, os.path.join(outdir, outf), save_all=False)
         outdata.pop(attr, None)
 
     if "cs_all" in outdata:

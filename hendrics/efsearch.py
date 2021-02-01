@@ -578,7 +578,9 @@ def plot_transient_search(results, gif_name=None):
             axf = plt.subplot(gs[0, i_f])
             axima = plt.subplot(gs[1, i_f], sharex=axf)
 
-            axima.pcolormesh(f, t, ima / detl * 3, vmax=3, vmin=0.3, shading="nearest")
+            axima.pcolormesh(
+                f, t, ima / detl * 3, vmax=3, vmin=0.3, shading="nearest"
+            )
 
             mean_line = np.mean(ima, axis=0) / sum_detl * 3
             maxidx = np.argmax(mean_line)
@@ -1037,8 +1039,7 @@ def dyn_folding_search(
             stats.append(np.zeros_like(trial_freqs))
     times = (start + stop) / 2
     fig = plt.figure("Dynamical search")
-    plt.pcolormesh(frequencies, times, np.array(stats),
-                   shading="nearest")
+    plt.pcolormesh(frequencies, times, np.array(stats), shading="nearest")
     plt.xlabel("Frequency")
     plt.ylabel("Time")
     plt.savefig("Dyn.png")

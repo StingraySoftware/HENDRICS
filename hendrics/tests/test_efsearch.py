@@ -375,7 +375,7 @@ class TestEFsearch:
                 "0.1",
                 "--transient",
                 "--n-transient-intervals",
-                "16"
+                "16",
             ]
         )
         outfile = "events_transient.gif"
@@ -539,8 +539,12 @@ class TestEFsearch:
                     "--find-candidates",
                 ]
             )
-        assert np.any(["Folding Algorithm functionality" in r.message.args[0]
-                       for r in record])
+        assert np.any(
+            [
+                "Folding Algorithm functionality" in r.message.args[0]
+                for r in record
+            ]
+        )
         outfile = "events_Z22_9.89-9.92Hz_ffa" + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file="bla_ffa.qdp")
@@ -575,7 +579,7 @@ class TestEFsearch:
                 "--fast",
                 "--transient",
                 "--n-transient-intervals",
-                "16"
+                "16",
             ]
         )
 
@@ -685,8 +689,12 @@ class TestEFsearch:
             outfile = main_accelsearch(
                 [evfile, "--fmin", "1", "--fmax", "10", "--zmax", "1"]
             )
-        assert np.any(["The accelsearch functionality is " in r.message.args[0]
-                       for r in record])
+        assert np.any(
+            [
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
+            ]
+        )
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
@@ -696,8 +704,12 @@ class TestEFsearch:
             outfile = main_accelsearch(
                 [evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1"]
             )
-        assert np.any(["The accelsearch functionality is " in r.message.args[0]
-                       for r in record])
+        assert np.any(
+            [
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
+            ]
+        )
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
@@ -719,18 +731,27 @@ class TestEFsearch:
                     "5",
                 ]
             )
-        assert np.any(["The accelsearch functionality is " in r.message.args[0]
-                       for r in record])
+        assert np.any(
+            [
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
+            ]
+        )
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_accelsearch_pad(self):
         evfile = self.dum
         with pytest.warns(UserWarning) as record:
-            outfile = \
-                main_accelsearch([evfile, "--pad-to-double", "--zmax", "1"])
-        assert np.any(["The accelsearch functionality is " in r.message.args[0]
-                       for r in record])
+            outfile = main_accelsearch(
+                [evfile, "--pad-to-double", "--zmax", "1"]
+            )
+        assert np.any(
+            [
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
+            ]
+        )
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
@@ -738,14 +759,18 @@ class TestEFsearch:
         evfile = self.dum
         with pytest.warns(UserWarning) as record:
             outfile = main_accelsearch([evfile, "--interbin", "--zmax", "1"])
-        assert np.any(["The accelsearch functionality is " in r.message.args[0]
-                       for r in record])
+        assert np.any(
+            [
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
+            ]
+        )
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_z2vspf(self):
         evfile = self.dum
-        ip = main_z2vspf([evfile, "--show-z-values", "30", '--ntrial', '10'])
+        ip = main_z2vspf([evfile, "--show-z-values", "30", "--ntrial", "10"])
 
     @classmethod
     def teardown_class(cls):

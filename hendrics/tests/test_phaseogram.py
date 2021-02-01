@@ -85,7 +85,7 @@ class TestPhaseogram:
         # Defaults to 2 harmonics
         assert efperiod.N == 2
 
-    @pytest.mark.parametrize('label', ('', '_info', '_nohead'))
+    @pytest.mark.parametrize("label", ("", "_info", "_nohead"))
     def test_phaseogram_input_periodogram(self, label):
         evfile = getattr(self, "dum" + label)
         main_phaseogram(
@@ -150,8 +150,12 @@ class TestPhaseogram:
         ip.recalculate(1)
         with pytest.warns(UserWarning) as record:
             ip.toa(1)
-        assert np.any(["TOA calculation is not robust" in r.message.args[0]
-                       for r in record])
+        assert np.any(
+            [
+                "TOA calculation is not robust" in r.message.args[0]
+                for r in record
+            ]
+        )
         ip.reset(1)
         ip.fdot = 2
         f, fdot, fddot = ip.get_values()
@@ -184,8 +188,12 @@ class TestPhaseogram:
         ip.recalculate(1)
         with pytest.warns(UserWarning) as record:
             ip.toa(1)
-        assert np.any(["TOA calculation is not robust" in r.message.args[0]
-                       for r in record])
+        assert np.any(
+            [
+                "TOA calculation is not robust" in r.message.args[0]
+                for r in record
+            ]
+        )
         ip.reset(1)
         ip.fdot = 2
         f, fdot, fddot = ip.get_values()

@@ -583,8 +583,12 @@ def plot_folding(
                 axfdot.axvline(vmax)
             axffdot = plt.subplot(gs[1, 0], sharex=axf, sharey=axfdot)
             axffdot.pcolormesh(
-                ef.freq, np.asarray(ef.fdots), ef.stat, vmin=vmin, vmax=vmax,
-                shading="nearest"
+                ef.freq,
+                np.asarray(ef.fdots),
+                ef.stat,
+                vmin=vmin,
+                vmax=vmax,
+                shading="nearest",
             )
             maximum_idx = 0
             maximum = 0
