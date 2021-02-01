@@ -135,12 +135,12 @@ def decide_binary_parameters(
 
         dX = 1 / (TWOPI * freq)
 
-        nX = np.int(np.diff(asini_range) // dX) + 1
+        nX = int(np.diff(asini_range) // dX) + 1
         Xs = np.random.uniform(asini_range[0], asini_range[1], nX)
 
         for X in Xs:
             dOmega = 1 / (TWOPI * freq * X * length) * D_OMEGA_FACTOR
-            nOmega = np.int(np.diff(omega_range) // dOmega) + 1
+            nOmega = int(np.diff(omega_range) // dOmega) + 1
             Omegas = np.random.uniform(omega_range[0], omega_range[1], nOmega)
 
             for Omega in Omegas:
@@ -263,7 +263,7 @@ def shift_and_sum(
     for k in range(nprof):
         total_shift = base_shift[k] * lshift + quadbaseshift[k] * qshift
         total_shift = mod(np.rint(total_shift), nbin)
-        total_shift_int = np.int(total_shift)
+        total_shift_int = int(total_shift)
 
         splat_prof[:] += repeated_profiles[
             k, nbin - total_shift_int : twonbin - total_shift_int
@@ -366,7 +366,7 @@ def _average_and_z_sub_search(profiles, n=2):
 
     for ave_i in range(len(n_ave)):
         n_ave_i = n_ave[ave_i]
-        shape_0 = np.int(profiles.shape[0] / n_ave_i)
+        shape_0 = int(profiles.shape[0] / n_ave_i)
         # new_profiles = np.zeros((shape_0, profiles.shape[1]))
         for i in range(shape_0):
             new_profiles = np.sum(

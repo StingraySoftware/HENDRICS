@@ -528,15 +528,15 @@ class InteractivePhaseogram(BasePhaseogram):
         tseg = np.median(np.diff(self.times))
         tobs = tseg * self.nt
         delta_df_start = 4 / tobs
-        self.df_order_of_mag = np.int(np.log10(delta_df_start))
+        self.df_order_of_mag = int(np.log10(delta_df_start))
         delta_df = delta_df_start / 10 ** self.df_order_of_mag
 
         delta_dfdot_start = 8 / tobs ** 2
-        self.dfdot_order_of_mag = np.int(np.log10(delta_dfdot_start))
+        self.dfdot_order_of_mag = int(np.log10(delta_dfdot_start))
         delta_dfdot = delta_dfdot_start / 10 ** self.dfdot_order_of_mag
 
         delta_dfddot_start = 16 / tobs ** 3
-        self.dfddot_order_of_mag = np.int(np.log10(delta_dfddot_start))
+        self.dfddot_order_of_mag = int(np.log10(delta_dfddot_start))
         delta_dfddot = delta_dfddot_start / 10 ** self.dfddot_order_of_mag
 
         freq_str = r"$\Delta$ F0" "x$10^{" + f"{self.df_order_of_mag}" + r"}$"

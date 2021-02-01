@@ -800,7 +800,7 @@ def _split_high_precision_number(varname, var, probesize):
             var_log10 = np.floor(np.log10(np.abs(var)))
 
         var = np.asarray(var) / 10.0 ** var_log10
-        var_I = np.long(np.floor(var))
+        var_I = int(np.floor(var))
         var_F = np.double(var - var_I)
     return var_I, var_F, var_log10, kind_str
 
@@ -1117,7 +1117,8 @@ def _get_gti_from_all_extensions(
     gti_lists = []
     for extn in gtiextn:
         gtihdu = lchdulist[extn]
-        gti_lists.append(list(_get_gti_from_hdu(gtihdu)))
+        gti_lists.append(_get_gti_from_hdu(gtihdu))
+
     return cross_gtis(gti_lists)
 
 

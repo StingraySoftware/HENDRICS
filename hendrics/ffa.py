@@ -338,7 +338,7 @@ def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
         [bin_period + n / (ntables - 1) for n in range(ntables)]
     )
 
-    for step in range(0, np.int(np.log2(ntables))):
+    for step in range(0, int(np.log2(ntables))):
         array_reshaped = ffa_step(array_reshaped, step, ntables)
 
     twopiphases = np.pi * 2 * np.arange(0, 1, 1 / array_reshaped.shape[1])
@@ -362,7 +362,7 @@ def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
 def ffa(array, bin_period, z_n_n=2):
     """Fast folding algorithm search"""
     N_raw = len(array)
-    ntables = np.int(2 ** np.ceil(np.log2(N_raw // bin_period + 1)))
+    ntables = int(2 ** np.ceil(np.log2(N_raw // bin_period + 1)))
     if ntables <= 1:
         return np.zeros(1), np.zeros(1)
     N = ntables * bin_period

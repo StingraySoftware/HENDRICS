@@ -379,7 +379,7 @@ def plot_folding(
         ntrial = ef.stat.size
         if hasattr(ef, "oversample") and ef.oversample is not None:
             ntrial /= ef.oversample
-            ntrial = np.int(ntrial)
+            ntrial = int(ntrial)
         if ef.kind == "Z2n":
             vmin = ef.N - 1
             vmax = z2_n_detection_level(
@@ -499,8 +499,8 @@ def plot_folding(
             # print(df, dfdot)
             # # noinspection PyPackageRequirements
             # ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
-            #     round(f, -np.int(np.floor(np.log10(np.abs(df))))),
-            #     round(fdot, -np.int(np.floor(np.log10(np.abs(dfdot)))))),
+            #     round(f, -int(np.floor(np.log10(np.abs(df))))),
+            #     round(fdot, -int(np.floor(np.log10(np.abs(dfdot)))))),
             #     horizontalalignment='left', verticalalignment='center',
             #     transform=ax.transAxes)
             ax.plot(
