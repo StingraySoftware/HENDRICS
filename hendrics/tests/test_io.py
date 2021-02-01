@@ -157,6 +157,8 @@ class TestIO:
             np.random.poisson(30, 15),
             mjdref=54385.3254923845,
             gti=np.longdouble([[-0.5, 3.5]]),
+            mission="bububu",
+            instr="bababa"
         )
         save_lcurve(lcurve, self.dum)
         lcurve2 = load_lcurve(self.dum)
@@ -165,6 +167,9 @@ class TestIO:
         assert np.allclose(lcurve.mjdref, lcurve2.mjdref)
         assert np.allclose(lcurve.gti, lcurve2.gti)
         assert lcurve.err_dist == lcurve2.err_dist
+        assert lcurve.mission == lcurve2.mission
+        assert lcurve2.mission == "bububu"
+        assert lcurve.instr == lcurve2.instr
 
     def test_load_and_save_pds(self):
         pds = Powerspectrum()
