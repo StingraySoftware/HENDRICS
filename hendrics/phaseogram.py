@@ -1066,7 +1066,7 @@ def main_phaseogram(args=None):
             fdot = args.fdot
             fddot = args.fddot
 
-        _ = run_interactive_phaseogram(
+        ip = run_interactive_phaseogram(
             args.file,
             freq=frequency,
             fdot=fdot,
@@ -1083,3 +1083,4 @@ def main_phaseogram(args=None):
             emin=args.emin,
             emax=args.emax,
         )
+    plt.close(ip.fig)
