@@ -102,6 +102,12 @@ def filter_for_deadtime(
         event_list_obj = event_list
 
     ev_list = event_list_obj.time
+    additional_arrays = {}
+    for arr in 'pi,energy'.split(','):
+        if hasattr(event_list_obj, arr):
+            values = getattr(event_list_obj, arr)
+            if values is not None:
+                additional_arrays[arr] = values
 
     if deadtime <= 0.0:
         return copy.copy(event_list)
@@ -109,6 +115,7 @@ def filter_for_deadtime(
     # Create the total lightcurve, and a "kind" array that keeps track
     # of the events classified as "signal" (True) and "background" (False)
     if bkg_ev_list is not None:
+        Nback = bkg_ev_list.size
         tot_ev_list = np.append(ev_list, bkg_ev_list)
         ev_kind = np.append(
             np.ones(len(ev_list), dtype=bool),
@@ -117,6 +124,10 @@ def filter_for_deadtime(
         order = np.argsort(tot_ev_list)
         tot_ev_list = tot_ev_list[order]
         ev_kind = ev_kind[order]
+        for arr in additional_arrays.keys():
+            newarr = np.append(additional_arrays[arr], np.zeros(Nback))
+            additional_arrays[arr] = newarr[order]
+
         del order
     else:
         tot_ev_list = ev_list
@@ -149,13 +160,12 @@ def filter_for_deadtime(
         "filter_for_deadtime: "
         "{0}/{1} events rejected".format(initial_len - final_len, initial_len)
     )
-    retval = EventList(time=tot_ev_list[ev_kind], mjdref=event_list_obj.mjdref)
 
-    if hasattr(event_list_obj, "pi") and event_list_obj.pi is not None:
-        warnings.warn(
-            "PI information is lost during dead time filtering",
-            AstropyUserWarning,
-        )
+    for arr in additional_arrays.keys():
+        additional_arrays[arr] = additional_arrays[arr][saved_mask][ev_kind]
+
+    retval = EventList(time=tot_ev_list[ev_kind], mjdref=event_list_obj.mjdref,
+                       **additional_arrays)
 
     if not isinstance(event_list, EventList):
         retval = retval.time
