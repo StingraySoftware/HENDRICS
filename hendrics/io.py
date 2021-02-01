@@ -1129,7 +1129,7 @@ def _get_gti_from_all_extensions(
     gti_lists = []
     for extn in gtiextn:
         gtihdu = lchdulist[extn]
-        gti_lists.append(_get_gti_from_hdu(gtihdu))
+        gti_lists.append(list(_get_gti_from_hdu(gtihdu)))
     return cross_gtis(gti_lists)
 
 
