@@ -159,7 +159,7 @@ class TestIO:
             gti=np.longdouble([[-0.5, 3.5]]),
         )
         # Monkeypatch for compatibility with old versions
-        lcurve.mission = "bububu",
+        lcurve.mission = "bububu"
         lcurve.instr = "bababa"
         save_lcurve(lcurve, self.dum)
         lcurve2 = load_lcurve(self.dum)
