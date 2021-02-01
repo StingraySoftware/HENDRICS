@@ -134,12 +134,6 @@ class TestMergeEvents:
         # Note that only 0 and 2 are valid
         with pytest.warns(UserWarning) as record:
             hen.read_events.main_join([self.f0, self.f2, self.f3])
-        assert np.any(
-            [
-                "ev3_ev.nc is from a different" in r.message.args[0]
-                for r in record
-            ]
-        )
 
         assert os.path.exists(outfile)
 
