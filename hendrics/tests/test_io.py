@@ -157,9 +157,10 @@ class TestIO:
             np.random.poisson(30, 15),
             mjdref=54385.3254923845,
             gti=np.longdouble([[-0.5, 3.5]]),
-            mission="bububu",
-            instr="bababa"
         )
+        # Monkeypatch for compatibility with old versions
+        lcurve.mission = "bububu",
+        lcurve.instr = "bababa"
         save_lcurve(lcurve, self.dum)
         lcurve2 = load_lcurve(self.dum)
         assert np.allclose(lcurve.time, lcurve2.time)
