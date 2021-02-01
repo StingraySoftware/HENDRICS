@@ -261,11 +261,7 @@ class BasePhaseogram(object):
         self.slider_axes = []
 
         def newax_fn(*args, **kwargs):
-            try:
-                ax = plt.axes(*args, facecolor=axcolor)
-            except AttributeError:
-                # MPL < 2
-                ax = plt.axes(*args, axis_bgcolor=axcolor)
+            ax = self.fig.add_axes(*args, facecolor=axcolor)
             return ax
 
         self.slider_axes.append(
@@ -280,32 +276,32 @@ class BasePhaseogram(object):
 
         self._construct_widgets(**kwargs)
 
-        self.closeax = plt.axes([0.15, 0.020, 0.15, 0.04])
+        self.closeax = self.fig.add_axes([0.15, 0.020, 0.15, 0.04])
         self.button_close = Button(
             self.closeax, "Quit", color=axcolor, hovercolor="0.8"
         )
 
-        self.recalcax = plt.axes([0.3, 0.020, 0.15, 0.04])
+        self.recalcax = self.fig.add_axes([0.3, 0.020, 0.15, 0.04])
         self.button_recalc = Button(
             self.recalcax, "Recalculate", color=axcolor, hovercolor="0.975"
         )
 
-        self.resetax = plt.axes([0.45, 0.020, 0.15, 0.04])
+        self.resetax = self.fig.add_axes([0.45, 0.020, 0.15, 0.04])
         self.button_reset = Button(
             self.resetax, "Reset", color=axcolor, hovercolor="0.975"
         )
 
-        self.zoominax = plt.axes([0.6, 0.020, 0.1, 0.04])
+        self.zoominax = self.fig.add_axes([0.6, 0.020, 0.1, 0.04])
         self.button_zoomin = Button(
             self.zoominax, "+Zoom", color=axcolor, hovercolor="0.975"
         )
 
-        self.zoomoutax = plt.axes([0.7, 0.020, 0.1, 0.04])
+        self.zoomoutax = self.fig.add_axes([0.7, 0.020, 0.1, 0.04])
         self.button_zoomout = Button(
             self.zoomoutax, "-Zoom", color=axcolor, hovercolor="0.975"
         )
 
-        self.toaax = plt.axes([0.8, 0.020, 0.1, 0.04])
+        self.toaax = self.fig.add_axes([0.8, 0.020, 0.1, 0.04])
         self.button_toa = Button(
             self.toaax, "TOA", color=axcolor, hovercolor="0.975"
         )
