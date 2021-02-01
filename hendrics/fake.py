@@ -103,7 +103,7 @@ def filter_for_deadtime(
 
     ev_list = event_list_obj.time
     additional_arrays = {}
-    for arr in 'pi,energy'.split(','):
+    for arr in "pi,energy".split(","):
         if hasattr(event_list_obj, arr):
             values = getattr(event_list_obj, arr)
             if values is not None:
@@ -164,8 +164,11 @@ def filter_for_deadtime(
     for arr in additional_arrays.keys():
         additional_arrays[arr] = additional_arrays[arr][saved_mask][ev_kind]
 
-    retval = EventList(time=tot_ev_list[ev_kind], mjdref=event_list_obj.mjdref,
-                       **additional_arrays)
+    retval = EventList(
+        time=tot_ev_list[ev_kind],
+        mjdref=event_list_obj.mjdref,
+        **additional_arrays,
+    )
 
     if not isinstance(event_list, EventList):
         retval = retval.time

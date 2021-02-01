@@ -80,6 +80,7 @@ def test_filter_for_deadtime_par_bkg():
         info.bkg, expected_bk
     )
 
+
 def test_filter_for_deadtime_par_bkg_obj():
     """Test dead time filter on Eventlist, paral. case, with background."""
     times = np.array([1.1, 2, 2.2, 3, 3.2])
@@ -197,8 +198,12 @@ class TestFake(object):
         fits_file = os.path.join(self.datadir, "monol_test_fake_lc.evt")
         with pytest.warns(UserWarning) as record:
             hen.fake.main(["--lc", lcurve_in, "-o", fits_file])
-        assert np.any(["FITS light curve handling is st" in r.message.args[0]
-                       for r in record])
+        assert np.any(
+            [
+                "FITS light curve handling is st" in r.message.args[0]
+                for r in record
+            ]
+        )
 
     def test_fake_file_with_deadtime(self):
         """Test produce a fake event file and apply deadtime."""
@@ -239,8 +244,9 @@ class TestFake(object):
         with pytest.raises(ValueError):
             with pytest.warns(UserWarning) as record:
                 _ = hen.fake.main_scramble(command.split())
-        assert np.any(['No energy information' in r.message.args[0]
-                       for r in record])
+        assert np.any(
+            ["No energy information" in r.message.args[0] for r in record]
+        )
 
     def test_scramble_calibrated_events_file(self):
         command = f"{self.first_event_file_cal} -e 3 30"
