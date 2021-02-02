@@ -1188,7 +1188,7 @@ def _get_detector_id(lctable):
     for column in ["CCDNR", "ccd_id", "PCUID"]:  # XMM  # Chandra  # XTE
         for name in lctable.columns.names:
             if column.lower() == name.lower():
-                return np.array(lctable.field(name), dtype=np.int)
+                return np.array(lctable.field(name), dtype=int)
 
     return None
 
