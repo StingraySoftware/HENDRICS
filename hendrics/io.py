@@ -506,28 +506,16 @@ def load_lcurve(fname):
     elif get_file_format(fname) == "nc":
         data = _load_data_nc(fname)
 
-    try:
-        lcurve = Lightcurve(
-            data["time"],
-            data["counts"],
-            err=data["counts_err"],
-            gti=data["gti"],
-            err_dist=data["err_dist"],
-            mjdref=data["mjdref"],
-            dt=data["dt"],
-            skip_checks=True,
-        )
-    except TypeError:
-        # Old stingray version
-        lcurve = Lightcurve(
-            data["time"],
-            data["counts"],
-            err=data["counts_err"],
-            gti=data["gti"],
-            err_dist=data["err_dist"],
-            mjdref=data["mjdref"],
-            dt=data["dt"],
-        )
+    lcurve = Lightcurve(
+        data["time"],
+        data["counts"],
+        err=data["counts_err"],
+        gti=data["gti"],
+        err_dist=data["err_dist"],
+        mjdref=data["mjdref"],
+        dt=data["dt"],
+        skip_checks=True,
+    )
 
     if hasattr(lcurve, "_apply_gtis"):  # pragma: no cover
         # Compatibility with old versions of stingray
@@ -609,7 +597,7 @@ def save_pds(cpds, fname, save_all=False):
     if not hasattr(cpds, "instr"):
         outdata["instr"] = "unknown"
 
-    for attr in ['show_progress', 'amplitude']:
+    for attr in ["show_progress", "amplitude"]:
         if hasattr(cpds, attr):
             outdata[attr] = getattr(cpds, attr)
 
@@ -617,22 +605,15 @@ def save_pds(cpds, fname, save_all=False):
     if save_all:
         mkdir_p(outdir)
 
-    for attr in ['lc1', 'lc2', 'pds1', 'pds2']:
+    for attr in ["lc1", "lc2", "pds1", "pds2"]:
         if save_all and hasattr(cpds, attr):
             value = getattr(cpds, attr)
 
             outf = f"__{attr}__" + HEN_FILE_EXTENSION
             if "lc" in attr and isinstance(value, Lightcurve):
-                save_lcurve(
-                    value,
-                    os.path.join(outdir, outf)
-                )
+                save_lcurve(value, os.path.join(outdir, outf))
             elif "pds" in attr and isinstance(value, Crossspectrum):
-                save_pds(
-                    value,
-                    os.path.join(outdir, outf),
-                    save_all=False
-                )
+                save_pds(value, os.path.join(outdir, outf), save_all=False)
         outdata.pop(attr, None)
 
     if "cs_all" in outdata:
@@ -819,7 +800,7 @@ def _split_high_precision_number(varname, var, probesize):
             var_log10 = np.floor(np.log10(np.abs(var)))
 
         var = np.asarray(var) / 10.0 ** var_log10
-        var_I = np.long(np.floor(var))
+        var_I = int(np.floor(var))
         var_F = np.double(var - var_I)
     return var_I, var_F, var_log10, kind_str
 
@@ -1137,6 +1118,7 @@ def _get_gti_from_all_extensions(
     for extn in gtiextn:
         gtihdu = lchdulist[extn]
         gti_lists.append(_get_gti_from_hdu(gtihdu))
+
     return cross_gtis(gti_lists)
 
 
@@ -1206,7 +1188,7 @@ def _get_detector_id(lctable):
     for column in ["CCDNR", "ccd_id", "PCUID"]:  # XMM  # Chandra  # XTE
         for name in lctable.columns.names:
             if column.lower() == name.lower():
-                return np.array(lctable.field(name), dtype=np.int)
+                return np.array(lctable.field(name), dtype=int)
 
     return None
 

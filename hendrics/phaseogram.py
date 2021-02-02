@@ -261,11 +261,7 @@ class BasePhaseogram(object):
         self.slider_axes = []
 
         def newax_fn(*args, **kwargs):
-            try:
-                ax = plt.axes(*args, facecolor=axcolor)
-            except AttributeError:
-                # MPL < 2
-                ax = plt.axes(*args, axis_bgcolor=axcolor)
+            ax = self.fig.add_axes(*args, facecolor=axcolor)
             return ax
 
         self.slider_axes.append(
@@ -280,32 +276,32 @@ class BasePhaseogram(object):
 
         self._construct_widgets(**kwargs)
 
-        self.closeax = plt.axes([0.15, 0.020, 0.15, 0.04])
+        self.closeax = self.fig.add_axes([0.15, 0.020, 0.15, 0.04])
         self.button_close = Button(
             self.closeax, "Quit", color=axcolor, hovercolor="0.8"
         )
 
-        self.recalcax = plt.axes([0.3, 0.020, 0.15, 0.04])
+        self.recalcax = self.fig.add_axes([0.3, 0.020, 0.15, 0.04])
         self.button_recalc = Button(
             self.recalcax, "Recalculate", color=axcolor, hovercolor="0.975"
         )
 
-        self.resetax = plt.axes([0.45, 0.020, 0.15, 0.04])
+        self.resetax = self.fig.add_axes([0.45, 0.020, 0.15, 0.04])
         self.button_reset = Button(
             self.resetax, "Reset", color=axcolor, hovercolor="0.975"
         )
 
-        self.zoominax = plt.axes([0.6, 0.020, 0.1, 0.04])
+        self.zoominax = self.fig.add_axes([0.6, 0.020, 0.1, 0.04])
         self.button_zoomin = Button(
             self.zoominax, "+Zoom", color=axcolor, hovercolor="0.975"
         )
 
-        self.zoomoutax = plt.axes([0.7, 0.020, 0.1, 0.04])
+        self.zoomoutax = self.fig.add_axes([0.7, 0.020, 0.1, 0.04])
         self.button_zoomout = Button(
             self.zoomoutax, "-Zoom", color=axcolor, hovercolor="0.975"
         )
 
-        self.toaax = plt.axes([0.8, 0.020, 0.1, 0.04])
+        self.toaax = self.fig.add_axes([0.8, 0.020, 0.1, 0.04])
         self.button_toa = Button(
             self.toaax, "TOA", color=axcolor, hovercolor="0.975"
         )
@@ -532,15 +528,15 @@ class InteractivePhaseogram(BasePhaseogram):
         tseg = np.median(np.diff(self.times))
         tobs = tseg * self.nt
         delta_df_start = 4 / tobs
-        self.df_order_of_mag = np.int(np.log10(delta_df_start))
+        self.df_order_of_mag = int(np.log10(delta_df_start))
         delta_df = delta_df_start / 10 ** self.df_order_of_mag
 
         delta_dfdot_start = 8 / tobs ** 2
-        self.dfdot_order_of_mag = np.int(np.log10(delta_dfdot_start))
+        self.dfdot_order_of_mag = int(np.log10(delta_dfdot_start))
         delta_dfdot = delta_dfdot_start / 10 ** self.dfdot_order_of_mag
 
         delta_dfddot_start = 16 / tobs ** 3
-        self.dfddot_order_of_mag = np.int(np.log10(delta_dfddot_start))
+        self.dfddot_order_of_mag = int(np.log10(delta_dfddot_start))
         delta_dfddot = delta_dfddot_start / 10 ** self.dfddot_order_of_mag
 
         freq_str = r"$\Delta$ F0" "x$10^{" + f"{self.df_order_of_mag}" + r"}$"
@@ -652,19 +648,21 @@ class InteractivePhaseogram(BasePhaseogram):
         template = gaussian_filter1d(template_raw, sigma=1)
 
         if self.nph < 64:
-            warnings.warn("TOA calculation is not robust if the "
-                          "number of bins is < 64. Oversampling.")
+            warnings.warn(
+                "TOA calculation is not robust if the "
+                "number of bins is < 64. Oversampling."
+            )
             nbin = 64
             phases = np.arange(self.nph * 2 + 1) / (self.nph * 2)
-            fun = interp1d(phases,
-                           np.concatenate((template, [template[0]])),
-                           kind='cubic')
+            fun = interp1d(
+                phases, np.concatenate((template, [template[0]])), kind="cubic"
+            )
             new_phases = np.arange(0, nbin * 2) / (nbin * 2)
             template = fun(new_phases)
 
-        template = template[nbin // 2: nbin // 2 + template.size // 2]
+        template = template[nbin // 2 : nbin // 2 + template.size // 2]
 
-        template = (np.roll(template, -np.argmax(template)) / self.nt)
+        template = np.roll(template, -np.argmax(template)) / self.nt
 
         toa, toaerr = get_TOAs_from_events(
             self.ev_times,
@@ -885,7 +883,7 @@ def run_interactive_phaseogram(
 
     position = name = None
 
-    if hasattr(events, 'header') and events.header is not None:
+    if hasattr(events, "header") and events.header is not None:
         header = Header.fromstring(events.header)
 
         try:
@@ -898,7 +896,7 @@ def run_interactive_phaseogram(
         except (KeyError, AttributeError):
             position = None
 
-        if 'OBJECT' in header:
+        if "OBJECT" in header:
             name = header["OBJECT"]
 
     pepoch_mjd = pepoch
@@ -1068,7 +1066,7 @@ def main_phaseogram(args=None):
             fdot = args.fdot
             fddot = args.fddot
 
-        _ = run_interactive_phaseogram(
+        ip = run_interactive_phaseogram(
             args.file,
             freq=frequency,
             fdot=fdot,
@@ -1085,3 +1083,4 @@ def main_phaseogram(args=None):
             emin=args.emin,
             emax=args.emax,
         )
+    plt.close(ip.fig)

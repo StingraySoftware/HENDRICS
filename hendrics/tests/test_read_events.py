@@ -68,24 +68,27 @@ class TestMergeEvents:
         cls.f0, cls.f1, cls.f2, cls.f3, cls.f4 = f0, f1, f2, f3, f4
 
     def test_merge_events(self):
-        hen.read_events.main_join(
-            [
-                self.f0,
-                self.f1,
-                "-o",
-                os.path.join(
-                    self.datadir, "monol_merg_ev" + HEN_FILE_EXTENSION
-                ),
-            ]
-        )
+        with pytest.warns(UserWarning) as record:
+            hen.read_events.main_join(
+                [
+                    self.f0,
+                    self.f1,
+                    "-o",
+                    os.path.join(
+                        self.datadir, "monol_merg_ev" + HEN_FILE_EXTENSION
+                    ),
+                ]
+            )
+        assert np.any(["changing MJDREF" in r.message.args[0] for r in record])
 
         out = os.path.join(self.datadir, "monol_merg_ev" + HEN_FILE_EXTENSION)
         assert os.path.exists(out)
         os.unlink(out)
 
     def test_merge_events_no_out_fname(self):
-        hen.read_events.main_join([self.f0, self.f1])
-
+        with pytest.warns(UserWarning) as record:
+            hen.read_events.main_join([self.f0, self.f1])
+        assert np.any(["changing MJDREF" in r.message.args[0] for r in record])
         out = os.path.join(self.datadir, "ev_ev" + HEN_FILE_EXTENSION)
         assert os.path.exists(out)
         os.unlink(out)
@@ -129,7 +132,9 @@ class TestMergeEvents:
     def test_merge_many_events(self):
         outfile = "joint_ev" + HEN_FILE_EXTENSION
         # Note that only 0 and 2 are valid
-        hen.read_events.main_join([self.f0, self.f2, self.f3])
+        with pytest.warns(UserWarning) as record:
+            hen.read_events.main_join([self.f0, self.f2, self.f3])
+
         assert os.path.exists(outfile)
 
         data = load_events(outfile)
@@ -178,6 +183,10 @@ class TestReadEvents:
             cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
         )
 
+    def test_start(self):
+        """Make any warnings in setup_class be dumped here."""
+        pass
+
     def test_treat_event_file_nustar(self):
         treat_event_file(self.fits_fileA)
         new_filename = "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
@@ -196,6 +205,7 @@ class TestReadEvents:
         assert "instr" in data
         assert "gti" in data
         assert "mjdref" in data
+        assert "pi" in data and data["pi"].size > 0
 
     def test_treat_event_file_xmm_gtisplit(self):
 
@@ -211,7 +221,7 @@ class TestReadEvents:
 
     def test_treat_event_file_xmm_lensplit(self):
 
-        treat_event_file(self.fits_file, length_split=10)
+        treat_event_file(self.fits_file, length_split=100)
         new_filename = (
             "monol_test_fake_xmm_epn_det01_chunk000_ev" + HEN_FILE_EXTENSION
         )
@@ -222,7 +232,7 @@ class TestReadEvents:
         assert "mjdref" in data
         gtis = data["gti"]
         lengths = np.array([g1 - g0 for (g0, g1) in gtis])
-        assert np.all(lengths <= 10)
+        assert np.all(lengths <= 100)
 
     def test_split_events(self):
         treat_event_file(self.fits_fileA)

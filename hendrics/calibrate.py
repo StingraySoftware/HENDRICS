@@ -76,7 +76,7 @@ def read_calibration(pis, rmf_file=None):
         the one given by default_nustar_rmf() is used.
     """
     calp, calEmin, calEmax = read_rmf(rmf_file)
-    es = np.zeros(len(pis), dtype=np.float)
+    es = np.zeros(len(pis), dtype=float)
     for ic, c in enumerate(calp):
         good = pis == c
         if not np.any(good):

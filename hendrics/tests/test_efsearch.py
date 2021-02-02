@@ -160,51 +160,6 @@ class TestEFsearch:
         os.unlink(outfile)
         main_fold(
             [
-                evfile,
-                "-f",
-                str(self.pulse_frequency),
-                "-n",
-                "64",
-                "--test",
-                "--norm",
-                "to1",
-            ]
-        )
-        outfile = "Energyprofile_to1.png"
-        assert os.path.exists(outfile)
-        os.unlink(outfile)
-        main_fold(
-            [
-                evfile,
-                "-f",
-                str(self.pulse_frequency),
-                "-n",
-                "64",
-                "--test",
-                "--norm",
-                "blablabla",
-            ]
-        )
-        outfile = "Energyprofile_to1.png"
-        assert os.path.exists(outfile)
-        os.unlink(outfile)
-        main_fold(
-            [
-                evfile_pi,
-                "-f",
-                str(self.pulse_frequency),
-                "-n",
-                "64",
-                "--test",
-                "--norm",
-                "blablabla",
-            ]
-        )
-        outfile = "Energyprofile_to1.png"
-        assert os.path.exists(outfile)
-        os.unlink(outfile)
-        main_fold(
-            [
                 evfile_noe,
                 "-f",
                 str(self.pulse_frequency),
@@ -216,6 +171,21 @@ class TestEFsearch:
             ]
         )
         outfile = "Energyprofile.png"
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+        main_fold(
+            [
+                evfile_pi,
+                "-f",
+                str(self.pulse_frequency),
+                "-n",
+                "64",
+                "--test",
+                "--norm",
+                "to1",
+            ]
+        )
+        outfile = "Energyprofile_to1.png"
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
@@ -365,11 +335,11 @@ class TestEFsearch:
                 "-F",
                 "9.95",
                 "-n",
-                "64",
+                "32",
                 "--fdotmin",
-                " -0.1",
+                " -0.01",
                 "--fdotmax",
-                "0.1",
+                "0.01",
                 "--fit-candidates",
                 "--fit-frequency",
                 str(self.pulse_frequency),
@@ -398,12 +368,14 @@ class TestEFsearch:
                 "-F",
                 "9.95",
                 "-n",
-                "64",
+                "32",
                 "--fdotmin",
                 " -0.1",
                 "--fdotmax",
                 "0.1",
                 "--transient",
+                "--n-transient-intervals",
+                "16",
             ]
         )
         outfile = "events_transient.gif"
@@ -553,17 +525,24 @@ class TestEFsearch:
 
     def test_zsearch_fdots_ffa(self):
         evfile = self.dum
-        main_zsearch(
+        with pytest.warns(UserWarning) as record:
+            main_zsearch(
+                [
+                    evfile,
+                    "-f",
+                    "9.89",
+                    "-F",
+                    "9.92",
+                    "-n",
+                    "32",
+                    "--ffa",
+                    "--find-candidates",
+                ]
+            )
+        assert np.any(
             [
-                evfile,
-                "-f",
-                "9.89",
-                "-F",
-                "9.92",
-                "-n",
-                "64",
-                "--ffa",
-                "--find-candidates",
+                "Folding Algorithm functionality" in r.message.args[0]
+                for r in record
             ]
         )
         outfile = "events_Z22_9.89-9.92Hz_ffa" + HEN_FILE_EXTENSION
@@ -599,6 +578,8 @@ class TestEFsearch:
                 "64",
                 "--fast",
                 "--transient",
+                "--n-transient-intervals",
+                "16",
             ]
         )
 
@@ -704,35 +685,56 @@ class TestEFsearch:
 
     def test_accelsearch(self):
         evfile = self.dum
-        outfile = main_accelsearch(
-            [evfile, "--fmin", "1", "--fmax", "10", "--zmax", "1"]
+        with pytest.warns(UserWarning) as record:
+            outfile = main_accelsearch(
+                [evfile, "--fmin", "1", "--fmax", "10", "--zmax", "1"]
+            )
+        assert np.any(
+            [
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
+            ]
         )
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_accelsearch_nodetections(self):
         evfile = self.dum_scramble
-        outfile = main_accelsearch(
-            [evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1"]
+        with pytest.warns(UserWarning) as record:
+            outfile = main_accelsearch(
+                [evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1"]
+            )
+        assert np.any(
+            [
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
+            ]
         )
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_accelsearch_energy_and_freq_filt(self):
         evfile = self.dum
-        outfile = main_accelsearch(
+        with pytest.warns(UserWarning) as record:
+            outfile = main_accelsearch(
+                [
+                    evfile,
+                    "--emin",
+                    "3",
+                    "--emax",
+                    "80",
+                    "--fmin",
+                    "0.1",
+                    "--fmax",
+                    "1",
+                    "--zmax",
+                    "5",
+                ]
+            )
+        assert np.any(
             [
-                evfile,
-                "--emin",
-                "3",
-                "--emax",
-                "80",
-                "--fmin",
-                "0.1",
-                "--fmax",
-                "1",
-                "--zmax",
-                "5",
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
             ]
         )
         assert os.path.exists(outfile)
@@ -740,19 +742,35 @@ class TestEFsearch:
 
     def test_accelsearch_pad(self):
         evfile = self.dum
-        outfile = main_accelsearch([evfile, "--pad-to-double", "--zmax", "1"])
+        with pytest.warns(UserWarning) as record:
+            outfile = main_accelsearch(
+                [evfile, "--pad-to-double", "--zmax", "1"]
+            )
+        assert np.any(
+            [
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
+            ]
+        )
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_accelsearch_interbin(self):
         evfile = self.dum
-        outfile = main_accelsearch([evfile, "--interbin", "--zmax", "1"])
+        with pytest.warns(UserWarning) as record:
+            outfile = main_accelsearch([evfile, "--interbin", "--zmax", "1"])
+        assert np.any(
+            [
+                "The accelsearch functionality is " in r.message.args[0]
+                for r in record
+            ]
+        )
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_z2vspf(self):
         evfile = self.dum
-        ip = main_z2vspf([evfile, "--show-z-values", "30"])
+        ip = main_z2vspf([evfile, "--show-z-values", "30", "--ntrial", "10"])
 
     @classmethod
     def teardown_class(cls):

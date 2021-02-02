@@ -630,7 +630,7 @@ def lcurve_from_fits(
         _look_for_array_in_array(["RATE", "RATE1", "COUNTS"], lctable.names),
     )
 
-    rate = np.array(lctable.field(ratecolumn), dtype=np.float)
+    rate = np.array(lctable.field(ratecolumn), dtype=float)
 
     try:
         rate_e = np.array(lctable.field("ERROR"), dtype=np.longdouble)
@@ -743,7 +743,7 @@ def lcurve_from_txt(
 
     time, counts = np.genfromtxt(txt_file, delimiter=" ", unpack=True)
     time = np.array(time, dtype=np.longdouble)
-    counts = np.array(counts, dtype=np.float)
+    counts = np.array(counts, dtype=float)
 
     lc = Lightcurve(time=time, counts=counts, gti=gti, mjdref=mjdref)
 

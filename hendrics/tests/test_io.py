@@ -158,6 +158,9 @@ class TestIO:
             mjdref=54385.3254923845,
             gti=np.longdouble([[-0.5, 3.5]]),
         )
+        # Monkeypatch for compatibility with old versions
+        lcurve.mission = "bububu"
+        lcurve.instr = "bababa"
         save_lcurve(lcurve, self.dum)
         lcurve2 = load_lcurve(self.dum)
         assert np.allclose(lcurve.time, lcurve2.time)
@@ -165,6 +168,9 @@ class TestIO:
         assert np.allclose(lcurve.mjdref, lcurve2.mjdref)
         assert np.allclose(lcurve.gti, lcurve2.gti)
         assert lcurve.err_dist == lcurve2.err_dist
+        assert lcurve.mission == lcurve2.mission
+        assert lcurve2.mission == "bububu"
+        assert lcurve.instr == lcurve2.instr
 
     def test_load_and_save_pds(self):
         pds = Powerspectrum()
@@ -177,7 +183,7 @@ class TestIO:
 
         save_pds(pds, self.dum)
         pds2 = load_pds(self.dum)
-        for attr in ['gti', 'mjdref', 'm', 'show_progress', 'amplitude']:
+        for attr in ["gti", "mjdref", "m", "show_progress", "amplitude"]:
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
     def test_load_and_save_xps(self):

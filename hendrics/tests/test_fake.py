@@ -81,6 +81,38 @@ def test_filter_for_deadtime_par_bkg():
     )
 
 
+def test_filter_for_deadtime_par_bkg_obj():
+    """Test dead time filter on Eventlist, paral. case, with background."""
+    times = np.array([1.1, 2, 2.2, 3, 3.2])
+    pis = np.arange(times.size) + 5
+    energies = np.arange(times.size) + 10
+    events = EventList(time=times, energy=energies, pi=pis)
+    bkg_events = np.array([1, 3.1])
+    filt_events, info = hen.fake.filter_for_deadtime(
+        events, 0.11, bkg_ev_list=bkg_events, paralyzable=True, return_all=True
+    )
+    expected_ev = np.array([2, 2.2, 3])
+    expected_bk = np.array([1])
+    expected_pi = np.array([6, 7, 8])
+    expected_nrg = np.array([11, 12, 13])
+    filt_times = filt_events.time
+    filt_pis = filt_events.pi
+    filt_nrgs = filt_events.energy
+
+    assert np.all(filt_times == expected_ev), "Wrong: {} vs {}".format(
+        filt_events, expected_ev
+    )
+    assert np.all(filt_pis == expected_pi), "Wrong: {} vs {}".format(
+        filt_events, expected_ev
+    )
+    assert np.all(filt_nrgs == expected_nrg), "Wrong: {} vs {}".format(
+        filt_events, expected_ev
+    )
+    assert np.all(info.bkg == expected_bk), "Wrong: {} vs {}".format(
+        info.bkg, expected_bk
+    )
+
+
 def test_deadtime_mask_par():
     """Test dead time filter, paralyzable case, with background."""
     events = np.array([1.1, 2, 2.2, 3, 3.2])
@@ -164,7 +196,14 @@ class TestFake(object):
         """Test produce a fake event file from input light curve."""
         lcurve_in = os.path.join(self.datadir, "lcurveA.fits")
         fits_file = os.path.join(self.datadir, "monol_test_fake_lc.evt")
-        hen.fake.main(["--lc", lcurve_in, "-o", fits_file])
+        with pytest.warns(UserWarning) as record:
+            hen.fake.main(["--lc", lcurve_in, "-o", fits_file])
+        assert np.any(
+            [
+                "FITS light curve handling is st" in r.message.args[0]
+                for r in record
+            ]
+        )
 
     def test_fake_file_with_deadtime(self):
         """Test produce a fake event file and apply deadtime."""
@@ -203,7 +242,11 @@ class TestFake(object):
     def test_scramble_uncalibrated_events_file_raises(self):
         command = f"{self.first_event_file} -e 3 30"
         with pytest.raises(ValueError):
-            _ = hen.fake.main_scramble(command.split())
+            with pytest.warns(UserWarning) as record:
+                _ = hen.fake.main_scramble(command.split())
+        assert np.any(
+            ["No energy information" in r.message.args[0] for r in record]
+        )
 
     def test_scramble_calibrated_events_file(self):
         command = f"{self.first_event_file_cal} -e 3 30"

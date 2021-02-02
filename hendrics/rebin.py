@@ -15,7 +15,7 @@ def rebin_file(filename, rebin):
     if ftype not in ["lc", "pds", "cpds"]:
         raise ValueError("This format does not support rebin (yet):", ftype)
 
-    if rebin == np.int(rebin):
+    if rebin == int(rebin):
         contents = contents.rebin(f=rebin)
     else:
         contents = contents.rebin_log(f=rebin)

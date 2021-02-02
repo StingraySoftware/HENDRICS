@@ -135,12 +135,12 @@ def decide_binary_parameters(
 
         dX = 1 / (TWOPI * freq)
 
-        nX = np.int(np.diff(asini_range) // dX) + 1
+        nX = int(np.diff(asini_range) // dX) + 1
         Xs = np.random.uniform(asini_range[0], asini_range[1], nX)
 
         for X in Xs:
             dOmega = 1 / (TWOPI * freq * X * length) * D_OMEGA_FACTOR
-            nOmega = np.int(np.diff(omega_range) // dOmega) + 1
+            nOmega = int(np.diff(omega_range) // dOmega) + 1
             Omegas = np.random.uniform(omega_range[0], omega_range[1], nOmega)
 
             for Omega in Omegas:
@@ -263,7 +263,7 @@ def shift_and_sum(
     for k in range(nprof):
         total_shift = base_shift[k] * lshift + quadbaseshift[k] * qshift
         total_shift = mod(np.rint(total_shift), nbin)
-        total_shift_int = np.int(total_shift)
+        total_shift_int = int(total_shift)
 
         splat_prof[:] += repeated_profiles[
             k, nbin - total_shift_int : twonbin - total_shift_int
@@ -366,7 +366,7 @@ def _average_and_z_sub_search(profiles, n=2):
 
     for ave_i in range(len(n_ave)):
         n_ave_i = n_ave[ave_i]
-        shape_0 = np.int(profiles.shape[0] / n_ave_i)
+        shape_0 = int(profiles.shape[0] / n_ave_i)
         # new_profiles = np.zeros((shape_0, profiles.shape[1]))
         for i in range(shape_0):
             new_profiles = np.sum(
@@ -578,7 +578,9 @@ def plot_transient_search(results, gif_name=None):
             axf = plt.subplot(gs[0, i_f])
             axima = plt.subplot(gs[1, i_f], sharex=axf)
 
-            axima.pcolormesh(f, t, ima / detl * 3, vmax=3, vmin=0.3)
+            axima.pcolormesh(
+                f, t, ima / detl * 3, vmax=3, vmin=0.3, shading="nearest"
+            )
 
             mean_line = np.mean(ima, axis=0) / sum_detl * 3
             maxidx = np.argmax(mean_line)
@@ -1037,7 +1039,7 @@ def dyn_folding_search(
             stats.append(np.zeros_like(trial_freqs))
     times = (start + stop) / 2
     fig = plt.figure("Dynamical search")
-    plt.pcolormesh(frequencies, times, np.array(stats))
+    plt.pcolormesh(frequencies, times, np.array(stats), shading="nearest")
     plt.xlabel("Frequency")
     plt.ylabel("Time")
     plt.savefig("Dyn.png")
@@ -1121,6 +1123,13 @@ def _common_parser(args=None):
         required=False,
         help="Size of search parameter space",
         default=2,
+    )
+    parser.add_argument(
+        "--n-transient-intervals",
+        type=int,
+        required=False,
+        help="Number of transient intervals to investigate",
+        default=None,
     )
     parser.add_argument(
         "-n",
@@ -1291,7 +1300,7 @@ def _common_main(args, func):
                 fdot=0,
                 nbin=args.nbin,
                 n=n,
-                nprof=None,
+                nprof=args.n_transient_intervals,
                 oversample=oversample,
             )
             plot_transient_search(results, hen_root(fname) + "_transient.gif")
