@@ -397,7 +397,8 @@ def plot_folding(
             )
             nbin = ef.nbin
 
-        best_cands = find_peaks_in_image(ef.stat, n=5)
+        n_cands = 5
+        best_cands = find_peaks_in_image(ef.stat, n=n_cands)
 
         fddot = 0
         if hasattr(ef, "fddots") and ef.fddots is not None:
@@ -423,9 +424,12 @@ def plot_folding(
                 allstats_fdot = None
             else:
                 raise ValueError("Did not understand stats shape.")
+            if max_stat < vmax:
+                continue
             best_cand_table.add_row([ef.pepoch, max_stat, f, fdot, fddot])
             Table({"freq": allfreqs, "stat": allstats_f}).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}_cand_{i}_fdot{fdot}.csv',
+                f'{fname.replace(HEN_FILE_EXTENSION, "")}'
+                f'_cand_{n_cands - i - 1}_fdot{fdot}.csv',
                 overwrite=True,
                 format="ascii",
             )
@@ -433,12 +437,13 @@ def plot_folding(
                 continue
 
             Table({"fdot": allfdots, "stat": allstats_fdot}).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}_cand_{i}_f{f}.dat',
+                f'{fname.replace(HEN_FILE_EXTENSION, "")}'
+                f'_cand_{n_cands - i - 1}_f{f}.dat',
                 overwrite=True,
                 format="ascii",
             )
 
-        print(best_cand_table)
+        print(best_cand_table[::-1])
         best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
         plt.figure(fname, figsize=(8, 8))
 
@@ -770,9 +775,10 @@ def plot_lc(
             npcus = lcdata["nPCUs"]
             lc /= npcus
 
-        for g in gti:
-            plt.axvline(g[0], ls="-", color="red")
-            plt.axvline(g[1], ls="--", color="red")
+        bti = list(zip(gti[:-1, 1], gti[1:, 0]))
+
+        for g in bti:
+            plt.axvspan(g[0], g[1], color="red", alpha=0.5)
 
         good = create_gti_mask(time, gti)
         plt.plot(time, lc, drawstyle="steps-mid", color="grey")
