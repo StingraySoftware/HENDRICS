@@ -85,9 +85,14 @@ def main(args=None):
                 ]
             )
             lc1 = load_lcurve("lc1" + HEN_FILE_EXTENSION)
+            from stingray.gti import cross_two_gtis
+            gti = cross_two_gtis(lc0.gti, lc1.gti)
+            lc0.gti = lc1.gti = gti
+            lc0.apply_gtis()
+            lc1.apply_gtis()
 
             time = lc0.time
-            counts = lc1.countrate / lc0.countrate
+            counts = lc1.counts / lc0.counts
             counts_err = np.sqrt(
                 lc1.countrate_err ** 2 + lc0.countrate_err ** 2
             )
