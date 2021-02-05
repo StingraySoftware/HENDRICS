@@ -429,7 +429,7 @@ def plot_folding(
             best_cand_table.add_row([ef.pepoch, max_stat, f, fdot, fddot])
             Table({"freq": allfreqs, "stat": allstats_f}).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}'
-                f'_cand_{n_cands - i - 1}_fdot{fdot}.csv',
+                f"_cand_{n_cands - i - 1}_fdot{fdot}.csv",
                 overwrite=True,
                 format="ascii",
             )
@@ -438,7 +438,7 @@ def plot_folding(
 
             Table({"fdot": allfdots, "stat": allstats_fdot}).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}'
-                f'_cand_{n_cands - i - 1}_f{f}.dat',
+                f"_cand_{n_cands - i - 1}_f{f}.dat",
                 overwrite=True,
                 format="ascii",
             )
@@ -711,20 +711,20 @@ def plot_color(
     if type1 == "color":
         ylabel = "{3}-{2}/{1}-{0}".format(*lc1.e_intervals)
     plt.errorbar(
-        lc0.counts,
-        lc1.counts,
-        xerr=lc0.counts_err,
-        yerr=lc1.counts_err,
+        lc0.countrate,
+        lc1.countrate,
+        xerr=lc0.countrate_err,
+        yerr=lc1.countrate_err,
         fmt="o",
         color="k",
         alpha=0.5,
     )
-    plt.scatter(lc0.counts, lc1.counts, zorder=10)
+    plt.scatter(lc0.countrate, lc1.countrate, zorder=10)
 
     if output_data_file is not None:
         save_as_qdp(
-            [lc0.counts, lc1.counts],
-            errors=[lc0.counts_err, lc1.counts_err],
+            [[file0] * lc0.countrate.size, lc0.countrate, lc1.countrate],
+            errors=[None, lc0.countrate_err, lc1.countrate_err],
             filename=output_data_file,
             mode="a",
         )

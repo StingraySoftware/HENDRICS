@@ -4,6 +4,7 @@
 import os
 from astropy import log
 from stingray.lightcurve import Lightcurve
+from stingray.utils import rebin_data
 import numpy as np
 from .io import HEN_FILE_EXTENSION, load_lcurve, save_lcurve
 from .base import hen_root
@@ -34,6 +35,12 @@ def main(args=None):
         "color will be calculated as 4.-6./2.-3. keV. "
         "If --use-pi is specified, these are interpreted "
         "as PI channels",
+    )
+    parser.add_argument(
+        "--rebin",
+        type=int,
+        default=None,
+        help="Average this number of light curve bins together",
     )
 
     args = check_negative_numbers_in_args(args)
@@ -86,6 +93,7 @@ def main(args=None):
             )
             lc1 = load_lcurve("lc1" + HEN_FILE_EXTENSION)
             from stingray.gti import cross_two_gtis
+
             gti = cross_two_gtis(lc0.gti, lc1.gti)
             lc0.gti = lc1.gti = gti
             lc0.apply_gtis()
@@ -93,9 +101,24 @@ def main(args=None):
 
             time = lc0.time
             counts = lc1.counts / lc0.counts
-            counts_err = np.sqrt(
-                lc1.countrate_err ** 2 + lc0.countrate_err ** 2
+            counts_err = counts * (
+                lc1.counts_err / lc1.counts + lc0.counts_err / lc0.counts
             )
+
+            if args.rebin is not None:
+                # I don't want complications from uneven sizes due to GTI
+                time = np.arange(counts.size) * lc0.dt
+                time, counts, _, _ = rebin_data(
+                    time,
+                    counts,
+                    args.rebin * lc0.dt,
+                    dx=lc0.dt,
+                    method="average",
+                )
+                counts_err = (
+                    np.zeros_like(counts) + np.mean(counts_err) / args.rebin
+                )
+
             scolor = Lightcurve(
                 time=time,
                 counts=counts,
@@ -104,6 +127,7 @@ def main(args=None):
                 err_dist="gauss",
                 gti=lc0.gti,
                 dt=args.bintime,
+                skip_checks=True,
             )
             del lc0
             del lc1
