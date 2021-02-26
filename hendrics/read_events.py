@@ -11,7 +11,7 @@ from stingray.gti import cross_two_gtis
 from .io import load_events
 from .base import common_name
 from .base import hen_root
-from .io import save_events, load_events_and_gtis
+from .io import save_events
 from .io import HEN_FILE_EXTENSION
 
 
@@ -47,13 +47,11 @@ def treat_event_file(
     gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
 
-    data = load_events_and_gtis(filename, gtistring=gtistring)
-
-    events = data.ev_list
+    events = EventList.read(filename, format_='hea', gtistring=gtistring)
     mission = events.mission
     instr = events.instr.lower()
     gtis = events.gti
-    detector_id = data.detector_id
+    detector_id = events.detector_id
 
     if randomize_by is not None:
         events.time += np.random.uniform(
@@ -74,7 +72,7 @@ def treat_event_file(
     output_files = []
     for d in detectors:
         if d is not None:
-            good_det = d == data.detector_id
+            good_det = d == detector_id
             outroot_local = "{0}_det{1:02d}".format(outfile_root, d)
 
         else:
@@ -124,31 +122,14 @@ def treat_event_file(
                 all_good = good_det & good
                 if len(events.time[all_good]) < 1:
                     continue
-                events_filt = EventList(
-                    events.time[all_good],
-                    pi=events.pi[all_good],
-                    gti=good_gtis,
-                    mjdref=events.mjdref,
-                )
-                events_filt.instr = events.instr.lower()
-                events_filt.header = events.header
-                events_filt.mission = events.mission
-                if hasattr(events, "cal_pi") and events.cal_pi is not None:
-                    events_filt.cal_pi = events.cal_pi[all_good]
+                events_filt = events.apply_mask(all_good)
+                events_filt.gti = good_gtis
+
                 save_events(events_filt, outfile_local)
                 output_files.append(outfile_local)
         else:
-            events_filt = EventList(
-                events.time[good_det],
-                pi=events.pi[good_det],
-                gti=events.gti,
-                mjdref=events.mjdref,
-            )
-            events_filt.instr = events.instr.lower()
-            events_filt.header = events.header
-            events_filt.mission = events.mission
-            if hasattr(events, "cal_pi") and events.cal_pi is not None:
-                events_filt.cal_pi = events.cal_pi[good_det]
+            events_filt = events.apply_mask(good_det)
+
             save_events(events_filt, outfile)
             output_files.append(outfile)
     return output_files
@@ -256,6 +237,11 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
         events.header = events1.header
     if events1.instr.lower() != events2.instr.lower():
         events.instr = ",".join([e.instr.lower() for e in [events1, events2]])
+    for attr in ['mission', 'instr']:
+        if getattr(events1, attr) != getattr(events2, attr):
+            setattr(events, attr, getattr(events1, attr) + ',' + getattr(events2, attr))
+        else:
+            setattr(events, attr, getattr(events1, attr))
 
     save_events(events, new_event_file)
 
@@ -343,7 +329,7 @@ def split_eventlist(fname, max_length, overlap=None):
 
         local_times = event_times[idx_start:idx_stop]
         new_ev = EventList(time=local_times, gti=gti_local)
-        for attr in ["pi", "energy"]:
+        for attr in ["pi", "energy", 'cal_pi']:
             if hasattr(ev, attr) and getattr(ev, attr) is not None:
                 setattr(new_ev, attr, getattr(ev, attr)[idx_start:idx_stop])
         for attr in ["mission", "instr", "mjdref", "header"]:
