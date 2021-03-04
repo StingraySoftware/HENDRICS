@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import argparse
 import warnings
 import numpy as np
@@ -16,7 +17,23 @@ from .fold import fit_profile, std_fold_fit_func
 
 
 def outfile_name(file):
-    return file.replace(".evt", "_phasetag.evt")
+    """Output file name for phasetag.
+
+    Examples
+    --------
+    >>> outfile_name('file.s.a.fits.Z')
+    'file.s.a_phasetag.fits.Z'
+    >>> outfile_name('file.s.a.evct.gz')
+    'file.s.a_phasetag.evct.gz'
+    >>> outfile_name('file.s.a.evct')
+    'file.s.a_phasetag.evct'
+    """
+    root, ext = os.path.splitext(file)
+    if ext.lower() in ['.gz', '.z']:
+        root, newext = os.path.splitext(root)
+        ext = newext + ext
+
+    return root + "_phasetag" + ext
 
 
 def phase_tag(
