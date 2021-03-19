@@ -443,7 +443,13 @@ def plot_folding(
                 format="ascii",
             )
 
-        print(best_cand_table[::-1])
+        if len(best_cand_table) == 0:
+            print(f"None.")
+            if hasattr(ef, "upperlim") and ef.upperlim is not None:
+                uplim = ef.upperlim
+                print(f"(Upper limit for sinusoids: p. frac. < {uplim})")
+        else:
+            print(best_cand_table[::-1])
         best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
         plt.figure(fname, figsize=(8, 8))
 

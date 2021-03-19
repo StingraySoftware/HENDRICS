@@ -1,5 +1,6 @@
 import os
 import copy
+import glob
 from collections.abc import Iterable
 
 import pytest
@@ -75,6 +76,10 @@ class TestEFsearch:
         save_events(events_scramble, cls.dum_scramble)
         cls.par = "bububububu.par"
         _dummy_par(cls.par)
+        events = EventList(time=np.sort(np.random.uniform(0, 100, 200)))
+        cls.empty = 'empty_ev' + HEN_FILE_EXTENSION
+        save_events(events, cls.empty)
+
 
     def test_get_TOAs(self):
         events = load_events(self.dum)
@@ -403,6 +408,17 @@ class TestEFsearch:
                 ]
             )
         assert np.any(["imageio needed" in r.message.args[0] for r in record])
+
+    def test_zsearch_print_upperlim(self):
+        evfile = self.empty
+
+        outfile = main_zsearch(
+            [evfile, "-f", "4", "-F", "6", "-N", "1", '--fast']
+        )[0]
+        plot_folding([outfile], ylog=True, output_data_file="bla.qdp")
+
+        # assert "Upper limit for sinusoids:" in caplog.text
+        os.unlink(outfile)
 
     def test_zsearch_fast(self):
         evfile = self.dum
@@ -774,7 +790,14 @@ class TestEFsearch:
 
     @classmethod
     def teardown_class(cls):
+        os.unlink(cls.empty)
         os.unlink(cls.dum_scramble)
         os.unlink(cls.dum_noe)
         os.unlink(cls.dum_pi)
         os.unlink(cls.par)
+        for fname in glob.glob('*cand*.csv'):
+            os.unlink(fname)
+        for fname in glob.glob('*cand*.dat'):
+            os.unlink(fname)
+        for fname in glob.glob('HEN*.log'):
+            os.unlink(fname)
