@@ -21,7 +21,7 @@ from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
 from .io import load_events, EFPeriodogram, save_folding, HEN_FILE_EXTENSION
 from .base import hen_root, show_progress, adjust_dt_for_power_of_two
-from .base import deorbit_events, njit, prange
+from .base import deorbit_events, njit, prange, vectorize, float64
 from .base import histogram2d, histogram, memmapped_arange
 from .base import z2_n_detection_level
 from .fold import filter_energy
@@ -80,8 +80,16 @@ def pf_from_a(a):
     p = lambda * (1 + a * sin(phase)),
 
     pulsed fraction = 2a/(1+a)
+
+    Examples
+    --------
+    >>> pf_from_a(1)
+    1.0
+    >>> pf_from_a(0)
+    0.0
     """
     return 2 * a / (1 + a)
+
 
 def a_from_pf(p):
     """The definition of pulsed fraction in HENDRICS is 2A/B, where B is the
@@ -92,8 +100,28 @@ def a_from_pf(p):
     we have
 
     a = pf / (2 - pf)
+
+    Examples
+    --------
+    >>> a_from_pf(1)
+    1.0
+    >>> a_from_pf(0)
+    0.0
     """
     return p / (2-p)
+
+
+def ssig_from_a(a, ncounts):
+    """From Bachetti+2021b, given a pulse profile
+    p = lambda * (1 + a * sin(phase)),
+    The theoretical value of Z^2_n is Ncounts / 2 * \sum a_l^2
+
+    Examples
+    --------
+    >>> round(ssig_from_a(0.1, 30000), 1)
+    150.0
+    """
+    return ncounts / 2 * a**2
 
 
 def a_from_ssig(ssig, ncounts):
@@ -101,17 +129,33 @@ def a_from_ssig(ssig, ncounts):
     p = lambda * (1 + a * sin(phase)),
     The theoretical value of Z^2_n is Ncounts / 2 * \sum a_l^2
 
+    Examples
+    --------
+    >>> a_from_ssig(150, 30000)
+    0.1
     """
     return np.sqrt(2 * ssig / ncounts)
 
 
 def ssig_from_pf(pf, ncounts):
+    """
+
+    Examples
+    --------
+    >>> round(ssig_from_pf(pf_from_a(0.1), 30000), 1)
+    150.0
+    """
     a = a_from_pf(pf)
     return ncounts / 2 * a ** 2
 
 
 def pf_from_ssig(ssig, ncounts):
     """Estimate pulsed fraction for a sinusoid from a given Z^2_n statistic.
+
+    Examples
+    --------
+    >>> round(a_from_pf(pf_from_ssig(150, 30000)), 1)
+    0.1
     """
     a = a_from_ssig(ssig, ncounts)
     return pf_from_a(a)
@@ -1444,7 +1488,7 @@ def _common_main(args, func):
             mjdref=mjdref,
             pepoch=mjdref + ref_time / 86400,
         )
-        efperiodogram.upperlim = pf_from_ssig(np.max(stats), events.time, N=N)
+        efperiodogram.upperlim = pf_from_ssig(np.max(stats), events.time.size)
 
         if args.find_candidates:
             threshold = 1 - args.conflevel / 100
