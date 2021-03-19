@@ -51,6 +51,9 @@ def treat_event_file(
     mission = events.mission
     instr = events.instr.lower()
     gtis = events.gti
+    lengths = np.array([g1 - g0 for (g0, g1) in gtis])
+    gtis = gtis[lengths >= min_length]
+    events.gti = gtis
     detector_id = events.detector_id
 
     if randomize_by is not None:
@@ -91,9 +94,6 @@ def treat_event_file(
             return
 
         if gti_split or (length_split is not None):
-            lengths = np.array([g1 - g0 for (g0, g1) in gtis])
-            gtis = gtis[lengths >= min_length]
-
             if length_split:
                 gti0 = np.arange(gtis[0, 0], gtis[-1, 1], length_split)
                 gti1 = gti0 + length_split
@@ -427,7 +427,7 @@ def main(args=None):
     parser.add_argument(
         "-l",
         "--length-split",
-        help="Split event list by GTI",
+        help="Split event list by length",
         default=None,
         type=float,
     )

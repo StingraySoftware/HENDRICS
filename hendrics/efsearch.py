@@ -718,7 +718,7 @@ def plot_transient_search(results, gif_name=None):
     return all_images
 
 
-@njit(nogil=True)
+@njit(nogil=True, parallel=True)
 def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
 
