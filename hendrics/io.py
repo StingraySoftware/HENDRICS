@@ -94,6 +94,7 @@ class EFPeriodogram(object):
         self.emax = emax
         self.pepoch = pepoch
         self.mjdref = mjdref
+        self.upperlim = None
 
 
 def _get_key(dict_like, key):

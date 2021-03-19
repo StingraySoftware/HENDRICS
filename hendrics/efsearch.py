@@ -73,6 +73,50 @@ __all__ = [
 ]
 
 
+def pf_from_a(a):
+    """The definition of pulsed fraction in HENDRICS is 2A/B, where B is the
+    maximum and A is the amplitude of the modulation. Hence, if the pulsed
+    profile is defined as
+    p = lambda * (1 + a * sin(phase)),
+
+    pulsed fraction = 2a/(1+a)
+    """
+    return 2 * a / (1 + a)
+
+def a_from_pf(p):
+    """The definition of pulsed fraction in HENDRICS is 2A/B, where B is the
+    maximum and A is the amplitude of the modulation. Hence, if the pulsed
+    profile is defined as
+    p = lambda * (1 + a * sin(phase)),
+
+    we have
+
+    a = pf / (2 - pf)
+    """
+    return p / (2-p)
+
+
+def a_from_ssig(ssig, ncounts):
+    """From Bachetti+2021b, given a pulse profile
+    p = lambda * (1 + a * sin(phase)),
+    The theoretical value of Z^2_n is Ncounts / 2 * \sum a_l^2
+
+    """
+    return np.sqrt(2 * ssig / ncounts)
+
+
+def ssig_from_pf(pf, ncounts):
+    a = a_from_pf(pf)
+    return ncounts / 2 * a ** 2
+
+
+def pf_from_ssig(ssig, ncounts):
+    """Estimate pulsed fraction for a sinusoid from a given Z^2_n statistic.
+    """
+    a = a_from_ssig(ssig, ncounts)
+    return pf_from_a(a)
+
+
 def _save_df_to_csv(df, csv_file, reset=False):
     if not os.path.exists(csv_file) or reset:
         mode = "w"
@@ -1400,6 +1444,7 @@ def _common_main(args, func):
             mjdref=mjdref,
             pepoch=mjdref + ref_time / 86400,
         )
+        efperiodogram.upperlim = pf_from_ssig(np.max(stats), events.time, N=N)
 
         if args.find_candidates:
             threshold = 1 - args.conflevel / 100
