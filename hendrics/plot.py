@@ -698,7 +698,10 @@ def plot_folding(
         ax.set_xscale("log", nonpositive="clip")
     if ylog:
         ax.set_yscale("log", nonpositive="clip")
-    plt.tight_layout()
+    try:
+        plt.tight_layout()
+    except:  # pragma: no cover
+        pass
 
     if figname is not None:
         plt.savefig(figname)
