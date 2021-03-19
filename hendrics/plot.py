@@ -700,7 +700,7 @@ def plot_folding(
         ax.set_yscale("log", nonpositive="clip")
     try:
         plt.tight_layout()
-    except:  # pragma: no cover
+    except Exception:  # pragma: no cover
         pass
 
     if figname is not None:
