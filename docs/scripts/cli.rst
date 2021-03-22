@@ -264,10 +264,12 @@ HENefsearch
     usage: HENefsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
                        [--mean-fdot MEAN_FDOT] [--mean-fddot MEAN_FDDOT]
                        [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
-                       [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
-                       [--step STEP] [--oversample OVERSAMPLE] [--fast] [--ffa]
-                       [--transient] [--expocorr] [--find-candidates]
-                       [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+                       [--npfact NPFACT]
+                       [--n-transient-intervals N_TRANSIENT_INTERVALS] [-n NBIN]
+                       [--segment-size SEGMENT_SIZE] [--step STEP]
+                       [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
+                       [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
+                       [--fit-candidates] [--curve CURVE]
                        [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                        [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
@@ -291,6 +293,8 @@ HENefsearch
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
       --npfact NPFACT       Size of search parameter space
+      --n-transient-intervals N_TRANSIENT_INTERVALS
+                            Number of transient intervals to investigate
       -n NBIN, --nbin NBIN  Number of phase bins of the profile
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
@@ -746,10 +750,11 @@ HENreadevents
 
 ::
 
-    usage: HENreadevents [-h] [--noclobber] [-g] [-l LENGTH_SPLIT]
-                         [--min-length MIN_LENGTH] [--gti-string GTI_STRING]
-                         [--randomize-by RANDOMIZE_BY] [-o OUTFILE]
-                         [--loglevel LOGLEVEL] [--debug] [--nproc NPROC]
+    usage: HENreadevents [-h] [--noclobber] [-g] [--discard-calibration]
+                         [-l LENGTH_SPLIT] [--min-length MIN_LENGTH]
+                         [--gti-string GTI_STRING] [--randomize-by RANDOMIZE_BY]
+                         [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
+                         [--nproc NPROC]
                          files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
@@ -762,8 +767,10 @@ HENreadevents
       -h, --help            show this help message and exit
       --noclobber           Do not overwrite existing event files
       -g, --gti-split       Split event list by GTI
+      --discard-calibration
+                            Discard automatic calibration (if any)
       -l LENGTH_SPLIT, --length-split LENGTH_SPLIT
-                            Split event list by GTI
+                            Split event list by length
       --min-length MIN_LENGTH
                             Minimum length of GTIs to consider
       --gti-string GTI_STRING
@@ -828,8 +835,10 @@ HENscramble
 
     usage: HENscramble [-h] [--smooth-kind {smooth,flat,pulsed}]
                        [--deadtime DEADTIME] [--dt DT]
-                       [--pulsed-fraction PULSED_FRACTION] [--outfile OUTFILE]
-                       [--loglevel LOGLEVEL] [--debug]
+                       [--pulsed-fraction PULSED_FRACTION] [-f FREQUENCY]
+                       [--outfile OUTFILE] [-p DEORBIT_PAR]
+                       [-e ENERGY_INTERVAL ENERGY_INTERVAL] [--loglevel LOGLEVEL]
+                       [--debug]
                        fname
 
     Scramble the events inside an event list, maintaining the same energies and
@@ -848,7 +857,14 @@ HENscramble
       --dt DT               Time resolution of smoothed light curve
       --pulsed-fraction PULSED_FRACTION
                             Pulsed fraction of simulated pulsations
+      -f FREQUENCY, --frequency FREQUENCY
+                            Pulsed fraction of simulated pulsations
       --outfile OUTFILE     Output file name
+      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+                            Deorbit data with this parameter file (requires PINT
+                            installed)
+      -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
+                            Energy interval used for filtering
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
@@ -912,7 +928,7 @@ HENsumfspec
       -h, --help            show this help message and exit
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_(c)pds.nc
+                            tot_{c,}pds.{nc,p}
 
 
 HENvarenergy
@@ -963,8 +979,10 @@ HENz2vspf
 
 ::
 
-    usage: HENz2vspf [-h] [--ntrial NTRIAL] [--outfile OUTFILE] [--emin EMIN]
-                     [--emax EMAX] [--loglevel LOGLEVEL] [--debug]
+    usage: HENz2vspf [-h] [--ntrial NTRIAL] [--outfile OUTFILE]
+                     [--show-z-values SHOW_Z_VALUES [SHOW_Z_VALUES ...]]
+                     [--emin EMIN] [--emax EMAX] [-N N] [--loglevel LOGLEVEL]
+                     [--debug]
                      fname
 
     Get Z2 vs pulsed fraction for a given observation. Takes the original event
@@ -973,17 +991,20 @@ HENz2vspf
     pulsation. Does this ntrial times, and plots.
 
     positional arguments:
-      fname                Input file name
+      fname                 Input file name
 
     optional arguments:
-      -h, --help           show this help message and exit
-      --ntrial NTRIAL      Number of trial values for the pulsed fraction
-      --outfile OUTFILE    Output table file name
-      --emin EMIN          Minimum energy (or PI if uncalibrated) to plot
-      --emax EMAX          Maximum energy (or PI if uncalibrated) to plot
-      --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
-                           ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug              set DEBUG logging level
+      -h, --help            show this help message and exit
+      --ntrial NTRIAL       Number of trial values for the pulsed fraction
+      --outfile OUTFILE     Output table file name
+      --show-z-values SHOW_Z_VALUES [SHOW_Z_VALUES ...]
+                            Show these Z values in the plot
+      --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
+      -N N                  The N in Z^2_N
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               set DEBUG logging level
 
 
 HENzsearch
@@ -994,10 +1015,12 @@ HENzsearch
     usage: HENzsearch [-h] -f FMIN -F FMAX [--emin EMIN] [--emax EMAX]
                       [--mean-fdot MEAN_FDOT] [--mean-fddot MEAN_FDDOT]
                       [--fdotmin FDOTMIN] [--fdotmax FDOTMAX] [--dynstep DYNSTEP]
-                      [--npfact NPFACT] [-n NBIN] [--segment-size SEGMENT_SIZE]
-                      [--step STEP] [--oversample OVERSAMPLE] [--fast] [--ffa]
-                      [--transient] [--expocorr] [--find-candidates]
-                      [--conflevel CONFLEVEL] [--fit-candidates] [--curve CURVE]
+                      [--npfact NPFACT]
+                      [--n-transient-intervals N_TRANSIENT_INTERVALS] [-n NBIN]
+                      [--segment-size SEGMENT_SIZE] [--step STEP]
+                      [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
+                      [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
+                      [--fit-candidates] [--curve CURVE]
                       [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
                       [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
@@ -1021,6 +1044,8 @@ HENzsearch
       --fdotmax FDOTMAX     Maximum fdot to fold
       --dynstep DYNSTEP     Dynamical EF step
       --npfact NPFACT       Size of search parameter space
+      --n-transient-intervals N_TRANSIENT_INTERVALS
+                            Number of transient intervals to investigate
       -n NBIN, --nbin NBIN  Number of phase bins of the profile
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
