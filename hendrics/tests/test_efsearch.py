@@ -799,5 +799,3 @@ class TestEFsearch:
             os.unlink(fname)
         for fname in glob.glob('*cand*.dat'):
             os.unlink(fname)
-        for fname in glob.glob('HEN*.log'):
-            os.unlink(fname)
