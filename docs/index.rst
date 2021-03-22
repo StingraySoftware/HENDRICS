@@ -8,16 +8,14 @@
 
 HENDRICS documentation
 ======================
-|Build Status| |Build status| |Coverage Status| |Documentation Status|
+|Build Status| |Coverage Status| |Documentation Status|
 
-.. |Build Status| image:: https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=main
-   :target: https://travis-ci.org/StingraySoftware/HENDRICS
-.. |Build status| image:: https://ci.appveyor.com/api/projects/status/ifm0iydpu6gd7vwk/branch/main?svg=true
-   :target: https://ci.appveyor.com/project/matteobachetti/hendrics/branch/main
+.. |Build Status| image:: https://github.com/StingraySoftware/HENDRICS/workflows/CI%20Tests/badge.svg
+    :target: https://github.com/StingraySoftware/HENDRICS/actions/
 .. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/main/graph/badge.svg
   :target: https://codecov.io/gh/StingraySoftware/HENDRICS
 .. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=main
-   :target: http://hendrics.readthedocs.io/en/main/?badge=master
+   :target: http://hendrics.readthedocs.io/en/main/?badge=main
 
 Description
 -----------

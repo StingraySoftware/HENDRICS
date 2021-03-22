@@ -94,8 +94,8 @@ use the actual command line scripts, and should always pass (albeit with
 some adaptations). The other test suites, e.g. ``test_unit.py``, tests
 the API.
 
-.. |Build Status| image:: https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=main
-   :target: https://travis-ci.org/StingraySoftware/HENDRICS
+.. |Build Status| image:: https://github.com/StingraySoftware/HENDRICS/workflows/CI%20Tests/badge.svg
+    :target: https://github.com/StingraySoftware/HENDRICS/actions/
 .. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/main/graph/badge.svg
   :target: https://codecov.io/gh/StingraySoftware/HENDRICS
 .. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=main
