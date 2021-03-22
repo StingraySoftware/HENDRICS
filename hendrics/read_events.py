@@ -150,14 +150,13 @@ def treat_event_file(
 
 def _wrap_fun(arglist):
     f, kwargs = arglist
-    return treat_event_file(f, **kwargs)
-    # try:
-    #     return treat_event_file(f, **kwargs)
-    # except IndexError:
-    #     log.error(f"Empty or corrupt event file: {f}")
-    # except Exception as e:
-    #     log.error(f"Unknown error: {f}")
-    #     log.error(f"{str(e)}")
+    try:
+        return treat_event_file(f, **kwargs)
+    except IndexError:
+        log.error(f"Empty or corrupt event file: {f}")
+    except Exception as e:
+        log.error(f"Unknown error: {f}")
+        log.error(f"{str(e)}")
 
 
 def multiple_event_concatenate(event_lists):
