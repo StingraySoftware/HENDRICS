@@ -59,7 +59,7 @@ class TestLcurve:
     def test_treat_event_file_nustar(self):
         from astropy.io.fits import Header
 
-        treat_event_file(self.fits_fileA)
+        treat_event_file(self.fits_fileA, discard_calibration=True)
         lcurve_from_events(self.new_filename)
         newfile = os.path.join(
             self.datadir, "monol_testA_nustar_fpma_lc" + HEN_FILE_EXTENSION
@@ -122,7 +122,7 @@ class TestFullRun(object):
             "monol_testB_nustar_fpmb_ev_calib" + HEN_FILE_EXTENSION,
         )
         cls.par = _dummy_par("bubububu.par")
-        command = "{0} {1}".format(
+        command = "{0} {1} --discard-calibration".format(
             os.path.join(cls.datadir, "monol_testA.evt"),
             os.path.join(cls.datadir, "monol_testB.evt"),
         )

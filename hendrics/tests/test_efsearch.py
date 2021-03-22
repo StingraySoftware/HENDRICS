@@ -77,9 +77,8 @@ class TestEFsearch:
         cls.par = "bububububu.par"
         _dummy_par(cls.par)
         events = EventList(time=np.sort(np.random.uniform(0, 100, 200)))
-        cls.empty = 'empty_ev' + HEN_FILE_EXTENSION
+        cls.empty = "empty_ev" + HEN_FILE_EXTENSION
         save_events(events, cls.empty)
-
 
     def test_get_TOAs(self):
         events = load_events(self.dum)
@@ -413,7 +412,7 @@ class TestEFsearch:
         evfile = self.empty
 
         outfile = main_zsearch(
-            [evfile, "-f", "4", "-F", "6", "-N", "1", '--fast']
+            [evfile, "-f", "4", "-F", "6", "-N", "1", "--fast"]
         )[0]
         plot_folding([outfile], ylog=True, output_data_file="bla.qdp")
 
@@ -795,9 +794,7 @@ class TestEFsearch:
         os.unlink(cls.dum_noe)
         os.unlink(cls.dum_pi)
         os.unlink(cls.par)
-        for fname in glob.glob('*cand*.csv'):
+        for fname in glob.glob("*cand*.csv"):
             os.unlink(fname)
-        for fname in glob.glob('*cand*.dat'):
-            os.unlink(fname)
-        for fname in glob.glob('HEN*.log'):
+        for fname in glob.glob("*cand*.dat"):
             os.unlink(fname)

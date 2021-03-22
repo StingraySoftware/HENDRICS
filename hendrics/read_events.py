@@ -2,16 +2,17 @@
 """Read and save event lists from FITS files."""
 
 import warnings
+import copy
 import os
 import numpy as np
 from astropy import log
 from stingray.utils import assign_value_if_none
 from stingray.events import EventList
 from stingray.gti import cross_two_gtis
-from .io import load_events
+from .io import load_events, load_events_and_gtis
 from .base import common_name
 from .base import hen_root
-from .io import save_events, load_events_and_gtis
+from .io import save_events
 from .io import HEN_FILE_EXTENSION
 
 
@@ -23,6 +24,7 @@ def treat_event_file(
     gtistring=None,
     length_split=None,
     randomize_by=None,
+    discard_calibration=False,
 ):
     """Read data from an event file, with no external GTI information.
 
@@ -43,17 +45,29 @@ def treat_event_file(
     min_length: float
         minimum length of GTIs accepted (only if gti_split is True or
         length_split is not None)
+    discard_calibration: bool
+        discard the automatic calibration done by Stingray (if any)
     """
     gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
+    try:
+        events = EventList.read(filename, format_="hea", gtistring=gtistring)
+    except TypeError:  # pragma: no cover
+        evtdata = load_events_and_gtis(filename, gtistring=gtistring)
+        events = evtdata.ev_list
+        events.detector_id = evtdata.detector_id
 
-    data = load_events_and_gtis(filename, gtistring=gtistring)
+    if discard_calibration:
+        events.energy = None
+        events.cal_pi = None
 
-    events = data.ev_list
     mission = events.mission
     instr = events.instr.lower()
     gtis = events.gti
-    detector_id = data.detector_id
+    lengths = np.array([g1 - g0 for (g0, g1) in gtis])
+    gtis = gtis[lengths >= min_length]
+    events.gti = gtis
+    detector_id = events.detector_id
 
     if randomize_by is not None:
         events.time += np.random.uniform(
@@ -74,7 +88,7 @@ def treat_event_file(
     output_files = []
     for d in detectors:
         if d is not None:
-            good_det = d == data.detector_id
+            good_det = d == detector_id
             outroot_local = "{0}_det{1:02d}".format(outfile_root, d)
 
         else:
@@ -93,9 +107,6 @@ def treat_event_file(
             return
 
         if gti_split or (length_split is not None):
-            lengths = np.array([g1 - g0 for (g0, g1) in gtis])
-            gtis = gtis[lengths >= min_length]
-
             if length_split:
                 gti0 = np.arange(gtis[0, 0], gtis[-1, 1], length_split)
                 gti1 = gti0 + length_split
@@ -124,31 +135,14 @@ def treat_event_file(
                 all_good = good_det & good
                 if len(events.time[all_good]) < 1:
                     continue
-                events_filt = EventList(
-                    events.time[all_good],
-                    pi=events.pi[all_good],
-                    gti=good_gtis,
-                    mjdref=events.mjdref,
-                )
-                events_filt.instr = events.instr.lower()
-                events_filt.header = events.header
-                events_filt.mission = events.mission
-                if hasattr(events, "cal_pi") and events.cal_pi is not None:
-                    events_filt.cal_pi = events.cal_pi[all_good]
+                events_filt = events.apply_mask(all_good)
+                events_filt.gti = good_gtis
+
                 save_events(events_filt, outfile_local)
                 output_files.append(outfile_local)
         else:
-            events_filt = EventList(
-                events.time[good_det],
-                pi=events.pi[good_det],
-                gti=events.gti,
-                mjdref=events.mjdref,
-            )
-            events_filt.instr = events.instr.lower()
-            events_filt.header = events.header
-            events_filt.mission = events.mission
-            if hasattr(events, "cal_pi") and events.cal_pi is not None:
-                events_filt.cal_pi = events.cal_pi[good_det]
+            events_filt = events.apply_mask(good_det)
+
             save_events(events_filt, outfile)
             output_files.append(outfile)
     return output_files
@@ -256,6 +250,15 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
         events.header = events1.header
     if events1.instr.lower() != events2.instr.lower():
         events.instr = ",".join([e.instr.lower() for e in [events1, events2]])
+    for attr in ["mission", "instr"]:
+        if getattr(events1, attr) != getattr(events2, attr):
+            setattr(
+                events,
+                attr,
+                getattr(events1, attr) + "," + getattr(events2, attr),
+            )
+        else:
+            setattr(events, attr, getattr(events1, attr))
 
     save_events(events, new_event_file)
 
@@ -343,7 +346,7 @@ def split_eventlist(fname, max_length, overlap=None):
 
         local_times = event_times[idx_start:idx_stop]
         new_ev = EventList(time=local_times, gti=gti_local)
-        for attr in ["pi", "energy"]:
+        for attr in ["pi", "energy", "cal_pi"]:
             if hasattr(ev, attr) and getattr(ev, attr) is not None:
                 setattr(new_ev, attr, getattr(ev, attr)[idx_start:idx_stop])
         for attr in ["mission", "instr", "mjdref", "header"]:
@@ -439,9 +442,15 @@ def main(args=None):
         action="store_true",
     )
     parser.add_argument(
+        "--discard-calibration",
+        help="Discard automatic calibration (if any)",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "-l",
         "--length-split",
-        help="Split event list by GTI",
+        help="Split event list by length",
         default=None,
         type=float,
     )
@@ -482,6 +491,7 @@ def main(args=None):
             "gtistring": args.gti_string,
             "length_split": args.length_split,
             "randomize_by": args.randomize_by,
+            "discard_calibration": args.discard_calibration,
         }
 
         arglist = [[f, argdict] for f in files]
