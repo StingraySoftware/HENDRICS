@@ -50,10 +50,9 @@ def treat_event_file(
     """
     gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
-
     try:
         events = EventList.read(filename, format_="hea", gtistring=gtistring)
-    except:  # pragma: no cover
+    except TypeError:  # pragma: no cover
         evtdata = load_events_and_gtis(filename, gtistring=gtistring)
         events = evtdata.ev_list
         events.detector_id = evtdata.detector_id
