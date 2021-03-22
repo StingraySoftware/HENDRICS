@@ -45,7 +45,7 @@ The **documentation** can be found
 `here <http://hendrics.readthedocs.io>`__.
 
 A **tutorial** is also available
-`here <http://hendrics.readthedocs.io/en/master/tutorials/index.html>`__.
+`here <http://hendrics.readthedocs.io/en/main/tutorials/index.html>`__.
 
 Installation instructions
 -------------------------
@@ -94,9 +94,9 @@ use the actual command line scripts, and should always pass (albeit with
 some adaptations). The other test suites, e.g. ``test_unit.py``, tests
 the API.
 
-.. |Build Status| image:: https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=master
+.. |Build Status| image:: https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=main
    :target: https://travis-ci.org/StingraySoftware/HENDRICS
-.. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/master/graph/badge.svg
+.. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/main/graph/badge.svg
   :target: https://codecov.io/gh/StingraySoftware/HENDRICS
-.. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=master
-   :target: http://hendrics.readthedocs.io/en/master/?badge=master
+.. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=main
+   :target: http://hendrics.readthedocs.io/en/main/?badge=main

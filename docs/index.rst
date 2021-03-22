@@ -1,4 +1,4 @@
-.. MaLTPyNT documentation master file, created by
+.. MaLTPyNT documentation main file, created by
    sphinx-quickstart on Fri Aug 14 18:05:00 2015.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -10,14 +10,14 @@ HENDRICS documentation
 ======================
 |Build Status| |Build status| |Coverage Status| |Documentation Status|
 
-.. |Build Status| image:: https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=master
+.. |Build Status| image:: https://travis-ci.org/StingraySoftware/HENDRICS.svg?branch=main
    :target: https://travis-ci.org/StingraySoftware/HENDRICS
-.. |Build status| image:: https://ci.appveyor.com/api/projects/status/ifm0iydpu6gd7vwk/branch/master?svg=true
-   :target: https://ci.appveyor.com/project/matteobachetti/hendrics/branch/master
-.. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/master/graph/badge.svg
+.. |Build status| image:: https://ci.appveyor.com/api/projects/status/ifm0iydpu6gd7vwk/branch/main?svg=true
+   :target: https://ci.appveyor.com/project/matteobachetti/hendrics/branch/main
+.. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/main/graph/badge.svg
   :target: https://codecov.io/gh/StingraySoftware/HENDRICS
-.. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=master
-   :target: http://hendrics.readthedocs.io/en/master/?badge=master
+.. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=main
+   :target: http://hendrics.readthedocs.io/en/main/?badge=master
 
 Description
 -----------
