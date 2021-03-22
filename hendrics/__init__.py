@@ -67,6 +67,6 @@ if not _ASTROPY_SETUP_:
         e.energy = None
         e.apply_mask([True, True, False])
         print(e)
-    except TypeError:
+    except (TypeError, AttributeError):
         print("Monkey patching Eventlist")
         stingray.events.EventList = MonkeyPatchedEventList
