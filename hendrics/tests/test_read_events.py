@@ -85,6 +85,23 @@ class TestMergeEvents:
         assert os.path.exists(out)
         os.unlink(out)
 
+    def test_merge_events_different_instr(self):
+        with pytest.warns(UserWarning) as record:
+            hen.read_events.main_join(
+                [
+                    self.f0,
+                    self.f3,
+                    "-o",
+                    os.path.join(
+                        self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION
+                    ),
+                ]
+            )
+
+        out = os.path.join(self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION)
+        assert os.path.exists(out)
+        os.unlink(out)
+
     def test_merge_events_no_out_fname(self):
         with pytest.warns(UserWarning) as record:
             hen.read_events.main_join([self.f0, self.f1])
