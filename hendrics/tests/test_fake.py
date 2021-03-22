@@ -178,7 +178,7 @@ class TestFake(object):
                 cls.xmm_fits_file,
             ]
         )
-        command = "{0}".format(cls.xmm_fits_file)
+        command = "{0}  --discard-calibration".format(cls.xmm_fits_file)
         hen.read_events.main(command.split())
         cls.xmm_ev_file = os.path.join(
             cls.datadir,
