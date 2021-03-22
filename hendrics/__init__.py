@@ -24,6 +24,8 @@ if not _ASTROPY_SETUP_:
         HAS_NETCDF = False
         pass
 
+    import copy
+    import numpy as np
     import stingray.utils
     from stingray.events import EventList
 
@@ -36,13 +38,13 @@ if not _ASTROPY_SETUP_:
 
     stingray.utils._root_squared_mean = _root_squared_mean
 
-    class MonkeyPatchedEventList(EventList):
+    class _MonkeyPatchedEventList(EventList):
         def apply_mask(self, mask, inplace=False):  # pragma: no cover
             """For compatibility with old stingray version.
 
             Examples
             --------
-            >>> evt = MonkeyPatchedEventList(time=[0, 1, 2])
+            >>> evt = _MonkeyPatchedEventList(time=[0, 1, 2])
             >>> newev0 = evt.apply_mask([True, True, False], inplace=False);
             >>> newev1 = evt.apply_mask([True, True, False], inplace=True);
             >>> np.allclose(newev0.time, [0, 1])
@@ -52,7 +54,6 @@ if not _ASTROPY_SETUP_:
             >>> evt is newev1
             True
             """
-            import copy
             if inplace:
                 new_ev = self
             else:
@@ -68,5 +69,4 @@ if not _ASTROPY_SETUP_:
         e.apply_mask([True, True, False])
         print(e)
     except (TypeError, AttributeError):
-        print("Monkey patching Eventlist")
-        stingray.events.EventList = MonkeyPatchedEventList
+        stingray.events.EventList = _MonkeyPatchedEventList
