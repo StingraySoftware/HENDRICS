@@ -23,6 +23,7 @@ def treat_event_file(
     gtistring=None,
     length_split=None,
     randomize_by=None,
+    discard_calibration=False
 ):
     """Read data from an event file, with no external GTI information.
 
@@ -43,11 +44,17 @@ def treat_event_file(
     min_length: float
         minimum length of GTIs accepted (only if gti_split is True or
         length_split is not None)
+    discard_calibration: bool
+        discard the automatic calibration done by Stingray (if any)
     """
     gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
 
     events = EventList.read(filename, format_='hea', gtistring=gtistring)
+    if discard_calibration:
+        events.energy = None
+        events.cal_pi = None
+
     mission = events.mission
     instr = events.instr.lower()
     gtis = events.gti
@@ -425,6 +432,12 @@ def main(args=None):
         action="store_true",
     )
     parser.add_argument(
+        "--discard-calibration",
+        help="Discard automatic calibration (if any)",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "-l",
         "--length-split",
         help="Split event list by length",
@@ -468,6 +481,7 @@ def main(args=None):
             "gtistring": args.gti_string,
             "length_split": args.length_split,
             "randomize_by": args.randomize_by,
+            "discard_calibration": args.discard_calibration,
         }
 
         arglist = [[f, argdict] for f in files]

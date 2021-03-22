@@ -50,7 +50,8 @@ class TestBinary(object):
             "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
         )
         cls.par = _dummy_par("bubububu.par")
-        command = "{0}".format(os.path.join(cls.datadir, "monol_testA.evt"))
+        command = "{0} --discard-calibration".format(
+            os.path.join(cls.datadir, "monol_testA.evt"))
         hen.read_events.main(command.split())
         command = "{} -r {}".format(
             os.path.join(

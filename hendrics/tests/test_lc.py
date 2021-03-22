@@ -59,7 +59,7 @@ class TestLcurve:
     def test_treat_event_file_nustar(self):
         from astropy.io.fits import Header
 
-        treat_event_file(self.fits_fileA)
+        treat_event_file(self.fits_fileA, discard_calibration=True)
         lcurve_from_events(self.new_filename)
         newfile = os.path.join(
             self.datadir, "monol_testA_nustar_fpma_lc" + HEN_FILE_EXTENSION

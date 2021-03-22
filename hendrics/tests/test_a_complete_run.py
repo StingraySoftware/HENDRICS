@@ -88,7 +88,7 @@ class TestFullRun(object):
             "monol_testB_nustar_fpmb_ev_calib" + HEN_FILE_EXTENSION,
         )
         cls.par = _dummy_par("bubububu.par")
-        command = "{0} {1}".format(
+        command = "{0} {1} --discard-calibration".format(
             os.path.join(cls.datadir, "monol_testA.evt"),
             os.path.join(cls.datadir, "monol_testB.evt"),
         )

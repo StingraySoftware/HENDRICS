@@ -153,7 +153,7 @@ class TestFake(object):
         )
         cls.par = _dummy_par("bubububu.par")
         cls.fits_fileA = os.path.join(cls.datadir, "monol_testA.evt")
-        command = "{0}".format(cls.fits_fileA)
+        command = "{0} --discard-calibration".format(cls.fits_fileA)
         hen.read_events.main(command.split())
 
         cls.first_event_file_cal = "calibrated" + HEN_FILE_EXTENSION
