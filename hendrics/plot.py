@@ -429,7 +429,7 @@ def plot_folding(
             best_cand_table.add_row([ef.pepoch, max_stat, f, fdot, fddot])
             Table({"freq": allfreqs, "stat": allstats_f}).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}'
-                f'_cand_{n_cands - i - 1}_fdot{fdot}.csv',
+                f"_cand_{n_cands - i - 1}_fdot{fdot}.csv",
                 overwrite=True,
                 format="ascii",
             )
@@ -438,7 +438,7 @@ def plot_folding(
 
             Table({"fdot": allfdots, "stat": allstats_fdot}).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}'
-                f'_cand_{n_cands - i - 1}_f{f}.dat',
+                f"_cand_{n_cands - i - 1}_f{f}.dat",
                 overwrite=True,
                 format="ascii",
             )

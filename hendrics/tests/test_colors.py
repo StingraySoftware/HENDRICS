@@ -86,7 +86,7 @@ class TestFullRun(object):
         cls.par = _dummy_par("bubububu.par")
         command = "{0} {1} --discard-calibration".format(
             os.path.join(cls.datadir, "monol_testA.evt"),
-            os.path.join(cls.datadir, "monol_testB.evt")
+            os.path.join(cls.datadir, "monol_testB.evt"),
         )
         hen.read_events.main(command.split())
 

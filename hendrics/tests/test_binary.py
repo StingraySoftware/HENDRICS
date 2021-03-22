@@ -51,7 +51,8 @@ class TestBinary(object):
         )
         cls.par = _dummy_par("bubububu.par")
         command = "{0} --discard-calibration".format(
-            os.path.join(cls.datadir, "monol_testA.evt"))
+            os.path.join(cls.datadir, "monol_testA.evt")
+        )
         hen.read_events.main(command.split())
         command = "{} -r {}".format(
             os.path.join(

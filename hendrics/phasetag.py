@@ -29,7 +29,7 @@ def outfile_name(file):
     'file.s.a_phasetag.evct'
     """
     root, ext = os.path.splitext(file)
-    if ext.lower() in ['.gz', '.z']:
+    if ext.lower() in [".gz", ".z"]:
         root, newext = os.path.splitext(root)
         ext = newext + ext
 

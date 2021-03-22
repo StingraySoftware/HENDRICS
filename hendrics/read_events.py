@@ -24,7 +24,7 @@ def treat_event_file(
     gtistring=None,
     length_split=None,
     randomize_by=None,
-    discard_calibration=False
+    discard_calibration=False,
 ):
     """Read data from an event file, with no external GTI information.
 
@@ -52,7 +52,7 @@ def treat_event_file(
     log.info("Opening %s" % filename)
 
     try:
-        events = EventList.read(filename, format_='hea', gtistring=gtistring)
+        events = EventList.read(filename, format_="hea", gtistring=gtistring)
     except:  # pragma: no cover
         evtdata = load_events_and_gtis(filename, gtistring=gtistring)
         events = evtdata.ev_list
@@ -251,9 +251,13 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
         events.header = events1.header
     if events1.instr.lower() != events2.instr.lower():
         events.instr = ",".join([e.instr.lower() for e in [events1, events2]])
-    for attr in ['mission', 'instr']:
+    for attr in ["mission", "instr"]:
         if getattr(events1, attr) != getattr(events2, attr):
-            setattr(events, attr, getattr(events1, attr) + ',' + getattr(events2, attr))
+            setattr(
+                events,
+                attr,
+                getattr(events1, attr) + "," + getattr(events2, attr),
+            )
         else:
             setattr(events, attr, getattr(events1, attr))
 
@@ -343,7 +347,7 @@ def split_eventlist(fname, max_length, overlap=None):
 
         local_times = event_times[idx_start:idx_stop]
         new_ev = EventList(time=local_times, gti=gti_local)
-        for attr in ["pi", "energy", 'cal_pi']:
+        for attr in ["pi", "energy", "cal_pi"]:
             if hasattr(ev, attr) and getattr(ev, attr) is not None:
                 setattr(new_ev, attr, getattr(ev, attr)[idx_start:idx_stop])
         for attr in ["mission", "instr", "mjdref", "header"]:

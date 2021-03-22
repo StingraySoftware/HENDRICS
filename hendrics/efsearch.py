@@ -108,7 +108,7 @@ def a_from_pf(p):
     >>> a_from_pf(0)
     0.0
     """
-    return p / (2-p)
+    return p / (2 - p)
 
 
 def ssig_from_a(a, ncounts):
@@ -121,7 +121,7 @@ def ssig_from_a(a, ncounts):
     >>> round(ssig_from_a(0.1, 30000), 1)
     150.0
     """
-    return ncounts / 2 * a**2
+    return ncounts / 2 * a ** 2
 
 
 def a_from_ssig(ssig, ncounts):
