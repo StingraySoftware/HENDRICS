@@ -126,10 +126,12 @@ class EFPeriodogram(object):
             best_cands = find_peaks_in_image(self.stat, n=10, threshold_abs=threshold)
             best_peaks = []
             best_stat = []
-            for i, idx in enumerate(best_cands[::-1]):
+            for i, idx in enumerate(best_cands):
                 f, fdot = self.freq[idx[0], idx[1]], self.fdots[idx[0], idx[1]]
                 best_peaks.append([f, fdot])
                 best_stat.append(self.stat[idx[0], idx[1]])
+        best_peaks = np.asarray(best_peaks)
+        best_stat = np.asarray(best_stat)
         self.peaks = best_peaks
         self.peak_stat = best_stat
         return best_peaks, best_stat
