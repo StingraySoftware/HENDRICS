@@ -36,8 +36,10 @@ from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
 from stingray.pulse.modeling import SincSquareModel
-from .base import _order_list_of_arrays, _empty, is_string, force_iterable
+from stingray.pulse.search import search_best_peaks
 
+from .base import _order_list_of_arrays, _empty, is_string, force_iterable
+from .base import find_peaks_in_image
 
 try:
     _ = np.complex256
@@ -95,6 +97,42 @@ class EFPeriodogram(object):
         self.pepoch = pepoch
         self.mjdref = mjdref
         self.upperlim = None
+
+    def find_peaks(self, conflevel=99.):
+        from .base import z2_n_detection_level, fold_detection_level
+        ntrial = self.stat.size
+        if hasattr(self, "oversample") and self.oversample is not None:
+            ntrial /= self.oversample
+            ntrial = int(ntrial)
+
+        epsilon = 1 - conflevel / 100
+        if self.kind == "Z2n":
+            threshold = z2_n_detection_level(
+                epsilon=epsilon,
+                n=self.N,
+                ntrial=ntrial,
+                n_summed_spectra=int(self.M),
+            )
+        else:
+            threshold = fold_detection_level(
+                nbin=int(self.nbin), epsilon=epsilon, ntrial=ntrial
+            )
+
+        if len(self.stat.shape) == 1:
+            best_peaks, best_stat = search_best_peaks(
+                self.freq, self.stat, threshold
+            )
+        else:
+            best_cands = find_peaks_in_image(self.stat, n=10, threshold_abs=threshold)
+            best_peaks = []
+            best_stat = []
+            for i, idx in enumerate(best_cands[::-1]):
+                f, fdot = self.freq[idx[0], idx[1]], self.fdots[idx[0], idx[1]]
+                best_peaks.append([f, fdot])
+                best_stat.append(self.stat[idx[0], idx[1]])
+        self.peaks = best_peaks
+        self.peak_stat = best_stat
+        return best_peaks, best_stat
 
 
 def _get_key(dict_like, key):

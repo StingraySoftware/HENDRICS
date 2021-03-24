@@ -23,7 +23,7 @@ from .io import load_events, EFPeriodogram, save_folding, HEN_FILE_EXTENSION
 from .base import hen_root, show_progress, adjust_dt_for_power_of_two
 from .base import deorbit_events, njit, prange, vectorize, float64
 from .base import histogram2d, histogram, memmapped_arange
-from .base import z2_n_detection_level
+from .base import z2_n_detection_level, fold_detection_level
 from .fold import filter_energy
 from .ffa import _z_n_fast_cached, ffa_search, h_test
 from .fake import scramble
@@ -1343,7 +1343,6 @@ def _common_main(args, func):
         args.find_candidates = True
     elif args.fit_candidates and args.fit_frequency is not None:
         args.find_candidates = False
-        best_peaks = [args.fit_frequency]
 
     if func != z_n_search and args.fast:
         raise ValueError("The fast option is only available for z searches")
@@ -1491,13 +1490,9 @@ def _common_main(args, func):
         efperiodogram.upperlim = pf_from_ssig(np.max(stats), events.time.size)
 
         if args.find_candidates:
-            threshold = 1 - args.conflevel / 100
-            best_peaks, best_stat = search_best_peaks(
-                frequencies, stats, threshold
-            )
-            efperiodogram.peaks = best_peaks
-            efperiodogram.peak_stat = best_stat
+            best_peaks, best_stat = efperiodogram.find_peaks(conflevel=args.conflevel)
         elif args.fit_frequency is not None:
+            best_peaks = [args.fit_frequency]
             efperiodogram.peaks = best_peaks
             efperiodogram.peak_stat = [0]
 
