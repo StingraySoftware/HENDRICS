@@ -1486,6 +1486,7 @@ def _common_main(args, func):
             emax=args.emax,
             mjdref=mjdref,
             pepoch=mjdref + ref_time / 86400,
+            oversample=args.oversample
         )
         efperiodogram.upperlim = pf_from_ssig(np.max(stats), events.time.size)
 
