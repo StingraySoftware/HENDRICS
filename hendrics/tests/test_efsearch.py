@@ -432,6 +432,8 @@ class TestEFsearch:
                 "64",
                 "--fast",
                 "--find-candidates",
+                "--oversample",
+                "4"
             ]
         )
         outfile = "events_Z22_9.85-9.95Hz_fast" + HEN_FILE_EXTENSION
