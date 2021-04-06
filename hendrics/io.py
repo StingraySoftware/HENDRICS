@@ -98,8 +98,9 @@ class EFPeriodogram(object):
         self.mjdref = mjdref
         self.upperlim = None
 
-    def find_peaks(self, conflevel=99.):
+    def find_peaks(self, conflevel=99.0):
         from .base import z2_n_detection_level, fold_detection_level
+
         ntrial = self.stat.size
         if hasattr(self, "oversample") and self.oversample is not None:
             ntrial /= self.oversample
@@ -123,7 +124,9 @@ class EFPeriodogram(object):
                 self.freq, self.stat, threshold
             )
         else:
-            best_cands = find_peaks_in_image(self.stat, n=10, threshold_abs=threshold)
+            best_cands = find_peaks_in_image(
+                self.stat, n=10, threshold_abs=threshold
+            )
             best_peaks = []
             best_stat = []
             for i, idx in enumerate(best_cands):

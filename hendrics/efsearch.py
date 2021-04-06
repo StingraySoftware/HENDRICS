@@ -1490,7 +1490,9 @@ def _common_main(args, func):
         efperiodogram.upperlim = pf_from_ssig(np.max(stats), events.time.size)
 
         if args.find_candidates:
-            best_peaks, best_stat = efperiodogram.find_peaks(conflevel=args.conflevel)
+            best_peaks, best_stat = efperiodogram.find_peaks(
+                conflevel=args.conflevel
+            )
         elif args.fit_frequency is not None:
             best_peaks = [args.fit_frequency]
             efperiodogram.peaks = best_peaks

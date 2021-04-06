@@ -422,7 +422,17 @@ class TestEFsearch:
     def test_zsearch_fast(self):
         evfile = self.dum
         main_zsearch(
-            [evfile, "-f", "9.85", "-F", "9.95", "-n", "64", "--fast"]
+            [
+                evfile,
+                "-f",
+                "9.85",
+                "-F",
+                "9.95",
+                "-n",
+                "64",
+                "--fast",
+                "--find-candidates",
+            ]
         )
         outfile = "events_Z22_9.85-9.95Hz_fast" + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
