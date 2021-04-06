@@ -416,7 +416,7 @@ def fit_profile_with_sinusoids(
 
         fig = plt.figure("Debug profile")
         plt.title("Debug profile")
-        plt.errorbar(x, profile, yerr=profile_err, drawstyle="steps-mid")
+        plt.errorbar(x, profile, drawstyle="steps-mid")
         plt.plot(x, std_fold_fit_func(guess_pars, x), "r--")
 
     for phase in np.arange(0.0, 1.0, 0.1):

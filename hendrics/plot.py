@@ -406,6 +406,8 @@ def plot_folding(
 
         print("Best candidates:")
         best_cand_table = Table(names=["mjd", "power", "f", "fdot", "fddot"])
+        # I do that in reverse order, so that the final solution is also the
+        # best one, for plotting the candidate f, fdot
         for i, idx in enumerate(best_cands[::-1]):
             if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
                 allfreqs = ef.freq[idx[0], :]

@@ -98,7 +98,9 @@ class TestMergeEvents:
                 ]
             )
 
-        out = os.path.join(self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION)
+        out = os.path.join(
+            self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION
+        )
         assert os.path.exists(out)
         os.unlink(out)
 
