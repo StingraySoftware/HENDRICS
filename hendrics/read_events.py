@@ -25,6 +25,7 @@ def treat_event_file(
     length_split=None,
     randomize_by=None,
     discard_calibration=False,
+    additional_columns=None
 ):
     """Read data from an event file, with no external GTI information.
 
@@ -48,10 +49,11 @@ def treat_event_file(
     discard_calibration: bool
         discard the automatic calibration done by Stingray (if any)
     """
-    gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
+    # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
     try:
-        events = EventList.read(filename, format_="hea", gtistring=gtistring)
+        events = EventList.read(filename, format_="hea", gtistring=gtistring,
+                                additional_columns=additional_columns)
     except TypeError:  # pragma: no cover
         evtdata = load_events_and_gtis(filename, gtistring=gtistring)
         events = evtdata.ev_list
@@ -471,7 +473,13 @@ def main(args=None):
         "XMM)",
         default=None,
     )
-
+    parser.add_argument(
+        "--additional",
+        type=str,
+        nargs="+",
+        help="Additional columns to be read from the FITS file",
+        default=None,
+    )
     _add_default_args(parser, ["output", "loglevel", "debug", "nproc"])
 
     args = check_negative_numbers_in_args(args)
@@ -492,6 +500,7 @@ def main(args=None):
             "length_split": args.length_split,
             "randomize_by": args.randomize_by,
             "discard_calibration": args.discard_calibration,
+            "additional_columns": args.additional,
         }
 
         arglist = [[f, argdict] for f in files]

@@ -66,6 +66,7 @@ def test_deorbit_run():
     ev = EventList(np.arange(0, 210000, 1000), gti=np.asarray([[0.0, 210000]]))
 
     ev.mjdref = 56000.0
+    ev.ephem = "de200"
     par = _dummy_par("bububu.par")
     with pytest.warns(UserWarning) as record:
         _ = deorbit_events(ev, par)
