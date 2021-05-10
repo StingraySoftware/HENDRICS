@@ -24,6 +24,7 @@ First of all, let us load the event list in a more manageable file
 
     $ HENreadevents mistery_source_1_00.evt --min-length 512
 
+The ``min-length`` option says to discard GTIs shorter than 512 s.
 Note that the understanding of good time intervals extensions is sometimes difficult to do automatically,
 as different missions have different standard naming of these extensions. Most NASA missions should be
 correctly handled, plus XMM-Newton; however, if you notice something strange in the GTI extension
@@ -45,7 +46,6 @@ of kilo-electronVolts (keV).
 The latter works only for *NuSTAR*, and if the official rmf files are in the CALDB. Otherwise,
 the ``--rmf`` option has to be used, providing a redistribution matrix file (see ``HENcalibrate -h``
 for details).
-The ``min-length`` option says to discard GTIs shorter than 512.
 
 Create and plot a light curve
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

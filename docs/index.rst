@@ -1,4 +1,4 @@
-.. MaLTPyNT documentation main file, created by
+.. HENDRICS documentation main file, created by
    sphinx-quickstart on Fri Aug 14 18:05:00 2015.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -159,7 +159,9 @@ license information in the ``LICENSE.rst`` file.
 **If you use this software in a publication**, please refer to its
 Astrophysics Source Code Library identifier:
 
-1. Bachetti, M. 2015, MaLTPyNT, Astrophysics Source Code Library, record `ascl:1502.021 <http://ascl.net/1502.021>`__.
+1. Bachetti, M. 2018, HENDRICS: High ENergy Data Reduction Interface from the Command Shell, record `ascl:1805.019 <http://ascl.net/1805.019>`__.
+
+and please also cite `stingray <https://stingray.science/stingray/citing.html>`
 
 In particular, **if you use the cospectrum**, please also refer to:
 

@@ -8,7 +8,7 @@ Data simulation
     For a general introduction to HENDRICS's workflow, please read the
     :ref:`quicklook-tutorial` tutorial
 
-To simulate datasets, `MaLTPyNT` includes the `HENfake` script. It can simulate
+To simulate datasets, `HENDRICS` includes the `HENfake` script. It can simulate
 event lists with a fixed count rate or from an input light curve. Also, it is able
 to apply a dead time filter to the simulated event lists.
 
@@ -24,7 +24,7 @@ it is sufficient to call `HENfake -c <countrate>`
     events.evt
 
 To simulate an event list from an input light curve, use the `-l` (or `--lc`)
-option. The light curve can be in FITS or MaLTPyNT native format (or one can use
+option. The light curve can be in FITS or HENDRICS native format (or one can use
 HENlcurve for the conversion from text format):
 
 ::
