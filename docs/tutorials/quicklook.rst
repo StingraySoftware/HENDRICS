@@ -73,7 +73,7 @@ Some scripts (e.g. ``HENreadevents``, ``HENlcurve``, ``HENfspec``) have a
 time. The load is divided among ``nproc`` processors, that work in
 parallel cutting down considerably the execution time.
 
-For I/O, MaLTPyNT looks if the ``netCDF4`` library is installed. If it's
+For I/O, HENDRICS looks if the ``netCDF4`` library is installed. If it's
 found in the system, files will be saved in this format. Otherwise, the
 native Python ``pickle`` format format will be used. This format is
 *much* slower (It might take some minutes to load some files) and files
@@ -85,7 +85,7 @@ Loading event lists
 ~~~~~~~~~~~~~~~~~~~
 
 Starting from cleaned event files, we will first save them in
-``MaLTPyNT`` format (a ``pickle`` or ``netcdf4`` file). For example, I'm starting
+``HENDRICS`` format (a ``pickle`` or ``netcdf4`` file). For example, I'm starting
 from two event lists called ``002A.evt`` and ``002B.evt``, containing
 the cleaned event lists from a source observed with NuSTAR's ``FPMA``
 and ``FPMB`` respectively.
