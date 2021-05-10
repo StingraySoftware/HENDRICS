@@ -222,6 +222,12 @@ here, the default would be Leahy et al. 1983 normalization.
     Loading file 002B_E3-30_lc.nc...
     Saving CPDS to ./cpds_002_3-30_0.nc
 
+Note that it is possible to directly event lists to ``HENfspec``, instead of the pre-calculated light curve. In this case, one needs to also specify the bin time, and the command line changes to
+
+::
+
+    $ HENfspec 002A_E3-30_ev.nc 002B_E3-30_ev.nc -k CPDS -o cpds_002_3-30 --norm frac -b -8
+
 Rebinning the spectrum
 ~~~~~~~~~~~~~~~~~~~~~~
 
