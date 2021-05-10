@@ -100,14 +100,16 @@ and ``FPMB`` respectively.
 
 This will create new files with a ``_ev.nc`` extension (``_ev.p`` if you
 don't use netCDF4), containing the event times and the energy *channel*
-(``PI``) of each event
+(e.g. ``PI``) of each event.
+
+For a few missions (_XMM_, _NuSTAR_, _NICER_), Stingray will automatically calculate the energy in keV corresponding to the energy channels, so that the step in ``HENcalibrate`` can be avoided (unless there is a specific reason not to trust the default calibration).
 
 Calibrating event lists
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Use ``HENcalibrate``. You can either specify an ``rmf`` file with the
-``-r`` option, or just let it look for it in the NuSTAR ``CALDB`` (the
-environment variable has to be defined!)
+Use ``HENcalibrate``. The most secure way to do this is to specify an ``rmf`` file with the
+``-r`` option. For _NuSTAR_ only, ``HENcalibrate`` will look into the ``CALDB``, if the
+environment variable has been defined!
 
 ::
 
@@ -226,7 +228,7 @@ Note that it is possible to directly event lists to ``HENfspec``, instead of the
 
 ::
 
-    $ HENfspec 002A_E3-30_ev.nc 002B_E3-30_ev.nc -k CPDS -o cpds_002_3-30 --norm frac -b -8
+    $ HENfspec 002A_ev.nc 002B_ev.nc -k CPDS -o cpds_002 --norm frac -b -8
 
 Rebinning the spectrum
 ~~~~~~~~~~~~~~~~~~~~~~
