@@ -61,7 +61,7 @@ What's new
 HENDRICS 6.0
 ~~~~~~~~~~~~
 
-+ Improved mission support (through Stingray updates)
++ Much Improved mission support
 + Lots of performance improvements
 + Improved simulation and upper limit determination for Z searches
 + Improved candidate searching in Z searches
