@@ -57,9 +57,19 @@ aperiodic timing analysis on X-ray data from, in principle, any other
 satellite (for sure XMM-Newton and RXTE).
 
 What's new
-----------
+
+HENDRICS 6.0
+~~~~~~~~~~~~
+
++ Improved mission support (through Stingray updates)
++ Lots of performance improvements
++ Improved simulation and upper limit determination for Z searches
++ Improved candidate searching in Z searches
++ Lots of documentation fixes
+
 HENDRICS 5.0
 ~~~~~~~~~~~~
+----------
 More improvements to pulsar functionalities:
 
 + The accelerated search from Ransom+2002 is now available, to search the f-fdot space through Fourier analysis. It is highly performant but still needs some work. Please consider it experimental.
