@@ -448,7 +448,7 @@ def simple_orbit_fun_from_parfile(
     return correction
 
 
-def deorbit_events(events, parameter_file=None, invert=False, ephem="DE421"):
+def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     """Refer arrival times to the center of mass of binary system.
 
     Parameters
@@ -485,6 +485,12 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem="DE421"):
             "The observation is very long. The barycentric correction "
             "will be rough"
         )
+
+    if ephem is None and hasattr(events, "ephem") and events.ephem is not None:
+        ephem = events.ephem
+        log.info(f"Using default ephemeris: {ephem}")
+    elif ephem is None:
+        ephem = "DE421"
 
     length_d = length / 86400
     orbital_correction_fun = simple_orbit_fun_from_parfile(

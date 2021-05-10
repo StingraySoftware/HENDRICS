@@ -452,8 +452,9 @@ def save_events(eventlist, fname):
         out["energy"] = eventlist.energy
     if hasattr(eventlist, "header") and eventlist.header is not None:
         out["header"] = eventlist.header
-    if hasattr(eventlist, "mission") and eventlist.mission is not None:
-        out["mission"] = eventlist.mission.lower()
+    for attr in ["mission", "ephem", "timeref", "timesys"]:
+        if hasattr(eventlist, attr) and getattr(eventlist, attr) is not None:
+            out[attr] = getattr(eventlist, attr).lower()
     if hasattr(eventlist, "cal_pi") and eventlist.cal_pi is not None:
         out["cal_pi"] = eventlist.cal_pi
 
@@ -490,6 +491,9 @@ def load_events(fname):
         eventlist.mission = out["mission"].lower()
     else:
         eventlist.mission = ""
+    for attr in ["mission", "ephem", "timeref", "timesys"]:
+        if attr in list(out.keys()):
+            setattr(eventlist, attr, out[attr].lower())
     return eventlist
 
 
