@@ -149,7 +149,10 @@ class BasePhaseogram(object):
         self.nt = nt
         self.nph = nph
         self.mjdref = mjdref
+        self.ev_times = ev_times
         self.gti = gti
+        if gti is None:
+            self.gti = np.array([[ev_times[0], ev_times[-1]]])
         self.label = label
         self.test = test
 
@@ -158,7 +161,6 @@ class BasePhaseogram(object):
         self.time_corr = assign_value_if_none(
             time_corr, np.zeros_like(ev_times)
         )
-        self.ev_times = ev_times
         self.freq = freq
         self.norm = norm
         self.position = position
@@ -515,7 +517,10 @@ class BasePhaseogram(object):
             tm_string += "T0(MET)        {}\n".format(self.t0)
             tm_string += "PB(s)          {}\n".format(self.orbital_period)
 
-        tm_string += "PEPOCH(MET)    {}\n".format(self.pepoch)
+        tm_string += "# PEPOCH(MET)  {}\n".format(self.pepoch)
+        start, stop = self.gti.min(), self.gti.max()
+        tm_string += "START         {}\n".format(start / 86400 + self.mjdref)
+        tm_string += "FINISH        {}\n".format(stop / 86400 + self.mjdref)
         return tm_string
 
 
