@@ -148,8 +148,13 @@ class BasePhaseogram(object):
         self.fddot = fddot
         self.nt = nt
         self.nph = nph
-        self.mjdref = mjdref
+        if mjdref is None:
+            warnings.warn("MJDREF not set. All MJD values will be incorrect.")
+        self.mjdref = assign_value_if_none(mjdref, 0.)
+        self.ev_times = np.asarray(ev_times)
         self.gti = gti
+        if gti is None:
+            self.gti = np.array([[ev_times[0], ev_times[-1]]])
         self.label = label
         self.test = test
 
@@ -158,7 +163,6 @@ class BasePhaseogram(object):
         self.time_corr = assign_value_if_none(
             time_corr, np.zeros_like(ev_times)
         )
-        self.ev_times = ev_times
         self.freq = freq
         self.norm = norm
         self.position = position
@@ -172,7 +176,7 @@ class BasePhaseogram(object):
             fill_value="extrapolate",
         )
         self.time_corr_mjd_fun = interp1d(
-            self.ev_times / 86400 + mjdref,
+            self.ev_times / 86400 + self.mjdref,
             self.time_corr / 86400,
             bounds_error=False,
             fill_value="extrapolate",
@@ -202,7 +206,7 @@ class BasePhaseogram(object):
             fdot=fdot,
             fddot=fddot,
             plot=False,
-            pepoch=pepoch,
+            pepoch=self.pepoch,
         )
 
         self.phaseogr, phases, times, additional_info = normalized_phaseogram(
@@ -215,7 +219,7 @@ class BasePhaseogram(object):
             fdot=fdot,
             fddot=fddot,
             plot=False,
-            pepoch=pepoch,
+            pepoch=self.pepoch,
         )
 
         self.phases, self.times = phases, times
@@ -233,13 +237,13 @@ class BasePhaseogram(object):
         ax.set_xlabel("Phase")
 
         def s2d(x):
-            return (x - pepoch) / 86400
+            return (x - self.pepoch) / 86400
 
         def d2s(x):
-            return (x - mjdref) * 86400
+            return (x - self.mjdref) * 86400
 
         secax = ax.secondary_yaxis("left", functions=(s2d, d2s))
-        secax.set_ylabel(f"d from MJD {pepoch / 86400 + mjdref}")
+        secax.set_ylabel(f"d from MJD {self.pepoch / 86400 + self.mjdref}")
 
         plt.setp(ax.get_yticklabels(), visible=False)
         ax.set_yticks([])
@@ -515,7 +519,10 @@ class BasePhaseogram(object):
             tm_string += "T0(MET)        {}\n".format(self.t0)
             tm_string += "PB(s)          {}\n".format(self.orbital_period)
 
-        tm_string += "PEPOCH(MET)    {}\n".format(self.pepoch)
+        tm_string += "# PEPOCH(MET)  {}\n".format(self.pepoch)
+        start, stop = self.gti.min(), self.gti.max()
+        tm_string += "START         {}\n".format(start / 86400 + self.mjdref)
+        tm_string += "FINISH        {}\n".format(stop / 86400 + self.mjdref)
         return tm_string
 
 
@@ -725,15 +732,13 @@ class BinaryPhaseogram(BasePhaseogram):
         self.asini = 0
         self.t0 = None
 
-        if "orbital_period" in kwargs:
-            self.orbital_period = kwargs["orbital_period"]
-            kwargs.pop("orbital_period")
-        if "asini" in kwargs:
-            self.asini = kwargs["asini"]
-            kwargs.pop("asini")
-        if "t0" in kwargs:
-            self.t0 = kwargs["t0"]
-            kwargs.pop("t0")
+        try:
+            self.orbital_period = kwargs.pop("orbital_period")
+            self.asini = kwargs.pop("asini")
+            self.t0 = kwargs.pop("t0")
+        except KeyError:
+            raise RuntimeError("Please specify all binary parameters")
+
         BasePhaseogram.__init__(self, *args, **kwargs)
 
     def _construct_widgets(self):

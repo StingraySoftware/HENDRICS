@@ -5,6 +5,7 @@ import numpy as np
 from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
 from hendrics.efsearch import main_zsearch
 from hendrics.phaseogram import main_phaseogram, run_interactive_phaseogram
+from hendrics.phaseogram import InteractivePhaseogram, BinaryPhaseogram
 from hendrics.base import hen_root
 from hendrics.fold import HAS_PINT
 from hendrics.plot import plot_folding
@@ -112,6 +113,19 @@ class TestPhaseogram:
                 norm,
             ]
         )
+
+    def test_phaseogram_all_defaults(self):
+        times = [0, 3., 4.]
+        with pytest.warns(UserWarning) as record:
+            _ = InteractivePhaseogram(times, 1., test=True)
+        assert np.any(["MJDREF not set." in r.message.args[0] for r in record])
+
+    def test_binary_all_no_orb(self):
+        times = [0, 3., 4.]
+        with pytest.raises(RuntimeError) as excinfo:
+            # Missing t0
+            _ = BinaryPhaseogram(times, 1., orbital_period=3., asini=3.)
+        assert "Please specify all binary parameters" in str(excinfo.value)
 
     def test_phaseogram_input_norm_invalid(self):
         evfile = self.dum

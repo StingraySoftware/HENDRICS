@@ -841,7 +841,7 @@ def _split_high_precision_number(varname, var, probesize):
             var_log10 = np.floor(np.log10(dum))
 
         var = np.asarray(var) / (10.0 ** var_log10)
-        var_I = np.floor(var).astype(np.long)
+        var_I = np.floor(var).astype(int)
         var_F = np.array(var - var_I, dtype=np.double)
     else:
         if np.abs(var) < 1 and np.abs(var) > 0.0:

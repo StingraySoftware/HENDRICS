@@ -25,7 +25,7 @@ def treat_event_file(
     length_split=None,
     randomize_by=None,
     discard_calibration=False,
-    additional_columns=None
+    additional_columns=None,
 ):
     """Read data from an event file, with no external GTI information.
 
@@ -52,8 +52,12 @@ def treat_event_file(
     # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
     try:
-        events = EventList.read(filename, format_="hea", gtistring=gtistring,
-                                additional_columns=additional_columns)
+        events = EventList.read(
+            filename,
+            format_="hea",
+            gtistring=gtistring,
+            additional_columns=additional_columns,
+        )
     except TypeError:  # pragma: no cover
         evtdata = load_events_and_gtis(filename, gtistring=gtistring)
         events = evtdata.ev_list

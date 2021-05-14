@@ -48,7 +48,7 @@ HENaccelsearch
       --fmax FMAX          Maximum frequency to search, in Hz
       --nproc NPROC        Number of processors to use
       --zmax ZMAX          Maximum acceleration (in spectral bins)
-      --delta-z DELTA_Z    Fdot step for search
+      --delta-z DELTA_Z    Fdot step for search (1 is the default resolution)
       --interbin           Use interbinning
       --pad-to-double      Pad to the double of bins (sort-of interbinning)
       --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
@@ -753,8 +753,8 @@ HENreadevents
     usage: HENreadevents [-h] [--noclobber] [-g] [--discard-calibration]
                          [-l LENGTH_SPLIT] [--min-length MIN_LENGTH]
                          [--gti-string GTI_STRING] [--randomize-by RANDOMIZE_BY]
-                         [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
-                         [--nproc NPROC]
+                         [--additional ADDITIONAL [ADDITIONAL ...]] [-o OUTFILE]
+                         [--loglevel LOGLEVEL] [--debug] [--nproc NPROC]
                          files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
@@ -778,6 +778,8 @@ HENreadevents
       --randomize-by RANDOMIZE_BY
                             Randomize event arrival times by this amount (e.g. it
                             might be the 0.073-s frame time in XMM)
+      --additional ADDITIONAL [ADDITIONAL ...]
+                            Additional columns to be read from the FITS file
       -o OUTFILE, --outfile OUTFILE
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -928,7 +930,7 @@ HENsumfspec
       -h, --help            show this help message and exit
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_{c,}pds.{nc,p}
+                            tot_(c)pds.p
 
 
 HENvarenergy

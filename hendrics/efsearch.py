@@ -1486,7 +1486,7 @@ def _common_main(args, func):
             emax=args.emax,
             mjdref=mjdref,
             pepoch=mjdref + ref_time / 86400,
-            oversample=args.oversample
+            oversample=args.oversample,
         )
         efperiodogram.upperlim = pf_from_ssig(np.max(stats), events.time.size)
 
@@ -1722,7 +1722,10 @@ def main_accelsearch(args=None):
         help="Maximum acceleration (in spectral bins)",
     )
     parser.add_argument(
-        "--delta-z", default=1, type=int, help="Fdot step for search"
+        "--delta-z",
+        default=1,
+        type=float,
+        help="Fdot step for search (1 is the default resolution)",
     )
     parser.add_argument(
         "--interbin",
