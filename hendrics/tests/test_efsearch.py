@@ -433,7 +433,7 @@ class TestEFsearch:
                 "--fast",
                 "--find-candidates",
                 "--oversample",
-                "4"
+                "4",
             ]
         )
         outfile = "events_Z22_9.85-9.95Hz_fast" + HEN_FILE_EXTENSION
@@ -478,16 +478,7 @@ class TestEFsearch:
         evfile = self.dum
         with pytest.warns(UserWarning) as record:
             _ = main_zsearch(
-                [
-                    evfile,
-                    "-f",
-                    "9.85",
-                    "-F",
-                    "9.95",
-                    "-n",
-                    "2",
-                    "--fast",
-                ]
+                [evfile, "-f", "9.85", "-F", "9.95", "-n", "2", "--fast",]
             )
         assert np.any(
             [
@@ -714,7 +705,17 @@ class TestEFsearch:
         evfile = self.dum
         with pytest.warns(UserWarning) as record:
             outfile = main_accelsearch(
-                [evfile, "--fmin", "1", "--fmax", "10", "--zmax", "1"]
+                [
+                    evfile,
+                    "--fmin",
+                    "1",
+                    "--fmax",
+                    "10",
+                    "--zmax",
+                    "1",
+                    "--delta-z",
+                    "0.5",
+                ]
             )
         assert np.any(
             [
