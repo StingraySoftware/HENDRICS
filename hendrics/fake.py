@@ -7,6 +7,7 @@ import copy
 import numpy as np
 import numpy.random as ra
 from astropy import log
+from astropy.io.fits import Header
 from astropy.logger import AstropyUserWarning
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
@@ -184,6 +185,42 @@ def filter_for_deadtime(
     return retval
 
 
+def _fill_in_default_information(tbheader):
+    tbheader["OBSERVER"] = "Edwige Bubble"
+    tbheader["COMMENT"] = (
+        "FITS (Flexible Image Transport System) format is"
+        " defined in 'Astronomy and Astrophysics', volume"
+        " 376, page 359; bibcode: 2001A&A...376..359H"
+    )
+    tbheader["OBS_ID"] = ("00000000001", "Observation ID")
+    tbheader["TARG_ID"] = (0, "Target ID")
+    tbheader["OBJECT"] = ("Fake X-1", "Name of observed object")
+    tbheader["RA_OBJ"] = (0.0, "[deg] R.A. Object")
+    tbheader["DEC_OBJ"] = (0.0, "[deg] Dec Object")
+    tbheader["RA_NOM"] = (
+        0.0,
+        "Right Ascension used for barycenter corrections",
+    )
+    tbheader["DEC_NOM"] = (0.0, "Declination used for barycenter corrections")
+    tbheader["RA_PNT"] = (0.0, "[deg] RA pointing")
+    tbheader["DEC_PNT"] = (0.0, "[deg] Dec pointing")
+    tbheader["PA_PNT"] = (0.0, "[deg] Position angle (roll)")
+    tbheader["EQUINOX"] = (2.000e03, "Equinox of celestial coord system")
+    tbheader["RADECSYS"] = ("FK5", "Coordinate Reference System")
+    tbheader["TASSIGN"] = ("SATELLITE", "Time assigned by onboard clock")
+    tbheader["TIMESYS"] = ("TDB", "All times in this file are TDB")
+    tbheader["TIMEREF"] = (
+        "SOLARSYSTEM",
+        "Times are pathlength-corrected to barycenter",
+    )
+    tbheader["CLOCKAPP"] = (False, "TRUE if timestamps corrected by gnd sware")
+    tbheader["COMMENT"] = (
+        "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
+    )
+    tbheader["TIMEUNIT"] = ("s", "unit for time keywords")
+    return tbheader
+
+
 def generate_fake_fits_observation(
     event_list=None,
     filename=None,
@@ -233,12 +270,21 @@ def generate_fake_fits_observation(
     from astropy.io import fits
     import numpy.random as ra
 
+    inheader = None
     if event_list is None:
         tstart = assign_value_if_none(tstart, 8e7)
         tstop = assign_value_if_none(tstop, tstart + 1025)
         ev_list = sorted(ra.uniform(tstart, tstop, 1000))
+        gti = assign_value_if_none(gti, np.array([[tstart, tstop]]))
     else:
+        if hasattr(event_list, "header") and event_list.header is not None:
+            inheader = Header.fromstring(event_list.header)
         ev_list = event_list.time
+        gti = assign_value_if_none(event_list.gti, np.asarray([[ev_list[0], ev_list[-1]]]))
+        mission = assign_value_if_none(mission, event_list.mission)
+        instr = assign_value_if_none(instr, event_list.instr)
+        tstart = assign_value_if_none(tstart, gti[0, 0])
+        tstop = assign_value_if_none(tstop, gti[-1, 1])
 
     if hasattr(event_list, "pi") and event_list.pi is not None:
         pi = event_list.pi
@@ -250,9 +296,6 @@ def generate_fake_fits_observation(
     else:
         cal_pi = pi / 3
 
-    tstart = assign_value_if_none(tstart, np.floor(ev_list[0]))
-    tstop = assign_value_if_none(tstop, np.ceil(ev_list[-1]))
-    gti = assign_value_if_none(gti, np.array([[tstart, tstop]]))
     filename = assign_value_if_none(filename, "events.evt")
     livetime = assign_value_if_none(livetime, tstop - tstart)
 
@@ -298,32 +341,18 @@ def generate_fake_fits_observation(
     tbhdu.name = "EVENTS"
 
     # ---- Fake lots of information ----
+
     tbheader = tbhdu.header
-    tbheader["OBSERVER"] = "Edwige Bubble"
-    tbheader["COMMENT"] = (
-        "FITS (Flexible Image Transport System) format is"
-        " defined in 'Astronomy and Astrophysics', volume"
-        " 376, page 359; bibcode: 2001A&A...376..359H"
+    tbheader = _fill_in_default_information(tbheader)
+    if inheader is not None:
+        tbheader.update(inheader)
+
+    tbheader["TSTART"] = (
+        tstart,
+        "Elapsed seconds since MJDREF at start of file",
     )
     tbheader["TELESCOP"] = (mission, "Telescope (mission) name")
     tbheader["INSTRUME"] = (instr, "Instrument name")
-    tbheader["OBS_ID"] = ("00000000001", "Observation ID")
-    tbheader["TARG_ID"] = (0, "Target ID")
-    tbheader["OBJECT"] = ("Fake X-1", "Name of observed object")
-    tbheader["RA_OBJ"] = (0.0, "[deg] R.A. Object")
-    tbheader["DEC_OBJ"] = (0.0, "[deg] Dec Object")
-    tbheader["RA_NOM"] = (
-        0.0,
-        "Right Ascension used for barycenter corrections",
-    )
-    tbheader["DEC_NOM"] = (0.0, "Declination used for barycenter corrections")
-    tbheader["RA_PNT"] = (0.0, "[deg] RA pointing")
-    tbheader["DEC_PNT"] = (0.0, "[deg] Dec pointing")
-    tbheader["PA_PNT"] = (0.0, "[deg] Position angle (roll)")
-    tbheader["EQUINOX"] = (2.000e03, "Equinox of celestial coord system")
-    tbheader["RADECSYS"] = ("FK5", "Coordinate Reference System")
-    tbheader["TASSIGN"] = ("SATELLITE", "Time assigned by onboard clock")
-    tbheader["TIMESYS"] = ("TDB", "All times in this file are TDB")
     tbheader["MJDREFI"] = (
         int(mjdref),
         "TDB time reference; Modified Julian Day (int)",
@@ -331,19 +360,6 @@ def generate_fake_fits_observation(
     tbheader["MJDREFF"] = (
         mjdref - int(mjdref),
         "TDB time reference; Modified Julian Day (frac)",
-    )
-    tbheader["TIMEREF"] = (
-        "SOLARSYSTEM",
-        "Times are pathlength-corrected to barycenter",
-    )
-    tbheader["CLOCKAPP"] = (False, "TRUE if timestamps corrected by gnd sware")
-    tbheader["COMMENT"] = (
-        "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
-    )
-    tbheader["TIMEUNIT"] = ("s", "unit for time keywords")
-    tbheader["TSTART"] = (
-        tstart,
-        "Elapsed seconds since MJDREF at start of file",
     )
     tbheader["TSTOP"] = (tstop, "Elapsed seconds since MJDREF at end of file")
     tbheader["LIVETIME"] = (livetime, "On-source time")
@@ -380,11 +396,8 @@ def generate_fake_fits_observation(
 
 
 def _read_event_list(filename):
-    if filename is not None:
-        warnings.warn(
-            "Input event lists not yet implemented", AstropyUserWarning
-        )
-    return None, None
+    ev_list = load_events(filename)
+    return ev_list
 
 
 def _read_light_curve(filename):
