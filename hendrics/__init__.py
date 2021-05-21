@@ -24,48 +24,30 @@ if not _ASTROPY_SETUP_:
         HAS_NETCDF = False
         pass
 
-    import copy
-    import numpy as np
-    import stingray.utils
-    from stingray.events import EventList
+    import stingray
+    from .compat import (
+        _MonkeyPatchedEventList,
+        filter_for_deadtime,
+        get_deadtime_mask,
+    )
 
-    # Patch stingray.utils
-    def _root_squared_mean(array):
-        import numpy as np
-
-        array = np.asarray(array)
-        return np.sqrt(np.sum(array ** 2)) / len(array)
-
-    stingray.utils._root_squared_mean = _root_squared_mean
-
-    class _MonkeyPatchedEventList(EventList):
-        def apply_mask(self, mask, inplace=False):  # pragma: no cover
-            """For compatibility with old stingray version.
-
-            Examples
-            --------
-            >>> evt = _MonkeyPatchedEventList(time=[0, 1, 2])
-            >>> newev0 = evt.apply_mask([True, True, False], inplace=False);
-            >>> newev1 = evt.apply_mask([True, True, False], inplace=True);
-            >>> np.allclose(newev0.time, [0, 1])
-            True
-            >>> np.allclose(newev1.time, [0, 1])
-            True
-            >>> evt is newev1
-            True
-            """
-            if inplace:
-                new_ev = self
-            else:
-                new_ev = copy.deepcopy(self)
-            for attr in "time", "energy", "pi", "cal_pi":
-                if hasattr(new_ev, attr) and getattr(new_ev, attr) is not None:
-                    setattr(new_ev, attr, getattr(new_ev, attr)[mask])
-            return new_ev
+    from .compat import (
+        prange,
+        array_take,
+        HAS_NUMBA,
+        njit,
+        vectorize,
+        float32,
+        float64,
+        int32,
+        int64,
+    )
 
     try:
-        e = EventList(time=[1, 2, 3])
+        e = stingray.events.EventList(time=[1, 2, 3])
         e.energy = None
         e.apply_mask([True, True, False])
     except (TypeError, AttributeError):
         stingray.events.EventList = _MonkeyPatchedEventList
+        stingray.filters.filter_for_deadtime = filter_for_deadtime
+        stingray.filters.get_deadtime_mask = get_deadtime_mask

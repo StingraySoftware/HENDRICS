@@ -150,7 +150,7 @@ class BasePhaseogram(object):
         self.nph = nph
         if mjdref is None:
             warnings.warn("MJDREF not set. All MJD values will be incorrect.")
-        self.mjdref = assign_value_if_none(mjdref, 0.)
+        self.mjdref = assign_value_if_none(mjdref, 0.0)
         self.ev_times = np.asarray(ev_times)
         self.gti = gti
         if gti is None:

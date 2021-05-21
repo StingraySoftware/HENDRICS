@@ -122,7 +122,7 @@ def test_deadtime_mask_par():
         events, 0.11, bkg_ev_list=bkg_events, paralyzable=True, return_all=True
     )
 
-    assert np.all(filt_events == events[info.mask])
+    assert np.allclose(filt_events, [2.0, 2.2, 3.0])
 
 
 def test_deadtime_conversion():
