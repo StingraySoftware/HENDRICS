@@ -245,6 +245,11 @@ class TestFake(object):
         command = f"-e {self.first_event_file} -o {newfile}"
         _ = hen.fake.main(command.split())
         assert os.path.exists(newfile)
+        with fits.open(newfile) as hdulist:
+            for hdu in hdulist:
+                assert hdu.verify_checksum() == 1
+                assert hdu.verify_datasum() == 1
+
         newfiles = hen.read_events.treat_event_file(newfile)
         events0 = load_events(newfiles[0])
         events1 = load_events(self.first_event_file)

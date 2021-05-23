@@ -48,6 +48,9 @@ class TestPhasetag:
         )
 
         hdulist = fits.open(self.phasetagged)
+        for hdu in hdulist:
+            assert hdu.verify_checksum() == 1
+            assert hdu.verify_datasum() == 1
 
         times = np.array(hdulist[1].data["TIME"])
         phases = np.array(hdulist[1].data["Phase"])

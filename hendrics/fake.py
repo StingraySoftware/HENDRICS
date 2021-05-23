@@ -229,7 +229,7 @@ def generate_fake_fits_observation(
 
     thdulist = fits.HDUList(all_new_hdus)
 
-    thdulist.writeto(filename, overwrite=True)
+    thdulist.writeto(filename, overwrite=True, checksum=True)
     return thdulist
 
 

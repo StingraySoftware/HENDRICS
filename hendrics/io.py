@@ -996,7 +996,6 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, append=False):
 
     shape = np.shape(cols)
     ndim = len(shape)
-    print(shape, ndim)
 
     if ndim == 1:
         cols = [cols]
