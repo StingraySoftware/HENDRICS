@@ -347,7 +347,7 @@ def phase_tag_fits(
         else:
             newhdulist.append(h.copy())
 
-    newhdulist.writeto(outfile, overwrite=True)
+    newhdulist.writeto(outfile, overwrite=True, checksum=True)
     hdulist.close()
 
     save_as_qdp(
