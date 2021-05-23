@@ -262,12 +262,14 @@ class TestFullRun(object):
 
     def test_cpds_wrong_norm(self):
         """Test CPDS production."""
-        command = "{0} {1} -f 128 --save-dyn -k CPDS --norm blablabla -o {2}".format(
-            os.path.join(self.datadir, "monol_testA_E3-50_lc")
-            + HEN_FILE_EXTENSION,
-            os.path.join(self.datadir, "monol_testB_E3-50_lc")
-            + HEN_FILE_EXTENSION,
-            os.path.join(self.datadir, "monol_test_E3-50"),
+        command = (
+            "{0} {1} -f 128 --save-dyn -k CPDS --norm blablabla -o {2}".format(
+                os.path.join(self.datadir, "monol_testA_E3-50_lc")
+                + HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, "monol_testB_E3-50_lc")
+                + HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, "monol_test_E3-50"),
+            )
         )
         with pytest.warns(UserWarning) as record:
             hen.fspec.main(command.split())

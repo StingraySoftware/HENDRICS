@@ -15,6 +15,7 @@ from stingray.events import EventList
 from hendrics.tests import _dummy_par
 from hendrics import fake, calibrate, read_events, io
 from hendrics.fake import scramble
+from hendrics.io import load_events
 from hendrics.fold import HAS_PINT
 
 try:
@@ -121,7 +122,7 @@ def test_deadtime_mask_par():
         events, 0.11, bkg_ev_list=bkg_events, paralyzable=True, return_all=True
     )
 
-    assert np.all(filt_events == events[info.mask])
+    assert np.allclose(filt_events, [2.0, 2.2, 3.0])
 
 
 def test_deadtime_conversion():
@@ -237,6 +238,19 @@ class TestFake(object):
         command = f"{self.first_event_file}"
         newfile = hen.fake.main_scramble(command.split())
         assert os.path.exists(newfile)
+        os.remove(newfile)
+
+    def test_fake_fits_input_events_file(self):
+        newfile = "bububu.fit"
+        command = f"-e {self.first_event_file} -o {newfile}"
+        _ = hen.fake.main(command.split())
+        assert os.path.exists(newfile)
+        newfiles = hen.read_events.treat_event_file(newfile)
+        events0 = load_events(newfiles[0])
+        events1 = load_events(self.first_event_file)
+        assert np.allclose(events0.time, events1.time)
+        assert np.allclose(events0.gti, events1.gti)
+
         os.remove(newfile)
 
     def test_scramble_uncalibrated_events_file_raises(self):

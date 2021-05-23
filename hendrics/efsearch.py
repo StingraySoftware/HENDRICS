@@ -1851,8 +1851,8 @@ def main_accelsearch(args=None):
         results["fmax"] = fmax
         results["zmax"] = zmax
         if hasattr(events, "mission"):
-            results["mission"] = events.mission
-        results["instr"] = events.instr
+            results["mission"] = events.mission.replace(",", "+")
+        results["instr"] = events.instr.replace(",", "+")
         results["mjdref"] = np.double(events.mjdref)
         results["pepoch"] = events.mjdref + results["time"] / 86400.0
 

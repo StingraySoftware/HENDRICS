@@ -251,7 +251,8 @@ class TestReadEvents:
         assert "mjdref" in data
         gtis = data["gti"]
         lengths = np.array([g1 - g0 for (g0, g1) in gtis])
-        assert np.all(lengths <= 100)
+        # add an epsilon for numerical error
+        assert np.all(lengths <= 100 + 1e-7)
 
     def test_split_events(self):
         treat_event_file(self.fits_fileA)

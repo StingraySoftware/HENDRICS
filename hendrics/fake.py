@@ -7,10 +7,12 @@ import copy
 import numpy as np
 import numpy.random as ra
 from astropy import log
+from astropy.io.fits import Header
 from astropy.logger import AstropyUserWarning
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
+from stingray.filters import filter_for_deadtime
 from .io import get_file_format, load_lcurve
 from .io import load_events, save_events, HEN_FILE_EXTENSION
 from .base import _empty, r_in
@@ -19,169 +21,40 @@ from .lcurve import lcurve_from_fits
 from .base import njit, deorbit_events
 
 
-def _paralyzable_dead_time(event_list, dead_time):
-    mask = np.ones(len(event_list), dtype=bool)
-    dead_time_end = event_list + dead_time
-    bad = dead_time_end[:-1] > event_list[1:]
-    # Easy: paralyzable case. Here, events coming during dead time produce
-    # more dead time. So...
-    mask[1:][bad] = False
-
-    return event_list[mask], mask
-
-
-@njit()
-def _nonpar_core(event_list, dead_time_end, mask):
-    for i in range(1, len(event_list)):
-        if event_list[i] < dead_time_end[i - 1]:
-            dead_time_end[i] = dead_time_end[i - 1]
-            mask[i] = False
-    return mask
-
-
-def _non_paralyzable_dead_time(event_list, dead_time):
-    event_list_dbl = (event_list - event_list[0]).astype(np.double)
-    dead_time_end = event_list_dbl + np.double(dead_time)
-    mask = np.ones(event_list_dbl.size, dtype=bool)
-    mask = _nonpar_core(event_list_dbl, dead_time_end, mask)
-    return event_list[mask], mask
-
-
-def filter_for_deadtime(
-    event_list,
-    deadtime,
-    bkg_ev_list=None,
-    dt_sigma=None,
-    paralyzable=False,
-    additional_data=None,
-    return_all=False,
-):
-    """Filter an event list for a given dead time.
-
-    Parameters
-    ----------
-    ev_list : array-like
-        The event list
-    deadtime: float
-        The (mean, if not constant) value of deadtime
-
-    Returns
-    -------
-    new_ev_list : array-like
-        The filtered event list
-    additional_output : dict
-        Object with all the following attributes. Only returned if
-        `return_all` is True
-    uf_events : array-like
-        Unfiltered event list (events + background)
-    is_event : array-like
-        Boolean values; True if event, False if background
-    deadtime : array-like
-        Dead time values
-    bkg : array-like
-        The filtered background event list
-    mask : array-like, optional
-        The mask that filters the input event list and produces the output
-        event list.
-
-    Other Parameters
-    ----------------
-    bkg_ev_list : array-like
-        A background event list that affects dead time
-    dt_sigma : float
-        The standard deviation of a non-constant dead time around deadtime.
-    return_all : bool
-        If True, return the mask that filters the input event list to obtain
-        the output event list.
-
-    """
-    additional_output = _empty()
-    if not isinstance(event_list, EventList):
-        event_list_obj = EventList(event_list)
-    else:
-        event_list_obj = event_list
-
-    ev_list = event_list_obj.time
-    additional_arrays = {}
-    for arr in "pi,energy".split(","):
-        if hasattr(event_list_obj, arr):
-            values = getattr(event_list_obj, arr)
-            if values is not None:
-                additional_arrays[arr] = values
-
-    if deadtime <= 0.0:
-        return copy.copy(event_list)
-
-    # Create the total lightcurve, and a "kind" array that keeps track
-    # of the events classified as "signal" (True) and "background" (False)
-    if bkg_ev_list is not None:
-        Nback = bkg_ev_list.size
-        tot_ev_list = np.append(ev_list, bkg_ev_list)
-        ev_kind = np.append(
-            np.ones(len(ev_list), dtype=bool),
-            np.zeros(len(bkg_ev_list), dtype=bool),
-        )
-        order = np.argsort(tot_ev_list)
-        tot_ev_list = tot_ev_list[order]
-        ev_kind = ev_kind[order]
-        for arr in additional_arrays.keys():
-            newarr = np.append(additional_arrays[arr], np.zeros(Nback))
-            additional_arrays[arr] = newarr[order]
-
-        del order
-    else:
-        tot_ev_list = ev_list
-        ev_kind = np.ones(len(ev_list), dtype=bool)
-
-    nevents = len(tot_ev_list)
-    all_ev_kind = ev_kind.copy()
-
-    if dt_sigma is not None:
-        deadtime_values = ra.normal(deadtime, dt_sigma, nevents)
-    else:
-        deadtime_values = np.zeros(nevents) + deadtime
-
-    initial_len = len(tot_ev_list)
-
-    if paralyzable:
-        tot_ev_list, saved_mask = _paralyzable_dead_time(
-            tot_ev_list, deadtime_values
-        )
-
-    else:
-        tot_ev_list, saved_mask = _non_paralyzable_dead_time(
-            tot_ev_list, deadtime_values
-        )
-
-    ev_kind = ev_kind[saved_mask]
-    deadtime_values = deadtime_values[saved_mask]
-    final_len = len(tot_ev_list)
-    log.info(
-        "filter_for_deadtime: "
-        "{0}/{1} events rejected".format(initial_len - final_len, initial_len)
+def _fill_in_default_information(tbheader):
+    tbheader["OBSERVER"] = "Edwige Bubble"
+    tbheader["COMMENT"] = (
+        "FITS (Flexible Image Transport System) format is"
+        " defined in 'Astronomy and Astrophysics', volume"
+        " 376, page 359; bibcode: 2001A&A...376..359H"
     )
-
-    for arr in additional_arrays.keys():
-        additional_arrays[arr] = additional_arrays[arr][saved_mask][ev_kind]
-
-    retval = EventList(
-        time=tot_ev_list[ev_kind],
-        mjdref=event_list_obj.mjdref,
-        **additional_arrays,
+    tbheader["OBS_ID"] = ("00000000001", "Observation ID")
+    tbheader["TARG_ID"] = (0, "Target ID")
+    tbheader["OBJECT"] = ("Fake X-1", "Name of observed object")
+    tbheader["RA_OBJ"] = (0.0, "[deg] R.A. Object")
+    tbheader["DEC_OBJ"] = (0.0, "[deg] Dec Object")
+    tbheader["RA_NOM"] = (
+        0.0,
+        "Right Ascension used for barycenter corrections",
     )
-
-    if not isinstance(event_list, EventList):
-        retval = retval.time
-
-    if return_all:
-        additional_output.uf_events = tot_ev_list
-        additional_output.is_event = ev_kind
-        additional_output.deadtime = deadtime_values
-        additional_output.mask = saved_mask[all_ev_kind]
-        additional_output.bkg = tot_ev_list[np.logical_not(ev_kind)]
-        retval = [retval, additional_output]
-
-    return retval
+    tbheader["DEC_NOM"] = (0.0, "Declination used for barycenter corrections")
+    tbheader["RA_PNT"] = (0.0, "[deg] RA pointing")
+    tbheader["DEC_PNT"] = (0.0, "[deg] Dec pointing")
+    tbheader["PA_PNT"] = (0.0, "[deg] Position angle (roll)")
+    tbheader["EQUINOX"] = (2.000e03, "Equinox of celestial coord system")
+    tbheader["RADECSYS"] = ("FK5", "Coordinate Reference System")
+    tbheader["TASSIGN"] = ("SATELLITE", "Time assigned by onboard clock")
+    tbheader["TIMESYS"] = ("TDB", "All times in this file are TDB")
+    tbheader["TIMEREF"] = (
+        "SOLARSYSTEM",
+        "Times are pathlength-corrected to barycenter",
+    )
+    tbheader["CLOCKAPP"] = (False, "TRUE if timestamps corrected by gnd sware")
+    tbheader["COMMENT"] = (
+        "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
+    )
+    tbheader["TIMEUNIT"] = ("s", "unit for time keywords")
+    return tbheader
 
 
 def generate_fake_fits_observation(
@@ -233,12 +106,23 @@ def generate_fake_fits_observation(
     from astropy.io import fits
     import numpy.random as ra
 
+    inheader = None
     if event_list is None:
         tstart = assign_value_if_none(tstart, 8e7)
         tstop = assign_value_if_none(tstop, tstart + 1025)
         ev_list = sorted(ra.uniform(tstart, tstop, 1000))
+        gti = assign_value_if_none(gti, np.array([[tstart, tstop]]))
     else:
+        if hasattr(event_list, "header") and event_list.header is not None:
+            inheader = Header.fromstring(event_list.header)
         ev_list = event_list.time
+        gti = assign_value_if_none(
+            event_list.gti, np.asarray([[ev_list[0], ev_list[-1]]])
+        )
+        mission = assign_value_if_none(mission, event_list.mission)
+        instr = assign_value_if_none(instr, event_list.instr)
+        tstart = assign_value_if_none(tstart, gti[0, 0])
+        tstop = assign_value_if_none(tstop, gti[-1, 1])
 
     if hasattr(event_list, "pi") and event_list.pi is not None:
         pi = event_list.pi
@@ -250,9 +134,6 @@ def generate_fake_fits_observation(
     else:
         cal_pi = pi / 3
 
-    tstart = assign_value_if_none(tstart, np.floor(ev_list[0]))
-    tstop = assign_value_if_none(tstop, np.ceil(ev_list[-1]))
-    gti = assign_value_if_none(gti, np.array([[tstart, tstop]]))
     filename = assign_value_if_none(filename, "events.evt")
     livetime = assign_value_if_none(livetime, tstop - tstart)
 
@@ -298,32 +179,18 @@ def generate_fake_fits_observation(
     tbhdu.name = "EVENTS"
 
     # ---- Fake lots of information ----
+
     tbheader = tbhdu.header
-    tbheader["OBSERVER"] = "Edwige Bubble"
-    tbheader["COMMENT"] = (
-        "FITS (Flexible Image Transport System) format is"
-        " defined in 'Astronomy and Astrophysics', volume"
-        " 376, page 359; bibcode: 2001A&A...376..359H"
+    tbheader = _fill_in_default_information(tbheader)
+    if inheader is not None:
+        tbheader.update(inheader)
+
+    tbheader["TSTART"] = (
+        tstart,
+        "Elapsed seconds since MJDREF at start of file",
     )
     tbheader["TELESCOP"] = (mission, "Telescope (mission) name")
     tbheader["INSTRUME"] = (instr, "Instrument name")
-    tbheader["OBS_ID"] = ("00000000001", "Observation ID")
-    tbheader["TARG_ID"] = (0, "Target ID")
-    tbheader["OBJECT"] = ("Fake X-1", "Name of observed object")
-    tbheader["RA_OBJ"] = (0.0, "[deg] R.A. Object")
-    tbheader["DEC_OBJ"] = (0.0, "[deg] Dec Object")
-    tbheader["RA_NOM"] = (
-        0.0,
-        "Right Ascension used for barycenter corrections",
-    )
-    tbheader["DEC_NOM"] = (0.0, "Declination used for barycenter corrections")
-    tbheader["RA_PNT"] = (0.0, "[deg] RA pointing")
-    tbheader["DEC_PNT"] = (0.0, "[deg] Dec pointing")
-    tbheader["PA_PNT"] = (0.0, "[deg] Position angle (roll)")
-    tbheader["EQUINOX"] = (2.000e03, "Equinox of celestial coord system")
-    tbheader["RADECSYS"] = ("FK5", "Coordinate Reference System")
-    tbheader["TASSIGN"] = ("SATELLITE", "Time assigned by onboard clock")
-    tbheader["TIMESYS"] = ("TDB", "All times in this file are TDB")
     tbheader["MJDREFI"] = (
         int(mjdref),
         "TDB time reference; Modified Julian Day (int)",
@@ -331,19 +198,6 @@ def generate_fake_fits_observation(
     tbheader["MJDREFF"] = (
         mjdref - int(mjdref),
         "TDB time reference; Modified Julian Day (frac)",
-    )
-    tbheader["TIMEREF"] = (
-        "SOLARSYSTEM",
-        "Times are pathlength-corrected to barycenter",
-    )
-    tbheader["CLOCKAPP"] = (False, "TRUE if timestamps corrected by gnd sware")
-    tbheader["COMMENT"] = (
-        "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
-    )
-    tbheader["TIMEUNIT"] = ("s", "unit for time keywords")
-    tbheader["TSTART"] = (
-        tstart,
-        "Elapsed seconds since MJDREF at start of file",
     )
     tbheader["TSTOP"] = (tstop, "Elapsed seconds since MJDREF at end of file")
     tbheader["LIVETIME"] = (livetime, "On-source time")
@@ -380,11 +234,8 @@ def generate_fake_fits_observation(
 
 
 def _read_event_list(filename):
-    if filename is not None:
-        warnings.warn(
-            "Input event lists not yet implemented", AstropyUserWarning
-        )
-    return None, None
+    ev_list = load_events(filename)
+    return ev_list
 
 
 def _read_light_curve(filename):

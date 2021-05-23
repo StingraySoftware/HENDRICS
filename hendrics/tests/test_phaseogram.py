@@ -115,16 +115,16 @@ class TestPhaseogram:
         )
 
     def test_phaseogram_all_defaults(self):
-        times = [0, 3., 4.]
+        times = [0, 3.0, 4.0]
         with pytest.warns(UserWarning) as record:
-            _ = InteractivePhaseogram(times, 1., test=True)
+            _ = InteractivePhaseogram(times, 1.0, test=True)
         assert np.any(["MJDREF not set." in r.message.args[0] for r in record])
 
     def test_binary_all_no_orb(self):
-        times = [0, 3., 4.]
+        times = [0, 3.0, 4.0]
         with pytest.raises(RuntimeError) as excinfo:
             # Missing t0
-            _ = BinaryPhaseogram(times, 1., orbital_period=3., asini=3.)
+            _ = BinaryPhaseogram(times, 1.0, orbital_period=3.0, asini=3.0)
         assert "Please specify all binary parameters" in str(excinfo.value)
 
     def test_phaseogram_input_norm_invalid(self):
