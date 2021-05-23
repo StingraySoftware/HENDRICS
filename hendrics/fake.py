@@ -124,7 +124,6 @@ def generate_fake_fits_observation(
         tstart = assign_value_if_none(tstart, gti[0, 0])
         tstop = assign_value_if_none(tstop, gti[-1, 1])
 
-    print(gti)
     if hasattr(event_list, "pi") and event_list.pi is not None:
         pi = event_list.pi
     else:

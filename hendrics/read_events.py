@@ -120,7 +120,6 @@ def treat_event_file(
                     [[g0, g1] for (g0, g1) in zip(gti0, gti1)]
                 )
                 label = "chunk"
-                print(gti_chunks)
             else:
                 gti_chunks = gtis
                 label = "gti"
