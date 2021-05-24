@@ -183,6 +183,8 @@ class TestFake(object):
                 "XMM",
                 "--ctrate",
                 "2000",
+                "--mjdref",
+                "50814.0",
                 "-o",
                 cls.xmm_fits_file,
             ]
@@ -274,7 +276,9 @@ class TestFake(object):
 
         assert np.allclose(events0.time, events1.time)
         assert np.allclose(events0.gti, events1.gti)
-
+        assert np.isclose(events0.mjdref, events1.mjdref)
+        if "xmm" in fname:
+            assert np.isclose(events0.mjdref, 50814)
         os.remove(newfile)
 
     def test_scramble_uncalibrated_events_file_raises(self):
