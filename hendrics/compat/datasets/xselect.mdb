@@ -1,0 +1,2271 @@
+! This file contains mission-specific information used in XSELECT.
+! It is hierarchically organised in a tree 
+!       Mission:Submission:Detector:Datamode:keyword
+! Any key between Mission and keyword can be omitted. keywords are
+! inherited from higher levels eg the value of ASCA:x is also used
+! for ASCA:SIS0:x and ASCA:SIS0:FAINT:x although the latter two do
+! not appear explicitly. If a keyword appears at multiple levels in
+! the hierarchy then the value for the lowest level is used eg if
+! both ASCA:GIS2:x and ASCA:x exist then for ASCA GIS2 data the former
+! value is used.
+!
+! Mandatory keyword dictionary...
+!
+! submkey               The keyword read from the file to get the SubMission
+! instkey               The keyword read from the file to get the Instrument
+! dmodekey              The keyword read from the file to get the Datamode
+!                       (All three of these keywords can be have a suffix (m:n)
+!                        which means take characters m to n of the keyword 
+!                        value)
+! mkf_def_expr          The global expression for filenames of MKF files
+! mkf_rel_dir           The directory path for MKF files relative to event files
+! time                  The column in the events extension used for time
+! tunits                The units for the time column
+! binsize               The default bin size for light curves
+! x                     The column for sky X-axis
+! y                     The column for sky Y-axis
+! detx                  The column for detector X-axis
+! dety                  The column for detector Y-axis
+! rawx                  The column for raw X-axis
+! rawy                  The column for raw Y-axis
+! gti                   The name of the extension with GTI table
+! events                The name of the extension with event data
+! timeorder             Yes if the events are in time order
+! timepixr              The TIMEPIXR value to use - only set if not in event file
+! instruments           A list of the instruments
+! spbn                  The binning factor for spectra
+! ecol                  The column for spectral information
+! ccol                  The column for CCD number (if required - NONE if not)
+! gcol                  The column for event grade/pattern
+! imagecoord            The default coordinate system for images
+! wmapcoord             The default coordinate system for WMAPs
+! catnum                The extension number for catalog keywords
+! wtmapb                Yes if a WMAP is to be produced
+! wtmapfix              Yes if WMAP pixels outside selected region set to -1
+! lststr                The global expression for event files
+! ofilt                 The default MKF filtering for valid files
+! fbin                  The default binning for images
+! hbin                  The default binning for WMAPs
+! modes                 A list of the datamodes
+! rbnval                Number of channels to which spectra are binned
+! rbnmod                Compression mode for spectral rebinning
+! catcol                A list of keywords used to catalog events files
+! dispcol               A list of keywords used to display the catalog
+! extract               The ftool used to extract images, spectra, and light
+!                       curves. Options are extractor, saextrct, or seextrct
+!
+! Optional keyword dictionary. The value in parentheses is the default used if the
+! keyword is not included.
+!
+! xsiz         (TLMAX)  The keyword giving the max. value of X
+! ysiz         (TLMAX)  The keyword giving the max. value of Y
+! detxsiz      (TLMAX)  The keyword giving the max. value of DETX
+! detysiz      (TLMAX)  The keyword giving the max. value of DETY
+! rawxsiz      (TLMAX)  The keyword giving the max. value of RAWX
+! rawysiz      (TLMAX)  The keyword giving the max. value of RAWY
+! phamax       (TLMAX)  The keyword giving the max. value of ECOL.
+! swmapx       (no)     True if WMAP X axis is inverted from sky
+! swmapy       (no)     True if WMAP Y axis is inverted from sky
+! respscript   (NONE)   The name of the script run to generate the spectral 
+!                       responses.
+! respneedreg  (FALSE)  Set to yes if the response script needs the region file as input
+! extendresp   (FALSE)  If set to yes the spectral response generation has an
+!                       extended source option.
+! adjustgti    (no)     If set to yes then extractor will line output GTIs up
+!                       with CCD frame boundaries.
+!
+ASCA:submkey          NONE
+ASCA:instkey          INSTRUME
+ASCA:dmodekey         DATAMODE
+ASCA:mkf_def_expr     ft*.mkf*
+ASCA:mkf_rel_dir      ../aux
+ASCA:lststr           ad*[hml].*
+ASCA:time             TIME
+ASCA:tunits           s
+ASCA:binsize          16.
+ASCA:x                X
+ASCA:y                Y
+ASCA:xsiz             AXLEN1
+ASCA:ysiz             AXLEN2
+ASCA:detx             DETX
+ASCA:dety             DETY
+ASCA:detxsiz          DET_XSIZ
+ASCA:detysiz          DET_YSIZ
+ASCA:rawx             RAWX
+ASCA:rawy             RAWY
+ASCA:rawxsiz          RAWXBINS
+ASCA:rawysiz          RAWYBINS
+ASCA:phamax           PHA_BINS
+ASCA:gti              STDGTI
+ASCA:events           EVENTS
+ASCA:timeorder        yes
+ASCA:instruments      SIS0 SIS1 GIS2 GIS3
+ASCA:spbn             1
+ASCA:ecol             PI
+ASCA:ccol             CCDID
+ASCA:gcol             NONE
+ASCA:imagecoord       SKY
+ASCA:wmapcoord        DETECTOR
+ASCA:fbin             1
+ASCA:hbin             1
+ASCA:catnum           0
+ASCA:wtmapb           yes
+ASCA:wtmapfix         yes
+ASCA:extract          extractor
+ASCA:grpstr           NONE
+ASCA:extendresp       yes
+ASCA:respneedreg      no
+
+ASCA:SIS0:lststr      ad*s0*[hml].*
+ASCA:SIS1:lststr      ad*s1*[hml].*
+
+ASCA:SIS0:ofilt       ONTIME>100&&NEVENTS>0&&COORDPRO!='ERROR'
+ASCA:SIS0:fbin        4  
+ASCA:SIS0:hbin        8
+ASCA:SIS0:gcol        GRADE
+ASCA:SIS0:respscript  xsl_asca_sis_makeresp
+ASCA:SIS0:modes       FAINT BRIGHT BRIGHT2 FAST
+ASCA:SIS0:dispcol     OBJECT DATAMODE BIT_RATE DATE-OBS TIME-OBS ONTIME NEVENTS S0CCDPOW
+ASCA:SIS0:timepixr    0.5
+
+ASCA:SIS1:ofilt       ONTIME>100&&NEVENTS>0&&COORDPRO!='ERROR'
+ASCA:SIS1:fbin        4  
+ASCA:SIS1:hbin        8
+ASCA:SIS1:gcol        GRADE
+ASCA:SIS1:respscript  xsl_asca_sis_makeresp
+ASCA:SIS1:modes       FAINT BRIGHT BRIGHT2 FAST
+ASCA:SIS1:dispcol     OBJECT DATAMODE BIT_RATE DATE-OBS TIME-OBS ONTIME NEVENTS S1CCDPOW
+ASCA:SIS1:timepixr    0.5
+
+ASCA:SIS0:catcol      TELESCOP INSTRUME OBSERVER OBJECT RA_NOM DEC_NOM COORDPRO DATAMODE BIT_RATE DATE-OBS TIME-OBS TELAPSE CREATOR ONTIME NEVENTS TIMEDEL S0CCDPOW S0_AEPOW S0_AEANL S0_DESTA S0BIASHV S0_ARENA S0_LVENA S0_LVDU0 S0_LVDU1 S0_LVDU2 S0_LVDU3 S0_LVDL0 S0_LVDL1 S0_LVDL2 S0_LVDL3 S0_ARIO0 S0_ARIO1 S0_ARIO2 S0_ARIO3 S0_STAH0 S0_STAH1 S0_STAH2 S0_STAH3 S0_ENDH0 S0_ENDH1 S0_ENDH2 S0_ENDH3 S0BIASOF S0CCDMOD S0CCDLST S0_STAV0 S0_STAV1 S0_STAV2 S0_STAV3 S0_ENDV0 S0_ENDV1 S0_ENDV2 S0_ENDV3 S0_EVTR0 S0_EVTR1 S0_EVTR2 S0_EVTR3 SPLIT_TH S0_SPTR0 S0_SPTR1 S0_SPTR2 S0_SPTR3 S0_GRADE
+ASCA:SIS1:catcol      TELESCOP INSTRUME OBSERVER OBJECT RA_NOM DEC_NOM COORDPRO DATAMODE BIT_RATE DATE-OBS TIME-OBS TELAPSE CREATOR ONTIME NEVENTS TIMEDEL S1CCDPOW S1_AEPOW S1_AEANL S1_DESTA S1BIASHV S1_ARENA S1_LVENA S1_LVDU0 S1_LVDU1 S1_LVDU2 S1_LVDU3 S1_LVDL0 S1_LVDL1 S1_LVDL2 S1_LVDL3 S1_ARIO0 S1_ARIO1 S1_ARIO2 S1_ARIO3 S1_STAH0 S1_STAH1 S1_STAH2 S1_STAH3 S1_ENDH0 S1_ENDH1 S1_ENDH2 S1_ENDH3 S1BIASOF S1CCDMOD S1CCDLST S1_STAV0 S1_STAV1 S1_STAV2 S1_STAV3 S1_ENDV0 S1_ENDV1 S1_ENDV2 S1_ENDV3 S1_EVTR0 S1_EVTR1 S1_EVTR2 S1_EVTR3 SPLIT_TH S1_SPTR0 S1_SPTR1 S1_SPTR2 S1_SPTR3 S1_GRADE
+
+ASCA:SIS0:BRIGHT:rbnval 512
+ASCA:SIS0:BRIGHT:rbnmod BRIGHT2LINEAR
+ASCA:SIS0:BRIGHT2:rbnval 1024
+ASCA:SIS0:BRIGHT2:rbnmod LINEAR
+
+ASCA:SIS0:FAST:rbnval 512
+ASCA:SIS0:FAST:rbnmod BRIGHT2LINEAR
+ASCA:SIS0:FAST:wtmapb no
+ASCA:SIS0:FAST:imagecoord RAW
+ASCA:SIS0:FAST:wmapcoord  RAW
+ASCA:SIS0:FAST:ecol PHA
+
+ASCA:SIS1:BRIGHT:rbnval 512
+ASCA:SIS1:BRIGHT:rbnmod BRIGHT2LINEAR
+ASCA:SIS1:BRIGHT2:rbnval 1024
+ASCA:SIS1:BRIGHT2:rbnmod LINEAR
+
+ASCA:SIS1:FAST:rbnval 512
+ASCA:SIS1:FAST:rbnmod BRIGHT2LINEAR
+ASCA:SIS1:FAST:wtmapb no
+ASCA:SIS1:FAST:imagecoord RAW
+ASCA:SIS1:FAST:wmapcoord  RAW
+ASCA:SIS1:FAST:ecol PHA
+
+
+ASCA:GIS2:lststr       ad*g2*[hml].*
+ASCA:GIS3:lststr       ad*g3*[hml].*
+
+ASCA:GIS2:ofilt        ONTIME>100&&NEVENTS>0&&HV_RED=='OFF'&&HVH_LVL==3&&HVL_LVL==4&&COORDPRO!='ERROR'
+ASCA:GIS2:modes       PH MPC
+ASCA:GIS2:grpstr      GROUP 0 1023 4&show group&exit
+ASCA:GIS2:respscript  xsl_asca_gis_makeresp
+ASCA:GIS2:catcol      TELESCOP INSTRUME OBSERVER OBJECT RA_NOM DEC_NOM COORDPRO DATAMODE BIT_RATE DATE-OBS TIME-OBS TELAPSE CREATOR ONTIME NEVENTS TIMEDEL PHA_BINS RAWXBINS RAWYBINS TIMEBINS RISEBINS SP_BINS POWER BYPASS A_POWER HVH_POW HVL_POW HV_RED HVH_LVL HVL_LVL GAIN LE_DS CPU2 CPU3 CPU_SEL CPU_DSCN RBM_POW RBM_MFLG RBM_AUTO RBM_FLVL RBM_LDL RT_LD RT_UD RT_B_CD ANO_SEL ANO_TUNE POS_DET R_DSCR S_DSCR PH_TUNE MASK_1 M1_LOGIC MASK_2 M2_RGN PH_EVENT X_AN_USE Y_AN_USE CETR_X_P CETR_Y_P CETR_X_F CETR_Y_F R_DSCR_P R_DSCR_F SP_A_L_P SP_A_U_P SP_B_P SP_C_P SP_PH_P SP_A_L_F SP_A_U_F SP_B_F SP_C_F SP_PH_F MASK1_X MASK1_Y M2_XL M2_XU M2_YL M2_YU L1_S_DWN LD_S_DWN M2_S_DWN X_S_DWN 1D_S_DWN C2_PGVER C3_PGVER
+ASCA:GIS2:dispcol     OBJECT DATAMODE BIT_RATE DATE-OBS TIME-OBS ONTIME NEVENTS PHA_BINS
+
+ASCA:GIS2:MPC:ecol    PHAS
+ASCA:GIS2:MPC:events  SPECTRUM
+ASCA:GIS2:MPC:extract saextrct
+
+ASCA:GIS3:ofilt        ONTIME>100&&NEVENTS>0&&HV_RED=='OFF'&&HVH_LVL==3&&HVL_LVL==4&&COORDPRO!='ERROR'
+ASCA:GIS3:modes       PH MPC
+ASCA:GIS3:grpstr      GROUP 0 1023 4&show group&exit
+ASCA:GIS3:respscript  xsl_asca_gis_makeresp
+ASCA:GIS3:catcol      TELESCOP INSTRUME OBSERVER OBJECT RA_NOM DEC_NOM COORDPRO DATAMODE BIT_RATE DATE-OBS TIME-OBS TELAPSE CREATOR ONTIME NEVENTS TIMEDEL PHA_BINS RAWXBINS RAWYBINS TIMEBINS RISEBINS SP_BINS POWER BYPASS A_POWER HVH_POW HVL_POW HV_RED HVH_LVL HVL_LVL GAIN LE_DS CPU2 CPU3 CPU_SEL CPU_DSCN RBM_POW RBM_MFLG RBM_AUTO RBM_FLVL RBM_LDL RT_LD RT_UD RT_B_CD ANO_SEL ANO_TUNE POS_DET R_DSCR S_DSCR PH_TUNE MASK_1 M1_LOGIC MASK_2 M2_RGN PH_EVENT X_AN_USE Y_AN_USE CETR_X_P CETR_Y_P CETR_X_F CETR_Y_F R_DSCR_P R_DSCR_F SP_A_L_P SP_A_U_P SP_B_P SP_C_P SP_PH_P SP_A_L_F SP_A_U_F SP_B_F SP_C_F SP_PH_F MASK1_X MASK1_Y M2_XL M2_XU M2_YL M2_YU L1_S_DWN LD_S_DWN M2_S_DWN X_S_DWN 1D_S_DWN C2_PGVER C3_PGVER
+ASCA:GIS3:dispcol     OBJECT DATAMODE BIT_RATE DATE-OBS TIME-OBS ONTIME NEVENTS PHA_BINS
+
+ASCA:GIS3:MPC:ecol    PHAS
+ASCA:GIS3:MPC:events  SPECTRUM
+ASCA:GIS3:MPC:extract saextrct
+
+
+Astro-E2:submkey            NONE
+Astro-E2:instkey            INSTRUME
+Astro-E2:dmodekey           DATAMODE
+Astro-E2:mkf_def_expr       ae*mkf*
+Astro-E2:mkf_rel_dir        ../aux
+Astro-E2:time               TIME
+Astro-E2:tunits             s
+Astro-E2:binsize          16.
+Astro-E2:x                  X
+Astro-E2:y                  Y
+Astro-E2:xsiz               TLMAX
+Astro-E2:ysiz               TLMAX
+Astro-E2:detx               DETX
+Astro-E2:dety               DETY
+Astro-E2:detxsiz            TLMAX
+Astro-E2:detysiz            TLMAX
+Astro-E2:rawxsiz            TLMAX
+Astro-E2:rawysiz            TLMAX
+Astro-E2:phamax             TLMAX
+Astro-E2:gti                GTI
+Astro-E2:events             EVENTS
+Astro-E2:timeorder          no
+Astro-E2:instruments        XRS XIS-0 XIS-1 XIS-2 XIS-3 XIS-EM0 XIS-EM1 XIS-EM2 XIS-EM3 HXD
+Astro-E2:fbin               1
+Astro-E2:hbin               1
+Astro-E2:spbn               1
+Astro-E2:ecol               PI
+Astro-E2:ccol               NONE
+Astro-E2:gcol               NONE
+Astro-E2:imagecoord         SKY
+Astro-E2:wmapcoord          SKY
+Astro-E2:catnum             1
+Astro-E2:grpstr             NONE
+Astro-E2:lststr             *.evt
+Astro-E2:ofilt              NONE
+Astro-E2:wtmapb             yes
+Astro-E2:wtmapfix           yes
+Astro-E2:catcol             OBJECT TELESCOP INSTRUME DATAMODE DATE-OBS TIME-OBS DATE-END TIME-END OBSERVER
+Astro-E2:dispcol            OBJECT DATE-OBS TIME-OBS DATE-END TIME-END
+Astro-E2:extract          extractor
+Astro-E2:respscript         NONE
+Astro-E2:extendresp         no
+Astro-E2:respneedreg        no
+
+Astro-E2:XRS:modes          STANDARD
+Astro-E2:XRS:rawx               PIXEL
+Astro-E2:XRS:rawy               PIXEL
+Astro-E2:XRS:lststr         ae*xrs*.*
+Astro-E2:XRS:ccol               PIXEL
+
+Astro-E2:XIS-*:rawx               ACTX
+Astro-E2:XIS-*:rawy               ACTY
+Astro-E2:XIS-*:gti             STDGTI
+Astro-E2:XIS-*:rbnval       2048
+Astro-E2:XIS-*:rbnmod         LINEAR
+Astro-E2:XIS-*:catcol       OBJECT TELESCOP INSTRUME DATAMODE EDITMODE DATE-OBS TIME-OBS DATE-END TIME-END OBSERVER 
+Astro-E2:XIS-*:dispcol            OBJECT DATE-OBS TIME-OBS DATE-END TIME-END EDITMODE
+Astro-E2:XIS-*:modes           STANDARD TIMING
+
+Astro-E2:XIS-0:lststr   ae*xis0*.*
+Astro-E2:XIS-1:lststr   ae*xis1*.*
+Astro-E2:XIS-2:lststr   ae*xis2*.*
+Astro-E2:XIS-3:lststr   ae*xis3*.*
+Astro-E2:XIS-EM0:lststr ae*xis0*.*
+Astro-E2:XIS-EM1:lststr ae*xis1*.*
+Astro-E2:XIS-EM2:lststr ae*xis2*.*
+Astro-E2:XIS-EM3:lststr ae*xis3*.*                                             
+
+
+Astro-E2:HXD:x      UNITID
+Astro-E2:HXD:y      UNITID
+Astro-E2:HXD:detx   UNITID
+Astro-E2:HXD:dety   PIN_ID
+Astro-E2:HXD:rawx   UNITID
+Astro-E2:HXD:rawy   UNITID
+Astro-E2:HXD:fbin      1
+Astro-E2:HXD:hbin      1
+Astro-E2:HXD:wmapcoord  DETECTOR
+Astro-E2:HXD:ecol      PI_SLOW
+Astro-E2:HXD:modes           WELL
+Astro-E2:HXD:wtmapfix  no
+Astro-E2:HXD:rbnval         1024
+Astro-E2:HXD:rbnmod         LINEAR
+Astro-E2:HXD:lststr ae*hxd_wel*.*
+
+ASTRO-E2:submkey            NONE
+ASTRO-E2:instkey            INSTRUME
+ASTRO-E2:dmodekey           DATAMODE
+ASTRO-E2:mkf_def_expr       ae*mkf*
+ASTRO-E2:mkf_rel_dir        ../aux
+ASTRO-E2:time               TIME
+ASTRO-E2:tunits             s
+ASTRO-E2:binsize          16.
+ASTRO-E2:x                  X
+ASTRO-E2:y                  Y
+ASTRO-E2:xsiz               TLMAX
+ASTRO-E2:ysiz               TLMAX
+ASTRO-E2:detx               DETX
+ASTRO-E2:dety               DETY
+ASTRO-E2:detxsiz            TLMAX
+ASTRO-E2:detysiz            TLMAX
+ASTRO-E2:rawxsiz            TLMAX
+ASTRO-E2:rawysiz            TLMAX
+ASTRO-E2:phamax             TLMAX
+ASTRO-E2:gti                GTI
+ASTRO-E2:events             EVENTS
+ASTRO-E2:timeorder          no
+ASTRO-E2:instruments        XRS XIS-0 XIS-1 XIS-2 XIS-3 XIS-EM0 XIS-EM1 XIS-EM2 XIS-EM3 HXD
+ASTRO-E2:fbin               1
+ASTRO-E2:hbin               1
+ASTRO-E2:spbn               1
+ASTRO-E2:ecol               PI
+ASTRO-E2:ccol               NONE
+ASTRO-E2:gcol               NONE
+ASTRO-E2:imagecoord         SKY
+ASTRO-E2:wmapcoord          SKY
+ASTRO-E2:catnum             1
+ASTRO-E2:grpstr             NONE
+ASTRO-E2:lststr             *.evt
+ASTRO-E2:ofilt              NONE
+ASTRO-E2:wtmapb             yes
+ASTRO-E2:wtmapfix           yes
+ASTRO-E2:catcol             OBJECT TELESCOP INSTRUME DATAMODE DATE-OBS TIME-OBS DATE-END TIME-END OBSERVER
+ASTRO-E2:dispcol            OBJECT DATE-OBS TIME-OBS DATE-END TIME-END
+ASTRO-E2:extract          extractor
+ASTRO-E2:respscript         NONE
+ASTRO-E2:extendresp         no
+ASTRO-E2:respneedreg        no
+
+ASTRO-E2:XRS:modes          STANDARD
+ASTRO-E2:XRS:rawx               PIXEL
+ASTRO-E2:XRS:rawy               PIXEL
+ASTRO-E2:XRS:lststr         ae*xrs*.*
+ASTRO-E2:XRS:ccol               PIXEL
+
+ASTRO-E2:XIS-*:rawx               ACTX
+ASTRO-E2:XIS-*:rawy               ACTY
+ASTRO-E2:XIS-*:gti             STDGTI
+ASTRO-E2:XIS-*:rbnval       2048
+ASTRO-E2:XIS-*:rbnmod         LINEAR
+ASTRO-E2:XIS-*:catcol       OBJECT TELESCOP INSTRUME DATAMODE EDITMODE DATE-OBS TIME-OBS DATE-END TIME-END OBSERVER 
+ASTRO-E2:XIS-*:dispcol            OBJECT DATE-OBS TIME-OBS DATE-END TIME-END EDITMODE
+ASTRO-E2:XIS-*:modes           STANDARD TIMING
+
+ASTRO-E2:XIS-0:lststr   ae*xis0*.*
+ASTRO-E2:XIS-1:lststr   ae*xis1*.*
+ASTRO-E2:XIS-2:lststr   ae*xis2*.*
+ASTRO-E2:XIS-3:lststr   ae*xis3*.*
+ASTRO-E2:XIS-EM0:lststr ae*xis0*.*
+ASTRO-E2:XIS-EM1:lststr ae*xis1*.*
+ASTRO-E2:XIS-EM2:lststr ae*xis2*.*
+ASTRO-E2:XIS-EM3:lststr ae*xis3*.*                                             
+
+
+ASTRO-E2:HXD:x      UNITID
+ASTRO-E2:HXD:y      UNITID
+ASTRO-E2:HXD:detx   UNITID
+ASTRO-E2:HXD:dety   PIN_ID
+ASTRO-E2:HXD:rawx   UNITID
+ASTRO-E2:HXD:rawy   UNITID
+ASTRO-E2:HXD:fbin      1
+ASTRO-E2:HXD:hbin      1
+ASTRO-E2:HXD:wmapcoord  DETECTOR
+ASTRO-E2:HXD:ecol      PI_SLOW
+ASTRO-E2:HXD:modes           WELL
+ASTRO-E2:HXD:wtmapfix  no
+ASTRO-E2:HXD:rbnval         1024
+ASTRO-E2:HXD:rbnmod         LINEAR
+ASTRO-E2:HXD:lststr ae*hxd_wel*.*
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! ASTRO-H mission database
+!  General keywords 
+!   Keywords gets replaced if redefined at lower level
+!   See initial list at the beginning of the file
+
+ASTRO-H:submkey            NONE
+ASTRO-H:instkey            INSTRUME
+ASTRO-H:dmodekey           DATAMODE
+ASTRO-H:mkf_def_expr       ah*.mkf*
+ASTRO-H:mkf_rel_dir        .
+ASTRO-H:time               TIME
+ASTRO-H:tunits             s
+ASTRO-H:binsize            16.
+ASTRO-H:x                  X
+ASTRO-H:y                  Y
+ASTRO-H:xsiz               TLMAX
+ASTRO-H:ysiz               TLMAX
+ASTRO-H:detx               DETX
+ASTRO-H:dety               DETY
+ASTRO-H:detxsiz            TLMAX
+ASTRO-H:detysiz            TLMAX
+ASTRO-H:rawx               ACTX
+ASTRO-H:rawy               ACTY
+ASTRO-H:rawxsiz            TLMAX
+ASTRO-H:rawysiz            TLMAX
+ASTRO-H:phamax             TLMAX
+ASTRO-H:gti                GTI
+ASTRO-H:events             EVENTS
+ASTRO-H:timeorder          yes 
+ASTRO-H:instruments        SXS SXI HXI1 HXI2 SGD1 SGD2
+ASTRO-H:spbn               1
+ASTRO-H:ecol               PI
+ASTRO-H:ccol               NONE
+ASTRO-H:gcol               NONE
+ASTRO-H:imagecoord         SKY
+ASTRO-H:wmapcoord          NONE
+ASTRO-H:catnum             1
+ASTRO-H:wtmapb             no
+ASTRO-H:wtmapfix           no
+ASTRO-H:swmapx             false
+ASTRO-H:swmapy             false
+ASTRO-H:grpstr             NONE
+ASTRO-H:lststr             ah*.evt
+ASTRO-H:ofilt              NONE
+ASTRO-H:fbin               1
+ASTRO-H:hbin               1
+ASTRO-H:catcol             OBJECT TELESCOP INSTRUME DETNAM DATAMODE DATE-OBS DATE-END 
+ASTRO-H:dispcol            OBJECT TELESCOP INSTRUME DETNAM DATAMODE DATE-OBS DATE-END 
+ASTRO-H:extract            extractor
+!
+! SXS all specific keywords 
+ASTRO-H:SXS:gcol           ITYPE
+ASTRO-H:SXS:lststr             ah*sxs*.evt
+ASTRO-H:SXS:modes              PX_NORMAL PX_MIDRES  AC_NORMAL
+!
+! SXS Antico no image
+ASTRO-H:SXS:AC_NORMAL:imagecoord   NONE
+!
+!  SXI keywords 
+ASTRO-H:SXI:lststr             ah*sxi*.evt
+ASTRO-H:SXI:modes               WINDOW1 WINDOW2 WINDOW1BURST WINDOW2BURST
+!ASTRO-H:SXI:ccol               CCD_ID
+ASTRO-H:SXI:gcol               GRADE
+ASTRO-H:SXI:wmapcoord          DETECTOR
+ASTRO-H:SXI:wtmapb             yes
+ASTRO-H:SXI:wtmapfix           yes
+ASTRO-H:SXI:swmapx             false
+ASTRO-H:SXI:swmapy             false
+!
+!  HXI1 specific keywords 
+ASTRO-H:HXI1:lststr             ah*hxi1*.*
+ASTRO-H:HXI1:modes              CAMERA_NORMAL1 CAMERA_NORMAL2 CAMERA_NORMAL3 CAMERA_CHECKOUT1 
+!
+!  HXI2 keywords 
+ASTRO-H:HXI2:lststr             ah*hxi2*.*
+ASTRO-H:HXI2:modes              CAMERA_NORMAL1 CAMERA_NORMAL2 CAMERA_NORMAL3 CAMERA_CHECKOUT1  
+!
+!  SGD1 keywords 
+ASTRO-H:SGD1:x                 CAMERAX
+ASTRO-H:SGD1:y                 CAMERAY
+ASTRO-H:SGD1:detx              CAMERAX
+ASTRO-H:SGD1:dety              CAMERAY
+ASTRO-H:SGD1:rawx              CAMERAX
+ASTRO-H:SGD1:rawy              CAMERAY
+ASTRO-H:SGD1:imagecoord         NONE
+ASTRO-H:SGD1:lststr        ah*sgd1*.*
+ASTRO-H:SGD1:modes              CC_NORMAL1
+!
+!  SGD2 keywords 
+ASTRO-H:SGD2:x                 CAMERAX
+ASTRO-H:SGD2:y                 CAMERAY
+ASTRO-H:SGD2:detx              CAMERAX
+ASTRO-H:SGD2:dety              CAMERAY
+ASTRO-H:SGD2:rawx              CAMERAX
+ASTRO-H:SGD2:rawy              CAMERAY
+ASTRO-H:SGD2:imagecoord         NONE
+ASTRO-H:SGD2:lststr        ah*sgd2*.*
+ASTRO-H:SGD2:modes              CC_NORMAL1
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+ASTROSAT:submkey       NONE
+ASTROSAT:instkey       INSTRUME
+ASTROSAT:dmodekey      DATAMODE
+ASTROSAT:mkf_def_expr  NONE
+ASTROSAT:mkf_rel_dir   .
+ASTROSAT:time          TIME
+ASTROSAT:tunits        s
+ASTROSAT:binsize       5.
+ASTROSAT:x             X
+ASTROSAT:y             Y
+ASTROSAT:xsiz          TLMAX
+ASTROSAT:ysiz          TLMAX
+ASTROSAT:detx          DETX
+ASTROSAT:dety          DETY
+ASTROSAT:detxsiz       TLMAX
+ASTROSAT:detysiz       TLMAX
+ASTROSAT:rawx          RAWX
+ASTROSAT:rawy          RAWY
+ASTROSAT:rawxsiz       TLMAX
+ASTROSAT:rawysiz       TLMAX
+ASTROSAT:phamax        TLMAX
+ASTROSAT:gti           GTI
+ASTROSAT:events        EVENTS
+ASTROSAT:timeorder     yes
+ASTROSAT:instruments   SXT
+ASTROSAT:fbin          1
+ASTROSAT:hbin          1
+ASTROSAT:spbn          1
+ASTROSAT:ecol          PI
+ASTROSAT:ccol          NONE
+ASTROSAT:gcol          GRADE
+ASTROSAT:imagecoord    SKY
+ASTROSAT:wmapcoord     SKY
+ASTROSAT:catnum        1
+ASTROSAT:grpstr        NONE
+ASTROSAT:lststr        AS1*.*
+ASTROSAT:ofilt         NONE
+ASTROSAT:wtmapb        yes
+ASTROSAT:wtmapfix      yes
+
+ASTROSAT:catcol        TELESCOP INSTRUME DATAMODE DATE-OBS OBJECT ORB_NUM
+ASTROSAT:dispcol       TELESCOP INSTRUME DATAMODE DATE-OBS OBJECT ORB_NUM
+ASTROSAT:extract       extractor
+ASTROSAT:respscript    NONE
+ASTROSAT:extendresp    no
+ASTROSAT:respneedreg   no
+
+ASTROSAT:SXT:modes     PC
+ASTROSAT:SXT:lststr    AS1*sxtPC*.*
+ASTROSAT:SXT:adjustgti yes
+
+ASTROSAT:SXT:modes     PW
+ASTROSAT:SXT:lststr    AS1*sxtPW*.*
+ASTROSAT:SXT:adjustgti yes
+
+ASTROSAT:SXT:modes     FW
+ASTROSAT:SXT:lststr    AS1*sxtFW*.*
+ASTROSAT:SXT:adjustgti yes
+
+ASTROSAT:SXT:modes     BM
+ASTROSAT:SXT:lststr    AS1*sxtBM*.*
+ASTROSAT:SXT:adjustgti yes
+
+ASTROSAT:SXT:modes     CM
+ASTROSAT:SXT:lststr    AS1*sxtCM*.*
+ASTROSAT:SXT:adjustgti yes
+
+ASTROSAT:SXT:PC:imagecoord SKY
+ASTROSAT:SXT:PC:wmapcoord  SKY
+ASTROSAT:SXT:PC:binsize    5.
+
+ASTROSAT:SXT:PW:imagecoord SKY
+ASTROSAT:SXT:PW:wmapcoord  SKY
+ASTROSAT:SXT:PW:binsize    5.
+
+ASTROSAT:SXT:CM:imagecoord SKY
+ASTROSAT:SXT:CM:wmapcoord  SKY
+ASTROSAT:SXT:CM:binsize    5.
+
+ASTROSAT:SXT:FW:imagecoord SKY
+ASTROSAT:SXT:FW:wmapcoord  SKY
+ASTROSAT:SXT:FW:binsize    5.
+
+ASTROSAT:SXT:BM:imagecoord SKY
+ASTROSAT:SXT:BM:wmapcoord  SKY
+ASTROSAT:SXT:BM:binsize    25
+
+AXAF:submkey            GRATING
+AXAF:instkey            INSTRUME
+AXAF:dmodekey           DATAMODE
+AXAF:mkf_def_expr       NONE
+AXAF:mkf_rel_dir        .
+AXAF:time               TIME
+AXAF:tunits             s
+AXAF:binsize          16.
+AXAF:x                  X
+AXAF:y                  Y
+AXAF:xsiz               TLMAX
+AXAF:ysiz               TLMAX
+AXAF:detx               DETX
+AXAF:dety               DETY
+AXAF:detxsiz            TLMAX
+AXAF:detysiz            TLMAX
+AXAF:rawx               CHIPX
+AXAF:rawy               CHIPY
+AXAF:rawxsiz            TLMAX
+AXAF:rawysiz            TLMAX
+AXAF:phamax             TLMAX
+AXAF:gti                GTI
+AXAF:events             EVENTS
+AXAF:timeorder          no
+AXAF:instruments        ACIS HRC
+AXAF:fbin               4
+AXAF:hbin               8
+AXAF:spbn               1
+AXAF:ecol               PI
+AXAF:ccol               CCD_ID
+AXAF:gcol               GRADE
+AXAF:imagecoord         SKY
+AXAF:wmapcoord          DETECTOR
+AXAF:catnum             1
+AXAF:grpstr             NONE
+AXAF:lststr             *.fits
+AXAF:ofilt              NONE
+AXAF:wtmapb             yes
+AXAF:wtmapfix           no
+AXAF:catcol             OBJECT TELESCOP INSTRUME DATAMODE DATE-OBS DATE-END OBSERVER LIVETIME DETNAM READMODE FIRSTROW NROWS
+AXAF:extract            extractor
+AXAF:respscript         NONE
+AXAF:extendresp         yes
+AXAF:respneedreg        no
+
+AXAF:ACIS:modes         FAINT
+AXAF:ACIS:fbin          4
+AXAF:ACIS:dispcol       OBJECT DATE-OBS LIVETIME DETNAM READMODE FIRSTROW NROWS
+AXAF:ACIS:respscript    xsl_chandra_acis_makeresp
+
+AXAF:HETG:ACIS:modes    FAINT
+AXAF:HETG:ACIS:fbin     4
+AXAF:HETG:ACIS:dispcol  OBJECT DATE-OBS LIVETIME DETNAM
+
+AXAF:LETG:ACIS:modes    FAINT
+AXAF:LETG:ACIS:fbin     4
+AXAF:LETG:ACIS:dispcol  OBJECT DATE-OBS LIVETIME DETNAM
+
+AXAF:HRC:modes          OBSERVING
+AXAF:HRC:fbin           16
+AXAF:HRC:dispcol        OBJECT DATE-OBS LIVETIME DETNAM 
+AXAF:HRC:rawx           TDETX
+AXAF:HRC:rawy           TDETY
+
+
+BBXRT:submkey           NONE
+BBXRT:instkey           INSTRUME
+BBXRT:dmodekey          NONE
+BBXRT:mkf_def_expr      NONE
+BBXRT:mkf_rel_dir       .
+BBXRT:binsize           1.157e-5
+BBXRT:time              TIME
+BBXRT:tunits            days
+BBXRT:x                 DETECTOR
+BBXRT:y                 DETECTOR
+BBXRT:xsiz              TLMAX
+BBXRT:ysiz              TLMAX
+BBXRT:detx              DETECTOR
+BBXRT:dety              DETECTOR
+BBXRT:detxsiz           TLMAX
+BBXRT:detysiz           TLMAX
+BBXRT:rawx              DETECTOR
+BBXRT:rawy              DETECTOR
+BBXRT:rawxsiz           TLMAX
+BBXRT:rawysiz           TLMAX
+BBXRT:phamax            PHACHANS
+BBXRT:gti               ALLGTI
+BBXRT:events            PHOTON_LIST
+BBXRT:timeorder         no
+BBXRT:instruments       AO-B4
+BBXRT:imagecoord        SKY
+BBXRT:wmapcoord         SKY
+BBXRT:catnum            0
+BBXRT:fbin              1
+BBXRT:hbin              1
+BBXRT:spbn              1
+BBXRT:ecol              PHA
+BBXRT:ccol              NONE
+BBXRT:grpstr            NONE
+BBXRT:lststr            *.fits
+BBXRT:ofilt             NONE
+BBXRT:wtmapb            no
+BBXRT:wtmapfix          no
+BBXRT:catcol            OBJECT INSTRUME TELESCOP DATE-OBS TIME-OBS RA_OBJ DEC_OBJ
+BBXRT:dispcol           OBJECT DATE-OBS TIME-OBS RA_OBJ DEC_OBJ
+BBXRT:extract           extractor
+BBXRT:respscript        NONE
+BBXRT:extendresp        no
+BBXRT:respneedreg       no
+
+
+EINSTEIN:submkey        NONE
+EINSTEIN:instkey        INSTRUME
+EINSTEIN:dmodekey       DATAMODE
+EINSTEIN:mkf_def_expr   NONE
+EINSTEIN:mkf_rel_dir    .
+EINSTEIN:time           TIME
+EINSTEIN:tunits         s
+EINSTEIN:binsize        16.
+EINSTEIN:gti            GTI
+EINSTEIN:x              X
+EINSTEIN:y              Y
+EINSTEIN:xsiz           AXLEN1
+EINSTEIN:ysiz           AXLEN2
+EINSTEIN:detx           DETX
+EINSTEIN:dety           DETY
+EINSTEIN:detxsiz        XS-XDET
+EINSTEIN:detysiz        XS-YDET
+EINSTEIN:rawx           RAWX
+EINSTEIN:rawy           RAWY
+EINSTEIN:rawxsiz        XS-XDET
+EINSTEIN:rawysiz        XS-YDET
+EINSTEIN:phamax         XS-CHANS
+EINSTEIN:events         EVENTS
+EINSTEIN:ecol           PHA
+EINSTEIN:ccol           NONE
+EINSTEIN:gcol           NONE
+EINSTEIN:timeorder      no
+EINSTEIN:instruments    HRI IPC MPC
+EINSTEIN:spbn           1
+EINSTEIN:fbin           4
+EINSTEIN:hbin           8
+EINSTEIN:imagecoord     SKY
+EINSTEIN:catnum         0
+EINSTEIN:grpstr         NONE
+EINSTEIN:lststr         *.xp*
+EINSTEIN:wmapcoord      DETECTOR
+EINSTEIN:wtmapb         yes
+EINSTEIN:wtmapfix       no
+EINSTEIN:extract        extractor
+EINSTEIN:respscript     NONE
+EINSTEIN:extendresp     no
+EINSTEIN:respneedreg    no
+
+EINSTEIN:HRI:lststr     h*.xp*
+EINSTEIN:HRI:gti        GTI
+EINSTEIN:HRI:ofilt      NONE
+EINSTEIN:HRI:fbin       4
+EINSTEIN:HRI:hbin       8
+EINSTEIN:HRI:ecol       PHA
+EINSTEIN:HRI:wmapcoord  SKY
+EINSTEIN:HRI:catcol     DATE-OBS TIME-OBS XS-RAPT XS-DECPT XS-ONTI TELESCOP INSTRUME 
+EINSTEIN:HRI:dispcol    DATE-OBS TIME-OBS XS-RAPT XS-DECPT XS-ONTI
+
+EINSTEIN:IPC:lststr     i*.xp*
+EINSTEIN:IPC:gti        GTI
+EINSTEIN:IPC:ofilt      NONE
+EINSTEIN:IPC:fbin       2
+EINSTEIN:IPC:hbin       4
+EINSTEIN:IPC:ecol       PI
+EINSTEIN:IPC:wmapcoord  DETECTOR
+EINSTEIN:IPC:catcol     DATE-OBS TIME-OBS TELESCOP INSTRUME OBJECT RA--NOM DEC--NOM OBSERVER
+EINSTEIN:IPC:dispcol    DATE-OBS TIME-OBS OBJECT RA--NOM DEC--NOM OBSERVER
+EINSTEIN:IPC:respscript xsl_einstein_ipc_makeresp
+
+EINSTEIN:MPC:x              NONE
+EINSTEIN:MPC:y              NONE
+EINSTEIN:MPC:xsiz           NONE
+EINSTEIN:MPC:ysiz           NONE
+EINSTEIN:MPC:detx           NONE
+EINSTEIN:MPC:dety           NONE
+EINSTEIN:MPC:detxsiz        NONE
+EINSTEIN:MPC:detysiz        NONE
+EINSTEIN:MPC:rawx           NONE
+EINSTEIN:MPC:rawy           NONE
+EINSTEIN:MPC:rawxsiz        NONE
+EINSTEIN:MPC:rawysiz        NONE
+EINSTEIN:MPC:phamax         NONE
+EINSTEIN:MPC:gti            NONE
+EINSTEIN:MPC:events         MPC
+EINSTEIN:MPC:timeorder      yes
+EINSTEIN:MPC:spbn           1
+EINSTEIN:MPC:imagecoord     NONE
+EINSTEIN:MPC:catnum         1
+EINSTEIN:MPC:grpstr         NONE
+EINSTEIN:MPC:wtmapb         no
+EINSTEIN:MPC:wtmapfix       no
+EINSTEIN:MPC:extract        saextrct
+EINSTEIN:MPC:lststr         *.cmb
+EINSTEIN:MPC:ofilt          NONE
+EINSTEIN:MPC:fbin           1
+EINSTEIN:MPC:hbin           1
+EINSTEIN:MPC:ecol           MPCPHA
+EINSTEIN:MPC:wmapcoord      NONE
+EINSTEIN:MPC:catcol     DATE-OBS TIME-OBS TELESCOP INSTRUME OBJECT RA_OBS DEC_OBS ONTIME SRCCNT
+EINSTEIN:MPC:dispcol    DATE-OBS OBJECT RA_OBS DEC_OBS ONTIME SRCCNT
+
+
+
+EXOSAT:submkey          NONE
+EXOSAT:instkey          INSTRUME
+EXOSAT:dmodekey         NONE
+EXOSAT:mkf_def_expr     NONE
+EXOSAT:mkf_rel_dir      .
+EXOSAT:time             TIME
+EXOSAT:tunits           s
+EXOSAT:binsize          16.
+EXOSAT:x                X
+EXOSAT:y                Y
+EXOSAT:xsiz             TLMAX2
+EXOSAT:ysiz             TLMAX3
+EXOSAT:detx             X
+EXOSAT:dety             Y
+EXOSAT:detxsiz          TLMAX2
+EXOSAT:detysiz          TLMAX3
+EXOSAT:rawx             X
+EXOSAT:rawy             Y
+EXOSAT:rawxsiz          TLMAX2
+EXOSAT:rawysiz          TLMAX3
+EXOSAT:phamax           TLMAX4
+EXOSAT:gti              STDGTI
+EXOSAT:events           EVENTS
+EXOSAT:timeorder        no
+EXOSAT:instruments      CMA1 CMA2 ME GS
+EXOSAT:fbin             4
+EXOSAT:hbin             4
+EXOSAT:spbn             1
+EXOSAT:ecol             PHA
+EXOSAT:ccol             NONE
+EXOSAT:imagecoord       SKY
+EXOSAT:wmapcoord        DETECTOR
+EXOSAT:catnum           0
+EXOSAT:grpstr           NONE
+EXOSAT:ofilt            NONE
+EXOSAT:wtmapb           no
+EXOSAT:wtmapfix         no
+EXOSAT:catcol           DATE-OBS TIME-OBS TELESCOP INSTRUME OBJECT RA_NOM DEC_NOM ONTIME DATE-END TIME-END TELAPSE EQUINOX
+EXOSAT:dispcol          OBJECT DATE-OBS TIME-OBS
+EXOSAT:extract          extractor
+EXOSAT:respscript       NONE
+EXOSAT:extendresp       no
+EXOSAT:respneedreg      no
+
+EXOSAT:CMA1:lststr      cma1*.xp*
+
+EXOSAT:CMA2:lststr      cma2*.xp*
+
+EXOSAT:ME:lststr        me*.xp*
+
+EXOSAT:GS:lststr        gs*.xp*
+
+!! HALOSAT 
+
+HALOSAT:submkey            NONE
+HALOSAT:instkey            INSTRUME
+HALOSAT:dmodekey           NONE
+HALOSAT:mkf_def_expr       *.hk
+HALOSAT:mkf_rel_dir        .
+HALOSAT:time               TIME
+HALOSAT:tunits             s
+HALOSAT:binsize            16.
+HALOSAT:x                  NONE
+HALOSAT:y                  NONE
+HALOSAT:xsiz               TLMAX
+HALOSAT:ysiz               TLMAX
+HALOSAT:detx               NONE
+HALOSAT:dety               NONE
+HALOSAT:detxsiz            TLMAX
+HALOSAT:detysiz            TLMAX
+HALOSAT:rawx               NONE
+HALOSAT:rawy               NONE
+HALOSAT:rawxsiz            TLMAX
+HALOSAT:rawysiz            TLMAX
+HALOSAT:phamax             TLMAX
+HALOSAT:gti                GTI
+HALOSAT:events             EVENTS
+HALOSAT:timeorder          yes
+HALOSAT:instruments        SDD14, SDD58, SDD38
+HALOSAT:fbin               1
+HALOSAT:hbin               1
+HALOSAT:spbn               1
+HALOSAT:ecol               PI
+HALOSAT:ccol               NONE
+HALOSAT:gcol               NONE
+HALOSAT:imagecoord         NONE
+HALOSAT:wmapcoord          NONE
+HALOSAT:catnum             1
+HALOSAT:catcol             OBJECT TELESCOP INSTRUME OBJTYPE DATAMODE DATE-OBS DATE-END 
+HALOSAT:dispcol            OBJECT TELESCOP INSTRUME OBJTYPE DATAMODE DATE-OBS DATE-END 
+HALOSAT:grpstr             NONE
+HALOSAT:lststr             *.evt
+HALOSAT:ofilt              NONE
+HALOSAT:wtmapb             no
+HALOSAT:wtmapfix           no
+HALOSAT:swmapx             no
+HALOSAT:swmapy             no
+HALOSAT:extract            extractor
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! HITOMI mission database
+!  General keywords 
+!   Keywords gets replaced if redefined at lower level
+!   See initial list at the beginning of the file
+
+HITOMI:submkey            NONE
+HITOMI:instkey            INSTRUME
+HITOMI:dmodekey           DATAMODE
+HITOMI:mkf_def_expr       ah*.mkf*
+HITOMI:mkf_rel_dir        .
+HITOMI:time               TIME
+HITOMI:tunits             s
+HITOMI:binsize            16.
+HITOMI:x                  X
+HITOMI:y                  Y
+HITOMI:xsiz               TLMAX
+HITOMI:ysiz               TLMAX
+HITOMI:detx               DETX
+HITOMI:dety               DETY
+HITOMI:detxsiz            TLMAX
+HITOMI:detysiz            TLMAX
+HITOMI:rawx               ACTX
+HITOMI:rawy               ACTY
+HITOMI:rawxsiz            TLMAX
+HITOMI:rawysiz            TLMAX
+HITOMI:phamax             TLMAX
+HITOMI:gti                GTI
+HITOMI:events             EVENTS
+HITOMI:timeorder          yes 
+HITOMI:instruments        SXS SXI HXI1 HXI2 SGD1 SGD2
+HITOMI:spbn               1
+HITOMI:ecol               PI
+HITOMI:ccol               NONE
+HITOMI:gcol               NONE
+HITOMI:imagecoord         SKY
+HITOMI:wmapcoord          NONE
+HITOMI:catnum             1
+HITOMI:wtmapb             no
+HITOMI:wtmapfix           no
+HITOMI:swmapx             false
+HITOMI:swmapy             false
+HITOMI:grpstr             NONE
+HITOMI:lststr             ah*.evt
+HITOMI:ofilt              NONE
+HITOMI:fbin               1
+HITOMI:hbin               1
+HITOMI:catcol             OBJECT TELESCOP INSTRUME DETNAM DATAMODE DATE-OBS DATE-END 
+HITOMI:dispcol            OBJECT TELESCOP INSTRUME DETNAM DATAMODE DATE-OBS DATE-END 
+HITOMI:extract            extractor
+!
+! SXS all specific keywords 
+HITOMI:SXS:lststr             ah*sxs*.evt
+HITOMI:SXS:modes              PX_NORMAL PX_MIDRES  AC_NORMAL
+HITOMI:SXS:gcol               ITYPE
+!
+! SXS Antico no image
+HITOMI:SXS:AC_NORMAL:imagecoord   NONE
+!
+!  SXI keywords 
+HITOMI:SXI:lststr             ah*sxi*.evt
+HITOMI:SXI:modes               WINDOW1 WINDOW2 WINDOW1BURST WINDOW2BURST
+!HITOMI:SXI:ccol               CCD_ID
+HITOMI:SXI:gcol               GRADE
+HITOMI:SXI:wmapcoord          DETECTOR
+HITOMI:SXI:wtmapb             yes
+HITOMI:SXI:wtmapfix           yes
+HITOMI:SXI:swmapx             false
+HITOMI:SXI:swmapy             false
+!
+!  HXI1 specific keywords 
+HITOMI:HXI1:lststr             ah*hxi1*.*
+HITOMI:HXI1:modes              CAMERA_NORMAL1 CAMERA_NORMAL2 CAMERA_NORMAL3 CAMERA_CHECKOUT1 
+!
+!  HXI2 keywords 
+HITOMI:HXI2:lststr             ah*hxi2*.*
+HITOMI:HXI2:modes              CAMERA_NORMAL1 CAMERA_NORMAL2 CAMERA_NORMAL3 CAMERA_CHECKOUT1  
+!
+!  SGD1 keywords 
+HITOMI:SGD1:x                  CAMERAX
+HITOMI:SGD1:y                  CAMERAY
+HITOMI:SGD1:detx               CAMERAX
+HITOMI:SGD1:dety               CAMERAY
+HITOMI:SGD1:rawx               CAMERAX
+HITOMI:SGD1:rawy               CAMERAY
+!HITOMI:SGD1:imagecoord         NONE
+HITOMI:SGD1:lststr        ah*sgd1*.*
+HITOMI:SGD1:modes              CC_NORMAL1
+!
+!  SGD2 keywords 
+HITOMI:SGD2:x                  CAMERAX
+HITOMI:SGD2:y                  CAMERAY
+HITOMI:SGD2:detx               CAMERAX
+HITOMI:SGD2:dety               CAMERAY
+HITOMI:SGD2:rawx               CAMERAX
+HITOMI:SGD2:rawy               CAMERAY
+!HITOMI:SGD2:imagecoord         NONE
+HITOMI:SGD2:lststr        ah*sgd2*.*
+HITOMI:SGD2:modes              CC_NORMAL1
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+INTEGRAL:submkey      NONE
+INTEGRAL:instkey      INSTRUME
+INTEGRAL:dmodekey     DATAMODE
+INTEGRAL:mkf_def_expr NONE
+INTEGRAL:mkf_rel_dir  .
+INTEGRAL:events       EVENTS
+INTEGRAL:wtmapfix     yes 
+INTEGRAL:wtmapb       yes
+INTEGRAL:time         TIME
+INTEGRAL:tunits       d
+INTEGRAL:timeorder    yes
+INTEGRAL:binsize      1.851851852e-4  
+INTEGRAL:instruments  SPI IBIS JMX1 JMX2
+INTEGRAL:wmapcoord    DETECTOR
+INTEGRAL:xsiz         TLMAX
+INTEGRAL:ysiz         TLMAX
+INTEGRAL:detxsiz         TLMAX
+INTEGRAL:detysiz         TLMAX
+INTEGRAL:rawxsiz            TLMAX
+INTEGRAL:rawysiz            TLMAX
+INTEGRAL:phamax             TLMAX
+INTEGRAL:fbin             1
+INTEGRAL:hbin             1
+INTEGRAL:spbn               1
+INTEGRAL:ecol               PI
+INTEGRAL:ccol               NONE
+INTEGRAL:gcol              NONE
+INTEGRAL:catnum             3
+INTEGRAL:imagecoord         DETECTOR
+INTEGRAL:gti               ALLGTI
+INTEGRAL:lststr            *.fits 
+INTEGRAL:wmapcoord    DETECTOR
+INTEGRAL:catcol  SWID DATE-OBS DATE-END RA_SCX DEC_SCX
+INTEGRAL:dispcol SWID DATE-OBS DATE-END RA_SCX DEC_SCX
+INTEGRAL:extract          extractor
+
+INTEGRAL:SPI:catnum   1
+INTEGRAL:SPI:ecol     PHA
+INTEGRAL:SPI:events   SPI.-OSGL-ALL
+INTEGRAL:SPI:detx     DETE 
+INTEGRAL:SPI:dety     DETE
+INTEGRAL:SPI:gti      SPI.-GNRL-GTI
+
+INTEGRAL:IBIS:ecol    ISGRI_PHA
+INTEGRAL:IBIS:events  ISGR-EVTS-ALL
+INTEGRAL:IBIS:detx    DETY
+INTEGRAL:IBIS:dety    DETZ
+INTEGRAL:IBIS:gti     IBIS-GNRL-GTI
+
+INTEGRAL:JMX1:ecol    PI
+INTEGRAL:JMX1:events  JMX1-FULL-ALL
+INTEGRAL:JMX1:gti     JMX1-GNRL-GTI
+INTEGRAL:JMX1:detx    DETX
+INTEGRAL:JMX1:dety    DETY  
+
+INTEGRAL:JMX2:ecol    PI 
+INTEGRAL:JMX2:events  JMX2-FULL-ALL
+INTEGRAL:JMX2:gti     JMX2-GNRL-GTI
+INTEGRAL:JMX2:detx    DETX
+INTEGRAL:JMX2:dety    DETY
+
+MAXI:submkey       NONE
+MAXI:instkey       INSTRUME
+MAXI:dmodekey      DATAMODE
+MAXI:mkf_def_expr  mx*.mkf*
+MAXI:mkf_rel_dir   .
+MAXI:time          TIME
+MAXI:tunits        s
+MAXI:binsize       16.
+MAXI:x             X
+MAXI:y             Y
+MAXI:xsiz          TLMAX
+MAXI:ysiz          TLMAX
+MAXI:detx          DETX
+MAXI:dety          DETY
+MAXI:detxsiz       TLMAX
+MAXI:detysiz       TLMAX
+MAXI:rawx          NONE
+MAXI:rawy          NONE
+MAXI:rawxsiz       NONE
+MAXI:rawysiz       NONE
+MAXI:phamax        TLMAX
+MAXI:gti           STDGTI
+MAXI:events        EVENTS
+MAXI:timeorder     yes
+MAXI:instruments   GSC GSC_0 GSC_1 GSC_2 GSC_3 GSC_4 GSC_5 GSC_6 GSC_7 GSC_8 GSC_9 GSC_A GSC_B SSC SSC_H SSC_Z
+MAXI:spbn          1
+MAXI:ecol          PI
+MAXI:ccol          NONE
+MAXI:gcol          NONE
+MAXI:imagecoord    SKY
+MAXI:wmapcoord     DETECTOR
+MAXI:catnum        1
+MAXI:wtmapb        yes
+MAXI:wtmapfix      no
+MAXI:lststr        *.evt
+MAXI:fbin          1
+MAXI:hbin          1
+MAXI:GSC:modes     64BIT 32BIT 16BIT
+MAXI:SSC:modes     64BIT
+MAXI:extract       extractor
+MAXI:catcol        OBJECT TELESCOP INSTRUME DATAMODE DATE-OBS DATE-END TIME-OBS
+MAXI:dispcol       OBJECT DATE-OBS DATE-END TIME-OBS
+MAXI:extendresp    yes
+
+NICER:submkey            NONE
+NICER:instkey            INSTRUME
+NICER:dmodekey           DATAMODE
+NICER:mkf_def_expr       *.hk
+NICER:mkf_rel_dir        .
+NICER:time               TIME
+NICER:tunits             s
+NICER:binsize            16.
+NICER:x                  NONE
+NICER:y                  NONE
+NICER:xsiz               TLMAX
+NICER:ysiz               TLMAX
+NICER:detx               NONE
+NICER:dety               NONE
+NICER:detxsiz            TLMAX
+NICER:detysiz            TLMAX
+NICER:rawx               RAWX
+NICER:rawy               RAWY
+NICER:rawxsiz            TLMAX
+NICER:rawysiz            TLMAX
+NICER:phamax             TLMAX
+NICER:gti                GTI
+NICER:events             EVENTS
+NICER:timeorder          yes
+NICER:instruments        XTI
+NICER:fbin               1
+NICER:hbin               1
+NICER:spbn               1
+NICER:ecol               PI
+NICER:ccol               NONE
+NICER:gcol               NONE
+NICER:imagecoord         RAW
+NICER:wmapcoord          NONE
+NICER:catnum             0
+NICER:grpstr             NONE
+NICER:lststr             *.evt
+NICER:ofilt              NONE
+NICER:wtmapb             no
+NICER:wtmapfix           no
+NICER:swmapx             no
+NICER:swmapy             no
+NICER:extract            extractor
+
+NICER:modes              PHOTON
+NICER:catcol             TELESCOP INSTRUME DATAMODE DATE-OBS DATE-END OBS_ID OBJECT
+NICER:dispcol            OBJECT OBS_ID DATE-OBS
+NICER:extendresp         no
+NICER:respneedreg        no
+
+NICER:rbnmod        LINEAR
+NICER:respscript    NONE
+!!! Deals with case of negative NICER pulse heights (resets TLMINn to 0)
+NICER:trunc_spec_lo      0
+
+NUSTAR:submkey            NONE
+NUSTAR:instkey            INSTRUME
+NUSTAR:dmodekey           NONE
+NUSTAR:mkf_rel_dir        .
+NUSTAR:mkf_def_expr       *.mkf
+NUSTAR:time               TIME
+NUSTAR:tunits             s
+NUSTAR:binsize            5.
+NUSTAR:x                  X
+NUSTAR:y                  Y
+NUSTAR:xsiz               TLMAX
+NUSTAR:ysiz               TLMAX
+NUSTAR:detx               DET2X
+NUSTAR:dety               DET2Y
+NUSTAR:detxsiz            TLMAX
+NUSTAR:detysiz            TLMAX
+NUSTAR:rawx               RAWX
+NUSTAR:rawy               RAWY
+NUSTAR:rawxsiz            TLMAX
+NUSTAR:rawysiz            TLMAX
+NUSTAR:phamax             TLMAX
+NUSTAR:gti                GTI
+NUSTAR:events             EVENTS
+NUSTAR:timeorder          yes
+NUSTAR:instruments        FPMA FPMB
+NUSTAR:fbin               1
+NUSTAR:hbin               1
+NUSTAR:spbn               1
+NUSTAR:ecol               PI
+NUSTAR:ccol               NONE
+NUSTAR:gcol               GRADE
+NUSTAR:imagecoord         SKY
+NUSTAR:wmapcoord          SKY
+NUSTAR:catnum             1
+NUSTAR:grpstr             NONE
+NUSTAR:lststr             nu*.evt
+NUSTAR:ofilt              NONE
+NUSTAR:wtmapb             yes
+NUSTAR:wtmapfix           yes
+NUSTAR:catcol             TELESCOP INSTRUME DATE-OBS DATE-END OBJECT OBS_ID
+NUSTAR:dispcol            OBJECT OBS_ID DATE-OBS
+NUSTAR:extract            extractor
+NUSTAR:respscript         NONE
+NUSTAR:extendresp         no
+
+NUSTAR:FPMA:lststr        nuA*.evt
+NUSTAR:FPMA:mkf_def_expr  *A.mkf
+NUSTAR:FPMB:lststr        nuB*.evt
+NUSTAR:FPMB:mkf_def_expr  *B.mkf
+
+ROSAT:submkey           NONE
+ROSAT:instkey           INSTRUME
+ROSAT:dmodekey          NONE
+ROSAT:mkf_def_expr      *.rmkf*
+ROSAT:mkf_rel_dir       .
+ROSAT:time              TIME
+ROSAT:tunits            s
+ROSAT:timeorder         no
+ROSAT:binsize           16.
+ROSAT:trunc_spec_hi     256
+ROSAT:instruments       HRI PSPCB PSPCC
+ROSAT:spbn              1
+ROSAT:imagecoord        SKY
+ROSAT:ofilt             NONE
+ROSAT:wmapcoord         DETECTOR
+ROSAT:wtmapb            yes
+ROSAT:wtmapfix          no
+ROSAT:extract           extractor
+ROSAT:x                 X
+ROSAT:y                 Y
+ROSAT:xsiz              TLMAX
+ROSAT:ysiz              TLMAX
+ROSAT:detx              DETX
+ROSAT:dety              DETY
+ROSAT:detxsiz           TLMAX
+ROSAT:detysiz           TLMAX
+ROSAT:rawx              RAWX
+ROSAT:rawy              RAWY
+ROSAT:rawxsiz           TLMAX
+ROSAT:rawysiz           TLMAX
+ROSAT:phamax            TALEN4
+ROSAT:lststr            *
+ROSAT:fbin              8
+ROSAT:hbin              8
+ROSAT:catnum            0
+ROSAT:ecol              PHA
+ROSAT:ccol              NONE
+ROSAT:gcol              NONE
+ROSAT:gti               GTI
+ROSAT:events            STDEVT
+ROSAT:catcol            DATE TELESCOP INSTRUME OBJECT RA_NOM DEC_NOM ROR_NUM LIVETIME OBSERVER
+ROSAT:dispcol           INSTRUME OBJECT DATE RA_NOM DEC_NOM ROR_NUM LIVETIME
+ROSAT:extendresp        no
+ROSAT:respneedreg       no
+
+ROSAT:HRI:detx          RAWX
+ROSAT:HRI:dety          RAWY
+ROSAT:HRI:grpstr      NONE
+ROSAT:HRI:lststr      *
+ROSAT:HRI:fbin        8
+ROSAT:HRI:hbin        8
+ROSAT:HRI:ecol        PHA
+ROSAT:HRI:wmapcoord   RAW
+ROSAT:HRI:catnum      3
+ROSAT:HRI:rbnval      1
+ROSAT:HRI:rbnmod      LINEAR
+ROSAT:HRI:respscript  xsl_rosat_hri_makeresp
+
+ROSAT:PSPCB:rawx       DETX
+ROSAT:PSPCB:rawy       DETY
+ROSAT:PSPCB:grpstr     Bad 1-11, 212-256&group 12-211 10&show group&show quality&exit
+ROSAT:PSPCB:lststr     rp*
+ROSAT:PSPCB:fbin       15
+ROSAT:PSPCB:hbin       15
+ROSAT:PSPCB:ecol       PI
+ROSAT:PSPCB:wmapcoord  DETECTOR
+ROSAT:PSPCB:respscript  xsl_rosat_pspc_makeresp
+
+ROSAT:PSPCC:rawx       DETX
+ROSAT:PSPCC:rawy       DETY
+ROSAT:PSPCC:grpstr     Bad 1-11, 212-256&group 12-211 10&show group&show quality&exit
+ROSAT:PSPCC:lststr     rp*
+ROSAT:PSPCC:fbin       15
+ROSAT:PSPCC:hbin       15
+ROSAT:PSPCC:ecol       PI
+ROSAT:PSPCC:wmapcoord  DETECTOR
+ROSAT:PSPCC:respscript  xsl_rosat_pspc_makeresp
+
+SAX:submkey             NONE
+SAX:instkey             INSTRUME
+SAX:dmodekey            NONE
+SAX:mkf_def_expr        *hkp.fits*
+SAX:mkf_rel_dir         .
+SAX:time                TIME
+SAX:tunits              s
+SAX:binsize             16.
+SAX:x                   X
+SAX:y                   Y
+SAX:xsiz                TLMAX
+SAX:ysiz                TLMAX
+SAX:detx                DETX
+SAX:dety                DETY
+SAX:detxsiz             TLMAX
+SAX:detysiz             TLMAX
+SAX:rawx                RAWX
+SAX:rawy                RAWY
+SAX:rawxsiz             TLMAX
+SAX:rawysiz             TLMAX
+SAX:phamax              TLMAX
+SAX:gti                 ALLGTI
+SAX:events              EVENTS
+SAX:timeorder           no
+SAX:instruments         LECS MECS MECS1 MECS2 MECS3 PDS
+SAX:fbin                1
+SAX:hbin                1
+SAX:spbn                1
+SAX:ecol                PI
+SAX:ccol                NONE
+SAX:gcol                NONE
+SAX:imagecoord          SKY
+SAX:wmapcoord           SKY
+SAX:catnum              2
+SAX:grpstr              NONE
+SAX:lststr              *_lev.fits
+SAX:ofilt               NONE
+SAX:wtmapb              yes
+SAX:wtmapfix            yes
+SAX:catcol              OBJECT TELESCOP INSTRUME DATE-OBS TIME-OBS DATE-END TIME-END OBSERVER RA_NOM DEC_NOM TELAPSE
+SAX:dispcol             OBJECT DATE-OBS TIME-OBS RA_NOM DEC_NOM TELAPSE
+SAX:extract             extractor
+SAX:respscript          NONE
+SAX:extendresp          no
+SAX:respneedreg         no
+
+SAX:PDS:x               PHWID
+SAX:PDS:y               PHWID
+SAX:PDS:detx            PHWID
+SAX:PDS:dety            PHWID
+SAX:PDS:rawx            PHWID
+SAX:PDS:rawy            PHWID
+SAX:PDS:grpstr          NONE
+SAX:PDS:lststr          *_qev.fits
+SAX:PDS:ofilt           NONE
+SAX:PDS:ecol            PHA
+
+
+SPECTRUM-RG:submkey      NONE
+SPECTRUM-RG:instkey      INSTRUME
+SPECTRUM-RG:dmodekey     DATAMODE
+SPECTRUM-RG:mkf_def_expr NONE
+SPECTRUM-RG:mkf_rel_dir  .
+SPECTRUM-RG:time         TIME
+SPECTRUM-RG:tunits       s
+SPECTRUM-RG:binsize      16.
+SPECTRUM-RG:x            LOCX
+SPECTRUM-RG:y            LOCY
+SPECTRUM-RG:xsiz         TLMAX
+SPECTRUM-RG:ysiz         TLMAX
+SPECTRUM-RG:detx         LINX
+SPECTRUM-RG:dety         LINY
+SPECTRUM-RG:detxsiz      TLMAX
+SPECTRUM-RG:detysiz      TLMAX
+SPECTRUM-RG:rawx         RAWX
+SPECTRUM-RG:rawy         RAWY
+SPECTRUM-RG:rawxsiz      TLMAX
+SPECTRUM-RG:rawysiz      TLMAX
+SPECTRUM-RG:phamax       TLMAX
+SPECTRUM-RG:gti          GTI
+SPECTRUM-RG:events       Accepted events
+SPECTRUM-RG:timeorder    no
+SPECTRUM-RG:instruments  JET-X
+SPECTRUM-RG:fbin         16
+SPECTRUM-RG:hbin         128
+SPECTRUM-RG:spbn         1
+SPECTRUM-RG:ecol         PHA
+SPECTRUM-RG:ccol         NONE
+SPECTRUM-RG:imagecoord   SKY
+SPECTRUM-RG:wmapcoord    SKY
+SPECTRUM-RG:catnum       0
+SPECTRUM-RG:wtmapb       yes
+SPECTRUM-RG:wtmapfix     yes
+SPECTRUM-RG:catcol       OBJECT TELESCOP INSTRUME DATE-OBS TIME-OBS DATE-END TIME-END OBSERVER RA_NOM DEC_NOM NEVENT
+SPECTRUM-RG:dispcol      OBJECT DATE-OBS TIME-OBS RA_NOM DEC_NOM NEVENT
+SPECTRUM-RG:extract      extractor
+SPECTRUM-RG:respscript   NONE
+SPECTRUM-RG:extendresp   no
+SPECTRUM-RG:respneedreg  no
+
+SPECTRUM-RG:JET-X:grpstr NONE
+SPECTRUM-RG:JET-X:lststr *
+SPECTRUM-RG:JET-X:ofilt  NONE
+
+SUZAKU:submkey            NONE
+SUZAKU:instkey            INSTRUME
+SUZAKU:mkf_def_expr       ae*.mkf*
+SUZAKU:mkf_rel_dir        ../../auxil
+SUZAKU:time               TIME
+SUZAKU:tunits             s
+SUZAKU:binsize          16.
+SUZAKU:x                  X
+SUZAKU:y                  Y
+SUZAKU:xsiz               TLMAX
+SUZAKU:ysiz               TLMAX
+SUZAKU:detx               DETX
+SUZAKU:dety               DETY
+SUZAKU:detxsiz            TLMAX
+SUZAKU:detysiz            TLMAX
+SUZAKU:rawx               ACTX
+SUZAKU:rawy               ACTY
+SUZAKU:rawxsiz            TLMAX
+SUZAKU:rawysiz            TLMAX
+SUZAKU:phamax             TLMAX
+SUZAKU:gti                GTI
+SUZAKU:events             EVENTS
+SUZAKU:timeorder          no
+SUZAKU:instruments        XRS XIS0 XIS1 XIS2 XIS3 XISEM0 XISEM1 XISEM2 XISEM3 HXD
+SUZAKU:fbin               8
+SUZAKU:hbin               8
+SUZAKU:spbn               1
+SUZAKU:ecol               PI
+SUZAKU:ccol               SEGMENT
+SUZAKU:gcol               GRADE
+SUZAKU:imagecoord         SKY
+SUZAKU:wmapcoord          DETECTOR
+SUZAKU:catnum             1
+SUZAKU:grpstr             NONE
+SUZAKU:lststr             ae*.evt
+SUZAKU:ofilt              NONE
+SUZAKU:wtmapb             yes
+SUZAKU:wtmapfix           yes
+SUZAKU:catcol             OBJECT TELESCOP INSTRUME DATAMODE DATE-OBS DATE-END OBSERVER
+SUZAKU:dispcol            OBJECT DATE-OBS DATE-END
+SUZAKU:extract            extractor
+SUZAKU:respscript         NONE
+SUZAKU:extendresp         no
+SUZAKU:respneedreg        no
+
+SUZAKU:XRS:dmodekey           DATAMODE
+SUZAKU:XRS:modes              STANDARD
+SUZAKU:XRS:rawx               PIXEL
+SUZAKU:XRS:rawy               PIXEL
+SUZAKU:XRS:lststr             ae*xrs*.*
+SUZAKU:XRS:ccol               PIXEL
+
+SUZAKU:XIS0:lststr   ae*xi0*.evt
+SUZAKU:XIS1:lststr   ae*xi1*.evt
+SUZAKU:XIS2:lststr   ae*xi2*.evt
+SUZAKU:XIS3:lststr   ae*xi3*.evt
+SUZAKU:XISEM0:lststr ae*xi0*.evt
+SUZAKU:XISEM1:lststr ae*xi1*.evt
+SUZAKU:XISEM2:lststr ae*xi2*.evt
+SUZAKU:XISEM3:lststr ae*xi3*.evt
+
+SUZAKU:XIS0:trunc_spec_hi   4095
+SUZAKU:XIS0:rebinscript     xsl_suzaku_xis_rebinspec
+SUZAKU:XIS0:respscript      xsl_suzaku_xis_makeresp
+SUZAKU:XIS0:extendresp      yes
+SUZAKU:XIS0:respneedreg     yes
+
+SUZAKU:XIS0:catcol       OBJECT TELESCOP INSTRUME DATAMODE EDITMODE DATE-OBS DATE-END OBSERVER 
+SUZAKU:XIS0:dispcol            OBJECT DATE-OBS DATE-END EDITMODE
+SUZAKU:XIS0:dmodekey           DATAMODE
+SUZAKU:XIS0:modes           STANDARD TIMING
+
+SUZAKU:XIS1:trunc_spec_hi   4095
+SUZAKU:XIS1:rebinscript     xsl_suzaku_xis_rebinspec
+SUZAKU:XIS1:respscript      xsl_suzaku_xis_makeresp
+SUZAKU:XIS1:extendresp      yes
+SUZAKU:XIS1:respneedreg     yes
+
+SUZAKU:XIS1:catcol       OBJECT TELESCOP INSTRUME DATAMODE EDITMODE DATE-OBS DATE-END OBSERVER 
+SUZAKU:XIS1:dispcol            OBJECT DATE-OBS DATE-END EDITMODE
+SUZAKU:XIS1:dmodekey           DATAMODE
+SUZAKU:XIS1:modes           STANDARD TIMING
+
+SUZAKU:XIS2:trunc_spec_hi   4095
+SUZAKU:XIS2:rebinscript     xsl_suzaku_xis_rebinspec
+SUZAKU:XIS2:respscript      xsl_suzaku_xis_makeresp
+SUZAKU:XIS2:extendresp      yes
+SUZAKU:XIS2:respneedreg     yes
+
+SUZAKU:XIS2:catcol       OBJECT TELESCOP INSTRUME DATAMODE EDITMODE DATE-OBS DATE-END OBSERVER 
+SUZAKU:XIS2:dispcol            OBJECT DATE-OBS DATE-END EDITMODE
+SUZAKU:XIS2:dmodekey           DATAMODE
+SUZAKU:XIS2:modes           STANDARD TIMING
+
+SUZAKU:XIS3:trunc_spec_hi   4095
+SUZAKU:XIS3:rebinscript     xsl_suzaku_xis_rebinspec
+SUZAKU:XIS3:respscript      xsl_suzaku_xis_makeresp
+SUZAKU:XIS3:extendresp      yes
+SUZAKU:XIS3:respneedreg     yes
+
+SUZAKU:XIS3:catcol       OBJECT TELESCOP INSTRUME DATAMODE EDITMODE DATE-OBS DATE-END OBSERVER 
+SUZAKU:XIS3:dispcol            OBJECT DATE-OBS DATE-END EDITMODE
+SUZAKU:XIS3:dmodekey           DATAMODE
+SUZAKU:XIS3:modes           STANDARD TIMING
+
+SUZAKU:HXD:dmodekey DETNAM
+SUZAKU:HXD:x      UNITID
+SUZAKU:HXD:y      UNITID
+SUZAKU:HXD:detx   UNITID
+SUZAKU:HXD:dety   PIN_ID
+SUZAKU:HXD:rawx   UNITID
+SUZAKU:HXD:rawy   UNITID
+SUZAKU:HXD:fbin      1
+SUZAKU:HXD:hbin      1
+SUZAKU:HXD:wmapcoord  DETECTOR
+SUZAKU:HXD:ccol      NONE
+SUZAKU:HXD:modes    WELL_PIN WELL_GSO
+SUZAKU:HXD:wtmapfix  no
+SUZAKU:HXD:lststr ae*hxd_wel*.*
+SUZAKU:HXD:catcol             OBJECT TELESCOP INSTRUME DETNAM DATAMODE DATE-OBS DATE-END OBSERVER
+SUZAKU:HXD:dispcol            OBJECT DETNAM DATE-OBS DATE-END
+
+SUZAKU:HXD:WELL_GSO:ecol      PI_SLOW
+SUZAKU:HXD:WELL_PIN:ecol      PI_PIN
+
+SWIFT:submkey            NONE
+SWIFT:instkey            INSTRUME
+SWIFT:dmodekey           DATAMODE
+SWIFT:mkf_def_expr       NONE
+SWIFT:mkf_rel_dir        .
+SWIFT:time               TIME
+SWIFT:tunits             s
+SWIFT:binsize            5.
+SWIFT:x                  X
+SWIFT:y                  Y
+SWIFT:xsiz               TLMAX
+SWIFT:ysiz               TLMAX
+SWIFT:detx               DETX
+SWIFT:dety               DETY
+SWIFT:detxsiz            TLMAX
+SWIFT:detysiz            TLMAX
+SWIFT:rawx               RAWX
+SWIFT:rawy               RAWY
+SWIFT:rawxsiz            TLMAX
+SWIFT:rawysiz            TLMAX
+SWIFT:phamax             TLMAX
+SWIFT:gti                GTI
+SWIFT:events             EVENTS
+SWIFT:timeorder          yes
+SWIFT:instruments        XRT UVOT
+SWIFT:fbin               1
+SWIFT:hbin               1
+SWIFT:spbn               1
+SWIFT:ecol               PI
+SWIFT:ccol               NONE
+SWIFT:gcol               GRADE
+SWIFT:imagecoord         SKY
+SWIFT:wmapcoord          SKY
+SWIFT:catnum             1
+SWIFT:grpstr             NONE
+SWIFT:lststr             sw*.*
+SWIFT:ofilt              NONE
+SWIFT:wtmapb             yes
+SWIFT:wtmapfix           yes
+SWIFT:catcol             TELESCOP INSTRUME DATAMODE DATE-OBS DATE-END OBJECT OBS_ID
+SWIFT:dispcol            OBJECT OBS_ID DATE-OBS DATAMODE
+SWIFT:extract            extractor
+SWIFT:respscript         NONE
+SWIFT:extendresp         no
+SWIFT:respneedreg        no
+
+SWIFT:XRT:modes          PHOTON WINDOWED PILEDUP LOWRATE
+SWIFT:XRT:lststr         sw*x*.*
+SWIFT:XRT:adjustgti      yes
+
+SWIFT:XRT:WINDOWED:imagecoord  SKY
+SWIFT:XRT:WINDOWED:wmapcoord   SKY
+SWIFT:XRT:WINDOWED:binsize     1.
+ 
+SWIFT:XRT:PILEDUP:imagecoord  DETECTOR
+SWIFT:XRT:PILEDUP:wmapcoord  DETECTOR
+SWIFT:XRT:PILEDUP:binsize     1.
+ 
+SWIFT:XRT:LOWRATE:imagecoord  DETECTOR
+SWIFT:XRT:LOWRATE:wmapcoord  DETECTOR
+SWIFT:XRT:LOWRATE:binsize     1.
+
+SWIFT:UVOT:modes         EVENT
+SWIFT:UVOT:ecol          NONE
+SWIFT:UVOT:ccol          EXPREF
+SWIFT:UVOT:gcol          NONE
+SWIFT:UVOT:lststr        sw*u*.*
+
+XMM:submkey            NONE
+XMM:instkey            INSTRUME
+XMM:dmodekey           DATAMODE
+XMM:mkf_def_expr       NONE
+XMM:mkf_rel_dir        .
+XMM:time               TIME
+XMM:tunits             s
+XMM:binsize            16.
+XMM:x                  X
+XMM:y                  Y
+XMM:xsiz               TLMAX
+XMM:ysiz               TLMAX
+XMM:detx               DETX
+XMM:dety               DETY
+XMM:detxsiz            TLMAX
+XMM:detysiz            TLMAX
+XMM:rawx               RAWX
+XMM:rawy               RAWY
+XMM:rawxsiz            TLMAX
+XMM:rawysiz            TLMAX
+XMM:phamax             TLMAX
+XMM:gti                STDGTI
+XMM:events             EVENTS
+XMM:timeorder          no
+XMM:instruments        EMOS1 EMOS2 EPN RGS1 RGS2
+XMM:fbin               32
+XMM:hbin               64
+XMM:spbn               1
+XMM:ecol               PI
+XMM:ccol               CCDNR
+XMM:gcol               PATTERN
+XMM:imagecoord         SKY
+XMM:wmapcoord          DETECTOR
+XMM:catnum             0
+XMM:grpstr             NONE
+XMM:lststr             *.fits
+XMM:ofilt              NONE
+XMM:wtmapb             yes
+XMM:wtmapfix           yes
+XMM:swmapx             yes
+XMM:swmapy             no
+XMM:extract            extractor
+
+XMM:modes        IMAGING
+XMM:catcol       TELESCOP INSTRUME DATAMODE FILTER DATE-OBS DATE-END OBS_ID EXP_ID OBJECT
+XMM:dispcol      OBJECT OBS_ID DATE-OBS DATAMODE FILTER
+XMM:extendresp         yes
+XMM:respneedreg        no
+
+XMM:EMOS1:trunc_spec_hi 11999
+XMM:EMOS1:rbnval        800
+XMM:EMOS1:rbnmod        LINEAR
+XMM:EMOS1:respscript   xsl_xmm_epic_makeresp
+XMM:EMOS2:trunc_spec_hi 11999
+XMM:EMOS2:rbnval        800
+XMM:EMOS2:rbnmod        LINEAR
+XMM:EMOS2:respscript   xsl_xmm_epic_makeresp
+XMM:EPN:trunc_spec_hi   20479
+XMM:EPN:rbnval          4096
+XMM:EPN:rbnmod          LINEAR
+XMM:EPN:respscript     xsl_xmm_epic_makeresp
+
+
+XTE:submkey          NONE
+XTE:instkey          INSTRUME
+XTE:dmodekey         DATAMODE
+XTE:mkf_def_expr     *.xfl*
+XTE:mkf_rel_dir      .
+XTE:time             TIME
+XTE:tunits           s
+XTE:binsize          16.
+XTE:x                NONE
+XTE:y                NONE
+XTE:xsiz             NONE
+XTE:ysiz             NONE
+XTE:detx             NONE
+XTE:dety             NONE
+XTE:detxsiz          NONE
+XTE:detysiz          NONE
+XTE:rawx             NONE
+XTE:rawy             NONE
+XTE:rawxsiz          NONE
+XTE:rawysiz          NONE
+XTE:phamax           NONE
+XTE:gti              GTI
+XTE:events           XTE_SA
+XTE:timeorder        yes
+XTE:instruments      PCA HEXTE
+XTE:fbin             1  
+XTE:hbin             1  
+XTE:spbn             1
+XTE:ecol             GOOD
+XTE:ccol             NONE
+XTE:gcol             NONE
+XTE:imagecoord       NONE
+XTE:wmapcoord        NONE
+XTE:catnum           1
+XTE:wtmapb           no
+XTE:wtmapfix         no
+XTE:extract          saextrct
+XTE:lststr           FS*
+XTE:grpstr           NONE
+XTE:respscript       NONE
+XTE:extendresp       no
+XTE:respneedreg      no
+
+XTE:HEXTE:lststr    FS*
+XTE:HEXTE:ofilt     NONE
+XTE:HEXTE:fbin      1  
+XTE:HEXTE:hbin      1  
+XTE:HEXTE:modes     E_8US_256_DX1F
+XTE:HEXTE:grpstr    NONE
+XTE:HEXTE:catcol    TELESCOP INSTRUME OBSERVER OBJECT RA_PNT DEC_PNT DATAMODE DATE-OBS TIME-OBS CREATOR OBS_MODE OBS_ID APPID TIMEDEL DELTAT
+XTE:HEXTE:dispcol   INSTRUME OBSERVER OBJECT DATAMODE DATE-OBS TIME-OBS
+
+XTE:HEXTE:E_8US_256_DX1F:ecol    Event
+XTE:HEXTE:E_8US_256_DX1F:events  XTE_SE
+XTE:HEXTE:E_8US_256_DX1F:extract seextrct
+
+XTE:PCA:lststr      FS4a*
+XTE:PCA:ofilt       NONE
+XTE:PCA:fbin        1  
+XTE:PCA:hbin        1  
+XTE:PCA:modes       STANDARD2A STANDARD2B STANDARD2C STANDARD2D STANDARD2E STANDARD2F E_500US_64M_0_1S GOODXENON_2S E_125US_64M_0_1S GOODXENON_16S E_62US_64M_0_1S_L1R1 E_16US_16B_36_1S E_125US_64M_36_1S E_62US_32M_36_1S GOODXENONWITHPROPANE_2S E_1MS_128M_0_8S E_16US_64M_0_1S E_250US_128M_0_1S E_125US_64M_24_1S E_125US_64M_14_1S E_16US_64M_36_1S E_125US_64M_18_1S E_16US_64M_0_8S E_16US_64M_18_1S E_500US_64M_36_1S E_16US_64M_14_1S E_16US_64M_24_1S E_62US_32M_24_1S E_125US_64M_50_1S E_1MS_128M_50_1S GOODXENONWITHPROPANE_16S E_1MS_128M_0_1S E_8US_32B_14_1S E_500US_64N_0_1S E_250US_128M_50_1S E_62US_32M_0_1S E_250US_128M_24_8S E_8US_32M_0_1S E_16US_16M_0_1S E_250US_128M_18_1S E_16US_16B_0_1S E_16US_64M_36_8S E_125US_64M_0_8S E_62US_32M_50_1S E_62US_32M_14_8S E_250US_128M_18_8S E_4US_16A_0_1S E_31US_16M_36_1S E_8US_32B_0_1S E_16US_64M_24_8S E_16US_16B_24_1S E_4US_16B_0_1S E_8US_32M_36_1S E_1US_1M_0_1S E_1MS_128M_50_8S E_62US_14M_0_13_1S E_4US_16M_50_1S E_8US_8A_0_1S E_250US_128M_0_8S E_16US_16M_50_1S E_8US_8C_0_1S E_1US_4M_0_1S E_8US_8B_24_1S E_8US_8B_36_1S E_500US_64M_14_8S E_250US_128M_24_1S E_4US_4B_0_1S E_1US_4A_50_8S E_250US_128M_14_1S E_16US_64M_14_8S E_16US_64M_18_8S E_2US_8B_36_1S E_31US_16M_0_8S E_1US_1M_18_1S E_8US_8B_18_1S E_62US_32B_18_1S E_8US_32M_24_1S E_1US_4A_36_1S E_250US_128M_14_8S E_8US_32M_18_1S E_500US_64M_50_1S E_31US_16M_50_1S E_250US_128M_50_8S E_2US_8B_14_1S E_8US_8M_0_1S E_16US_64M_50_8S E_2US_2M_0_1S  
+XTE:PCA:grpstr      NONE
+XTE:PCA:catcol      TELESCOP INSTRUME OBSERVER OBJECT RA_PNT DEC_PNT DATAMODE DATE-OBS TIME-OBS CREATOR OBS_MODE OBS_ID APPID TIMEDEL DELTAT HDUCLAS2
+XTE:PCA:dispcol     INSTRUME OBSERVER OBJECT DATAMODE DATE-OBS TIME-OBS HDUCLAS2
+
+XTE:PCA:STANDARD2A:ecol        GOOD
+XTE:PCA:STANDARD2A:events      XTE_SA
+XTE:PCA:STANDARD2A:extract     saextrct
+XTE:PCA:STANDARD2A:respscript  pcarsp -s -a none -f
+
+XTE:PCA:STANDARD2B:ecol        GOOD
+XTE:PCA:STANDARD2B:events      XTE_SA
+XTE:PCA:STANDARD2B:extract     saextrct
+XTE:PCA:STANDARD2B:respscript  pcarsp -s -a none -f
+
+XTE:PCA:STANDARD2C:ecol        GOOD
+XTE:PCA:STANDARD2C:events      XTE_SA
+XTE:PCA:STANDARD2C:extract     saextrct
+XTE:PCA:STANDARD2C:respscript  pcarsp -s -a none -f
+
+XTE:PCA:STANDARD2D:ecol        GOOD
+XTE:PCA:STANDARD2D:events      XTE_SA
+XTE:PCA:STANDARD2D:extract     saextrct
+XTE:PCA:STANDARD2D:respscript  pcarsp -s -a none -f
+
+XTE:PCA:STANDARD2E:ecol        GOOD
+XTE:PCA:STANDARD2E:events      XTE_SA
+XTE:PCA:STANDARD2E:extract     saextrct
+XTE:PCA:STANDARD2E:respscript  pcarsp -s -a none -f
+
+XTE:PCA:STANDARD2F:ecol        GOOD
+XTE:PCA:STANDARD2F:events      XTE_SA
+XTE:PCA:STANDARD2F:extract     saextrct
+XTE:PCA:STANDARD2F:respscript  pcarsp -s -a none -f
+
+XTE:PCA:E_500US_64M_0_1S:ecol PHA
+XTE:PCA:E_500US_64M_0_1S:events XTE_SE
+XTE:PCA:E_500US_64M_0_1S:imagecoord SKY
+XTE:PCA:E_500US_64M_0_1S:x PCUID
+XTE:PCA:E_500US_64M_0_1S:y ANODEID
+XTE:PCA:E_500US_64M_0_1S:extract extractor
+
+XTE:PCA:GOODXENON_2S:ecol PHA
+XTE:PCA:GOODXENON_2S:events XTE_SE
+XTE:PCA:GOODXENON_2S:imagecoord SKY
+XTE:PCA:GOODXENON_2S:x PCUID
+XTE:PCA:GOODXENON_2S:y ANODEID
+XTE:PCA:GOODXENON_2S:extract extractor
+
+XTE:PCA:E_125US_64M_0_1S:ecol PHA
+XTE:PCA:E_125US_64M_0_1S:events XTE_SE
+XTE:PCA:E_125US_64M_0_1S:imagecoord SKY
+XTE:PCA:E_125US_64M_0_1S:x PCUID
+XTE:PCA:E_125US_64M_0_1S:y ANODEID
+XTE:PCA:E_125US_64M_0_1S:extract extractor
+
+XTE:PCA:GOODXENON_16S:ecol PHA
+XTE:PCA:GOODXENON_16S:events XTE_SE
+XTE:PCA:GOODXENON_16S:imagecoord SKY
+XTE:PCA:GOODXENON_16S:x PCUID
+XTE:PCA:GOODXENON_16S:y ANODEID
+XTE:PCA:GOODXENON_16S:extract extractor
+
+XTE:PCA:E_62US_64M_0_1S_L1R1:ecol PHA
+XTE:PCA:E_62US_64M_0_1S_L1R1:events XTE_SE
+XTE:PCA:E_62US_64M_0_1S_L1R1:imagecoord SKY
+XTE:PCA:E_62US_64M_0_1S_L1R1:x PCUID
+XTE:PCA:E_62US_64M_0_1S_L1R1:y ANODEID
+XTE:PCA:E_62US_64M_0_1S_L1R1:extract extractor
+
+XTE:PCA:E_16US_16B_36_1S:ecol PHA
+XTE:PCA:E_16US_16B_36_1S:events XTE_SE
+XTE:PCA:E_16US_16B_36_1S:imagecoord SKY
+XTE:PCA:E_16US_16B_36_1S:x PCUID
+XTE:PCA:E_16US_16B_36_1S:y ANODEID
+XTE:PCA:E_16US_16B_36_1S:extract extractor
+
+XTE:PCA:E_125US_64M_36_1S:ecol PHA
+XTE:PCA:E_125US_64M_36_1S:events XTE_SE
+XTE:PCA:E_125US_64M_36_1S:imagecoord SKY
+XTE:PCA:E_125US_64M_36_1S:x PCUID
+XTE:PCA:E_125US_64M_36_1S:y ANODEID
+XTE:PCA:E_125US_64M_36_1S:extract extractor
+
+XTE:PCA:E_62US_32M_36_1S:ecol PHA
+XTE:PCA:E_62US_32M_36_1S:events XTE_SE
+XTE:PCA:E_62US_32M_36_1S:imagecoord SKY
+XTE:PCA:E_62US_32M_36_1S:x PCUID
+XTE:PCA:E_62US_32M_36_1S:y ANODEID
+XTE:PCA:E_62US_32M_36_1S:extract extractor
+
+XTE:PCA:GOODXENONWITHPROPANE_2S:ecol PHA
+XTE:PCA:GOODXENONWITHPROPANE_2S:events XTE_SE
+XTE:PCA:GOODXENONWITHPROPANE_2S:imagecoord SKY
+XTE:PCA:GOODXENONWITHPROPANE_2S:x PCUID
+XTE:PCA:GOODXENONWITHPROPANE_2S:y ANODEID
+XTE:PCA:GOODXENONWITHPROPANE_2S:extract extractor
+
+XTE:PCA:E_1MS_128M_0_8S:ecol PHA
+XTE:PCA:E_1MS_128M_0_8S:events XTE_SE
+XTE:PCA:E_1MS_128M_0_8S:imagecoord SKY
+XTE:PCA:E_1MS_128M_0_8S:x PCUID
+XTE:PCA:E_1MS_128M_0_8S:y ANODEID
+XTE:PCA:E_1MS_128M_0_8S:extract extractor
+
+XTE:PCA:E_16US_64M_0_1S:ecol PHA
+XTE:PCA:E_16US_64M_0_1S:events XTE_SE
+XTE:PCA:E_16US_64M_0_1S:imagecoord SKY
+XTE:PCA:E_16US_64M_0_1S:x PCUID
+XTE:PCA:E_16US_64M_0_1S:y ANODEID
+XTE:PCA:E_16US_64M_0_1S:extract extractor
+
+XTE:PCA:E_250US_128M_0_1S:ecol PHA
+XTE:PCA:E_250US_128M_0_1S:events XTE_SE
+XTE:PCA:E_250US_128M_0_1S:imagecoord SKY
+XTE:PCA:E_250US_128M_0_1S:x PCUID
+XTE:PCA:E_250US_128M_0_1S:y ANODEID
+XTE:PCA:E_250US_128M_0_1S:extract extractor
+
+XTE:PCA:E_125US_64M_24_1S:ecol PHA
+XTE:PCA:E_125US_64M_24_1S:events XTE_SE
+XTE:PCA:E_125US_64M_24_1S:imagecoord SKY
+XTE:PCA:E_125US_64M_24_1S:x PCUID
+XTE:PCA:E_125US_64M_24_1S:y ANODEID
+XTE:PCA:E_125US_64M_24_1S:extract extractor
+
+XTE:PCA:E_125US_64M_14_1S:ecol PHA
+XTE:PCA:E_125US_64M_14_1S:events XTE_SE
+XTE:PCA:E_125US_64M_14_1S:imagecoord SKY
+XTE:PCA:E_125US_64M_14_1S:x PCUID
+XTE:PCA:E_125US_64M_14_1S:y ANODEID
+XTE:PCA:E_125US_64M_14_1S:extract extractor
+
+XTE:PCA:E_16US_64M_36_1S:ecol PHA
+XTE:PCA:E_16US_64M_36_1S:events XTE_SE
+XTE:PCA:E_16US_64M_36_1S:imagecoord SKY
+XTE:PCA:E_16US_64M_36_1S:x PCUID
+XTE:PCA:E_16US_64M_36_1S:y ANODEID
+XTE:PCA:E_16US_64M_36_1S:extract extractor
+
+XTE:PCA:E_125US_64M_18_1S:ecol PHA
+XTE:PCA:E_125US_64M_18_1S:events XTE_SE
+XTE:PCA:E_125US_64M_18_1S:imagecoord SKY
+XTE:PCA:E_125US_64M_18_1S:x PCUID
+XTE:PCA:E_125US_64M_18_1S:y ANODEID
+XTE:PCA:E_125US_64M_18_1S:extract extractor
+
+XTE:PCA:E_16US_64M_0_8S:ecol PHA
+XTE:PCA:E_16US_64M_0_8S:events XTE_SE
+XTE:PCA:E_16US_64M_0_8S:imagecoord SKY
+XTE:PCA:E_16US_64M_0_8S:x PCUID
+XTE:PCA:E_16US_64M_0_8S:y ANODEID
+XTE:PCA:E_16US_64M_0_8S:extract extractor
+
+XTE:PCA:E_16US_64M_18_1S:ecol PHA
+XTE:PCA:E_16US_64M_18_1S:events XTE_SE
+XTE:PCA:E_16US_64M_18_1S:imagecoord SKY
+XTE:PCA:E_16US_64M_18_1S:x PCUID
+XTE:PCA:E_16US_64M_18_1S:y ANODEID
+XTE:PCA:E_16US_64M_18_1S:extract extractor
+
+XTE:PCA:E_500US_64M_36_1S:ecol PHA
+XTE:PCA:E_500US_64M_36_1S:events XTE_SE
+XTE:PCA:E_500US_64M_36_1S:imagecoord SKY
+XTE:PCA:E_500US_64M_36_1S:x PCUID
+XTE:PCA:E_500US_64M_36_1S:y ANODEID
+XTE:PCA:E_500US_64M_36_1S:extract extractor
+
+XTE:PCA:E_16US_64M_14_1S:ecol PHA
+XTE:PCA:E_16US_64M_14_1S:events XTE_SE
+XTE:PCA:E_16US_64M_14_1S:imagecoord SKY
+XTE:PCA:E_16US_64M_14_1S:x PCUID
+XTE:PCA:E_16US_64M_14_1S:y ANODEID
+XTE:PCA:E_16US_64M_14_1S:extract extractor
+
+XTE:PCA:E_16US_64M_24_1S:ecol PHA
+XTE:PCA:E_16US_64M_24_1S:events XTE_SE
+XTE:PCA:E_16US_64M_24_1S:imagecoord SKY
+XTE:PCA:E_16US_64M_24_1S:x PCUID
+XTE:PCA:E_16US_64M_24_1S:y ANODEID
+XTE:PCA:E_16US_64M_24_1S:extract extractor
+
+XTE:PCA:E_62US_32M_24_1S:ecol PHA
+XTE:PCA:E_62US_32M_24_1S:events XTE_SE
+XTE:PCA:E_62US_32M_24_1S:imagecoord SKY
+XTE:PCA:E_62US_32M_24_1S:x PCUID
+XTE:PCA:E_62US_32M_24_1S:y ANODEID
+XTE:PCA:E_62US_32M_24_1S:extract extractor
+
+XTE:PCA:E_125US_64M_50_1S:ecol PHA
+XTE:PCA:E_125US_64M_50_1S:events XTE_SE
+XTE:PCA:E_125US_64M_50_1S:imagecoord SKY
+XTE:PCA:E_125US_64M_50_1S:x PCUID
+XTE:PCA:E_125US_64M_50_1S:y ANODEID
+XTE:PCA:E_125US_64M_50_1S:extract extractor
+
+XTE:PCA:E_1MS_128M_50_1S:ecol PHA
+XTE:PCA:E_1MS_128M_50_1S:events XTE_SE
+XTE:PCA:E_1MS_128M_50_1S:imagecoord SKY
+XTE:PCA:E_1MS_128M_50_1S:x PCUID
+XTE:PCA:E_1MS_128M_50_1S:y ANODEID
+XTE:PCA:E_1MS_128M_50_1S:extract extractor
+
+XTE:PCA:GOODXENONWITHPROPANE_16S:ecol PHA
+XTE:PCA:GOODXENONWITHPROPANE_16S:events XTE_SE
+XTE:PCA:GOODXENONWITHPROPANE_16S:imagecoord SKY
+XTE:PCA:GOODXENONWITHPROPANE_16S:x PCUID
+XTE:PCA:GOODXENONWITHPROPANE_16S:y ANODEID
+XTE:PCA:GOODXENONWITHPROPANE_16S:extract extractor
+
+XTE:PCA:E_1MS_128M_0_1S:ecol PHA
+XTE:PCA:E_1MS_128M_0_1S:events XTE_SE
+XTE:PCA:E_1MS_128M_0_1S:imagecoord SKY
+XTE:PCA:E_1MS_128M_0_1S:x PCUID
+XTE:PCA:E_1MS_128M_0_1S:y ANODEID
+XTE:PCA:E_1MS_128M_0_1S:extract extractor
+
+XTE:PCA:E_8US_32B_14_1S:ecol PHA
+XTE:PCA:E_8US_32B_14_1S:events XTE_SE
+XTE:PCA:E_8US_32B_14_1S:imagecoord SKY
+XTE:PCA:E_8US_32B_14_1S:x PCUID
+XTE:PCA:E_8US_32B_14_1S:y ANODEID
+XTE:PCA:E_8US_32B_14_1S:extract extractor
+
+XTE:PCA:E_500US_64N_0_1S:ecol PHA
+XTE:PCA:E_500US_64N_0_1S:events XTE_SE
+XTE:PCA:E_500US_64N_0_1S:imagecoord SKY
+XTE:PCA:E_500US_64N_0_1S:x PCUID
+XTE:PCA:E_500US_64N_0_1S:y ANODEID
+XTE:PCA:E_500US_64N_0_1S:extract extractor
+
+XTE:PCA:E_250US_128M_50_1S:ecol PHA
+XTE:PCA:E_250US_128M_50_1S:events XTE_SE
+XTE:PCA:E_250US_128M_50_1S:imagecoord SKY
+XTE:PCA:E_250US_128M_50_1S:x PCUID
+XTE:PCA:E_250US_128M_50_1S:y ANODEID
+XTE:PCA:E_250US_128M_50_1S:extract extractor
+
+XTE:PCA:E_62US_32M_0_1S:ecol PHA
+XTE:PCA:E_62US_32M_0_1S:events XTE_SE
+XTE:PCA:E_62US_32M_0_1S:imagecoord SKY
+XTE:PCA:E_62US_32M_0_1S:x PCUID
+XTE:PCA:E_62US_32M_0_1S:y ANODEID
+XTE:PCA:E_62US_32M_0_1S:extract extractor
+
+XTE:PCA:E_250US_128M_24_8S:ecol PHA
+XTE:PCA:E_250US_128M_24_8S:events XTE_SE
+XTE:PCA:E_250US_128M_24_8S:imagecoord SKY
+XTE:PCA:E_250US_128M_24_8S:x PCUID
+XTE:PCA:E_250US_128M_24_8S:y ANODEID
+XTE:PCA:E_250US_128M_24_8S:extract extractor
+
+XTE:PCA:E_8US_32M_0_1S:ecol PHA
+XTE:PCA:E_8US_32M_0_1S:events XTE_SE
+XTE:PCA:E_8US_32M_0_1S:imagecoord SKY
+XTE:PCA:E_8US_32M_0_1S:x PCUID
+XTE:PCA:E_8US_32M_0_1S:y ANODEID
+XTE:PCA:E_8US_32M_0_1S:extract extractor
+
+XTE:PCA:E_16US_16M_0_1S:ecol PHA
+XTE:PCA:E_16US_16M_0_1S:events XTE_SE
+XTE:PCA:E_16US_16M_0_1S:imagecoord SKY
+XTE:PCA:E_16US_16M_0_1S:x PCUID
+XTE:PCA:E_16US_16M_0_1S:y ANODEID
+XTE:PCA:E_16US_16M_0_1S:extract extractor
+
+XTE:PCA:E_250US_128M_18_1S:ecol PHA
+XTE:PCA:E_250US_128M_18_1S:events XTE_SE
+XTE:PCA:E_250US_128M_18_1S:imagecoord SKY
+XTE:PCA:E_250US_128M_18_1S:x PCUID
+XTE:PCA:E_250US_128M_18_1S:y ANODEID
+XTE:PCA:E_250US_128M_18_1S:extract extractor
+
+XTE:PCA:E_16US_16B_0_1S:ecol PHA
+XTE:PCA:E_16US_16B_0_1S:events XTE_SE
+XTE:PCA:E_16US_16B_0_1S:imagecoord SKY
+XTE:PCA:E_16US_16B_0_1S:x PCUID
+XTE:PCA:E_16US_16B_0_1S:y ANODEID
+XTE:PCA:E_16US_16B_0_1S:extract extractor
+
+XTE:PCA:E_16US_64M_36_8S:ecol PHA
+XTE:PCA:E_16US_64M_36_8S:events XTE_SE
+XTE:PCA:E_16US_64M_36_8S:imagecoord SKY
+XTE:PCA:E_16US_64M_36_8S:x PCUID
+XTE:PCA:E_16US_64M_36_8S:y ANODEID
+XTE:PCA:E_16US_64M_36_8S:extract extractor
+
+XTE:PCA:E_125US_64M_0_8S:ecol PHA
+XTE:PCA:E_125US_64M_0_8S:events XTE_SE
+XTE:PCA:E_125US_64M_0_8S:imagecoord SKY
+XTE:PCA:E_125US_64M_0_8S:x PCUID
+XTE:PCA:E_125US_64M_0_8S:y ANODEID
+XTE:PCA:E_125US_64M_0_8S:extract extractor
+
+XTE:PCA:E_62US_32M_50_1S:ecol PHA
+XTE:PCA:E_62US_32M_50_1S:events XTE_SE
+XTE:PCA:E_62US_32M_50_1S:imagecoord SKY
+XTE:PCA:E_62US_32M_50_1S:x PCUID
+XTE:PCA:E_62US_32M_50_1S:y ANODEID
+XTE:PCA:E_62US_32M_50_1S:extract extractor
+
+XTE:PCA:E_62US_32M_14_8S:ecol PHA
+XTE:PCA:E_62US_32M_14_8S:events XTE_SE
+XTE:PCA:E_62US_32M_14_8S:imagecoord SKY
+XTE:PCA:E_62US_32M_14_8S:x PCUID
+XTE:PCA:E_62US_32M_14_8S:y ANODEID
+XTE:PCA:E_62US_32M_14_8S:extract extractor
+
+XTE:PCA:E_250US_128M_18_8S:ecol PHA
+XTE:PCA:E_250US_128M_18_8S:events XTE_SE
+XTE:PCA:E_250US_128M_18_8S:imagecoord SKY
+XTE:PCA:E_250US_128M_18_8S:x PCUID
+XTE:PCA:E_250US_128M_18_8S:y ANODEID
+XTE:PCA:E_250US_128M_18_8S:extract extractor
+
+XTE:PCA:E_4US_16A_0_1S:ecol PHA
+XTE:PCA:E_4US_16A_0_1S:events XTE_SE
+XTE:PCA:E_4US_16A_0_1S:imagecoord SKY
+XTE:PCA:E_4US_16A_0_1S:x PCUID
+XTE:PCA:E_4US_16A_0_1S:y ANODEID
+XTE:PCA:E_4US_16A_0_1S:extract extractor
+
+XTE:PCA:E_31US_16M_36_1S:ecol PHA
+XTE:PCA:E_31US_16M_36_1S:events XTE_SE
+XTE:PCA:E_31US_16M_36_1S:imagecoord SKY
+XTE:PCA:E_31US_16M_36_1S:x PCUID
+XTE:PCA:E_31US_16M_36_1S:y ANODEID
+XTE:PCA:E_31US_16M_36_1S:extract extractor
+
+XTE:PCA:E_8US_32B_0_1S:ecol PHA
+XTE:PCA:E_8US_32B_0_1S:events XTE_SE
+XTE:PCA:E_8US_32B_0_1S:imagecoord SKY
+XTE:PCA:E_8US_32B_0_1S:x PCUID
+XTE:PCA:E_8US_32B_0_1S:y ANODEID
+XTE:PCA:E_8US_32B_0_1S:extract extractor
+
+XTE:PCA:E_16US_64M_24_8S:ecol PHA
+XTE:PCA:E_16US_64M_24_8S:events XTE_SE
+XTE:PCA:E_16US_64M_24_8S:imagecoord SKY
+XTE:PCA:E_16US_64M_24_8S:x PCUID
+XTE:PCA:E_16US_64M_24_8S:y ANODEID
+XTE:PCA:E_16US_64M_24_8S:extract extractor
+
+XTE:PCA:E_16US_16B_24_1S:ecol PHA
+XTE:PCA:E_16US_16B_24_1S:events XTE_SE
+XTE:PCA:E_16US_16B_24_1S:imagecoord SKY
+XTE:PCA:E_16US_16B_24_1S:x PCUID
+XTE:PCA:E_16US_16B_24_1S:y ANODEID
+XTE:PCA:E_16US_16B_24_1S:extract extractor
+
+XTE:PCA:E_4US_16B_0_1S:ecol PHA
+XTE:PCA:E_4US_16B_0_1S:events XTE_SE
+XTE:PCA:E_4US_16B_0_1S:imagecoord SKY
+XTE:PCA:E_4US_16B_0_1S:x PCUID
+XTE:PCA:E_4US_16B_0_1S:y ANODEID
+XTE:PCA:E_4US_16B_0_1S:extract extractor
+
+XTE:PCA:E_8US_32M_36_1S:ecol PHA
+XTE:PCA:E_8US_32M_36_1S:events XTE_SE
+XTE:PCA:E_8US_32M_36_1S:imagecoord SKY
+XTE:PCA:E_8US_32M_36_1S:x PCUID
+XTE:PCA:E_8US_32M_36_1S:y ANODEID
+XTE:PCA:E_8US_32M_36_1S:extract extractor
+
+XTE:PCA:E_1US_1M_0_1S:ecol PHA
+XTE:PCA:E_1US_1M_0_1S:events XTE_SE
+XTE:PCA:E_1US_1M_0_1S:imagecoord SKY
+XTE:PCA:E_1US_1M_0_1S:x PCUID
+XTE:PCA:E_1US_1M_0_1S:y ANODEID
+XTE:PCA:E_1US_1M_0_1S:extract extractor
+
+XTE:PCA:E_1MS_128M_50_8S:ecol PHA
+XTE:PCA:E_1MS_128M_50_8S:events XTE_SE
+XTE:PCA:E_1MS_128M_50_8S:imagecoord SKY
+XTE:PCA:E_1MS_128M_50_8S:x PCUID
+XTE:PCA:E_1MS_128M_50_8S:y ANODEID
+XTE:PCA:E_1MS_128M_50_8S:extract extractor
+
+XTE:PCA:E_62US_14M_0_13_1S:ecol PHA
+XTE:PCA:E_62US_14M_0_13_1S:events XTE_SE
+XTE:PCA:E_62US_14M_0_13_1S:imagecoord SKY
+XTE:PCA:E_62US_14M_0_13_1S:x PCUID
+XTE:PCA:E_62US_14M_0_13_1S:y ANODEID
+XTE:PCA:E_62US_14M_0_13_1S:extract extractor
+
+XTE:PCA:E_4US_16M_50_1S:ecol PHA
+XTE:PCA:E_4US_16M_50_1S:events XTE_SE
+XTE:PCA:E_4US_16M_50_1S:imagecoord SKY
+XTE:PCA:E_4US_16M_50_1S:x PCUID
+XTE:PCA:E_4US_16M_50_1S:y ANODEID
+XTE:PCA:E_4US_16M_50_1S:extract extractor
+
+XTE:PCA:E_8US_8A_0_1S:ecol PHA
+XTE:PCA:E_8US_8A_0_1S:events XTE_SE
+XTE:PCA:E_8US_8A_0_1S:imagecoord SKY
+XTE:PCA:E_8US_8A_0_1S:x PCUID
+XTE:PCA:E_8US_8A_0_1S:y ANODEID
+XTE:PCA:E_8US_8A_0_1S:extract extractor
+
+XTE:PCA:E_250US_128M_0_8S:ecol PHA
+XTE:PCA:E_250US_128M_0_8S:events XTE_SE
+XTE:PCA:E_250US_128M_0_8S:imagecoord SKY
+XTE:PCA:E_250US_128M_0_8S:x PCUID
+XTE:PCA:E_250US_128M_0_8S:y ANODEID
+XTE:PCA:E_250US_128M_0_8S:extract extractor
+
+XTE:PCA:E_16US_16M_50_1S:ecol PHA
+XTE:PCA:E_16US_16M_50_1S:events XTE_SE
+XTE:PCA:E_16US_16M_50_1S:imagecoord SKY
+XTE:PCA:E_16US_16M_50_1S:x PCUID
+XTE:PCA:E_16US_16M_50_1S:y ANODEID
+XTE:PCA:E_16US_16M_50_1S:extract extractor
+
+XTE:PCA:E_8US_8C_0_1S:ecol PHA
+XTE:PCA:E_8US_8C_0_1S:events XTE_SE
+XTE:PCA:E_8US_8C_0_1S:imagecoord SKY
+XTE:PCA:E_8US_8C_0_1S:x PCUID
+XTE:PCA:E_8US_8C_0_1S:y ANODEID
+XTE:PCA:E_8US_8C_0_1S:extract extractor
+
+XTE:PCA:E_1US_4M_0_1S:ecol PHA
+XTE:PCA:E_1US_4M_0_1S:events XTE_SE
+XTE:PCA:E_1US_4M_0_1S:imagecoord SKY
+XTE:PCA:E_1US_4M_0_1S:x PCUID
+XTE:PCA:E_1US_4M_0_1S:y ANODEID
+XTE:PCA:E_1US_4M_0_1S:extract extractor
+
+XTE:PCA:E_8US_8B_24_1S:ecol PHA
+XTE:PCA:E_8US_8B_24_1S:events XTE_SE
+XTE:PCA:E_8US_8B_24_1S:imagecoord SKY
+XTE:PCA:E_8US_8B_24_1S:x PCUID
+XTE:PCA:E_8US_8B_24_1S:y ANODEID
+XTE:PCA:E_8US_8B_24_1S:extract extractor
+
+XTE:PCA:E_8US_8B_36_1S:ecol PHA
+XTE:PCA:E_8US_8B_36_1S:events XTE_SE
+XTE:PCA:E_8US_8B_36_1S:imagecoord SKY
+XTE:PCA:E_8US_8B_36_1S:x PCUID
+XTE:PCA:E_8US_8B_36_1S:y ANODEID
+XTE:PCA:E_8US_8B_36_1S:extract extractor
+
+XTE:PCA:E_500US_64M_14_8S:ecol PHA
+XTE:PCA:E_500US_64M_14_8S:events XTE_SE
+XTE:PCA:E_500US_64M_14_8S:imagecoord SKY
+XTE:PCA:E_500US_64M_14_8S:x PCUID
+XTE:PCA:E_500US_64M_14_8S:y ANODEID
+XTE:PCA:E_500US_64M_14_8S:extract extractor
+
+XTE:PCA:E_250US_128M_24_1S:ecol PHA
+XTE:PCA:E_250US_128M_24_1S:events XTE_SE
+XTE:PCA:E_250US_128M_24_1S:imagecoord SKY
+XTE:PCA:E_250US_128M_24_1S:x PCUID
+XTE:PCA:E_250US_128M_24_1S:y ANODEID
+XTE:PCA:E_250US_128M_24_1S:extract extractor
+
+XTE:PCA:E_4US_4B_0_1S:ecol PHA
+XTE:PCA:E_4US_4B_0_1S:events XTE_SE
+XTE:PCA:E_4US_4B_0_1S:imagecoord SKY
+XTE:PCA:E_4US_4B_0_1S:x PCUID
+XTE:PCA:E_4US_4B_0_1S:y ANODEID
+XTE:PCA:E_4US_4B_0_1S:extract extractor
+
+XTE:PCA:E_1US_4A_50_8S:ecol PHA
+XTE:PCA:E_1US_4A_50_8S:events XTE_SE
+XTE:PCA:E_1US_4A_50_8S:imagecoord SKY
+XTE:PCA:E_1US_4A_50_8S:x PCUID
+XTE:PCA:E_1US_4A_50_8S:y ANODEID
+XTE:PCA:E_1US_4A_50_8S:extract extractor
+
+XTE:PCA:E_250US_128M_14_1S:ecol PHA
+XTE:PCA:E_250US_128M_14_1S:events XTE_SE
+XTE:PCA:E_250US_128M_14_1S:imagecoord SKY
+XTE:PCA:E_250US_128M_14_1S:x PCUID
+XTE:PCA:E_250US_128M_14_1S:y ANODEID
+XTE:PCA:E_250US_128M_14_1S:extract extractor
+
+XTE:PCA:E_16US_64M_14_8S:ecol PHA
+XTE:PCA:E_16US_64M_14_8S:events XTE_SE
+XTE:PCA:E_16US_64M_14_8S:imagecoord SKY
+XTE:PCA:E_16US_64M_14_8S:x PCUID
+XTE:PCA:E_16US_64M_14_8S:y ANODEID
+XTE:PCA:E_16US_64M_14_8S:extract extractor
+
+XTE:PCA:E_16US_64M_18_8S:ecol PHA
+XTE:PCA:E_16US_64M_18_8S:events XTE_SE
+XTE:PCA:E_16US_64M_18_8S:imagecoord SKY
+XTE:PCA:E_16US_64M_18_8S:x PCUID
+XTE:PCA:E_16US_64M_18_8S:y ANODEID
+XTE:PCA:E_16US_64M_18_8S:extract extractor
+
+XTE:PCA:E_2US_8B_36_1S:ecol PHA
+XTE:PCA:E_2US_8B_36_1S:events XTE_SE
+XTE:PCA:E_2US_8B_36_1S:imagecoord SKY
+XTE:PCA:E_2US_8B_36_1S:x PCUID
+XTE:PCA:E_2US_8B_36_1S:y ANODEID
+XTE:PCA:E_2US_8B_36_1S:extract extractor
+
+XTE:PCA:E_31US_16M_0_8S:ecol PHA
+XTE:PCA:E_31US_16M_0_8S:events XTE_SE
+XTE:PCA:E_31US_16M_0_8S:imagecoord SKY
+XTE:PCA:E_31US_16M_0_8S:x PCUID
+XTE:PCA:E_31US_16M_0_8S:y ANODEID
+XTE:PCA:E_31US_16M_0_8S:extract extractor
+
+XTE:PCA:E_1US_1M_18_1S:ecol PHA
+XTE:PCA:E_1US_1M_18_1S:events XTE_SE
+XTE:PCA:E_1US_1M_18_1S:imagecoord SKY
+XTE:PCA:E_1US_1M_18_1S:x PCUID
+XTE:PCA:E_1US_1M_18_1S:y ANODEID
+XTE:PCA:E_1US_1M_18_1S:extract extractor
+
+XTE:PCA:E_8US_8B_18_1S:ecol PHA
+XTE:PCA:E_8US_8B_18_1S:events XTE_SE
+XTE:PCA:E_8US_8B_18_1S:imagecoord SKY
+XTE:PCA:E_8US_8B_18_1S:x PCUID
+XTE:PCA:E_8US_8B_18_1S:y ANODEID
+XTE:PCA:E_8US_8B_18_1S:extract extractor
+
+XTE:PCA:E_62US_32B_18_1S:ecol PHA
+XTE:PCA:E_62US_32B_18_1S:events XTE_SE
+XTE:PCA:E_62US_32B_18_1S:imagecoord SKY
+XTE:PCA:E_62US_32B_18_1S:x PCUID
+XTE:PCA:E_62US_32B_18_1S:y ANODEID
+XTE:PCA:E_62US_32B_18_1S:extract extractor
+
+XTE:PCA:E_8US_32M_24_1S:ecol PHA
+XTE:PCA:E_8US_32M_24_1S:events XTE_SE
+XTE:PCA:E_8US_32M_24_1S:imagecoord SKY
+XTE:PCA:E_8US_32M_24_1S:x PCUID
+XTE:PCA:E_8US_32M_24_1S:y ANODEID
+XTE:PCA:E_8US_32M_24_1S:extract extractor
+
+XTE:PCA:E_1US_4A_36_1S:ecol PHA
+XTE:PCA:E_1US_4A_36_1S:events XTE_SE
+XTE:PCA:E_1US_4A_36_1S:imagecoord SKY
+XTE:PCA:E_1US_4A_36_1S:x PCUID
+XTE:PCA:E_1US_4A_36_1S:y ANODEID
+XTE:PCA:E_1US_4A_36_1S:extract extractor
+
+XTE:PCA:E_250US_128M_14_8S:ecol PHA
+XTE:PCA:E_250US_128M_14_8S:events XTE_SE
+XTE:PCA:E_250US_128M_14_8S:imagecoord SKY
+XTE:PCA:E_250US_128M_14_8S:x PCUID
+XTE:PCA:E_250US_128M_14_8S:y ANODEID
+XTE:PCA:E_250US_128M_14_8S:extract extractor
+
+XTE:PCA:E_8US_32M_18_1S:ecol PHA
+XTE:PCA:E_8US_32M_18_1S:events XTE_SE
+XTE:PCA:E_8US_32M_18_1S:imagecoord SKY
+XTE:PCA:E_8US_32M_18_1S:x PCUID
+XTE:PCA:E_8US_32M_18_1S:y ANODEID
+XTE:PCA:E_8US_32M_18_1S:extract extractor
+
+XTE:PCA:E_500US_64M_50_1S:ecol PHA
+XTE:PCA:E_500US_64M_50_1S:events XTE_SE
+XTE:PCA:E_500US_64M_50_1S:imagecoord SKY
+XTE:PCA:E_500US_64M_50_1S:x PCUID
+XTE:PCA:E_500US_64M_50_1S:y ANODEID
+XTE:PCA:E_500US_64M_50_1S:extract extractor
+
+XTE:PCA:E_31US_16M_50_1S:ecol PHA
+XTE:PCA:E_31US_16M_50_1S:events XTE_SE
+XTE:PCA:E_31US_16M_50_1S:imagecoord SKY
+XTE:PCA:E_31US_16M_50_1S:x PCUID
+XTE:PCA:E_31US_16M_50_1S:y ANODEID
+XTE:PCA:E_31US_16M_50_1S:extract extractor
+
+XTE:PCA:E_250US_128M_50_8S:ecol PHA
+XTE:PCA:E_250US_128M_50_8S:events XTE_SE
+XTE:PCA:E_250US_128M_50_8S:imagecoord SKY
+XTE:PCA:E_250US_128M_50_8S:x PCUID
+XTE:PCA:E_250US_128M_50_8S:y ANODEID
+XTE:PCA:E_250US_128M_50_8S:extract extractor
+
+XTE:PCA:E_2US_8B_14_1S:ecol PHA
+XTE:PCA:E_2US_8B_14_1S:events XTE_SE
+XTE:PCA:E_2US_8B_14_1S:imagecoord SKY
+XTE:PCA:E_2US_8B_14_1S:x PCUID
+XTE:PCA:E_2US_8B_14_1S:y ANODEID
+XTE:PCA:E_2US_8B_14_1S:extract extractor
+
+XTE:PCA:E_8US_8M_0_1S:ecol PHA
+XTE:PCA:E_8US_8M_0_1S:events XTE_SE
+XTE:PCA:E_8US_8M_0_1S:imagecoord SKY
+XTE:PCA:E_8US_8M_0_1S:x PCUID
+XTE:PCA:E_8US_8M_0_1S:y ANODEID
+XTE:PCA:E_8US_8M_0_1S:extract extractor
+
+XTE:PCA:E_16US_64M_50_8S:ecol PHA
+XTE:PCA:E_16US_64M_50_8S:events XTE_SE
+XTE:PCA:E_16US_64M_50_8S:imagecoord SKY
+XTE:PCA:E_16US_64M_50_8S:x PCUID
+XTE:PCA:E_16US_64M_50_8S:y ANODEID
+XTE:PCA:E_16US_64M_50_8S:extract extractor
+
+XTE:PCA:E_2US_2M_0_1S:ecol PHA
+XTE:PCA:E_2US_2M_0_1S:events XTE_SE
+XTE:PCA:E_2US_2M_0_1S:imagecoord SKY
+XTE:PCA:E_2US_2M_0_1S:x PCUID
+XTE:PCA:E_2US_2M_0_1S:y ANODEID
+XTE:PCA:E_2US_2M_0_1S:extract extractor
