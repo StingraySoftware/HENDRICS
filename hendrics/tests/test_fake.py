@@ -172,6 +172,9 @@ class TestFake(object):
         cls.xmm_fits_file = os.path.join(
             cls.datadir, "monol_test_fake_lc_xmm.evt"
         )
+        # Note that I don't specify the instrument. This is because
+        # I want the internal machinery to understand that this is
+        # XMM and this has to be given EPIC-pn by default.
         hen.fake.main(
             [
                 "--deadtime",

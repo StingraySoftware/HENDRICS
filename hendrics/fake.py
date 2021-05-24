@@ -165,7 +165,7 @@ def generate_fake_fits_observation(
 
     allowed_instr = [ins.lower() for ins in allowed_instr]
     if instr.lower() not in allowed_instr:
-        instr = mission_info["instruments"][0]
+        instr = allowed_instr[0]
 
     ccol = get_key_from_mission_info(mission_info, "ccol", None, inst=instr)
     ecol = get_key_from_mission_info(mission_info, "ecol", "PI", inst=instr)
