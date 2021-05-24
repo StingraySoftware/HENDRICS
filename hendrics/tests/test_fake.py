@@ -235,6 +235,7 @@ class TestFake(object):
             assert "STDGTI01" in hdunames
             assert "STDGTI02" in hdunames
             assert "STDGTI07" in hdunames
+
         assert os.path.exists(self.xmm_ev_file)
 
     def test_load_events_randomize(self):
@@ -255,17 +256,19 @@ class TestFake(object):
         assert os.path.exists(newfile)
         os.remove(newfile)
 
-    def test_fake_fits_input_events_file(self):
+    @pytest.mark.parametrize("fname", ["first_event_file", "xmm_ev_file"])
+    def test_fake_fits_input_events_file(self, fname):
         newfile = "bububuasdf.fits"
-        command = f"-e {self.first_event_file} -o {newfile}"
+        infname = getattr(self, fname)
+        command = f"-e {infname} -o {newfile}"
         _ = hen.fake.main(command.split())
         assert os.path.exists(newfile)
 
         verify_all_checksums(newfile)
 
-        newfiles = hen.read_events.treat_event_file(newfile)
-        events0 = load_events(newfiles[0])
-        events1 = load_events(self.first_event_file)
+        events0 = load_events(infname)
+        events1 = EventList.read(newfile, format_="hea")
+
         assert np.allclose(events0.time, events1.time)
         assert np.allclose(events0.gti, events1.gti)
 
