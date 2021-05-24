@@ -137,6 +137,8 @@ def generate_fake_fits_observation(
         instr = assign_value_if_none(instr, event_list.instr)
         tstart = assign_value_if_none(tstart, gti[0, 0])
         tstop = assign_value_if_none(tstop, gti[-1, 1])
+        if hasattr(event_list, "mjdref") and event_list.mjdref is not None:
+            mjdref = event_list.mjdref
 
     if hasattr(event_list, "pi") and event_list.pi is not None:
         pi = event_list.pi
@@ -224,14 +226,20 @@ def generate_fake_fits_observation(
     )
     tbheader["TELESCOP"] = (mission, "Telescope (mission) name")
     tbheader["INSTRUME"] = (instr, "Instrument name")
-    tbheader["MJDREFI"] = (
-        int(mjdref),
-        "TDB time reference; Modified Julian Day (int)",
-    )
-    tbheader["MJDREFF"] = (
-        mjdref - int(mjdref),
-        "TDB time reference; Modified Julian Day (frac)",
-    )
+    if mjdref != float(int(mjdref)):
+        tbheader["MJDREFI"] = (
+            int(mjdref),
+            "TDB time reference; Modified Julian Day (int)",
+        )
+        tbheader["MJDREFF"] = (
+            mjdref - int(mjdref),
+            "TDB time reference; Modified Julian Day (frac)",
+        )
+        tbheader.pop("MJDREF", None)
+    else:
+        tbheader["MJDREF"] = mjdref
+        tbheader.pop("MJDREFI", None)
+        tbheader.pop("MJDREFF", None)
     tbheader["TSTOP"] = (tstop, "Elapsed seconds since MJDREF at end of file")
     tbheader["LIVETIME"] = (livetime, "On-source time")
     tbheader["TIMEZERO"] = (0.000000e00, "Time Zero")
@@ -270,7 +278,6 @@ def generate_fake_fits_observation(
     thdulist.writeto(
         filename, overwrite=True, checksum=True, output_verify="exception"
     )
-    print(thdulist.info())
 
     thdulist.close()
     return filename
@@ -725,6 +732,7 @@ def main(args=None):
             event_list.simulate_times(lc)
             nevents = len(event_list.time)
             event_list.pi = np.zeros(nevents, dtype=int)
+            event_list.mjdref = args.mjdref
             log.info("{} events generated".format(nevents))
         else:
             event_list = None
