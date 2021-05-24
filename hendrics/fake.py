@@ -169,7 +169,9 @@ def generate_fake_fits_observation(
 
     ccol = get_key_from_mission_info(mission_info, "ccol", None, inst=instr)
     ecol = get_key_from_mission_info(mission_info, "ecol", "PI", inst=instr)
-    ext = get_key_from_mission_info(mission_info, "events", "EVENTS", inst=instr)
+    ext = get_key_from_mission_info(
+        mission_info, "events", "EVENTS", inst=instr
+    )
 
     # Create primary header
     prihdr = fits.Header()
@@ -265,7 +267,9 @@ def generate_fake_fits_observation(
 
     thdulist = fits.HDUList(all_new_hdus)
     assert thdulist[1].verify_datasum() == 1
-    thdulist.writeto(filename, overwrite=True, checksum=True, output_verify="exception")
+    thdulist.writeto(
+        filename, overwrite=True, checksum=True, output_verify="exception"
+    )
     print(thdulist.info())
 
     thdulist.close()
