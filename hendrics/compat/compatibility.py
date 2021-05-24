@@ -2,6 +2,8 @@ import copy
 import os
 from functools import wraps
 import numpy as np
+from astropy.table import Table
+from astropy import log
 import stingray.utils
 from stingray.events import EventList
 
@@ -202,7 +204,7 @@ def get_deadtime_mask(
     all_ev_kind = ev_kind.copy()
 
     if dt_sigma is not None:
-        deadtime_values = ra.normal(deadtime, dt_sigma, nevents)
+        deadtime_values = np.random.normal(deadtime, dt_sigma, nevents)
         deadtime_values[deadtime_values < 0] = 0.0
     else:
         deadtime_values = np.zeros(nevents) + deadtime

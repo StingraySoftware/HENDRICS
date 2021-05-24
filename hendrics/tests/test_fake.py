@@ -267,7 +267,9 @@ class TestFake(object):
         verify_all_checksums(newfile)
 
         events0 = load_events(infname)
-        events1 = EventList.read(newfile, format_="hea")
+        newf = hen.read_events.treat_event_file(newfile)
+
+        events1 = load_events(newf[0])
 
         assert np.allclose(events0.time, events1.time)
         assert np.allclose(events0.gti, events1.gti)
