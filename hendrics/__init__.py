@@ -55,3 +55,4 @@ if not _ASTROPY_SETUP_:
         stingray.filters.filter_for_deadtime = filter_for_deadtime
         stingray.filters.get_deadtime_mask = get_deadtime_mask
         stingray.io.read_mission_info = read_mission_info
+        stingray.io.get_key_from_mission_info = get_key_from_mission_info
