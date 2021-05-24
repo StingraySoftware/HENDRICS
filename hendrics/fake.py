@@ -120,7 +120,6 @@ def generate_fake_fits_observation(
     from astropy.io import fits
     import numpy.random as ra
 
-    print(mjdref)
     inheader = None
     if event_list is None:
         tstart = assign_value_if_none(tstart, 8e7)
@@ -141,8 +140,6 @@ def generate_fake_fits_observation(
         if hasattr(event_list, "mjdref") and event_list.mjdref is not None:
             mjdref = event_list.mjdref
 
-    print(mjdref)
-
     if hasattr(event_list, "pi") and event_list.pi is not None:
         pi = event_list.pi
     else:
@@ -160,7 +157,6 @@ def generate_fake_fits_observation(
         raise ValueError(
             "Livetime must be equal or smaller than " "tstop - tstart"
         )
-    print(mjdref)
 
     mission_info = read_mission_info(mission)
     allowed_instr = mission_info["instruments"]
@@ -191,7 +187,6 @@ def generate_fake_fits_observation(
     col1 = fits.Column(name="TIME", format="1D", array=ev_list)
 
     allcols = [col1]
-    print(mjdref)
 
     if ccol is not None:
         ccdnr = np.zeros(len(ev_list)) + 1
@@ -251,7 +246,6 @@ def generate_fake_fits_observation(
     tbheader["HISTORY"] = "Generated with HENDRICS by {0}".format(
         os.getenv("USER")
     )
-    print(mjdref)
 
     tbhdu.add_checksum()
     tbhdu.verify("exception")
@@ -276,7 +270,6 @@ def generate_fake_fits_observation(
         gtihdu.name = name
         gtihdu.verify("exception")
         all_new_hdus.append(gtihdu)
-    print(mjdref)
 
     tbhdu.verify("exception")
 
@@ -285,7 +278,6 @@ def generate_fake_fits_observation(
     thdulist.writeto(
         filename, overwrite=True, checksum=True, output_verify="exception"
     )
-    print(mjdref)
 
     thdulist.close()
     return filename
