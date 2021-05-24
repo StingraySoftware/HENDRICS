@@ -1,6 +1,9 @@
 import copy
+import os
 from functools import wraps
 import numpy as np
+from astropy.table import Table
+from astropy import log
 import stingray.utils
 from stingray.events import EventList
 
@@ -201,7 +204,7 @@ def get_deadtime_mask(
     all_ev_kind = ev_kind.copy()
 
     if dt_sigma is not None:
-        deadtime_values = ra.normal(deadtime, dt_sigma, nevents)
+        deadtime_values = np.random.normal(deadtime, dt_sigma, nevents)
         deadtime_values[deadtime_values < 0] = 0.0
     else:
         deadtime_values = np.zeros(nevents) + deadtime
@@ -388,3 +391,141 @@ class _MonkeyPatchedEventList(EventList):
             new_ev = [new_ev, retall]
 
         return new_ev
+
+
+def _patch_mission_info(info, mission=None):
+    """Add some information that is surely missing in xselect.mdb.
+    Examples
+    --------
+    >>> info = {'gti': 'STDGTI'}
+    >>> new_info = _patch_mission_info(info, mission=None)
+    >>> new_info['gti'] == info['gti']
+    True
+    >>> new_info = _patch_mission_info(info, mission="xmm")
+    >>> new_info['gti']
+    'STDGTI,GTI0'
+    """
+    if mission is None:
+        return info
+    if mission.lower() == "xmm" and "gti" in info:
+        info["gti"] += ",GTI0"
+    return info
+
+
+def read_mission_info(mission=None):
+    """Search the relevant information about a mission in xselect.mdb."""
+    curdir = os.path.abspath(os.path.dirname(__file__))
+    fname = os.path.join(curdir, "datasets", "xselect.mdb")
+
+    # If HEADAS is defined, search for the most up-to-date version of the
+    # mission database
+    if os.getenv("HEADAS"):
+        hea_fname = os.path.join(os.getenv("HEADAS"), "bin", "xselect.mdb")
+        if os.path.exists(hea_fname):
+            fname = hea_fname
+    if mission is not None:
+        mission = mission.lower()
+
+    db = {}
+    with open(fname) as fobj:
+        for line in fobj.readlines():
+            line = line.strip()
+            if mission is not None and not line.lower().startswith(mission):
+                continue
+            if line.startswith("!") or line == "":
+                continue
+            allvals = line.split()
+            string = allvals[0]
+            value = allvals[1:]
+            if len(value) == 1:
+                value = value[0]
+
+            data = string.split(":")[:]
+            if mission is None:
+                if data[0] not in db:
+                    db[data[0]] = {}
+                previous_db_step = db[data[0]]
+            else:
+                previous_db_step = db
+            data = data[1:]
+            for key in data[:-1]:
+                if key not in previous_db_step:
+                    previous_db_step[key] = {}
+                previous_db_step = previous_db_step[key]
+            previous_db_step[data[-1]] = value
+    return _patch_mission_info(db, mission)
+
+
+def _case_insensitive_search_in_list(string, list_of_strings):
+    """Search for a string in a list of strings, in a case-insensitive way.
+
+    Example
+    -------
+    >>> _case_insensitive_search_in_list("a", ["A", "b"])
+    'A'
+    >>> _case_insensitive_search_in_list("a", ["c", "b"]) is None
+    True
+    """
+    for s in list_of_strings:
+        if string.lower() == s.lower():
+            return s
+    return None
+
+
+def get_key_from_mission_info(info, key, default, inst=None, mode=None):
+    """Get the name of a header key or table column from the mission database.
+
+    Many entries in the mission database have default values that can be
+    altered for specific instruments or observing modes. Here, if there is a
+    definition for a given instrument and mode, we take that, otherwise we use
+    the default).
+
+    Parameters
+    ----------
+    info : dict
+        Nested dictionary containing all the information for a given mission.
+        It can be nested, e.g. contain some info for a given instrument, and
+        for each observing mode of that instrument.
+    key : str
+        The key to read from the info dictionary
+    default : object
+        The default value. It can be of any type, depending on the expected
+        type for the entry.
+
+    Other parameters
+    ----------------
+    inst : str
+        Instrument
+    mode : str
+        Observing mode
+
+    Returns
+    -------
+    retval : object
+        The wanted entry from the info dictionary
+
+    Examples
+    --------
+    >>> info = {'ecol': 'PI', "A": {"ecol": "BLA"}, "C": {"M1": {"ecol": "X"}}}
+    >>> get_key_from_mission_info(info, "ecol", "BU", inst="A", mode=None)
+    'BLA'
+    >>> get_key_from_mission_info(info, "ecol", "BU", inst="B", mode=None)
+    'PI'
+    >>> get_key_from_mission_info(info, "ecol", "BU", inst="A", mode="M1")
+    'BLA'
+    >>> get_key_from_mission_info(info, "ecol", "BU", inst="C", mode="M1")
+    'X'
+    >>> get_key_from_mission_info(info, "ghghg", "BU", inst="C", mode="M1")
+    'BU'
+    """
+    filt_info = copy.deepcopy(info)
+    if inst is not None and inst in filt_info:
+        filt_info.update(info[inst])
+        filt_info.pop(inst)
+    if mode is not None and mode in filt_info:
+        filt_info.update(info[inst][mode])
+        filt_info.pop(mode)
+
+    if key in filt_info:
+        return filt_info[key]
+    return default

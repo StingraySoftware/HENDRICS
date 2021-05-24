@@ -29,6 +29,9 @@ if not _ASTROPY_SETUP_:
         _MonkeyPatchedEventList,
         filter_for_deadtime,
         get_deadtime_mask,
+        read_mission_info,
+        _case_insensitive_search_in_list,
+        get_key_from_mission_info,
     )
 
     from .compat import (
@@ -51,3 +54,5 @@ if not _ASTROPY_SETUP_:
         stingray.events.EventList = _MonkeyPatchedEventList
         stingray.filters.filter_for_deadtime = filter_for_deadtime
         stingray.filters.get_deadtime_mask = get_deadtime_mask
+        stingray.io.read_mission_info = read_mission_info
+        stingray.io.get_key_from_mission_info = get_key_from_mission_info

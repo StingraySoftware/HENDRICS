@@ -13,12 +13,26 @@ from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from stingray.filters import filter_for_deadtime
+from stingray.io import read_mission_info, get_key_from_mission_info
 from .io import get_file_format, load_lcurve
 from .io import load_events, save_events, HEN_FILE_EXTENSION
 from .base import _empty, r_in
 from .fold import filter_energy
 from .lcurve import lcurve_from_fits
 from .base import njit, deorbit_events
+
+
+def _clean_up_header(header):
+    if header is None:
+        return None
+    for key in header.keys():
+        for k in ["TTYP", "TFORM"]:
+            if key.startswith(k):
+                header.pop(key)
+    for k in ["EXTNAME", "PCOUNT", "GCOUNT", "NAXIS1", "NAXIS2"]:
+        if k in header:
+            header.pop(k)
+    return header
 
 
 def _fill_in_default_information(tbheader):
@@ -142,29 +156,47 @@ def generate_fake_fits_observation(
             "Livetime must be equal or smaller than " "tstop - tstart"
         )
 
+    mission_info = read_mission_info(mission)
+    allowed_instr = mission_info["instruments"]
+
+    # Just prefer EPN for XMM
+    if "xmm" in mission.lower():
+        allowed_instr = ["EPN", "EMOS1", "EMOS2", "RGS1", "RGS2"]
+
+    allowed_instr = [ins.lower() for ins in allowed_instr]
+    if instr.lower() not in allowed_instr:
+        instr = allowed_instr[0]
+
+    ccol = get_key_from_mission_info(mission_info, "ccol", None, inst=instr)
+    ecol = get_key_from_mission_info(mission_info, "ecol", "PI", inst=instr)
+    ext = get_key_from_mission_info(
+        mission_info, "events", "EVENTS", inst=instr
+    )
+
     # Create primary header
     prihdr = fits.Header()
     prihdr["OBSERVER"] = "Edwige Bubble"
     prihdr["TELESCOP"] = (mission, "Telescope (mission) name")
     prihdr["INSTRUME"] = (instr, "Instrument name")
     prihdu = fits.PrimaryHDU(header=prihdr)
+    prihdu.verify("exception")
 
     # Write events to table
     col1 = fits.Column(name="TIME", format="1D", array=ev_list)
 
     allcols = [col1]
 
-    if mission.lower().strip() == "xmm":
+    if ccol is not None:
         ccdnr = np.zeros(len(ev_list)) + 1
         ccdnr[1] = 2  # Make it less trivial
         ccdnr[10] = 7
-        allcols.append(fits.Column(name="CCDNR", format="1J", array=ccdnr))
+        allcols.append(fits.Column(name=ccol, format="1J", array=ccdnr))
 
     if mission.lower().strip() in ["xmm", "swift"]:
         allcols.append(fits.Column(name="PHA", format="1J", array=pi))
         allcols.append(fits.Column(name="PI", format="1J", array=cal_pi))
     else:
-        allcols.append(fits.Column(name="PI", format="1J", array=pi))
+        allcols.append(fits.Column(name=ecol, format="1J", array=pi))
 
     for c in additional_columns.keys():
         col = fits.Column(
@@ -176,14 +208,15 @@ def generate_fake_fits_observation(
 
     cols = fits.ColDefs(allcols)
     tbhdu = fits.BinTableHDU.from_columns(cols)
-    tbhdu.name = "EVENTS"
+    tbhdu.name = ext
 
     # ---- Fake lots of information ----
 
     tbheader = tbhdu.header
     tbheader = _fill_in_default_information(tbheader)
-    if inheader is not None:
-        tbheader.update(inheader)
+    inheader = _clean_up_header(inheader)
+    # If None, it will not update
+    tbheader.update(inheader)
 
     tbheader["TSTART"] = (
         tstart,
@@ -202,10 +235,12 @@ def generate_fake_fits_observation(
     tbheader["TSTOP"] = (tstop, "Elapsed seconds since MJDREF at end of file")
     tbheader["LIVETIME"] = (livetime, "On-source time")
     tbheader["TIMEZERO"] = (0.000000e00, "Time Zero")
-    tbheader["COMMENT"] = "Generated with HENDRICS by {0}".format(
+    tbheader["HISTORY"] = "Generated with HENDRICS by {0}".format(
         os.getenv("USER")
     )
 
+    tbhdu.add_checksum()
+    tbhdu.verify("exception")
     # ---- END Fake lots of information ----
 
     # Fake GTIs
@@ -225,12 +260,20 @@ def generate_fake_fits_observation(
     for name in gtinames:
         gtihdu = fits.BinTableHDU.from_columns(cols)
         gtihdu.name = name
+        gtihdu.verify("exception")
         all_new_hdus.append(gtihdu)
 
-    thdulist = fits.HDUList(all_new_hdus)
+    tbhdu.verify("exception")
 
-    thdulist.writeto(filename, overwrite=True, checksum=True)
-    return thdulist
+    thdulist = fits.HDUList(all_new_hdus)
+    assert thdulist[1].verify_datasum() == 1
+    thdulist.writeto(
+        filename, overwrite=True, checksum=True, output_verify="exception"
+    )
+    print(thdulist.info())
+
+    thdulist.close()
+    return filename
 
 
 def _read_event_list(filename):

@@ -2,6 +2,9 @@ from .compatibility import (
     _MonkeyPatchedEventList,
     filter_for_deadtime,
     get_deadtime_mask,
+    read_mission_info,
+    _case_insensitive_search_in_list,
+    get_key_from_mission_info,
 )
 from .compatibility import (
     prange,

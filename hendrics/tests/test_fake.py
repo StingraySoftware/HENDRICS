@@ -134,6 +134,13 @@ def test_deadtime_conversion():
     np.testing.assert_almost_equal(rin, original_rate)
 
 
+def verify_all_checksums(filename):
+    with fits.open(filename) as hdul:
+        for hdu in hdul:
+            assert hdu.verify_datasum() == 1, f"Bad datasum: {hdu.name}"
+            assert hdu.verify_checksum() == 1, f"Bad checksum: {hdu.name}"
+
+
 class TestFake(object):
     """Test how command lines work.
 
@@ -165,14 +172,15 @@ class TestFake(object):
         cls.xmm_fits_file = os.path.join(
             cls.datadir, "monol_test_fake_lc_xmm.evt"
         )
+        # Note that I don't specify the instrument. This is because
+        # I want the internal machinery to understand that this is
+        # XMM and this has to be given EPIC-pn by default.
         hen.fake.main(
             [
                 "--deadtime",
                 "1e-4",
                 "-m",
                 "XMM",
-                "-i",
-                "epn",
                 "--ctrate",
                 "2000",
                 "-o",
@@ -186,10 +194,15 @@ class TestFake(object):
             "monol_test_fake_xmm_xmm_epn_det01_ev" + HEN_FILE_EXTENSION,
         )
 
+    def test_checksums(self):
+        for fname in [self.xmm_fits_file, self.fits_fileA]:
+            verify_all_checksums(fname)
+
     def test_fake_file(self):
         """Test produce a fake event file."""
         fits_file = os.path.join(self.datadir, "monol_test_fake.evt")
         hen.fake.main(["-o", fits_file, "--instrument", "FPMB"])
+        verify_all_checksums(fits_file)
         info = hen.io.print_fits_info(fits_file, hdu=1)
         assert info["Instrument"] == "FPMB"
 
@@ -205,6 +218,7 @@ class TestFake(object):
                 for r in record
             ]
         )
+        verify_all_checksums(fits_file)
 
     def test_fake_file_with_deadtime(self):
         """Test produce a fake event file and apply deadtime."""
@@ -212,14 +226,17 @@ class TestFake(object):
         hen.fake.main(
             ["--deadtime", "2.5e-3", "--ctrate", "2000", "-o", fits_file]
         )
+        verify_all_checksums(fits_file)
 
     def test_fake_file_xmm(self):
         """Test produce a fake event file and apply deadtime."""
-        hdu_list = fits.open(self.xmm_fits_file)
-        hdunames = [hdu.name for hdu in hdu_list]
-        assert "STDGTI01" in hdunames
-        assert "STDGTI02" in hdunames
-        assert "STDGTI07" in hdunames
+
+        with fits.open(self.xmm_fits_file) as hdu_list:
+            hdunames = [hdu.name for hdu in hdu_list]
+            assert "STDGTI01" in hdunames
+            assert "STDGTI02" in hdunames
+            assert "STDGTI07" in hdunames
+
         assert os.path.exists(self.xmm_ev_file)
 
     def test_load_events_randomize(self):
@@ -240,19 +257,21 @@ class TestFake(object):
         assert os.path.exists(newfile)
         os.remove(newfile)
 
-    def test_fake_fits_input_events_file(self):
-        newfile = "bububu.fit"
-        command = f"-e {self.first_event_file} -o {newfile}"
+    @pytest.mark.parametrize("fname", ["first_event_file", "xmm_ev_file"])
+    def test_fake_fits_input_events_file(self, fname):
+        newfile = "bububuasdf.fits"
+        infname = getattr(self, fname)
+        command = f"-e {infname} -o {newfile}"
         _ = hen.fake.main(command.split())
         assert os.path.exists(newfile)
-        with fits.open(newfile) as hdulist:
-            for hdu in hdulist:
-                assert hdu.verify_checksum() == 1
-                assert hdu.verify_datasum() == 1
 
-        newfiles = hen.read_events.treat_event_file(newfile)
-        events0 = load_events(newfiles[0])
-        events1 = load_events(self.first_event_file)
+        verify_all_checksums(newfile)
+
+        events0 = load_events(infname)
+        newf = hen.read_events.treat_event_file(newfile)
+
+        events1 = load_events(newf[0])
+
         assert np.allclose(events0.time, events1.time)
         assert np.allclose(events0.gti, events1.gti)
 
