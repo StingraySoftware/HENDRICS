@@ -178,8 +178,6 @@ class TestFake(object):
                 "1e-4",
                 "-m",
                 "XMM",
-                "-i",
-                "epn",
                 "--ctrate",
                 "2000",
                 "-o",
