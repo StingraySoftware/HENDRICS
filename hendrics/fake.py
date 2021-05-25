@@ -74,16 +74,16 @@ def _fill_in_default_information(tbheader):
 def generate_fake_fits_observation(
     event_list=None,
     filename=None,
-    instr="FPMA",
+    instr=None,
     gti=None,
     tstart=None,
     tstop=None,
-    mission="NUSTAR",
+    mission=None,
     mjdref=55197.00076601852,
     livetime=None,
     additional_columns={},
 ):
-    """Generate fake NuSTAR data.
+    """Generate fake X-ray data.
 
     Takes an event list (as a list of floats)
     All inputs are None by default, and can be set during the call.
@@ -129,6 +129,8 @@ def generate_fake_fits_observation(
     else:
         if hasattr(event_list, "header") and event_list.header is not None:
             inheader = Header.fromstring(event_list.header)
+            inheader = _clean_up_header(inheader)
+
         ev_list = event_list.time
         gti = assign_value_if_none(
             event_list.gti, np.asarray([[ev_list[0], ev_list[-1]]])
@@ -140,6 +142,8 @@ def generate_fake_fits_observation(
         if hasattr(event_list, "mjdref") and event_list.mjdref is not None:
             mjdref = event_list.mjdref
 
+    mission = assign_value_if_none(mission, "NuSTAR")
+    instr = assign_value_if_none(instr, "FPMA")
     if hasattr(event_list, "pi") and event_list.pi is not None:
         pi = event_list.pi
     else:
@@ -178,6 +182,8 @@ def generate_fake_fits_observation(
     # Create primary header
     prihdr = fits.Header()
     prihdr["OBSERVER"] = "Edwige Bubble"
+    if inheader is not None and "OBSERVER" in inheader:
+        prihdr["OBSERVER"] = inheader["OBSERVER"]
     prihdr["TELESCOP"] = (mission, "Telescope (mission) name")
     prihdr["INSTRUME"] = (instr, "Instrument name")
     prihdu = fits.PrimaryHDU(header=prihdr)
@@ -216,7 +222,6 @@ def generate_fake_fits_observation(
 
     tbheader = tbhdu.header
     tbheader = _fill_in_default_information(tbheader)
-    inheader = _clean_up_header(inheader)
     # If None, it will not update
     tbheader.update(inheader)
 

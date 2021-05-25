@@ -100,7 +100,7 @@ class TestEFsearch:
         delta_toa_s = (toas[0] - closest) * 86400
         toa_err_s = toaerrs[0] / 1e6
 
-        assert np.abs(delta_toa_s) < toa_err_s * 3
+        assert np.abs(delta_toa_s) < toa_err_s * 4
 
     def test_get_TOAs_template(self):
         nbin = 32
