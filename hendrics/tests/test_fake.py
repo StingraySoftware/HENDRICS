@@ -238,6 +238,8 @@ class TestFake(object):
             assert "STDGTI01" in hdunames
             assert "STDGTI02" in hdunames
             assert "STDGTI07" in hdunames
+            assert hdu_list[0].header["TELESCOP"].lower() == "xmm"
+            assert hdu_list[0].header["INSTRUME"].lower() == "epn"
 
         assert os.path.exists(self.xmm_ev_file)
 
