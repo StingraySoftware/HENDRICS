@@ -8,6 +8,8 @@ from stingray.gti import cross_gtis
 from stingray.crossspectrum import AveragedCrossspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
 from stingray.utils import show_progress
+from stingray.gti import time_intervals_from_gtis
+from stingray.events import EventList
 import numpy as np
 from astropy import log
 from astropy.logger import AstropyUserWarning
@@ -157,6 +159,54 @@ def _format_lc_data(data, type, fftlen=512.0, bintime=1.0):
     return lc_data
 
 
+def _distribute_events(events, chunk_length):
+    """Split event list in chunks.
+
+    Examples
+    --------
+    >>> ev = EventList([1, 2, 3, 4, 5, 6], gti=[[0.5, 6.5]])
+    >>> ev.pi = np.ones_like(ev.time)
+    >>> ev.mjdref = 56780.
+    >>> ev_lists = list(_distribute_events(ev, 2))
+    >>> np.allclose(ev_lists[0].time, [1, 2])
+    True
+    >>> np.allclose(ev_lists[1].time, [3, 4])
+    True
+    >>> np.allclose(ev_lists[2].time, [5, 6])
+    True
+    >>> np.allclose(ev_lists[0].gti, [[0.5, 2.5]])
+    True
+    >>> ev_lists[0].mjdref == ev.mjdref
+    True
+    >>> ev_lists[2].mjdref == ev.mjdref
+    True
+    >>> np.allclose(ev_lists[1].pi, [1, 1])
+    True
+    """
+    gti = events.gti
+    start_times, stop_times = time_intervals_from_gtis(gti, chunk_length)
+    for start, end in zip(start_times, stop_times):
+        first, last = np.searchsorted(events.time, [start, end])
+        new_ev = EventList(events.time[first:last], gti=[[start, end]])
+        for attr in events.__dict__.keys():
+            if attr == "gti":
+                continue
+            val = getattr(events, attr)
+            if np.size(val) == np.size(events.time):
+                val = val[first:last]
+            setattr(new_ev, attr, val)
+        yield new_ev
+
+
+def _provide_periodograms(events, fftlen, dt, norm):
+    length = events.gti[-1, 1] - events.gti[0, 0]
+    total = int(length / fftlen)
+    for new_ev in show_progress(_distribute_events(events, fftlen), total=total):
+        pds = AveragedPowerspectrum(new_ev, dt=dt, segment_size=fftlen, norm=norm, silent=True)
+        pds.fftlen = fftlen
+        yield pds
+
+
 def calc_pds(
     lcfile,
     fftlen,
@@ -209,11 +259,20 @@ def calc_pds(
     mjdref = data.mjdref
     instr = data.instr
 
-    lc_data = _format_lc_data(data, ftype, bintime=bintime, fftlen=fftlen)
+    length = data.gti[-1, 1] - data.gti[0, 0]
+    if hasattr(data, "dt"):
+        bintime = max(data.dt, bintime)
 
-    pds = AveragedPowerspectrum(
-        lc_data, segment_size=fftlen, norm=normalization.lower()
-    )
+    nbins = int(length / bintime)
+    if ftype == "events" and nbins > 10**7:
+        print("Long observation. Using split analysis")
+        pds = average_periodograms(_provide_periodograms(data, fftlen, bintime, norm=normalization.lower()))
+    else:
+        lc_data = _format_lc_data(data, ftype, bintime=bintime, fftlen=fftlen)
+
+        pds = AveragedPowerspectrum(
+            lc_data, segment_size=fftlen, norm=normalization.lower()
+        )
 
     if pdsrebin is not None and pdsrebin != 1:
         pds = pds.rebin(pdsrebin)
