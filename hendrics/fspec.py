@@ -7,6 +7,7 @@ import os
 from stingray.gti import cross_gtis
 from stingray.crossspectrum import AveragedCrossspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
+from stingray.utils import show_progress
 import numpy as np
 from astropy import log
 from astropy.logger import AstropyUserWarning
