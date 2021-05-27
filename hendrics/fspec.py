@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to calculate frequency spectra."""
 
+import copy
 import warnings
 import os
 from stingray.gti import cross_gtis
@@ -17,6 +18,65 @@ from .base import (
 )
 from .io import sort_files, save_pds, load_data
 from .io import HEN_FILE_EXTENSION, get_file_type
+
+
+def average_periodograms(fspec_iterable):
+    """Sum a list (or iterable) of power density spectra.
+
+    Examples
+    --------
+    >>> pds = AveragedPowerspectrum()
+    >>> pds.freq = np.asarray([1, 2, 3])
+    >>> pds.power = np.asarray([3, 3, 3])
+    >>> pds.power_err = np.asarray([0.1, 0.1, 0.1])
+    >>> pds.m = 1
+    >>> pds.fftlen = 128
+    >>> pds1 = copy.deepcopy(pds)
+    >>> pds1.m = 2
+    >>> tot_pds = average_periodograms([pds, pds1])
+    >>> np.allclose(tot_pds.power, pds.power)
+    True
+    >>> np.allclose(tot_pds.power_err, pds.power_err / np.sqrt(3))
+    True
+    >>> tot_pds.m
+    3
+    """
+
+    for i, contents in enumerate(show_progress(fspec_iterable)):
+        freq = contents.freq
+        pds = contents.power
+        epds = contents.power_err
+        nchunks = contents.m
+        rebin = 1
+        norm = contents.norm
+        fftlen = contents.fftlen
+        if i == 0:
+            rebin0, norm0, freq0 = rebin, norm, freq
+            tot_pds = pds * nchunks
+            tot_epds = epds ** 2 * nchunks
+            tot_npds = nchunks
+            tot_contents = copy.copy(contents)
+        else:
+            assert np.all(
+                rebin == rebin0
+            ), "Files must be rebinned in the same way"
+            np.testing.assert_array_almost_equal(
+                freq,
+                freq0,
+                decimal=int(-np.log10(1 / fftlen) + 2),
+                err_msg="Frequencies must coincide",
+            )
+            assert norm == norm0, "Files must have the same normalization"
+
+            tot_pds += pds * nchunks
+            tot_epds += epds ** 2 * nchunks
+            tot_npds += nchunks
+
+    tot_contents.power = tot_pds / tot_npds
+    tot_contents.power_err = np.sqrt(tot_epds) / tot_npds
+    tot_contents.m = tot_npds
+
+    return tot_contents
 
 
 def _wrap_fun_cpds(arglist):
