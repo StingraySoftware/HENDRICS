@@ -60,8 +60,12 @@ def test_cpds_fails_noclobber_exists():
 
 
 def test_distributed_pds():
-    events = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=[[0, 1000]])
-    single_periodogram = stingray.AveragedPowerspectrum(events, segment_size=100, dt=0.1, norm="leahy")
+    events = EventList(
+        np.sort(np.random.uniform(0, 1000, 1000)), gti=[[0, 1000]]
+    )
+    single_periodogram = stingray.AveragedPowerspectrum(
+        events, segment_size=100, dt=0.1, norm="leahy"
+    )
     pds_iterable = hen.fspec._provide_periodograms(events, 100, 0.1, "leahy")
     pds_distr = hen.fspec.average_periodograms(pds_iterable)
     assert np.allclose(pds_distr.power, single_periodogram.power)
@@ -69,11 +73,20 @@ def test_distributed_pds():
     assert np.allclose(pds_distr.freq, single_periodogram.freq)
     assert pds_distr.m == single_periodogram.m
 
+
 def test_distributed_cpds():
-    events1 = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=[[0, 1000]])
-    events2 = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=[[0, 1000]])
-    single_periodogram = stingray.AveragedCrossspectrum(events1, events2, segment_size=100, dt=0.1, norm="leahy")
-    pds_iterable = hen.fspec._provide_cross_periodograms(events1, events2, 100, 0.1, "leahy")
+    events1 = EventList(
+        np.sort(np.random.uniform(0, 1000, 1000)), gti=[[0, 1000]]
+    )
+    events2 = EventList(
+        np.sort(np.random.uniform(0, 1000, 1000)), gti=[[0, 1000]]
+    )
+    single_periodogram = stingray.AveragedCrossspectrum(
+        events1, events2, segment_size=100, dt=0.1, norm="leahy"
+    )
+    pds_iterable = hen.fspec._provide_cross_periodograms(
+        events1, events2, 100, 0.1, "leahy"
+    )
     pds_distr = hen.fspec.average_periodograms(pds_iterable)
     assert np.allclose(pds_distr.power, single_periodogram.power)
     assert np.allclose(pds_distr.power_err, single_periodogram.power_err)

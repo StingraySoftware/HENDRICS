@@ -201,10 +201,14 @@ def _distribute_events(events, chunk_length):
 def _provide_periodograms(events, fftlen, dt, norm):
     length = events.gti[-1, 1] - events.gti[0, 0]
     total = int(length / fftlen)
-    for new_ev in show_progress(_distribute_events(events, fftlen), total=total):
+    for new_ev in show_progress(
+        _distribute_events(events, fftlen), total=total
+    ):
         # Hack: epsilon slightly below zero, to allow for a GTI to be recognized as such
         new_ev.gti[:, 1] += dt / 10
-        pds = AveragedPowerspectrum(new_ev, dt=dt, segment_size=fftlen, norm=norm, silent=True)
+        pds = AveragedPowerspectrum(
+            new_ev, dt=dt, segment_size=fftlen, norm=norm, silent=True
+        )
         pds.fftlen = fftlen
         yield pds
 
@@ -218,7 +222,14 @@ def _provide_cross_periodograms(events1, events2, fftlen, dt, norm):
         new_ev1, new_ev2 = new_ev
         new_ev1.gti[:, 1] += dt / 10
         new_ev2.gti[:, 1] += dt / 10
-        pds = AveragedCrossspectrum(new_ev1, new_ev2, dt=dt, segment_size=fftlen, norm=norm, silent=True)
+        pds = AveragedCrossspectrum(
+            new_ev1,
+            new_ev2,
+            dt=dt,
+            segment_size=fftlen,
+            norm=norm,
+            silent=True,
+        )
         pds.fftlen = fftlen
         yield pds
 
@@ -281,9 +292,13 @@ def calc_pds(
         bintime = max(data.dt, bintime)
 
     nbins = int(length / bintime)
-    if ftype == "events" and (test or nbins > 10**7):
+    if ftype == "events" and (test or nbins > 10 ** 7):
         print("Long observation. Using split analysis")
-        pds = average_periodograms(_provide_periodograms(data, fftlen, bintime, norm=normalization.lower()))
+        pds = average_periodograms(
+            _provide_periodograms(
+                data, fftlen, bintime, norm=normalization.lower()
+            )
+        )
     else:
         lc_data = _format_lc_data(data, ftype, bintime=bintime, fftlen=fftlen)
 
@@ -377,9 +392,13 @@ def calc_cpds(
         bintime = max(lc1.dt, bintime)
 
     nbins = int(length / bintime)
-    if ftype1 == "events" and (test or nbins > 10**7):
+    if ftype1 == "events" and (test or nbins > 10 ** 7):
         print("Long observation. Using split analysis")
-        cpds = average_periodograms(_provide_cross_periodograms(lc1, lc2, fftlen, bintime, norm=normalization.lower()))
+        cpds = average_periodograms(
+            _provide_cross_periodograms(
+                lc1, lc2, fftlen, bintime, norm=normalization.lower()
+            )
+        )
     else:
         lc1 = _format_lc_data(lc1, ftype1, fftlen=fftlen, bintime=bintime)
         lc2 = _format_lc_data(lc2, ftype2, fftlen=fftlen, bintime=bintime)
