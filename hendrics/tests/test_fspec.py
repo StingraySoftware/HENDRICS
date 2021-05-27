@@ -4,8 +4,10 @@ import glob
 import subprocess as sp
 
 import numpy as np
+import stingray
 from astropy import log
 import pytest
+from stingray.events import EventList
 import hendrics as hen
 from hendrics.tests import _dummy_par
 from hendrics import (
@@ -55,6 +57,28 @@ def test_cpds_fails_noclobber_exists():
         ["File exists, and noclobber" in r.message.args[0] for r in record]
     )
     os.unlink("bububu")
+
+
+def test_distributed_pds():
+    events = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=[[0, 1000]])
+    single_periodogram = stingray.AveragedPowerspectrum(events, segment_size=100, dt=0.1, norm="leahy")
+    pds_iterable = hen.fspec._provide_periodograms(events, 100, 0.1, "leahy")
+    pds_distr = hen.fspec.average_periodograms(pds_iterable)
+    assert np.allclose(pds_distr.power, single_periodogram.power)
+    assert np.allclose(pds_distr.power_err, single_periodogram.power_err)
+    assert np.allclose(pds_distr.freq, single_periodogram.freq)
+    assert pds_distr.m == single_periodogram.m
+
+def test_distributed_cpds():
+    events1 = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=[[0, 1000]])
+    events2 = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=[[0, 1000]])
+    single_periodogram = stingray.AveragedCrossspectrum(events1, events2, segment_size=100, dt=0.1, norm="leahy")
+    pds_iterable = hen.fspec._provide_cross_periodograms(events1, events2, 100, 0.1, "leahy")
+    pds_distr = hen.fspec.average_periodograms(pds_iterable)
+    assert np.allclose(pds_distr.power, single_periodogram.power)
+    assert np.allclose(pds_distr.power_err, single_periodogram.power_err)
+    assert np.allclose(pds_distr.freq, single_periodogram.freq)
+    assert pds_distr.m == single_periodogram.m
 
 
 class TestFullRun(object):
@@ -228,6 +252,24 @@ class TestFullRun(object):
             os.path.join(self.datadir, f"monol_testA_{out_labelA}")
             + HEN_FILE_EXTENSION
         )
+
+    @pytest.mark.parametrize("kind", ["PDS", "CPDS"])
+    def test_pds_events_big(self, kind):
+        """Test PDS production."""
+        labelA = "nustar_fpma_ev"
+        labelB = "nustar_fpmb_ev"
+
+        command = (
+            "{0} {1} -f 128 --save-all --save-dyn -k {2} "
+            "--norm frac --test".format(
+                os.path.join(self.datadir, f"monol_testA_{labelA}")
+                + HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, f"monol_testB_{labelB}")
+                + HEN_FILE_EXTENSION,
+                kind,
+            )
+        )
+        hen.fspec.main(command.split())
 
     def test_cpds_ignore_instr(self):
         """Test CPDS production."""

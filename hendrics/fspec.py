@@ -202,7 +202,23 @@ def _provide_periodograms(events, fftlen, dt, norm):
     length = events.gti[-1, 1] - events.gti[0, 0]
     total = int(length / fftlen)
     for new_ev in show_progress(_distribute_events(events, fftlen), total=total):
+        # Hack: epsilon slightly below zero, to allow for a GTI to be recognized as such
+        new_ev.gti[:, 1] += dt / 10
         pds = AveragedPowerspectrum(new_ev, dt=dt, segment_size=fftlen, norm=norm, silent=True)
+        pds.fftlen = fftlen
+        yield pds
+
+
+def _provide_cross_periodograms(events1, events2, fftlen, dt, norm):
+    length = events1.gti[-1, 1] - events1.gti[0, 0]
+    total = int(length / fftlen)
+    ev1_iter = _distribute_events(events1, fftlen)
+    ev2_iter = _distribute_events(events2, fftlen)
+    for new_ev in show_progress(zip(ev1_iter, ev2_iter), total=total):
+        new_ev1, new_ev2 = new_ev
+        new_ev1.gti[:, 1] += dt / 10
+        new_ev2.gti[:, 1] += dt / 10
+        pds = AveragedCrossspectrum(new_ev1, new_ev2, dt=dt, segment_size=fftlen, norm=norm, silent=True)
         pds.fftlen = fftlen
         yield pds
 
@@ -218,6 +234,7 @@ def calc_pds(
     noclobber=False,
     outname=None,
     save_all=False,
+    test=False,
 ):
     """Calculate the PDS from an input light curve file.
 
@@ -264,7 +281,7 @@ def calc_pds(
         bintime = max(data.dt, bintime)
 
     nbins = int(length / bintime)
-    if ftype == "events" and nbins > 10**7:
+    if ftype == "events" and (test or nbins > 10**7):
         print("Long observation. Using split analysis")
         pds = average_periodograms(_provide_periodograms(data, fftlen, bintime, norm=normalization.lower()))
     else:
@@ -299,6 +316,7 @@ def calc_cpds(
     back_ctrate=0.0,
     noclobber=False,
     save_all=False,
+    test=False,
 ):
     """Calculate the CPDS from a pair of input light curve files.
 
@@ -354,12 +372,21 @@ def calc_cpds(
         lc2 = lc2.change_mjdref(lc1.mjdref)
     mjdref = lc1.mjdref
 
-    lc1 = _format_lc_data(lc1, ftype1, fftlen=fftlen, bintime=bintime)
-    lc2 = _format_lc_data(lc2, ftype2, fftlen=fftlen, bintime=bintime)
+    length = lc1.gti[-1, 1] - lc1.gti[0, 0]
+    if hasattr(lc1, "dt"):
+        bintime = max(lc1.dt, bintime)
 
-    cpds = AveragedCrossspectrum(
-        lc1, lc2, segment_size=fftlen, norm=normalization.lower()
-    )
+    nbins = int(length / bintime)
+    if ftype1 == "events" and (test or nbins > 10**7):
+        print("Long observation. Using split analysis")
+        cpds = average_periodograms(_provide_cross_periodograms(lc1, lc2, fftlen, bintime, norm=normalization.lower()))
+    else:
+        lc1 = _format_lc_data(lc1, ftype1, fftlen=fftlen, bintime=bintime)
+        lc2 = _format_lc_data(lc2, ftype2, fftlen=fftlen, bintime=bintime)
+
+        cpds = AveragedCrossspectrum(
+            lc1, lc2, segment_size=fftlen, norm=normalization.lower()
+        )
 
     if pdsrebin is not None and pdsrebin != 1:
         cpds = cpds.rebin(pdsrebin)
@@ -394,6 +421,7 @@ def calc_fspec(
     noclobber=False,
     ignore_instr=False,
     save_all=False,
+    test=False,
 ):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
@@ -443,16 +471,17 @@ def calc_fspec(
     if do_calc_pds:
         wrapped_file_dicts = []
         for f in files:
-            wfd = {
-                "fftlen": fftlen,
-                "save_dyn": save_dyn,
-                "bintime": bintime,
-                "pdsrebin": pdsrebin,
-                "normalization": normalization.lower(),
-                "back_ctrate": back_ctrate,
-                "noclobber": noclobber,
-                "save_all": save_all,
-            }
+            wfd = dict(
+                fftlen=fftlen,
+                save_dyn=save_dyn,
+                bintime=bintime,
+                pdsrebin=pdsrebin,
+                normalization=normalization.lower(),
+                back_ctrate=back_ctrate,
+                noclobber=noclobber,
+                save_all=save_all,
+                test=test,
+            )
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
 
@@ -481,16 +510,16 @@ def calc_fspec(
 
     assert len(files1) == len(files2), "An even number of files is needed"
 
-    argdict = {
-        "fftlen": fftlen,
-        "save_dyn": save_dyn,
-        "bintime": bintime,
-        "pdsrebin": pdsrebin,
-        "normalization": normalization.lower(),
-        "back_ctrate": back_ctrate,
-        "noclobber": noclobber,
-        "save_all": save_all,
-    }
+    argdict = dict(
+        fftlen=fftlen,
+        save_dyn=save_dyn,
+        bintime=bintime,
+        pdsrebin=pdsrebin,
+        normalization=normalization.lower(),
+        back_ctrate=back_ctrate,
+        noclobber=noclobber,
+        save_all=save_all,
+    )
 
     funcargs = []
 
@@ -667,6 +696,12 @@ def main(args=None):
         default=False,
         action="store_true",
     )
+    parser.add_argument(
+        "--test",
+        help="Only to be used in testing",
+        default=False,
+        action="store_true",
+    )
     _add_default_args(parser, ["loglevel", "debug"])
 
     args = check_negative_numbers_in_args(args)
@@ -726,4 +761,5 @@ def main(args=None):
             noclobber=args.noclobber,
             ignore_instr=args.ignore_instr,
             save_all=args.save_all,
+            test=args.test,
         )
