@@ -3,6 +3,7 @@
 
 import copy
 import warnings
+import contextlib
 import os
 from stingray.gti import cross_gtis
 from stingray.crossspectrum import AveragedCrossspectrum
@@ -23,7 +24,7 @@ from .io import sort_files, save_pds, load_data
 from .io import HEN_FILE_EXTENSION, get_file_type
 
 
-def average_periodograms(fspec_iterable):
+def average_periodograms(fspec_iterable, total=None):
     """Sum a list (or iterable) of power density spectra.
 
     Examples
@@ -45,7 +46,7 @@ def average_periodograms(fspec_iterable):
     3
     """
 
-    for i, contents in enumerate(show_progress(fspec_iterable)):
+    for i, contents in enumerate(show_progress(fspec_iterable, total=total)):
         freq = contents.freq
         pds = contents.power
         epds = contents.power_err
@@ -201,11 +202,7 @@ def _distribute_events(events, chunk_length):
 
 
 def _provide_periodograms(events, fftlen, dt, norm):
-    length = events.gti[-1, 1] - events.gti[0, 0]
-    total = int(length / fftlen)
-    for new_ev in show_progress(
-        _distribute_events(events, fftlen), total=total
-    ):
+    for new_ev in _distribute_events(events, fftlen):
         # Hack: epsilon slightly below zero, to allow for a GTI to be recognized as such
         new_ev.gti[:, 1] += dt / 10
         pds = AveragedPowerspectrum(
@@ -220,18 +217,19 @@ def _provide_cross_periodograms(events1, events2, fftlen, dt, norm):
     total = int(length / fftlen)
     ev1_iter = _distribute_events(events1, fftlen)
     ev2_iter = _distribute_events(events2, fftlen)
-    for new_ev in show_progress(zip(ev1_iter, ev2_iter), total=total):
+    for new_ev in zip(ev1_iter, ev2_iter):
         new_ev1, new_ev2 = new_ev
         new_ev1.gti[:, 1] += dt / 10
         new_ev2.gti[:, 1] += dt / 10
-        pds = AveragedCrossspectrum(
-            new_ev1,
-            new_ev2,
-            dt=dt,
-            segment_size=fftlen,
-            norm=norm,
-            silent=True,
-        )
+        with contextlib.redirect_stdout(os.devnull):
+            pds = AveragedCrossspectrum(
+                new_ev1,
+                new_ev2,
+                dt=dt,
+                segment_size=fftlen,
+                norm=norm,
+                silent=True,
+            )
         pds.fftlen = fftlen
         yield pds
 
@@ -294,12 +292,16 @@ def calc_pds(
         bintime = max(data.dt, bintime)
 
     nbins = int(length / bintime)
+
     if ftype == "events" and (test or nbins > 10 ** 7):
         print("Long observation. Using split analysis")
+        length = data.gti[-1, 1] - data.gti[0, 0]
+        total = int(length / fftlen)
         pds = average_periodograms(
             _provide_periodograms(
                 data, fftlen, bintime, norm=normalization.lower()
-            )
+            ),
+            total=total
         )
     else:
         lc_data = _format_lc_data(data, ftype, bintime=bintime, fftlen=fftlen)
@@ -394,12 +396,16 @@ def calc_cpds(
         bintime = max(lc1.dt, bintime)
 
     nbins = int(length / bintime)
+
     if ftype1 == "events" and (test or nbins > 10 ** 7):
         print("Long observation. Using split analysis")
+        length = lc1.gti[-1, 1] - lc1.gti[0, 0]
+        total = int(length / fftlen)
         cpds = average_periodograms(
             _provide_cross_periodograms(
                 lc1, lc2, fftlen, bintime, norm=normalization.lower()
-            )
+            ),
+            total=total,
         )
     else:
         lc1 = _format_lc_data(lc1, ftype1, fftlen=fftlen, bintime=bintime)
@@ -540,6 +546,7 @@ def calc_fspec(
         back_ctrate=back_ctrate,
         noclobber=noclobber,
         save_all=save_all,
+        test=test,
     )
 
     funcargs = []

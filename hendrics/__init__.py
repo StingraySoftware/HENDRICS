@@ -25,6 +25,8 @@ if not _ASTROPY_SETUP_:
         pass
 
     import stingray
+    import warnings
+    warnings.filterwarnings("ignore", message=".*Errorbars on cross.*")
     from .compat import (
         _MonkeyPatchedEventList,
         filter_for_deadtime,
