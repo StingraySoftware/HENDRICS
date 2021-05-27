@@ -324,6 +324,30 @@ def join_many_eventlists(eventfiles, new_event_file=None):
     return new_event_file
 
 
+def _split_events(ev, max_length, overlap=0):
+    event_times = ev.time
+    GTI = ev.gti
+    t0 = GTI[0, 0]
+    while t0 < GTI.max():
+        t1 = min(t0 + max_length, GTI.max())
+        if t1 - t0 < max_length / 2:
+            break
+        idx_start = np.searchsorted(event_times, t0)
+        idx_stop = np.searchsorted(event_times, t1)
+        gti_local = cross_two_gtis(GTI, [[t0, t1]])
+
+        local_times = event_times[idx_start:idx_stop]
+        new_ev = EventList(time=local_times, gti=gti_local)
+        for attr in ["pi", "energy", "cal_pi"]:
+            if hasattr(ev, attr) and getattr(ev, attr) is not None:
+                setattr(new_ev, attr, getattr(ev, attr)[idx_start:idx_stop])
+        for attr in ["mission", "instr", "mjdref", "header"]:
+            if hasattr(ev, attr) and getattr(ev, attr) is not None:
+                setattr(new_ev, attr, getattr(ev, attr))
+        t0 = t0 + max_length * (1.0 - overlap)
+        yield new_ev
+
+
 def split_eventlist(fname, max_length, overlap=None):
     root = hen_root(fname)
     ev = load_events(fname)
@@ -342,27 +366,11 @@ def split_eventlist(fname, max_length, overlap=None):
     nchars = nchars_in_int_value((GTI.max() - t0) / max_length)
 
     all_files = []
-    while t0 < GTI.max():
-        t1 = min(t0 + max_length, GTI.max())
-        if t1 - t0 < max_length / 2:
-            break
-        idx_start = np.searchsorted(event_times, t0)
-        idx_stop = np.searchsorted(event_times, t1)
-        gti_local = cross_two_gtis(GTI, [[t0, t1]])
-
-        local_times = event_times[idx_start:idx_stop]
-        new_ev = EventList(time=local_times, gti=gti_local)
-        for attr in ["pi", "energy", "cal_pi"]:
-            if hasattr(ev, attr) and getattr(ev, attr) is not None:
-                setattr(new_ev, attr, getattr(ev, attr)[idx_start:idx_stop])
-        for attr in ["mission", "instr", "mjdref", "header"]:
-            if hasattr(ev, attr) and getattr(ev, attr) is not None:
-                setattr(new_ev, attr, getattr(ev, attr))
+    for new_ev in _split_events(ev, max_length, overlap):
         newfname = root + f"_{count:0{nchars}d}" + HEN_FILE_EXTENSION
 
         save_events(new_ev, newfname)
         all_files.append(newfname)
-        t0 = t0 + max_length * (1.0 - overlap)
         count += 1
     return all_files
 

@@ -265,6 +265,17 @@ class TestReadEvents:
         for f in files:
             assert os.path.exists(f)
 
+    def test_split_events_bad_overlap_raises(self):
+        treat_event_file(self.fits_fileA)
+
+        filea = os.path.join(
+            self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
+        )
+
+        with pytest.raises(ValueError) as excinfo:
+            hen.read_events.split_eventlist(filea, 10, overlap=1.5)
+        assert "Overlap cannot be >=1. Exiting." in str(excinfo.value)
+
     def test_load_events(self):
         """Test event file reading."""
         command = "{}".format(self.fits_fileA)
