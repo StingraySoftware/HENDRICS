@@ -187,7 +187,9 @@ def _distribute_events(events, chunk_length):
     start_times, stop_times = time_intervals_from_gtis(gti, chunk_length)
     for start, end in zip(start_times, stop_times):
         first, last = np.searchsorted(events.time, [start, end])
-        new_ev = EventList(events.time[first:last], gti=[[start, end]])
+        new_ev = EventList(
+            events.time[first:last], gti=np.asarray([[start, end]])
+        )
         for attr in events.__dict__.keys():
             if attr == "gti":
                 continue
