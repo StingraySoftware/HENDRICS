@@ -30,7 +30,6 @@ from astropy import log
 from astropy.logger import AstropyUserWarning
 from astropy.io import fits
 from stingray.utils import assign_value_if_none
-from stingray.gti import get_gti_from_all_extensions as load_gti
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum

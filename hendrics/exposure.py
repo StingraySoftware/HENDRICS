@@ -249,8 +249,7 @@ def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
 
     data = load_events_and_gtis(uf_file, additional_columns=additional_columns)
 
-    events_obj = data.ev_list
-    events = events_obj.time
+    events = data.ev_list
     additional = data.additional_data
 
     priors = additional["PRIOR"]
