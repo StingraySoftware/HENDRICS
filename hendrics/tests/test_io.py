@@ -11,9 +11,9 @@ from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
 from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
-from hendrics.io import _get_additional_data, find_file_in_allowed_paths
+from hendrics.io import find_file_in_allowed_paths
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
-from hendrics.io import load_events_and_gtis, main
+from hendrics.io import main
 
 import pytest
 import glob
@@ -32,30 +32,6 @@ def _dummy_bad(x, z, y=0):
 
 def _dummy(x, y=0):
     return
-
-
-def test_get_additional_data(capsys):
-    from astropy.table import Table
-
-    lctable = Table({"a": [1, 2, 3], "b": [4, 5, 6]})
-    assert np.allclose(_get_additional_data(lctable, ["b"])["b"], [4, 5, 6])
-    with pytest.warns(UserWarning) as record:
-        add = _get_additional_data(lctable, ["c"])
-    assert np.any(["Column c not found" in r.message.args[0] for r in record])
-    assert np.allclose(add["c"], 0)
-
-
-def test_get_additional_data_fits(capsys):
-    from astropy.table import Table
-    from astropy.io import fits
-
-    table = Table({"a": [1, 2, 3], "b": [4, 5, 6]})
-    lctable = fits.BinTableHDU(table).data
-    assert np.allclose(_get_additional_data(lctable, ["b"])["b"], [4, 5, 6])
-    with pytest.warns(UserWarning) as record:
-        add = _get_additional_data(lctable, ["c"])
-    assert np.any(["Column c not found" in r.message.args[0] for r in record])
-    assert np.allclose(add["c"], 0)
 
 
 def test_find_files_in_allowed_paths(capsys):
@@ -110,12 +86,6 @@ class TestIO:
         fname = os.path.join(self.datadir, "monol_testA.evt")
         val = ref_mjd([fname])
         assert np.isclose(val, 55197.00076601852, atol=0.00000000001)
-
-    def test_load_events_gtis_gtifile(self):
-        fname = os.path.join(self.datadir, "monol_testA_nomission.evt")
-        gtifname = os.path.join(self.datadir, "monol_testA_timezero_gti.evt")
-        _ = load_events_and_gtis(fname, gti_file=gtifname)
-        # assert np.isclose(val, 55197.00076601852, atol=0.00000000001)
 
     def test_save_data(self):
         struct = {

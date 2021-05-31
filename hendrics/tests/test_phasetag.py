@@ -3,8 +3,6 @@ from astropy.io import fits
 import numpy as np
 import pytest
 from ..phasetag import main_phasetag
-from ..read_events import main as main_read
-from ..io import load_events, HEN_FILE_EXTENSION, load_events_and_gtis
 
 
 class TestPhasetag:
