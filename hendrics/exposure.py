@@ -10,7 +10,7 @@ from stingray.lightcurve import Lightcurve
 from stingray.gti import create_gti_mask
 from astropy import log
 import numpy as np
-from .io import load_events_and_gtis
+from stingray.io import load_events_and_gtis
 from .io import get_file_type, save_lcurve, HEN_FILE_EXTENSION, load_data
 from .base import hen_root, _assign_value_if_none
 
@@ -151,11 +151,24 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
 
     additional_columns = ["PRIOR", "SHIELD", "SHLD_T", "SHLD_HI"]
 
-    data = load_events_and_gtis(uf_file, additional_columns=additional_columns)
+    evtdata = load_events_and_gtis(uf_file, additional_columns=additional_columns)
 
-    events_obj = data.ev_list
+    from stingray import EventList
+    events_obj = EventList(time=evtdata.ev_list,
+                    gti=evtdata.gti_list,
+                    pi=evtdata.pi_list,
+                    energy=evtdata.energy_list,
+                    mjdref=evtdata.mjdref,
+                    instr=evtdata.instr,
+                    mission=evtdata.mission,
+                    header=evtdata.header,
+                    detector_id=evtdata.detector_id,
+                    ephem=evtdata.ephem,
+                    timeref=evtdata.timeref,
+                    timesys=evtdata.timesys)
+
     events = events_obj.time
-    additional = data.additional_data
+    additional = evtdata.additional_data
 
     priors = additional["PRIOR"]
 
