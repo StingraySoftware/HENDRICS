@@ -38,4 +38,6 @@ if not _ASTROPY_SETUP_:
         float64,
         int32,
         int64,
+        _MonkeyPatchedEventList
     )
+    stingray.events.EventList = _MonkeyPatchedEventList

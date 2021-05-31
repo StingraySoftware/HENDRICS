@@ -8,4 +8,5 @@ from .compatibility import (
     float64,
     int32,
     int64,
+    _MonkeyPatchedEventList
 )

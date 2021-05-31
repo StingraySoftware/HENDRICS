@@ -432,14 +432,14 @@ def save_events(eventlist, fname):
     fname: str
         Name of output file
     """
-    out = {
-        "time": eventlist.time,
-        "gti": eventlist.gti,
-        "pi": eventlist.pi,
-        "mjdref": eventlist.mjdref,
-        "tstart": np.min(eventlist.gti),
-        "tstop": np.max(eventlist.gti),
-    }
+    out = dict(
+        time=eventlist.time,
+        gti=eventlist.gti,
+        pi=eventlist.pi,
+        mjdref=eventlist.mjdref,
+        tstart=np.min(eventlist.gti),
+        tstop=np.max(eventlist.gti),
+    )
 
     out["__sr__class__type__"] = str(type(eventlist))
 
@@ -447,15 +447,15 @@ def save_events(eventlist, fname):
         out["instr"] = eventlist.instr.lower()
     else:
         out["instr"] = "unknown"
-    if hasattr(eventlist, "energy") and eventlist.energy is not None:
-        out["energy"] = eventlist.energy
+    for attr in ["energy", "cal_pi", "detector_id"]:
+        if hasattr(eventlist, attr) and getattr(eventlist, attr) is not None:
+            out[attr] = getattr(eventlist, attr)
+
     if hasattr(eventlist, "header") and eventlist.header is not None:
         out["header"] = eventlist.header
     for attr in ["mission", "ephem", "timeref", "timesys"]:
         if hasattr(eventlist, attr) and getattr(eventlist, attr) is not None:
             out[attr] = getattr(eventlist, attr).lower()
-    if hasattr(eventlist, "cal_pi") and eventlist.cal_pi is not None:
-        out["cal_pi"] = eventlist.cal_pi
 
     if get_file_format(fname) == "pickle":
         _save_data_pickle(out, fname)
@@ -474,22 +474,21 @@ def load_events(fname):
 
     eventlist.time = out["time"]
     eventlist.gti = out["gti"]
-    if "pi" in list(out.keys()):
-        eventlist.pi = force_iterable(out["pi"])
+
+    for attr in ["pi", "cal_pi", "detector_id", "energy"]:
+        if attr in out:
+            setattr(eventlist, attr, force_iterable(out[attr]))
     if "mjdref" in list(out.keys()):
         eventlist.mjdref = out["mjdref"]
     if "instr" in list(out.keys()):
         eventlist.instr = out["instr"].lower()
-    if "energy" in list(out.keys()):
-        eventlist.energy = force_iterable(out["energy"])
-    if "cal_pi" in list(out.keys()):
-        eventlist.cal_pi = force_iterable(out["cal_pi"])
     if "header" in list(out.keys()):
         eventlist.header = out["header"]
     if "mission" in list(out.keys()):
         eventlist.mission = out["mission"].lower()
     else:
         eventlist.mission = ""
+
     for attr in ["mission", "ephem", "timeref", "timesys"]:
         if attr in list(out.keys()):
             setattr(eventlist, attr, out[attr].lower())

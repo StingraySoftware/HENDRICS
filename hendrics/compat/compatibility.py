@@ -64,3 +64,28 @@ except ImportError:
     def array_take(arr, indices):
         """Adapt np.take to arrays"""
         return np.take(arr, indices)
+
+
+class _MonkeyPatchedEventList(EventList):
+    def apply_mask(self, mask, inplace=False):  # pragma: no cover
+        """For compatibility with old stingray version.
+        Examples
+        --------
+        >>> evt = _MonkeyPatchedEventList(time=[0, 1, 2])
+        >>> newev0 = evt.apply_mask([True, True, False], inplace=False);
+        >>> newev1 = evt.apply_mask([True, True, False], inplace=True);
+        >>> np.allclose(newev0.time, [0, 1])
+        True
+        >>> np.allclose(newev1.time, [0, 1])
+        True
+        >>> evt is newev1
+        True
+        """
+        if inplace:
+            new_ev = self
+        else:
+            new_ev = copy.deepcopy(self)
+        for attr in "time", "energy", "pi", "cal_pi", "detector_id":
+            if hasattr(new_ev, attr) and getattr(new_ev, attr) is not None:
+                setattr(new_ev, attr, getattr(new_ev, attr)[mask])
+        return new_ev
