@@ -26,6 +26,7 @@ if not _ASTROPY_SETUP_:
 
     import stingray
     import warnings
+
     warnings.filterwarnings("ignore", message=".*Errorbars on cross.*")
 
     from .compat import (
@@ -38,6 +39,7 @@ if not _ASTROPY_SETUP_:
         float64,
         int32,
         int64,
-        _MonkeyPatchedEventList
+        _MonkeyPatchedEventList,
     )
+
     stingray.events.EventList = _MonkeyPatchedEventList

@@ -197,7 +197,10 @@ def generate_fake_fits_observation(
     allcols = [col1]
 
     if ccol is not None:
-        if not hasattr(event_list, "detector_id") or event_list.detector_id is None:
+        if (
+            not hasattr(event_list, "detector_id")
+            or event_list.detector_id is None
+        ):
 
             ccdnr = np.zeros(np.size(ev_list)) + 1
             ccdnr[1] = 2  # Make it less trivial
@@ -222,7 +225,6 @@ def generate_fake_fits_observation(
         allcols.append(col)
 
     cols = fits.ColDefs(allcols)
-
 
     # ---- Fake lots of information ----
 
@@ -762,7 +764,10 @@ def main(args=None):
             event_list, info = filter_for_deadtime(
                 event_list, deadtime, dt_sigma=deadtime_sigma, return_all=True
             )
-            if hasattr(event_list, "detector_id") and event_list.detector_id is not None:
+            if (
+                hasattr(event_list, "detector_id")
+                and event_list.detector_id is not None
+            ):
                 event_list.detector_id = event_list.detector_id[info.uf_mask]
                 assert event_list.detector_id.size == event_list.time.size
             log.info("{} events after filter".format(len(event_list.time)))
