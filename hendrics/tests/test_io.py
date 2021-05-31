@@ -108,12 +108,14 @@ class TestIO:
             mjdref=54385.3254923845,
             gti=np.longdouble([[-0.5, 3.5]]),
         )
+        events.cal_pi = events.pi.copy()
         events.energy = np.array([3.0, 4.0, 5.0])
         events.mission = "nustar"
         events.header = Header().tostring()
         save_events(events, self.dum)
         events2 = load_events(self.dum)
         assert np.allclose(events.time, events2.time)
+        assert np.allclose(events.cal_pi, events2.cal_pi)
         assert np.allclose(events.pi, events2.pi)
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
@@ -156,6 +158,27 @@ class TestIO:
         for attr in ["gti", "mjdref", "m", "show_progress", "amplitude"]:
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
+    def test_load_and_save_cpds(self):
+        pds = Crossspectrum()
+        pds.freq = np.linspace(0, 10, 15)
+        pds.power = np.random.poisson(30, 15) + 1.0j
+        pds.mjdref = 54385.3254923845
+        pds.gti = np.longdouble([[-0.5, 3.5]])
+        pds.show_progress = True
+        pds.amplitude = False
+
+        save_pds(pds, self.dum)
+        pds2 = load_pds(self.dum)
+        for attr in ["gti", "mjdref", "m", "show_progress", "amplitude", "power"]:
+            assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
+
+    def test_load_pds_fails(self):
+        pds = EventList()
+        save_events(pds, self.dum)
+        with pytest.raises(ValueError) as excinfo:
+            load_pds(self.dum)
+        assert "Unrecognized data type" in str(excinfo.value)
+
     def test_load_and_save_xps(self):
         lcurve1 = Lightcurve(
             np.linspace(0, 10, 150),
@@ -170,11 +193,12 @@ class TestIO:
             gti=np.longdouble([[-0.5, 3.5]]),
         )
 
-        xps = AveragedCrossspectrum(lcurve1, lcurve2, 1)
-
+        xps = AveragedCrossspectrum(lcurve1, lcurve2, 1, save_all=True)
         save_pds(xps, self.dum, save_all=True)
         xps2 = load_pds(self.dum)
         assert np.allclose(xps.gti, xps2.gti)
+        assert hasattr(xps2, "cs_all")
+        assert np.allclose(xps.cs_all[0].power, xps2.cs_all[0].power)
         assert xps.m == xps2.m
         lag, lag_err = xps.time_lag()
         lag2, lag2_err = xps2.time_lag()

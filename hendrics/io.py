@@ -747,7 +747,7 @@ def load_pds(fname, nosub=False):
         cpds.pds2 = load_pds(pds2_name)
     if len(cs_all_names) > 0:
         cs_all = []
-        for c in cs_all_names:
+        for c in sorted(cs_all_names):
             cs_all.append(load_pds(c))
         cpds.cs_all = cs_all
 
