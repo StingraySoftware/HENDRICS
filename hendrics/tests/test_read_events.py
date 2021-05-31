@@ -314,11 +314,6 @@ class TestReadEvents:
         gti_to_test = hen.io.load_events(self.ev_fileB).gti[0]
         assert np.allclose(gti_to_test, lc.gti)
 
-    def test_load_gtis(self):
-        """Test loading of GTIs from FITS files."""
-        fits_file = os.path.join(self.datadir, "monol_testA.evt")
-        hen.io.load_gtis(fits_file)
-
     def test_load_events_noclobber(self):
         """Test event file reading w. noclobber option."""
         with catch_warnings() as w:

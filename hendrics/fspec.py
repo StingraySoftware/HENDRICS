@@ -301,7 +301,7 @@ def calc_pds(
             _provide_periodograms(
                 data, fftlen, bintime, norm=normalization.lower()
             ),
-            total=total
+            total=total,
         )
     else:
         lc_data = _format_lc_data(data, ftype, bintime=bintime, fftlen=fftlen)

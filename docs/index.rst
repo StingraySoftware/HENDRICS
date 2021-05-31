@@ -62,7 +62,7 @@ HENDRICS 6.0
 ~~~~~~~~~~~~
 
 + Much Improved mission support
-+ Lots of performance improvements
++ Lots of performance improvements with large datasets
 + Improved simulation and upper limit determination for Z searches
 + Improved candidate searching in Z searches
 + Lots of documentation fixes

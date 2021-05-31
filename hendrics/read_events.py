@@ -6,10 +6,10 @@ import copy
 import os
 import numpy as np
 from astropy import log
-from stingray.utils import assign_value_if_none
+from stingray.io import load_events_and_gtis
 from stingray.events import EventList
 from stingray.gti import cross_two_gtis
-from .io import load_events, load_events_and_gtis
+from .io import load_events
 from .base import common_name
 from .base import hen_root
 from .io import save_events
@@ -51,17 +51,13 @@ def treat_event_file(
     """
     # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
-    try:
-        events = EventList.read(
-            filename,
-            format_="hea",
-            gtistring=gtistring,
-            additional_columns=additional_columns,
-        )
-    except TypeError:  # pragma: no cover
-        evtdata = load_events_and_gtis(filename, gtistring=gtistring)
-        events = evtdata.ev_list
-        events.detector_id = evtdata.detector_id
+
+    events = EventList.read(
+        filename,
+        format_="hea",
+        gtistring=gtistring,
+        additional_columns=additional_columns,
+    )
 
     if discard_calibration:
         events.energy = None

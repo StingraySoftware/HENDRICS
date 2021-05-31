@@ -473,7 +473,7 @@ HENfspec
 
     usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
                     [--norm NORM] [--noclobber] [-o OUTROOT] [--back BACK]
-                    [--save-dyn] [--ignore-instr] [--save-all]
+                    [--save-dyn] [--ignore-instr] [--save-all] [--test]
                     [--loglevel LOGLEVEL] [--debug]
                     files [files ...]
 
@@ -505,6 +505,7 @@ HENfspec
       --ignore-instr        Ignore instrument names in channels
       --save-all            Save all information contained in spectra, including
                             single pdss and light curves.
+      --test                Only to be used in testing
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level

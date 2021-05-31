@@ -124,7 +124,7 @@ def generate_fake_fits_observation(
     if event_list is None:
         tstart = assign_value_if_none(tstart, 8e7)
         tstop = assign_value_if_none(tstop, tstart + 1025)
-        ev_list = sorted(ra.uniform(tstart, tstop, 1000))
+        ev_list = np.sort(ra.uniform(tstart, tstop, 1000))
         gti = assign_value_if_none(gti, np.array([[tstart, tstop]]))
     else:
         if hasattr(event_list, "header") and event_list.header is not None:
@@ -147,7 +147,7 @@ def generate_fake_fits_observation(
     if hasattr(event_list, "pi") and event_list.pi is not None:
         pi = event_list.pi
     else:
-        pi = ra.randint(0, 1024, len(ev_list))
+        pi = ra.randint(0, 1024, np.size(ev_list))
 
     if hasattr(event_list, "cal_pi") and event_list.cal_pi is not None:
         cal_pi = event_list.cal_pi
@@ -174,6 +174,8 @@ def generate_fake_fits_observation(
         instr = allowed_instr[0]
 
     ccol = get_key_from_mission_info(mission_info, "ccol", None, inst=instr)
+    if ccol.lower() == "none":
+        ccol = None
     ecol = get_key_from_mission_info(mission_info, "ecol", "PI", inst=instr)
     ext = get_key_from_mission_info(
         mission_info, "events", "EVENTS", inst=instr
@@ -195,9 +197,17 @@ def generate_fake_fits_observation(
     allcols = [col1]
 
     if ccol is not None:
-        ccdnr = np.zeros(len(ev_list)) + 1
-        ccdnr[1] = 2  # Make it less trivial
-        ccdnr[10] = 7
+        if (
+            not hasattr(event_list, "detector_id")
+            or event_list.detector_id is None
+        ):
+
+            ccdnr = np.zeros(np.size(ev_list)) + 1
+            ccdnr[1] = 2  # Make it less trivial
+            ccdnr[10] = 7
+        else:
+            ccdnr = event_list.detector_id
+
         allcols.append(fits.Column(name=ccol, format="1J", array=ccdnr))
 
     if mission.lower().strip() in ["xmm", "swift"]:
@@ -215,12 +225,10 @@ def generate_fake_fits_observation(
         allcols.append(col)
 
     cols = fits.ColDefs(allcols)
-    tbhdu = fits.BinTableHDU.from_columns(cols)
-    tbhdu.name = ext
 
     # ---- Fake lots of information ----
 
-    tbheader = tbhdu.header
+    tbheader = Header()
     tbheader = _fill_in_default_information(tbheader)
     # If None, it will not update
     tbheader.update(inheader)
@@ -245,12 +253,16 @@ def generate_fake_fits_observation(
         tbheader["MJDREF"] = mjdref
         tbheader.pop("MJDREFI", None)
         tbheader.pop("MJDREFF", None)
+
     tbheader["TSTOP"] = (tstop, "Elapsed seconds since MJDREF at end of file")
     tbheader["LIVETIME"] = (livetime, "On-source time")
     tbheader["TIMEZERO"] = (0.000000e00, "Time Zero")
     tbheader["HISTORY"] = "Generated with HENDRICS by {0}".format(
         os.getenv("USER")
     )
+
+    tbhdu = fits.BinTableHDU.from_columns(cols, header=tbheader)
+    tbhdu.name = ext
 
     tbhdu.add_checksum()
     tbhdu.verify("exception")
@@ -267,7 +279,9 @@ def generate_fake_fits_observation(
     cols = fits.ColDefs(allcols)
     gtinames = ["GTI"]
     if mission.lower().strip() == "xmm":
-        gtinames = ["STDGTI01", "STDGTI02", "STDGTI07"]
+        gtinames = []
+        for i in set(ccdnr):
+            gtinames.append(f"STDGTI{int(i):02d}")
 
     all_new_hdus = [prihdu, tbhdu]
     for name in gtinames:
@@ -674,10 +688,10 @@ def main(args=None):
         help="Output file name",
     )
     parser.add_argument(
-        "-i", "--instrument", type=str, default="FPMA", help="Instrument name"
+        "-i", "--instrument", type=str, default=None, help="Instrument name"
     )
     parser.add_argument(
-        "-m", "--mission", type=str, default="NUSTAR", help="Mission name"
+        "-m", "--mission", type=str, default=None, help="Mission name"
     )
     parser.add_argument(
         "--tstart",
@@ -750,6 +764,7 @@ def main(args=None):
             event_list, info = filter_for_deadtime(
                 event_list, deadtime, dt_sigma=deadtime_sigma, return_all=True
             )
+
             log.info("{} events after filter".format(len(event_list.time)))
 
             prior = np.zeros_like(event_list.time)

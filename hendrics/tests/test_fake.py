@@ -276,9 +276,15 @@ class TestFake(object):
 
         events1 = load_events(newf[0])
 
-        assert np.allclose(events0.time, events1.time)
         assert np.allclose(events0.gti, events1.gti)
+        assert np.allclose(events0.time, np.sort(events0.time))
+        assert np.allclose(events1.time, np.sort(events1.time))
+        assert np.allclose(events0.time, events1.time)
+
         assert np.isclose(events0.mjdref, events1.mjdref)
+        if hasattr(events0, "detector_id") and events0.detector_id is not None:
+            assert np.allclose(events0.detector_id, events1.detector_id)
+
         if "xmm" in fname:
             assert np.isclose(events0.mjdref, 50814)
         os.remove(newfile)

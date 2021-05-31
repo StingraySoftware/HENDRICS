@@ -11,9 +11,9 @@ from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
 from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
-from hendrics.io import _get_additional_data, find_file_in_allowed_paths
+from hendrics.io import find_file_in_allowed_paths
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
-from hendrics.io import load_events_and_gtis, main
+from hendrics.io import main
 
 import pytest
 import glob
@@ -32,30 +32,6 @@ def _dummy_bad(x, z, y=0):
 
 def _dummy(x, y=0):
     return
-
-
-def test_get_additional_data(capsys):
-    from astropy.table import Table
-
-    lctable = Table({"a": [1, 2, 3], "b": [4, 5, 6]})
-    assert np.allclose(_get_additional_data(lctable, ["b"])["b"], [4, 5, 6])
-    with pytest.warns(UserWarning) as record:
-        add = _get_additional_data(lctable, ["c"])
-    assert np.any(["Column c not found" in r.message.args[0] for r in record])
-    assert np.allclose(add["c"], 0)
-
-
-def test_get_additional_data_fits(capsys):
-    from astropy.table import Table
-    from astropy.io import fits
-
-    table = Table({"a": [1, 2, 3], "b": [4, 5, 6]})
-    lctable = fits.BinTableHDU(table).data
-    assert np.allclose(_get_additional_data(lctable, ["b"])["b"], [4, 5, 6])
-    with pytest.warns(UserWarning) as record:
-        add = _get_additional_data(lctable, ["c"])
-    assert np.any(["Column c not found" in r.message.args[0] for r in record])
-    assert np.allclose(add["c"], 0)
 
 
 def test_find_files_in_allowed_paths(capsys):
@@ -111,12 +87,6 @@ class TestIO:
         val = ref_mjd([fname])
         assert np.isclose(val, 55197.00076601852, atol=0.00000000001)
 
-    def test_load_events_gtis_gtifile(self):
-        fname = os.path.join(self.datadir, "monol_testA_nomission.evt")
-        gtifname = os.path.join(self.datadir, "monol_testA_timezero_gti.evt")
-        _ = load_events_and_gtis(fname, gti_file=gtifname)
-        # assert np.isclose(val, 55197.00076601852, atol=0.00000000001)
-
     def test_save_data(self):
         struct = {
             "a": 0.1,
@@ -138,12 +108,14 @@ class TestIO:
             mjdref=54385.3254923845,
             gti=np.longdouble([[-0.5, 3.5]]),
         )
+        events.cal_pi = events.pi.copy()
         events.energy = np.array([3.0, 4.0, 5.0])
         events.mission = "nustar"
         events.header = Header().tostring()
         save_events(events, self.dum)
         events2 = load_events(self.dum)
         assert np.allclose(events.time, events2.time)
+        assert np.allclose(events.cal_pi, events2.cal_pi)
         assert np.allclose(events.pi, events2.pi)
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
@@ -186,6 +158,34 @@ class TestIO:
         for attr in ["gti", "mjdref", "m", "show_progress", "amplitude"]:
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
+    def test_load_and_save_cpds(self):
+        pds = Crossspectrum()
+        pds.freq = np.linspace(0, 10, 15)
+        pds.power = np.random.poisson(30, 15) + 1.0j
+        pds.mjdref = 54385.3254923845
+        pds.gti = np.longdouble([[-0.5, 3.5]])
+        pds.show_progress = True
+        pds.amplitude = False
+
+        save_pds(pds, self.dum)
+        pds2 = load_pds(self.dum)
+        for attr in [
+            "gti",
+            "mjdref",
+            "m",
+            "show_progress",
+            "amplitude",
+            "power",
+        ]:
+            assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
+
+    def test_load_pds_fails(self):
+        pds = EventList()
+        save_events(pds, self.dum)
+        with pytest.raises(ValueError) as excinfo:
+            load_pds(self.dum)
+        assert "Unrecognized data type" in str(excinfo.value)
+
     def test_load_and_save_xps(self):
         lcurve1 = Lightcurve(
             np.linspace(0, 10, 150),
@@ -200,11 +200,12 @@ class TestIO:
             gti=np.longdouble([[-0.5, 3.5]]),
         )
 
-        xps = AveragedCrossspectrum(lcurve1, lcurve2, 1)
-
+        xps = AveragedCrossspectrum(lcurve1, lcurve2, 1, save_all=True)
         save_pds(xps, self.dum, save_all=True)
         xps2 = load_pds(self.dum)
         assert np.allclose(xps.gti, xps2.gti)
+        assert hasattr(xps2, "cs_all")
+        assert np.allclose(xps.cs_all[0].power, xps2.cs_all[0].power)
         assert xps.m == xps2.m
         lag, lag_err = xps.time_lag()
         lag2, lag2_err = xps2.time_lag()

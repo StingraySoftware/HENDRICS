@@ -26,15 +26,8 @@ if not _ASTROPY_SETUP_:
 
     import stingray
     import warnings
+
     warnings.filterwarnings("ignore", message=".*Errorbars on cross.*")
-    from .compat import (
-        _MonkeyPatchedEventList,
-        filter_for_deadtime,
-        get_deadtime_mask,
-        read_mission_info,
-        _case_insensitive_search_in_list,
-        get_key_from_mission_info,
-    )
 
     from .compat import (
         prange,
@@ -46,15 +39,7 @@ if not _ASTROPY_SETUP_:
         float64,
         int32,
         int64,
+        _MonkeyPatchedEventList,
     )
 
-    try:
-        e = stingray.events.EventList(time=[1, 2, 3])
-        e.energy = None
-        e.apply_mask([True, True, False])
-    except (TypeError, AttributeError):
-        stingray.events.EventList = _MonkeyPatchedEventList
-        stingray.filters.filter_for_deadtime = filter_for_deadtime
-        stingray.filters.get_deadtime_mask = get_deadtime_mask
-        stingray.io.read_mission_info = read_mission_info
-        stingray.io.get_key_from_mission_info = get_key_from_mission_info
+    stingray.events.EventList = _MonkeyPatchedEventList
