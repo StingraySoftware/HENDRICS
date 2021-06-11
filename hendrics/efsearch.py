@@ -682,6 +682,10 @@ def plot_transient_search(results, gif_name=None):
                 if line[maxidx] > maxline:
                     best_f = f[maxidx]
                     maxline = line[maxidx]
+            if 3.5 < maxline < 5 and i_f == 0:  # pragma: no cover
+                print(f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
+            elif maxline >= 5 and i_f == 0:  # pragma: no cover
+                print(f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
 
             axf.plot(
                 f, mean_line, lw=1, c="k", zorder=10, label="mean", ls="-"
@@ -1349,6 +1353,7 @@ def _common_main(args, func):
 
     outfiles = []
     for i_f, fname in enumerate(files):
+        log.info(f"Treating {fname}")
         mjdref = 0
         kwargs = {}
         baseline = args.nbin
@@ -1362,6 +1367,24 @@ def _common_main(args, func):
             kind = "Z2n"
             kind_label = f"Z2{n}"
         ftype, events = get_file_type(fname)
+
+        out_fname = hen_root(fname) + "_{}".format(kind_label)
+        if args.emin is not None or args.emax is not None:
+            emin = assign_value_if_none(args.emin, "**")
+            emax = assign_value_if_none(args.emax, "**")
+            out_fname += f"_{emin:g}-{emax:g}keV"
+        if args.fmin is not None or args.fmax is not None:
+            fmin = assign_value_if_none(args.fmin, "**")
+            fmax = assign_value_if_none(args.fmax, "**")
+            out_fname += f"_{fmin:g}-{fmax:g}Hz"
+        if args.fast:
+            out_fname += "_fast"
+        elif args.ffa:
+            out_fname += "_ffa"
+        if args.mean_fdot is not None and not np.isclose(
+            args.mean_fdot * 1e10, 0
+        ):
+            out_fname += f"_fd{args.mean_fdot * 1e10:g}e-10s-2"
 
         if ftype == "events":
             if hasattr(events, "mjdref"):
@@ -1390,7 +1413,7 @@ def _common_main(args, func):
                 nprof=args.n_transient_intervals,
                 oversample=oversample,
             )
-            plot_transient_search(results, hen_root(fname) + "_transient.gif")
+            plot_transient_search(results, out_fname + "_transient.gif")
             continue
 
         if not args.fast and not args.ffa:
@@ -1524,24 +1547,6 @@ def _common_main(args, func):
 
         efperiodogram.best_fits = best_models
         efperiodogram.oversample = oversample
-
-        out_fname = hen_root(fname) + "_{}".format(kind_label)
-        if args.emin is not None or args.emax is not None:
-            emin = assign_value_if_none(args.emin, "**")
-            emax = assign_value_if_none(args.emax, "**")
-            out_fname += f"_{emin:g}-{emax:g}keV"
-        if args.fmin is not None or args.fmax is not None:
-            fmin = assign_value_if_none(args.fmin, "**")
-            fmax = assign_value_if_none(args.fmax, "**")
-            out_fname += f"_{fmin:g}-{fmax:g}Hz"
-        if args.fast:
-            out_fname += "_fast"
-        elif args.ffa:
-            out_fname += "_ffa"
-        if args.mean_fdot is not None and not np.isclose(
-            args.mean_fdot * 1e10, 0
-        ):
-            out_fname += f"_fd{args.mean_fdot * 1e10:g}e-10s-2"
 
         save_folding(efperiodogram, out_fname + HEN_FILE_EXTENSION)
         outfiles.append(out_fname + HEN_FILE_EXTENSION)
