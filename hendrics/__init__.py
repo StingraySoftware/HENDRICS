@@ -40,6 +40,27 @@ if not _ASTROPY_SETUP_:
         int32,
         int64,
         _MonkeyPatchedEventList,
+        power_confidence_limits,
+        power_upper_limit,
+        pf_from_ssig,
+        pf_from_a,
+        pf_upper_limit,
+        a_from_pf,
+        a_from_ssig,
+        ssig_from_a,
+        ssig_from_pf,
     )
 
     stingray.events.EventList = _MonkeyPatchedEventList
+    try:
+        from stingray.stats import pf_upper_limit
+    except ImportError:
+        stingray.stats.power_confidence_limits = power_confidence_limits
+        stingray.stats.power_upper_limit = power_upper_limit
+        stingray.stats.pf_from_ssig = pf_from_ssig
+        stingray.stats.pf_from_a = pf_from_a
+        stingray.stats.pf_upper_limit = pf_upper_limit
+        stingray.stats.a_from_pf = a_from_pf
+        stingray.stats.a_from_ssig = a_from_ssig
+        stingray.stats.ssig_from_a = ssig_from_a
+        stingray.stats.ssig_from_pf = ssig_from_pf

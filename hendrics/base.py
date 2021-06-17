@@ -9,6 +9,8 @@ from collections.abc import Iterable
 from pathlib import Path
 import tempfile
 
+from scipy.interpolate import interp1d
+from scipy.stats import ncx2
 import numpy as np
 from numpy import histogram2d as histogram2d_np
 from numpy import histogram as histogram_np

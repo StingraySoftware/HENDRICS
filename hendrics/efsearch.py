@@ -19,6 +19,7 @@ from stingray.pulse.search import (
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
+from stingray.stats import pf_upper_limit
 from .io import load_events, EFPeriodogram, save_folding, HEN_FILE_EXTENSION
 from .base import hen_root, show_progress, adjust_dt_for_power_of_two
 from .base import deorbit_events, njit, prange, vectorize, float64
@@ -71,94 +72,6 @@ __all__ = [
     "main_accelsearch",
     "h_test",
 ]
-
-
-def pf_from_a(a):
-    """The definition of pulsed fraction in HENDRICS is 2A/B, where B is the
-    maximum and A is the amplitude of the modulation. Hence, if the pulsed
-    profile is defined as
-    p = lambda * (1 + a * sin(phase)),
-
-    pulsed fraction = 2a/(1+a)
-
-    Examples
-    --------
-    >>> pf_from_a(1)
-    1.0
-    >>> pf_from_a(0)
-    0.0
-    """
-    return 2 * a / (1 + a)
-
-
-def a_from_pf(p):
-    """The definition of pulsed fraction in HENDRICS is 2A/B, where B is the
-    maximum and A is the amplitude of the modulation. Hence, if the pulsed
-    profile is defined as
-    p = lambda * (1 + a * sin(phase)),
-
-    we have
-
-    a = pf / (2 - pf)
-
-    Examples
-    --------
-    >>> a_from_pf(1)
-    1.0
-    >>> a_from_pf(0)
-    0.0
-    """
-    return p / (2 - p)
-
-
-def ssig_from_a(a, ncounts):
-    """From Bachetti+2021b, given a pulse profile
-    p = lambda * (1 + a * sin(phase)),
-    The theoretical value of Z^2_n is Ncounts / 2 * \sum a_l^2
-
-    Examples
-    --------
-    >>> round(ssig_from_a(0.1, 30000), 1)
-    150.0
-    """
-    return ncounts / 2 * a ** 2
-
-
-def a_from_ssig(ssig, ncounts):
-    """From Bachetti+2021b, given a pulse profile
-    p = lambda * (1 + a * sin(phase)),
-    The theoretical value of Z^2_n is Ncounts / 2 * \sum a_l^2
-
-    Examples
-    --------
-    >>> a_from_ssig(150, 30000)
-    0.1
-    """
-    return np.sqrt(2 * ssig / ncounts)
-
-
-def ssig_from_pf(pf, ncounts):
-    """
-
-    Examples
-    --------
-    >>> round(ssig_from_pf(pf_from_a(0.1), 30000), 1)
-    150.0
-    """
-    a = a_from_pf(pf)
-    return ncounts / 2 * a ** 2
-
-
-def pf_from_ssig(ssig, ncounts):
-    """Estimate pulsed fraction for a sinusoid from a given Z^2_n statistic.
-
-    Examples
-    --------
-    >>> round(a_from_pf(pf_from_ssig(150, 30000)), 1)
-    0.1
-    """
-    a = a_from_ssig(ssig, ncounts)
-    return pf_from_a(a)
 
 
 def _save_df_to_csv(df, csv_file, reset=False):
@@ -683,9 +596,13 @@ def plot_transient_search(results, gif_name=None):
                     best_f = f[maxidx]
                     maxline = line[maxidx]
             if 3.5 < maxline < 5 and i_f == 0:  # pragma: no cover
-                print(f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
+                print(
+                    f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
+                )
             elif maxline >= 5 and i_f == 0:  # pragma: no cover
-                print(f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
+                print(
+                    f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
+                )
 
             axf.plot(
                 f, mean_line, lw=1, c="k", zorder=10, label="mean", ls="-"
@@ -1511,7 +1428,9 @@ def _common_main(args, func):
             pepoch=mjdref + ref_time / 86400,
             oversample=args.oversample,
         )
-        efperiodogram.upperlim = pf_from_ssig(np.max(stats), events.time.size)
+        efperiodogram.upperlim = pf_upper_limit(
+            np.max(stats), events.time.size, n=args.N
+        )
 
         if args.find_candidates:
             best_peaks, best_stat = efperiodogram.find_peaks(
