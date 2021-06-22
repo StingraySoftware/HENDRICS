@@ -1431,6 +1431,7 @@ def _common_main(args, func):
         efperiodogram.upperlim = pf_upper_limit(
             np.max(stats), events.time.size, n=args.N
         )
+        efperiodogram.ncounts = events.time.size
 
         if args.find_candidates:
             best_peaks, best_stat = efperiodogram.find_peaks(
