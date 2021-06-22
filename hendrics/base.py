@@ -433,28 +433,29 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
             "MJDREF is very low (<01-01-1950), " "this is unsupported."
         )
 
+    model = get_model(parameter_file)
+    porb = model.PB.value
     pepoch = events.gti[0, 0]
     pepoch_mjd = pepoch / 86400 + events.mjdref
 
     length = np.max(events.time) - np.min(events.time)
-    if length > 200000:
-        warnings.warn(
-            "The observation is very long. The barycentric correction "
-            "will be rough"
-        )
+
+    length_d = length / 86400
+    ntimes = max(int(length // 60), int(length_d / porb * 100))
+    log.info(f"Interpolating orbital solution with {ntimes} points")
 
     if ephem is None and hasattr(events, "ephem") and events.ephem is not None:
         ephem = events.ephem
         log.info(f"Using default ephemeris: {ephem}")
+
     elif ephem is None:
         ephem = "DE421"
 
-    length_d = length / 86400
     orbital_correction_fun = simple_orbit_fun_from_parfile(
         pepoch_mjd - 1,
         pepoch_mjd + length_d + 1,
         parameter_file,
-        ntimes=min(int(length // 10), 10000),
+        ntimes=ntimes,
         invert=invert,
         ephem=ephem,
     )
