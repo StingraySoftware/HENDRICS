@@ -388,14 +388,14 @@ def plot_folding(
                 ntrial=ntrial,
                 n_summed_spectra=int(ef.M),
             )
-            nbin = ef.N * 8
+            nbin = max(16, ef.N * 8)
             label = "$" + f"Z^2_{ef.N}" + "$"
         else:
             vmin = ef.nbin
             vmax = fold_detection_level(
                 nbin=int(ef.nbin), epsilon=0.001, ntrial=ntrial
             )
-            nbin = ef.nbin
+            nbin = max(16, ef.nbin)
 
         n_cands = 5
         best_cands = find_peaks_in_image(ef.stat, n=n_cands)
