@@ -9,4 +9,13 @@ from .compatibility import (
     int32,
     int64,
     _MonkeyPatchedEventList,
+    power_confidence_limits,
+    power_upper_limit,
+    pf_from_ssig,
+    pf_from_a,
+    pf_upper_limit,
+    a_from_pf,
+    a_from_ssig,
+    ssig_from_a,
+    ssig_from_pf,
 )

@@ -12,7 +12,7 @@ from scipy.signal import savgol_filter
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
 from astropy import log
-from .io import load_events
+from .io import load_events, filter_energy
 
 try:
     from tqdm import tqdm as show_progress
@@ -462,96 +462,6 @@ def fit_profile(
     return fit_profile_with_sinusoids(
         profile, profile_err, debug=debug, nperiods=nperiods, baseline=baseline
     )
-
-
-def get_energy_from_events(ev):
-    if hasattr(ev, "energy") and ev.energy is not None:
-        energy = ev.energy
-        elabel = "Energy"
-    elif hasattr(ev, "pi") and ev.pi is not None:
-        energy = ev.pi
-        elabel = "PI"
-        ev.energy = energy
-    else:
-        energy = np.ones_like(ev.time)
-        elabel = ""
-    return elabel, energy
-
-
-def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
-    """Filter event list by energy (or PI)
-
-    If an ``energy`` attribute is present, uses it. Otherwise, it switches
-    automatically to ``pi``
-
-    Examples
-    --------
-    >>> import doctest
-    >>> from contextlib import redirect_stderr
-    >>> import sys
-    >>> time = np.arange(5)
-    >>> energy = np.array([0, 0, 30, 4, 1])
-    >>> events = EventList(time=time, energy=energy)
-    >>> ev_out, elabel = filter_energy(events, 3, None)
-    >>> np.all(ev_out.time == [2, 3])
-    True
-    >>> elabel == 'Energy'
-    True
-    >>> events = EventList(time=time, pi=energy)
-    >>> with warnings.catch_warnings(record=True) as w:
-    ...     ev_out, elabel = filter_energy(events, None, 20)  # doctest: +ELLIPSIS
-    >>> "No energy information in event list" in str(w[-1].message)
-    True
-    >>> np.all(ev_out.time == [0, 1, 3, 4])
-    True
-    >>> elabel == 'PI'
-    True
-    >>> events = EventList(time=time, pi=energy)
-    >>> ev_out, elabel = filter_energy(events, None, None)  # doctest: +ELLIPSIS
-    >>> np.all(ev_out.time == time)
-    True
-    >>> elabel == 'PI'
-    True
-    >>> events = EventList(time=time)
-    >>> with redirect_stderr(sys.stdout):
-    ...     ev_out, elabel = filter_energy(events, 3, None)  # doctest: +ELLIPSIS
-    ERROR:...No Energy or PI...
-    >>> np.all(ev_out.time == time)
-    True
-    >>> elabel == ''
-    True
-    """
-    times = ev.time
-
-    elabel, energy = get_energy_from_events(ev)
-    # For some reason the doctest doesn't work if I don't do this instead
-    # of using warnings.warn
-    if elabel == "":
-        log.error(
-            "No Energy or PI information available. "
-            "No energy filter applied to events"
-        )
-        return ev, ""
-
-    if emax is None and emin is None:
-        return ev, elabel
-    # For some reason the doctest doesn't work if I don't do this instead
-    # of using warnings.warn
-    if elabel.lower() == "pi" and (emax is not None or emin is not None):
-        warnings.warn(
-            f"No energy information in event list "
-            f"while filtering between {emin} and {emax}. "
-            f"Definition of events.energy is now based on PI."
-        )
-    if emin is None:
-        emin = np.min(energy)
-    if emax is None:
-        emax = np.max(energy)
-
-    good = (energy >= emin) & (energy <= emax)
-    ev.time = times[good]
-    ev.energy = energy[good]
-    return ev, elabel
 
 
 def run_folding(

@@ -700,7 +700,7 @@ class InteractivePhaseogram(BasePhaseogram):
             print(self.timing_model_string, file=fobj)
 
     def quit(self, event):
-        plt.close(self.fig)
+        plt.close("all")
 
     def get_values(self):
         return self.freq, self.fdot, self.fddot

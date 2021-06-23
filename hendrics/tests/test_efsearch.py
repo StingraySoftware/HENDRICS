@@ -382,7 +382,7 @@ class TestEFsearch:
                 "16",
             ]
         )
-        outfile = "events_transient.gif"
+        outfile = "events_Z22_9.85-9.95Hz_transient.gif"
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
