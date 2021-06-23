@@ -70,9 +70,6 @@ def test_deorbit_run():
     ev.mjdref = 56000.0
     ev.ephem = "de200"
     par = _dummy_par("bububu.par")
-    with pytest.warns(UserWarning) as record:
-        _ = deorbit_events(ev, par)
-    assert np.any(
-        ["The observation is very long." in r.message.args[0] for r in record]
-    )
+    _ = deorbit_events(ev, par)
+
     os.remove("bububu.par")

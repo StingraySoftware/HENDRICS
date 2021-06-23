@@ -441,7 +441,7 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     length = np.max(events.time) - np.min(events.time)
 
     length_d = length / 86400
-    ntimes = max(int(length // 60), int(length_d / porb * 100))
+    ntimes = max(100, int(length // 60), int(length_d / porb * 100))
     log.info(f"Interpolating orbital solution with {ntimes} points")
 
     if ephem is None and hasattr(events, "ephem") and events.ephem is not None:
