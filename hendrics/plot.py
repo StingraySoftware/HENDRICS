@@ -389,7 +389,7 @@ def plot_folding(
                 n_summed_spectra=int(ef.M),
             )
             nbin = max(16, ef.N * 8)
-            label = "$" + f"Z^2_{ef.N}" + "$"
+            label = "$" + "Z^2_{" + f"{ef.N}" + "}$"
         else:
             vmin = ef.nbin
             vmax = fold_detection_level(

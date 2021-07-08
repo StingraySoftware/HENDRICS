@@ -24,6 +24,7 @@ def sum_fspec(files, outname=None):
                 contents0, ftype0 = contents, ftype
             else:
                 assert ftype == ftype0, "Files must all be of the same kind"
+            contents.fftlen = contents.segment_size
             yield contents
 
     tot_contents = average_periodograms(check_and_distribute_files(files))
