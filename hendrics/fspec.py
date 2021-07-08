@@ -221,7 +221,8 @@ def _provide_cross_periodograms(events1, events2, fftlen, dt, norm):
         new_ev1, new_ev2 = new_ev
         new_ev1.gti[:, 1] += dt / 10
         new_ev2.gti[:, 1] += dt / 10
-        with contextlib.redirect_stdout(os.devnull):
+
+        with contextlib.redirect_stdout(open(os.devnull, "w")):
             pds = AveragedCrossspectrum(
                 new_ev1,
                 new_ev2,
