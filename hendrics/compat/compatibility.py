@@ -92,9 +92,12 @@ class _MonkeyPatchedEventList(EventList):
         return new_ev
 
 
-def power_confidence_limits(preal, n=1, alpha=0.16):
-    """Confidence limits on power, given a signal power in the PDS/Z search.
+def power_confidence_limits(preal, n=1, c=0.95):
+    """Confidence limits on power, given a (theoretical) signal power.
 
+    This is to be used when we *expect* a given power (e.g. from the pulsed
+    fraction measured in previous observations) and we want to know the
+    range of values the measured power could take to a given confidence level.
     Adapted from Vaughan et al. 1994, noting that, after appropriate
     normalization of the spectral stats, the distribution of powers in the PDS
     and the Z^2_n searches is always described by a noncentral chi squared
@@ -103,16 +106,16 @@ def power_confidence_limits(preal, n=1, alpha=0.16):
     Parameters
     ----------
     preal: float
-        The underlying, signal-generated value of power
+        The theoretical signal-generated value of power
 
     Other Parameters
     ----------------
     n: int
-        The number of summed powers to obtain pmeas. It can be multiple
+        The number of summed powers to obtain the result. It can be multiple
         harmonics of the PDS, adjacent bins in a PDS summed to collect all the
         power in a QPO, or the n in Z^2_n
-    alpha: float
-        The p-value (e.g. 0.16 = 16% for 1-sigma)
+    c: float
+        The confidence level (e.g. 0.95=95%)
 
     Results
     -------
@@ -121,12 +124,12 @@ def power_confidence_limits(preal, n=1, alpha=0.16):
 
     Examples
     --------
-    >>> cl = power_confidence_limits(150)
+    >>> cl = power_confidence_limits(150, c=0.84)
     >>> np.allclose(cl, [127, 176], atol=1)
     True
     """
     rv = stats.ncx2(2 * n, preal)
-    return rv.ppf([alpha, 1 - alpha])
+    return rv.ppf([1 - c, c])
 
 
 def power_upper_limit(pmeas, n=1, c=0.95):
@@ -173,10 +176,9 @@ def power_upper_limit(pmeas, n=1, c=0.95):
     >>> np.isclose(pup, 75, atol=2)
     True
     """
-
     def ppf(x):
         rv = stats.ncx2(2 * n, x)
-        return rv.ppf(1 - c)
+        return rv.ppf(1-c)
 
     def isf(x):
         rv = stats.ncx2(2 * n, x)
@@ -186,20 +188,32 @@ def power_upper_limit(pmeas, n=1, c=0.95):
         return np.abs(ppf(x) - xmeas)
 
     from scipy.optimize import minimize
-
     initial = isf(pmeas)
 
-    res = minimize(
-        func_to_minimize, [initial], pmeas, bounds=[(0, initial * 2)]
-    )
+    res = minimize(func_to_minimize, [initial], pmeas, bounds=[(0, initial * 2)])
 
     return res.x[0]
 
 
-def pf_upper_limit(pmeas, counts, n=1, c=0.95):
-    """Upper limit on pulsed fraction, given a measured power in the PDS/Z search.
+def amplitude_upper_limit(pmeas, counts, n=1, c=0.95, fft_corr=False, nyq_ratio=0):
+    """Upper limit on a sinusoidal modulation, given a measured power in the PDS/Z search.
 
-    See `power_upper_limit` and `pf_from_ssig`.
+    Eq. 10 in Vaughan+94 and `a_from_ssig`: they are equivalent but Vaughan+94
+    corrects further for the response inside an FFT bin and at frequencies close
+    to Nyquist. These two corrections are added by using fft_corr=True and
+    nyq_ratio to the correct :math:`f / f_{Nyq}` of the FFT peak
+
+    To understand the meaning of this amplitude: if the modulation is described by:
+
+    ..math:: p = \overline{p} (1 + a * \sin(x))
+
+    this function returns a.
+
+    If it is a sum of sinusoidal harmonics instead
+    ..math:: p = \overline{p} (1 + \sum_l a_l * \sin(lx))
+    a is equivalent to :math:`\sqrt(\sum_l a_l^2)`.
+
+    See `power_upper_limit`
 
     Parameters
     ----------
@@ -217,6 +231,75 @@ def pf_upper_limit(pmeas, counts, n=1, c=0.95):
         power in a QPO, or the n in Z^2_n
     c: float
         The confidence value for the probability (e.g. 0.95 = 95%)
+    fft_corr: bool
+        Apply a correction for the expected power concentrated in an FFT bin,
+        which is about 0.773 on average (it's 1 at the center of the bin, 2/pi
+        at the bin edge.
+    nyq_ratio: float
+        Ratio of the frequency of this feature with respect to the Nyquist
+        frequency. Important to know when dealing with FFTs, because the FFT
+        response decays between 0 and f_Nyq similarly to the response inside
+        a frequency bin: from 1 at 0 Hz to ~2/pi at f_Nyq
+
+    Results
+    -------
+    a: float
+        The modulation amplitude that could produce P>pmeas with 1 - c probability
+
+    Examples
+    --------
+    >>> aup = amplitude_upper_limit(40, 30000, 1, 0.99)
+    >>> aup_nyq = amplitude_upper_limit(40, 30000, 1, 0.99, nyq_ratio=1)
+    >>> np.isclose(aup_nyq, aup / (2 / np.pi))
+    True
+    >>> aup_corr = amplitude_upper_limit(40, 30000, 1, 0.99, fft_corr=True)
+    >>> np.isclose(aup_corr, aup / np.sqrt(0.773))
+    True
+    """
+
+    uplim = power_upper_limit(pmeas, n, c)
+    a = a_from_ssig(uplim, counts)
+    if fft_corr:
+        factor = 1 / np.sqrt(0.773)
+        a *= factor
+    if nyq_ratio > 0:
+        factor = np.pi / 2 * nyq_ratio
+        sinc_factor = np.sin(factor) / factor
+        a /= sinc_factor
+    return a
+
+
+def pf_upper_limit(*args, **kwargs):
+    """Upper limit on pulsed fraction, given a measured power in the PDS/Z search.
+
+    See `power_upper_limit` and `pf_from_ssig`.
+    All arguments are the same as `amplitude_upper_limit`
+
+    Parameters
+    ----------
+    pmeas: float
+        The measured value of power
+
+    counts: int
+        The number of counts in the light curve used to calculate the spectrum
+
+    Other Parameters
+    ----------------
+    n: int
+        The number of summed powers to obtain pmeas. It can be multiple
+        harmonics of the PDS, adjacent bins in a PDS summed to collect all the
+        power in a QPO, or the n in Z^2_n
+    c: float
+        The confidence value for the probability (e.g. 0.95 = 95%)
+    fft_corr: bool
+        Apply a correction for the expected power concentrated in an FFT bin,
+        which is about 0.773 on average (it's 1 at the center of the bin, 2/pi
+        at the bin edge.
+    nyq_ratio: float
+        Ratio of the frequency of this feature with respect to the Nyquist
+        frequency. Important to know when dealing with FFTs, because the FFT
+        response decays between 0 and f_Nyq similarly to the response inside
+        a frequency bin: from 1 at 0 Hz to ~2/pi at f_Nyq
 
     Results
     -------
@@ -230,8 +313,7 @@ def pf_upper_limit(pmeas, counts, n=1, c=0.95):
     True
     """
 
-    uplim = power_upper_limit(pmeas, n, c)
-    return pf_from_ssig(uplim, counts)
+    return pf_from_a(amplitude_upper_limit(*args, **kwargs))
 
 
 def pf_from_a(a):
