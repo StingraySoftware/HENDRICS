@@ -137,10 +137,10 @@ class EFPeriodogram(object):
                 best_stat.append(self.stat[idx[0], idx[1]])
         best_peaks = np.asarray(best_peaks)
         best_stat = np.asarray(best_stat)
-        self.peaks = best_peaks
-        self.peak_stat = best_stat
+        if len(best_peaks) > 0:
+            self.peaks = best_peaks
+            self.peak_stat = best_stat
         return best_peaks, best_stat
-
 
 def get_energy_from_events(ev):
     if hasattr(ev, "energy") and ev.energy is not None:

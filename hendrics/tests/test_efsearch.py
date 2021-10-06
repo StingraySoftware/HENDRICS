@@ -243,6 +243,34 @@ class TestEFsearch:
         )
         os.unlink(outfile)
 
+    def test_efsearch_bad_freq(self):
+        evfile = self.dum
+        main_efsearch(
+            [
+                evfile,
+                "-f",
+                "100",
+                "-F",
+                "100.01",
+                "-n",
+                "64",
+                "--emin",
+                "3",
+                "--emax",
+                "79",
+                "--fit-candidates",
+            ]
+        )
+        # outfile = "events_EF_3-79keV_100-100.01Hz" + HEN_FILE_EXTENSION
+        # assert os.path.exists(outfile)
+        # plot_folding([outfile], ylog=True)
+        # ftype, efperiod = get_file_type(outfile)
+        # assert ftype == "folding"
+        # assert np.isclose(
+        #     efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25
+        # )
+        # os.unlink(outfile)
+
     def test_efsearch_from_lc(self):
         evfile = self.lcfile
 
