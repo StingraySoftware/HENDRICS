@@ -319,11 +319,32 @@ def hen_root(filename):
     Parameters
     ----------
     filename : str
+
+    Examples
+    --------
+    >>> fname = "blabla_ev_calib.nc"
+    >>> hen_root(fname)
+    'blabla'
+    >>> fname = "blablu_ev_bli.fits.gz"
+    >>> hen_root(fname)
+    'blablu_ev_bli'
+    >>> fname = "blablu_ev_lc.nc"
+    >>> hen_root(fname)
+    'blablu'
+    >>> fname = "blablu_lc_asrd_ev_lc.nc"
+    >>> hen_root(fname)
+    'blablu_lc_asrd'
     """
     fname = filename.replace(".gz", "")
     fname = os.path.splitext(fname)[0]
-    fname = fname.replace("_ev", "").replace("_lc", "")
-    fname = fname.replace("_calib", "")
+    todo = True
+    while todo:
+        todo = False
+        for ending in ["_ev", "_lc", "_pds", "_cpds", "_calib"]:
+            if fname.endswith(ending):
+                fname = fname[:-len(ending)]
+                todo = True
+
     return fname
 
 
