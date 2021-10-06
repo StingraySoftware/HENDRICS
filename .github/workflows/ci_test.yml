@@ -23,8 +23,8 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            python: '3.8'
-            tox_env: 'py38-test-cov'
+            python: '3.10'
+            tox_env: 'py310-test-cov'
           - os: ubuntu-latest
             python: '3.8'
             tox_env: 'build_docs'
@@ -33,8 +33,8 @@ jobs:
             tox_env: 'py38-test-alldeps-cov'
             use_remote_data: true
           - os: ubuntu-latest
-            python: '3.8'
-            tox_env: 'py38-test-devdeps'
+            python: '3.10'
+            tox_env: 'py310-test-devdeps'
             use_remote_data: true
           - os: ubuntu-latest
             python: '3.6'
