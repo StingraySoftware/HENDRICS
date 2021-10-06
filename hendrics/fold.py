@@ -649,7 +649,6 @@ def run_folding(
                 label="{}={:.2f}-{:.2f}".format(elabel, biny[i], biny[i + 1]),
             )
             std = np.std(prof - smooth)
-
             pfs.append(pf)
             errs.append(100 * std / max)
         ax2.set_xlabel("Phase")
@@ -662,6 +661,11 @@ def run_folding(
         ax3.errorbar(
             meannrgs, pfs, fmt="o", yerr=errs, xerr=(biny[1:] - biny[:-1]) / 2
         )
+        from astropy.table import Table
+        pf_results = Table(
+            data=[meannrgs, pfs, (biny[1:] - biny[:-1]) / 2, errs],
+            names=["E", "Ee", "pf", "pfe"])
+        pf_results.write("Energyprofile" + file_label + ".csv", overwrite=True)
         ax3.semilogx()
         # labels = [float(item.get_text()) for item in ax3.get_xticklabels() if item.get_text()!='']
         # ax3.set_xticklabels([f"{label:g}" for label in labels])
