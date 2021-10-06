@@ -663,7 +663,7 @@ def run_folding(
         )
         from astropy.table import Table
         pf_results = Table(
-            data=[meannrgs, pfs, (biny[1:] - biny[:-1]) / 2, errs],
+            data=[meannrgs, (biny[1:] - biny[:-1]) / 2, pfs, errs],
             names=["E", "Ee", "pf", "pfe"])
         pf_results.write("Energyprofile" + file_label + ".csv", overwrite=True)
         ax3.semilogx()
