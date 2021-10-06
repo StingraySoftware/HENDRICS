@@ -142,6 +142,7 @@ class EFPeriodogram(object):
             self.peak_stat = best_stat
         return best_peaks, best_stat
 
+
 def get_energy_from_events(ev):
     if hasattr(ev, "energy") and ev.energy is not None:
         energy = ev.energy
