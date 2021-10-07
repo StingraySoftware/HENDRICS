@@ -351,15 +351,21 @@ def adjust_amp_phase(pars):
     pars[0] is the initial amplitude; pars[1] is the initial phase
     If amplitude is negative, it makes it positive and changes the phase
     accordingly
+
+    Examples
+    --------
+    >>> np.allclose(adjust_amp_phase([-0.5, 0.2]), [0.5, 0.7])
+    True
+    >>> np.allclose(adjust_amp_phase([0.5, -1.2]), [0.5, 0.8])
+    True
+    >>> np.allclose(adjust_amp_phase([0.5, 1.2]), [0.5, 0.2])
+    True
     """
     if pars[0] < 0:
         pars[0] = -pars[0]
         pars[1] += 0.5
-    if pars[1] < -1:
-        pars[1] += np.floor(-pars[1])
-    if pars[1] > 1:
-        pars[1] -= np.floor(pars[1])
-    pars[1] = pars[1] - np.ceil(pars[1])
+
+    pars[1] = pars[1] - np.floor(pars[1])
     return pars
 
 
