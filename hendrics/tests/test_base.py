@@ -2,9 +2,7 @@ import os
 import pytest
 from astropy.tests.helper import remote_data
 import numpy as np
-from hendrics.base import (
-    deorbit_events,
-)
+from hendrics.base import deorbit_events
 from stingray.events import EventList
 from hendrics.tests import _dummy_par
 from hendrics.fold import HAS_PINT

@@ -342,7 +342,7 @@ def hen_root(filename):
         todo = False
         for ending in ["_ev", "_lc", "_pds", "_cpds", "_calib"]:
             if fname.endswith(ending):
-                fname = fname[:-len(ending)]
+                fname = fname[: -len(ending)]
                 todo = True
 
     return fname

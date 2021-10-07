@@ -54,6 +54,7 @@ if not _ASTROPY_SETUP_:
     stingray.events.EventList = _MonkeyPatchedEventList
     try:
         from stingray.stats import pf_upper_limit, power_confidence_limits
+
         power_confidence_limits(50, alpha=0.16)
     except (ImportError, TypeError):
         stingray.stats.power_confidence_limits = power_confidence_limits

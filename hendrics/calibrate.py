@@ -156,7 +156,8 @@ def calibrate(fname, outname, rmf_file=None, rough=False):
             raise RuntimeError(
                 "Calibration for XMM should work out-of-the box in "
                 "HENreadevents. Running HENcalibrate with the --rmf option is"
-                " known to produce wrong results in XMM")
+                " known to produce wrong results in XMM"
+            )
         es = read_calibration(pis, rmf_file)
 
     evdata.energy = es

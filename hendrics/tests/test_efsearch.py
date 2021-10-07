@@ -261,10 +261,9 @@ class TestEFsearch:
                     "79",
                     "--fit-candidates",
                 ]
-        )
+            )
         assert np.any(
-            ["No peaks detected" in r.message.args[0] for r in
-             record]
+            ["No peaks detected" in r.message.args[0] for r in record]
         )
 
     def test_efsearch_from_lc(self):
@@ -502,16 +501,7 @@ class TestEFsearch:
         evfile = self.dum
         with pytest.warns(UserWarning) as record:
             _ = main_zsearch(
-                [
-                    evfile,
-                    "-f",
-                    "9.85",
-                    "-F",
-                    "9.95",
-                    "-n",
-                    "2",
-                    "--fast",
-                ]
+                [evfile, "-f", "9.85", "-F", "9.95", "-n", "2", "--fast",]
             )
         assert np.any(
             [

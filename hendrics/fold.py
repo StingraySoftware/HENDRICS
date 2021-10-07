@@ -668,9 +668,11 @@ def run_folding(
             meannrgs, pfs, fmt="o", yerr=errs, xerr=(biny[1:] - biny[:-1]) / 2
         )
         from astropy.table import Table
+
         pf_results = Table(
             data=[meannrgs, (biny[1:] - biny[:-1]) / 2, pfs, errs],
-            names=["E", "Ee", "pf", "pfe"])
+            names=["E", "Ee", "pf", "pfe"],
+        )
         pf_results.write("Energyprofile" + file_label + ".csv", overwrite=True)
         ax3.semilogx()
         # labels = [float(item.get_text()) for item in ax3.get_xticklabels() if item.get_text()!='']

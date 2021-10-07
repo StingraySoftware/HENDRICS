@@ -76,7 +76,7 @@ class EFPeriodogram(object):
         emin=None,
         emax=None,
         ncounts=None,
-        upperlim=None
+        upperlim=None,
     ):
         self.freq = freq
         self.stat = stat

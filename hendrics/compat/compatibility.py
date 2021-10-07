@@ -176,9 +176,10 @@ def power_upper_limit(pmeas, n=1, c=0.95):
     >>> np.isclose(pup, 75, atol=2)
     True
     """
+
     def ppf(x):
         rv = stats.ncx2(2 * n, x)
-        return rv.ppf(1-c)
+        return rv.ppf(1 - c)
 
     def isf(x):
         rv = stats.ncx2(2 * n, x)
@@ -188,14 +189,19 @@ def power_upper_limit(pmeas, n=1, c=0.95):
         return np.abs(ppf(x) - xmeas)
 
     from scipy.optimize import minimize
+
     initial = isf(pmeas)
 
-    res = minimize(func_to_minimize, [initial], pmeas, bounds=[(0, initial * 2)])
+    res = minimize(
+        func_to_minimize, [initial], pmeas, bounds=[(0, initial * 2)]
+    )
 
     return res.x[0]
 
 
-def amplitude_upper_limit(pmeas, counts, n=1, c=0.95, fft_corr=False, nyq_ratio=0):
+def amplitude_upper_limit(
+    pmeas, counts, n=1, c=0.95, fft_corr=False, nyq_ratio=0
+):
     """Upper limit on a sinusoidal modulation, given a measured power in the PDS/Z search.
 
     Eq. 10 in Vaughan+94 and `a_from_ssig`: they are equivalent but Vaughan+94
