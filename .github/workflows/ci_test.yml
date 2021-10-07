@@ -33,8 +33,8 @@ jobs:
             tox_env: 'py38-test-alldeps-cov'
             use_remote_data: true
           - os: ubuntu-latest
-            python: '3.10'
-            tox_env: 'py310-test-devdeps'
+            python: '3.9'
+            tox_env: 'py39-test-devdeps'
             use_remote_data: true
           - os: ubuntu-latest
             python: '3.6'
