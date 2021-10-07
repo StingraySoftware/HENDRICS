@@ -258,7 +258,7 @@ class TestEFsearch:
                 "3",
                 "--emax",
                 "79",
-                "--fit-candidates",
+                "--find-candidates",
             ]
         )
         # outfile = "events_EF_3-79keV_100-100.01Hz" + HEN_FILE_EXTENSION
