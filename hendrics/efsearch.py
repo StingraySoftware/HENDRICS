@@ -1432,19 +1432,22 @@ def _common_main(args, func):
             np.max(stats), events.time.size, n=args.N
         )
         efperiodogram.ncounts = events.time.size
-
+        best_peaks = None
         if args.find_candidates:
             best_peaks, best_stat = efperiodogram.find_peaks(
                 conflevel=args.conflevel
             )
         elif args.fit_frequency is not None:
-            best_peaks = [args.fit_frequency]
+            best_peaks = np.array([args.fit_frequency])
             efperiodogram.peaks = best_peaks
             efperiodogram.peak_stat = [0]
 
         best_models = []
+        detected = best_peaks is not None and len(best_peaks) > 0
 
-        if args.fit_candidates and not (args.fast or args.ffa):
+        if args.fit_candidates and not detected:
+            warnings.warn("No peaks detected")
+        elif args.fit_candidates and not (args.fast or args.ffa):
             search_width = 5 * oversample * step
             for f in best_peaks:
                 good = np.abs(frequencies - f) < search_width
