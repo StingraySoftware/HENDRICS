@@ -152,6 +152,12 @@ def calibrate(fname, outname, rmf_file=None, rough=False):
             cal_pis = evdata.cal_pi
         es = rough_calibration(cal_pis, evdata.mission)
     else:
+        if evdata.mission.lower() == "xmm":
+            raise RuntimeError(
+                "Calibration for XMM should work out-of-the box in "
+                "HENreadevents. Running HENcalibrate with the --rmf option is"
+                " known to produce wrong results in XMM"
+            )
         es = read_calibration(pis, rmf_file)
 
     evdata.energy = es
@@ -181,14 +187,15 @@ def main(args=None):
     parser.add_argument(
         "-r",
         "--rmf",
-        help="rmf file used for calibration",
+        help="rmf file used for calibration. Not working with XMM data",
         default=None,
         type=str,
     )
     parser.add_argument(
         "--rough",
         help="Rough calibration, without rmf file "
-        "(only for NuSTAR and XMM)",
+        "(only for NuSTAR, XMM, and NICER). Only for compatibility purposes. "
+        "This is done automatically by HENreadevents",
         default=False,
         action="store_true",
     )

@@ -351,15 +351,21 @@ def adjust_amp_phase(pars):
     pars[0] is the initial amplitude; pars[1] is the initial phase
     If amplitude is negative, it makes it positive and changes the phase
     accordingly
+
+    Examples
+    --------
+    >>> np.allclose(adjust_amp_phase([-0.5, 0.2]), [0.5, 0.7])
+    True
+    >>> np.allclose(adjust_amp_phase([0.5, -1.2]), [0.5, 0.8])
+    True
+    >>> np.allclose(adjust_amp_phase([0.5, 1.2]), [0.5, 0.2])
+    True
     """
     if pars[0] < 0:
         pars[0] = -pars[0]
         pars[1] += 0.5
-    if pars[1] < -1:
-        pars[1] += np.floor(-pars[1])
-    if pars[1] > 1:
-        pars[1] -= np.floor(pars[1])
-    pars[1] = pars[1] - np.ceil(pars[1])
+
+    pars[1] = pars[1] - np.floor(pars[1])
     return pars
 
 
@@ -649,7 +655,6 @@ def run_folding(
                 label="{}={:.2f}-{:.2f}".format(elabel, biny[i], biny[i + 1]),
             )
             std = np.std(prof - smooth)
-
             pfs.append(pf)
             errs.append(100 * std / max)
         ax2.set_xlabel("Phase")
@@ -662,6 +667,13 @@ def run_folding(
         ax3.errorbar(
             meannrgs, pfs, fmt="o", yerr=errs, xerr=(biny[1:] - biny[:-1]) / 2
         )
+        from astropy.table import Table
+
+        pf_results = Table(
+            data=[meannrgs, (biny[1:] - biny[:-1]) / 2, pfs, errs],
+            names=["E", "Ee", "pf", "pfe"],
+        )
+        pf_results.write("Energyprofile" + file_label + ".csv", overwrite=True)
         ax3.semilogx()
         # labels = [float(item.get_text()) for item in ax3.get_xticklabels() if item.get_text()!='']
         # ax3.set_xticklabels([f"{label:g}" for label in labels])

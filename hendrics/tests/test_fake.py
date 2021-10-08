@@ -193,7 +193,7 @@ class TestFake(object):
         hen.read_events.main(command.split())
         cls.xmm_ev_file = os.path.join(
             cls.datadir,
-            "monol_test_fake_xmm_xmm_epn_det01_ev" + HEN_FILE_EXTENSION,
+            "monol_test_fake_lc_xmm_xmm_epn_det01_ev" + HEN_FILE_EXTENSION,
         )
 
     def test_checksums(self):
@@ -339,7 +339,8 @@ class TestFake(object):
         command = "{0} -r {1} --nproc 2".format(
             xmm_file, os.path.join(self.datadir, "test.rmf")
         )
-        hen.calibrate.main(command.split())
+        with pytest.raises(RuntimeError):
+            hen.calibrate.main(command.split())
 
     def test_calibrate_xmm_normf(self):
         """Test event file calibration."""

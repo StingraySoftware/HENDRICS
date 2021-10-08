@@ -104,8 +104,8 @@ don't use netCDF4), containing the event times and the energy *channel*
 
 For a few missions (_XMM_, _NuSTAR_, _NICER_), Stingray will automatically calculate the energy in keV corresponding to the energy channels, so that the step in ``HENcalibrate`` can be avoided (unless there is a specific reason not to trust the default calibration).
 
-Calibrating event lists
-~~~~~~~~~~~~~~~~~~~~~~~
+Calibrating event lists (deprecated, use with caution)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use ``HENcalibrate``. The most secure way to do this is to specify an ``rmf`` file with the
 ``-r`` option. For _NuSTAR_ only, ``HENcalibrate`` will look into the ``CALDB``, if the
@@ -154,11 +154,11 @@ each GTI.
 
 ::
 
-    $ HENlcurve 002A_ev_calib.nc 002B_ev_calib.nc -b -8 -e 3 30 --safe-interval 100 300
-    Loading file 002A_ev_calib.nc...
+    $ HENlcurve 002A_ev.nc 002B_ev.nc -b -8 -e 3 30 --safe-interval 100 300
+    Loading file 002A_ev.nc...
     Done.
     Saving light curve to 002A_E3-30_lc.nc
-    Loading file 002B_ev_calib.nc...
+    Loading file 002B_ev.nc...
     Done.
     Saving light curve to 002B_E3-30_lc.nc
 

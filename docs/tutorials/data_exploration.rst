@@ -36,15 +36,21 @@ detector 01 of XMM-Newton/EPIC-pn the command might be something like:
 
 See the help of ``HENreadevents`` for more details.
 
-Calibrate events
-~~~~~~~~~~~~~~~~
-Then we can "calibrate" it, which means that we are measuring the energy of each photon in units
-of kilo-electronVolts (keV).
+Calibrate events (deprecated, use with caution)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For NuSTAR, XMM, and NICER, ``HENreadevents``,  also "calibrates" the data, which means that it converts the "energy channel" of a photon into an energy in units of kilo-electronVolts (keV).
+For NuSTAR, XMM, and NICER, there should be no need to do any further calibration.
+In specific case where the user wants to apply a different calibration, using a custom RMF, one can use ``HENcalibrate``.
 
     $ HENcalibrate mistery_source_1_00_nustar_fpma_ev.nc
 
 The latter works only for *NuSTAR*, and if the official rmf files are in the CALDB. Otherwise,
-the ``--rmf`` option has to be used, providing a redistribution matrix file (see ``HENcalibrate -h``
+the ``--rmf`` option has to be used, providing a custom redistribution matrix file
+
+    $ HENcalibrate mistery_source_1_00_nustar_fpma_ev.nc --rmf my_rmf_file.rmf
+
+(see ``HENcalibrate -h``
 for details).
 
 Create and plot a light curve
@@ -53,7 +59,7 @@ Then, let's calculate and plot a light curve binned at 10 s, between 3 and 5 keV
 interval around GTIs of 100 s (for example, to account for increased particle background close to
 SAA)
 
-    $ HENlcurve -b 10 mistery_source_1_00_nustar_fpma_ev_calib.nc --safe-interval 100 100 -e 3 5
+    $ HENlcurve -b 10 mistery_source_1_00_nustar_fpma_ev.nc --safe-interval 100 100 -e 3 5
 
     $ HENplot mistery_source_1_00_nustar_fpma_E3-5_lc.nc
 
@@ -69,8 +75,8 @@ Now, let's produce a color-color diagram.
 
 First of all, we need to produce two color light curves:
 
-    $ HENcolors -b 100 mistery_source_1_00_nustar_fpma_ev_calib.nc -e 2 5 5 8
-    $ HENcolors -b 100 mistery_source_1_00_nustar_fpma_ev_calib.nc -e 8 12 12 30
+    $ HENcolors -b 100 mistery_source_1_00_nustar_fpma_ev.nc -e 2 5 5 8
+    $ HENcolors -b 100 mistery_source_1_00_nustar_fpma_ev.nc -e 8 12 12 30
 
 Then, we can plot these new light curves and see if there is anything interesting there.
 
