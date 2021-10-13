@@ -840,6 +840,7 @@ class BinaryPhaseogram(BasePhaseogram):
             fddot=self.fddot,
         )
 
+        self.reset(event)
         self._set_lines(False)
         self.pcolor.set_array(self.phaseogr.T.ravel())
         self.sasini.valinit = self.asini
@@ -850,7 +851,6 @@ class BinaryPhaseogram(BasePhaseogram):
         self.fig.canvas.draw()
 
         self.timing_model_string = self.get_timing_model_string()
-
         print("------------------------")
         print(self.timing_model_string)
         print("------------------------")
