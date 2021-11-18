@@ -184,7 +184,7 @@ class TestPhaseogram:
         evfile = self.dum
 
         par = hen_root(evfile) + ".par"
-        with open(par, "a") as fobj:
+        with open(par, "w") as fobj:
             print("F0  9.9", file=fobj)
             print("PEPOCH 57000", file=fobj)
             print("BINARY BT", file=fobj)
