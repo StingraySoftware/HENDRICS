@@ -1,11 +1,13 @@
 import copy
 import os
 from functools import wraps
+from typing import Iterable
 import numpy as np
 from astropy.table import Table
 from astropy import log
 import stingray.utils
 from scipy import stats
+from collections.abc import Iterable as iterable
 from stingray.events import EventList
 
 try:
@@ -68,28 +70,122 @@ except ImportError:
 
 
 class _MonkeyPatchedEventList(EventList):
-    def apply_mask(self, mask, inplace=False):  # pragma: no cover
+    def array_attrs(self):
+        return [
+            attr
+            for attr in dir(self)
+            if (
+                isinstance(getattr(self, attr), Iterable)
+                and np.shape(getattr(self, attr)) == self.time.shape
+            )
+        ]
+
+    def apply_mask(self, mask, inplace=False):
         """For compatibility with old stingray version.
         Examples
         --------
-        >>> evt = _MonkeyPatchedEventList(time=[0, 1, 2])
+        >>> evt = _MonkeyPatchedEventList(time=[0, 1, 2], mission="nustar")
+        >>> evt.bubuattr = [222, 111, 333]
         >>> newev0 = evt.apply_mask([True, True, False], inplace=False);
         >>> newev1 = evt.apply_mask([True, True, False], inplace=True);
+        >>> newev0.mission == "nustar"
+        True
         >>> np.allclose(newev0.time, [0, 1])
+        True
+        >>> np.allclose(newev0.bubuattr, [222, 111])
         True
         >>> np.allclose(newev1.time, [0, 1])
         True
         >>> evt is newev1
         True
         """
+        array_attrs = self.array_attrs()
+
         if inplace:
             new_ev = self
         else:
-            new_ev = copy.deepcopy(self)
-        for attr in "time", "energy", "pi", "cal_pi", "detector_id":
-            if hasattr(new_ev, attr) and getattr(new_ev, attr) is not None:
-                setattr(new_ev, attr, getattr(new_ev, attr)[mask])
+            new_ev = EventList()
+            for attr in dir(self):
+                if not attr.startswith("_") and attr not in array_attrs:
+                    setattr(new_ev, attr, getattr(self, attr))
+
+        for attr in array_attrs:
+            if hasattr(self, attr) and getattr(self, attr) is not None:
+                setattr(new_ev, attr, np.asarray(getattr(self, attr))[mask])
         return new_ev
+
+    def to_astropy_timeseries(self):
+        from astropy.timeseries import TimeSeries
+        from astropy.time import TimeDelta
+        from astropy import units as u
+
+        data = {}
+        array_attrs = self.array_attrs()
+
+        for attr in array_attrs:
+            if attr == "time":
+                continue
+            data[attr] = np.asarray(getattr(self, attr))
+
+        if data == {}:
+            data = None
+
+        if self.time is not None and self.time.size > 0:
+            times = TimeDelta(self.time * u.s)
+            ts = TimeSeries(data=data, time=times)
+        else:
+            ts = TimeSeries()
+        ts.meta["gti"] = self.gti
+        ts.meta["mjdref"] = self.mjdref
+        ts.meta["instr"] = self.instr
+        ts.meta["mission"] = self.mission
+        ts.meta["header"] = self.header
+        return ts
+
+    @staticmethod
+    def from_astropy_timeseries(ts):
+        from astropy.timeseries import TimeSeries
+        from astropy import units as u
+
+        kwargs = dict([(key.lower(), val) for (key, val) in ts.meta.items()])
+        ev = EventList(time=ts.time, **kwargs)
+        array_attrs = ts.colnames
+
+        for attr in array_attrs:
+            if attr == "time":
+                continue
+            setattr(ev, attr, ts[attr])
+
+        return ev
+
+    def to_astropy_table(self):
+        data = {}
+        array_attrs = self.array_attrs()
+
+        for attr in array_attrs:
+            data[attr] = np.asarray(getattr(self, attr))
+
+        ts = Table(data)
+
+        ts.meta["gti"] = self.gti
+        ts.meta["mjdref"] = self.mjdref
+        ts.meta["instr"] = self.instr
+        ts.meta["mission"] = self.mission
+        ts.meta["header"] = self.header
+        return ts
+
+    @staticmethod
+    def from_astropy_table(ts):
+        kwargs = dict([(key.lower(), val) for (key, val) in ts.meta.items()])
+        ev = EventList(time=ts["time"], **kwargs)
+        array_attrs = ts.colnames
+
+        for attr in array_attrs:
+            if attr == "time":
+                continue
+            setattr(ev, attr, ts[attr])
+
+        return ev
 
 
 def power_confidence_limits(preal, n=1, c=0.95):

@@ -371,6 +371,30 @@ def split_eventlist(fname, max_length, overlap=None):
     return all_files
 
 
+def split_eventlist_at_mjd(fname, mjd):
+    root = hen_root(fname)
+    ev = load_events(fname)
+
+    event_times = ev.time
+    met = (mjd - ev.mjdref) * 86400
+    idx = np.searchsorted(event_times, met)
+
+    ev_before = ev.apply_mask(slice(0, idx))
+    ev_after = ev.apply_mask(slice(idx, -1))
+
+    GTI = ev.gti
+    ev_before.gti = cross_two_gtis(GTI, [[GTI[0, 0], met]])
+    ev_after.gti = cross_two_gtis(GTI, [[met, GTI[-1, 1]]])
+
+    fbefore = root + f"_before_{mjd:g}" + HEN_FILE_EXTENSION
+    fafter = root + f"_after_{mjd:g}" + HEN_FILE_EXTENSION
+    save_events(ev_before, fbefore)
+    save_events(ev_after, fafter)
+    all_files = [fbefore, fafter]
+
+    return all_files
+
+
 def main_join(args=None):
     """Main function called by the `HENjoinevents` command line script."""
     import argparse
@@ -418,9 +442,14 @@ def main_splitevents(args=None):
         "half-interval overlap, and so on.",
         default=None,
     )
+    parser.add_argument(
+        "--split-at-mjd", type=float, help="Split at this MJD", default=None,
+    )
 
     args = parser.parse_args(args)
 
+    if args.split_at_mjd is not None:
+        return split_eventlist_at_mjd(args.fname, mjd=args.split_at_mjd)
     return split_eventlist(
         args.fname, max_length=args.length_split, overlap=args.overlap
     )

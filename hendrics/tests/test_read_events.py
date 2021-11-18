@@ -265,6 +265,27 @@ class TestReadEvents:
         for f in files:
             assert os.path.exists(f)
 
+    def test_split_events_at_mjd(self):
+        treat_event_file(self.fits_fileA)
+
+        filea = os.path.join(
+            self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
+        )
+        data = load_events(filea)
+        mean_met = np.mean(data.time)
+        mean_mjd = mean_met / 86400 + data.mjdref
+
+        files = hen.read_events.main_splitevents(
+            [filea, "--split-at-mjd", f"{mean_mjd}"]
+        )
+        assert "before" in files[0]
+        assert "after" in files[1]
+
+        data = load_events(files[0])
+        assert np.isclose(data.gti[-1, 1], mean_met)
+        data = load_events(files[1])
+        assert np.isclose(data.gti[0, 0], mean_met)
+
     def test_split_events_bad_overlap_raises(self):
         treat_event_file(self.fits_fileA)
 
