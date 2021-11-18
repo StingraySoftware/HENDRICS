@@ -275,7 +275,9 @@ class TestReadEvents:
         mean_met = np.mean(data.time)
         mean_mjd = mean_met / 86400 + data.mjdref
 
-        files = hen.read_events.main_splitevents([filea, "--split-at-mjd", f"{mean_mjd}"])
+        files = hen.read_events.main_splitevents(
+            [filea, "--split-at-mjd", f"{mean_mjd}"]
+        )
         assert "before" in files[0]
         assert "after" in files[1]
 

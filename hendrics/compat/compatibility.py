@@ -72,7 +72,8 @@ except ImportError:
 class _MonkeyPatchedEventList(EventList):
     def array_attrs(self):
         return [
-            attr for attr in dir(self)
+            attr
+            for attr in dir(self)
             if (
                 isinstance(getattr(self, attr), Iterable)
                 and np.shape(getattr(self, attr)) == self.time.shape
@@ -117,6 +118,7 @@ class _MonkeyPatchedEventList(EventList):
         from astropy.timeseries import TimeSeries
         from astropy.time import TimeDelta
         from astropy import units as u
+
         data = {}
         array_attrs = self.array_attrs()
 
@@ -133,11 +135,11 @@ class _MonkeyPatchedEventList(EventList):
             ts = TimeSeries(data=data, time=times)
         else:
             ts = TimeSeries()
-        ts.meta['gti'] = self.gti
-        ts.meta['mjdref'] = self.mjdref
-        ts.meta['instr'] = self.instr
-        ts.meta['mission'] = self.mission
-        ts.meta['header'] = self.header
+        ts.meta["gti"] = self.gti
+        ts.meta["mjdref"] = self.mjdref
+        ts.meta["instr"] = self.instr
+        ts.meta["mission"] = self.mission
+        ts.meta["header"] = self.header
         return ts
 
     @staticmethod
@@ -165,11 +167,11 @@ class _MonkeyPatchedEventList(EventList):
 
         ts = Table(data)
 
-        ts.meta['gti'] = self.gti
-        ts.meta['mjdref'] = self.mjdref
-        ts.meta['instr'] = self.instr
-        ts.meta['mission'] = self.mission
-        ts.meta['header'] = self.header
+        ts.meta["gti"] = self.gti
+        ts.meta["mjdref"] = self.mjdref
+        ts.meta["instr"] = self.instr
+        ts.meta["mission"] = self.mission
+        ts.meta["header"] = self.header
         return ts
 
     @staticmethod
@@ -184,7 +186,6 @@ class _MonkeyPatchedEventList(EventList):
             setattr(ev, attr, ts[attr])
 
         return ev
-
 
 
 def power_confidence_limits(preal, n=1, c=0.95):

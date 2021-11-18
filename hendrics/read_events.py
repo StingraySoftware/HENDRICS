@@ -443,18 +443,13 @@ def main_splitevents(args=None):
         default=None,
     )
     parser.add_argument(
-        "--split-at-mjd",
-        type=float,
-        help="Split at this MJD",
-        default=None,
+        "--split-at-mjd", type=float, help="Split at this MJD", default=None,
     )
 
     args = parser.parse_args(args)
 
     if args.split_at_mjd is not None:
-        return split_eventlist_at_mjd(
-            args.fname, mjd=args.split_at_mjd
-        )
+        return split_eventlist_at_mjd(args.fname, mjd=args.split_at_mjd)
     return split_eventlist(
         args.fname, max_length=args.length_split, overlap=args.overlap
     )
