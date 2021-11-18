@@ -56,3 +56,12 @@ pip-wheel-metadata/
 
 # Mac OSX
 .DS_Store
+*.png
+*bubu*
+*.csv
+*.gif
+*.npy
+*.tim
+.hypothesis
+.tox
+.vscode
