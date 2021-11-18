@@ -1048,7 +1048,12 @@ def dyn_folding_search(
             stats.append(np.zeros_like(trial_freqs))
     times = (start + stop) / 2
     fig = plt.figure("Dynamical search")
-    plt.pcolormesh(frequencies, times, np.array(stats), shading="nearest")
+    plt.pcolormesh(
+        frequencies.astype(float),
+        times.astype(float),
+        np.array(stats).astype(float),
+        shading="nearest",
+    )
     plt.xlabel("Frequency")
     plt.ylabel("Time")
     plt.savefig("Dyn.png")
