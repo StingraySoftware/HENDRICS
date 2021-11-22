@@ -39,7 +39,7 @@ if not _ASTROPY_SETUP_:
         float64,
         int32,
         int64,
-        _MonkeyPatchedEventList,
+        EventList,
         power_confidence_limits,
         power_upper_limit,
         pf_from_ssig,
@@ -51,7 +51,7 @@ if not _ASTROPY_SETUP_:
         ssig_from_pf,
     )
 
-    stingray.events.EventList = _MonkeyPatchedEventList
+    stingray.events.EventList = EventList
     try:
         from stingray.stats import pf_upper_limit, power_confidence_limits
 

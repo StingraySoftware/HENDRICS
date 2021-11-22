@@ -5,10 +5,9 @@ from typing import Iterable
 import numpy as np
 from astropy.table import Table
 from astropy import log
-import stingray.utils
+import stingray
 from scipy import stats
 from collections.abc import Iterable as iterable
-from stingray.events import EventList
 
 try:
     from numba import jit, njit, prange, vectorize
@@ -69,7 +68,7 @@ except ImportError:
         return np.take(arr, indices)
 
 
-class _MonkeyPatchedEventList(EventList):
+class EventList(stingray.EventList):
     def array_attrs(self):
         return [
             attr
@@ -84,7 +83,7 @@ class _MonkeyPatchedEventList(EventList):
         """For compatibility with old stingray version.
         Examples
         --------
-        >>> evt = _MonkeyPatchedEventList(time=[0, 1, 2], mission="nustar")
+        >>> evt = EventList(time=[0, 1, 2], mission="nustar")
         >>> evt.bubuattr = [222, 111, 333]
         >>> newev0 = evt.apply_mask([True, True, False], inplace=False);
         >>> newev1 = evt.apply_mask([True, True, False], inplace=True);
