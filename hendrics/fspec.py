@@ -297,11 +297,14 @@ def calc_pds(
 
     # New Stingray machinery, hopefully more efficient and consistent
     if hasattr(AveragedPowerspectrum, "from_events"):
-        print("Using new machinery")
         if ftype == "events":
-            pds = AveragedPowerspectrum.from_events(data, dt=bintime, segment_size=fftlen)
+            pds = AveragedPowerspectrum.from_events(
+                data, dt=bintime, segment_size=fftlen
+            )
         elif ftype == "lc":
-            pds = AveragedPowerspectrum.from_lightcurve(data, segment_size=fftlen)
+            pds = AveragedPowerspectrum.from_lightcurve(
+                data, segment_size=fftlen
+            )
         if pds.power_err is None:
             pds.power_err = pds.power / np.sqrt(pds.m)
     else:
@@ -316,7 +319,9 @@ def calc_pds(
                 total=total,
             )
         else:
-            lc_data = _format_lc_data(data, ftype, bintime=bintime, fftlen=fftlen)
+            lc_data = _format_lc_data(
+                data, ftype, bintime=bintime, fftlen=fftlen
+            )
 
             pds = AveragedPowerspectrum(
                 lc_data, segment_size=fftlen, norm=normalization.lower()
@@ -411,11 +416,14 @@ def calc_cpds(
 
     # New Stingray machinery, hopefully more efficient and consistent
     if hasattr(AveragedPowerspectrum, "from_events"):
-        print("Using new machinery")
         if ftype1 == "events":
-            cpds = AveragedCrossspectrum.from_events(lc1, lc2, dt=bintime, segment_size=fftlen)
+            cpds = AveragedCrossspectrum.from_events(
+                lc1, lc2, dt=bintime, segment_size=fftlen
+            )
         elif ftype1 == "lc":
-            cpds = AveragedCrossspectrum.from_lightcurve(lc1, lc2, segment_size=fftlen)
+            cpds = AveragedCrossspectrum.from_lightcurve(
+                lc1, lc2, segment_size=fftlen
+            )
         if cpds.power_err is None:
             cpds.power_err = np.sqrt(cpds.power) / np.sqrt(cpds.m)
     else:
