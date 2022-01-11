@@ -406,12 +406,22 @@ def plot_folding(
             fddot = ef.fddots
 
         print("Best candidates:")
-        best_cand_table = Table(names=["fname", "mjd", "power", "f", "fdot",
-                                "fddot", "pulse_amp_cl_0.1 (%)", "pulse_amp_cl_0.9 (%)"],
-                                dtype=[str, float, float, float, float, float, float, float])
-        best_cand_table['power'].info.format = ".2f"
-        best_cand_table['fdot'].info.format = ".2e"
-        best_cand_table['fddot'].info.format = "g"
+        best_cand_table = Table(
+            names=[
+                "fname",
+                "mjd",
+                "power",
+                "f",
+                "fdot",
+                "fddot",
+                "pulse_amp_cl_0.1 (%)",
+                "pulse_amp_cl_0.9 (%)",
+            ],
+            dtype=[str, float, float, float, float, float, float, float],
+        )
+        best_cand_table["power"].info.format = ".2f"
+        best_cand_table["fdot"].info.format = ".2e"
+        best_cand_table["fddot"].info.format = "g"
         best_cand_table["pulse_amp_cl_0.1 (%)"].info.format = ".2f"
         best_cand_table["pulse_amp_cl_0.9 (%)"].info.format = ".2f"
 
@@ -440,8 +450,18 @@ def plot_folding(
             sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=ef.N)
             amp_0 = a_from_ssig(sig_0, ef.ncounts)
             amp_1 = a_from_ssig(sig_1, ef.ncounts)
-            best_cand_table.add_row([ef.filename, ef.pepoch, max_stat,
-                                    f, fdot, fddot, amp_0 * 100, amp_1 * 100])
+            best_cand_table.add_row(
+                [
+                    ef.filename,
+                    ef.pepoch,
+                    max_stat,
+                    f,
+                    fdot,
+                    fddot,
+                    amp_0 * 100,
+                    amp_1 * 100,
+                ]
+            )
             Table({"freq": allfreqs, "stat": allstats_f}).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}'
                 f"_cand_{n_cands - i - 1}_fdot{fdot}.csv",
@@ -466,7 +486,8 @@ def plot_folding(
                 amp_lim = a_from_ssig(sig_1, ef.ncounts)
                 pf_lim = pf_from_ssig(sig_1, ef.ncounts)
                 print(
-                    f"(90% Upper limit for sinusoids: p. frac. < {pf_lim * 100:.2f}%, p. ampl. < {amp_lim * 100:.2f} %)")
+                    f"(90% Upper limit for sinusoids: p. frac. < {pf_lim * 100:.2f}%, p. ampl. < {amp_lim * 100:.2f} %)"
+                )
         else:
             print(best_cand_table[::-1])
         best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
