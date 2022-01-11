@@ -12,7 +12,6 @@ from hendrics.plot import plot_folding
 import os
 import pytest
 import subprocess as sp
-from astropy.tests.helper import remote_data
 
 
 class TestPhaseogram:
@@ -155,7 +154,7 @@ class TestPhaseogram:
         evfile = self.real_event_file
         main_phaseogram([evfile, "-f", "9.9", "--test", "--pepoch", "57000"])
 
-    @remote_data
+    @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_phaseogram_input_f_change(self):
         evfile = self.dum
@@ -178,7 +177,7 @@ class TestPhaseogram:
         par = hen_root(evfile) + ".par"
         assert os.path.exists(par)
 
-    @remote_data
+    @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_phaseogram_deorbit(self):
         evfile = self.dum

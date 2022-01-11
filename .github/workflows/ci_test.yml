@@ -78,7 +78,9 @@ jobs:
       run: tox -e ${{ matrix.tox_env }}
     - name: Run tests with remote data
       if: "matrix.use_remote_data"
-      run: tox -e ${{ matrix.tox_env }} -- --remote-data=any
+      run: |
+        pip install pytest-remotedata
+        tox -e ${{ matrix.tox_env }} -- --remote-data=any
     - name: Upload coverage to codecov
       if: "endsWith(matrix.tox_env, '-cov')"
       uses: codecov/codecov-action@v1.0.13

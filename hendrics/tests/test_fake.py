@@ -9,7 +9,6 @@ import pytest
 import numpy as np
 from astropy import log
 from astropy.io import fits
-from astropy.tests.helper import remote_data
 import hendrics as hen
 from stingray.events import EventList
 from hendrics.tests import _dummy_par
@@ -305,7 +304,7 @@ class TestFake(object):
         assert os.path.exists(newfile)
         os.remove(newfile)
 
-    @remote_data
+    @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_scramble_events_file_deorbit(self):
         _ = _dummy_par("bububububu.par", pb=1.0, a1=30)

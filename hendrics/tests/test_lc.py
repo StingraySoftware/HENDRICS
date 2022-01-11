@@ -7,7 +7,6 @@ import glob
 import numpy as np
 from astropy import log
 from astropy.logger import AstropyUserWarning
-from astropy.tests.helper import remote_data
 import pytest
 from stingray.lightcurve import Lightcurve
 import hendrics as hen
