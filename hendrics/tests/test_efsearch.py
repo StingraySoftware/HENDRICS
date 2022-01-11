@@ -23,7 +23,6 @@ from hendrics.fold import fit_profile_with_sinusoids, get_TOAs_from_events
 from hendrics.plot import plot_folding
 from hendrics.tests import _dummy_par
 from hendrics.base import hen_root
-from astropy.tests.helper import remote_data
 
 try:
     import pandas as pd
@@ -649,7 +648,7 @@ class TestEFsearch:
         os.unlink(csv_file)
         os.unlink("out.csv")
 
-    @remote_data
+    @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_efsearch_deorbit(self):
         evfile = self.dum
@@ -672,7 +671,7 @@ class TestEFsearch:
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
 
-    @remote_data
+    @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_fold_deorbit(self):
         evfile = self.dum
@@ -697,7 +696,7 @@ class TestEFsearch:
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
-    @remote_data
+    @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_deorbit(self):
         evfile = self.dum

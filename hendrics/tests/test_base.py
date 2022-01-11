@@ -1,6 +1,5 @@
 import os
 import pytest
-from astropy.tests.helper import remote_data
 import numpy as np
 from hendrics.base import deorbit_events
 from stingray.events import EventList
@@ -27,7 +26,7 @@ def test_deorbit_non_existing_par():
     )
 
 
-@remote_data
+@pytest.mark.remote_data
 @pytest.mark.skipif("not HAS_PINT")
 def test_deorbit_bad_mjdref():
     from hendrics.base import deorbit_events
@@ -41,7 +40,7 @@ def test_deorbit_bad_mjdref():
     os.remove("bububu.par")
 
 
-@remote_data
+@pytest.mark.remote_data
 @pytest.mark.skipif("not HAS_PINT")
 def test_deorbit_inverse():
     from hendrics.base import deorbit_events
@@ -58,7 +57,7 @@ def test_deorbit_inverse():
     os.remove("bububu.par")
 
 
-@remote_data
+@pytest.mark.remote_data
 @pytest.mark.skipif("not HAS_PINT")
 def test_deorbit_run():
     from hendrics.base import deorbit_events

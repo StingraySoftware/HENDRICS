@@ -3,7 +3,6 @@
 
 import os
 
-from astropy.tests.helper import remote_data
 import pytest
 
 import hendrics as hen
@@ -80,7 +79,7 @@ class TestBinary(object):
 
         assert "Energy filtering requested" in str(excinfo.value)
 
-    @remote_data
+    @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_save_binary_calibrated_events(self):
         f = self.ev_fileAcal
