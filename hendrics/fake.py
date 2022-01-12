@@ -163,14 +163,16 @@ def generate_fake_fits_observation(
         )
 
     mission_info = read_mission_info(mission)
-    allowed_instr = mission_info["instruments"]
+    allowed_instr = []
+    if "instruments" in mission_info:
+        allowed_instr = mission_info["instruments"]
 
     # Just prefer EPN for XMM
     if "xmm" in mission.lower():
         allowed_instr = ["EPN", "EMOS1", "EMOS2", "RGS1", "RGS2"]
 
     allowed_instr = [ins.lower() for ins in allowed_instr]
-    if instr.lower() not in allowed_instr:
+    if (allowed_instr != []) and (instr.lower() not in allowed_instr):
         instr = allowed_instr[0]
 
     ccol = get_key_from_mission_info(mission_info, "ccol", None, inst=instr)
