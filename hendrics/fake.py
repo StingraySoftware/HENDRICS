@@ -175,8 +175,8 @@ def generate_fake_fits_observation(
     if (allowed_instr != []) and (instr.lower() not in allowed_instr):
         instr = allowed_instr[0]
 
-    ccol = get_key_from_mission_info(mission_info, "ccol", None, inst=instr)
-    if ccol.lower() == "none":
+    ccol = get_key_from_mission_info(mission_info, "ccol", "none", inst=instr)
+    if ccol is not None and ccol.lower() == "none":
         ccol = None
     ecol = get_key_from_mission_info(mission_info, "ecol", "PI", inst=instr)
     ext = get_key_from_mission_info(
