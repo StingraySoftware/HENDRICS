@@ -340,10 +340,13 @@ class TestReadEvents:
         with catch_warnings() as record:
             command = "{0} --noclobber".format(self.fits_fileB)
             hen.read_events.main(command.split())
-        assert np.any([
-            str(w.message)
-            .strip()
-            .endswith("exists and using noclobber. Skipping")] for w in record
+        assert np.any(
+            [
+                str(w.message)
+                .strip()
+                .endswith("exists and using noclobber. Skipping")
+            ]
+            for w in record
         ), "Unexpected warning output"
 
     @classmethod
