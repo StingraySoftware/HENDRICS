@@ -81,15 +81,20 @@ def test_distributed_cpds():
     events2 = EventList(
         np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0, 1000]])
     )
-    single_periodogram = stingray.AveragedCrossspectrum(
-        events1, events2, segment_size=100, dt=0.1, norm="leahy"
-    )
+    if hasattr(stingray.AveragedCrossspectrum, "from_events"):
+        single_periodogram = stingray.AveragedCrossspectrum(
+            events1, events2, segment_size=100, dt=0.1, norm="leahy",
+            use_common_mean=False
+        )
+    else:
+        single_periodogram = stingray.AveragedCrossspectrum(
+            events1, events2, segment_size=100, dt=0.1, norm="leahy")
+
     pds_iterable = hen.fspec._provide_cross_periodograms(
         events1, events2, 100, 0.1, "leahy"
     )
     pds_distr = hen.fspec.average_periodograms(pds_iterable)
     assert np.allclose(pds_distr.power, single_periodogram.power)
-    assert np.allclose(pds_distr.power_err, single_periodogram.power_err)
     assert np.allclose(pds_distr.freq, single_periodogram.freq)
     assert pds_distr.m == single_periodogram.m
 
@@ -256,15 +261,20 @@ class TestFullRun(object):
 
         out_labelA = labelA.replace("_ev", "_pds").replace("_lc", "_pds")
         out_labelB = labelB.replace("_ev", "_pds").replace("_lc", "_pds")
-        assert os.path.exists(
-            os.path.join(
+        outA = os.path.join(
+            self.datadir, f"monol_testA_{out_labelA}" + HEN_FILE_EXTENSION
+        )
+        outB = os.path.join(
                 self.datadir, f"monol_testB_{out_labelB}" + HEN_FILE_EXTENSION
             )
-        )
-        assert os.path.exists(
-            os.path.join(self.datadir, f"monol_testA_{out_labelA}")
-            + HEN_FILE_EXTENSION
-        )
+        assert os.path.exists(outA)
+        assert os.path.exists(outB)
+
+        new_pdsA = hen.io.load_pds(outA)
+        new_pdsB = hen.io.load_pds(outB)
+        for pds in [new_pdsA, new_pdsB]:
+            assert hasattr(pds, "cs_all")
+            assert len(pds.cs_all) == pds.m
 
     @pytest.mark.parametrize("kind", ["PDS", "CPDS"])
     def test_pds_events_big(self, kind):

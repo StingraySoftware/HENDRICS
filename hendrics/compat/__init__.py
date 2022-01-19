@@ -8,7 +8,7 @@ from .compatibility import (
     float64,
     int32,
     int64,
-    _MonkeyPatchedEventList,
+    EventList,
     power_confidence_limits,
     power_upper_limit,
     pf_from_ssig,

@@ -6,6 +6,7 @@ import os
 import glob
 import copy
 import re
+from typing import Tuple
 
 from collections.abc import Iterable
 import importlib
@@ -157,7 +158,7 @@ def get_energy_from_events(ev):
     return elabel, energy
 
 
-def filter_energy(ev: EventList, emin: float, emax: float) -> (EventList, str):
+def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, str]:
     """Filter event list by energy (or PI)
 
     If an ``energy`` attribute is present, uses it. Otherwise, it switches
