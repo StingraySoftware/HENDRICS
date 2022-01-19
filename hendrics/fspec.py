@@ -298,12 +298,14 @@ def calc_pds(
     # New Stingray machinery, hopefully more efficient and consistent
     if hasattr(AveragedPowerspectrum, "from_events"):
         if ftype == "events":
-            pds = AveragedPowerspectrum.from_events(
-                data, dt=bintime, segment_size=fftlen
+            pds = AveragedPowerspectrum(
+                data, dt=bintime, segment_size=fftlen,
+                save_all=save_dyn
             )
         elif ftype == "lc":
-            pds = AveragedPowerspectrum.from_lightcurve(
-                data, segment_size=fftlen
+            pds = AveragedPowerspectrum(
+                data, segment_size=fftlen,
+                save_all=save_dyn
             )
         if pds.power_err is None:
             pds.power_err = pds.power / np.sqrt(pds.m)
@@ -323,9 +325,10 @@ def calc_pds(
                 data, ftype, bintime=bintime, fftlen=fftlen
             )
 
-            pds = AveragedPowerspectrum(
-                lc_data, segment_size=fftlen, norm=normalization.lower()
-            )
+        pds = AveragedPowerspectrum(
+            lc_data, segment_size=fftlen, norm=normalization.lower(),
+            save_all=save_dyn
+        )
 
     if pdsrebin is not None and pdsrebin != 1:
         pds = pds.rebin(pdsrebin)
