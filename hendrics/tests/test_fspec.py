@@ -81,10 +81,15 @@ def test_distributed_cpds():
     events2 = EventList(
         np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0, 1000]])
     )
-    single_periodogram = stingray.AveragedCrossspectrum(
-        events1, events2, segment_size=100, dt=0.1, norm="leahy",
-        use_common_mean=False
-    )
+    if hasattr(stingray.AveragedCrossspectrum, "from_events"):
+        single_periodogram = stingray.AveragedCrossspectrum(
+            events1, events2, segment_size=100, dt=0.1, norm="leahy",
+            use_common_mean=False
+        )
+    else:
+        single_periodogram = stingray.AveragedCrossspectrum(
+            events1, events2, segment_size=100, dt=0.1, norm="leahy")
+
     pds_iterable = hen.fspec._provide_cross_periodograms(
         events1, events2, 100, 0.1, "leahy"
     )

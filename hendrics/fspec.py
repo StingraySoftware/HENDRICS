@@ -46,11 +46,14 @@ def average_periodograms(fspec_iterable, total=None):
     3
     """
 
+    all_spec = []
     for i, contents in enumerate(show_progress(fspec_iterable, total=total)):
         freq = contents.freq
         pds = contents.power
         epds = contents.power_err
         nchunks = contents.m
+        if hasattr(contents, "cs_all") and contents.cs_all is not None:
+            all_spec.extend(contents.cs_all)
         rebin = 1
         norm = contents.norm
         fftlen = contents.fftlen
@@ -60,7 +63,7 @@ def average_periodograms(fspec_iterable, total=None):
 
             tot_epds = epds ** 2 * nchunks
             tot_npds = nchunks
-            tot_contents = copy.copy(contents)
+            tot_contents = copy.deepcopy(contents)
         else:
             assert np.all(
                 rebin == rebin0
@@ -76,6 +79,9 @@ def average_periodograms(fspec_iterable, total=None):
             tot_pds += pds * nchunks
             tot_epds += epds ** 2 * nchunks
             tot_npds += nchunks
+
+    if len(all_spec) > 0:
+        tot_contents.cs_all = all_spec
 
     tot_contents.power = tot_pds / tot_npds
     tot_contents.power_err = np.sqrt(tot_epds) / tot_npds
@@ -325,10 +331,10 @@ def calc_pds(
                 data, ftype, bintime=bintime, fftlen=fftlen
             )
 
-        pds = AveragedPowerspectrum(
-            lc_data, segment_size=fftlen, norm=normalization.lower(),
-            save_all=save_dyn
-        )
+            pds = AveragedPowerspectrum(
+                lc_data, segment_size=fftlen, norm=normalization.lower(),
+                save_all=save_dyn
+            )
 
     if pdsrebin is not None and pdsrebin != 1:
         pds = pds.rebin(pdsrebin)
@@ -420,12 +426,14 @@ def calc_cpds(
     # New Stingray machinery, hopefully more efficient and consistent
     if hasattr(AveragedPowerspectrum, "from_events"):
         if ftype1 == "events":
-            cpds = AveragedCrossspectrum.from_events(
-                lc1, lc2, dt=bintime, segment_size=fftlen
+            cpds = AveragedCrossspectrum(
+                lc1, lc2, dt=bintime, segment_size=fftlen,
+                save_all=save_dyn
             )
         elif ftype1 == "lc":
-            cpds = AveragedCrossspectrum.from_lightcurve(
-                lc1, lc2, segment_size=fftlen
+            cpds = AveragedCrossspectrum(
+                lc1, lc2, segment_size=fftlen,
+                save_all=save_dyn
             )
         if cpds.power_err is None:
             cpds.power_err = np.sqrt(cpds.power) / np.sqrt(cpds.m)
@@ -445,7 +453,8 @@ def calc_cpds(
             lc2 = _format_lc_data(lc2, ftype2, fftlen=fftlen, bintime=bintime)
 
             cpds = AveragedCrossspectrum(
-                lc1, lc2, segment_size=fftlen, norm=normalization.lower()
+                lc1, lc2, segment_size=fftlen, norm=normalization.lower(),
+                save_all=save_dyn
             )
 
     if pdsrebin is not None and pdsrebin != 1:
