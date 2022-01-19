@@ -256,15 +256,20 @@ class TestFullRun(object):
 
         out_labelA = labelA.replace("_ev", "_pds").replace("_lc", "_pds")
         out_labelB = labelB.replace("_ev", "_pds").replace("_lc", "_pds")
-        assert os.path.exists(
-            os.path.join(
+        outA = os.path.join(
+            self.datadir, f"monol_testA_{out_labelA}" + HEN_FILE_EXTENSION
+        )
+        outB = os.path.join(
                 self.datadir, f"monol_testB_{out_labelB}" + HEN_FILE_EXTENSION
             )
-        )
-        assert os.path.exists(
-            os.path.join(self.datadir, f"monol_testA_{out_labelA}")
-            + HEN_FILE_EXTENSION
-        )
+        assert os.path.exists(outA)
+        assert os.path.exists(outB)
+
+        new_pdsA = hen.io.load_pds(outA)
+        new_pdsB = hen.io.load_pds(outB)
+        for pds in [new_pdsA, new_pdsB]:
+            assert hasattr(pds, "cs_all")
+            assert len(pds.cs_all) == pds.m
 
     @pytest.mark.parametrize("kind", ["PDS", "CPDS"])
     def test_pds_events_big(self, kind):
