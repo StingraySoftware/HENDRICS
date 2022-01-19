@@ -313,8 +313,6 @@ def calc_pds(
                 data, segment_size=fftlen,
                 save_all=save_dyn
             )
-        if pds.power_err is None:
-            pds.power_err = pds.power / np.sqrt(pds.m)
     else:
         if ftype == "events" and (test or nbins > 10 ** 7):
             print("Long observation. Using split analysis")
@@ -435,8 +433,6 @@ def calc_cpds(
                 lc1, lc2, segment_size=fftlen,
                 save_all=save_dyn
             )
-        if cpds.power_err is None:
-            cpds.power_err = np.sqrt(cpds.power) / np.sqrt(cpds.m)
     else:
         if ftype1 == "events" and (test or nbins > 10 ** 7):
             print("Long observation. Using split analysis")
