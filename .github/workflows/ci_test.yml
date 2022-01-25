@@ -33,10 +33,6 @@ jobs:
             tox_env: 'py38-test-alldeps-cov'
             use_remote_data: true
           - os: ubuntu-latest
-            python: '3.8'
-            tox_env: 'py38-test-bedeps-cov'
-            use_remote_data: true
-          - os: ubuntu-latest
             python: '3.9'
             tox_env: 'py39-test-devdeps'
             use_remote_data: true
@@ -50,9 +46,6 @@ jobs:
           - os: windows-latest
             python: '3.8'
             tox_env: 'py38-test'
-#          - os: ubuntu-latest
-#            python: '3.7'
-#            tox_env: 'py37-test-astropy30-numpy117'
           - os: ubuntu-latest
             python: '3.8'
             tox_env: 'codestyle'
