@@ -306,12 +306,12 @@ def calc_pds(
         if ftype == "events":
             pds = AveragedPowerspectrum(
                 data, dt=bintime, segment_size=fftlen,
-                save_all=save_dyn
+                save_all=save_dyn, norm=normalization.lower()
             )
         elif ftype == "lc":
             pds = AveragedPowerspectrum(
                 data, segment_size=fftlen,
-                save_all=save_dyn
+                save_all=save_dyn, norm=normalization.lower()
             )
     else:
         if ftype == "events" and (test or nbins > 10 ** 7):
@@ -426,12 +426,12 @@ def calc_cpds(
         if ftype1 == "events":
             cpds = AveragedCrossspectrum(
                 lc1, lc2, dt=bintime, segment_size=fftlen,
-                save_all=save_dyn
+                save_all=save_dyn, norm=normalization.lower()
             )
         elif ftype1 == "lc":
             cpds = AveragedCrossspectrum(
                 lc1, lc2, segment_size=fftlen,
-                save_all=save_dyn
+                save_all=save_dyn, norm=normalization.lower()
             )
     else:
         if ftype1 == "events" and (test or nbins > 10 ** 7):
