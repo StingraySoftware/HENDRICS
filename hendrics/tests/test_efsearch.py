@@ -158,7 +158,7 @@ class TestEFsearch:
                 "ratios",
             ]
         )
-        outfile = "Energyprofile_ratios.png"
+        outfile = hen_root(evfile) + "_ratios.png"
         assert os.path.exists(outfile)
         os.unlink(outfile)
         main_fold(
@@ -173,7 +173,7 @@ class TestEFsearch:
                 "blablabla",
             ]
         )
-        outfile = "Energyprofile.png"
+        outfile = hen_root(evfile_noe) + ".png"
         assert os.path.exists(outfile)
         os.unlink(outfile)
         main_fold(
@@ -188,7 +188,7 @@ class TestEFsearch:
                 "to1",
             ]
         )
-        outfile = "Energyprofile_to1.png"
+        outfile = hen_root(evfile_pi) + "_to1.png"
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
@@ -692,7 +692,7 @@ class TestEFsearch:
                 str(self.mjdref),
             ]
         )
-        outfile = "Energyprofile_ratios.png"
+        outfile = hen_root(evfile) + "_ratios.png"
         assert os.path.exists(outfile)
         os.unlink(outfile)
 

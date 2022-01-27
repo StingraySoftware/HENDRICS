@@ -12,6 +12,7 @@ from scipy.signal import savgol_filter
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
 from astropy import log
+from .base import hen_root
 from .io import load_events, filter_energy
 
 try:
@@ -485,6 +486,7 @@ def run_folding(
     smooth_window=None,
     deorbit_par=None,
     pepoch=None,
+    out_file_root=None,
     **opts,
 ):
     from matplotlib.gridspec import GridSpec
@@ -557,6 +559,10 @@ def run_folding(
             factor = np.max(hist2d, axis=0)[np.newaxis, :]
             hist2d /= factor
             file_label = "_to1"
+
+    if out_file_root is None:
+        out_file_root = "Energyprofile"
+    out_file_root = out_file_root + file_label
 
     plt.figure(figsize=(8, 8))
     if plot_energy:
@@ -673,7 +679,7 @@ def run_folding(
             data=[meannrgs, (biny[1:] - biny[:-1]) / 2, pfs, errs],
             names=["E", "Ee", "pf", "pfe"],
         )
-        pf_results.write("Energyprofile" + file_label + ".csv", overwrite=True)
+        pf_results.write(out_file_root + ".csv", overwrite=True)
         ax3.semilogx()
         # labels = [float(item.get_text()) for item in ax3.get_xticklabels() if item.get_text()!='']
         # ax3.set_xticklabels([f"{label:g}" for label in labels])
@@ -681,7 +687,7 @@ def run_folding(
         ax3.set_ylabel("Pulsed fraction")
 
     plt.tight_layout()
-    plt.savefig("Energyprofile" + file_label + ".png")
+    plt.savefig(out_file_root + ".png")
     if not test:  # pragma:no cover
         plt.show()
 
@@ -778,6 +784,7 @@ def main_fold(args=None):
             norm=args.norm,
             deorbit_par=args.deorbit_par,
             pepoch=args.pepoch,
+            out_file_root=hen_root(args.file),
         )
 
 

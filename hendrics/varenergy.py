@@ -184,12 +184,18 @@ def main(args=None):
     parser.add_argument(
         "--norm",
         default="abs",
-        help="When relevant, the normalization of the spectrum. One of ['abs', 'frac', 'rms', 'leahy', 'none']",
+        help=(
+            "When relevant, the normalization of the spectrum. One of "
+            "['abs', 'frac', 'rms', 'leahy', 'none']"
+        ),
     )
     parser.add_argument(
         "--format",
         default="ecsv",
-        help="Output format for the table. Can be ECSV, QDP, or any other format accepted by astropy",
+        help=(
+            "Output format for the table. Can be ECSV, QDP, or any other "
+            "format accepted by astropy"
+        ),
     )
 
     _add_default_args(parser, ["bintime", "loglevel", "debug"])
