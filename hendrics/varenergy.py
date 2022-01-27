@@ -8,13 +8,18 @@ from astropy import log
 from astropy.table import Table
 from astropy.logger import AstropyUserWarning
 import numpy as np
-from stingray.varenergyspectrum import (
-    LagSpectrum,
-    RmsSpectrum,
-    CovarianceSpectrum,
-    VarEnergySpectrum,
-    _decode_energy_specification,
-)
+try:
+    from stingray.varenergyspectrum import (
+        LagSpectrum,
+        RmsSpectrum,
+        CovarianceSpectrum,
+        VarEnergySpectrum,
+        _decode_energy_specification,
+    )
+except ImportError:
+    VarEnergySpectrum = object
+    warnings.warn("Please update stingray to the latest version.")
+
 
 from .base import hen_root, interpret_bintime
 from .io import load_events
