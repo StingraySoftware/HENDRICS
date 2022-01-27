@@ -19,7 +19,7 @@ def sum_fspec(files, outname=None):
 
     def check_and_distribute_files(files):
         for i, f in enumerate(files):
-            ftype, contents = get_file_type(files[0])
+            ftype, contents = get_file_type(f)
             if i == 0:
                 contents0, ftype0 = contents, ftype
             else:
