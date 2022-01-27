@@ -305,13 +305,18 @@ def calc_pds(
     if hasattr(AveragedPowerspectrum, "from_events"):
         if ftype == "events":
             pds = AveragedPowerspectrum(
-                data, dt=bintime, segment_size=fftlen,
-                save_all=save_dyn, norm=normalization.lower()
+                data,
+                dt=bintime,
+                segment_size=fftlen,
+                save_all=save_dyn,
+                norm=normalization.lower(),
             )
         elif ftype == "lc":
             pds = AveragedPowerspectrum(
-                data, segment_size=fftlen,
-                save_all=save_dyn, norm=normalization.lower()
+                data,
+                segment_size=fftlen,
+                save_all=save_dyn,
+                norm=normalization.lower(),
             )
     else:
         if ftype == "events" and (test or nbins > 10 ** 7):
@@ -330,8 +335,10 @@ def calc_pds(
             )
 
             pds = AveragedPowerspectrum(
-                lc_data, segment_size=fftlen, norm=normalization.lower(),
-                save_all=save_dyn
+                lc_data,
+                segment_size=fftlen,
+                norm=normalization.lower(),
+                save_all=save_dyn,
             )
 
     if pdsrebin is not None and pdsrebin != 1:
@@ -425,13 +432,20 @@ def calc_cpds(
     if hasattr(AveragedPowerspectrum, "from_events"):
         if ftype1 == "events":
             cpds = AveragedCrossspectrum(
-                lc1, lc2, dt=bintime, segment_size=fftlen,
-                save_all=save_dyn, norm=normalization.lower()
+                lc1,
+                lc2,
+                dt=bintime,
+                segment_size=fftlen,
+                save_all=save_dyn,
+                norm=normalization.lower(),
             )
         elif ftype1 == "lc":
             cpds = AveragedCrossspectrum(
-                lc1, lc2, segment_size=fftlen,
-                save_all=save_dyn, norm=normalization.lower()
+                lc1,
+                lc2,
+                segment_size=fftlen,
+                save_all=save_dyn,
+                norm=normalization.lower(),
             )
     else:
         if ftype1 == "events" and (test or nbins > 10 ** 7):
@@ -449,8 +463,11 @@ def calc_cpds(
             lc2 = _format_lc_data(lc2, ftype2, fftlen=fftlen, bintime=bintime)
 
             cpds = AveragedCrossspectrum(
-                lc1, lc2, segment_size=fftlen, norm=normalization.lower(),
-                save_all=save_dyn
+                lc1,
+                lc2,
+                segment_size=fftlen,
+                norm=normalization.lower(),
+                save_all=save_dyn,
             )
 
     if pdsrebin is not None and pdsrebin != 1:

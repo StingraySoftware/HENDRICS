@@ -8,6 +8,7 @@ from astropy import log
 from astropy.table import Table
 from astropy.logger import AstropyUserWarning
 import numpy as np
+
 try:
     from stingray.varenergyspectrum import (
         LagSpectrum,
@@ -32,13 +33,25 @@ def varenergy_to_astropy_table(spectrum):
     start_energy = np.asarray(spectrum.energy_intervals)[:, 0]
     stop_energy = np.asarray(spectrum.energy_intervals)[:, 1]
     res = Table(
-        {"start_energy": start_energy,
-         "stop_energy": stop_energy,
-         "spectrum": spectrum.spectrum,
-         "error": spectrum.spectrum_error
-        })
+        {
+            "start_energy": start_energy,
+            "stop_energy": stop_energy,
+            "spectrum": spectrum.spectrum,
+            "error": spectrum.spectrum_error,
+        }
+    )
 
-    for attr in ["ref_band", "energy_intervals", "freq_interval", "bin_time", "use_pi", "segment_size", "norm", "return_complex", "norm"]:
+    for attr in [
+        "ref_band",
+        "energy_intervals",
+        "freq_interval",
+        "bin_time",
+        "use_pi",
+        "segment_size",
+        "norm",
+        "return_complex",
+        "norm",
+    ]:
         if hasattr(spectrum, attr):
             res.meta[attr] = getattr(spectrum, attr)
 
@@ -50,11 +63,22 @@ def varenergy_from_astropy_table(fname):
     data = Table.read(fname)
     varenergy = HENVarEnergySpectrum()
 
-    for attr in ["ref_band", "freq_interval", "bin_time", "use_pi", "segment_size", "norm", "return_complex", "norm"]:
+    for attr in [
+        "ref_band",
+        "freq_interval",
+        "bin_time",
+        "use_pi",
+        "segment_size",
+        "norm",
+        "return_complex",
+        "norm",
+    ]:
         if attr in data.meta:
             setattr(varenergy, attr, data.meta[attr])
 
-    varenergy.energy_intervals = list(zip(data["start_energy"], data["stop_energy"]))
+    varenergy.energy_intervals = list(
+        zip(data["start_energy"], data["stop_energy"])
+    )
     varenergy.spectrum = data["spectrum"]
     varenergy.spectrum_error = data["error"]
     return varenergy
@@ -62,7 +86,15 @@ def varenergy_from_astropy_table(fname):
 
 class HENVarEnergySpectrum(VarEnergySpectrum):
     def __init__(self):
-        for attr in ["ref_band", "freq_interval", "bin_time", "use_pi", "segment_size", "norm", "return_complex"]:
+        for attr in [
+            "ref_band",
+            "freq_interval",
+            "bin_time",
+            "use_pi",
+            "segment_size",
+            "norm",
+            "return_complex",
+        ]:
             setattr(self, attr, None)
 
         for attr in ["energy_intervals", "spectrum", "spectrum_error"]:
@@ -225,11 +257,19 @@ def main(args=None):
                     bin_time=args.bintime,
                     events2=events2,
                     use_pi=args.use_pi,
-                    norm=args.norm
+                    norm=args.norm,
                 )
-                outfile = hen_root(fname) + "_" + args.label.lstrip("_") + "_rms." + args.format
+                outfile = (
+                    hen_root(fname)
+                    + "_"
+                    + args.label.lstrip("_")
+                    + "_rms."
+                    + args.format
+                )
                 out_table = varenergy_to_astropy_table(rms)
-                out_table.write(outfile, overwrite=True, **additional_output_args)
+                out_table.write(
+                    outfile, overwrite=True, **additional_output_args
+                )
                 filelist.append(outfile)
 
             if args.lag:
@@ -243,20 +283,34 @@ def main(args=None):
                     events2=events2,
                     use_pi=args.use_pi,
                 )
-                outfile = hen_root(fname) + "_" + args.label.lstrip("_") + "_lag." + args.format
+                outfile = (
+                    hen_root(fname)
+                    + "_"
+                    + args.label.lstrip("_")
+                    + "_lag."
+                    + args.format
+                )
                 out_table = varenergy_to_astropy_table(lag)
-                out_table.write(outfile, overwrite=True, **additional_output_args)
+                out_table.write(
+                    outfile, overwrite=True, **additional_output_args
+                )
                 filelist.append(outfile)
 
             if args.count:
                 cts = CountSpectrum(
-                    events,
-                    energy_spec=energy_spec,
-                    use_pi=args.use_pi,
+                    events, energy_spec=energy_spec, use_pi=args.use_pi,
                 )
-                outfile = hen_root(fname) + "_" + args.label.lstrip("_") + "_count." + args.format
+                outfile = (
+                    hen_root(fname)
+                    + "_"
+                    + args.label.lstrip("_")
+                    + "_count."
+                    + args.format
+                )
                 out_table = varenergy_to_astropy_table(cts)
-                out_table.write(outfile, overwrite=True, **additional_output_args)
+                out_table.write(
+                    outfile, overwrite=True, **additional_output_args
+                )
                 filelist.append(outfile)
 
             if args.covariance:
@@ -269,12 +323,20 @@ def main(args=None):
                     bin_time=args.bintime,
                     events2=events2,
                     use_pi=args.use_pi,
-                    norm=args.norm
+                    norm=args.norm,
                 )
                 print(cov.norm)
-                outfile = hen_root(fname) + "_" + args.label.lstrip("_") + "_cov." + args.format
+                outfile = (
+                    hen_root(fname)
+                    + "_"
+                    + args.label.lstrip("_")
+                    + "_cov."
+                    + args.format
+                )
                 out_table = varenergy_to_astropy_table(cov)
-                out_table.write(outfile, overwrite=True, **additional_output_args)
+                out_table.write(
+                    outfile, overwrite=True, **additional_output_args
+                )
 
                 filelist.append(outfile)
 
