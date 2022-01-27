@@ -60,4 +60,3 @@ except ImportError:
     def array_take(arr, indices):
         """Adapt np.take to arrays"""
         return np.take(arr, indices)
-
