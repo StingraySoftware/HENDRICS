@@ -10,16 +10,16 @@ from astropy.logger import AstropyUserWarning
 import numpy as np
 
 try:
+    from stingray.varenergyspectrum import VarEnergySpectrum as VES
     from stingray.varenergyspectrum import (
         LagSpectrum,
         RmsSpectrum,
         CovarianceSpectrum,
-        VarEnergySpectrum,
         CountSpectrum,
         _decode_energy_specification,
     )
 except ImportError:
-    VarEnergySpectrum = object
+    VES = object
     warnings.warn("Please update stingray to the latest version.")
 
 
@@ -59,9 +59,31 @@ def varenergy_to_astropy_table(spectrum):
 
 
 def varenergy_from_astropy_table(fname):
+    """
 
-    data = Table.read(fname)
-    varenergy = HENVarEnergySpectrum()
+    Examples
+    --------
+    >>> varen = VarEnergySpectrum()
+    >>> varen.spectrum = [3, 4]
+    >>> varen.energy_intervals = [[3, 5], [5, 7]]
+    >>> varen.spectrum_error = [0.3, 0.4]
+    >>> varen.ref_band = [0, 3]
+    >>> table = varenergy_to_astropy_table(varen)
+    >>> spec = varenergy_from_astropy_table(table)
+    >>> np.allclose(spec.spectrum, varen.spectrum)
+    True
+    >>> np.allclose(spec.spectrum_error, varen.spectrum_error)
+    True
+    >>> np.allclose(spec.energy_intervals, varen.energy_intervals)
+    True
+    >>> np.allclose(spec.ref_band, varen.ref_band)
+    True
+    """
+    if isinstance(fname, Table):
+        data = fname
+    else:
+        data = Table.read(fname)
+    varenergy = VarEnergySpectrum()
 
     for attr in [
         "ref_band",
@@ -84,8 +106,9 @@ def varenergy_from_astropy_table(fname):
     return varenergy
 
 
-class HENVarEnergySpectrum(VarEnergySpectrum):
+class VarEnergySpectrum(VES):
     def __init__(self):
+
         for attr in [
             "ref_band",
             "freq_interval",
