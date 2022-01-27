@@ -561,7 +561,7 @@ def run_folding(
             file_label = "_to1"
 
     if out_file_root is None:
-        out_file_root = "Energyprofile"
+        out_file_root = hen_root(file)
     out_file_root = out_file_root + file_label
 
     plt.figure(figsize=(8, 8))
@@ -752,6 +752,11 @@ def main_fold(args=None):
         "at each energy is one. "
         "--norm ratios: Divide by mean profile",
     )
+    parser.add_argument(
+        "--out-file-root",
+        default=None,
+        help="Root of the output files (plots and csv tables)",
+    )
 
     _add_default_args(
         parser, ["pepoch", "deorbit", "loglevel", "debug", "test"]
@@ -784,7 +789,7 @@ def main_fold(args=None):
             norm=args.norm,
             deorbit_par=args.deorbit_par,
             pepoch=args.pepoch,
-            out_file_root=hen_root(args.file),
+            out_file_root=args.out_file_root,
         )
 
 
