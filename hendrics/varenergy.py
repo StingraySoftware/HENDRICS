@@ -14,6 +14,7 @@ try:
         RmsSpectrum,
         CovarianceSpectrum,
         VarEnergySpectrum,
+        CountSpectrum,
         _decode_energy_specification,
     )
 except ImportError:
@@ -50,7 +51,8 @@ def varenergy_from_astropy_table(fname):
     varenergy = HENVarEnergySpectrum()
 
     for attr in ["ref_band", "freq_interval", "bin_time", "use_pi", "segment_size", "norm", "return_complex", "norm"]:
-        setattr(varenergy, attr, data.meta[attr])
+        if attr in data.meta:
+            setattr(varenergy, attr, data.meta[attr])
 
     varenergy.energy_intervals = list(zip(data["start_energy"], data["stop_energy"]))
     varenergy.spectrum = data["spectrum"]
@@ -132,6 +134,12 @@ def main(args=None):
     )
     parser.add_argument(
         "--lag",
+        default=False,
+        action="store_true",
+        help="Calculate lag-energy",
+    )
+    parser.add_argument(
+        "--count",
         default=False,
         action="store_true",
         help="Calculate lag-energy",
@@ -237,6 +245,17 @@ def main(args=None):
                 )
                 outfile = hen_root(fname) + "_" + args.label.lstrip("_") + "_lag." + args.format
                 out_table = varenergy_to_astropy_table(lag)
+                out_table.write(outfile, overwrite=True, **additional_output_args)
+                filelist.append(outfile)
+
+            if args.count:
+                cts = CountSpectrum(
+                    events,
+                    energy_spec=energy_spec,
+                    use_pi=args.use_pi,
+                )
+                outfile = hen_root(fname) + "_" + args.label.lstrip("_") + "_count." + args.format
+                out_table = varenergy_to_astropy_table(cts)
                 out_table.write(outfile, overwrite=True, **additional_output_args)
                 filelist.append(outfile)
 
