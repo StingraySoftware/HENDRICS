@@ -165,7 +165,8 @@ class TestFullRun(object):
             ftype, _ = hen.io.get_file_type(fname)
             assert ftype == realtype, "File types do not match"
 
-    def test_save_varen_rms(self):
+    @pytest.mark.parametrize("kind", ["rms", "cov", "count", "lag"])
+    def test_save_varen(self, kind):
         fname = self.ev_fileAcal
         hen.varenergy.main(
             [
@@ -178,61 +179,17 @@ class TestFullRun(object):
                 "12",
                 "5",
                 "lin",
-                "--rms",
+                f"--{kind}",
                 "-b",
                 "0.5",
                 "--segment-size",
                 "128",
+                "--format",
+                "qdp",
             ]
         )
-        out = hen.base.hen_root(fname) + "_rms" + ".qdp"
-        os.path.exists(out)
-
-    def test_save_varen_rms(self):
-        fname = self.ev_fileAcal
-        hen.varenergy.main(
-            [
-                fname,
-                "-f",
-                "0",
-                "100",
-                "--energy-values",
-                "0.3",
-                "12",
-                "5",
-                "lin",
-                "--covariance",
-                "-b",
-                "0.5",
-                "--segment-size",
-                "128",
-            ]
-        )
-        out = hen.base.hen_root(fname) + "_cov" + ".qdp"
-        os.path.exists(out)
-
-    def test_save_varen_lag(self):
-        fname = self.ev_fileAcal
-        hen.varenergy.main(
-            [
-                fname,
-                "-f",
-                "0",
-                "100",
-                "--energy-values",
-                "0.3",
-                "12",
-                "5",
-                "lin",
-                "--lag",
-                "-b",
-                "0.5",
-                "--segment-size",
-                "128",
-            ]
-        )
-        out = hen.base.hen_root(fname) + "_lag" + ".qdp"
-        os.path.exists(out)
+        out = hen.base.hen_root(fname) + f"_{kind}" + ".qdp"
+        assert os.path.exists(out)
 
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""

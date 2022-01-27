@@ -201,7 +201,7 @@ def main(args=None):
     )
     parser.add_argument(
         "--label",
-        default="",
+        default=None,
         help="Additional label to be added to file names",
     )
     parser.add_argument(
@@ -230,6 +230,9 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
+    label = ""
+    if args.label is not None:
+        label = "_" + args.label.lstrip("_")
     log.setLevel(args.loglevel)
     with log.log_to_file("HENvarenergy.log"):
         filelist = []
@@ -288,13 +291,7 @@ def main(args=None):
                     use_pi=args.use_pi,
                     norm=args.norm,
                 )
-                outfile = (
-                    hen_root(fname)
-                    + "_"
-                    + args.label.lstrip("_")
-                    + "_rms."
-                    + args.format
-                )
+                outfile = hen_root(fname) + label + "_rms." + args.format
                 out_table = varenergy_to_astropy_table(rms)
                 out_table.write(
                     outfile, overwrite=True, **additional_output_args
@@ -312,13 +309,7 @@ def main(args=None):
                     events2=events2,
                     use_pi=args.use_pi,
                 )
-                outfile = (
-                    hen_root(fname)
-                    + "_"
-                    + args.label.lstrip("_")
-                    + "_lag."
-                    + args.format
-                )
+                outfile = hen_root(fname) + label + "_lag." + args.format
                 out_table = varenergy_to_astropy_table(lag)
                 out_table.write(
                     outfile, overwrite=True, **additional_output_args
@@ -329,13 +320,7 @@ def main(args=None):
                 cts = CountSpectrum(
                     events, energy_spec=energy_spec, use_pi=args.use_pi,
                 )
-                outfile = (
-                    hen_root(fname)
-                    + "_"
-                    + args.label.lstrip("_")
-                    + "_count."
-                    + args.format
-                )
+                outfile = hen_root(fname) + label + "_count." + args.format
                 out_table = varenergy_to_astropy_table(cts)
                 out_table.write(
                     outfile, overwrite=True, **additional_output_args
@@ -354,14 +339,7 @@ def main(args=None):
                     use_pi=args.use_pi,
                     norm=args.norm,
                 )
-                print(cov.norm)
-                outfile = (
-                    hen_root(fname)
-                    + "_"
-                    + args.label.lstrip("_")
-                    + "_cov."
-                    + args.format
-                )
+                outfile = hen_root(fname) + label + "_cov." + args.format
                 out_table = varenergy_to_astropy_table(cov)
                 out_table.write(
                     outfile, overwrite=True, **additional_output_args
