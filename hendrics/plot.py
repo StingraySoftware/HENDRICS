@@ -448,8 +448,10 @@ def plot_folding(
             if max_stat < vmax:
                 continue
             sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=ef.N)
-            amp_0 = a_from_ssig(sig_0, ef.ncounts)
-            amp_1 = a_from_ssig(sig_1, ef.ncounts)
+            amp_0 = amp_1 = np.nan
+            if ef.ncounts is not None:
+                amp_0 = a_from_ssig(sig_0, ef.ncounts) * 100
+                amp_1 = a_from_ssig(sig_1, ef.ncounts) * 100
             best_cand_table.add_row(
                 [
                     ef.filename,
@@ -458,8 +460,8 @@ def plot_folding(
                     f,
                     fdot,
                     fddot,
-                    amp_0 * 100,
-                    amp_1 * 100,
+                    amp_0,
+                    amp_1,
                 ]
             )
             Table({"freq": allfreqs, "stat": allstats_f}).write(
@@ -483,8 +485,11 @@ def plot_folding(
             if hasattr(ef, "upperlim") and ef.upperlim is not None:
                 maxpow = ef.stat.max()
                 sig_0, sig_1 = power_confidence_limits(maxpow, c=0.90, n=ef.N)
-                amp_lim = a_from_ssig(sig_1, ef.ncounts)
-                pf_lim = pf_from_ssig(sig_1, ef.ncounts)
+                amp_lim = pf_lim = np.nan
+                if ef.ncounts is not None:
+                    amp_lim = a_from_ssig(sig_1, ef.ncounts)
+                    pf_lim = pf_from_ssig(sig_1, ef.ncounts)
+
                 print(
                     f"(90% Upper limit for sinusoids: p. frac. < {pf_lim * 100:.2f}%, p. ampl. < {amp_lim * 100:.2f} %)"
                 )
