@@ -186,9 +186,11 @@ class TestFullRun(object):
                 "128",
                 "--format",
                 "qdp",
+                "--label",
+                "nice"
             ]
         )
-        out = hen.base.hen_root(fname) + f"_{kind}" + ".qdp"
+        out = hen.base.hen_root(fname) + f"_nice_{kind}" + ".qdp"
         assert os.path.exists(out)
 
     def test_colors_fail_uncalibrated(self):

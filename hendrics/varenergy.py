@@ -78,6 +78,12 @@ def varenergy_from_astropy_table(fname):
     True
     >>> np.allclose(spec.ref_band, varen.ref_band)
     True
+    >>> table.write("varenergyboubou.ecsv")
+    >>> spec_file = varenergy_from_astropy_table("varenergyboubou.ecsv")
+    >>> np.allclose(spec.spectrum, spec_file.spectrum)
+    True
+    >>> np.allclose(spec.spectrum_error, spec_file.spectrum_error)
+    True
     """
     if isinstance(fname, Table):
         data = fname
@@ -123,7 +129,7 @@ class VarEnergySpectrum(VES):
         for attr in ["energy_intervals", "spectrum", "spectrum_error"]:
             setattr(self, attr, None)
 
-    def _spectrum_function(self):
+    def _spectrum_function(self): #pragma: no cover
         pass
 
 
@@ -260,16 +266,18 @@ def main(args=None):
             files2 = sorted_files[instrs[1]]
         else:
             files1 = args.files
-            files2 = args.files
+            files2 = [None] * len(args.files)
 
         for fnames in zip(files1, files2):
             fname = fnames[0]
             fname2 = fnames[1]
 
             events = load_events(fname)
-            events2 = load_events(fname2)
+            events2 = None
+            if fname2 is not None:
+                events2 = load_events(fname2)
             if not args.use_pi and (
-                events.energy is None or events2.energy is None
+                events.energy is None or (events2 is not None and events2.energy is None)
             ):
                 raise ValueError(
                     "If --use-pi is not specified, event lists must "
