@@ -7,6 +7,7 @@ import glob
 import subprocess as sp
 
 import numpy as np
+from astropy.io.registry import IORegistryError
 from astropy import log
 from astropy.tests.helper import catch_warnings
 from astropy.logger import AstropyUserWarning
@@ -165,33 +166,37 @@ class TestFullRun(object):
             ftype, _ = hen.io.get_file_type(fname)
             assert ftype == realtype, "File types do not match"
 
+    @pytest.mark.parametrize("format", ["qdp", "ecsv", "hdf5"])
     @pytest.mark.parametrize("kind", ["rms", "cov", "count", "lag"])
-    def test_save_varen(self, kind):
+    def test_save_varen(self, kind, format):
         fname = self.ev_fileAcal
-        hen.varenergy.main(
-            [
-                fname,
-                "-f",
-                "0",
-                "100",
-                "--energy-values",
-                "0.3",
-                "12",
-                "5",
-                "lin",
-                f"--{kind}",
-                "-b",
-                "0.5",
-                "--segment-size",
-                "128",
-                "--format",
-                "qdp",
-                "--label",
-                "nice"
-            ]
-        )
-        out = hen.base.hen_root(fname) + f"_nice_{kind}" + ".qdp"
-        assert os.path.exists(out)
+        try:
+            hen.varenergy.main(
+                [
+                    fname,
+                    "-f",
+                    "0",
+                    "100",
+                    "--energy-values",
+                    "0.3",
+                    "12",
+                    "5",
+                    "lin",
+                    f"--{kind}",
+                    "-b",
+                    "0.5",
+                    "--segment-size",
+                    "128",
+                    "--format",
+                    format,
+                    "--label",
+                    "nice"
+                ]
+            )
+            out = hen.base.hen_root(fname) + f"_nice_{kind}" + f".{format}"
+            assert os.path.exists(out)
+        except IORegistryError:
+            pass
 
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
