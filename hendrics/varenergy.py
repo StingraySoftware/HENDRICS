@@ -5,19 +5,132 @@
 
 import warnings
 from astropy import log
+from astropy.table import Table
 from astropy.logger import AstropyUserWarning
 import numpy as np
-from stingray.varenergyspectrum import (
-    RmsEnergySpectrum,
-    _decode_energy_specification,
-)
-from stingray.varenergyspectrum import LagEnergySpectrum
 
-# from stingray.covariancespectrum import AveragedCovariancespectrum
+try:
+    from stingray.varenergyspectrum import VarEnergySpectrum as VES
+    from stingray.varenergyspectrum import (
+        LagSpectrum,
+        RmsSpectrum,
+        CovarianceSpectrum,
+        CountSpectrum,
+        _decode_energy_specification,
+    )
+except ImportError:
+    VES = object
+    warnings.warn("Please update stingray to the latest version.")
+
 
 from .base import hen_root, interpret_bintime
 from .io import load_events
 from .io import save_as_qdp
+
+
+def varenergy_to_astropy_table(spectrum):
+
+    start_energy = np.asarray(spectrum.energy_intervals)[:, 0]
+    stop_energy = np.asarray(spectrum.energy_intervals)[:, 1]
+    res = Table(
+        {
+            "start_energy": start_energy,
+            "stop_energy": stop_energy,
+            "spectrum": spectrum.spectrum,
+            "error": spectrum.spectrum_error,
+        }
+    )
+
+    for attr in [
+        "ref_band",
+        "energy_intervals",
+        "freq_interval",
+        "bin_time",
+        "use_pi",
+        "segment_size",
+        "norm",
+        "return_complex",
+        "norm",
+    ]:
+        if hasattr(spectrum, attr):
+            res.meta[attr] = getattr(spectrum, attr)
+
+    return res
+
+
+def varenergy_from_astropy_table(fname):
+    """
+
+    Examples
+    --------
+    >>> varen = VarEnergySpectrum()
+    >>> varen.spectrum = [3, 4]
+    >>> varen.energy_intervals = [[3, 5], [5, 7]]
+    >>> varen.spectrum_error = [0.3, 0.4]
+    >>> varen.ref_band = [0, 3]
+    >>> table = varenergy_to_astropy_table(varen)
+    >>> spec = varenergy_from_astropy_table(table)
+    >>> np.allclose(spec.spectrum, varen.spectrum)
+    True
+    >>> np.allclose(spec.spectrum_error, varen.spectrum_error)
+    True
+    >>> np.allclose(spec.energy_intervals, varen.energy_intervals)
+    True
+    >>> np.allclose(spec.ref_band, varen.ref_band)
+    True
+    >>> table.write("varenergyboubou.ecsv")
+    >>> spec_file = varenergy_from_astropy_table("varenergyboubou.ecsv")
+    >>> np.allclose(spec.spectrum, spec_file.spectrum)
+    True
+    >>> np.allclose(spec.spectrum_error, spec_file.spectrum_error)
+    True
+    """
+    if isinstance(fname, Table):
+        data = fname
+    else:
+        data = Table.read(fname)
+    varenergy = VarEnergySpectrum()
+
+    for attr in [
+        "ref_band",
+        "freq_interval",
+        "bin_time",
+        "use_pi",
+        "segment_size",
+        "norm",
+        "return_complex",
+        "norm",
+    ]:
+        if attr in data.meta:
+            setattr(varenergy, attr, data.meta[attr])
+
+    varenergy.energy_intervals = list(
+        zip(data["start_energy"], data["stop_energy"])
+    )
+    varenergy.spectrum = data["spectrum"]
+    varenergy.spectrum_error = data["error"]
+    return varenergy
+
+
+class VarEnergySpectrum(VES):
+    def __init__(self):
+
+        for attr in [
+            "ref_band",
+            "freq_interval",
+            "bin_time",
+            "use_pi",
+            "segment_size",
+            "norm",
+            "return_complex",
+        ]:
+            setattr(self, attr, None)
+
+        for attr in ["energy_intervals", "spectrum", "spectrum_error"]:
+            setattr(self, attr, None)
+
+    def _spectrum_function(self):  # pragma: no cover
+        pass
 
 
 def main(args=None):
@@ -86,6 +199,33 @@ def main(args=None):
         action="store_true",
         help="Calculate lag-energy",
     )
+    parser.add_argument(
+        "--count",
+        default=False,
+        action="store_true",
+        help="Calculate lag-energy",
+    )
+    parser.add_argument(
+        "--label",
+        default=None,
+        help="Additional label to be added to file names",
+    )
+    parser.add_argument(
+        "--norm",
+        default="abs",
+        help=(
+            "When relevant, the normalization of the spectrum. One of "
+            "['abs', 'frac', 'rms', 'leahy', 'none']"
+        ),
+    )
+    parser.add_argument(
+        "--format",
+        default="ecsv",
+        help=(
+            "Output format for the table. Can be ECSV, QDP, or any other "
+            "format accepted by astropy"
+        ),
+    )
 
     _add_default_args(parser, ["bintime", "loglevel", "debug"])
 
@@ -96,6 +236,9 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
+    label = ""
+    if args.label is not None:
+        label = "_" + args.label.lstrip("_")
     log.setLevel(args.loglevel)
     with log.log_to_file("HENvarenergy.log"):
         filelist = []
@@ -105,7 +248,6 @@ def main(args=None):
             int(args.energy_values[2]),
             args.energy_values[3],
         )
-
         from .io import sort_files
 
         if args.cross_instr:
@@ -124,86 +266,94 @@ def main(args=None):
             files2 = sorted_files[instrs[1]]
         else:
             files1 = args.files
-            files2 = args.files
+            files2 = [None] * len(args.files)
 
         for fnames in zip(files1, files2):
             fname = fnames[0]
             fname2 = fnames[1]
 
             events = load_events(fname)
-            events2 = load_events(fname2)
+            events2 = None
+            if fname2 is not None:
+                events2 = load_events(fname2)
             if not args.use_pi and (
-                events.energy is None or events2.energy is None
+                events.energy is None
+                or (events2 is not None and events2.energy is None)
             ):
                 raise ValueError(
                     "If --use-pi is not specified, event lists must "
                     "be calibrated! Please use HENcalibrate."
                 )
 
+            additional_output_args = {}
+            if args.format == "qdp":
+                additional_output_args["err_specs"] = {"serr": [3]}
+
             if args.rms:
-                rms = RmsEnergySpectrum(
+                rms = RmsSpectrum(
                     events,
-                    args.freq_interval,
-                    energy_spec,
+                    freq_interval=args.freq_interval,
+                    energy_spec=energy_spec,
                     segment_size=args.segment_size,
                     bin_time=args.bintime,
                     events2=events2,
                     use_pi=args.use_pi,
+                    norm=args.norm,
                 )
-                out1 = hen_root(fname) + "_rms" + ".qdp"
-                start_energy = np.asarray(rms.energy_intervals)[:, 0]
-                stop_energy = np.asarray(rms.energy_intervals)[:, 1]
-                save_as_qdp(
-                    [start_energy, stop_energy, rms.spectrum],
-                    [None, None, rms.spectrum_error],
-                    filename=out1,
+                outfile = hen_root(fname) + label + "_rms." + args.format
+                out_table = varenergy_to_astropy_table(rms)
+                out_table.write(
+                    outfile, overwrite=True, **additional_output_args
                 )
-                filelist.append(out1)
+                filelist.append(outfile)
 
             if args.lag:
-                lag = LagEnergySpectrum(
+                lag = LagSpectrum(
                     events,
-                    args.freq_interval,
-                    energy_spec,
-                    args.ref_band,
+                    freq_interval=args.freq_interval,
+                    energy_spec=energy_spec,
+                    ref_band=args.ref_band,
                     segment_size=args.segment_size,
                     bin_time=args.bintime,
                     events2=events2,
                     use_pi=args.use_pi,
                 )
-                start_energy = np.asarray(lag.energy_intervals)[:, 0]
-                stop_energy = np.asarray(lag.energy_intervals)[:, 1]
-                out2 = hen_root(fname) + "_lag" + ".qdp"
-                save_as_qdp(
-                    [start_energy, stop_energy, lag.spectrum],
-                    [None, None, lag.spectrum_error],
-                    filename=out2,
+                outfile = hen_root(fname) + label + "_lag." + args.format
+                out_table = varenergy_to_astropy_table(lag)
+                out_table.write(
+                    outfile, overwrite=True, **additional_output_args
                 )
-                filelist.append(out2)
+                filelist.append(outfile)
+
+            if args.count:
+                cts = CountSpectrum(
+                    events, energy_spec=energy_spec, use_pi=args.use_pi,
+                )
+                outfile = hen_root(fname) + label + "_count." + args.format
+                out_table = varenergy_to_astropy_table(cts)
+                out_table.write(
+                    outfile, overwrite=True, **additional_output_args
+                )
+                filelist.append(outfile)
 
             if args.covariance:
-                from stingray.covariancespectrum import (
-                    AveragedCovariancespectrum,
-                )
-
-                energies = _decode_energy_specification(energy_spec)
-                energies = list(zip(energies[:-1], energies[1:]))
-                cov = AveragedCovariancespectrum(
+                cov = CovarianceSpectrum(
                     events,
-                    dt=args.bintime,
-                    band_interest=energies,
-                    ref_band_interest=args.ref_band,
+                    freq_interval=args.freq_interval,
+                    energy_spec=energy_spec,
+                    ref_band=args.ref_band,
                     segment_size=args.segment_size,
+                    bin_time=args.bintime,
+                    events2=events2,
+                    use_pi=args.use_pi,
+                    norm=args.norm,
+                )
+                outfile = hen_root(fname) + label + "_cov." + args.format
+                out_table = varenergy_to_astropy_table(cov)
+                out_table.write(
+                    outfile, overwrite=True, **additional_output_args
                 )
 
-                start_energy = np.asarray(energies)[:, 0]
-                stop_energy = np.asarray(energies)[:, 1]
-                out2 = hen_root(fname) + "_cov" + ".qdp"
-                save_as_qdp(
-                    [start_energy, stop_energy, cov.covar],
-                    [None, None, cov.covar_error],
-                    filename=out2,
-                )
-                filelist.append(out2)
+                filelist.append(outfile)
 
     return filelist

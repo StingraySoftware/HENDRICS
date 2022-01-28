@@ -65,7 +65,11 @@ def test_distributed_pds():
     )
     if hasattr(stingray.AveragedPowerspectrum, "from_events"):
         single_periodogram = stingray.AveragedPowerspectrum(
-            events, segment_size=100, dt=0.1, norm="leahy", use_common_mean=False,
+            events,
+            segment_size=100,
+            dt=0.1,
+            norm="leahy",
+            use_common_mean=False,
         )
     else:
         single_periodogram = stingray.AveragedPowerspectrum(
@@ -87,12 +91,17 @@ def test_distributed_cpds():
     )
     if hasattr(stingray.AveragedCrossspectrum, "from_events"):
         single_periodogram = stingray.AveragedCrossspectrum(
-            events1, events2, segment_size=100, dt=0.1, norm="leahy",
-            use_common_mean=False
+            events1,
+            events2,
+            segment_size=100,
+            dt=0.1,
+            norm="leahy",
+            use_common_mean=False,
         )
     else:
         single_periodogram = stingray.AveragedCrossspectrum(
-            events1, events2, segment_size=100, dt=0.1, norm="leahy")
+            events1, events2, segment_size=100, dt=0.1, norm="leahy"
+        )
 
     pds_iterable = hen.fspec._provide_cross_periodograms(
         events1, events2, 100, 0.1, "leahy"
@@ -269,8 +278,8 @@ class TestFullRun(object):
             self.datadir, f"monol_testA_{out_labelA}" + HEN_FILE_EXTENSION
         )
         outB = os.path.join(
-                self.datadir, f"monol_testB_{out_labelB}" + HEN_FILE_EXTENSION
-            )
+            self.datadir, f"monol_testB_{out_labelB}" + HEN_FILE_EXTENSION
+        )
         assert os.path.exists(outA)
         assert os.path.exists(outB)
 
