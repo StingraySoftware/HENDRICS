@@ -129,7 +129,7 @@ class VarEnergySpectrum(VES):
         for attr in ["energy_intervals", "spectrum", "spectrum_error"]:
             setattr(self, attr, None)
 
-    def _spectrum_function(self): #pragma: no cover
+    def _spectrum_function(self):  # pragma: no cover
         pass
 
 
@@ -277,7 +277,8 @@ def main(args=None):
             if fname2 is not None:
                 events2 = load_events(fname2)
             if not args.use_pi and (
-                events.energy is None or (events2 is not None and events2.energy is None)
+                events.energy is None
+                or (events2 is not None and events2.energy is None)
             ):
                 raise ValueError(
                     "If --use-pi is not specified, event lists must "

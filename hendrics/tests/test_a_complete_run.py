@@ -40,8 +40,9 @@ from hendrics import (
 
 try:
     import h5py
+
     HAS_H5PY = True
-except:
+except ImportError:
     HAS_H5PY = False
 
 try:
@@ -199,7 +200,7 @@ class TestFullRun(object):
                     "--format",
                     format,
                     "--label",
-                    "nice"
+                    "nice",
                 ]
             )
             out = hen.base.hen_root(fname) + f"_nice_{kind}" + f".{format}"
