@@ -39,6 +39,12 @@ from hendrics import (
 )
 
 try:
+    import h5py
+    HAS_H5PY = True
+except:
+    HAS_H5PY = False
+
+try:
     FileNotFoundError
 except NameError:
     FileNotFoundError = IOError
@@ -166,10 +172,13 @@ class TestFullRun(object):
             ftype, _ = hen.io.get_file_type(fname)
             assert ftype == realtype, "File types do not match"
 
-    @pytest.mark.parametrize("format", ["qdp", "ecsv", "hdf5"])
+    @pytest.mark.parametrize("format", ["qdp", "ecsv", "csv", "hdf5"])
     @pytest.mark.parametrize("kind", ["rms", "cov", "count", "lag"])
     def test_save_varen(self, kind, format):
         fname = self.ev_fileAcal
+        if not HAS_H5PY and format == "hdf5":
+            return
+
         try:
             hen.varenergy.main(
                 [
