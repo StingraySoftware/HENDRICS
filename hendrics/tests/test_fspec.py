@@ -25,7 +25,7 @@ from hendrics import (
     varenergy,
 )
 
-from hendrics.base import touch
+from hendrics.base import touch, HENDRICS_STAR_VALUE
 from hendrics.fspec import calc_cpds, calc_pds
 
 try:
@@ -136,102 +136,79 @@ class TestFullRun(object):
         cls.ev_fileB = os.path.join(
             cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
         )
-        cls.ev_fileAcal = os.path.join(
-            cls.datadir,
-            "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
-        )
-        cls.ev_fileBcal = os.path.join(
-            cls.datadir,
-            "monol_testB_nustar_fpmb_ev_calib" + HEN_FILE_EXTENSION,
-        )
+
         cls.par = _dummy_par("bubububu.par")
         command = "{0} {1}".format(
             os.path.join(cls.datadir, "monol_testA.evt"),
             os.path.join(cls.datadir, "monol_testB.evt"),
         )
         hen.read_events.main(command.split())
-        command = "{} {} -r {}".format(
-            os.path.join(
-                cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-            ),
-            os.path.join(
-                cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-            ),
-            os.path.join(cls.datadir, "test.rmf"),
-        )
-        hen.calibrate.main(command.split())
-        cls.lcA = os.path.join(
-            os.path.join(
-                cls.datadir, "monol_testA_nustar_fpma_lc" + HEN_FILE_EXTENSION
-            )
-        )
-        cls.lcB = os.path.join(
-            os.path.join(
-                cls.datadir, "monol_testB_nustar_fpmb_lc" + HEN_FILE_EXTENSION
-            )
-        )
-        cls.lcAfilt = os.path.join(
-            os.path.join(
-                cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-            )
-        )
-        cls.lcBfilt = os.path.join(
-            os.path.join(
-                cls.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION
-            )
-        )
-        command = (
-            "{} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " "-o {}"
-        ).format(cls.ev_fileAcal, cls.lcAfilt)
-        hen.lcurve.main(command.split())
-        command = (
-            "{} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " "-o {}"
-        ).format(cls.ev_fileBcal, cls.lcBfilt)
-        hen.lcurve.main(command.split())
-        command = ("{} --nproc 2 -b 0.5 " "-o {}").format(
-            cls.ev_fileAcal, cls.lcA
+
+        command = "{0} {1}  --safe-interval 100 300  --nproc 2 -b 0.5".format(
+            cls.ev_fileA, cls.ev_fileB
         )
         hen.lcurve.main(command.split())
-        command = ("{}  --nproc 2 -b 0.5 " "-o {}").format(
-            cls.ev_fileBcal, cls.lcB
-        )
-        hen.lcurve.main(command.split())
+        cls.lcA = cls.ev_fileA.replace("_ev", "_lc")
+        cls.lcB = cls.ev_fileB.replace("_ev", "_lc")
 
         cls.pdsA = os.path.join(
-            cls.datadir, "monol_testA_E3-50_pds" + HEN_FILE_EXTENSION
+            cls.datadir,
+            "monol_testA_nustar_fpma_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
         cls.pdsB = os.path.join(
-            cls.datadir, "monol_testB_E3-50_pds" + HEN_FILE_EXTENSION
+            cls.datadir,
+            "monol_testB_nustar_fpmb_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
         cls.cpds = os.path.join(
-            cls.datadir, "monol_test_E3-50_cpds" + HEN_FILE_EXTENSION
+            cls.datadir,
+            "monol_test_nustar_fpm_3-50keV_cpds" + HEN_FILE_EXTENSION,
         )
 
-        command = "{} {} -f 128 -k PDS --save-all --norm leahy".format(
-            cls.lcAfilt, cls.lcBfilt
+        command = "{} {} -f 128 -k PDS --save-all --norm leahy --emin 3 --emax 50".format(
+            cls.ev_fileA, cls.ev_fileB
         )
         hen.fspec.main(command.split())
 
-        command = "{} {} -f 128 -k CPDS --save-all --norm leahy".format(
-            cls.lcAfilt, cls.lcBfilt
+        command = "{} {} -f 128 -k CPDS --save-all --norm leahy --emin 3 --emax 50".format(
+            cls.ev_fileA, cls.ev_fileB
         )
         hen.fspec.main(command.split())
+
         assert os.path.exists(cls.cpds)
         assert os.path.exists(cls.pdsA)
         assert os.path.exists(cls.pdsB)
 
-    def test_pds_leahy_dtbig(self):
+    def test_pds_leahy_emax_only(self):
         """Test PDS production."""
-        lc = self.lcAfilt
-        hen.io.main([lc])
-        command = "{0} -f 128 -k PDS --save-all --norm leahy -b {1}".format(
-            lc, 1
+        evdata = self.ev_fileA
+
+        command = "{0} -f 128 -k PDS --save-all --norm leahy -b {1} --emax 50".format(
+            evdata, 1
         )
         hen.fspec.main(command.split())
 
         assert os.path.exists(
             os.path.join(
-                self.datadir, "monol_testA_E3-50_pds" + HEN_FILE_EXTENSION
+                self.datadir,
+                f"monol_testA_nustar_fpma_{HENDRICS_STAR_VALUE}-50keV_pds"
+                + HEN_FILE_EXTENSION,
+            )
+        )
+
+    def test_pds_leahy_emin_only(self):
+        """Test PDS production."""
+        evdata = self.ev_fileA
+
+        command = "{0} -f 128 -k PDS --save-all --norm leahy -b {1} --emin 3".format(
+            evdata, 1
+        )
+        hen.fspec.main(command.split())
+
+        assert os.path.exists(
+            os.path.join(
+                self.datadir,
+                f"monol_testA_nustar_fpma_3-{HENDRICS_STAR_VALUE}keV_pds"
+                + HEN_FILE_EXTENSION,
             )
         )
 
@@ -257,28 +234,26 @@ class TestFullRun(object):
     def test_pds(self, data_kind):
         """Test PDS production."""
         if data_kind == "events":
-            labelA = "nustar_fpma_ev"
-            labelB = "nustar_fpmb_ev"
+            label = "_ev"
         else:
-            labelA = labelB = "E3-50_lc"
+            label = "_lc"
+
         command = (
             "{0} {1} -f 128 --save-all --save-dyn -k PDS "
             "--norm frac".format(
-                os.path.join(self.datadir, f"monol_testA_{labelA}")
+                os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
                 + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, f"monol_testB_{labelB}")
+                os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
                 + HEN_FILE_EXTENSION,
             )
         )
         hen.fspec.main(command.split())
 
-        out_labelA = labelA.replace("_ev", "_pds").replace("_lc", "_pds")
-        out_labelB = labelB.replace("_ev", "_pds").replace("_lc", "_pds")
         outA = os.path.join(
-            self.datadir, f"monol_testA_{out_labelA}" + HEN_FILE_EXTENSION
+            self.datadir, f"monol_testA_nustar_fpma_pds" + HEN_FILE_EXTENSION
         )
         outB = os.path.join(
-            self.datadir, f"monol_testB_{out_labelB}" + HEN_FILE_EXTENSION
+            self.datadir, f"monol_testB_nustar_fpmb_pds" + HEN_FILE_EXTENSION
         )
         assert os.path.exists(outA)
         assert os.path.exists(outB)
@@ -288,6 +263,8 @@ class TestFullRun(object):
         for pds in [new_pdsA, new_pdsB]:
             assert hasattr(pds, "cs_all")
             assert len(pds.cs_all) == pds.m
+        shutil.rmtree(outA.replace(HEN_FILE_EXTENSION, ""))
+        shutil.rmtree(outB.replace(HEN_FILE_EXTENSION, ""))
 
     @pytest.mark.parametrize("kind", ["PDS", "CPDS"])
     def test_pds_events_big(self, kind):
@@ -312,10 +289,8 @@ class TestFullRun(object):
         command = (
             "{0} {1} -f 128 --save-dyn -k CPDS,lag --save-all --ignore-instr"
             " -o {2} --debug".format(
-                os.path.join(self.datadir, "monol_testA_E3-50_lc")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, "monol_testB_E3-50_lc")
-                + HEN_FILE_EXTENSION,
+                self.lcA,
+                self.lcB,
                 os.path.join(self.datadir, "ignore_instr")
                 + HEN_FILE_EXTENSION,
             )
@@ -328,11 +303,9 @@ class TestFullRun(object):
         command = (
             "{0} {1} -f 128 --save-dyn -k CPDS --save-all "
             "--norm rms -o {2}".format(
-                os.path.join(self.datadir, "monol_testA_E3-50_lc")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, "monol_testB_E3-50_lc")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, "monol_test_E3-50"),
+                self.lcA,
+                self.lcB,
+                os.path.join(self.datadir, "monol_test_3-50keV"),
             )
         )
 
@@ -341,11 +314,9 @@ class TestFullRun(object):
     def test_cpds_wrong_norm(self):
         """Test CPDS production."""
         command = "{0} {1} -f 128 --save-dyn -k CPDS --norm blablabla -o {2}".format(
-            os.path.join(self.datadir, "monol_testA_E3-50_lc")
-            + HEN_FILE_EXTENSION,
-            os.path.join(self.datadir, "monol_testB_E3-50_lc")
-            + HEN_FILE_EXTENSION,
-            os.path.join(self.datadir, "monol_test_E3-50"),
+            self.lcA,
+            self.lcB,
+            os.path.join(self.datadir, "monol_test_3-50keV"),
         )
         with pytest.warns(UserWarning) as record:
             hen.fspec.main(command.split())
@@ -362,11 +333,9 @@ class TestFullRun(object):
         command = (
             "{0} {1} -f 128 --save-dyn -k CPDS --save-all --norm "
             "frac -o {2}".format(
-                os.path.join(self.datadir, "monol_testA_E3-50_lc")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, "monol_testB_E3-50_lc")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, "monol_test_E3-50"),
+                self.lcA,
+                self.lcB,
+                os.path.join(self.datadir, "monol_test_3-50keV"),
             )
         )
         command += " -b 1"
@@ -376,7 +345,7 @@ class TestFullRun(object):
         """Test dump dynamical PDSs."""
         command = (
             "--noplot "
-            + os.path.join(self.datadir, "monol_testA_E3-50_pds")
+            + os.path.join(self.datadir, "monol_testA_3-50keV_pds")
             + HEN_FILE_EXTENSION
         )
         with pytest.raises(NotImplementedError):
@@ -386,9 +355,13 @@ class TestFullRun(object):
         """Test the sum of pdss."""
         hen.sum_fspec.main(
             [
-                os.path.join(self.datadir, "monol_testA_E3-50_pds")
+                os.path.join(
+                    self.datadir, "monol_testA_nustar_fpma_3-50keV_pds"
+                )
                 + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, "monol_testB_E3-50_pds")
+                os.path.join(
+                    self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds"
+                )
                 + HEN_FILE_EXTENSION,
                 "-o",
                 os.path.join(
@@ -401,7 +374,7 @@ class TestFullRun(object):
         """Test dump dynamical PDSs."""
         command = (
             "--noplot "
-            + os.path.join(self.datadir, "monol_test_E3-50_cpds")
+            + os.path.join(self.datadir, "monol_test_3-50keV_cpds")
             + HEN_FILE_EXTENSION
         )
         with pytest.raises(NotImplementedError):
@@ -410,70 +383,76 @@ class TestFullRun(object):
     def test_rebinpds(self):
         """Test PDS rebinning 1."""
         command = "{0} -r 2".format(
-            os.path.join(self.datadir, "monol_testA_E3-50_pds")
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds")
             + HEN_FILE_EXTENSION
         )
         hen.rebin.main(command.split())
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testA_E3-50_pds_rebin2" + HEN_FILE_EXTENSION,
+                "monol_testA_nustar_fpma_3-50keV_pds_rebin2"
+                + HEN_FILE_EXTENSION,
             )
         )
 
     def test_rebinpds_geom(self):
         """Test geometrical PDS rebinning."""
         command = "{0} {1} -r 1.03".format(
-            os.path.join(self.datadir, "monol_testA_E3-50_pds")
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds")
             + HEN_FILE_EXTENSION,
-            os.path.join(self.datadir, "monol_testB_E3-50_pds")
+            os.path.join(self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds")
             + HEN_FILE_EXTENSION,
         )
         hen.rebin.main(command.split())
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testA_E3-50_pds_rebin1.03" + HEN_FILE_EXTENSION,
+                "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03"
+                + HEN_FILE_EXTENSION,
             )
         )
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testB_E3-50_pds_rebin1.03" + HEN_FILE_EXTENSION,
+                "monol_testB_nustar_fpmb_3-50keV_pds_rebin1.03"
+                + HEN_FILE_EXTENSION,
             )
         )
 
     def test_rebincpds(self):
         """Test CPDS rebinning."""
         command = "{0} -r 2".format(
-            os.path.join(self.datadir, "monol_test_E3-50_cpds")
+            os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds")
             + HEN_FILE_EXTENSION
         )
         hen.rebin.main(command.split())
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_test_E3-50_cpds_rebin2" + HEN_FILE_EXTENSION,
+                "monol_test_nustar_fpm_3-50keV_cpds_rebin2"
+                + HEN_FILE_EXTENSION,
             )
         )
 
     def test_rebincpds_geom(self):
         """Test CPDS geometrical rebinning."""
         command = "{0} -r 1.03".format(
-            os.path.join(self.datadir, "monol_test_E3-50_cpds")
+            os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds")
             + HEN_FILE_EXTENSION
         )
         hen.rebin.main(command.split())
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_test_E3-50_cpds_rebin1.03" + HEN_FILE_EXTENSION,
+                "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03"
+                + HEN_FILE_EXTENSION,
             )
         )
 
     def test_save_lags(self):
         fname = os.path.join(
-            self.datadir, "monol_test_E3-50_cpds_rebin2" + HEN_FILE_EXTENSION
+            self.datadir,
+            "monol_test_nustar_fpm_3-50keV_cpds_rebin2" + HEN_FILE_EXTENSION,
         )
         hen.timelags.main([fname])
         out = hen.base.hen_root(fname) + "_lags.qdp"
@@ -488,10 +467,12 @@ model = models.Const1D()
         with open(modelfile, "w") as fobj:
             print(modelstring, file=fobj)
         pdsfile1 = os.path.join(
-            self.datadir, "monol_testA_E3-50_pds" + HEN_FILE_EXTENSION
+            self.datadir,
+            "monol_testA_nustar_fpma_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
         pdsfile2 = os.path.join(
-            self.datadir, "monol_testB_E3-50_pds" + HEN_FILE_EXTENSION
+            self.datadir,
+            "monol_testB_nustar_fpmb_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
 
         command = "{0} {1} -m {2} --frequency-interval 0 10".format(
@@ -499,22 +480,30 @@ model = models.Const1D()
         )
         hen.modeling.main_model(command.split())
 
-        out0 = os.path.join(self.datadir, "monol_testA_E3-50_pds_bestfit.p")
-        out1 = os.path.join(self.datadir, "monol_testB_E3-50_pds_bestfit.p")
+        out0 = os.path.join(
+            self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_bestfit.p"
+        )
+        out1 = os.path.join(
+            self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds_bestfit.p"
+        )
         assert os.path.exists(out0)
         assert os.path.exists(out1)
         m, k, c = hen.io.load_model(
-            os.path.join(self.datadir, "monol_testB_E3-50_pds_bestfit.p")
+            os.path.join(
+                self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds_bestfit.p"
+            )
         )
         assert hasattr(m, "amplitude")
         os.unlink(out0)
         os.unlink(out1)
 
         out0 = os.path.join(
-            self.datadir, "monol_testA_E3-50_pds_fit" + HEN_FILE_EXTENSION
+            self.datadir,
+            "monol_testA_nustar_fpma_3-50keV_pds_fit" + HEN_FILE_EXTENSION,
         )
         out1 = os.path.join(
-            self.datadir, "monol_testB_E3-50_pds_fit" + HEN_FILE_EXTENSION
+            self.datadir,
+            "monol_testB_nustar_fpmb_3-50keV_pds_fit" + HEN_FILE_EXTENSION,
         )
         assert os.path.exists(out0)
         assert os.path.exists(out1)
@@ -530,7 +519,8 @@ model = models.Const1D()
         with open(modelfile, "w") as fobj:
             print(modelstring, file=fobj)
         pdsfile1 = os.path.join(
-            self.datadir, "monol_test_E3-50_cpds" + HEN_FILE_EXTENSION
+            self.datadir,
+            "monol_test_nustar_fpm_3-50keV_cpds" + HEN_FILE_EXTENSION,
         )
 
         command = "{0} -m {1} --frequency-interval 0 10".format(
@@ -538,14 +528,17 @@ model = models.Const1D()
         )
         hen.modeling.main_model(command.split())
 
-        out0 = os.path.join(self.datadir, "monol_test_E3-50_cpds_bestfit.p")
+        out0 = os.path.join(
+            self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_bestfit.p"
+        )
         assert os.path.exists(out0)
         m, k, c = hen.io.load_model(out0)
         assert hasattr(m, "amplitude")
         os.unlink(out0)
 
         out0 = os.path.join(
-            self.datadir, "monol_test_E3-50_cpds_fit" + HEN_FILE_EXTENSION
+            self.datadir,
+            "monol_test_nustar_fpm_3-50keV_cpds_fit" + HEN_FILE_EXTENSION,
         )
         assert os.path.exists(out0)
         spec = hen.io.load_pds(out0)
@@ -560,10 +553,12 @@ model = models.Const1D()
         with open(modelfile, "w") as fobj:
             print(modelstring, file=fobj)
         pdsfile1 = os.path.join(
-            self.datadir, "monol_testA_E3-50_pds" + HEN_FILE_EXTENSION
+            self.datadir,
+            "monol_testA_nustar_fpma_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
         pdsfile2 = os.path.join(
-            self.datadir, "monol_testB_E3-50_pds" + HEN_FILE_EXTENSION
+            self.datadir,
+            "monol_testB_nustar_fpmb_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
 
         command = "{0} {1} -m {2} --frequency-interval 0 1 9".format(
@@ -577,43 +572,57 @@ model = models.Const1D()
     def test_savexspec(self):
         """Test save as Xspec 1."""
         command = "{0}".format(
-            os.path.join(self.datadir, "monol_testA_E3-50_pds_rebin2")
+            os.path.join(
+                self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_rebin2"
+            )
             + HEN_FILE_EXTENSION
         )
         hen.save_as_xspec.main(command.split())
         os.path.exists(
-            os.path.join(self.datadir, "monol_testA_E3-50_pds_rebin2.pha")
+            os.path.join(
+                self.datadir, "monol_testA_nustar_fpmb_3-50keV_pds_rebin2.pha"
+            )
         )
 
     def test_savexspec_geom(self):
         """Test save as Xspec 2."""
         command = "{0}".format(
-            os.path.join(self.datadir, "monol_test_E3-50_cpds_rebin1.03")
+            os.path.join(
+                self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03"
+            )
             + HEN_FILE_EXTENSION
         )
         hen.save_as_xspec.main(command.split())
 
         os.path.exists(
-            os.path.join(self.datadir, "monol_test_E3-50_cpds_rebin1.03.pha")
+            os.path.join(
+                self.datadir,
+                "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03.pha",
+            )
         )
         os.path.exists(
             os.path.join(
-                self.datadir, "monol_test_E3-50_cpds_rebin1.03_lags.pha"
+                self.datadir,
+                "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03_lags.pha",
             )
         )
 
     def test_plot_lin(self):
         """Test plotting with linear axes."""
         pname = (
-            os.path.join(self.datadir, "monol_testA_E3-50_pds_fit")
+            os.path.join(
+                self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_fit"
+            )
             + HEN_FILE_EXTENSION
         )
         cname = (
-            os.path.join(self.datadir, "monol_test_E3-50_cpds_fit")
+            os.path.join(
+                self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_fit"
+            )
             + HEN_FILE_EXTENSION
         )
         lname = (
-            os.path.join(self.datadir, "monol_testA_E3-50_lc")
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_lc")
             + HEN_FILE_EXTENSION
         )
         hen.plot.main(
@@ -646,11 +655,13 @@ model = models.Const1D()
         """Test plotting with log axes."""
         pname = os.path.join(
             self.datadir,
-            "monol_testA_E3-50_pds_rebin1.03" + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03"
+            + HEN_FILE_EXTENSION,
         )
         cname = os.path.join(
             self.datadir,
-            "monol_test_E3-50_cpds_rebin1.03" + HEN_FILE_EXTENSION,
+            "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03"
+            + HEN_FILE_EXTENSION,
         )
         hen.plot.main(
             [pname, cname, "--noplot", "--xlog", "--ylog", "-o", "dummy.qdp"]
@@ -673,7 +684,8 @@ model = models.Const1D()
         """Test plotting and saving figure."""
         pname = os.path.join(
             self.datadir,
-            "monol_testA_E3-50_pds_rebin1.03" + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03"
+            + HEN_FILE_EXTENSION,
         )
         hen.plot.main(
             [
@@ -681,7 +693,8 @@ model = models.Const1D()
                 "--noplot",
                 "--figname",
                 os.path.join(
-                    self.datadir, "monol_testA_E3-50_pds_rebin1.03.png"
+                    self.datadir,
+                    "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03.png",
                 ),
                 "-o",
                 "dummy.qdp",

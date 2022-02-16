@@ -105,6 +105,8 @@ __all__ = [
 ]
 
 
+HENDRICS_STAR_VALUE = "**" if os.name != "nt" else "XX"
+
 DEFAULT_PARSER_ARGS = {}
 DEFAULT_PARSER_ARGS["loglevel"] = dict(
     args=["--loglevel"],
