@@ -21,7 +21,12 @@ from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
 from stingray.stats import pf_upper_limit
 from .io import load_events, EFPeriodogram, save_folding, HEN_FILE_EXTENSION
-from .base import hen_root, show_progress, adjust_dt_for_power_of_two
+from .base import (
+    hen_root,
+    show_progress,
+    adjust_dt_for_power_of_two,
+    HENDRICS_STAR_VALUE,
+)
 from .base import deorbit_events, njit, prange, vectorize, float64
 from .base import histogram2d, histogram, memmapped_arange
 from .base import z2_n_detection_level, fold_detection_level
@@ -1292,12 +1297,12 @@ def _common_main(args, func):
 
         out_fname = hen_root(fname) + "_{}".format(kind_label)
         if args.emin is not None or args.emax is not None:
-            emin = assign_value_if_none(args.emin, "**")
-            emax = assign_value_if_none(args.emax, "**")
+            emin = assign_value_if_none(args.emin, HENDRICS_STAR_VALUE)
+            emax = assign_value_if_none(args.emax, HENDRICS_STAR_VALUE)
             out_fname += f"_{emin:g}-{emax:g}keV"
         if args.fmin is not None or args.fmax is not None:
-            fmin = assign_value_if_none(args.fmin, "**")
-            fmax = assign_value_if_none(args.fmax, "**")
+            fmin = assign_value_if_none(args.fmin, HENDRICS_STAR_VALUE)
+            fmax = assign_value_if_none(args.fmax, HENDRICS_STAR_VALUE)
             out_fname += f"_{fmin:g}-{fmax:g}Hz"
         if args.fast:
             out_fname += "_fast"
@@ -1687,8 +1692,8 @@ def main_accelsearch(args=None):
     if outfile is None:
         label = "_accelsearch"
         if args.emin is not None or args.emax is not None:
-            emin = assign_value_if_none(args.emin, "**")
-            emax = assign_value_if_none(args.emax, "**")
+            emin = assign_value_if_none(args.emin, HENDRICS_STAR_VALUE)
+            emax = assign_value_if_none(args.emax, HENDRICS_STAR_VALUE)
             label += f"_{emin:g}-{emax:g}keV"
         if args.interbin:
             label += "_interbin"

@@ -25,7 +25,7 @@ from hendrics import (
     varenergy,
 )
 
-from hendrics.base import touch
+from hendrics.base import touch, HENDRICS_STAR_VALUE
 from hendrics.fspec import calc_cpds, calc_pds
 
 try:
@@ -190,7 +190,8 @@ class TestFullRun(object):
         assert os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testA_nustar_fpma_**-50keV_pds" + HEN_FILE_EXTENSION,
+                f"monol_testA_nustar_fpma_{HENDRICS_STAR_VALUE}-50keV_pds"
+                + HEN_FILE_EXTENSION,
             )
         )
 
@@ -206,7 +207,8 @@ class TestFullRun(object):
         assert os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testA_nustar_fpma_3-**keV_pds" + HEN_FILE_EXTENSION,
+                f"monol_testA_nustar_fpma_3-{HENDRICS_STAR_VALUE}keV_pds"
+                + HEN_FILE_EXTENSION,
             )
         )
 

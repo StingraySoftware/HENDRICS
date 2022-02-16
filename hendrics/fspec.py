@@ -21,6 +21,7 @@ from .base import (
     common_name,
     _assign_value_if_none,
     interpret_bintime,
+    HENDRICS_STAR_VALUE,
 )
 from .io import sort_files, save_pds, load_data
 from .io import HEN_FILE_EXTENSION, get_file_type
@@ -297,8 +298,8 @@ def calc_pds(
     root = hen_root(lcfile)
     label = ""
     if emin is not None or emax is not None:
-        emin_label = f"{emin:g}" if emin is not None else "**"
-        emax_label = f"{emax:g}" if emax is not None else "**"
+        emin_label = f"{emin:g}" if emin is not None else HENDRICS_STAR_VALUE
+        emax_label = f"{emax:g}" if emax is not None else HENDRICS_STAR_VALUE
         label += f"_{emin_label}-{emax_label}keV"
 
     if outname is None:
@@ -429,8 +430,8 @@ def calc_cpds(
     """
     label = ""
     if emin is not None or emax is not None:
-        emin_label = f"{emin:g}" if emin is not None else "**"
-        emax_label = f"{emax:g}" if emax is not None else "**"
+        emin_label = f"{emin:g}" if emin is not None else HENDRICS_STAR_VALUE
+        emax_label = f"{emax:g}" if emax is not None else HENDRICS_STAR_VALUE
         label += f"_{emin_label}-{emax_label}keV"
 
     if outname is None:
