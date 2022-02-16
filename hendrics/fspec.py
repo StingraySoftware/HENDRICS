@@ -297,9 +297,9 @@ def calc_pds(
     root = hen_root(lcfile)
     label = ""
     if emin is not None or emax is not None:
-        emin_label = assign_value_if_none(emin, "**")
-        emax_label = assign_value_if_none(emax, "**")
-        label += f"_{emin_label:g}-{emax_label:g}keV"
+        emin_label = f"{emin:g}" if emin is not None else "**"
+        emax_label = f"{emax:g}" if emax is not None else "**"
+        label += f"_{emin_label}-{emax_label}keV"
 
     if outname is None:
         outname = root + label + "_pds" + HEN_FILE_EXTENSION
@@ -429,12 +429,14 @@ def calc_cpds(
     """
     label = ""
     if emin is not None or emax is not None:
-        emin_label = assign_value_if_none(emin, "**")
-        emax_label = assign_value_if_none(emax, "**")
-        label += f"_{emin_label:g}-{emax_label:g}keV"
+        emin_label = f"{emin:g}" if emin is not None else "**"
+        emax_label = f"{emax:g}" if emax is not None else "**"
+        label += f"_{emin_label}-{emax_label}keV"
 
     if outname is None:
+        root = cn if (cn := common_name(lcfile1, lcfile2)) != "" else "cpds"
         outname = root + label + "_cpds" + HEN_FILE_EXTENSION
+
     if noclobber and os.path.exists(outname):
         warnings.warn("File exists, and noclobber option used. Skipping")
         return
@@ -668,16 +670,19 @@ def calc_fspec(
         if outdir == "":
             outdir = os.getcwd()
 
-        outr = _assign_value_if_none(
-            outroot, common_name(f1, f2, default="%d" % i_f)
-        )
+        outname = None
+        outr = outroot
 
-        outname = os.path.join(
-            outdir,
-            outr.replace(HEN_FILE_EXTENSION, "")
-            + "_cpds"
-            + HEN_FILE_EXTENSION,
-        )
+        if len(files1) > 1 and outroot is None:
+            outr = common_name(f1, f2, default="%d" % i_f)
+
+        if outr is not None:
+            outname = os.path.join(
+                outdir,
+                outr.replace(HEN_FILE_EXTENSION, "")
+                + "_cpds"
+                + HEN_FILE_EXTENSION,
+            )
 
         funcargs.append([f1, f2, outname, argdict])
 

@@ -54,7 +54,7 @@ def treat_event_file(
 
     events = EventList.read(
         filename,
-        format_="hea",
+        fmt="hea",
         gtistring=gtistring,
         additional_columns=additional_columns,
     )
