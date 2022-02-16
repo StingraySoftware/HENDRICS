@@ -52,12 +52,20 @@ def treat_event_file(
     # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
 
-    events = EventList.read(
-        filename,
-        fmt="hea",
-        gtistring=gtistring,
-        additional_columns=additional_columns,
-    )
+    try:
+        events = EventList.read(
+            filename,
+            fmt="hea",
+            gtistring=gtistring,
+            additional_columns=additional_columns,
+        )
+    except Exception:  # pragma: no cover
+        events = EventList.read(
+            filename,
+            format_="hea",
+            gtistring=gtistring,
+            additional_columns=additional_columns,
+        )
 
     if discard_calibration:
         events.energy = None
