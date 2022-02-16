@@ -9,6 +9,8 @@ from stingray.gti import cross_gtis
 from stingray.crossspectrum import AveragedCrossspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
 from stingray.utils import show_progress
+from stingray.utils import assign_value_if_none
+
 from stingray.gti import time_intervals_from_gtis
 from stingray.events import EventList
 import numpy as np
@@ -22,6 +24,7 @@ from .base import (
 )
 from .io import sort_files, save_pds, load_data
 from .io import HEN_FILE_EXTENSION, get_file_type
+from .io import filter_energy
 
 
 def average_periodograms(fspec_iterable, total=None):
@@ -254,6 +257,8 @@ def calc_pds(
     outname=None,
     save_all=False,
     test=False,
+    emin=None,
+    emax=None
 ):
     """Calculate the PDS from an input light curve file.
 
@@ -283,15 +288,32 @@ def calc_pds(
     outname : str
         If speficied, output file name. If not specified or None, the new file
         will have the same root as the input light curve and the '_pds' suffix
+    emin : float, default None
+        Minimum energy of the photons
+    emax : float, default None
+        Maximum energy of the photons
+
     """
     root = hen_root(lcfile)
+    label = ""
+    if emin is not None or emax is not None:
+        emin_label = assign_value_if_none(emin, "**")
+        emax_label = assign_value_if_none(emax, "**")
+        label += f"_{emin_label:g}-{emax_label:g}keV"
+
     if outname is None:
-        outname = root + "_pds" + HEN_FILE_EXTENSION
+        outname = root + label + "_pds" + HEN_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
         warnings.warn("File exists, and noclobber option used. Skipping")
         return
 
     ftype, data = get_file_type(lcfile)
+
+    if (emin is not None or emax is not None) and ftype != "events":
+        warnings.warn("Energy selection only makes sense for event lists")
+    elif ftype == "events":
+        data, _ = filter_energy(data, emin, emax)
+
     mjdref = data.mjdref
     instr = data.instr
 
@@ -361,12 +383,14 @@ def calc_cpds(
     save_dyn=False,
     bintime=1,
     pdsrebin=1,
-    outname="cpds" + HEN_FILE_EXTENSION,
+    outname=None,
     normalization="leahy",
     back_ctrate=0.0,
     noclobber=False,
     save_all=False,
     test=False,
+    emin=None,
+    emax=None
 ):
     """Calculate the CPDS from a pair of input light curve files.
 
@@ -397,7 +421,20 @@ def calc_cpds(
         If True, do not overwrite existing files
     outname : str
         Output file name for the cpds. Default: cpds.[nc|p]
+    emin : float, default None
+        Minimum energy of the photons
+    emax : float, default None
+        Maximum energy of the photons
+
     """
+    label = ""
+    if emin is not None or emax is not None:
+        emin_label = assign_value_if_none(emin, "**")
+        emax_label = assign_value_if_none(emax, "**")
+        label += f"_{emin_label:g}-{emax_label:g}keV"
+
+    if outname is None:
+        outname = root + label + "_cpds" + HEN_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
         warnings.warn("File exists, and noclobber option used. Skipping")
         return
@@ -414,6 +451,14 @@ def calc_cpds(
             "Please use similar data files for the two time "
             "series (e.g. both events or both light curves)"
         )
+
+    if (emin is not None or emax is not None) and (ftype1 != "events" or ftype2 != "events"):
+        warnings.warn("Energy selection only makes sense for event lists")
+    if ftype1 == "events":
+        lc1, _ = filter_energy(lc1, emin, emax)
+    if ftype2 == "events":
+        lc2, _ = filter_energy(lc2, emin, emax)
+
     if hasattr(lc1, "dt"):
         assert lc1.dt == lc2.dt, "Light curves are sampled differently"
 
@@ -504,6 +549,8 @@ def calc_fspec(
     ignore_instr=False,
     save_all=False,
     test=False,
+    emin=None,
+    emax=None
 ):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
@@ -536,6 +583,10 @@ def calc_fspec(
         files
     ignore_instr : bool
         Ignore instruments; files are alternated in the two channels
+    emin : float, default None
+        Minimum energy of the photons
+    emax : float, default None
+        Maximum energy of the photons
 
     References
     ----------
@@ -563,6 +614,8 @@ def calc_fspec(
                 noclobber=noclobber,
                 save_all=save_all,
                 test=test,
+                emin=emin,
+                emax=emax
             )
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
@@ -602,6 +655,8 @@ def calc_fspec(
         noclobber=noclobber,
         save_all=save_all,
         test=test,
+        emin=emin,
+        emax=emax
     )
 
     funcargs = []
@@ -785,6 +840,18 @@ def main(args=None):
         default=False,
         action="store_true",
     )
+    parser.add_argument(
+        "--emin",
+        default=None,
+        type=float,
+        help="Minimum energy (or PI if uncalibrated) to plot",
+    )
+    parser.add_argument(
+        "--emax",
+        default=None,
+        type=float,
+        help="Maximum energy (or PI if uncalibrated) to plot",
+    )
     _add_default_args(parser, ["loglevel", "debug"])
 
     args = check_negative_numbers_in_args(args)
@@ -845,4 +912,6 @@ def main(args=None):
             ignore_instr=args.ignore_instr,
             save_all=args.save_all,
             test=args.test,
+            emin=args.emin,
+            emax=args.emax
         )
