@@ -23,32 +23,32 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            python: '3.9'
-            tox_env: 'py39-test-cov'
-          - os: ubuntu-latest
             python: '3.8'
             tox_env: 'build_docs'
           - os: ubuntu-latest
+            python: '3.10'
+            tox_env: 'codestyle'
+          - os: ubuntu-latest
+            python: '3.10'
+            tox_env: 'py310-test-cov'
+          - os: ubuntu-latest
+            python: '3.10'
+            tox_env: 'py310-test-alldeps-cov'
+            use_remote_data: true
+          - os: ubuntu-latest
+            python: '3.10'
+            tox_env: 'py310-test-devdeps'
+            use_remote_data: true
+          - os: ubuntu-latest
             python: '3.8'
-            tox_env: 'py38-test-alldeps-cov'
-            use_remote_data: true
-          - os: ubuntu-latest
-            python: '3.9'
-            tox_env: 'py39-test-devdeps'
-            use_remote_data: true
-          - os: ubuntu-latest
-            python: '3.6'
-            tox_env: 'py36-test-oldestdeps-cov'
+            tox_env: 'py38-test-oldestdeps-cov'
             use_remote_data: true
           - os: macos-latest
-            python: '3.7'
-            tox_env: 'py37-test'
+            python: '3.10'
+            tox_env: 'py310-test'
           - os: windows-latest
-            python: '3.8'
-            tox_env: 'py38-test'
-          - os: ubuntu-latest
-            python: '3.8'
-            tox_env: 'codestyle'
+            python: '3.10'
+            tox_env: 'py310-test'
 
     steps:
     - name: Check out repository
