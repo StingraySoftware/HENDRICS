@@ -258,7 +258,7 @@ def calc_pds(
     save_all=False,
     test=False,
     emin=None,
-    emax=None
+    emax=None,
 ):
     """Calculate the PDS from an input light curve file.
 
@@ -390,7 +390,7 @@ def calc_cpds(
     save_all=False,
     test=False,
     emin=None,
-    emax=None
+    emax=None,
 ):
     """Calculate the CPDS from a pair of input light curve files.
 
@@ -454,7 +454,9 @@ def calc_cpds(
             "series (e.g. both events or both light curves)"
         )
 
-    if (emin is not None or emax is not None) and (ftype1 != "events" or ftype2 != "events"):
+    if (emin is not None or emax is not None) and (
+        ftype1 != "events" or ftype2 != "events"
+    ):
         warnings.warn("Energy selection only makes sense for event lists")
     if ftype1 == "events":
         lc1, _ = filter_energy(lc1, emin, emax)
@@ -552,7 +554,7 @@ def calc_fspec(
     save_all=False,
     test=False,
     emin=None,
-    emax=None
+    emax=None,
 ):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
@@ -617,7 +619,7 @@ def calc_fspec(
                 save_all=save_all,
                 test=test,
                 emin=emin,
-                emax=emax
+                emax=emax,
             )
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
@@ -658,7 +660,7 @@ def calc_fspec(
         save_all=save_all,
         test=test,
         emin=emin,
-        emax=emax
+        emax=emax,
     )
 
     funcargs = []
@@ -918,5 +920,5 @@ def main(args=None):
             save_all=args.save_all,
             test=args.test,
             emin=args.emin,
-            emax=args.emax
+            emax=args.emax,
         )
