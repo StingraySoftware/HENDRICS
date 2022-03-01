@@ -169,9 +169,6 @@ def scrunch_lightcurve_objs(lclist):
     gti = cross_gtis(gti_lists)
     for lc in lclist:
         lc.gti = gti
-        if hasattr(lc, "_apply_gtis"):  # pragma: no cover
-            # Compatibility with old versions of stingray
-            lc.apply_gtis = lc._apply_gtis
         lc.apply_gtis()
     # Determine limits
 

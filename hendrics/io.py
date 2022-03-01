@@ -660,10 +660,6 @@ def load_lcurve(fname):
         skip_checks=True,
     )
 
-    if hasattr(lcurve, "_apply_gtis"):  # pragma: no cover
-        # Compatibility with old versions of stingray
-        lcurve.apply_gtis = lcurve._apply_gtis
-
     if "instr" in list(data.keys()) and data["instr"] is not None:
         lcurve.instr = data["instr"].lower()
     if "mission" in list(data.keys()) and data["mission"] is not None:

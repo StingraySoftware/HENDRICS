@@ -137,38 +137,12 @@ def sync_gtis(lc1, lc2):
     gti = cross_gtis([lc1.gti, lc2.gti])
     lc1.gti = gti
     lc2.gti = gti
-    if hasattr(lc1, "_apply_gtis"):
-        # Compatibility with old versions of stingray
-        lc1.apply_gtis = lc1._apply_gtis
-        lc2.apply_gtis = lc2._apply_gtis
 
     if hasattr(lc1, "apply_gtis"):
         lc1.apply_gtis()
         lc2.apply_gtis()
 
-    # compatibility with old versions of stingray
-    if hasattr(lc1, "tseg") and lc1.tseg != lc2.tseg:
-        lc1.tseg = np.max(lc1.gti) - np.min(lc1.gti)
-        lc2.tseg = np.max(lc1.gti) - np.min(lc1.gti)
     return lc1, lc2
-
-
-def _format_lc_data(data, type, fftlen=512.0, bintime=1.0):
-    if type == "events":
-        events = data
-        gtilength = events.gti[:, 1] - events.gti[:, 0]
-        events.gti = events.gti[gtilength >= fftlen]
-        lc_data = list(events.to_lc_list(dt=bintime))
-    else:
-        lc = data
-        if bintime > lc.dt:
-            lcrebin = np.rint(bintime / lc.dt)
-            log.info("Rebinning lcs by a factor %d" % lcrebin)
-            lc = lc.rebin(bintime)
-            # To fix problem with float128
-            lc.counts = lc.counts.astype(float)
-        lc_data = lc
-    return lc_data
 
 
 def _distribute_events(events, chunk_length):
@@ -318,51 +292,24 @@ def calc_pds(
     mjdref = data.mjdref
     instr = data.instr
 
-    length = data.gti[-1, 1] - data.gti[0, 0]
     if hasattr(data, "dt"):
         bintime = max(data.dt, bintime)
 
-    nbins = int(length / bintime)
-
-    # New Stingray machinery, hopefully more efficient and consistent
-    if hasattr(AveragedPowerspectrum, "from_events"):
-        if ftype == "events":
-            pds = AveragedPowerspectrum(
-                data,
-                dt=bintime,
-                segment_size=fftlen,
-                save_all=save_dyn,
-                norm=normalization.lower(),
-            )
-        elif ftype == "lc":
-            pds = AveragedPowerspectrum(
-                data,
-                segment_size=fftlen,
-                save_all=save_dyn,
-                norm=normalization.lower(),
-            )
-    else:
-        if ftype == "events" and (test or nbins > 10 ** 7):
-            print("Long observation. Using split analysis")
-            length = data.gti[-1, 1] - data.gti[0, 0]
-            total = int(length / fftlen)
-            pds = average_periodograms(
-                _provide_periodograms(
-                    data, fftlen, bintime, norm=normalization.lower()
-                ),
-                total=total,
-            )
-        else:
-            lc_data = _format_lc_data(
-                data, ftype, bintime=bintime, fftlen=fftlen
-            )
-
-            pds = AveragedPowerspectrum(
-                lc_data,
-                segment_size=fftlen,
-                norm=normalization.lower(),
-                save_all=save_dyn,
-            )
+    if ftype == "events":
+        pds = AveragedPowerspectrum(
+            data,
+            dt=bintime,
+            segment_size=fftlen,
+            save_all=save_dyn,
+            norm=normalization.lower(),
+        )
+    elif ftype == "lc":
+        pds = AveragedPowerspectrum(
+            data,
+            segment_size=fftlen,
+            save_all=save_dyn,
+            norm=normalization.lower(),
+        )
 
     if pdsrebin is not None and pdsrebin != 1:
         pds = pds.rebin(pdsrebin)
@@ -472,53 +419,27 @@ def calc_cpds(
         lc2 = lc2.change_mjdref(lc1.mjdref)
     mjdref = lc1.mjdref
 
-    length = lc1.gti[-1, 1] - lc1.gti[0, 0]
     if hasattr(lc1, "dt"):
         bintime = max(lc1.dt, bintime)
 
-    nbins = int(length / bintime)
-
     # New Stingray machinery, hopefully more efficient and consistent
-    if hasattr(AveragedPowerspectrum, "from_events"):
-        if ftype1 == "events":
-            cpds = AveragedCrossspectrum(
-                lc1,
-                lc2,
-                dt=bintime,
-                segment_size=fftlen,
-                save_all=save_dyn,
-                norm=normalization.lower(),
-            )
-        elif ftype1 == "lc":
-            cpds = AveragedCrossspectrum(
-                lc1,
-                lc2,
-                segment_size=fftlen,
-                save_all=save_dyn,
-                norm=normalization.lower(),
-            )
-    else:
-        if ftype1 == "events" and (test or nbins > 10 ** 7):
-            print("Long observation. Using split analysis")
-            length = lc1.gti[-1, 1] - lc1.gti[0, 0]
-            total = int(length / fftlen)
-            cpds = average_periodograms(
-                _provide_cross_periodograms(
-                    lc1, lc2, fftlen, bintime, norm=normalization.lower()
-                ),
-                total=total,
-            )
-        else:
-            lc1 = _format_lc_data(lc1, ftype1, fftlen=fftlen, bintime=bintime)
-            lc2 = _format_lc_data(lc2, ftype2, fftlen=fftlen, bintime=bintime)
-
-            cpds = AveragedCrossspectrum(
-                lc1,
-                lc2,
-                segment_size=fftlen,
-                norm=normalization.lower(),
-                save_all=save_dyn,
-            )
+    if ftype1 == "events":
+        cpds = AveragedCrossspectrum(
+            lc1,
+            lc2,
+            dt=bintime,
+            segment_size=fftlen,
+            save_all=save_dyn,
+            norm=normalization.lower(),
+        )
+    elif ftype1 == "lc":
+        cpds = AveragedCrossspectrum(
+            lc1,
+            lc2,
+            segment_size=fftlen,
+            save_all=save_dyn,
+            norm=normalization.lower(),
+        )
 
     if pdsrebin is not None and pdsrebin != 1:
         cpds = cpds.rebin(pdsrebin)
