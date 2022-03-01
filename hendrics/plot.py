@@ -535,7 +535,7 @@ def plot_folding(
                 f,
                 fdot,
                 ref_time=ref_time,
-                # gtis=copy.deepcopy(events.gti),
+                # gti=copy.deepcopy(events.gti),
                 expocorr=False,
                 nbin=nbin,
             )

@@ -484,13 +484,13 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     )
 
     mjdtimes = events.time / 86400 + events.mjdref
-    mjdgtis = events.gti / 86400 + events.mjdref
+    mjdgti = events.gti / 86400 + events.mjdref
 
     outtime = (orbital_correction_fun(mjdtimes) - events.mjdref) * 86400
-    outgtis = (orbital_correction_fun(mjdgtis) - events.mjdref) * 86400
+    outgti = (orbital_correction_fun(mjdgti) - events.mjdref) * 86400
 
     events.time = outtime
-    events.gti = outgtis
+    events.gti = outgti
     return events
 
 

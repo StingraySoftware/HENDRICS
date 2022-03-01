@@ -159,13 +159,13 @@ class TestMergeEvents:
         data = load_events(outfile)
         assert hasattr(data, "gti")
         assert data.gti is not None
-        allgtis = []
+        allgti = []
         # Note that only 0 and 2 are valid
         for evfile in [self.f0, self.f2]:
             ev = load_events(evfile)
-            allgtis.append(ev.gti)
-        allgtis = np.sort(np.concatenate(allgtis))
-        assert np.allclose(data.gti, allgtis)
+            allgti.append(ev.gti)
+        allgti = np.sort(np.concatenate(allgti))
+        assert np.allclose(data.gti, allgti)
         os.unlink(outfile)
 
 
@@ -249,8 +249,8 @@ class TestReadEvents:
         assert "instr" in data
         assert "gti" in data
         assert "mjdref" in data
-        gtis = data["gti"]
-        lengths = np.array([g1 - g0 for (g0, g1) in gtis])
+        gti = data["gti"]
+        lengths = np.array([g1 - g0 for (g0, g1) in gti])
         # add an epsilon for numerical error
         assert np.all(lengths <= 100 + 1e-7)
 

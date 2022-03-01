@@ -39,7 +39,7 @@ def outfile_name(file):
 def phase_tag(
     ev_list,
     parameter_info,
-    gtis=None,
+    gti=None,
     mjdref=0,
     nbin=10,
     ref_to_max=False,
@@ -62,7 +62,7 @@ def phase_tag(
 
     Other parameters
     ----------------
-    gtis : [[g0_0, g0_1], [g1_0, g1_1], ...]
+    gti : [[g0_0, g0_1], [g1_0, g1_1], ...]
         Good time intervals
     nbin : int
         Number of nbin in the pulsed profile
@@ -80,13 +80,13 @@ def phase_tag(
 
     """
     # ---- in MJD ----
-    if gtis is None:
-        gtis = np.array([[ev_list[0], ev_list[-1]]])
+    if gti is None:
+        gti = np.array([[ev_list[0], ev_list[-1]]])
 
     ev_mjd = ev_list / 86400 + mjdref
-    gtis_mjd = gtis / 86400 + mjdref
+    gti_mjd = gti / 86400 + mjdref
 
-    pepoch = _assign_value_if_none(pepoch, gtis_mjd[0, 0])
+    pepoch = _assign_value_if_none(pepoch, gti_mjd[0, 0])
 
     # ------ Orbital DEMODULATION --------------------
     if is_string(parameter_info):
@@ -104,7 +104,7 @@ def phase_tag(
 
     phase = pulse_phase(times, *frequency_derivatives, to_1=False)
     gti_phases = pulse_phase(
-        (gtis_mjd - pepoch) * 86400, *frequency_derivatives, to_1=False
+        (gti_mjd - pepoch) * 86400, *frequency_derivatives, to_1=False
     )
 
     # ------- now apply period derivatives ------
@@ -123,7 +123,7 @@ def phase_tag(
             phase_to1, bins=np.linspace(0, 1, nbin + 1)
         )
         exposure = phase_exposure(
-            gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gtis=gti_phases
+            gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gti=gti_phases
         )
         profile = raw_profile / exposure
         profile_err = np.sqrt(raw_profile) / exposure
@@ -150,7 +150,7 @@ def phase_tag(
     )
 
     exposure = phase_exposure(
-        gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gtis=gti_phases
+        gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gti=gti_phases
     )
     if np.any(np.logical_or(exposure != exposure, exposure == 0)):
         warnings.warn(
@@ -255,7 +255,7 @@ def phase_tag_fits(
     results = phase_tag(
         evreturns.ev_list,
         parameter_info,
-        gtis=evreturns.gti_list,
+        gti=evreturns.gti_list,
         mjdref=mjdref,
         **kwargs
     )
