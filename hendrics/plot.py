@@ -414,16 +414,22 @@ def plot_folding(
                 "f",
                 "fdot",
                 "fddot",
+                "pulse_amp (%)",
+                "pulse_amp_err (%)",
                 "pulse_amp_cl_0.1 (%)",
                 "pulse_amp_cl_0.9 (%)",
+                "pulse_amp_ul_0.9 (%)"
             ],
-            dtype=[str, float, float, float, float, float, float, float],
+            dtype=[str, float, float, float, float, float, float, float, float, float, float],
         )
         best_cand_table["power"].info.format = ".2f"
         best_cand_table["fdot"].info.format = ".2e"
         best_cand_table["fddot"].info.format = "g"
         best_cand_table["pulse_amp_cl_0.1 (%)"].info.format = ".2f"
         best_cand_table["pulse_amp_cl_0.9 (%)"].info.format = ".2f"
+        best_cand_table["pulse_amp (%)"].info.format = ".2f"
+        best_cand_table["pulse_amp_err (%)"].info.format = ".2f"
+        best_cand_table["pulse_amp_ul_0.9 (%)"].info.format = ".2f"
 
         # I do that in reverse order, so that the final solution is also the
         # best one, for plotting the candidate f, fdot
@@ -445,13 +451,21 @@ def plot_folding(
                 allstats_fdot = None
             else:
                 raise ValueError("Did not understand stats shape.")
-            if max_stat < vmax:
+
+            if ef.ncounts is None:
                 continue
+
+            _, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
             sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=ef.N)
-            amp_0 = amp_1 = np.nan
-            if ef.ncounts is not None:
+            amp = amp_err = amp_ul = amp_1 = amp_0 = np.nan
+            if max_stat < vmax:
+                amp_ul = a_from_ssig(sig_1, ef.ncounts) * 100
+            else:
+                amp = a_from_ssig(max_stat, ef.ncounts) * 100
+                amp_err = a_from_ssig(sig_e1, ef.ncounts) * 100 - amp
                 amp_0 = a_from_ssig(sig_0, ef.ncounts) * 100
                 amp_1 = a_from_ssig(sig_1, ef.ncounts) * 100
+
             best_cand_table.add_row(
                 [
                     ef.filename,
@@ -460,10 +474,17 @@ def plot_folding(
                     f,
                     fdot,
                     fddot,
+                    amp,
+                    amp_err,
                     amp_0,
                     amp_1,
+                    amp_ul,
                 ]
             )
+            if max_stat < vmax:
+                # Only add one candidate
+                break
+
             Table({"freq": allfreqs, "stat": allstats_f}).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}'
                 f"_cand_{n_cands - i - 1}_fdot{fdot}.csv",
@@ -480,7 +501,7 @@ def plot_folding(
                 format="ascii",
             )
 
-        if len(best_cand_table) == 0:
+        if len(best_cand_table[~np.isnan(best_cand_table["pulse_amp (%)"])]) == 0:
             print(f"None.")
             if hasattr(ef, "upperlim") and ef.upperlim is not None:
                 maxpow = ef.stat.max()
