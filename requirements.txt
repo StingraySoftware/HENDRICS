@@ -2,5 +2,5 @@ numpy
 scipy
 astropy
 matplotlib
-stingray >= 0.3
+stingray >= 1.0b0
 sphinx-astropy

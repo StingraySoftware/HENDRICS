@@ -169,9 +169,6 @@ def scrunch_lightcurve_objs(lclist):
     gti = cross_gtis(gti_lists)
     for lc in lclist:
         lc.gti = gti
-        if hasattr(lc, "_apply_gtis"):  # pragma: no cover
-            # Compatibility with old versions of stingray
-            lc.apply_gtis = lc._apply_gtis
         lc.apply_gtis()
     # Determine limits
 
@@ -264,7 +261,7 @@ def filter_lc_gtis(
         If True, return also the indexes of the light curve corresponding to
         the borders of the GTIs
     """
-    mask, newgtis = create_gti_mask(
+    mask, newgti = create_gti_mask(
         lc.time,
         lc.gti,
         return_new_gtis=True,
@@ -276,10 +273,10 @@ def filter_lc_gtis(
 
     newlc = copy.copy(lc)
     newlc.counts[nomask] = 0
-    newlc.gti = newgtis
+    newlc.gti = newgti
 
     if return_borders:
-        mask = create_gti_mask(lc.time, newgtis)
+        mask = create_gti_mask(lc.time, newgti)
         borders = contiguous_regions(mask)
         return newlc, borders
     else:
@@ -354,9 +351,9 @@ def lcurve_from_events(
 
     tag = ""
 
-    gtis = evdata.gti
-    tstart = np.min(gtis)
-    tstop = np.max(gtis)
+    gti = evdata.gti
+    tstart = np.min(gti)
+    tstop = np.max(gti)
     events = evdata.time
     if hasattr(evdata, "instr") and evdata.instr is not None:
         instr = evdata.instr
@@ -364,8 +361,8 @@ def lcurve_from_events(
         instr = "unknown"
 
     if ignore_gtis:
-        gtis = np.array([[tstart, tstop]])
-        evdata.gtis = gtis
+        gti = np.array([[tstart, tstop]])
+        evdata.gti = gti
 
     total_lc = evdata.to_lc(100)
     total_lc.instr = instr
@@ -422,7 +419,7 @@ def lcurve_from_events(
         tstart=tstart,
         tseg=tstop - tstart,
         mjdref=evdata.mjdref,
-        gti=gtis,
+        gti=gti,
     )
 
     lc.instr = instr

@@ -225,7 +225,7 @@ def get_TOAs_from_events(
             copy.deepcopy(events),
             *frequency_derivatives,
             ref_time=pepoch,
-            gtis=copy.deepcopy(gti),
+            gti=copy.deepcopy(gti),
             expocorr=expocorr,
             nbin=nbin,
         )
@@ -248,11 +248,11 @@ def get_TOAs_from_events(
         events_tofold = events[good]
         if len(events_tofold) < nbin:
             continue
-        gtis_tofold = copy.deepcopy(
+        gti_tofold = copy.deepcopy(
             gti[(gti[:, 0] < stop) & (gti[:, 1] > start)]
         )
-        gtis_tofold[0, 0] = start
-        gtis_tofold[-1, 1] = stop
+        gti_tofold[0, 0] = start
+        gti_tofold[-1, 1] = stop
 
         local_f = frequency_derivatives[0]
         for i_f, f in enumerate(frequency_derivatives[1:]):
@@ -269,7 +269,7 @@ def get_TOAs_from_events(
             events_tofold,
             *fder,
             ref_time=start,
-            gtis=gtis_tofold,
+            gti=gti_tofold,
             expocorr=expocorr,
             nbin=nbin,
         )

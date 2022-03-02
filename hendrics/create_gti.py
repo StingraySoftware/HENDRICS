@@ -16,13 +16,13 @@ def filter_gti_by_length(gti, minimum_length):
     if minimum_length == 0 or minimum_length is None:
         return gti
 
-    newgtis = []
+    newgti = []
     for g in gti:
         length = g[1] - g[0]
         if length >= minimum_length:
-            newgtis.append(g)
+            newgti.append(g)
 
-    return np.array(newgtis)
+    return np.array(newgti)
 
 
 def create_gti(
@@ -40,7 +40,7 @@ def create_gti(
 
     Returns
     -------
-    gtis : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
+    gti : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
         The newly created GTIs
 
     Other parameters
@@ -69,20 +69,20 @@ def create_gti(
 
     good = eval(filter_expr)
 
-    gtis = create_gti_from_condition(
+    gti = create_gti_from_condition(
         locals()["time"], good, safe_interval=safe_interval
     )
 
-    gtis = filter_gti_by_length(gtis, minimum_length)
+    gti = filter_gti_by_length(gti, minimum_length)
 
     outfile = _assign_value_if_none(
         outfile, hen_root(fname) + "_gti" + HEN_FILE_EXTENSION
     )
     save_data(
-        {"gti": gtis, "mjdref": mjdref, "__sr__class__type__": "gti"}, outfile
+        {"gti": gti, "mjdref": mjdref, "__sr__class__type__": "gti"}, outfile
     )
 
-    return gtis
+    return gti
 
 
 def apply_gti(fname, gti, outname=None, minimum_length=0):
@@ -94,15 +94,15 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
 
     try:
         datagti = data["gti"]
-        newgtis = cross_gtis([gti, datagti])
+        newgti = cross_gtis([gti, datagti])
     except Exception:  # pragma: no cover
         warnings.warn("Data have no GTI extension", AstropyUserWarning)
-        newgtis = gti
+        newgti = gti
 
-    newgtis = filter_gti_by_length(newgtis, minimum_length)
+    newgti = filter_gti_by_length(newgti, minimum_length)
 
-    data["gti"] = newgtis
-    good = create_gti_mask(data["time"], newgtis)
+    data["gti"] = newgti
+    good = create_gti_mask(data["time"], newgti)
 
     data["time"] = data["time"][good]
     if ftype == "lc":
@@ -122,7 +122,7 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
     )
     save_data(data, outname)
 
-    return newgtis
+    return newgti
 
 
 def main(args=None):
@@ -212,9 +212,9 @@ def main(args=None):
         for fname in files:
             if args.apply_gti is not None:
                 data = load_data(args.apply_gti)
-                gtis = data["gti"]
+                gti = data["gti"]
             else:
-                gtis = create_gti(
+                gti = create_gti(
                     fname,
                     filter_expr,
                     safe_interval=args.safe_interval,
@@ -229,7 +229,7 @@ def main(args=None):
                 outname = None
             apply_gti(
                 fname,
-                gtis,
+                gti,
                 outname=outname,
                 minimum_length=args.minimum_length,
             )

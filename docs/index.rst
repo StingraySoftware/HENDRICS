@@ -58,6 +58,17 @@ satellite (for sure XMM-Newton and RXTE).
 
 What's new
 
+HENDRICS 7.0
+~~~~~~~~~~~~
+
++ Based on [Stingray 1.0](https://github.com/StingraySoftware/stingray/releases/tag/v1.0-beta), bringing a huge bump in performance
++ Energy-filtered periodograms
++ Many fixes to mission-specific files
++ Better info returned by Z searches, including pulse amplitude estimates
++ Add ability to split files at a given MJD
++ New upper limit functionality in Z searches with no candidates
+
+
 HENDRICS 6.0
 ~~~~~~~~~~~~
 

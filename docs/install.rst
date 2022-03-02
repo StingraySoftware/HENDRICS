@@ -4,7 +4,7 @@ Installation Instructions
 Prerequisites
 -------------
 
-You'll need a recent python 2.7+ or 3.4+ installation.
+You'll need a recent python 3.8+ installation.
 The main dependency is
 
 1. `Stingray <http://github.com/stingraysoftware/stingray>`__,
@@ -41,7 +41,7 @@ Installing releases
 -------------------
 ::
 
-    $ pip install hendrics numba emcee statsmodels netcdf4 matplotlib stingray>=0.1
+    $ pip install hendrics numba emcee statsmodels netcdf4 matplotlib stingray>=1.0b1
 
 
 Installing the Development version

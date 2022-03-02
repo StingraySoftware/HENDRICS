@@ -8,7 +8,7 @@ import numpy as np
 from astropy import log
 from stingray.io import load_events_and_gtis
 from stingray.events import EventList
-from stingray.gti import cross_two_gtis
+from stingray.gti import cross_two_gtis, cross_gtis, check_separate
 from .io import load_events
 from .base import common_name
 from .base import hen_root
@@ -73,10 +73,10 @@ def treat_event_file(
 
     mission = events.mission
     instr = events.instr.lower()
-    gtis = events.gti
-    lengths = np.array([g1 - g0 for (g0, g1) in gtis])
-    gtis = gtis[lengths >= min_length]
-    events.gti = gtis
+    gti = events.gti
+    lengths = np.array([g1 - g0 for (g0, g1) in gti])
+    gti = gti[lengths >= min_length]
+    events.gti = gti
     detector_id = events.detector_id
 
     if randomize_by is not None:
@@ -118,14 +118,14 @@ def treat_event_file(
 
         if gti_split or (length_split is not None):
             if length_split:
-                gti0 = np.arange(gtis[0, 0], gtis[-1, 1], length_split)
+                gti0 = np.arange(gti[0, 0], gti[-1, 1], length_split)
                 gti1 = gti0 + length_split
                 gti_chunks = np.array(
                     [[g0, g1] for (g0, g1) in zip(gti0, gti1)]
                 )
                 label = "chunk"
             else:
-                gti_chunks = gtis
+                gti_chunks = gti
                 label = "gti"
 
             for ig, g in enumerate(gti_chunks):
@@ -134,7 +134,7 @@ def treat_event_file(
                     + HEN_FILE_EXTENSION
                 )
 
-                good_gtis = cross_two_gtis([g], gtis)
+                good_gti = cross_two_gtis([g], gti)
                 if noclobber and os.path.exists(outfile_local):
                     warnings.warn(
                         "{0} exists, ".format(outfile_local)
@@ -146,7 +146,7 @@ def treat_event_file(
                 if len(events.time[all_good]) < 1:
                     continue
                 events_filt = events.apply_mask(all_good)
-                events_filt.gti = good_gtis
+                events_filt.gti = good_gti
 
                 save_events(events_filt, outfile_local)
                 output_files.append(outfile_local)
@@ -195,9 +195,13 @@ def multiple_event_concatenate(event_lists):
 
     ev_new = EventList()
 
-    gtis = np.concatenate([ev.gti for ev in event_lists])
-    order = np.argsort(gtis[:, 0])
-    gtis = gtis[order]
+    if check_separate(event_lists[0].gti, event_lists[1].gti):
+        gti = np.concatenate([ev.gti for ev in event_lists])
+    else:
+        gti = cross_gtis([ev.gti for ev in event_lists])
+
+    order = np.argsort(gti[:, 0])
+    gti = gti[order]
 
     ev_new.time = np.concatenate([ev.time for ev in event_lists])
     order = np.argsort(ev_new.time)
@@ -211,7 +215,7 @@ def multiple_event_concatenate(event_lists):
         ]
 
     ev_new.mjdref = event_lists[0].mjdref
-    ev_new.gti = gtis
+    ev_new.gti = gti
 
     return ev_new
 
