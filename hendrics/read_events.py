@@ -8,7 +8,7 @@ import numpy as np
 from astropy import log
 from stingray.io import load_events_and_gtis
 from stingray.events import EventList
-from stingray.gti import cross_two_gtis
+from stingray.gti import cross_two_gtis, cross_gtis, check_separate
 from .io import load_events
 from .base import common_name
 from .base import hen_root
@@ -195,7 +195,11 @@ def multiple_event_concatenate(event_lists):
 
     ev_new = EventList()
 
-    gti = np.concatenate([ev.gti for ev in event_lists])
+    if check_separate(event_lists[0].gti, event_lists[1].gti):
+        gti = np.concatenate([ev.gti for ev in event_lists])
+    else:
+        gti = cross_gtis([ev.gti for ev in event_lists])
+
     order = np.argsort(gti[:, 0])
     gti = gti[order]
 
