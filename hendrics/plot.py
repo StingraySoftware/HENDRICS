@@ -433,7 +433,7 @@ def plot_folding(
 
         # I do that in reverse order, so that the final solution is also the
         # best one, for plotting the candidate f, fdot
-        for i, idx in enumerate(best_cands[::-1]):
+        for i, idx in enumerate(best_cands):
             if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
                 allfreqs = ef.freq[idx[0], :]
                 allfdots = ef.freq[:, idx[1]]
@@ -483,7 +483,7 @@ def plot_folding(
             )
             if max_stat < vmax:
                 # Only add one candidate
-                break
+                continue
 
             Table({"freq": allfreqs, "stat": allstats_f}).write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}'
@@ -501,6 +501,14 @@ def plot_folding(
                 format="ascii",
             )
 
+        # Get these from the first row of the table
+        f, fdot, fddot, max_stat = (
+            best_cand_table["f"][0],
+            best_cand_table["fdot"][0],
+            best_cand_table["fddot"][0],
+            best_cand_table["power"][0],
+        )
+
         if len(best_cand_table[~np.isnan(best_cand_table["pulse_amp (%)"])]) == 0:
             print(f"None.")
             if hasattr(ef, "upperlim") and ef.upperlim is not None:
@@ -515,7 +523,7 @@ def plot_folding(
                     f"(90% Upper limit for sinusoids: p. frac. < {pf_lim * 100:.2f}%, p. ampl. < {amp_lim * 100:.2f} %)"
                 )
         else:
-            print(best_cand_table[::-1])
+            print(best_cand_table)
         best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
         plt.figure(fname, figsize=(8, 8))
 
