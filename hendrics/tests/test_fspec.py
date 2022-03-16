@@ -257,8 +257,6 @@ class TestFullRun(object):
         )
         assert os.path.exists(outA)
         assert os.path.exists(outB)
-        os.unlink(outA)
-        os.unlink(outB)
 
         new_pdsA = hen.io.load_pds(outA)
         new_pdsB = hen.io.load_pds(outB)
@@ -267,6 +265,8 @@ class TestFullRun(object):
             assert len(pds.cs_all) == pds.m
         shutil.rmtree(outA.replace(HEN_FILE_EXTENSION, ""))
         shutil.rmtree(outB.replace(HEN_FILE_EXTENSION, ""))
+        os.unlink(outA)
+        os.unlink(outB)
 
     @pytest.mark.parametrize("data_kind", ["events", "lc"])
     def test_ignore_gti(self, data_kind):
