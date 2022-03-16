@@ -234,6 +234,7 @@ def calc_pds(
     test=False,
     emin=None,
     emax=None,
+    ignore_gti=False
 ):
     """Calculate the PDS from an input light curve file.
 
@@ -283,6 +284,8 @@ def calc_pds(
         return
 
     ftype, data = get_file_type(lcfile)
+    if ignore_gti:
+        data.gti = np.asarray([[data.gti[0, 0], data.gti[-1, 1]]])
 
     if (emin is not None or emax is not None) and ftype != "events":
         warnings.warn("Energy selection only makes sense for event lists")
@@ -339,6 +342,7 @@ def calc_cpds(
     test=False,
     emin=None,
     emax=None,
+    ignore_gti=False,
 ):
     """Calculate the CPDS from a pair of input light curve files.
 
@@ -415,6 +419,9 @@ def calc_cpds(
         assert lc1.dt == lc2.dt, "Light curves are sampled differently"
 
     lc1, lc2 = sync_gtis(lc1, lc2)
+    if ignore_gti:
+        lc1.gti = lc2.gti = np.asarray([[lc1.gti[0, 0], lc1.gti[-1, 1]]])
+
     if lc1.mjdref != lc2.mjdref:
         lc2 = lc2.change_mjdref(lc1.mjdref)
     mjdref = lc1.mjdref
@@ -477,6 +484,7 @@ def calc_fspec(
     test=False,
     emin=None,
     emax=None,
+    ignore_gti=False,
 ):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
@@ -542,6 +550,7 @@ def calc_fspec(
                 test=test,
                 emin=emin,
                 emax=emax,
+                ignore_gti=ignore_gti
             )
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
@@ -583,6 +592,7 @@ def calc_fspec(
         test=test,
         emin=emin,
         emax=emax,
+        ignore_gti=ignore_gti,
     )
 
     funcargs = []
@@ -757,6 +767,10 @@ def main(args=None):
         action="store_true",
     )
     parser.add_argument(
+        "--ignore-gtis", help="Ignore GTIs. USE AT YOUR OWN RISK",
+        default=False, action="store_true"
+    )
+    parser.add_argument(
         "--save-all",
         help="Save all information contained in spectra,"
         " including single pdss and light curves.",
@@ -843,4 +857,5 @@ def main(args=None):
             test=args.test,
             emin=args.emin,
             emax=args.emax,
+            ignore_gti=args.ignore_gtis
         )
