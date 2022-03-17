@@ -136,9 +136,11 @@ HENcalibrate
 
     optional arguments:
       -h, --help           show this help message and exit
-      -r RMF, --rmf RMF    rmf file used for calibration
-      --rough              Rough calibration, without rmf file (only for NuSTAR
-                           and XMM)
+      -r RMF, --rmf RMF    rmf file used for calibration. Not working with XMM
+                           data
+      --rough              Rough calibration, without rmf file (only for NuSTAR,
+                           XMM, and NICER). Only for compatibility purposes. This
+                           is done automatically by HENreadevents
       -o, --overwrite      Overwrite; default: no
       --nproc NPROC        Number of processors to use
       --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
@@ -435,8 +437,8 @@ HENfold
 
     usage: HENfold [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT] [--tref TREF]
                    [-n NBIN] [--nebin NEBIN] [--emin EMIN] [--emax EMAX]
-                   [--norm NORM] [--pepoch PEPOCH] [-p DEORBIT_PAR]
-                   [--loglevel LOGLEVEL] [--debug] [--test]
+                   [--norm NORM] [--out-file-root OUT_FILE_ROOT] [--pepoch PEPOCH]
+                   [-p DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug] [--test]
                    file
 
     Plot a folded profile
@@ -456,6 +458,8 @@ HENfold
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --norm NORM           --norm to1: Normalize hist so that the maximum at each
                             energy is one. --norm ratios: Divide by mean profile
+      --out-file-root OUT_FILE_ROOT
+                            Root of the output files (plots and csv tables)
       --pepoch PEPOCH       Reference epoch for timing parameters (MJD)
       -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
@@ -473,8 +477,9 @@ HENfspec
 
     usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
                     [--norm NORM] [--noclobber] [-o OUTROOT] [--back BACK]
-                    [--save-dyn] [--ignore-instr] [--save-all] [--test]
-                    [--loglevel LOGLEVEL] [--debug]
+                    [--save-dyn] [--ignore-instr] [--ignore-gtis] [--save-all]
+                    [--test] [--emin EMIN] [--emax EMAX] [--loglevel LOGLEVEL]
+                    [--debug]
                     files [files ...]
 
     Create frequency spectra (PDS, CPDS, cospectrum) starting from well-defined
@@ -503,9 +508,12 @@ HENfspec
       --back BACK           Estimated background (non-source) count rate
       --save-dyn            save dynamical power spectrum
       --ignore-instr        Ignore instrument names in channels
+      --ignore-gtis         Ignore GTIs. USE AT YOUR OWN RISK
       --save-all            Save all information contained in spectra, including
                             single pdss and light curves.
       --test                Only to be used in testing
+      --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
+      --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
@@ -899,7 +907,9 @@ HENsplitevents
 
 ::
 
-    usage: HENsplitevents [-h] [-l LENGTH_SPLIT] [--overlap OVERLAP] fname
+    usage: HENsplitevents [-h] [-l LENGTH_SPLIT] [--overlap OVERLAP]
+                          [--split-at-mjd SPLIT_AT_MJD]
+                          fname
 
     Reads a cleaned event files and splits the file into overlapping multiple
     chunks of fixed length
@@ -913,6 +923,8 @@ HENsplitevents
                             Split event list by GTI
       --overlap OVERLAP     Overlap factor. 0 for no overlap, 0.5 for half-
                             interval overlap, and so on.
+      --split-at-mjd SPLIT_AT_MJD
+                            Split at this MJD
 
 
 HENsumfspec
@@ -931,7 +943,7 @@ HENsumfspec
       -h, --help            show this help message and exit
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_(c)pds.p
+                            tot_(c)pds.nc
 
 
 HENvarenergy
@@ -943,8 +955,9 @@ HENvarenergy
                         [--energy-values ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES]
                         [--segment-size SEGMENT_SIZE]
                         [--ref-band REF_BAND REF_BAND] [--rms] [--covariance]
-                        [--use-pi] [--cross-instr] [--lag] [-b BINTIME]
-                        [--loglevel LOGLEVEL] [--debug]
+                        [--use-pi] [--cross-instr] [--lag] [--count]
+                        [--label LABEL] [--norm NORM] [--format FORMAT]
+                        [-b BINTIME] [--loglevel LOGLEVEL] [--debug]
                         files [files ...]
 
     Calculates variability-energy spectra
@@ -970,6 +983,12 @@ HENvarenergy
                             band from one and the subbands from the other (useful
                             in NuSTAR and multiple-detector missions)
       --lag                 Calculate lag-energy
+      --count               Calculate lag-energy
+      --label LABEL         Additional label to be added to file names
+      --norm NORM           When relevant, the normalization of the spectrum. One
+                            of ['abs', 'frac', 'rms', 'leahy', 'none']
+      --format FORMAT       Output format for the table. Can be ECSV, QDP, or any
+                            other format accepted by astropy
       -b BINTIME, --bintime BINTIME
                             Bin time
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,

@@ -265,6 +265,36 @@ class TestFullRun(object):
             assert len(pds.cs_all) == pds.m
         shutil.rmtree(outA.replace(HEN_FILE_EXTENSION, ""))
         shutil.rmtree(outB.replace(HEN_FILE_EXTENSION, ""))
+        os.unlink(outA)
+        os.unlink(outB)
+
+    @pytest.mark.parametrize("data_kind", ["events", "lc"])
+    def test_ignore_gti(self, data_kind):
+        """Test PDS production ignoring gti."""
+        if data_kind == "events":
+            label = "_ev"
+        else:
+            label = "_lc"
+
+        command = (
+            "{0} {1} -f 128 --ignore-gtis".format(
+                os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
+                + HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
+                + HEN_FILE_EXTENSION,
+            )
+        )
+        hen.fspec.main(command.split())
+        outA = os.path.join(
+            self.datadir, f"monol_testA_nustar_fpma_pds" + HEN_FILE_EXTENSION
+        )
+        outB = os.path.join(
+            self.datadir, f"monol_testB_nustar_fpmb_pds" + HEN_FILE_EXTENSION
+        )
+        assert os.path.exists(outA)
+        assert os.path.exists(outB)
+        os.unlink(outA)
+        os.unlink(outB)
 
     @pytest.mark.parametrize("kind", ["PDS", "CPDS"])
     def test_pds_events_big(self, kind):
