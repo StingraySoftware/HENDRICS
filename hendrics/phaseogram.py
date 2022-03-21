@@ -20,7 +20,7 @@ from scipy.ndimage import gaussian_filter1d
 from .fold import filter_energy
 from .io import load_events, load_folding
 from .fold import get_TOAs_from_events
-from .base import hen_root, deorbit_events
+from .base import hen_root, deorbit_events, get_model
 from .efsearch import h_test
 
 
@@ -107,6 +107,7 @@ class BasePhaseogram(object):
         object=None,
         plot_only=False,
         time_corr=None,
+        model=None,
         **kwargs,
     ):
         """Init BasePhaseogram class.
@@ -143,7 +144,7 @@ class BasePhaseogram(object):
         **kwargs : keyword args
             additional arguments to pass to `self._construct_widgets`
         """
-
+        self.model = model
         self.fdot = fdot
         self.fddot = fddot
         self.nt = nt
@@ -485,7 +486,33 @@ class BasePhaseogram(object):
             linephase = ph0 + func(self.times) - func(self.times[0])
             self.lines[i].set_xdata(linephase)
 
+    def update_pint_model(self):
+        self.model.PEPOCH.value = self.pepoch / 86400 + self.mjdref
+        self.model.F0.value = self.freq
+        if hasattr(self.model, "F1"):
+            self.model.F1.value = self.fdot
+        else:
+            warnings.warn("Parameter F2 not in parfile. It will not be updated")
+        if hasattr(self.model, "F2"):
+            self.model.F2.value = self.fddot
+        else:
+            warnings.warn("Parameter F2 not in parfile. It will not be updated")
+        start, stop = self.gti.min(), self.gti.max()
+        self.model.START.value = start / 86400 + self.mjdref
+        self.model.FINISH.value = stop / 86400 + self.mjdref
+        if hasattr(self, "orbital_period") and self.orbital_period is not None:
+            self.model.PB.value = self.orbital_period / 86400
+            self.model.A1.value = self.asini
+            if hasattr(self.model, "T0"):
+                self.model.T0.value = self.t0
+            if hasattr(self.model, "TASC"):
+                self.model.TASC.value = self.t0
+        return self.model.as_parfile()
+
     def get_timing_model_string(self):
+
+        if hasattr(self, "model") and self.model is not None:
+            return self.update_pint_model()
 
         tm_string = ""
 
@@ -694,7 +721,7 @@ class InteractivePhaseogram(BasePhaseogram):
         with open(self.label + corr_string + ".tim", "w") as fobj:
             print("FORMAT 1", file=fobj)
             for t, te in zip(toa_corr, toaerr):
-                print("HEN", 0, t, te, "@", file=fobj)
+                print(self.label, 0, t, te, "@", file=fobj)
 
         with open(self.label + ".par", "w") as fobj:
             print(self.timing_model_string, file=fobj)
@@ -934,8 +961,10 @@ def run_interactive_phaseogram(
         )
     else:
         events_save = copy.deepcopy(events)
+        model = None
         if deorbit_par is not None:
             events = deorbit_events(events, deorbit_par)
+            model = get_model(deorbit_par)
 
         ip = InteractivePhaseogram(
             events.time,
@@ -954,6 +983,7 @@ def run_interactive_phaseogram(
             position=position,
             plot_only=plot_only,
             time_corr=events_save.time - events.time,
+            model=model
         )
 
     return ip

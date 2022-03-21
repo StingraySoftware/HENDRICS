@@ -29,6 +29,7 @@ try:
     HAS_PINT = True
 except ImportError:
     HAS_PINT = False
+    get_model = None
 
 try:
     from skimage.feature import peak_local_max
