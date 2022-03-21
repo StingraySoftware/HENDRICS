@@ -6,25 +6,24 @@ import os
 import copy
 from collections.abc import Iterable
 import numpy as np
+import matplotlib.colors as colors
 from stingray.gti import create_gti_mask
-from stingray.stats import a_from_ssig, pf_from_ssig, power_confidence_limits
 from astropy.modeling.models import Const1D
 from astropy.modeling import Model
 from astropy.stats import poisson_conf_interval
 from astropy import log
 from astropy.table import Table
 
+from .efsearch import analyze_qffa_results
 from .fold import fold_events, filter_energy
-from .base import z2_n_detection_level
-from .base import fold_detection_level
-from .base import deorbit_events
 from .io import load_events
 from .io import load_data, get_file_type, load_pds
-from .io import is_string, save_as_qdp, load_folding
+from .io import is_string, save_as_qdp
 from .io import HEN_FILE_EXTENSION
 from .io import find_file_in_allowed_paths
-from .base import _assign_value_if_none, find_peaks_in_image
+from .base import _assign_value_if_none
 from .base import pds_detection_level as detection_level
+from .base import deorbit_events
 
 
 def _next_color(ax):
@@ -372,170 +371,28 @@ def plot_folding(
         fnames = [fnames]
 
     for fname in fnames:
-        ef = load_folding(fname)
 
-        if not hasattr(ef, "M") or ef.M is None:
-            ef.M = 1
-        label = "Stat"
-        ntrial = ef.stat.size
-        if hasattr(ef, "oversample") and ef.oversample is not None:
-            ntrial /= ef.oversample
-            ntrial = int(ntrial)
-        if ef.kind == "Z2n":
-            vmin = ef.N - 1
-            vmax = z2_n_detection_level(
-                epsilon=0.001,
-                n=int(ef.N),
-                ntrial=ntrial,
-                n_summed_spectra=int(ef.M),
-            )
-            nbin = max(16, ef.N * 8)
-            label = "$" + "Z^2_{" + f"{ef.N}" + "}$"
-        else:
-            vmin = ef.nbin
-            vmax = fold_detection_level(
-                nbin=int(ef.nbin), epsilon=0.001, ntrial=ntrial
-            )
-            nbin = max(16, ef.nbin)
+        plt.figure(fname, figsize=(8, 8))
 
-        n_cands = 5
-        best_cands = find_peaks_in_image(ef.stat, n=n_cands)
-
-        fddot = 0
-        if hasattr(ef, "fddots") and ef.fddots is not None:
-            fddot = ef.fddots
-
-        print("Best candidates:")
-        best_cand_table = Table(
-            names=[
-                "fname",
-                "mjd",
-                "power",
-                "f",
-                "fdot",
-                "fddot",
-                "pulse_amp (%)",
-                "pulse_amp_err (%)",
-                "pulse_amp_cl_0.1 (%)",
-                "pulse_amp_cl_0.9 (%)",
-                "pulse_amp_ul_0.9 (%)"
-            ],
-            dtype=[str, float, float, float, float, float, float, float, float, float, float],
-        )
-        best_cand_table["power"].info.format = ".2f"
-        best_cand_table["fdot"].info.format = ".2e"
-        best_cand_table["fddot"].info.format = "g"
-        best_cand_table["pulse_amp_cl_0.1 (%)"].info.format = ".2f"
-        best_cand_table["pulse_amp_cl_0.9 (%)"].info.format = ".2f"
-        best_cand_table["pulse_amp (%)"].info.format = ".2f"
-        best_cand_table["pulse_amp_err (%)"].info.format = ".2f"
-        best_cand_table["pulse_amp_ul_0.9 (%)"].info.format = ".2f"
-
-        # I do that in reverse order, so that the final solution is also the
-        # best one, for plotting the candidate f, fdot
-        for i, idx in enumerate(best_cands):
-            if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-                allfreqs = ef.freq[idx[0], :]
-                allfdots = ef.freq[:, idx[1]]
-                allstats_f = ef.stat[idx[0], :]
-                allstats_fdot = ef.stat[:, idx[1]]
-                f, fdot = ef.freq[idx[0], idx[1]], ef.fdots[idx[0], idx[1]]
-                max_stat = ef.stat[idx[0], idx[1]]
-            elif len(ef.stat.shape) == 1:
-                allfreqs = ef.freq
-                allstats_f = ef.stat
-                f = ef.freq[idx[0]]
-                max_stat = ef.stat[idx[0]]
-                fdot = 0
-                allfdots = None
-                allstats_fdot = None
-            else:
-                raise ValueError("Did not understand stats shape.")
-
-            if ef.ncounts is None:
-                continue
-
-            _, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
-            sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=ef.N)
-            amp = amp_err = amp_ul = amp_1 = amp_0 = np.nan
-            if max_stat < vmax:
-                amp_ul = a_from_ssig(sig_1, ef.ncounts) * 100
-            else:
-                amp = a_from_ssig(max_stat, ef.ncounts) * 100
-                amp_err = a_from_ssig(sig_e1, ef.ncounts) * 100 - amp
-                amp_0 = a_from_ssig(sig_0, ef.ncounts) * 100
-                amp_1 = a_from_ssig(sig_1, ef.ncounts) * 100
-
-            best_cand_table.add_row(
-                [
-                    ef.filename,
-                    ef.pepoch,
-                    max_stat,
-                    f,
-                    fdot,
-                    fddot,
-                    amp,
-                    amp_err,
-                    amp_0,
-                    amp_1,
-                    amp_ul,
-                ]
-            )
-            if max_stat < vmax:
-                # Only add one candidate
-                continue
-
-            Table({"freq": allfreqs, "stat": allstats_f}).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}'
-                f"_cand_{n_cands - i - 1}_fdot{fdot}.csv",
-                overwrite=True,
-                format="ascii",
-            )
-            if allfdots is None:
-                continue
-
-            Table({"fdot": allfdots, "stat": allstats_fdot}).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}'
-                f"_cand_{n_cands - i - 1}_f{f}.dat",
-                overwrite=True,
-                format="ascii",
-            )
-
+        ef, best_cand_table = analyze_qffa_results(fname)
+        nbin = best_cand_table.meta["nbin"]
+        label = best_cand_table.meta["label"]
+        detlev = best_cand_table.meta["detlev"]
+        ndof = best_cand_table.meta["ndof"]
         # Get these from the first row of the table
-        f, fdot, fddot, max_stat = (
+        f, fdot, fddot, max_stat, max_stat_cl_90 = (
             best_cand_table["f"][0],
             best_cand_table["fdot"][0],
             best_cand_table["fddot"][0],
             best_cand_table["power"][0],
+            best_cand_table["power_cl_0.9"][0],
         )
 
-        if len(best_cand_table[~np.isnan(best_cand_table["pulse_amp (%)"])]) == 0:
-            print(f"None.")
-            if hasattr(ef, "upperlim") and ef.upperlim is not None:
-                maxpow = ef.stat.max()
-                sig_0, sig_1 = power_confidence_limits(maxpow, c=0.90, n=ef.N)
-                amp_lim = pf_lim = np.nan
-                if ef.ncounts is not None:
-                    amp_lim = a_from_ssig(sig_1, ef.ncounts)
-                    pf_lim = pf_from_ssig(sig_1, ef.ncounts)
-
-                print(
-                    f"(90% Upper limit for sinusoids: p. frac. < {pf_lim * 100:.2f}%, p. ampl. < {amp_lim * 100:.2f} %)"
-                )
-        else:
-            print(best_cand_table)
-        best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
-        plt.figure(fname, figsize=(8, 8))
-
-        if (
-            hasattr(ef, "filename")
-            and ef.filename is not None
-            and os.path.exists(ef.filename)
-        ):
+        if (filename := best_cand_table.meta["filename"]) is not None:
             external_gs = gridspec.GridSpec(2, 1)
             search_gs_no = 1
 
-            events = load_events(ef.filename)
+            events = load_events(filename)
             if ef.emin is not None or ef.emax is not None:
                 events, elabel = filter_energy(events, ef.emin, ef.emax)
 
@@ -663,18 +520,44 @@ def plot_folding(
 
             axf = plt.subplot(gs[0, 0])
             axfdot = plt.subplot(gs[1, 1])
-            if vmax is not None:
-                axf.axhline(vmax, ls="--", label=r"99.9\% c.l.")
-                axfdot.axvline(vmax)
+            if detlev is not None:
+                axf.axhline(detlev, ls="--", label=r"99.9\% det. lev.")
+                axfdot.axvline(detlev)
+
             axffdot = plt.subplot(gs[1, 0], sharex=axf, sharey=axfdot)
+            divnorm = colors.TwoSlopeNorm(vmin=ndof, vcenter=detlev, vmax=max(detlev+1, ef.stat.max()))
+
             axffdot.pcolormesh(
                 ef.freq,
                 np.asarray(ef.fdots),
                 ef.stat,
-                vmin=vmin,
-                vmax=vmax,
                 shading="nearest",
+                norm=divnorm,
+                cmap="twilight"
             )
+
+            cs = axffdot.contour(
+                ef.freq,
+                np.asarray(ef.fdots),
+                ef.stat,
+                [max_stat_cl_90],
+                colors="white",
+                zorder=20,
+                label=r"90% C.L.")
+
+            if np.shape(cs.allsegs[0])[0] > 1:
+                warnings.warn(
+                    "More than one contour found. "
+                    "Frequency estimates might be wrong")
+
+            for ax in (axffdot, axf):
+                ax.axvline(cs.allsegs[0][0][:, 0].min(), label=f"90% conf. lim.")
+                ax.axvline(cs.allsegs[0][0][:, 0].max())
+
+            for ax in (axffdot, axfdot):
+                ax.axhline(cs.allsegs[0][0][:, 1].max())
+                ax.axhline(cs.allsegs[0][0][:, 1].min())
+
             maximum_idx = 0
             maximum = 0
 
@@ -690,7 +573,7 @@ def plot_folding(
                 if np.max(ef.stat[ix, :]) > maximum:
                     maximum = np.max(ef.stat[ix, :])
                     maximum_idx = ix
-            if vmax is not None and maximum_idx > 0:
+            if detlev is not None and maximum_idx > 0:
                 axf.plot(
                     ef.freq[maximum_idx, :],
                     ef.stat[maximum_idx, :],
@@ -711,7 +594,7 @@ def plot_folding(
                 if np.max(ef.stat[:, iy]) > maximum:
                     maximum = np.max(ef.stat[:, iy])
                     maximum_idx = iy
-            if vmax is not None and maximum_idx > 0:
+            if detlev is not None and maximum_idx > 0:
                 axfdot.plot(
                     ef.stat[:, maximum_idx],
                     np.asarray(ef.fdots)[:, maximum_idx],
