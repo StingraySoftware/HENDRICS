@@ -179,12 +179,17 @@ class TestPhaseogram:
 
     @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
-    def test_phaseogram_deorbit(self):
+    @pytest.mark.parametrize("withfX", [True, False])
+    def test_phaseogram_deorbit(self, withfX):
         evfile = self.dum
 
         par = hen_root(evfile) + ".par"
         with open(par, "w") as fobj:
             print("F0  9.9", file=fobj)
+            if withfX:
+                print("F1  1e-14", file=fobj)
+                print("F2  1e-22", file=fobj)
+
             print("PEPOCH 57000", file=fobj)
             print("BINARY BT", file=fobj)
             print("PB  1e20", file=fobj)
@@ -212,6 +217,7 @@ class TestPhaseogram:
         f, fdot, fddot = ip.get_values()
         assert fdot == 2
         assert f == 9.9
+        os.unlink(par)
 
     def test_phaseogram_raises(self):
         evfile = self.dum
