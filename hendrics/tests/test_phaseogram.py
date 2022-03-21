@@ -191,10 +191,20 @@ class TestPhaseogram:
                 print("F2  1e-22", file=fobj)
 
             print("PEPOCH 57000", file=fobj)
-            print("BINARY BT", file=fobj)
+            if withfX:
+                print("BINARY ELL1", file=fobj)
+            else:
+                print("BINARY BT", file=fobj)
+
             print("PB  1e20", file=fobj)
             print("A1  0", file=fobj)
-            print("T0  56000", file=fobj)
+            if withfX:
+                print("TASC  56000", file=fobj)
+                print("EPS1  0", file=fobj)
+                print("EPS2  0", file=fobj)
+            else:
+                print("T0  56000", file=fobj)
+
             print("EPHEM  DE200", file=fobj)
             print("RAJ  00:55:01", file=fobj)
             print("DECJ 12:00:40.2", file=fobj)
