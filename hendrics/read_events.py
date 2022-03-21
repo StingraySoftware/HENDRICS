@@ -260,7 +260,9 @@ def join_eventlists(
     events2 = load_events(event_file2)
 
     if ignore_instr:
-        events1.instr = events2.instr = ",".join(events1.instr, events2.instr)
+        events1.instr = events2.instr = ",".join(
+            (events1.instr, events2.instr)
+        )
 
     if events2.time.size == 0 or events2.gti.size == 0:
         warnings.warn(f"{event_file2} has no good events")
@@ -320,6 +322,7 @@ def join_many_eventlists(eventfiles, new_event_file=None, ignore_instr=False):
     log.info(f"Reading {eventfiles[0]} ({1}/{N})")
     first_events = load_events(eventfiles[0])
     all_events = [first_events]
+    instr = first_events.instr
     for i, event_file in enumerate(eventfiles[1:]):
         log.info(f"Reading {event_file} ({i + 1}/{N})")
         events = load_events(event_file)
@@ -333,6 +336,9 @@ def join_many_eventlists(eventfiles, new_event_file=None, ignore_instr=False):
         ):
             warnings.warn(f"{event_file} is from a different instrument")
             continue
+        elif ignore_instr:
+            instr += "," + events.instr
+
         if (
             events.time.size == 0
             or events.gti.size == 0
@@ -349,6 +355,9 @@ def join_many_eventlists(eventfiles, new_event_file=None, ignore_instr=False):
         all_events.append(events)
 
     events = multiple_event_concatenate(all_events)
+    if ignore_instr:
+        events.instr = instr
+
     save_events(events, new_event_file)
     return new_event_file
 

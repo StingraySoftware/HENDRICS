@@ -493,7 +493,7 @@ class BasePhaseogram(object):
             self.model.F1.value = self.fdot
         else:
             warnings.warn(
-                "Parameter F2 not in parfile. It will not be updated"
+                "Parameter F1 not in parfile. It will not be updated"
             )
         if hasattr(self.model, "F2"):
             self.model.F2.value = self.fddot
