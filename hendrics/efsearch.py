@@ -22,7 +22,13 @@ from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
 from stingray.stats import pf_upper_limit
-from .io import load_events, EFPeriodogram, save_folding, HEN_FILE_EXTENSION, load_folding
+from .io import (
+    load_events,
+    EFPeriodogram,
+    save_folding,
+    HEN_FILE_EXTENSION,
+    load_folding,
+)
 
 from .base import (
     hen_root,
@@ -99,8 +105,8 @@ def check_phase_error_after_casting_to_double(tref, f, fdot=0):
     """Check the maximum error expected in the phase when casting to double."""
     times = np.array(np.random.normal(tref, 0.1, 1000), dtype=np.longdouble)
     times_dbl = times.astype(np.double)
-    phase = times * f + 0.5 * times ** 2 * fdot
-    phase_dbl = times_dbl * np.double(f) + 0.5 * times_dbl ** 2 * np.double(
+    phase = times * f + 0.5 * times**2 * fdot
+    phase_dbl = times_dbl * np.double(f) + 0.5 * times_dbl**2 * np.double(
         fdot
     )
     return np.max(np.abs(phase_dbl - phase))
@@ -193,7 +199,7 @@ def folding_orbital_search(
                 dtype=np.float64,
             )
 
-            dT0 = min(1 / (TWOPI ** 2 * freq) * Porb / X, Porb / 10)
+            dT0 = min(1 / (TWOPI**2 * freq) * Porb / X, Porb / 10)
             max_stats = 0
             min_stats = 1e32
             best_T0 = None
@@ -666,7 +672,7 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     nprof = repeated_profiles.shape[0]
 
     base_shift = np.linspace(-1, 1, nprof)
-    quad_base_shift = base_shift ** 2
+    quad_base_shift = base_shift**2
 
     for i in prange(linbinshifts.size):
         # This zeros needs to be here, not outside the parallel loop, or
@@ -762,7 +768,7 @@ def search_with_qffa_step(
     dphi = 1 / nbin
     delta_t = (t1 - t0) / 2
     bin_to_frequency = dphi / delta_t
-    bin_to_fdot = 2 * dphi / delta_t ** 2
+    bin_to_fdot = 2 * dphi / delta_t**2
 
     L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing="ij")
 
@@ -986,7 +992,7 @@ def folding_search(
     if step is None:
         step = 1 / oversample / length
     if fdotstep is None:
-        fdotstep = 1 / oversample / length ** 2
+        fdotstep = 1 / oversample / length**2
     gti = None
     if expocorr:
         gti = events.gti
@@ -1131,9 +1137,22 @@ def analyze_qffa_results(fname):
             "pulse_amp_err (%)",
             "pulse_amp_cl_0.1 (%)",
             "pulse_amp_cl_0.9 (%)",
-            "pulse_amp_ul_0.9 (%)"
+            "pulse_amp_ul_0.9 (%)",
         ],
-        dtype=[str, float, float, float, float, float, float, float, float, float, float, float],
+        dtype=[
+            str,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+        ],
     )
     best_cand_table["power"].info.format = ".2f"
     best_cand_table["power_cl_0.9"].info.format = ".2f"
@@ -1230,7 +1249,9 @@ def analyze_qffa_results(fname):
     else:
         print(best_cand_table)
 
-    best_cand_table.meta.update(dict(nbin=nbin, ndof=ndof, label=label, filename=None, detlev=detlev))
+    best_cand_table.meta.update(
+        dict(nbin=nbin, ndof=ndof, label=label, filename=None, detlev=detlev)
+    )
     if (
         hasattr(ef, "filename")
         and ef.filename is not None
@@ -1904,7 +1925,7 @@ def main_accelsearch(args=None):
 
     t0 = GTI[0, 0]
     Nbins = int(np.rint(max_length / dt))
-    if Nbins > 10 ** 8:
+    if Nbins > 10**8:
         log.info(
             f"The number of bins is more than 100 millions: {Nbins}. "
             "Using memmap."

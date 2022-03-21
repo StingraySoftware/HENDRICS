@@ -500,7 +500,16 @@ class TestEFsearch:
         evfile = self.dum
         with pytest.warns(UserWarning) as record:
             _ = main_zsearch(
-                [evfile, "-f", "9.85", "-F", "9.95", "-n", "2", "--fast",]
+                [
+                    evfile,
+                    "-f",
+                    "9.85",
+                    "-F",
+                    "9.95",
+                    "-n",
+                    "2",
+                    "--fast",
+                ]
             )
         assert np.any(
             [

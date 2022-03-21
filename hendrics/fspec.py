@@ -65,7 +65,7 @@ def average_periodograms(fspec_iterable, total=None):
             rebin0, norm0, freq0 = rebin, norm, freq
             tot_pds = pds * nchunks
 
-            tot_epds = epds ** 2 * nchunks
+            tot_epds = epds**2 * nchunks
             tot_npds = nchunks
             tot_contents = copy.deepcopy(contents)
         else:
@@ -81,7 +81,7 @@ def average_periodograms(fspec_iterable, total=None):
             assert norm == norm0, "Files must have the same normalization"
 
             tot_pds += pds * nchunks
-            tot_epds += epds ** 2 * nchunks
+            tot_epds += epds**2 * nchunks
             tot_npds += nchunks
 
     if len(all_spec) > 0:
@@ -234,7 +234,7 @@ def calc_pds(
     test=False,
     emin=None,
     emax=None,
-    ignore_gti=False
+    ignore_gti=False,
 ):
     """Calculate the PDS from an input light curve file.
 
@@ -550,7 +550,7 @@ def calc_fspec(
                 test=test,
                 emin=emin,
                 emax=emax,
-                ignore_gti=ignore_gti
+                ignore_gti=ignore_gti,
             )
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
@@ -767,8 +767,10 @@ def main(args=None):
         action="store_true",
     )
     parser.add_argument(
-        "--ignore-gtis", help="Ignore GTIs. USE AT YOUR OWN RISK",
-        default=False, action="store_true"
+        "--ignore-gtis",
+        help="Ignore GTIs. USE AT YOUR OWN RISK",
+        default=False,
+        action="store_true",
     )
     parser.add_argument(
         "--save-all",
@@ -857,5 +859,5 @@ def main(args=None):
             test=args.test,
             emin=args.emin,
             emax=args.emax,
-            ignore_gti=args.ignore_gtis
+            ignore_gti=args.ignore_gtis,
         )

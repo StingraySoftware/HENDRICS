@@ -525,7 +525,9 @@ def plot_folding(
                 axfdot.axvline(detlev)
 
             axffdot = plt.subplot(gs[1, 0], sharex=axf, sharey=axfdot)
-            divnorm = colors.TwoSlopeNorm(vmin=ndof, vcenter=detlev, vmax=max(detlev+1, ef.stat.max()))
+            divnorm = colors.TwoSlopeNorm(
+                vmin=ndof, vcenter=detlev, vmax=max(detlev + 1, ef.stat.max())
+            )
 
             axffdot.pcolormesh(
                 ef.freq,
@@ -533,7 +535,7 @@ def plot_folding(
                 ef.stat,
                 shading="nearest",
                 norm=divnorm,
-                cmap="twilight"
+                cmap="twilight",
             )
 
             cs = axffdot.contour(
@@ -543,15 +545,19 @@ def plot_folding(
                 [max_stat_cl_90],
                 colors="white",
                 zorder=20,
-                label=r"90% C.L.")
+                label=r"90% C.L.",
+            )
 
             if np.shape(cs.allsegs[0])[0] > 1:
                 warnings.warn(
                     "More than one contour found. "
-                    "Frequency estimates might be wrong")
+                    "Frequency estimates might be wrong"
+                )
 
             for ax in (axffdot, axf):
-                ax.axvline(cs.allsegs[0][0][:, 0].min(), label=f"90% conf. lim.")
+                ax.axvline(
+                    cs.allsegs[0][0][:, 0].min(), label=f"90% conf. lim."
+                )
                 ax.axvline(cs.allsegs[0][0][:, 0].max())
 
             for ax in (axffdot, axfdot):

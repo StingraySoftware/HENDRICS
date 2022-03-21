@@ -327,7 +327,9 @@ def main(args=None):
 
             if args.count:
                 cts = CountSpectrum(
-                    events, energy_spec=energy_spec, use_pi=args.use_pi,
+                    events,
+                    energy_spec=energy_spec,
+                    use_pi=args.use_pi,
                 )
                 outfile = hen_root(fname) + label + "_count." + args.format
                 out_table = varenergy_to_astropy_table(cts)

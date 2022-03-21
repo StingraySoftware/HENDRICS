@@ -492,11 +492,15 @@ class BasePhaseogram(object):
         if hasattr(self.model, "F1"):
             self.model.F1.value = self.fdot
         else:
-            warnings.warn("Parameter F2 not in parfile. It will not be updated")
+            warnings.warn(
+                "Parameter F2 not in parfile. It will not be updated"
+            )
         if hasattr(self.model, "F2"):
             self.model.F2.value = self.fddot
         else:
-            warnings.warn("Parameter F2 not in parfile. It will not be updated")
+            warnings.warn(
+                "Parameter F2 not in parfile. It will not be updated"
+            )
         start, stop = self.gti.min(), self.gti.max()
         self.model.START.value = start / 86400 + self.mjdref
         self.model.FINISH.value = stop / 86400 + self.mjdref
@@ -563,15 +567,15 @@ class InteractivePhaseogram(BasePhaseogram):
         tobs = tseg * self.nt
         delta_df_start = 4 / tobs
         self.df_order_of_mag = int(np.log10(delta_df_start))
-        delta_df = delta_df_start / 10 ** self.df_order_of_mag
+        delta_df = delta_df_start / 10**self.df_order_of_mag
 
-        delta_dfdot_start = 8 / tobs ** 2
+        delta_dfdot_start = 8 / tobs**2
         self.dfdot_order_of_mag = int(np.log10(delta_dfdot_start))
-        delta_dfdot = delta_dfdot_start / 10 ** self.dfdot_order_of_mag
+        delta_dfdot = delta_dfdot_start / 10**self.dfdot_order_of_mag
 
-        delta_dfddot_start = 16 / tobs ** 3
+        delta_dfddot_start = 16 / tobs**3
         self.dfddot_order_of_mag = int(np.log10(delta_dfddot_start))
-        delta_dfddot = delta_dfddot_start / 10 ** self.dfddot_order_of_mag
+        delta_dfddot = delta_dfddot_start / 10**self.dfddot_order_of_mag
 
         freq_str = r"$\Delta$ F0" "x$10^{" + f"{self.df_order_of_mag}" + r"}$"
         fdot_str = (
@@ -615,9 +619,9 @@ class InteractivePhaseogram(BasePhaseogram):
         self.fig.canvas.draw_idle()
 
     def _read_sliders(self):
-        fddot = self.sfddot.val * 10 ** self.dfddot_order_of_mag
-        fdot = self.sfdot.val * 10 ** self.dfdot_order_of_mag
-        freq = self.sfreq.val * 10 ** self.df_order_of_mag
+        fddot = self.sfddot.val * 10**self.dfddot_order_of_mag
+        fdot = self.sfdot.val * 10**self.dfdot_order_of_mag
+        freq = self.sfreq.val * 10**self.df_order_of_mag
         return freq, fdot, fddot
 
     def _line_delay_fun(self, times):
@@ -983,7 +987,7 @@ def run_interactive_phaseogram(
             position=position,
             plot_only=plot_only,
             time_corr=events_save.time - events.time,
-            model=model
+            model=model,
         )
 
     return ip
