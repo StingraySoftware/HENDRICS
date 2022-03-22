@@ -20,7 +20,7 @@ from scipy.ndimage import gaussian_filter1d
 from .fold import filter_energy
 from .io import load_events, load_folding
 from .fold import get_TOAs_from_events
-from .base import hen_root, deorbit_events
+from .base import hen_root, deorbit_events, get_model
 from .efsearch import h_test
 
 
@@ -107,6 +107,7 @@ class BasePhaseogram(object):
         object=None,
         plot_only=False,
         time_corr=None,
+        model=None,
         **kwargs,
     ):
         """Init BasePhaseogram class.
@@ -143,7 +144,7 @@ class BasePhaseogram(object):
         **kwargs : keyword args
             additional arguments to pass to `self._construct_widgets`
         """
-
+        self.model = model
         self.fdot = fdot
         self.fddot = fddot
         self.nt = nt
@@ -485,7 +486,38 @@ class BasePhaseogram(object):
             linephase = ph0 + func(self.times) - func(self.times[0])
             self.lines[i].set_xdata(linephase)
 
+    def update_pint_model(self):
+        self.model.PEPOCH.value = self.pepoch / 86400 + self.mjdref
+        self.model.F0.value = self.freq
+        if hasattr(self.model, "F1"):
+            self.model.F1.value = self.fdot
+        else:
+            warnings.warn(
+                "Parameter F1 not in parfile. It will not be updated"
+            )
+        if hasattr(self.model, "F2"):
+            self.model.F2.value = self.fddot
+        else:
+            warnings.warn(
+                "Parameter F2 not in parfile. It will not be updated"
+            )
+        start, stop = self.gti.min(), self.gti.max()
+        self.model.START.value = start / 86400 + self.mjdref
+        self.model.FINISH.value = stop / 86400 + self.mjdref
+        if hasattr(self, "orbital_period") and self.orbital_period is not None:
+            self.model.PB.value = self.orbital_period / 86400
+            self.model.A1.value = self.asini
+            tasc = self.t0 / 86400 + self.mjdref
+            if hasattr(self.model, "T0"):
+                self.model.T0.value = tasc
+            if hasattr(self.model, "TASC"):
+                self.model.TASC.value = tasc
+        return self.model.as_parfile()
+
     def get_timing_model_string(self):
+
+        if hasattr(self, "model") and self.model is not None:
+            return self.update_pint_model()
 
         tm_string = ""
 
@@ -536,15 +568,15 @@ class InteractivePhaseogram(BasePhaseogram):
         tobs = tseg * self.nt
         delta_df_start = 4 / tobs
         self.df_order_of_mag = int(np.log10(delta_df_start))
-        delta_df = delta_df_start / 10 ** self.df_order_of_mag
+        delta_df = delta_df_start / 10**self.df_order_of_mag
 
-        delta_dfdot_start = 8 / tobs ** 2
+        delta_dfdot_start = 8 / tobs**2
         self.dfdot_order_of_mag = int(np.log10(delta_dfdot_start))
-        delta_dfdot = delta_dfdot_start / 10 ** self.dfdot_order_of_mag
+        delta_dfdot = delta_dfdot_start / 10**self.dfdot_order_of_mag
 
-        delta_dfddot_start = 16 / tobs ** 3
+        delta_dfddot_start = 16 / tobs**3
         self.dfddot_order_of_mag = int(np.log10(delta_dfddot_start))
-        delta_dfddot = delta_dfddot_start / 10 ** self.dfddot_order_of_mag
+        delta_dfddot = delta_dfddot_start / 10**self.dfddot_order_of_mag
 
         freq_str = r"$\Delta$ F0" "x$10^{" + f"{self.df_order_of_mag}" + r"}$"
         fdot_str = (
@@ -588,9 +620,9 @@ class InteractivePhaseogram(BasePhaseogram):
         self.fig.canvas.draw_idle()
 
     def _read_sliders(self):
-        fddot = self.sfddot.val * 10 ** self.dfddot_order_of_mag
-        fdot = self.sfdot.val * 10 ** self.dfdot_order_of_mag
-        freq = self.sfreq.val * 10 ** self.df_order_of_mag
+        fddot = self.sfddot.val * 10**self.dfddot_order_of_mag
+        fdot = self.sfdot.val * 10**self.dfdot_order_of_mag
+        freq = self.sfreq.val * 10**self.df_order_of_mag
         return freq, fdot, fddot
 
     def _line_delay_fun(self, times):
@@ -694,7 +726,7 @@ class InteractivePhaseogram(BasePhaseogram):
         with open(self.label + corr_string + ".tim", "w") as fobj:
             print("FORMAT 1", file=fobj)
             for t, te in zip(toa_corr, toaerr):
-                print("HEN", 0, t, te, "@", file=fobj)
+                print(self.label, 0, t, te, "@", file=fobj)
 
         with open(self.label + ".par", "w") as fobj:
             print(self.timing_model_string, file=fobj)
@@ -911,7 +943,19 @@ def run_interactive_phaseogram(
     else:
         pepoch = (pepoch_mjd - events.mjdref) * 86400
 
+    model = None
+    if deorbit_par is not None:
+        model = get_model(deorbit_par)
+
     if binary:
+        if binary_parameters[0] is None and model is not None:
+            log.info("Reading binary parameters from parameter file")
+            pb = model.PB.value * 86400
+            a1 = model.A1.value
+            key = ("T0" if hasattr(model, "T0") else "TASC")
+            t0 = (getattr(model, key).value - events.mjdref) * 86400
+            binary_parameters = [pb, a1, t0]
+
         ip = BinaryPhaseogram(
             events.time,
             freq,
@@ -931,11 +975,14 @@ def run_interactive_phaseogram(
             object=name,
             position=position,
             plot_only=plot_only,
+            model=model,
         )
     else:
         events_save = copy.deepcopy(events)
+        model = None
         if deorbit_par is not None:
             events = deorbit_events(events, deorbit_par)
+            model = get_model(deorbit_par)
 
         ip = InteractivePhaseogram(
             events.time,
@@ -954,6 +1001,7 @@ def run_interactive_phaseogram(
             position=position,
             plot_only=plot_only,
             time_corr=events_save.time - events.time,
+            model=model,
         )
 
     return ip

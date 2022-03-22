@@ -443,7 +443,7 @@ def fit_profile_with_sinusoids(
             fit_pars[startidx + 2 : startidx + 4]
         )
         chisq = np.sum(
-            (profile - std_fold_fit_func(fit_pars, x)) ** 2 / profile_err ** 2
+            (profile - std_fold_fit_func(fit_pars, x)) ** 2 / profile_err**2
         ) / (len(profile) - (startidx + 4))
         if debug:
             plt.plot(x, std_fold_fit_func(fit_pars, x), "b--")

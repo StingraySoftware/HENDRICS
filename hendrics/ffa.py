@@ -310,7 +310,7 @@ def sum_rolled(arr1, arr2, out, shift):
 @njit()
 def ffa_step(array, step, ntables):
     array_reshaped_dum = np.copy(array)
-    jump = 2 ** step
+    jump = 2**step
     # dum = np.zeros_like(array_reshaped_dum[0, :])
 
     for prof_n in range(ntables):

@@ -207,12 +207,18 @@ def multiple_event_concatenate(event_lists):
     order = np.argsort(ev_new.time)
     ev_new.time = ev_new.time[order]
 
-    if hasattr(event_lists[0], "pi") and event_lists[0].pi is not None:
-        ev_new.pi = np.concatenate([ev.pi for ev in event_lists])[order]
-    if hasattr(event_lists[0], "energy") and event_lists[0].energy is not None:
-        ev_new.energy = np.concatenate([ev.energy for ev in event_lists])[
-            order
-        ]
+    for attr in ev_new.array_attrs():
+        if (
+            hasattr(event_lists[0], attr)
+            and getattr(event_lists[0], attr) is not None
+        ):
+            setattr(
+                ev_new,
+                attr,
+                np.concatenate([getattr(ev, attr) for ev in event_lists])[
+                    order
+                ],
+            )
 
     ev_new.mjdref = event_lists[0].mjdref
     ev_new.gti = gti
@@ -220,7 +226,9 @@ def multiple_event_concatenate(event_lists):
     return ev_new
 
 
-def join_eventlists(event_file1, event_file2, new_event_file=None):
+def join_eventlists(
+    event_file1, event_file2, new_event_file=None, ignore_instr=False
+):
     """Join two event files.
 
     Parameters
@@ -235,6 +243,8 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
     new_event_file : str, default None
         Output event file. If not specified uses `hendrics.utils.common_name`
         to figure out a good name to use mixing up the two input names.
+    ignore_instr : bool
+        Ignore errors about different instruments
 
     Returns
     -------
@@ -248,6 +258,12 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
 
     events1 = load_events(event_file1)
     events2 = load_events(event_file2)
+
+    if ignore_instr:
+        events1.instr = events2.instr = ",".join(
+            (events1.instr, events2.instr)
+        )
+
     if events2.time.size == 0 or events2.gti.size == 0:
         warnings.warn(f"{event_file2} has no good events")
         return None
@@ -279,7 +295,7 @@ def join_eventlists(event_file1, event_file2, new_event_file=None):
     return new_event_file
 
 
-def join_many_eventlists(eventfiles, new_event_file=None):
+def join_many_eventlists(eventfiles, new_event_file=None, ignore_instr=False):
     """Join two event files.
 
     Parameters
@@ -291,6 +307,8 @@ def join_many_eventlists(eventfiles, new_event_file=None):
     ----------------
     new_event_file : str, default None
         Output event file. If not specified ``joint_ev`` + HEN_FILE_EXTENSION
+    ignore_instr : bool
+        Ignore errors about different instruments
 
     Returns
     -------
@@ -301,17 +319,26 @@ def join_many_eventlists(eventfiles, new_event_file=None):
         new_event_file = "joint_ev" + HEN_FILE_EXTENSION
 
     N = len(eventfiles)
+    log.info(f"Reading {eventfiles[0]} ({1}/{N})")
     first_events = load_events(eventfiles[0])
     all_events = [first_events]
+    instr = first_events.instr
     for i, event_file in enumerate(eventfiles[1:]):
         log.info(f"Reading {event_file} ({i + 1}/{N})")
         events = load_events(event_file)
         if not np.isclose(events.mjdref, first_events.mjdref):
             warnings.warn(f"{event_file} has a different MJDREF")
             continue
-        if hasattr(events, "instr") and not events.instr == first_events.instr:
+        if (
+            hasattr(events, "instr")
+            and not events.instr == first_events.instr
+            and not ignore_instr
+        ):
             warnings.warn(f"{event_file} is from a different instrument")
             continue
+        elif ignore_instr:
+            instr += "," + events.instr
+
         if (
             events.time.size == 0
             or events.gti.size == 0
@@ -328,6 +355,9 @@ def join_many_eventlists(eventfiles, new_event_file=None):
         all_events.append(events)
 
     events = multiple_event_concatenate(all_events)
+    if ignore_instr:
+        events.instr = instr
+
     save_events(events, new_event_file)
     return new_event_file
 
@@ -420,14 +450,27 @@ def main_join(args=None):
     parser.add_argument(
         "-o", "--output", type=str, help="Name of output file", default=None
     )
+    parser.add_argument(
+        "--ignore-instr",
+        help="Ignore instrument names in channels",
+        default=False,
+        action="store_true",
+    )
     args = parser.parse_args(args)
 
     if len(args.files) == 2:
         return join_eventlists(
-            args.files[0], args.files[1], new_event_file=args.output
+            args.files[0],
+            args.files[1],
+            new_event_file=args.output,
+            ignore_instr=args.ignore_instr,
         )
     else:
-        return join_many_eventlists(args.files, new_event_file=args.output)
+        return join_many_eventlists(
+            args.files,
+            new_event_file=args.output,
+            ignore_instr=args.ignore_instr,
+        )
 
 
 def main_splitevents(args=None):
@@ -455,7 +498,10 @@ def main_splitevents(args=None):
         default=None,
     )
     parser.add_argument(
-        "--split-at-mjd", type=float, help="Split at this MJD", default=None,
+        "--split-at-mjd",
+        type=float,
+        help="Split at this MJD",
+        default=None,
     )
 
     args = parser.parse_args(args)

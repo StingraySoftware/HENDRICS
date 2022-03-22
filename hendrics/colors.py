@@ -89,7 +89,7 @@ def main(args=None):
             time = lc0.time
             counts = lc1.countrate / lc0.countrate
             counts_err = np.sqrt(
-                lc1.countrate_err ** 2 + lc0.countrate_err ** 2
+                lc1.countrate_err**2 + lc0.countrate_err**2
             )
             scolor = Lightcurve(
                 time=time,

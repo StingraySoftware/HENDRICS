@@ -29,6 +29,7 @@ try:
     HAS_PINT = True
 except ImportError:
     HAS_PINT = False
+    get_model = None
 
 try:
     from skimage.feature import peak_local_max
@@ -547,7 +548,7 @@ def interpret_bintime(bintime):
     ValueError: Bin time cannot be = 0
     """
     if bintime < 0:
-        return 2 ** bintime
+        return 2**bintime
     elif bintime > 0:
         return bintime
     raise ValueError("Bin time cannot be = 0")
@@ -642,7 +643,7 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     >>> assert np.all(H == Hn)
     >>> assert os.path.exists('out.npy')
     """
-    if bins > 10 ** 7 and use_memmap:
+    if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+")
         hist_arr = np.lib.format.open_memmap(
@@ -874,7 +875,6 @@ if HAS_NUMBA:
             kwargs["ranges"] = kwargs.pop("range")
         return hist1d_numba_seq(*args, **kwargs)
 
-
 else:
 
     def histogram2d(*args, **kwargs):
@@ -975,7 +975,7 @@ def adjust_dt_for_small_power(dt, length):
 
 
 def memmapped_arange(
-    i0, i1, istep, fname=None, nbin_threshold=10 ** 7, dtype=float
+    i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=float
 ):
     """Arange plus memory mapping.
 
@@ -991,7 +991,7 @@ def memmapped_arange(
     """
     import tempfile
 
-    chunklen = 10 ** 6
+    chunklen = 10**6
     Nbins = int((i1 - i0) / istep)
     if Nbins < nbin_threshold:
         return np.arange(i0, i1, istep)

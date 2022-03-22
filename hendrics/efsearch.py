@@ -16,11 +16,20 @@ from stingray.pulse.search import (
     z_n_search,
     search_best_peaks,
 )
+from stingray.stats import a_from_ssig, pf_from_ssig, power_confidence_limits
+
 from stingray.gti import time_intervals_from_gtis
 from stingray.utils import assign_value_if_none
 from stingray.pulse.modeling import fit_sinc, fit_gaussian
 from stingray.stats import pf_upper_limit
-from .io import load_events, EFPeriodogram, save_folding, HEN_FILE_EXTENSION
+from .io import (
+    load_events,
+    EFPeriodogram,
+    save_folding,
+    HEN_FILE_EXTENSION,
+    load_folding,
+)
+
 from .base import (
     hen_root,
     show_progress,
@@ -30,6 +39,9 @@ from .base import (
 from .base import deorbit_events, njit, prange, vectorize, float64
 from .base import histogram2d, histogram, memmapped_arange
 from .base import z2_n_detection_level, fold_detection_level
+from .base import find_peaks_in_image
+from .base import z2_n_detection_level
+from .base import fold_detection_level
 from .fold import filter_energy
 from .ffa import _z_n_fast_cached, ffa_search, h_test
 from .fake import scramble
@@ -93,8 +105,8 @@ def check_phase_error_after_casting_to_double(tref, f, fdot=0):
     """Check the maximum error expected in the phase when casting to double."""
     times = np.array(np.random.normal(tref, 0.1, 1000), dtype=np.longdouble)
     times_dbl = times.astype(np.double)
-    phase = times * f + 0.5 * times ** 2 * fdot
-    phase_dbl = times_dbl * np.double(f) + 0.5 * times_dbl ** 2 * np.double(
+    phase = times * f + 0.5 * times**2 * fdot
+    phase_dbl = times_dbl * np.double(f) + 0.5 * times_dbl**2 * np.double(
         fdot
     )
     return np.max(np.abs(phase_dbl - phase))
@@ -187,7 +199,7 @@ def folding_orbital_search(
                 dtype=np.float64,
             )
 
-            dT0 = min(1 / (TWOPI ** 2 * freq) * Porb / X, Porb / 10)
+            dT0 = min(1 / (TWOPI**2 * freq) * Porb / X, Porb / 10)
             max_stats = 0
             min_stats = 1e32
             best_T0 = None
@@ -660,7 +672,7 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     nprof = repeated_profiles.shape[0]
 
     base_shift = np.linspace(-1, 1, nprof)
-    quad_base_shift = base_shift ** 2
+    quad_base_shift = base_shift**2
 
     for i in prange(linbinshifts.size):
         # This zeros needs to be here, not outside the parallel loop, or
@@ -756,7 +768,7 @@ def search_with_qffa_step(
     dphi = 1 / nbin
     delta_t = (t1 - t0) / 2
     bin_to_frequency = dphi / delta_t
-    bin_to_fdot = 2 * dphi / delta_t ** 2
+    bin_to_fdot = 2 * dphi / delta_t**2
 
     L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing="ij")
 
@@ -980,7 +992,7 @@ def folding_search(
     if step is None:
         step = 1 / oversample / length
     if fdotstep is None:
-        fdotstep = 1 / oversample / length ** 2
+        fdotstep = 1 / oversample / length**2
     gti = None
     if expocorr:
         gti = events.gti
@@ -1064,6 +1076,191 @@ def dyn_folding_search(
     plt.savefig("Dyn.png")
     plt.close(fig)
     return times, frequencies, np.array(stats)
+
+
+def analyze_qffa_results(fname):
+    """Search best candidates in a quasi-fast-folding search.
+
+    This function searches the (typically) 2-d search plane from
+    a QFFA search and finds the best five candidates.
+    For the best candidate, it calculates
+
+    Parameters
+    ----------
+    fname : str
+        File containing the folding search results
+    """
+    ef = load_folding(fname)
+
+    if not hasattr(ef, "M") or ef.M is None:
+        ef.M = 1
+
+    ntrial = ef.stat.size
+    if hasattr(ef, "oversample") and ef.oversample is not None:
+        ntrial /= ef.oversample
+        ntrial = int(ntrial)
+    if ef.kind == "Z2n":
+        ndof = ef.N - 1
+        detlev = z2_n_detection_level(
+            epsilon=0.001,
+            n=int(ef.N),
+            ntrial=ntrial,
+            n_summed_spectra=int(ef.M),
+        )
+        nbin = max(16, ef.N * 8, ef.nbin if ef.nbin is not None else 1)
+        label = "$" + "Z^2_{" + f"{ef.N}" + "}$"
+    else:
+        ndof = ef.nbin
+        detlev = fold_detection_level(
+            nbin=int(ef.nbin), epsilon=0.001, ntrial=ntrial
+        )
+        nbin = max(16, ef.nbin)
+        label = rf"$\chi^2_{ndof}$ Stat"
+    n_cands = 5
+    best_cands = find_peaks_in_image(ef.stat, n=n_cands)
+
+    fddot = 0
+    if hasattr(ef, "fddots") and ef.fddots is not None:
+        fddot = ef.fddots
+
+    print("Best candidates:")
+    best_cand_table = Table(
+        names=[
+            "fname",
+            "mjd",
+            "power",
+            "f",
+            "fdot",
+            "fddot",
+            "power_cl_0.9",
+            "pulse_amp (%)",
+            "pulse_amp_err (%)",
+            "pulse_amp_cl_0.1 (%)",
+            "pulse_amp_cl_0.9 (%)",
+            "pulse_amp_ul_0.9 (%)",
+        ],
+        dtype=[
+            str,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+            float,
+        ],
+    )
+    best_cand_table["power"].info.format = ".2f"
+    best_cand_table["power_cl_0.9"].info.format = ".2f"
+    best_cand_table["fdot"].info.format = ".2e"
+    best_cand_table["fddot"].info.format = "g"
+    best_cand_table["pulse_amp_cl_0.1 (%)"].info.format = ".2f"
+    best_cand_table["pulse_amp_cl_0.9 (%)"].info.format = ".2f"
+    best_cand_table["pulse_amp (%)"].info.format = ".2f"
+    best_cand_table["pulse_amp_err (%)"].info.format = ".2f"
+    best_cand_table["pulse_amp_ul_0.9 (%)"].info.format = ".2f"
+
+    for i, idx in enumerate(best_cands):
+        if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+            allfreqs = ef.freq[idx[0], :]
+            allfdots = ef.freq[:, idx[1]]
+            allstats_f = ef.stat[idx[0], :]
+            allstats_fdot = ef.stat[:, idx[1]]
+            f, fdot = ef.freq[idx[0], idx[1]], ef.fdots[idx[0], idx[1]]
+            max_stat = ef.stat[idx[0], idx[1]]
+        elif len(ef.stat.shape) == 1:
+            allfreqs = ef.freq
+            allstats_f = ef.stat
+            f = ef.freq[idx[0]]
+            max_stat = ef.stat[idx[0]]
+            fdot = 0
+            allfdots = None
+            allstats_fdot = None
+        else:
+            raise ValueError("Did not understand stats shape.")
+
+        if ef.ncounts is None:
+            continue
+
+        _, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
+        sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=ef.N)
+        amp = amp_err = amp_ul = amp_1 = amp_0 = np.nan
+        if max_stat < detlev:
+            amp_ul = a_from_ssig(sig_1, ef.ncounts) * 100
+        else:
+            amp = a_from_ssig(max_stat, ef.ncounts) * 100
+            amp_err = a_from_ssig(sig_e1, ef.ncounts) * 100 - amp
+            amp_0 = a_from_ssig(sig_0, ef.ncounts) * 100
+            amp_1 = a_from_ssig(sig_1, ef.ncounts) * 100
+
+        best_cand_table.add_row(
+            [
+                ef.filename,
+                ef.pepoch,
+                max_stat,
+                f,
+                fdot,
+                fddot,
+                sig_0,
+                amp,
+                amp_err,
+                amp_0,
+                amp_1,
+                amp_ul,
+            ]
+        )
+        if max_stat < detlev:
+            # Only add one candidate
+            continue
+
+        Table({"freq": allfreqs, "stat": allstats_f}).write(
+            f'{fname.replace(HEN_FILE_EXTENSION, "")}'
+            f"_cand_{n_cands - i - 1}_fdot{fdot}.csv",
+            overwrite=True,
+            format="ascii",
+        )
+        if allfdots is None:
+            continue
+
+        Table({"fdot": allfdots, "stat": allstats_fdot}).write(
+            f'{fname.replace(HEN_FILE_EXTENSION, "")}'
+            f"_cand_{n_cands - i - 1}_f{f}.dat",
+            overwrite=True,
+            format="ascii",
+        )
+
+    if len(best_cand_table[~np.isnan(best_cand_table["pulse_amp (%)"])]) == 0:
+        print(f"None.")
+        if hasattr(ef, "upperlim") and ef.upperlim is not None:
+            maxpow = ef.stat.max()
+            sig_0, sig_1 = power_confidence_limits(maxpow, c=0.90, n=ef.N)
+            amp_lim = pf_lim = np.nan
+            if ef.ncounts is not None:
+                amp_lim = a_from_ssig(sig_1, ef.ncounts)
+                pf_lim = pf_from_ssig(sig_1, ef.ncounts)
+
+            print(
+                f"(90% Upper limit for sinusoids: p. frac. < {pf_lim * 100:.2f}%, p. ampl. < {amp_lim * 100:.2f} %)"
+            )
+    else:
+        print(best_cand_table)
+
+    best_cand_table.meta.update(
+        dict(nbin=nbin, ndof=ndof, label=label, filename=None, detlev=detlev)
+    )
+    if (
+        hasattr(ef, "filename")
+        and ef.filename is not None
+        and os.path.exists(ef.filename)
+    ):
+        best_cand_table.meta["filename"] = ef.filename
+
+    best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
+    return ef, best_cand_table
 
 
 def _common_parser(args=None):
@@ -1728,7 +1925,7 @@ def main_accelsearch(args=None):
 
     t0 = GTI[0, 0]
     Nbins = int(np.rint(max_length / dt))
-    if Nbins > 10 ** 8:
+    if Nbins > 10**8:
         log.info(
             f"The number of bins is more than 100 millions: {Nbins}. "
             "Using memmap."

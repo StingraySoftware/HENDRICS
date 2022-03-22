@@ -73,7 +73,10 @@ def test_distributed_pds():
         )
     else:
         single_periodogram = stingray.AveragedPowerspectrum(
-            events, segment_size=100, dt=0.1, norm="leahy",
+            events,
+            segment_size=100,
+            dt=0.1,
+            norm="leahy",
         )
     pds_iterable = hen.fspec._provide_periodograms(events, 100, 0.1, "leahy")
     pds_distr = hen.fspec.average_periodograms(pds_iterable)
@@ -199,8 +202,10 @@ class TestFullRun(object):
         """Test PDS production."""
         evdata = self.ev_fileA
 
-        command = "{0} -f 128 -k PDS --save-all --norm leahy -b {1} --emin 3".format(
-            evdata, 1
+        command = (
+            "{0} -f 128 -k PDS --save-all --norm leahy -b {1} --emin 3".format(
+                evdata, 1
+            )
         )
         hen.fspec.main(command.split())
 
@@ -276,13 +281,11 @@ class TestFullRun(object):
         else:
             label = "_lc"
 
-        command = (
-            "{0} {1} -f 128 --ignore-gtis".format(
-                os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
-                + HEN_FILE_EXTENSION,
-            )
+        command = "{0} {1} -f 128 --ignore-gtis".format(
+            os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
+            + HEN_FILE_EXTENSION,
+            os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
+            + HEN_FILE_EXTENSION,
         )
         hen.fspec.main(command.split())
         outA = os.path.join(
@@ -343,10 +346,12 @@ class TestFullRun(object):
 
     def test_cpds_wrong_norm(self):
         """Test CPDS production."""
-        command = "{0} {1} -f 128 --save-dyn -k CPDS --norm blablabla -o {2}".format(
-            self.lcA,
-            self.lcB,
-            os.path.join(self.datadir, "monol_test_3-50keV"),
+        command = (
+            "{0} {1} -f 128 --save-dyn -k CPDS --norm blablabla -o {2}".format(
+                self.lcA,
+                self.lcB,
+                os.path.join(self.datadir, "monol_test_3-50keV"),
+            )
         )
         with pytest.warns(UserWarning) as record:
             hen.fspec.main(command.split())

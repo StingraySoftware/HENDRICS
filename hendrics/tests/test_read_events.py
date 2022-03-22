@@ -104,6 +104,49 @@ class TestMergeEvents:
         assert os.path.exists(out)
         os.unlink(out)
 
+    def test_merge_events_different_instr_ignore(self):
+        hen.read_events.main_join(
+            [
+                self.f0,
+                self.f2,
+                self.f3,
+                "--ignore-instr",
+                "-o",
+                os.path.join(
+                    self.datadir, "monol_merg1023_ev" + HEN_FILE_EXTENSION
+                ),
+            ]
+        )
+
+        out = os.path.join(
+            self.datadir, "monol_merg1023_ev" + HEN_FILE_EXTENSION
+        )
+        assert os.path.exists(out)
+        ev = load_events(out)
+        assert ev.instr.lower() == "BA,BA,BU".lower()
+        os.unlink(out)
+
+    def test_merge_two_events_different_instr_ignore(self):
+        hen.read_events.main_join(
+            [
+                self.f0,
+                self.f3,
+                "--ignore-instr",
+                "-o",
+                os.path.join(
+                    self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION
+                ),
+            ]
+        )
+
+        out = os.path.join(
+            self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION
+        )
+        assert os.path.exists(out)
+        ev = load_events(out)
+        assert ev.instr.lower() == "BA,BU".lower()
+        os.unlink(out)
+
     def test_merge_events_no_out_fname(self):
         with pytest.warns(UserWarning) as record:
             hen.read_events.main_join([self.f0, self.f1])
