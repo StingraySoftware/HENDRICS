@@ -507,10 +507,11 @@ class BasePhaseogram(object):
         if hasattr(self, "orbital_period") and self.orbital_period is not None:
             self.model.PB.value = self.orbital_period / 86400
             self.model.A1.value = self.asini
+            tasc = self.t0 / 86400 + self.mjdref
             if hasattr(self.model, "T0"):
-                self.model.T0.value = self.t0
+                self.model.T0.value = tasc
             if hasattr(self.model, "TASC"):
-                self.model.TASC.value = self.t0
+                self.model.TASC.value = tasc
         return self.model.as_parfile()
 
     def get_timing_model_string(self):
@@ -942,7 +943,19 @@ def run_interactive_phaseogram(
     else:
         pepoch = (pepoch_mjd - events.mjdref) * 86400
 
+    model = None
+    if deorbit_par is not None:
+        model = get_model(deorbit_par)
+
     if binary:
+        if binary_parameters[0] is None and model is not None:
+            log.info("Reading binary parameters from parameter file")
+            pb = model.PB.value * 86400
+            a1 = model.A1.value
+            key = ("T0" if hasattr(model, "T0") else "TASC")
+            t0 = (getattr(model, key).value - events.mjdref) * 86400
+            binary_parameters = [pb, a1, t0]
+
         ip = BinaryPhaseogram(
             events.time,
             freq,
@@ -962,6 +975,7 @@ def run_interactive_phaseogram(
             object=name,
             position=position,
             plot_only=plot_only,
+            model=model,
         )
     else:
         events_save = copy.deepcopy(events)

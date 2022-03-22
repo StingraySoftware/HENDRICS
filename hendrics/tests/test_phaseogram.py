@@ -14,6 +14,34 @@ import pytest
 import subprocess as sp
 
 
+def create_parfile(parfile, withfX=False, withbt=False, withell1=False):
+    with open(parfile, "w") as fobj:
+        print("F0  9.9", file=fobj)
+        if withfX:
+            print("F1  1e-14", file=fobj)
+            print("F2  1e-22", file=fobj)
+
+        withorbit = withbt or withell1
+        print("PEPOCH 57000", file=fobj)
+        if withell1:
+            print("BINARY ELL1", file=fobj)
+        elif withbt:
+            print("BINARY BT", file=fobj)
+
+        if withorbit:
+            print("PB  1e20", file=fobj)
+            print("A1  0", file=fobj)
+        if withell1:
+            print("TASC  56000", file=fobj)
+            print("EPS1  0", file=fobj)
+            print("EPS2  0", file=fobj)
+        elif withbt:
+            print("T0  56000", file=fobj)
+
+        print("EPHEM  DE200", file=fobj)
+        print("RAJ  00:55:01", file=fobj)
+        print("DECJ 12:00:40.2", file=fobj)
+
 class TestPhaseogram:
     def setup_class(cls):
         cls.pulse_frequency = 1 / 0.101
@@ -184,30 +212,10 @@ class TestPhaseogram:
         evfile = self.dum
 
         par = hen_root(evfile) + ".par"
-        with open(par, "w") as fobj:
-            print("F0  9.9", file=fobj)
-            if withfX:
-                print("F1  1e-14", file=fobj)
-                print("F2  1e-22", file=fobj)
 
-            print("PEPOCH 57000", file=fobj)
-            if withfX:
-                print("BINARY ELL1", file=fobj)
-            else:
-                print("BINARY BT", file=fobj)
-
-            print("PB  1e20", file=fobj)
-            print("A1  0", file=fobj)
-            if withfX:
-                print("TASC  56000", file=fobj)
-                print("EPS1  0", file=fobj)
-                print("EPS2  0", file=fobj)
-            else:
-                print("T0  56000", file=fobj)
-
-            print("EPHEM  DE200", file=fobj)
-            print("RAJ  00:55:01", file=fobj)
-            print("DECJ 12:00:40.2", file=fobj)
+        withell1 = withfX
+        withbt = not withfX
+        create_parfile(par, withfX=withfX, withell1=withell1, withbt=withbt)
 
         ip = run_interactive_phaseogram(
             evfile, 9.9, test=True, nbin=16, nt=8, deorbit_par=par
@@ -283,6 +291,32 @@ class TestPhaseogram:
         ip.orbital_period = 2
         orbital_period, fdot, fddot = ip.get_values()
         assert orbital_period == 2
+
+    @pytest.mark.remote_data
+    @pytest.mark.skipif("not HAS_PINT")
+    @pytest.mark.parametrize("use_ell1", [True, False])
+    def test_phaseogram_input_f_change_binary_deorbit(self, use_ell1):
+        evfile = self.dum
+        par = "orbit.par"
+        create_parfile(par, withell1=use_ell1, withbt=not use_ell1)
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True, binary=True, deorbit_par=par)
+        ip.update(1)
+        ip.recalculate(1)
+        ip.reset(1)
+        ip.zoom_in(1)
+        ip.zoom_out(1)
+        with pytest.warns(UserWarning) as record:
+            ip.toa(1)
+        assert np.any(
+            [
+                "This function was not implemented" in r.message.args[0]
+                for r in record
+            ]
+        )
+        ip.orbital_period = 2
+        orbital_period, fdot, fddot = ip.get_values()
+        assert orbital_period == 2
+        os.unlink(par)
 
     def test_phaseogram_raises_binary(self):
         evfile = self.dum
