@@ -12,7 +12,7 @@ from scipy.signal import savgol_filter
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
 from astropy import log
-from .base import hen_root
+from .base import hen_root, normalize_dyn_profile
 from .io import load_events, filter_energy
 
 try:
@@ -37,18 +37,21 @@ except ImportError:
 from .base import deorbit_events
 
 
-def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE405"):
+def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE421"):
     errs_us = assign_value_if_none(errs_us, np.zeros_like(mjds))
 
     toalist = [None] * len(mjds)
     for i, m in enumerate(mjds):
         toalist[i] = toa.TOA(
-            m, error=errs_us[i], obs="Barycenter", scale="tdb"
+            m,
+            error=errs_us[i],
+            obs="Barycenter",
+            scale="tdb",
         )
 
     toalist = toa.TOAs(toalist=toalist)
     if "tdb" not in toalist.table.colnames:
-        toalist.compute_TDBs()
+        toalist.compute_TDBs(ephem=ephem)
     if "ssb_obs_pos" not in toalist.table.colnames:
         toalist.compute_posvels(ephem, False)
     return toalist
@@ -192,6 +195,8 @@ def get_TOAs_from_events(
          If True, use a quicker fitting algorithms for TOAs. Defaults to False
     position: `astropy.SkyCoord` object
          Position of the object
+    ephem : str
+        Ephemeris. Default DE421
 
     Returns
     -------
@@ -209,6 +214,7 @@ def get_TOAs_from_events(
     gti = kwargs["gti"] if "gti" in kwargs else None
     label = kwargs["label"] if "label" in kwargs else None
     quick = kwargs["quick"] if "quick" in kwargs else False
+    ephem = kwargs["ephem"] if "ephem" in kwargs else "DE421"
 
     pepoch = assign_value_if_none(pepoch, events[0])
     gti = np.asarray(assign_value_if_none(gti, [[events[0], events[-1]]]))
@@ -296,7 +302,9 @@ def get_TOAs_from_events(
         toa_errs = toa_errs * 1e6
         if HAS_PINT:
             label = assign_value_if_none(label, "hendrics")
-            toa_list = _load_and_prepare_TOAs(toas, errs_us=toa_errs)
+            toa_list = _load_and_prepare_TOAs(
+                toas, errs_us=toa_errs, ephem=ephem
+            )
             # workaround until PR #368 is accepted in pint
             toa_list.table["clkcorr"] = 0
             toa_list.write_TOA_file(timfile, name=label, format="Tempo2")
@@ -487,6 +495,7 @@ def run_folding(
     deorbit_par=None,
     pepoch=None,
     out_file_root=None,
+    colormap="cubehelix",
     **opts,
 ):
     from matplotlib.gridspec import GridSpec
@@ -549,16 +558,9 @@ def run_folding(
         hist2d = np.vstack((hist2d, hist2d))
         hist2d_save = np.copy(hist2d)
         X, Y = np.meshgrid(binx, biny)
-
-        if norm == "ratios":
-            hist2d /= smooth[:, np.newaxis]
-            hist2d *= histen[np.newaxis, :]
-            file_label = "_ratios"
-        else:
-            hist2d /= histen[np.newaxis, :]
-            factor = np.max(hist2d, axis=0)[np.newaxis, :]
-            hist2d /= factor
-            file_label = "_to1"
+        hist2d = normalize_dyn_profile(hist2d.T, norm).T
+        if norm is not None and norm != "":
+            file_label = f"_{norm}"
 
     if out_file_root is None:
         out_file_root = hen_root(file)
@@ -629,7 +631,7 @@ def run_folding(
     ax0.set_xlabel("Phase")
 
     if plot_energy:
-        ax1.pcolormesh(X, Y, hist2d.T, cmap="Greys_r")
+        ax1.pcolormesh(X, Y, hist2d.T, cmap=colormap)
         ax1.semilogy()
 
         ax1.set_xlabel("Phase")
@@ -746,20 +748,22 @@ def main_fold(args=None):
         help="Maximum energy (or PI if uncalibrated) to plot",
     )
     parser.add_argument(
-        "--norm",
-        default="to1",
-        help="--norm to1: Normalize hist so that the maximum "
-        "at each energy is one. "
-        "--norm ratios: Divide by mean profile",
-    )
-    parser.add_argument(
         "--out-file-root",
         default=None,
         help="Root of the output files (plots and csv tables)",
     )
 
     _add_default_args(
-        parser, ["pepoch", "deorbit", "loglevel", "debug", "test"]
+        parser,
+        [
+            "pepoch",
+            "dynprofnorm",
+            "colormap",
+            "deorbit",
+            "loglevel",
+            "debug",
+            "test",
+        ],
     )
 
     args = check_negative_numbers_in_args(args)
@@ -790,6 +794,7 @@ def main_fold(args=None):
             deorbit_par=args.deorbit_par,
             pepoch=args.pepoch,
             out_file_root=args.out_file_root,
+            colormap=args.colormap,
         )
 
 

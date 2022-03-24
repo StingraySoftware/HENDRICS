@@ -17,6 +17,7 @@ from matplotlib.widgets import Slider, Button
 from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter1d
 
+from .base import normalize_dyn_profile
 from .fold import filter_energy
 from .io import load_events, load_folding
 from .fold import get_TOAs_from_events
@@ -24,7 +25,7 @@ from .base import hen_root, deorbit_events, get_model
 from .efsearch import h_test
 
 
-DEFAULT_COLORMAP = "viridis"
+DEFAULT_COLORMAP = "cubehelix"
 
 
 def get_H_label(phas, prof):
@@ -55,36 +56,7 @@ class SliderOnSteroids(Slider):
 
 def normalized_phaseogram(norm, *args, **kwargs):
     phas, phases, times, additional_info = phaseogram(*args, **kwargs)
-    if norm is None:
-        pass
-    elif norm == "to1":
-        minarr = np.min(phas, axis=0)
-        maxarr = np.max(phas, axis=0)
-        for i in range(phas.shape[0]):
-            phas[i][:] -= minarr
-            phas[i][:] /= maxarr - minarr
-    elif norm == "mediansub":
-        medarr = np.median(phas, axis=0)
-        for i in range(phas.shape[0]):
-            phas[i][:] -= medarr
-    elif norm == "mediannorm":
-        medarr = np.median(phas, axis=0)
-        for i in range(phas.shape[0]):
-            phas[i][:] -= medarr
-        phas[i][:] /= medarr
-    elif norm == "meansub":
-        medarr = np.mean(phas, axis=0)
-        for i in range(phas.shape[0]):
-            phas[i][:] -= medarr
-    elif norm == "meannorm":
-        medarr = np.mean(phas, axis=0)
-        for i in range(phas.shape[0]):
-            phas[i][:] -= medarr
-        phas[i][:] /= medarr
-    else:
-        warnings.warn(
-            "Profile normalization " "{} not known. Using default".format(norm)
-        )
+    phas = normalize_dyn_profile(phas.T, norm).T
     return phas, phases, times, additional_info
 
 
@@ -108,6 +80,7 @@ class BasePhaseogram(object):
         plot_only=False,
         time_corr=None,
         model=None,
+        colormap=DEFAULT_COLORMAP,
         **kwargs,
     ):
         """Init BasePhaseogram class.
@@ -145,6 +118,7 @@ class BasePhaseogram(object):
             additional arguments to pass to `self._construct_widgets`
         """
         self.model = model
+        self.colormap = colormap
         self.fdot = fdot
         self.fddot = fddot
         self.nt = nt
@@ -225,12 +199,9 @@ class BasePhaseogram(object):
 
         self.phases, self.times = phases, times
         vmin = None
-        if self.norm is not None and (
-            "sub" in self.norm or "to1" in self.norm
-        ):
-            vmin = 0
+
         self.pcolor = ax.pcolormesh(
-            phases, times, self.phaseogr.T, cmap=DEFAULT_COLORMAP, vmin=vmin
+            phases, times, self.phaseogr.T, cmap=self.colormap, vmin=vmin
         )
         self.colorbar = plt.colorbar(
             self.pcolor, cax=colorbax, orientation="horizontal"
@@ -702,7 +673,9 @@ class InteractivePhaseogram(BasePhaseogram):
         template = template[nbin // 2 : nbin // 2 + template.size // 2]
 
         template = np.roll(template, -np.argmax(template)) / self.nt
-
+        ephem = "DE421"
+        if self.model is not None and hasattr(self.model, "EPHEM"):
+            ephem = self.model.EPHEM.value
         toa, toaerr = get_TOAs_from_events(
             self.ev_times,
             folding_length,
@@ -716,6 +689,7 @@ class InteractivePhaseogram(BasePhaseogram):
             label=self.label[:10],
             quick=self.test,
             position=None,
+            ephem=ephem,
         )
         toa_corr = toa + self.time_corr_mjd_fun(toa)
         corr_string = ""
@@ -910,6 +884,7 @@ def run_interactive_phaseogram(
     deorbit_par=None,
     emin=None,
     emax=None,
+    colormap=DEFAULT_COLORMAP,
 ):
     from astropy.io.fits import Header
     from astropy.coordinates import SkyCoord
@@ -952,7 +927,7 @@ def run_interactive_phaseogram(
             log.info("Reading binary parameters from parameter file")
             pb = model.PB.value * 86400
             a1 = model.A1.value
-            key = ("T0" if hasattr(model, "T0") else "TASC")
+            key = "T0" if hasattr(model, "T0") else "TASC"
             t0 = (getattr(model, key).value - events.mjdref) * 86400
             binary_parameters = [pb, a1, t0]
 
@@ -976,6 +951,7 @@ def run_interactive_phaseogram(
             position=position,
             plot_only=plot_only,
             model=model,
+            colormap=colormap,
         )
     else:
         events_save = copy.deepcopy(events)
@@ -1002,6 +978,7 @@ def run_interactive_phaseogram(
             plot_only=plot_only,
             time_corr=events_save.time - events.time,
             model=model,
+            colormap=colormap,
         )
 
     return ip
@@ -1075,17 +1052,6 @@ def main_phaseogram(args=None):
         help="Maximum energy (or PI if uncalibrated) to plot",
     )
     parser.add_argument(
-        "--norm",
-        help=(
-            "Normalization for the phaseogram. Can be 'to1' "
-            "(each profile normalized from 0 to 1); "
-            "'mediansub' (just subtract the median from each "
-            "profile); default None"
-        ),
-        default=None,
-        type=str,
-    )
-    parser.add_argument(
         "--plot-only",
         help="Only plot the phaseogram",
         default=False,
@@ -1093,7 +1059,16 @@ def main_phaseogram(args=None):
     )
 
     _add_default_args(
-        parser, ["pepoch", "deorbit", "test", "loglevel", "debug"]
+        parser,
+        [
+            "pepoch",
+            "dynprofnorm",
+            "colormap",
+            "deorbit",
+            "test",
+            "loglevel",
+            "debug",
+        ],
     )
 
     args = check_negative_numbers_in_args(args)
@@ -1135,5 +1110,6 @@ def main_phaseogram(args=None):
             deorbit_par=args.deorbit_par,
             emin=args.emin,
             emax=args.emax,
+            colormap=args.colormap,
         )
     plt.close(ip.fig)

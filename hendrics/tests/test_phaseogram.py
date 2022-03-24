@@ -42,6 +42,7 @@ def create_parfile(parfile, withfX=False, withbt=False, withell1=False):
         print("RAJ  00:55:01", file=fobj)
         print("DECJ 12:00:40.2", file=fobj)
 
+
 class TestPhaseogram:
     def setup_class(cls):
         cls.pulse_frequency = 1 / 0.101
@@ -299,7 +300,9 @@ class TestPhaseogram:
         evfile = self.dum
         par = "orbit.par"
         create_parfile(par, withell1=use_ell1, withbt=not use_ell1)
-        ip = run_interactive_phaseogram(evfile, 9.9, test=True, binary=True, deorbit_par=par)
+        ip = run_interactive_phaseogram(
+            evfile, 9.9, test=True, binary=True, deorbit_par=par
+        )
         ip.update(1)
         ip.recalculate(1)
         ip.reset(1)
