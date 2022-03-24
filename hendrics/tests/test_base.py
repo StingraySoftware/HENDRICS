@@ -1,10 +1,55 @@
 import os
 import pytest
 import numpy as np
-from hendrics.base import deorbit_events
+from hendrics.base import deorbit_events, normalize_dyn_profile
 from stingray.events import EventList
 from hendrics.tests import _dummy_par
 from hendrics.fold import HAS_PINT
+
+
+class TestNormalize:
+    @classmethod
+    def setup_class(cls):
+        cls.mean = 20
+        cls.std = 2
+        cls.hist = [
+            np.random.normal(cls.mean, cls.std, 100_000) for i in range(4)
+        ]
+
+    @pytest.mark.parametrize("kind", ["mean", "median", ""])
+    def test_normalize_norm(self, kind):
+        norm = kind + "norm"
+        nhist = normalize_dyn_profile(self.hist, norm)
+        assert np.allclose(nhist.mean(axis=1), 0, atol=0.01)
+        assert np.allclose(nhist.std(axis=1), self.std / self.mean, atol=0.01)
+
+    @pytest.mark.parametrize("kind", ["mean", "median", ""])
+    def test_normalize_std(self, kind):
+        norm = kind + "std"
+        nhist = normalize_dyn_profile(self.hist, norm)
+        assert np.allclose(nhist.mean(axis=1), 0, atol=0.01)
+        assert np.allclose(nhist.std(axis=1), 1, atol=0.01)
+
+    @pytest.mark.parametrize("kind", ["mean", "median", ""])
+    def test_normalize_norm_smooth(self, kind):
+        norm = kind + "norm" + "_smooth"
+        nhist = normalize_dyn_profile(self.hist, norm)
+        assert np.allclose(nhist.mean(axis=1), 0, atol=0.01)
+        # Smoothing reduces the standard deviation
+        assert np.all(nhist.std(axis=1) < self.std / self.mean)
+
+    @pytest.mark.parametrize("kind", ["mean", "median", ""])
+    def test_normalize_to1(self, kind):
+        norm = kind + "to1"
+        nhist = normalize_dyn_profile(self.hist, norm)
+        assert np.allclose(nhist.min(axis=1), 0, atol=0.01)
+        assert np.allclose(nhist.max(axis=1), 1, atol=0.01)
+
+    @pytest.mark.parametrize("kind", ["mean", "median", ""])
+    def test_normalize_ratios(self, kind):
+        norm = kind + "ratios"
+        nhist = normalize_dyn_profile(self.hist, norm)
+        assert np.allclose(nhist.mean(axis=1), 1, atol=0.01)
 
 
 def test_deorbit_badpar():

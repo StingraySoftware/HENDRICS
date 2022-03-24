@@ -10,6 +10,7 @@ from pathlib import Path
 import tempfile
 
 from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter
 from scipy.stats import ncx2
 import numpy as np
 from numpy import histogram2d as histogram2d_np
@@ -129,6 +130,38 @@ DEFAULT_PARSER_ARGS["debug"] = dict(
     args=["--debug"],
     kwargs=dict(
         help=("set DEBUG logging level"), default=False, action="store_true"
+    ),
+)
+DEFAULT_PARSER_ARGS["colormap"] = dict(
+    args=["--colormap"],
+    kwargs=dict(
+        help=(
+            "Change the color map of the image. Any matplotlib colormap is valid"
+        ),
+        default="cubehelix",
+        type=str,
+    ),
+)
+DEFAULT_PARSER_ARGS["dynprofnorm"] = dict(
+    args=["--norm"],
+    kwargs=dict(
+        help=(
+            "Normalization for the dynamical phase plot. Can be:\n"
+            "  'to1' (each profile normalized from 0 to 1);\n"
+            "  'std' (subtract the mean and divide by the standard "
+            "deviation);\n"
+            "  'sub' (just subtract the mean of each profile);\n"
+            "  'ratios' (divide by the average profile, to highlight "
+            "changes).\n"
+            "Prepending 'median' to any of those options uses the median "
+            "in place of the mean. Appending '_smooth' smooths the 2d "
+            "array with a Gaussian filter.\n"
+            "E.g. mediansub_smooth subtracts the median and smooths the "
+            "image"
+            "default None"
+        ),
+        default=None,
+        type=str,
     ),
 )
 DEFAULT_PARSER_ARGS["bintime"] = dict(
@@ -1096,3 +1129,81 @@ def force_iterable(val):
         return np.array([val])
 
     return np.asarray(val)
+
+
+def normalize_dyn_profile(dynprof, norm):
+    """Normalize a dynamical profile (e.g. a phaseogram).
+
+    Parameters
+    ----------
+    dynprof : np.ndarray
+        The dynamical profile has to be a 2d array structured as:
+        `dynprof = [profile0, profile1, profile2, ...]`
+        where each `profileX` is a pulse profile.
+    norm : str
+        The chosen normalization. If it ends with `_smooth`, a
+        simple Gaussian smoothing is applied to the image.
+        Besides the smoothing string, the options are:
+        1. to1: make each profile normalized between 0 and 1
+        2. std: subtract the mean and divide by standard deviation
+            in each row
+        3. ratios: divide by the average profile (particularly
+            useful in energy vs phase plots)
+        4. mediansub, meansub: just subtract the median or the mean
+            from each profile
+        5. mediannorm, meannorm: subtract the median or the norm
+            and divide by it to get fractional amplitude
+
+    Examples
+    --------
+    >>> hist = [[1, 2], [2, 3], [3, 4]]
+    >>> hnorm = normalize_dyn_profile(hist, "meansub")
+    >>> np.allclose(hnorm[0], [-0.5, 0.5])
+    True
+    >>> hnorm = normalize_dyn_profile(hist, "meannorm")
+    >>> np.allclose(hnorm[0], [-1/3, 1/3])
+    True
+    >>> hnorm = normalize_dyn_profile(hist, "ratios")
+    >>> np.allclose(hnorm[1], [1, 1])
+    True
+    """
+    dynprof = np.array(dynprof, dtype=float)
+
+    if norm is None:
+        norm = ""
+
+    if norm.endswith("_smooth"):
+        dynprof = gaussian_filter(dynprof, 1, mode=("constant", "wrap"))
+        norm = norm.replace("_smooth", "")
+
+    if norm.startswith("median"):
+        y_mean = np.median(dynprof, axis=1)
+        prof_mean = np.median(dynprof, axis=0)
+        norm = norm.replace("median", "")
+    else:
+        y_mean = np.mean(dynprof, axis=1)
+        prof_mean = np.mean(dynprof, axis=0)
+        norm = norm.replace("mean", "")
+
+    y_min = np.min(dynprof, axis=1)
+    y_max = np.max(dynprof, axis=1)
+    y_std = np.std(np.diff(dynprof, axis=0)) / np.sqrt(2)
+
+    if norm in ("", "none"):
+        pass
+    elif norm == "to1":
+        dynprof -= y_min[:, np.newaxis]
+        dynprof /= (y_max - y_min)[:, np.newaxis]
+    elif norm == "std":
+        dynprof -= y_mean[:, np.newaxis]
+        dynprof /= y_std
+    elif norm == "ratios":
+        dynprof /= prof_mean[np.newaxis, :]
+    elif norm == "sub":
+        dynprof -= y_mean[:, np.newaxis]
+    elif norm == "norm":
+        dynprof -= y_mean[:, np.newaxis]
+        dynprof /= y_mean[:, np.newaxis]
+    else:
+        warnings.warn(f"Profile normalization {norm} not known. Using default")
+    return dynprof

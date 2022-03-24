@@ -63,6 +63,7 @@ HENDRICS 7.0
 
 + Based on [Stingray 1.0](https://github.com/StingraySoftware/stingray/releases/tag/v1.0-beta), bringing a huge bump in performance
 + Energy-filtered periodograms
++ A wider range of normalizations available for both HENfold and HENphaseogram, with more options (e.g. smoothing) and higher-contrast color map by default
 + Many fixes to mission-specific files
 + Better info returned by Z searches, including pulse amplitude estimates
 + Add ability to split files at a given MJD
