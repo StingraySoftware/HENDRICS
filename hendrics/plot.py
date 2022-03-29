@@ -16,8 +16,8 @@ from astropy.table import Table
 
 from .efsearch import analyze_qffa_results
 from .fold import fold_events, filter_energy
-from .io import load_events
-from .io import load_data, get_file_type, load_pds
+from .io import load_events, load_lcurve, load_pds
+from .io import load_data, get_file_type
 from .io import is_string, save_as_qdp
 from .io import HEN_FILE_EXTENSION
 from .io import find_file_in_allowed_paths
@@ -731,21 +731,22 @@ def plot_lc(
     plt.figure("LC " + figlabel)
     for lcfile in lcfiles:
         log.info("Loading %s..." % lcfile)
-        lcdata = load_data(lcfile)
+        lcdata = load_lcurve(lcfile)
 
-        time = lcdata["time"]
-        lc = lcdata["counts"]
-        gti = lcdata["gti"]
-        instr = lcdata["instr"]
+        time = lcdata.time
+        lc = lcdata.counts
+        gti = lcdata.gti
+        instr = lcdata.instr
 
         if fromstart:
-            time -= lcdata["Tstart"]
-            gti -= lcdata["Tstart"]
+            time -= lcdata.gti[0, 0]
+            gti -= lcdata.gti[0, 0]
 
         if instr == "PCA":
             # If RXTE, plot per PCU count rate
-            npcus = lcdata["nPCUs"]
-            lc /= npcus
+            if hasattr(lcdata, "nPCUs"):
+                npcus = lcdata.nPCUs
+                lc /= npcus
 
         bti = list(zip(gti[:-1, 1], gti[1:, 0]))
 
@@ -755,13 +756,13 @@ def plot_lc(
         good = create_gti_mask(time, gti)
         plt.plot(time, lc, drawstyle="steps-mid", color="grey")
         plt.plot(time[good], lc[good], drawstyle="steps-mid", label=lcfile)
-        if "base" in lcdata:
-            plt.plot(time, lcdata["base"], color="r")
+        if hasattr(lcdata, "base"):
+            plt.plot(time, lcdata.base, color="r")
 
         if output_data_file is not None:
             outqdpdata = [time[good], lc[good]]
-            if "base" in lcdata:
-                outqdpdata.append(lcdata["base"][good])
+            if hasattr(lcdata, "base"):
+                outqdpdata.append(lcdata.base[good])
             save_as_qdp(outqdpdata, filename=output_data_file, mode="a")
 
     plt.xlabel("Time (s)")

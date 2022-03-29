@@ -14,6 +14,7 @@ import warnings
 import pickle
 import os.path
 import numpy as np
+from astropy.table import Table
 
 try:
     import netCDF4 as nc
@@ -363,9 +364,9 @@ def get_file_format(fname):
     >>> get_file_format('bu.nc')
     'nc'
     >>> get_file_format('bu.evt')
-    'fits'
-    >>> get_file_format('bu.txt')
-    'text'
+    'ogip'
+    >>> get_file_format('bu.ecsv')
+    'ascii.ecsv'
     >>> get_file_format('bu.pdfghj')
     Traceback (most recent call last):
         ...
@@ -376,10 +377,12 @@ def get_file_format(fname):
         return "pickle"
     elif ext == ".nc":
         return "nc"
+    elif ext in (".h5", ".hdf5"):
+        return "hdf5"
     elif ext in [".evt", ".fits"]:
-        return "fits"
+        return "ogip"
     elif ext in [".txt", ".qdp", ".csv"]:
-        return "text"
+        return "ascii" + ext
     else:
         raise RuntimeError(f"File format {ext[1:]} " f"not recognized")
 
@@ -479,15 +482,36 @@ def _dum(x):
     return x
 
 
+def recognize_stingray_object(obj):
+    if "pds1" in obj.colnames:
+        return "AveragedCrossspectrum"
+    if "power" in obj.colnames:
+        return "AveragedPowerspectrum"
+    if "counts" in obj.colnames:
+        return "Lightcurve"
+    if "time" in obj.colnames:
+        return "EventList"
+    raise ValueError(f"Object not recognized:\n{obj}")
+
+
 # ----- Functions to handle file types
 def get_file_type(fname, raw_data=False):
     """Return the file type and its contents.
 
     Only works for hendrics-format pickle or netcdf files.
     """
-    contents = load_data(fname)
+    contents_raw = load_data(fname)
+    if isinstance(contents_raw, Table):
+        ftype_raw = recognize_stingray_object(contents_raw)
+        if raw_data:
+            contents = dict(
+                [(col, contents_raw[col])
+                 for col in contents_raw.colnames])
+            contents.update(contents_raw.meta)
+            contents_raw = contents
+    else:
+        ftype_raw = contents_raw["__sr__class__type__"]
 
-    ftype_raw = contents["__sr__class__type__"]
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
         fun = load_lcurve
@@ -562,10 +586,14 @@ def save_events(eventlist, fname):
 
 def load_events(fname):
     """Load events from a file."""
-    if get_file_format(fname) == "pickle":
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
         out = _load_data_pickle(fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         out = _load_data_nc(fname)
+    else:
+        # Try one of the known files from Astropy
+        return EventList.read(fname, fmt=fmt)
 
     eventlist = EventList()
 
@@ -644,10 +672,14 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
 
 def load_lcurve(fname):
     """Load light curve from a file."""
-    if get_file_format(fname) == "pickle":
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
         data = _load_data_pickle(fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         data = _load_data_nc(fname)
+    else:
+        # Try one of the known files from Astropy
+        return Lightcurve.read(fname, fmt=fmt)
 
     lcurve = Lightcurve(
         data["time"],
@@ -785,10 +817,17 @@ def save_pds(cpds, fname, save_all=False):
 
 def load_pds(fname, nosub=False):
     """Load PDS from a file."""
-    if get_file_format(fname) == "pickle":
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
         data = _load_data_pickle(fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         data = _load_data_nc(fname)
+    else:
+        try:
+            # Try one of the known files from Astropy
+            return AveragedCrossspectrum.read(fname, fmt=fmt)
+        except:
+            return AveragedPowerspectrum.read(fname, fmt=fmt)
 
     type_string = data["__sr__class__type__"]
     if "AveragedPowerspectrum" in type_string:
@@ -997,19 +1036,30 @@ def _save_data_nc(struct, fname, kind="data"):
 
 def save_data(struct, fname, ftype="data"):
     """Save generic data in hendrics format."""
-    if get_file_format(fname) == "pickle":
-        _save_data_pickle(struct, fname)
-    elif get_file_format(fname) == "nc":
-        _save_data_nc(struct, fname)
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
+        return _save_data_pickle(struct, fname)
+    elif fmt == "nc":
+        return _save_data_nc(struct, fname)
+
+    if not hasattr(struct, "write"):
+        raise ValueError("Unrecognized data format or file format")
+
+    struct.write(fname, fmt=fmt)
 
 
 def load_data(fname):
     """Load generic data in hendrics format."""
-    if get_file_format(fname) == "pickle":
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
         return _load_data_pickle(fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         return _load_data_nc(fname)
-    else:
+
+    try:
+        return Table.read(fname, format=fmt)
+    except Exception as e:
+
         raise TypeError(
             "The file type is not recognized. Did you convert the"
             " original files into HENDRICS format (e.g. with "
