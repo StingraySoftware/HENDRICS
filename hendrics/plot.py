@@ -538,7 +538,6 @@ def plot_folding(
                 [max_stat_cl_90],
                 colors="white",
                 zorder=20,
-                label=r"90% C.L.",
             )
 
             if np.shape(cs.allsegs[0])[0] > 1:

@@ -18,7 +18,7 @@ from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter1d
 
 from .base import normalize_dyn_profile
-from .fold import filter_energy
+from .fold import create_template_from_profile_harm, filter_energy
 from .io import load_events, load_folding
 from .fold import get_TOAs_from_events
 from .base import hen_root, deorbit_events, get_model
@@ -648,34 +648,49 @@ class InteractivePhaseogram(BasePhaseogram):
         print("------------------------")
 
     def toa(self, event):
-        self.timing_model_string = self.get_timing_model_string()
 
         dfreq, dfdot, dfddot = self._read_sliders()
         freqs = [self.freq - dfreq, self.fdot - dfdot, self.fddot - dfddot]
         folding_length = np.median(np.diff(self.times))
         nbin = self.nph
-        template_raw = np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1)
-        template = gaussian_filter1d(template_raw, sigma=1)
 
-        if self.nph < 64:
-            warnings.warn(
-                "TOA calculation is not robust if the "
-                "number of bins is < 64. Oversampling."
+        corrected_times = self.ev_times - self._delay_fun(self.ev_times)
+        raw_times = (corrected_times - self.pepoch)
+        raw_phases = raw_times * self.freq + 0.5 * raw_times**2 * self.fdot + 1/6 * raw_times**2 * self.fddot
+        raw_phases -= np.floor(raw_phases)
+
+        template_raw, _ = np.histogram(raw_phases, bins=self.nph * 4)
+
+        nharm = min(max(1, nbin // 16), h_test(template_raw)[1])
+        phase = np.arange(0, 1, 1 / self.nph)
+        if nharm < 5:
+            template, _ = create_template_from_profile_harm(
+                phase, template_raw, nharm=nharm, final_nbin=nbin * 20
             )
-            nbin = 64
-            phases = np.arange(self.nph * 2 + 1) / (self.nph * 2)
-            fun = interp1d(
-                phases, np.concatenate((template, [template[0]])), kind="cubic"
-            )
-            new_phases = np.arange(0, nbin * 2) / (nbin * 2)
-            template = fun(new_phases)
+        else:
+            from scipy.signal import savgol_filter
+            template = savgol_filter(template_raw, 4, 2)
 
-        template = template[nbin // 2 : nbin // 2 + template.size // 2]
+        from .ml_timing import normalized_template, ml_pulsefit
 
-        template = np.roll(template, -np.argmax(template)) / self.nt
+        template = normalized_template(template, tomax=True, subtract_min=False)
+
+        pars, errs = ml_pulsefit(template_raw, template, calculate_errors=True)
+        ph, phe = pars[1], errs[1]
+        if ph is None:
+            warnings.warn("The pulse profile is not adequate for TOA fitting.")
+            return
+        toa = ph / freqs[0] + self.times[0]
+        toaerr = phe / freqs[0]
+        full_toa = toa / 86400 + self.mjdref
+        full_toaerr = toaerr * 1e6
+        print(full_toa, full_toaerr)
+
+        # template = np.roll(template, -np.argmax(template)) / self.nt
         ephem = "DE421"
         if self.model is not None and hasattr(self.model, "EPHEM"):
             ephem = self.model.EPHEM.value
+
         toa, toaerr = get_TOAs_from_events(
             self.ev_times,
             folding_length,
@@ -691,7 +706,12 @@ class InteractivePhaseogram(BasePhaseogram):
             position=None,
             ephem=ephem,
         )
+        if toa is None:
+            warnings.warn("No valid TOAs found")
+            return
         toa_corr = toa + self.time_corr_mjd_fun(toa)
+        full_toa_corr = full_toa + self.time_corr_mjd_fun(full_toa)
+
         corr_string = ""
 
         if np.any(toa_corr != toa):
@@ -701,6 +721,14 @@ class InteractivePhaseogram(BasePhaseogram):
             print("FORMAT 1", file=fobj)
             for t, te in zip(toa_corr, toaerr):
                 print(self.label, 0, t, te, "@", file=fobj)
+
+        if hasattr(self, "model"):
+            if hasattr(self.model, "TZRMJD"):
+
+                self.model.TZRMJD.value = full_toa_corr
+                self.model.TZRSITE.value = "@"
+
+        self.timing_model_string = self.get_timing_model_string()
 
         with open(self.label + ".par", "w") as fobj:
             print(self.timing_model_string, file=fobj)
@@ -1057,7 +1085,12 @@ def main_phaseogram(args=None):
         default=False,
         action="store_true",
     )
-
+    parser.add_argument(
+        "--get-toa",
+        help="Only calculate TOAs",
+        default=False,
+        action="store_true",
+    )
     _add_default_args(
         parser,
         [
@@ -1101,7 +1134,7 @@ def main_phaseogram(args=None):
             fddot=fddot,
             nbin=args.nbin,
             nt=args.ntimes,
-            test=args.test,
+            test=args.test or args.get_toa,
             binary=args.binary,
             binary_parameters=args.binary_parameters,
             pepoch=args.pepoch,
@@ -1112,4 +1145,7 @@ def main_phaseogram(args=None):
             emax=args.emax,
             colormap=args.colormap,
         )
+    if args.get_toa:
+        ip.toa(1)
+
     plt.close(ip.fig)

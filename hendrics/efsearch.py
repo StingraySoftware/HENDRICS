@@ -1286,18 +1286,24 @@ def analyze_qffa_results(fname):
             allstats_fdot = ef.stat[:, fdot_idx]
             f, fdot = ef.freq[f_idx, fdot_idx], ef.fdots[f_idx, fdot_idx]
             max_stat = ef.stat[f_idx, fdot_idx]
-            sig_e1_m, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
+            sig_e1_m, sig_e1 = power_confidence_limits(
+                max_stat, c=0.68, n=ef.N
+            )
             fmin, fmax, fdotmin, fdotmax = get_xy_boundaries_from_level(
-                ef.freq, ef.fdots, ef.stat, sig_e1_m, f, fdot)
+                ef.freq, ef.fdots, ef.stat, sig_e1_m, f, fdot
+            )
         elif len(ef.stat.shape) == 1:
             f_idx = idx
             allfreqs = ef.freq
             allstats_f = ef.stat
             f = ef.freq[f_idx]
             max_stat = ef.stat[f_idx]
-            sig_e1_m, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
+            sig_e1_m, sig_e1 = power_confidence_limits(
+                max_stat, c=0.68, n=ef.N
+            )
             fmin, fmax = get_boundaries_from_level(
-                ef.freq, ef.stat, sig_e1_m, f)
+                ef.freq, ef.stat, sig_e1_m, f
+            )
             fdot = fdotmin = fdotmax = 0
             allfdots = None
             allstats_fdot = None
