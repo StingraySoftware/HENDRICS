@@ -508,9 +508,9 @@ def get_file_type(fname, raw_data=False):
                 [(col, contents_raw[col])
                  for col in contents_raw.colnames])
             contents.update(contents_raw.meta)
-            contents_raw = contents
     else:
         ftype_raw = contents_raw["__sr__class__type__"]
+        contents = contents_raw
 
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
@@ -823,11 +823,10 @@ def load_pds(fname, nosub=False):
     elif fmt == "nc":
         data = _load_data_nc(fname)
     else:
-        try:
-            # Try one of the known files from Astropy
-            return AveragedCrossspectrum.read(fname, fmt=fmt)
-        except:
-            return AveragedPowerspectrum.read(fname, fmt=fmt)
+        data = Table.read(fname, format=fmt)
+        if hasattr(data, "pds1"):
+            return AveragedCrossspectrum.from_astropy_table(data)
+        return AveragedPowerspectrum.from_astropy_table(data)
 
     type_string = data["__sr__class__type__"]
     if "AveragedPowerspectrum" in type_string:
