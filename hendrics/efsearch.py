@@ -1084,12 +1084,21 @@ def print_qffa_results(best_cand_table):
     if len(newtable[good]) == 0:
         print("No pulsations found. Best candidate and upper limit:")
         good = 0
-        newtable["Pulsed amplitude (%)"] = [f"<{a:g} (90%)" for a in newtable["pulse_amp_ul_0.9"]]
+        newtable["Pulsed amplitude (%)"] = [
+            f"<{a:g} (90%)" for a in newtable["pulse_amp_ul_0.9"]
+        ]
     else:
         print("Best candidate(s):")
-        newtable["Pulsed amplitude (%)"] = [f"{a:g} ± {e:g}" for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])]
+        newtable["Pulsed amplitude (%)"] = [
+            f"{a:g} ± {e:g}"
+            for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
+        ]
 
-    print(newtable["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"][good])
+    print(
+        newtable["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"][
+            good
+        ]
+    )
     return
 
 

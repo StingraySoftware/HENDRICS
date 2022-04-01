@@ -557,7 +557,6 @@ def plot_folding(
                     ax.axhline(cs.allsegs[0][0][:, 1].max())
                     ax.axhline(cs.allsegs[0][0][:, 1].min())
 
-
             if detlev is not None:
                 axf.plot(
                     ef.freq[f_idx, :],

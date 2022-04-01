@@ -509,8 +509,8 @@ def get_file_type(fname, raw_data=False):
         ftype_raw = recognize_stingray_object(contents_raw)
         if raw_data:
             contents = dict(
-                [(col, contents_raw[col])
-                 for col in contents_raw.colnames])
+                [(col, contents_raw[col]) for col in contents_raw.colnames]
+            )
             contents.update(contents_raw.meta)
     else:
         ftype_raw = contents_raw["__sr__class__type__"]
