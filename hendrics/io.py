@@ -533,7 +533,8 @@ def recognize_stingray_table(obj):
 def get_file_type(fname, raw_data=False):
     """Return the file type and its contents.
 
-    Only works for hendrics-format pickle or netcdf files.
+    Only works for hendrics-format pickle or netcdf files,
+    or stingray outputs.
     """
     contents_raw = load_data(fname)
     if isinstance(contents_raw, Table):
@@ -875,7 +876,7 @@ def load_pds(fname, nosub=False):
         data = _load_data_nc(fname)
     else:
         data = Table.read(fname, format=fmt)
-        if hasattr(data, "pds1"):
+        if "pds1" in data.colnames or "power.real" in data.colnames:
             return AveragedCrossspectrum.read(fname, fmt=fmt)
         return AveragedPowerspectrum.read(fname, fmt=fmt)
 

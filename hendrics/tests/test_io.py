@@ -11,7 +11,7 @@ from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
 from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
-from hendrics.io import find_file_in_allowed_paths
+from hendrics.io import find_file_in_allowed_paths, get_file_type
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
 from hendrics.io import main
 
@@ -131,6 +131,18 @@ class TestIO:
         struct2 = load_data("bubu" + fmt)
         assert np.allclose(struct["a"], struct2["a"])
         assert np.allclose(struct["b"], struct2["b"])
+
+    def test_get_file_type_astropy_format_raw(self):
+        events = EventList(
+            [0, 2, 3.0],
+            pi=[1, 2, 3],
+            mjdref=54385.3254923845,
+            gti=np.longdouble([[-0.5, 3.5]]),
+        )
+        save_data(events, "bubu.ecsv")
+        ftype, newdata = get_file_type("bubu.ecsv", raw_data=True)
+        assert ftype == "events"
+        assert isinstance(newdata, dict)
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_events(self, fmt):
