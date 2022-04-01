@@ -102,6 +102,18 @@ class TestIO:
         assert np.allclose(struct["c"], struct2["c"])
         assert np.allclose(struct["d"], struct2["d"])
 
+    def test_save_dict_data_bad(self):
+        struct = {
+            "a": 0.1,
+            "b": np.longdouble("123.4567890123456789"),
+            "c": np.longdouble([[-0.5, 3.5]]),
+            "d": 1,
+        }
+        with pytest.raises(ValueError) as excinfo:
+           save_data(struct, "bubu.hdf5")
+
+        assert "Unrecognized data" in str(excinfo.value)
+
     @pytest.mark.parametrize("fmt", [".ecsv", ".hdf5"])
     def test_save_data(self, fmt):
         from astropy.table import Table
