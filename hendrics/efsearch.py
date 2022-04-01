@@ -1690,7 +1690,9 @@ def _common_main(args, func):
         efperiodogram.oversample = oversample
 
         save_folding(efperiodogram, out_fname + HEN_FILE_EXTENSION)
-        analyze_qffa_results(out_fname + HEN_FILE_EXTENSION)
+        if args.fast:
+            analyze_qffa_results(out_fname + HEN_FILE_EXTENSION)
+
         outfiles.append(out_fname + HEN_FILE_EXTENSION)
     return outfiles
 
