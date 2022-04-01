@@ -10,7 +10,7 @@ import os
 from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
 from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
-from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
+from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
 from hendrics.io import find_file_in_allowed_paths
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
 from hendrics.io import main
@@ -19,6 +19,7 @@ import pytest
 import glob
 from astropy.modeling import models
 from astropy.modeling.core import Model
+
 
 try:
     FileNotFoundError
@@ -104,6 +105,10 @@ class TestIO:
     @pytest.mark.parametrize("fmt", [".ecsv", ".hdf5"])
     def test_save_data(self, fmt):
         from astropy.table import Table
+
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
+
         struct = Table({
             "a": [0, .1],
             "b": [np.longdouble("123.4567890123456789"), np.longdouble(0)],
@@ -116,6 +121,8 @@ class TestIO:
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_events(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
         events = EventList(
             [0, 2, 3.0],
             pi=[1, 2, 3],
@@ -139,6 +146,8 @@ class TestIO:
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_lcurve(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
         lcurve = Lightcurve(
             np.linspace(0, 10, 15),
             np.random.poisson(30, 15),
@@ -161,6 +170,8 @@ class TestIO:
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_pds(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
         pds = Powerspectrum()
         pds.freq = np.linspace(0, 10, 15)
         pds.power = np.random.poisson(30, 15)
@@ -176,6 +187,8 @@ class TestIO:
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_cpds(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
         pds = Crossspectrum()
         pds.freq = np.linspace(0, 10, 15)
         pds.power = np.random.poisson(30, 15) + 1.0j

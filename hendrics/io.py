@@ -18,6 +18,11 @@ from astropy.table import Table
 from astropy.io.registry import identify_format
 
 try:
+    import h5py
+except ImportError:
+    HAS_H5PY = False
+
+try:
     import netCDF4 as nc
 
     HEN_FILE_EXTENSION = ".nc"
