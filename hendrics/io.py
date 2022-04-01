@@ -493,10 +493,34 @@ def _dum(x):
     return x
 
 
-def recognize_stingray_object(obj):
-    if "pds1" in obj.colnames:
-        return "AveragedCrossspectrum"
+def recognize_stingray_table(obj):
+    """
+
+    Examples
+    --------
+    >>> obj = AveragedCrossspectrum()
+    >>> obj.freq = np.arange(10)
+    >>> obj.power = np.random.random(10)
+    >>> recognize_stingray_table(obj.to_astropy_table())
+    'AveragedPowerspectrum'
+    >>> obj.pds1 = obj.power
+    >>> recognize_stingray_table(obj.to_astropy_table())
+    'AveragedCrossspectrum'
+    >>> obj = EventList(np.arange(10))
+    >>> recognize_stingray_table(obj.to_astropy_table())
+    'EventList'
+    >>> obj = Lightcurve(np.arange(10), np.arange(10))
+    >>> recognize_stingray_table(obj.to_astropy_table())
+    'Lightcurve'
+    >>> obj = Table()
+    >>> recognize_stingray_table(obj)
+    Traceback (most recent call last):
+    ...
+    ValueError: Object not recognized...
+    """
     if "power" in obj.colnames:
+        if np.iscomplex(obj["power"][1]) or "pds1" in obj.colnames:
+            return "AveragedCrossspectrum"
         return "AveragedPowerspectrum"
     if "counts" in obj.colnames:
         return "Lightcurve"
@@ -513,7 +537,7 @@ def get_file_type(fname, raw_data=False):
     """
     contents_raw = load_data(fname)
     if isinstance(contents_raw, Table):
-        ftype_raw = recognize_stingray_object(contents_raw)
+        ftype_raw = recognize_stingray_table(contents_raw)
         if raw_data:
             contents = dict(
                 [(col, contents_raw[col]) for col in contents_raw.colnames]
