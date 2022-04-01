@@ -87,7 +87,7 @@ class TestIO:
         val = ref_mjd([fname])
         assert np.isclose(val, 55197.00076601852, atol=0.00000000001)
 
-    def test_save_data(self):
+    def test_save_dict_data(self):
         struct = {
             "a": 0.1,
             "b": np.longdouble("123.4567890123456789"),
@@ -101,7 +101,21 @@ class TestIO:
         assert np.allclose(struct["c"], struct2["c"])
         assert np.allclose(struct["d"], struct2["d"])
 
-    def test_load_and_save_events(self):
+    @pytest.mark.parametrize("fmt", [".ecsv", ".hdf5"])
+    def test_save_data(self, fmt):
+        from astropy.table import Table
+        struct = Table({
+            "a": [0, .1],
+            "b": [np.longdouble("123.4567890123456789"), np.longdouble(0)],
+            }
+        )
+        save_data(struct, "bubu" + fmt)
+        struct2 = load_data("bubu" + fmt)
+        assert np.allclose(struct["a"], struct2["a"])
+        assert np.allclose(struct["b"], struct2["b"])
+
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_events(self, fmt):
         events = EventList(
             [0, 2, 3.0],
             pi=[1, 2, 3],
@@ -112,8 +126,8 @@ class TestIO:
         events.energy = np.array([3.0, 4.0, 5.0])
         events.mission = "nustar"
         events.header = Header().tostring()
-        save_events(events, self.dum)
-        events2 = load_events(self.dum)
+        save_events(events, "bubu" + fmt)
+        events2 = load_events("bubu" + fmt)
         assert np.allclose(events.time, events2.time)
         assert np.allclose(events.cal_pi, events2.cal_pi)
         assert np.allclose(events.pi, events2.pi)
@@ -123,7 +137,8 @@ class TestIO:
         assert events.header == events2.header
         assert events2.mission == events.mission
 
-    def test_load_and_save_lcurve(self):
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_lcurve(self, fmt):
         lcurve = Lightcurve(
             np.linspace(0, 10, 15),
             np.random.poisson(30, 15),
@@ -133,8 +148,8 @@ class TestIO:
         # Monkeypatch for compatibility with old versions
         lcurve.mission = "bububu"
         lcurve.instr = "bababa"
-        save_lcurve(lcurve, self.dum)
-        lcurve2 = load_lcurve(self.dum)
+        save_lcurve(lcurve, "bubu" + fmt)
+        lcurve2 = load_lcurve("bubu" + fmt)
         assert np.allclose(lcurve.time, lcurve2.time)
         assert np.allclose(lcurve.counts, lcurve2.counts)
         assert np.allclose(lcurve.mjdref, lcurve2.mjdref)
@@ -144,7 +159,8 @@ class TestIO:
         assert lcurve2.mission == "bububu"
         assert lcurve.instr == lcurve2.instr
 
-    def test_load_and_save_pds(self):
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_pds(self, fmt):
         pds = Powerspectrum()
         pds.freq = np.linspace(0, 10, 15)
         pds.power = np.random.poisson(30, 15)
@@ -153,12 +169,13 @@ class TestIO:
         pds.show_progress = True
         pds.amplitude = False
 
-        save_pds(pds, self.dum)
-        pds2 = load_pds(self.dum)
+        save_pds(pds, "bubu" + fmt)
+        pds2 = load_pds("bubu" + fmt)
         for attr in ["gti", "mjdref", "m", "show_progress", "amplitude"]:
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
-    def test_load_and_save_cpds(self):
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_cpds(self, fmt):
         pds = Crossspectrum()
         pds.freq = np.linspace(0, 10, 15)
         pds.power = np.random.poisson(30, 15) + 1.0j
@@ -167,8 +184,8 @@ class TestIO:
         pds.show_progress = True
         pds.amplitude = False
 
-        save_pds(pds, self.dum)
-        pds2 = load_pds(self.dum)
+        save_pds(pds, "bubup" + fmt)
+        pds2 = load_pds("bubup" + fmt)
         for attr in [
             "gti",
             "mjdref",
@@ -177,6 +194,7 @@ class TestIO:
             "amplitude",
             "power",
         ]:
+            print(attr, getattr(pds, attr), getattr(pds2, attr))
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
     def test_load_pds_fails(self):

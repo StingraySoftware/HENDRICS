@@ -557,6 +557,11 @@ def save_events(eventlist, fname):
     fname: str
         Name of output file
     """
+    fmt = get_file_format(fname)
+
+    if fmt not in ["nc", "pickle"]:
+        return eventlist.write(fname)
+
     out = dict(
         time=eventlist.time,
         gti=eventlist.gti,
@@ -582,9 +587,9 @@ def save_events(eventlist, fname):
         if hasattr(eventlist, attr) and getattr(eventlist, attr) is not None:
             out[attr] = getattr(eventlist, attr).lower()
 
-    if get_file_format(fname) == "pickle":
+    if fmt == "pickle":
         _save_data_pickle(out, fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         _save_data_nc(out, fname)
 
 
@@ -635,6 +640,12 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     fname: str
         Name of output file
     """
+
+    fmt = get_file_format(fname)
+
+    if fmt not in ["nc", "pickle"]:
+        return lcurve.write(fname)
+
     out = {}
 
     out["__sr__class__type__"] = str(lctype)
@@ -668,9 +679,9 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     if hasattr(lcurve, "mission") and lcurve.mission is not None:
         out["mission"] = lcurve.mission.lower()
 
-    if get_file_format(fname) == "pickle":
+    if fmt == "pickle":
         return _save_data_pickle(out, fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         return _save_data_nc(out, fname)
 
 
@@ -765,6 +776,10 @@ def load_folding(fname):
 def save_pds(cpds, fname, save_all=False):
     """Save PDS in a file."""
     from .base import mkdir_p
+    fmt = get_file_format(fname)
+
+    if fmt not in ["nc", "pickle"]:
+        return cpds.write(fname, fmt=fmt)
 
     outdata = copy.copy(cpds.__dict__)
     outdata["__sr__class__type__"] = str(type(cpds))
@@ -813,9 +828,9 @@ def save_pds(cpds, fname, save_all=False):
             model_files.append(mfile)
         outdata.pop("best_fits")
 
-    if get_file_format(fname) == "pickle":
+    if fmt == "pickle":
         return _save_data_pickle(outdata, fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         return _save_data_nc(outdata, fname)
 
 
@@ -829,8 +844,8 @@ def load_pds(fname, nosub=False):
     else:
         data = Table.read(fname, format=fmt)
         if hasattr(data, "pds1"):
-            return AveragedCrossspectrum.from_astropy_table(data)
-        return AveragedPowerspectrum.from_astropy_table(data)
+            return AveragedCrossspectrum.read(fname, fmt=fmt)
+        return AveragedPowerspectrum.read(fname, fmt=fmt)
 
     type_string = data["__sr__class__type__"]
     if "AveragedPowerspectrum" in type_string:
@@ -1040,15 +1055,17 @@ def _save_data_nc(struct, fname, kind="data"):
 def save_data(struct, fname, ftype="data"):
     """Save generic data in hendrics format."""
     fmt = get_file_format(fname)
+    has_write_method = hasattr(struct, "write")
+
     if fmt == "pickle":
         return _save_data_pickle(struct, fname)
     elif fmt == "nc":
         return _save_data_nc(struct, fname)
 
-    if not hasattr(struct, "write"):
+    if not has_write_method:
         raise ValueError("Unrecognized data format or file format")
 
-    struct.write(fname, fmt=fmt)
+    struct.write(fname)
 
 
 def load_data(fname):
