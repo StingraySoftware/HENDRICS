@@ -15,6 +15,7 @@ import pickle
 import os.path
 import numpy as np
 from astropy.table import Table
+from astropy.io.registry import identify_format
 
 try:
     import netCDF4 as nc
@@ -375,16 +376,19 @@ def get_file_format(fname):
     ext = get_file_extension(fname)
     if ext == ".p":
         return "pickle"
-    elif ext == ".nc":
+
+    if ext == ".nc":
         return "nc"
-    elif ext in (".h5", ".hdf5"):
-        return "hdf5"
-    elif ext in [".evt", ".fits"]:
+
+    if ext in [".evt", ".fits"]:
         return "ogip"
-    elif ext in [".txt", ".qdp", ".csv"]:
-        return "ascii" + ext
-    else:
-        raise RuntimeError(f"File format {ext[1:]} " f"not recognized")
+
+    # For the rest of formats, use Astropy
+    fmts = identify_format("write", Table, fname, None, [], {})
+    if len(fmts) > 0:
+        return fmts[0]
+
+    raise RuntimeError(f"File format {ext[1:]} " f"not recognized")
 
 
 # ---- Base function to save NetCDF4 files
