@@ -109,9 +109,10 @@ class TestIO:
         if fmt == ".hdf5" and not HAS_H5PY:
             return True
 
-        struct = Table({
-            "a": [0, .1],
-            "b": [np.longdouble("123.4567890123456789"), np.longdouble(0)],
+        struct = Table(
+            {
+                "a": [0, 0.1],
+                "b": [np.longdouble("123.4567890123456789"), np.longdouble(0)],
             }
         )
         save_data(struct, "bubu" + fmt)

@@ -19,6 +19,7 @@ from astropy.io.registry import identify_format
 
 try:
     import h5py
+
     HAS_H5PY = True
 except ImportError:
     HAS_H5PY = False
@@ -782,6 +783,7 @@ def load_folding(fname):
 def save_pds(cpds, fname, save_all=False):
     """Save PDS in a file."""
     from .base import mkdir_p
+
     fmt = get_file_format(fname)
 
     if fmt not in ["nc", "pickle"]:
