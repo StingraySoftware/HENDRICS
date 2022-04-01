@@ -373,19 +373,20 @@ def plot_folding(
     for fname in fnames:
 
         plt.figure(fname, figsize=(8, 8))
-
         ef, best_cand_table = analyze_qffa_results(fname)
         nbin = best_cand_table.meta["nbin"]
         label = best_cand_table.meta["label"]
         detlev = best_cand_table.meta["detlev"]
         ndof = best_cand_table.meta["ndof"]
         # Get these from the first row of the table
-        f, fdot, fddot, max_stat, max_stat_cl_90 = (
+        f, fdot, fddot, max_stat, max_stat_cl_90, f_idx, fdot_idx = (
             best_cand_table["f"][0],
             best_cand_table["fdot"][0],
             best_cand_table["fddot"][0],
             best_cand_table["power"][0],
             best_cand_table["power_cl_0.9"][0],
+            best_cand_table["f_idx"][0],
+            best_cand_table["fdot_idx"][0],
         )
 
         if (filename := best_cand_table.meta["filename"]) is not None:
@@ -438,13 +439,6 @@ def plot_folding(
                 format="ascii",
             )
 
-            # print(df, dfdot)
-            # # noinspection PyPackageRequirements
-            # ax.text(0.1, 0.9, "Profile for F0={} Hz, F1={} Hz/s".format(
-            #     round(f, -int(np.floor(np.log10(np.abs(df))))),
-            #     round(fdot, -int(np.floor(np.log10(np.abs(dfdot)))))),
-            #     horizontalalignment='left', verticalalignment='center',
-            #     transform=ax.transAxes)
             ax.plot(
                 np.concatenate((phase, phase + 1)),
                 np.concatenate((profile, profile)),
@@ -479,11 +473,10 @@ def plot_folding(
             ax.set_ylabel("Counts")
             ax.set_xlim([0, 2])
             ax.legend(loc=4)
+            ntimes = max(8, np.rint(max_stat / 20).astype(int))
             phascommand = (
-                "HENphaseogram -f {} "
-                "--fdot {} {} -n {} --norm to1".format(
-                    f, fdot, ef.filename, nbin
-                )
+                f"HENphaseogram -f {f} "
+                f"--fdot {fdot} {ef.filename} -n {nbin} --ntimes {ntimes} --norm meansub"
             )
             if ef.parfile and os.path.exists(ef.parfile):
                 phascommand += " --deorbit-par {}".format(parfile)
@@ -553,57 +546,45 @@ def plot_folding(
                     "More than one contour found. "
                     "Frequency estimates might be wrong"
                 )
-
-            for ax in (axffdot, axf):
-                ax.axvline(
-                    cs.allsegs[0][0][:, 0].min(), label=f"90% conf. lim."
-                )
-                ax.axvline(cs.allsegs[0][0][:, 0].max())
-
-            for ax in (axffdot, axfdot):
-                ax.axhline(cs.allsegs[0][0][:, 1].max())
-                ax.axhline(cs.allsegs[0][0][:, 1].min())
-
-            maximum_idx = 0
-            maximum = 0
-
-            for ix in range(ef.stat.shape[0]):
-                if ef.stat.shape[0] < 100:
-                    axf.plot(
-                        ef.freq[ix, :],
-                        ef.stat[ix, :],
-                        alpha=0.5,
-                        lw=0.2,
-                        color="k",
+            else:
+                for ax in (axffdot, axf):
+                    ax.axvline(
+                        cs.allsegs[0][0][:, 0].min(), label=f"90% conf. lim."
                     )
-                if np.max(ef.stat[ix, :]) > maximum:
-                    maximum = np.max(ef.stat[ix, :])
-                    maximum_idx = ix
-            if detlev is not None and maximum_idx > 0:
+                    ax.axvline(cs.allsegs[0][0][:, 0].max())
+
+                for ax in (axffdot, axfdot):
+                    ax.axhline(cs.allsegs[0][0][:, 1].max())
+                    ax.axhline(cs.allsegs[0][0][:, 1].min())
+
+
+            if detlev is not None:
                 axf.plot(
-                    ef.freq[maximum_idx, :],
-                    ef.stat[maximum_idx, :],
+                    ef.freq[f_idx, :],
+                    ef.stat[f_idx, :],
                     lw=1,
                     color="k",
                 )
-            maximum_idx = -1
-            maximum = 0
-            for iy in range(ef.stat.shape[1]):
-                if ef.stat.shape[1] < 100:
-                    axfdot.plot(
-                        ef.stat[:, iy],
-                        np.asarray(ef.fdots)[:, iy],
-                        alpha=0.5,
-                        lw=0.2,
-                        color="k",
-                    )
-                if np.max(ef.stat[:, iy]) > maximum:
-                    maximum = np.max(ef.stat[:, iy])
-                    maximum_idx = iy
-            if detlev is not None and maximum_idx > 0:
+            for cand_row in best_cand_table:
                 axfdot.plot(
-                    ef.stat[:, maximum_idx],
-                    np.asarray(ef.fdots)[:, maximum_idx],
+                    ef.stat[:, cand_row["fdot_idx"]],
+                    np.asarray(ef.fdots)[:, cand_row["fdot_idx"]],
+                    alpha=0.5,
+                    lw=0.2,
+                    color="k",
+                )
+                axf.plot(
+                    np.asarray(ef.freq)[cand_row["f_idx"], :],
+                    ef.stat[cand_row["f_idx"], :],
+                    alpha=0.5,
+                    lw=0.2,
+                    color="k",
+                )
+
+            if detlev is not None:
+                axfdot.plot(
+                    ef.stat[:, fdot_idx],
+                    np.asarray(ef.fdots)[:, fdot_idx],
                     lw=1,
                     color="k",
                 )
