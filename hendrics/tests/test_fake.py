@@ -219,6 +219,7 @@ class TestFake(object):
                 for r in record
             ]
         )
+
         verify_all_checksums(fits_file)
 
     def test_fake_file_with_deadtime(self):

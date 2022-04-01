@@ -682,8 +682,8 @@ def load_lcurve(fname):
     elif fmt == "nc":
         data = _load_data_nc(fname)
     else:
-        # Try one of the known files from Astropy
-        return Lightcurve.read(fname, fmt=fmt)
+        # Try one of the known files from Lightcurve
+        return Lightcurve.read(fname, fmt=fmt, skip_checks=True)
 
     lcurve = Lightcurve(
         data["time"],
