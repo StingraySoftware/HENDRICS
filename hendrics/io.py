@@ -19,6 +19,7 @@ from astropy.io.registry import identify_format
 
 try:
     import h5py
+    HAS_H5PY = True
 except ImportError:
     HAS_H5PY = False
 
