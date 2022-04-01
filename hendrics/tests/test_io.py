@@ -110,7 +110,7 @@ class TestIO:
             "d": 1,
         }
         with pytest.raises(ValueError) as excinfo:
-           save_data(struct, "bubu.hdf5")
+            save_data(struct, "bubu.hdf5")
 
         assert "Unrecognized data" in str(excinfo.value)
 
