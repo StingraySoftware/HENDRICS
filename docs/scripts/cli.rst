@@ -437,8 +437,9 @@ HENfold
 
     usage: HENfold [-h] [-f FREQ] [--fdot FDOT] [--fddot FDDOT] [--tref TREF]
                    [-n NBIN] [--nebin NEBIN] [--emin EMIN] [--emax EMAX]
-                   [--norm NORM] [--out-file-root OUT_FILE_ROOT] [--pepoch PEPOCH]
-                   [-p DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug] [--test]
+                   [--out-file-root OUT_FILE_ROOT] [--pepoch PEPOCH] [--norm NORM]
+                   [--colormap COLORMAP] [-p DEORBIT_PAR] [--loglevel LOGLEVEL]
+                   [--debug] [--test]
                    file
 
     Plot a folded profile
@@ -456,11 +457,21 @@ HENfold
       --nebin NEBIN         Number of energy bins (Y axis) of the profile
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
-      --norm NORM           --norm to1: Normalize hist so that the maximum at each
-                            energy is one. --norm ratios: Divide by mean profile
       --out-file-root OUT_FILE_ROOT
                             Root of the output files (plots and csv tables)
       --pepoch PEPOCH       Reference epoch for timing parameters (MJD)
+      --norm NORM           Normalization for the dynamical phase plot. Can be:
+                            'to1' (each profile normalized from 0 to 1); 'std'
+                            (subtract the mean and divide by the standard
+                            deviation); 'sub' (just subtract the mean of each
+                            profile); 'ratios' (divide by the average profile, to
+                            highlight changes). Prepending 'median' to any of
+                            those options uses the median in place of the mean.
+                            Appending '_smooth' smooths the 2d array with a
+                            Gaussian filter. E.g. mediansub_smooth subtracts the
+                            median and smooths the imagedefault None
+      --colormap COLORMAP   Change the color map of the image. Any matplotlib
+                            colormap is valid
       -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
@@ -524,7 +535,7 @@ HENjoinevents
 
 ::
 
-    usage: HENjoinevents [-h] [-o OUTPUT] files [files ...]
+    usage: HENjoinevents [-h] [-o OUTPUT] [--ignore-instr] files [files ...]
 
     Read a cleaned event files and saves the relevant information in a standard
     format
@@ -536,6 +547,7 @@ HENjoinevents
       -h, --help            show this help message and exit
       -o OUTPUT, --output OUTPUT
                             Name of output file
+      --ignore-instr        Ignore instrument names in channels
 
 
 HENlags
@@ -650,9 +662,9 @@ HENphaseogram
                          [--periodogram PERIODOGRAM] [-n NBIN] [--ntimes NTIMES]
                          [--binary]
                          [--binary-parameters BINARY_PARAMETERS BINARY_PARAMETERS BINARY_PARAMETERS]
-                         [--emin EMIN] [--emax EMAX] [--norm NORM] [--plot-only]
-                         [--pepoch PEPOCH] [-p DEORBIT_PAR] [--test]
-                         [--loglevel LOGLEVEL] [--debug]
+                         [--emin EMIN] [--emax EMAX] [--plot-only]
+                         [--pepoch PEPOCH] [--norm NORM] [--colormap COLORMAP]
+                         [-p DEORBIT_PAR] [--test] [--loglevel LOGLEVEL] [--debug]
                          file
 
     Plot an interactive phaseogram
@@ -675,11 +687,20 @@ HENphaseogram
                             Initial values for binary parameters
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
-      --norm NORM           Normalization for the phaseogram. Can be 'to1' (each
-                            profile normalized from 0 to 1); 'mediansub' (just
-                            subtract the median from each profile); default None
       --plot-only           Only plot the phaseogram
       --pepoch PEPOCH       Reference epoch for timing parameters (MJD)
+      --norm NORM           Normalization for the dynamical phase plot. Can be:
+                            'to1' (each profile normalized from 0 to 1); 'std'
+                            (subtract the mean and divide by the standard
+                            deviation); 'sub' (just subtract the mean of each
+                            profile); 'ratios' (divide by the average profile, to
+                            highlight changes). Prepending 'median' to any of
+                            those options uses the median in place of the mean.
+                            Appending '_smooth' smooths the 2d array with a
+                            Gaussian filter. E.g. mediansub_smooth subtracts the
+                            median and smooths the imagedefault None
+      --colormap COLORMAP   Change the color map of the image. Any matplotlib
+                            colormap is valid
       -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
@@ -943,7 +964,7 @@ HENsumfspec
       -h, --help            show this help message and exit
       -o OUTNAME, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_(c)pds.nc
+                            tot_(c)pds.p
 
 
 HENvarenergy
