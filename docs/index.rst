@@ -23,26 +23,11 @@ Description
 This set of command-line scripts based on
 `Stingray <https://github.com/StingraySoftware/stingray>`__ is designed
 to do correctly and fairly easily a **quick-look (spectral-) timing
-analysis** of X-ray data, treating properly the gaps in the data due,
-e.g., to occultation from the Earth or passages through the SAA.
-
-Originally, its development as MaLTPyNT - Matteo's Libraries and Tools
-in Python for NuSTAR Timing - was driven by the need of performing
-aperiodic timing analysis on NuSTAR data, whose long dead time made it
-difficult to treat power density spectra with the usual tools. By
-exploiting the presence of two independent detectors, one could use the
-**cospectrum** as a proxy for the power density spectrum (for an
-explanation of why this is important, look at Bachetti et al., *ApJ*,
-800, 109 -`arXiv:1409.3248 <http://arxiv.org/abs/1409.3248>`__).
-
-Today, this set of command line scripts is much more complete and it is
-capable of working with the data of many more satellites. Among the
+analysis** of X-ray data. Among the
 features already implemented are power density and cross spectra, time
 lags, pulsar searches with the Epoch folding and the Z\_n^2 statistics,
-color-color and color-intensity diagrams. More is in preparation:
-rms-energy, lag-energy, covariance-energy spectra, Lomb-Scargle
-periodograms and in general all that is available in
-`Stingray <https://github.com/StingraySoftware/stingray>`__. The
+color-color and color-intensity diagrams, rms-energy, lag-energy,
+covariance-energy spectra. The
 analysis done in HENDRICS will be compatible with the graphical user
 interface `DAVE <https://github.com/StingraySoftware/dave>`__, so that
 users will have the choice to analyze single datasets with an easy
@@ -61,13 +46,15 @@ What's new
 HENDRICS 7.0
 ~~~~~~~~~~~~
 
-+ Based on [Stingray 1.0](https://github.com/StingraySoftware/stingray/releases/tag/v1.0-beta), bringing a huge bump in performance
++ Based on `Stingray 1.0 <https://github.com/StingraySoftware/stingray/releases/tag/v1.>`__, bringing a huge bump in performance
++ Accepts many more file formats for round-trip of Stingray objects, thanks to the new functionality of Stingray.
 + Energy-filtered periodograms
-+ A wider range of normalizations available for both HENfold and HENphaseogram, with more options (e.g. smoothing) and higher-contrast color map by default
++ A wider range of normalizations available for both ``HENfold`` and ``HENphaseogram``, with more options (e.g. smoothing) and higher-contrast color map by default
 + Many fixes to mission-specific files
-+ Better info returned by Z searches, including pulse amplitude estimates
++ Better info returned by Z/EF searches, including pulse amplitude estimates
++ New upper limit functionality in Z/EF searches with no candidates
++ ``HENplot`` now estimates the error of frequency and frequency derivative searches returned by ``HENzsearch``  and ``HENefsearch`` with option ``--fast``
 + Add ability to split files at a given MJD
-+ New upper limit functionality in Z searches with no candidates
 
 
 HENDRICS 6.0
