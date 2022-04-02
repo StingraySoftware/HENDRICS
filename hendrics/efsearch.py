@@ -1078,6 +1078,30 @@ def dyn_folding_search(
     return times, frequencies, np.array(stats)
 
 
+def print_qffa_results(best_cand_table):
+    newtable = copy.deepcopy(best_cand_table)
+    good = ~np.isnan(newtable["pulse_amp"])
+    if len(newtable[good]) == 0:
+        print("No pulsations found. Best candidate and upper limit:")
+        good = 0
+        newtable["Pulsed amplitude (%)"] = [
+            f"<{a:g} (90%)" for a in newtable["pulse_amp_ul_0.9"]
+        ]
+    else:
+        print("Best candidate(s):")
+        newtable["Pulsed amplitude (%)"] = [
+            f"{a:g} ± {e:g}"
+            for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
+        ]
+
+    print(
+        newtable["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"][
+            good
+        ]
+    )
+    return
+
+
 def analyze_qffa_results(fname):
     """Search best candidates in a quasi-fast-folding search.
 
@@ -1123,7 +1147,6 @@ def analyze_qffa_results(fname):
     if hasattr(ef, "fddots") and ef.fddots is not None:
         fddot = ef.fddots
 
-    print("Best candidates:")
     best_cand_table = Table(
         names=[
             "fname",
@@ -1133,11 +1156,14 @@ def analyze_qffa_results(fname):
             "fdot",
             "fddot",
             "power_cl_0.9",
-            "pulse_amp (%)",
-            "pulse_amp_err (%)",
-            "pulse_amp_cl_0.1 (%)",
-            "pulse_amp_cl_0.9 (%)",
-            "pulse_amp_ul_0.9 (%)",
+            "pulse_amp",
+            "pulse_amp_err",
+            "pulse_amp_cl_0.1",
+            "pulse_amp_cl_0.9",
+            "pulse_amp_ul_0.9",
+            "f_idx",
+            "fdot_idx",
+            "fddot_idx",
         ],
         dtype=[
             str,
@@ -1152,31 +1178,37 @@ def analyze_qffa_results(fname):
             float,
             float,
             float,
+            int,
+            int,
+            int,
         ],
     )
     best_cand_table["power"].info.format = ".2f"
     best_cand_table["power_cl_0.9"].info.format = ".2f"
     best_cand_table["fdot"].info.format = ".2e"
     best_cand_table["fddot"].info.format = "g"
-    best_cand_table["pulse_amp_cl_0.1 (%)"].info.format = ".2f"
-    best_cand_table["pulse_amp_cl_0.9 (%)"].info.format = ".2f"
-    best_cand_table["pulse_amp (%)"].info.format = ".2f"
-    best_cand_table["pulse_amp_err (%)"].info.format = ".2f"
-    best_cand_table["pulse_amp_ul_0.9 (%)"].info.format = ".2f"
+    best_cand_table["pulse_amp_cl_0.1"].info.format = ".2f"
+    best_cand_table["pulse_amp_cl_0.9"].info.format = ".2f"
+    best_cand_table["pulse_amp"].info.format = ".2f"
+    best_cand_table["pulse_amp_err"].info.format = ".2f"
+    best_cand_table["pulse_amp_ul_0.9"].info.format = ".2f"
 
     for i, idx in enumerate(best_cands):
+        f_idx = fdot_idx = fddot_idx = 0
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
-            allfreqs = ef.freq[idx[0], :]
-            allfdots = ef.freq[:, idx[1]]
-            allstats_f = ef.stat[idx[0], :]
-            allstats_fdot = ef.stat[:, idx[1]]
-            f, fdot = ef.freq[idx[0], idx[1]], ef.fdots[idx[0], idx[1]]
-            max_stat = ef.stat[idx[0], idx[1]]
+            f_idx, fdot_idx = idx
+            allfreqs = ef.freq[f_idx, :]
+            allfdots = ef.freq[:, fdot_idx]
+            allstats_f = ef.stat[f_idx, :]
+            allstats_fdot = ef.stat[:, fdot_idx]
+            f, fdot = ef.freq[f_idx, fdot_idx], ef.fdots[f_idx, fdot_idx]
+            max_stat = ef.stat[f_idx, fdot_idx]
         elif len(ef.stat.shape) == 1:
+            f_idx = idx
             allfreqs = ef.freq
             allstats_f = ef.stat
-            f = ef.freq[idx[0]]
-            max_stat = ef.stat[idx[0]]
+            f = ef.freq[f_idx]
+            max_stat = ef.stat[f_idx]
             fdot = 0
             allfdots = None
             allstats_fdot = None
@@ -1211,6 +1243,9 @@ def analyze_qffa_results(fname):
                 amp_0,
                 amp_1,
                 amp_ul,
+                f_idx,
+                fdot_idx,
+                fddot_idx,
             ]
         )
         if max_stat < detlev:
@@ -1233,22 +1268,7 @@ def analyze_qffa_results(fname):
             format="ascii",
         )
 
-    if len(best_cand_table[~np.isnan(best_cand_table["pulse_amp (%)"])]) == 0:
-        print(f"None.")
-        if hasattr(ef, "upperlim") and ef.upperlim is not None:
-            maxpow = ef.stat.max()
-            sig_0, sig_1 = power_confidence_limits(maxpow, c=0.90, n=ef.N)
-            amp_lim = pf_lim = np.nan
-            if ef.ncounts is not None:
-                amp_lim = a_from_ssig(sig_1, ef.ncounts)
-                pf_lim = pf_from_ssig(sig_1, ef.ncounts)
-
-            print(
-                f"(90% Upper limit for sinusoids: p. frac. < {pf_lim * 100:.2f}%, p. ampl. < {amp_lim * 100:.2f} %)"
-            )
-    else:
-        print(best_cand_table)
-
+    print_qffa_results(best_cand_table)
     best_cand_table.meta.update(
         dict(nbin=nbin, ndof=ndof, label=label, filename=None, detlev=detlev)
     )
@@ -1679,6 +1699,9 @@ def _common_main(args, func):
         efperiodogram.oversample = oversample
 
         save_folding(efperiodogram, out_fname + HEN_FILE_EXTENSION)
+        if args.fast:
+            analyze_qffa_results(out_fname + HEN_FILE_EXTENSION)
+
         outfiles.append(out_fname + HEN_FILE_EXTENSION)
     return outfiles
 

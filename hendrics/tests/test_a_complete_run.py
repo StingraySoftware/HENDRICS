@@ -37,13 +37,7 @@ from hendrics import (
     varenergy,
     sum_fspec,
 )
-
-try:
-    import h5py
-
-    HAS_H5PY = True
-except ImportError:
-    HAS_H5PY = False
+from hendrics.io import HAS_H5PY
 
 try:
     FileNotFoundError

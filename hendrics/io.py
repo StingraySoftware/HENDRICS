@@ -14,6 +14,15 @@ import warnings
 import pickle
 import os.path
 import numpy as np
+from astropy.table import Table
+from astropy.io.registry import identify_format
+
+try:
+    import h5py
+
+    HAS_H5PY = True
+except ImportError:
+    HAS_H5PY = False
 
 try:
     import netCDF4 as nc
@@ -363,9 +372,9 @@ def get_file_format(fname):
     >>> get_file_format('bu.nc')
     'nc'
     >>> get_file_format('bu.evt')
-    'fits'
-    >>> get_file_format('bu.txt')
-    'text'
+    'ogip'
+    >>> get_file_format('bu.ecsv')
+    'ascii.ecsv'
     >>> get_file_format('bu.pdfghj')
     Traceback (most recent call last):
         ...
@@ -374,14 +383,19 @@ def get_file_format(fname):
     ext = get_file_extension(fname)
     if ext == ".p":
         return "pickle"
-    elif ext == ".nc":
+
+    if ext == ".nc":
         return "nc"
-    elif ext in [".evt", ".fits"]:
-        return "fits"
-    elif ext in [".txt", ".qdp", ".csv"]:
-        return "text"
-    else:
-        raise RuntimeError(f"File format {ext[1:]} " f"not recognized")
+
+    if ext in [".evt", ".fits"]:
+        return "ogip"
+
+    # For the rest of formats, use Astropy
+    fmts = identify_format("write", Table, fname, None, [], {})
+    if len(fmts) > 0:
+        return fmts[0]
+
+    raise RuntimeError(f"File format {ext[1:]} " f"not recognized")
 
 
 # ---- Base function to save NetCDF4 files
@@ -479,15 +493,61 @@ def _dum(x):
     return x
 
 
+def recognize_stingray_table(obj):
+    """
+
+    Examples
+    --------
+    >>> obj = AveragedCrossspectrum()
+    >>> obj.freq = np.arange(10)
+    >>> obj.power = np.random.random(10)
+    >>> recognize_stingray_table(obj.to_astropy_table())
+    'AveragedPowerspectrum'
+    >>> obj.pds1 = obj.power
+    >>> recognize_stingray_table(obj.to_astropy_table())
+    'AveragedCrossspectrum'
+    >>> obj = EventList(np.arange(10))
+    >>> recognize_stingray_table(obj.to_astropy_table())
+    'EventList'
+    >>> obj = Lightcurve(np.arange(10), np.arange(10))
+    >>> recognize_stingray_table(obj.to_astropy_table())
+    'Lightcurve'
+    >>> obj = Table()
+    >>> recognize_stingray_table(obj)
+    Traceback (most recent call last):
+    ...
+    ValueError: Object not recognized...
+    """
+    if "power" in obj.colnames:
+        if np.iscomplex(obj["power"][1]) or "pds1" in obj.colnames:
+            return "AveragedCrossspectrum"
+        return "AveragedPowerspectrum"
+    if "counts" in obj.colnames:
+        return "Lightcurve"
+    if "time" in obj.colnames:
+        return "EventList"
+    raise ValueError(f"Object not recognized:\n{obj}")
+
+
 # ----- Functions to handle file types
 def get_file_type(fname, raw_data=False):
     """Return the file type and its contents.
 
-    Only works for hendrics-format pickle or netcdf files.
+    Only works for hendrics-format pickle or netcdf files,
+    or stingray outputs.
     """
-    contents = load_data(fname)
+    contents_raw = load_data(fname)
+    if isinstance(contents_raw, Table):
+        ftype_raw = recognize_stingray_table(contents_raw)
+        if raw_data:
+            contents = dict(
+                [(col, contents_raw[col]) for col in contents_raw.colnames]
+            )
+            contents.update(contents_raw.meta)
+    else:
+        ftype_raw = contents_raw["__sr__class__type__"]
+        contents = contents_raw
 
-    ftype_raw = contents["__sr__class__type__"]
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
         fun = load_lcurve
@@ -529,6 +589,11 @@ def save_events(eventlist, fname):
     fname: str
         Name of output file
     """
+    fmt = get_file_format(fname)
+
+    if fmt not in ["nc", "pickle"]:
+        return eventlist.write(fname)
+
     out = dict(
         time=eventlist.time,
         gti=eventlist.gti,
@@ -554,18 +619,22 @@ def save_events(eventlist, fname):
         if hasattr(eventlist, attr) and getattr(eventlist, attr) is not None:
             out[attr] = getattr(eventlist, attr).lower()
 
-    if get_file_format(fname) == "pickle":
+    if fmt == "pickle":
         _save_data_pickle(out, fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         _save_data_nc(out, fname)
 
 
 def load_events(fname):
     """Load events from a file."""
-    if get_file_format(fname) == "pickle":
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
         out = _load_data_pickle(fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         out = _load_data_nc(fname)
+    else:
+        # Try one of the known files from Astropy
+        return EventList.read(fname, fmt=fmt)
 
     eventlist = EventList()
 
@@ -603,6 +672,12 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     fname: str
         Name of output file
     """
+
+    fmt = get_file_format(fname)
+
+    if fmt not in ["nc", "pickle"]:
+        return lcurve.write(fname)
+
     out = {}
 
     out["__sr__class__type__"] = str(lctype)
@@ -636,18 +711,22 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     if hasattr(lcurve, "mission") and lcurve.mission is not None:
         out["mission"] = lcurve.mission.lower()
 
-    if get_file_format(fname) == "pickle":
+    if fmt == "pickle":
         return _save_data_pickle(out, fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         return _save_data_nc(out, fname)
 
 
 def load_lcurve(fname):
     """Load light curve from a file."""
-    if get_file_format(fname) == "pickle":
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
         data = _load_data_pickle(fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         data = _load_data_nc(fname)
+    else:
+        # Try one of the known files from Lightcurve
+        return Lightcurve.read(fname, fmt=fmt, skip_checks=True)
 
     lcurve = Lightcurve(
         data["time"],
@@ -730,6 +809,11 @@ def save_pds(cpds, fname, save_all=False):
     """Save PDS in a file."""
     from .base import mkdir_p
 
+    fmt = get_file_format(fname)
+
+    if fmt not in ["nc", "pickle"]:
+        return cpds.write(fname, fmt=fmt)
+
     outdata = copy.copy(cpds.__dict__)
     outdata["__sr__class__type__"] = str(type(cpds))
 
@@ -777,18 +861,24 @@ def save_pds(cpds, fname, save_all=False):
             model_files.append(mfile)
         outdata.pop("best_fits")
 
-    if get_file_format(fname) == "pickle":
+    if fmt == "pickle":
         return _save_data_pickle(outdata, fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         return _save_data_nc(outdata, fname)
 
 
 def load_pds(fname, nosub=False):
     """Load PDS from a file."""
-    if get_file_format(fname) == "pickle":
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
         data = _load_data_pickle(fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         data = _load_data_nc(fname)
+    else:
+        data = Table.read(fname, format=fmt)
+        if "pds1" in data.colnames or "power.real" in data.colnames:
+            return AveragedCrossspectrum.read(fname, fmt=fmt)
+        return AveragedPowerspectrum.read(fname, fmt=fmt)
 
     type_string = data["__sr__class__type__"]
     if "AveragedPowerspectrum" in type_string:
@@ -997,19 +1087,32 @@ def _save_data_nc(struct, fname, kind="data"):
 
 def save_data(struct, fname, ftype="data"):
     """Save generic data in hendrics format."""
-    if get_file_format(fname) == "pickle":
-        _save_data_pickle(struct, fname)
-    elif get_file_format(fname) == "nc":
-        _save_data_nc(struct, fname)
+    fmt = get_file_format(fname)
+    has_write_method = hasattr(struct, "write")
+
+    if fmt == "pickle":
+        return _save_data_pickle(struct, fname)
+    elif fmt == "nc":
+        return _save_data_nc(struct, fname)
+
+    if not has_write_method:
+        raise ValueError("Unrecognized data format or file format")
+
+    struct.write(fname)
 
 
 def load_data(fname):
     """Load generic data in hendrics format."""
-    if get_file_format(fname) == "pickle":
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
         return _load_data_pickle(fname)
-    elif get_file_format(fname) == "nc":
+    elif fmt == "nc":
         return _load_data_nc(fname)
-    else:
+
+    try:
+        return Table.read(fname, format=fmt)
+    except Exception as e:
+
         raise TypeError(
             "The file type is not recognized. Did you convert the"
             " original files into HENDRICS format (e.g. with "

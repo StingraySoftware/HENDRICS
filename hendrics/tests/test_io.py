@@ -10,8 +10,8 @@ import os
 from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
 from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
-from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF
-from hendrics.io import find_file_in_allowed_paths
+from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
+from hendrics.io import find_file_in_allowed_paths, get_file_type
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
 from hendrics.io import main
 
@@ -19,6 +19,7 @@ import pytest
 import glob
 from astropy.modeling import models
 from astropy.modeling.core import Model
+
 
 try:
     FileNotFoundError
@@ -87,7 +88,7 @@ class TestIO:
         val = ref_mjd([fname])
         assert np.isclose(val, 55197.00076601852, atol=0.00000000001)
 
-    def test_save_data(self):
+    def test_save_dict_data(self):
         struct = {
             "a": 0.1,
             "b": np.longdouble("123.4567890123456789"),
@@ -101,7 +102,52 @@ class TestIO:
         assert np.allclose(struct["c"], struct2["c"])
         assert np.allclose(struct["d"], struct2["d"])
 
-    def test_load_and_save_events(self):
+    def test_save_dict_data_bad(self):
+        struct = {
+            "a": 0.1,
+            "b": np.longdouble("123.4567890123456789"),
+            "c": np.longdouble([[-0.5, 3.5]]),
+            "d": 1,
+        }
+        with pytest.raises(ValueError) as excinfo:
+            save_data(struct, "bubu.hdf5")
+
+        assert "Unrecognized data" in str(excinfo.value)
+
+    @pytest.mark.parametrize("fmt", [".ecsv", ".hdf5"])
+    def test_save_data(self, fmt):
+        from astropy.table import Table
+
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
+
+        struct = Table(
+            {
+                "a": [0, 0.1],
+                "b": [np.longdouble("123.4567890123456789"), np.longdouble(0)],
+            }
+        )
+        save_data(struct, "bubu" + fmt)
+        struct2 = load_data("bubu" + fmt)
+        assert np.allclose(struct["a"], struct2["a"])
+        assert np.allclose(struct["b"], struct2["b"])
+
+    def test_get_file_type_astropy_format_raw(self):
+        events = EventList(
+            [0, 2, 3.0],
+            pi=[1, 2, 3],
+            mjdref=54385.3254923845,
+            gti=np.longdouble([[-0.5, 3.5]]),
+        )
+        save_data(events, "bubu.ecsv")
+        ftype, newdata = get_file_type("bubu.ecsv", raw_data=True)
+        assert ftype == "events"
+        assert isinstance(newdata, dict)
+
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_events(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
         events = EventList(
             [0, 2, 3.0],
             pi=[1, 2, 3],
@@ -112,8 +158,8 @@ class TestIO:
         events.energy = np.array([3.0, 4.0, 5.0])
         events.mission = "nustar"
         events.header = Header().tostring()
-        save_events(events, self.dum)
-        events2 = load_events(self.dum)
+        save_events(events, "bubu" + fmt)
+        events2 = load_events("bubu" + fmt)
         assert np.allclose(events.time, events2.time)
         assert np.allclose(events.cal_pi, events2.cal_pi)
         assert np.allclose(events.pi, events2.pi)
@@ -123,7 +169,10 @@ class TestIO:
         assert events.header == events2.header
         assert events2.mission == events.mission
 
-    def test_load_and_save_lcurve(self):
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_lcurve(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
         lcurve = Lightcurve(
             np.linspace(0, 10, 15),
             np.random.poisson(30, 15),
@@ -133,8 +182,8 @@ class TestIO:
         # Monkeypatch for compatibility with old versions
         lcurve.mission = "bububu"
         lcurve.instr = "bababa"
-        save_lcurve(lcurve, self.dum)
-        lcurve2 = load_lcurve(self.dum)
+        save_lcurve(lcurve, "bubu" + fmt)
+        lcurve2 = load_lcurve("bubu" + fmt)
         assert np.allclose(lcurve.time, lcurve2.time)
         assert np.allclose(lcurve.counts, lcurve2.counts)
         assert np.allclose(lcurve.mjdref, lcurve2.mjdref)
@@ -144,7 +193,10 @@ class TestIO:
         assert lcurve2.mission == "bububu"
         assert lcurve.instr == lcurve2.instr
 
-    def test_load_and_save_pds(self):
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_pds(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
         pds = Powerspectrum()
         pds.freq = np.linspace(0, 10, 15)
         pds.power = np.random.poisson(30, 15)
@@ -153,12 +205,15 @@ class TestIO:
         pds.show_progress = True
         pds.amplitude = False
 
-        save_pds(pds, self.dum)
-        pds2 = load_pds(self.dum)
+        save_pds(pds, "bubu" + fmt)
+        pds2 = load_pds("bubu" + fmt)
         for attr in ["gti", "mjdref", "m", "show_progress", "amplitude"]:
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
-    def test_load_and_save_cpds(self):
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_cpds(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return True
         pds = Crossspectrum()
         pds.freq = np.linspace(0, 10, 15)
         pds.power = np.random.poisson(30, 15) + 1.0j
@@ -167,8 +222,8 @@ class TestIO:
         pds.show_progress = True
         pds.amplitude = False
 
-        save_pds(pds, self.dum)
-        pds2 = load_pds(self.dum)
+        save_pds(pds, "bubup" + fmt)
+        pds2 = load_pds("bubup" + fmt)
         for attr in [
             "gti",
             "mjdref",
@@ -177,6 +232,7 @@ class TestIO:
             "amplitude",
             "power",
         ]:
+            print(attr, getattr(pds, attr), getattr(pds2, attr))
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
     def test_load_pds_fails(self):
