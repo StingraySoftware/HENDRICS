@@ -47,6 +47,7 @@ HENDRICS 7.0
 ~~~~~~~~~~~~
 
 + Based on `Stingray 1.0 <https://github.com/StingraySoftware/stingray/releases/tag/v1.>`__, bringing a huge bump in performance
++ Following Astropy, Numpy and Scipy, HENDRICS 7.0 is only compatible with Python >3.8
 + Accepts many more file formats for round-trip of Stingray objects, thanks to the new functionality of Stingray.
 + Energy-filtered periodograms
 + A wider range of normalizations available for both ``HENfold`` and ``HENphaseogram``, with more options (e.g. smoothing) and higher-contrast color map by default
