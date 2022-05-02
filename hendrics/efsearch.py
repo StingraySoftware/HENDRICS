@@ -1102,6 +1102,81 @@ def print_qffa_results(best_cand_table):
     return
 
 
+def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
+    """Calculate boundaries of peaks in image.
+
+    Parameters
+    ----------
+    x, y : array-like
+        The coordinates of the image (anything that works with pcolormesh)
+    image : 2-D array
+        The image containing peaks
+    level : float
+        The level at which boundaries will be traced
+    x0, y0 : float
+        The local maximum around which the boundary has to be drawn
+
+    Examples
+    --------
+    >>> x = np.linspace(-10, 10, 1000)
+    >>> y = np.linspace(-10, 10, 1000)
+    >>> X, Y = np.meshgrid(x, y)
+    >>> Z = Z = np.sinc(np.sqrt(X**2 + Y**2))**2 + np.sinc(np.sqrt((X - 5)**2 + Y**2))**2
+    >>> vals = get_xy_boundaries_from_level(X, Y, Z, 0.5, 0, 0)
+    >>> np.allclose(np.abs(vals), 0.44, atol=0.1)
+    True
+    """
+    fig = plt.figure(np.random.random())
+    cs = fig.gca().contour(x, y, image, [level])
+
+    cont, seg, idx, xm, ym, d2 = cs.find_nearest_contour(x0, y0, pixel=False)
+
+    min_x = cs.allsegs[cont][seg][:, 0].min()
+    max_x = cs.allsegs[cont][seg][:, 0].max()
+    min_y = cs.allsegs[cont][seg][:, 1].min()
+    max_y = cs.allsegs[cont][seg][:, 1].max()
+    plt.close(fig)
+
+    return min_x, max_x, min_y, max_y
+
+
+def get_boundaries_from_level(x, y, level, x0):
+    """Calculate boundaries of peak in x-y plot
+
+    Parameters
+    ----------
+    x, y : array-like
+        The x and y values
+    level : float
+        The level at which boundaries will be traced
+    x0 : float
+        The local maximum around which the boundary has to be drawn
+
+    Examples
+    --------
+    >>> x = np.linspace(-10, 10, 1000)
+    >>> y = np.sinc(x)**2 + np.sinc((x - 5))**2
+    >>> vals = get_boundaries_from_level(x, y, 0.5, 0)
+    >>> np.allclose(np.abs(vals), 0.44, atol=0.1)
+    True
+    """
+    max_idx = np.argmin(np.abs(x - x0))
+    idx = max_idx
+    min_x = max_x = x0
+    # lower limit
+    while y[idx] > level:
+        min_x = x[idx]
+        idx -= 1
+
+    idx = max_idx
+    # upper limit
+    while y[idx] > level:
+        max_x = x[idx]
+        idx += 1
+
+    return min_x, max_x
+
+
 def analyze_qffa_results(fname):
     """Search best candidates in a quasi-fast-folding search.
 
@@ -1153,7 +1228,11 @@ def analyze_qffa_results(fname):
             "mjd",
             "power",
             "f",
+            "f_err_n",
+            "f_err_p",
             "fdot",
+            "fdot_err_n",
+            "fdot_err_p",
             "fddot",
             "power_cl_0.9",
             "pulse_amp",
@@ -1167,6 +1246,10 @@ def analyze_qffa_results(fname):
         ],
         dtype=[
             str,
+            float,
+            float,
+            float,
+            float,
             float,
             float,
             float,
@@ -1203,13 +1286,19 @@ def analyze_qffa_results(fname):
             allstats_fdot = ef.stat[:, fdot_idx]
             f, fdot = ef.freq[f_idx, fdot_idx], ef.fdots[f_idx, fdot_idx]
             max_stat = ef.stat[f_idx, fdot_idx]
+            sig_e1_m, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
+            fmin, fmax, fdotmin, fdotmax = get_xy_boundaries_from_level(
+                ef.freq, ef.fdots, ef.stat, sig_e1_m, f, fdot)
         elif len(ef.stat.shape) == 1:
             f_idx = idx
             allfreqs = ef.freq
             allstats_f = ef.stat
             f = ef.freq[f_idx]
             max_stat = ef.stat[f_idx]
-            fdot = 0
+            sig_e1_m, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
+            fmin, fmax = get_boundaries_from_level(
+                ef.freq, ef.stat, sig_e1_m, f)
+            fdot = fdotmin = fdotmax = 0
             allfdots = None
             allstats_fdot = None
         else:
@@ -1218,7 +1307,6 @@ def analyze_qffa_results(fname):
         if ef.ncounts is None:
             continue
 
-        _, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
         sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=ef.N)
         amp = amp_err = amp_ul = amp_1 = amp_0 = np.nan
         if max_stat < detlev:
@@ -1235,7 +1323,11 @@ def analyze_qffa_results(fname):
                 ef.pepoch,
                 max_stat,
                 f,
+                fmin - f,
+                fmax - f,
                 fdot,
+                fdotmin - fdot,
+                fdotmax - fdot,
                 fddot,
                 sig_0,
                 amp,
