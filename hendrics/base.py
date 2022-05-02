@@ -1185,6 +1185,11 @@ def normalize_dyn_profile(dynprof, norm):
         prof_mean = np.mean(dynprof, axis=0)
         norm = norm.replace("mean", "")
 
+    if "ratios" in norm:
+        dynprof /= prof_mean[np.newaxis, :]
+        norm = norm.replace("ratios", "")
+        y_mean = np.mean(dynprof, axis=1)
+
     y_min = np.min(dynprof, axis=1)
     y_max = np.max(dynprof, axis=1)
     y_std = np.std(np.diff(dynprof, axis=0)) / np.sqrt(2)
@@ -1197,8 +1202,6 @@ def normalize_dyn_profile(dynprof, norm):
     elif norm == "std":
         dynprof -= y_mean[:, np.newaxis]
         dynprof /= y_std
-    elif norm == "ratios":
-        dynprof /= prof_mean[np.newaxis, :]
     elif norm == "sub":
         dynprof -= y_mean[:, np.newaxis]
     elif norm == "norm":
