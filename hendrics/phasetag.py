@@ -349,7 +349,7 @@ def phase_tag_fits(
 
     try:
         newhdulist.writeto(outfile, overwrite=True, checksum=True)
-    except:
+    except Exception:
         newhdulist.writeto(outfile, overwrite=True)
     hdulist.close()
 
