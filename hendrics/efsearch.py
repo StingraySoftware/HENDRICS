@@ -1164,13 +1164,13 @@ def get_boundaries_from_level(x, y, level, x0):
     idx = max_idx
     min_x = max_x = x0
     # lower limit
-    while y[idx] > level:
+    while idx > 0 and y[idx] > level:
         min_x = x[idx]
         idx -= 1
 
     idx = max_idx
     # upper limit
-    while y[idx] > level:
+    while idx < y.size and y[idx] > level:
         max_x = x[idx]
         idx += 1
 
