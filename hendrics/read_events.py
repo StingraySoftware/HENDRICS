@@ -191,6 +191,20 @@ def multiple_event_concatenate(event_lists):
     -------
     `ev_new` : :class:`EventList` object
         The resulting :class:`EventList` object.
+
+    Examples
+    --------
+    >>> gti = [[0, 5]]
+    >>> ev1 = EventList(time=[0.3, 1], gti=gti, energy=[3, 4], pi=None)
+    >>> ev2 = EventList(time=[2, 3], gti=gti, energy=[3, 4])
+    >>> ev3 = EventList(time=[4, 4.5], gti=gti, energy=[3, 4])
+    >>> ev_new = multiple_event_concatenate([ev1, ev2, ev3])
+    >>> np.allclose(ev_new.time, [0.3, 1, 2, 3, 4, 4.5])
+    True
+    >>> np.allclose(ev_new.energy, [3, 4, 3, 4, 3, 4])
+    True
+    >>> ev_new.pi is None
+    True
     """
 
     ev_new = EventList()
@@ -207,10 +221,11 @@ def multiple_event_concatenate(event_lists):
     order = np.argsort(ev_new.time)
     ev_new.time = ev_new.time[order]
 
-    for attr in ev_new.array_attrs():
+    for attr in event_lists[0].array_attrs():
+        if attr == "time":
+            continue
         if (
-            hasattr(event_lists[0], attr)
-            and getattr(event_lists[0], attr) is not None
+            getattr(event_lists[0], attr) is not None
         ):
             setattr(
                 ev_new,
@@ -219,6 +234,8 @@ def multiple_event_concatenate(event_lists):
                     order
                 ],
             )
+        else:
+            setattr(ev_new, attr, None)
 
     ev_new.mjdref = event_lists[0].mjdref
     ev_new.gti = gti
