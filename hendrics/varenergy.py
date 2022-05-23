@@ -78,7 +78,7 @@ def varenergy_from_astropy_table(fname):
     True
     >>> np.allclose(spec.ref_band, varen.ref_band)
     True
-    >>> table.write("varenergyboubou.ecsv")
+    >>> table.write("varenergyboubou.ecsv", overwrite=True)
     >>> spec_file = varenergy_from_astropy_table("varenergyboubou.ecsv")
     >>> np.allclose(spec.spectrum, spec_file.spectrum)
     True

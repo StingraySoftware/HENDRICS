@@ -181,11 +181,7 @@ class TestPhaseogram:
         ip = run_interactive_phaseogram(evfile, 9.9, test=True, nbin=16, nt=8)
         ip.update(1)
         ip.recalculate(1)
-        with pytest.warns(UserWarning) as record:
-            ip.toa(1)
-        assert np.any(
-            ["TOA calculation is not robust" in r.message.args[0] for r in record]
-        )
+        ip.toa(1)
         ip.reset(1)
         ip.fdot = 2
         f, fdot, fddot = ip.get_values()
@@ -211,11 +207,8 @@ class TestPhaseogram:
         )
         ip.update(1)
         ip.recalculate(1)
-        with pytest.warns(UserWarning) as record:
-            ip.toa(1)
-        assert np.any(
-            ["TOA calculation is not robust" in r.message.args[0] for r in record]
-        )
+        ip.toa(1)
+
         ip.reset(1)
         ip.fdot = 2
         f, fdot, fddot = ip.get_values()

@@ -5,14 +5,14 @@ from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 
 try:
-    import numdifftools as nd
+    from statsmodels.tools.numdiff import approx_hess3
 
-    HAS_NUMDIF = True
+    HAS_STATSM = True
 except ImportError:
-    HAS_NUMDIF = False
+    HAS_STATSM = False
 
 
-@vectorize([int64(int64), float32(float32), float64(float64)])
+@vectorize([(int64,), (float32,), (float64,)])
 def phases_from_zero_to_one(phase):
     """Normalize pulse phases from 0 to 1
 
@@ -36,7 +36,7 @@ def phases_from_zero_to_one(phase):
     return phase
 
 
-@vectorize([int64(int64), float32(float32), float64(float64)])
+@vectorize([(int64,), (float32,), (float64,)])
 def phases_around_zero(phase):
     """Normalize pulse phases from -0.5 to 0.5
 
@@ -59,7 +59,7 @@ def phases_around_zero(phase):
     return ph
 
 
-@njit
+@njit()
 def poisson_loglike(model, data):
     """Loglikelihood for a Poisson distribution
 
@@ -70,7 +70,13 @@ def poisson_loglike(model, data):
     data : array-like
         The input data
     """
-    return -np.sum(data * np.log(model) - model)
+    ll = 0
+    for i in range(model.size):
+        if model[i] <= 0:
+            continue
+        ll += data[i] * np.log(model[i]) - model[i]
+
+    return -ll
 
 
 def normal_loglike(model, input_data):
@@ -263,7 +269,7 @@ def ml_pulsefit(
     template,
     profile_err=None,
     mean_phase=None,
-    fit_base=None,
+    fit_base=True,
     calculate_errors=False,
     ntrial=100,
 ):
@@ -318,10 +324,13 @@ def ml_pulsefit(
         if len(pars) > 2:
             base = pars[2]
         lam = base + amp * template_fun(phases - shift)
+
         x = profile
         if profile_err is not None:
             x = profile, profile_err
         ll = loglike(lam, x)
+        if np.isnan(ll):
+            return np.inf
         return ll
 
     minp = np.min(profile)
@@ -329,8 +338,9 @@ def ml_pulsefit(
     mint = np.min(template)
     maxt = np.max(template)
 
+    dph = 1 / profile.size
     if mean_phase is None:
-        mean_phase = (np.argmax(profile) - np.argmax(template)) / profile.size
+        mean_phase = ((np.argmax(profile) - np.argmax(template)) + 0.5) * dph
 
     if fit_base:
         x0 = (
@@ -342,21 +352,23 @@ def ml_pulsefit(
 
     else:
         x0 = (
-            maxp,
+            maxp / maxt,
             phases_from_zero_to_one(mean_phase),
         )
         bounds = [(0, np.inf), (0, 1)]
 
     res = minimize(func, x0, bounds=bounds)
-    if res.x[1] == 0:
+
+    if res.x[0] == 0 or np.any(np.isnan(res.x)):
         return [np.nan, np.nan, np.nan], [0, 0, 0]
 
     errs = [0, 0, 0]
+
     if calculate_errors:
         # final = res.x[0] + res.x[1] * template_fun(phases - res.x[2])
         # errs = estimate_errors(final, profile_err=profile_err, ntrial=ntrial)
-        if HAS_NUMDIF:
-            hessian_ndt = np.linalg.inv(nd.Hessian(func)(res.x))
+        if HAS_STATSM:
+            hessian_ndt = np.linalg.inv(approx_hess3(res.x, func, epsilon=dph / 10))
         else:
             hessian_ndt = res.hess_inv.todense()
         errs = np.sqrt(np.diag(hessian_ndt))
@@ -369,11 +381,24 @@ def ml_pulsefit(
 
     # import matplotlib.pyplot as plt
     # plt.figure()
+    # phases_fine = np.linspace(0, 1, 300)
+
     # amp, shift, base = final_pars
+    # amp_tr, shift_tr = x0[:2]
+    # base_tr = x0[2] if fit_base else 0
     # shift = phases_from_zero_to_one(shift)
-    # plt.plot(phases, base + amp * template_fun(phases - shift))
+    # plt.title(f"{template.size} {shift}")
+    # plt.plot(phases_fine, base + amp * template_fun(phases_fine - shift), label="Best fit")
+    # plt.plot(phases_fine,
+    #          base_tr + amp_tr * template_fun(phases_fine - shift_tr),
+    #          color="grey", label="Start guess")
+    # plt.plot(phases_fine, base + amp * template_fun(phases_fine), color="grey", alpha=0.5,
+    #          label="Template")
     # plt.axvline(shift - errs[1])
     # plt.axvline(shift + errs[1])
-    # plt.plot(phases, profile)
+    # plt.axvline(phases_from_zero_to_one(mean_phase), color="k")
+    # plt.plot(phases, profile, label="Data")
     # plt.show()
+    # plt.legend()
+    # plt.savefig(f"{np.random.random()}.png")
     return final_pars, errs

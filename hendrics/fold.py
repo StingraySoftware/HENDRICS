@@ -193,7 +193,7 @@ def create_template_from_profile_harm(
 
     Examples
     --------
-    >>> phase = np.arange(0.0, 1, 0.01)
+    >>> phase = np.arange(0.005, 1, 0.01)
     >>> profile = np.cos(2 * np.pi * phase)
     >>> profile_err = profile * 0
     >>> template, additional_phase = create_template_from_profile(
@@ -221,13 +221,72 @@ def create_template_from_profile_harm(
     new_ft[np.abs(new_ft_freq) <= nharm] = ft[np.abs(freq) <= nharm]
 
     template = ifft(new_ft)
-    phas = np.arange(0, 3, 1 / final_nbin)
+    dph = 1 / final_nbin
+    phas = np.arange(dph / 2, 3, dph)
     templ_func = interp1d(phas, template, kind="cubic", assume_sorted=True)
-    phases_fine = np.linspace(1, 1, 1_000 * nharm)
+    phases_fine = np.linspace(1, 2, 1_000 * nharm)
+    dph_fine = phases_fine[1] - phases_fine[0]
+    # phases_fine += 0.5 * dph_fine
     template_fine = templ_func(phases_fine)
 
-    additional_phase = np.argmax(template_fine) / len(template_fine)
+    additional_phase = np.argmax(template_fine) / len(template_fine) + dph_fine / 2
+    print(nharm, additional_phase, 1 / len(template_fine), 1 - additional_phase)
     return template[:final_nbin].real, additional_phase
+
+
+def create_default_template(template_raw):
+    """Create a smooth-ish template from an input folded profile.
+
+    An initial H test assesses the kind of profile. If M > 5, the profile is
+    approximated through a Savitzky-Golay filter. Otherwise, through a Fourier
+    interpolation with M harmonics.
+
+    Parameters
+    ----------
+    template: :class:`np.array`
+
+    Returns
+    -------
+    template: :class:`np.array`
+        The calculated template
+    additional_phase: float
+
+    Examples
+    --------
+    >>> phase = np.arange(0.005, 1, 0.01)
+    >>> profile = np.cos(2 * np.pi * phase)
+    >>> profile_err = profile * 0
+    >>> template, additional_phase = create_template_from_profile(
+    ...     phase, profile, profile_err)
+    ...
+    >>> np.allclose(template, profile, atol=0.001)
+    True
+    """
+    nbin = template_raw.size
+    nharm = min(max(1, nbin // 16), htest(template_raw)[0])
+    dph = 1 / nbin
+    phase = np.arange(0.5 * dph, 1, dph)
+    if nharm <= 5:
+        template, _ = create_template_from_profile_harm(
+            phase, template_raw, nharm=nharm, final_nbin=nbin * 100
+        )
+    else:
+        from scipy.signal import savgol_filter
+
+        template = savgol_filter(template_raw, 4, 2, mode="wrap")
+        phase = np.concatenate((phase - 1, phase, phase + 1))
+        template = np.concatenate((template, template, template))
+
+        templ_func = interp1d(phase, template, kind="cubic", assume_sorted=True)
+
+        phases_fine = np.linspace(0, 1, nbin * 100 + 1)[:-1]
+        phases_fine += (phases_fine[1] - phases_fine[0]) / 2
+        template = templ_func(phases_fine)
+
+    additional_phase = np.argmax(template) / len(template)
+    print(template, additional_phase, nharm)
+
+    return template, additional_phase
 
 
 def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwargs):
@@ -293,7 +352,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
     if template is not None:
         additional_phase = np.argmax(template) / template.size
     else:
-        phase, profile, profile_err = fold_events(
+        _, profile, _ = fold_events(
             copy.deepcopy(events),
             *frequency_derivatives,
             ref_time=pepoch,
@@ -301,14 +360,13 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
             expocorr=expocorr,
             nbin=nbin,
         )
+        template, additional_phase = create_default_template(profile)
+    print(template.size)
 
-        template, additional_phase = create_template_from_profile(
-            phase,
-            profile,
-            profile_err,
-            imagefile=timfile.replace(".tim", "") + ".png",
-            norm=folding_length / length,
-        )
+    min_phase_err = 1 / template.size
+    fit_base = False
+    if np.any(template < 0):
+        fit_base = True
 
     starts = np.arange(gti[0, 0], gti[-1, 1], folding_length)
 
@@ -356,12 +414,15 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
         from .ml_timing import ml_pulsefit
 
         pars, errs = ml_pulsefit(
-            profile, template, calculate_errors=True, fit_base=False
+            profile, template, calculate_errors=True, fit_base=fit_base
         )
-        if np.any(np.isnan(pars)) or pars[1] == 0.0 or np.any(np.isnan(errs)):
+
+        if np.any(np.isnan(pars)) or pars[0] == 0.0 or np.any(np.isnan(errs)):
             continue
 
         ph, phe = pars[1], errs[1]
+
+        phe = max(min_phase_err, phe)
 
         toa = (ph + additional_phase) / frequency_derivatives[0] + start
         toaerr = phe / frequency_derivatives[0]
@@ -377,8 +438,11 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
     phs, phs_errs = np.array(phs), np.array(phs_errs)
 
     factor = np.std(phs) / np.mean(phs_errs)
-    if phs.size > 15 and factor < 1:
-        log.info("Correcting TOA errors for the real scatter")
+
+    if phs.size > 15:
+        log.info(
+            "Correcting TOA errors for the real scatter. Don't trust them " "literally"
+        )
 
         # print(phs, phs_errs, factor)
         toa_errs = toa_errs * factor

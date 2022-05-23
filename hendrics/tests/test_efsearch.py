@@ -40,6 +40,7 @@ class TestEFsearch:
         cls.pulse_period = 0.101
         cls.pulse_frequency = 1 / cls.pulse_period
         cls.tstart = 0
+        # cls.toa = 0.2 * cls.pulse_period
         cls.tend = 25.25
         cls.tseg = cls.tend - cls.tstart
         cls.dt = 0.00606
@@ -77,21 +78,22 @@ class TestEFsearch:
 
     def test_get_TOAs(self):
         events = load_events(self.dum)
+        nbin = 32
         toas, toaerrs = get_TOAs_from_events(
             events.time,
             self.tseg,
             self.pulse_frequency,
             gti=events.gti,
-            nbin=32,
+            nbin=nbin,
             mjdref=events.mjdref,
             template=None,
         )
 
-        possible_toas = events.mjdref + np.arange(-1, 3) * self.pulse_period / 86400
+        possible_toas = events.mjdref + np.arange(2) * self.pulse_period / 86400
         closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
 
         delta_toa_s = (toas[0] - closest) * 86400
-        toa_err_s = toaerrs[0] / 1e6
+        toa_err_s = max(toaerrs[0] / 1e6, 1 / nbin / self.pulse_frequency)
 
         assert np.abs(delta_toa_s) < toa_err_s * 4
 

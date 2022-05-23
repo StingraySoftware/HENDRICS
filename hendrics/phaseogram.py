@@ -18,11 +18,13 @@ from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter1d
 
 from .base import normalize_dyn_profile
-from .fold import create_template_from_profile_harm, filter_energy
 from .io import load_events, load_folding
+from .fold import filter_energy
 from .fold import get_TOAs_from_events
+from .fold import create_default_template
 from .base import hen_root, deorbit_events, get_model
 from .efsearch import h_test
+from .ml_timing import normalized_template, ml_pulsefit
 
 
 DEFAULT_COLORMAP = "cubehelix"
@@ -636,18 +638,7 @@ class InteractivePhaseogram(BasePhaseogram):
 
         template_raw, _ = np.histogram(raw_phases, bins=self.nph * 4)
 
-        nharm = min(max(1, nbin // 16), h_test(template_raw)[1])
-        phase = np.arange(0, 1, 1 / self.nph)
-        if nharm < 5:
-            template, _ = create_template_from_profile_harm(
-                phase, template_raw, nharm=nharm, final_nbin=nbin * 20
-            )
-        else:
-            from scipy.signal import savgol_filter
-
-            template = savgol_filter(template_raw, 4, 2)
-
-        from .ml_timing import normalized_template, ml_pulsefit
+        template, additional = create_default_template(template_raw)
 
         template = normalized_template(template, tomax=True, subtract_min=False)
 
@@ -656,7 +647,7 @@ class InteractivePhaseogram(BasePhaseogram):
         if ph is None:
             warnings.warn("The pulse profile is not adequate for TOA fitting.")
             return
-        toa = ph / freqs[0] + self.times[0]
+        toa = (ph + additional) / freqs[0] + self.times[0]
         toaerr = phe / freqs[0]
         full_toa = toa / 86400 + self.mjdref
         full_toaerr = toaerr * 1e6
