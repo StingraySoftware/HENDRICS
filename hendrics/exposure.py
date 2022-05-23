@@ -79,9 +79,7 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
     livetime_array = np.zeros_like(times)
 
     # ------ Normalize priors at the start and end of light curve ----------
-    before_start = (livetime_starts < tbin_starts[0]) & (
-        ev_fl > tbin_starts[0]
-    )
+    before_start = (livetime_starts < tbin_starts[0]) & (ev_fl > tbin_starts[0])
 
     livetime_starts[before_start] = tbins[0] + 1e-9
     pr_fl[before_start] = ev_fl[before_start] - livetime_starts[before_start]
@@ -98,9 +96,7 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
 
     # First of all, just consider livetimes and events inside the same bin.
     first_pass = ev_bin == lts_bin
-    expo, bins = np.histogram(
-        ev_fl[first_pass], bins=tbins, weights=pr_fl[first_pass]
-    )
+    expo, bins = np.histogram(ev_fl[first_pass], bins=tbins, weights=pr_fl[first_pass])
 
     assert np.all(expo) >= 0, expo
     livetime_array += expo
@@ -123,18 +119,14 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
         livetime_array[ev_bin_good] += ev_good - _tbins
         assert np.all(
             ev_good - _tbins >= 0
-        ), "Invalid boundaries. Contact the developer: {}".format(
-            ev_good - _tbins
-        )
+        ), "Invalid boundaries. Contact the developer: {}".format(ev_good - _tbins)
 
         l_idx = np.searchsorted(tbin_starts, lt_good, "right")
         _tbins = tbin_starts[l_idx]
         livetime_array[lts_bin_good] += _tbins - lt_good
         assert np.all(
             _tbins - lt_good >= 0
-        ), "Invalid boundaries. Contact the developer: {}".format(
-            _tbins - lt_good
-        )
+        ), "Invalid boundaries. Contact the developer: {}".format(_tbins - lt_good)
 
         # Complete bins
         if bin_diff > 1:
@@ -151,9 +143,7 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
 
     additional_columns = ["PRIOR", "SHIELD", "SHLD_T", "SHLD_HI"]
 
-    evtdata = load_events_and_gtis(
-        uf_file, additional_columns=additional_columns
-    )
+    evtdata = load_events_and_gtis(uf_file, additional_columns=additional_columns)
 
     from stingray import EventList
 
@@ -200,12 +190,8 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
     ax1 = plt.subplot(gs[0])
     ax1.loglog(bin_centers, hist_all, drawstyle="steps-mid", label="all")
     ax1.loglog(bin_centers, hist_shield, drawstyle="steps-mid", label="shield")
-    ax1.loglog(
-        bin_centers, hist_shld_hi, drawstyle="steps-mid", label="shld_hi"
-    )
-    ax1.loglog(
-        bin_centers, hist_noshield, drawstyle="steps-mid", label="no shield"
-    )
+    ax1.loglog(bin_centers, hist_shld_hi, drawstyle="steps-mid", label="shld_hi")
+    ax1.loglog(bin_centers, hist_noshield, drawstyle="steps-mid", label="no shield")
     ax1.set_ylabel("Occurrences (arbitrary units)")
     ax1.legend()
     ax2 = plt.subplot(gs[1], sharex=ax1)
@@ -352,9 +338,7 @@ def main(args=None):
     import argparse
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = (
-        "Create exposure light curve based on unfiltered event files."
-    )
+    description = "Create exposure light curve based on unfiltered event files."
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("lcfile", help="Light curve file (HENDRICS format)")

@@ -82,13 +82,9 @@ def test_ffa_vs_folding_search():
     t1 = time.time()
     print("FFA completed in {:.1e} s".format(t1 - t0))
     t1 = time.time()
-    freqs, stats, _, _ = folding_search(
-        ev, 1 / pmax, 1 / pmin, oversample=3, nbin=128
-    )
+    freqs, stats, _, _ = folding_search(ev, 1 / pmax, 1 / pmin, oversample=3, nbin=128)
     t2 = time.time()
     print("Standard search completed in {:.1e} s".format(t2 - t1))
 
-    comparable_stats = np.array(
-        [st[idx] for idx in np.searchsorted(per, 1 / freqs)]
-    )
+    comparable_stats = np.array([st[idx] for idx in np.searchsorted(per, 1 / freqs)])
     assert (comparable_stats - stats + 127).std() < 127

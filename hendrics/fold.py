@@ -35,8 +35,7 @@ try:
     HAS_PINT = True
 except ImportError:
     warnings.warn(
-        "PINT is not installed. "
-        "Some pulsar functionality will not be available"
+        "PINT is not installed. " "Some pulsar functionality will not be available"
     )
     HAS_PINT = False
 from .base import deorbit_events
@@ -231,9 +230,7 @@ def create_template_from_profile_harm(
     return template[:final_nbin].real, additional_phase
 
 
-def get_TOAs_from_events(
-    events, folding_length, *frequency_derivatives, **kwargs
-):
+def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwargs):
     """Get TOAs of pulsation.
 
     Parameters
@@ -319,13 +316,8 @@ def get_TOAs_from_events(
 
     factorial = 1
     for i_f, f in enumerate(frequency_derivatives[1:]):
-        factorial *= (i_f + 1)
-        freqs += (
-            1
-            / factorial
-            * (starts - pepoch) ** (i_f + 1)
-            * f
-        )
+        factorial *= i_f + 1
+        freqs += 1 / factorial * (starts - pepoch) ** (i_f + 1) * f
 
     phase_starts = pulse_phase((starts - pepoch), *frequency_derivatives, to_1=True)
 
@@ -339,14 +331,14 @@ def get_TOAs_from_events(
     toa_errs = []
     phs = []
     phs_errs = []
-    for start, stop, startidx, stopidx, local_f in show_progress(zip(starts, stops, startidxs, stopidxs, freqs)):
+    for start, stop, startidx, stopidx, local_f in show_progress(
+        zip(starts, stops, startidxs, stopidxs, freqs)
+    ):
         # good = (events >= start) & (events < stop)
         events_tofold = events[startidx:stopidx]
         if len(events_tofold) < nbin:
             continue
-        gti_tofold = copy.deepcopy(
-            gti[(gti[:, 0] < stop) & (gti[:, 1] > start)]
-        )
+        gti_tofold = copy.deepcopy(gti[(gti[:, 0] < stop) & (gti[:, 1] > start)])
         gti_tofold[0, 0] = start
         gti_tofold[-1, 1] = stop
 
@@ -363,7 +355,9 @@ def get_TOAs_from_events(
 
         from .ml_timing import ml_pulsefit
 
-        pars, errs = ml_pulsefit(profile, template, calculate_errors=True, fit_base=False)
+        pars, errs = ml_pulsefit(
+            profile, template, calculate_errors=True, fit_base=False
+        )
         if np.any(np.isnan(pars)) or pars[1] == 0.0 or np.any(np.isnan(errs)):
             continue
 
@@ -394,9 +388,7 @@ def get_TOAs_from_events(
         toa_errs = toa_errs * 1e6
         if HAS_PINT:
             label = assign_value_if_none(label, "hendrics")
-            toa_list = _load_and_prepare_TOAs(
-                toas, errs_us=toa_errs, ephem=ephem
-            )
+            toa_list = _load_and_prepare_TOAs(toas, errs_us=toa_errs, ephem=ephem)
             # workaround until PR #368 is accepted in pint
             toa_list.table["clkcorr"] = 0
             toa_list.write_TOA_file(timfile, name=label, format="Tempo2")
@@ -425,9 +417,7 @@ def dbl_cos_fit_func(p, x):
     if len(p) % 2 != 0:
         base = p[0]
         startidx = 1
-    first_harm = p[startidx] * np.cos(
-        2 * np.pi * x + 2 * np.pi * p[startidx + 1]
-    )
+    first_harm = p[startidx] * np.cos(2 * np.pi * x + 2 * np.pi * p[startidx + 1])
     second_harm = p[startidx + 2] * np.cos(
         4.0 * np.pi * x + 4 * np.pi * p[startidx + 3]
     )
@@ -677,8 +667,7 @@ def run_folding(
         meanbins,
         smooth,
         drawstyle="steps-mid",
-        label="Smooth profile "
-        "(P.F. = {:.1f}%)".format(100 * (max - min) / max),
+        label="Smooth profile " "(P.F. = {:.1f}%)".format(100 * (max - min) / max),
         color="k",
         zorder=3,
     )
@@ -713,9 +702,7 @@ def run_folding(
     ax0.axhline(min, lw=1, color="k")
 
     mean = np.mean(profile)
-    ax0.fill_between(
-        meanbins, mean - np.sqrt(mean), mean + np.sqrt(mean), alpha=0.5
-    )
+    ax0.fill_between(meanbins, mean - np.sqrt(mean), mean + np.sqrt(mean), alpha=0.5)
     ax0.axhline(mean, ls="--")
     ax0.legend()
     ax0.set_ylim([0, None])
@@ -764,9 +751,7 @@ def run_folding(
             ax2.legend()
         ax2.set_xlim([0, 2])
 
-        ax3.errorbar(
-            meannrgs, pfs, fmt="o", yerr=errs, xerr=(biny[1:] - biny[:-1]) / 2
-        )
+        ax3.errorbar(meannrgs, pfs, fmt="o", yerr=errs, xerr=(biny[1:] - biny[:-1]) / 2)
         from astropy.table import Table
 
         pf_results = Table(

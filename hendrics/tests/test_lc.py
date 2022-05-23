@@ -142,13 +142,10 @@ class TestFullRun(object):
         from astropy.io.fits import Header
 
         new_filename = os.path.join(
-            os.path.join(
-                self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-            )
+            os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )
         command = (
-            "{0} -e {1} {2} --safe-interval "
-            "{3} {4}  --nproc 2 -b 0.5 -o {5}"
+            "{0} -e {1} {2} --safe-interval " "{3} {4}  --nproc 2 -b 0.5 -o {5}"
         ).format(self.ev_fileAcal, 3, 50, 100, 300, new_filename)
         hen.lcurve.main(command.split())
 
@@ -162,41 +159,29 @@ class TestFullRun(object):
         assert np.allclose(gti_to_test, lc.gti)
 
     def test_lcurve_B(self):
-        command = (
-            "{0} -e {1} {2} --safe-interval " "{3} {4} -b 0.5 -o {5}"
-        ).format(
+        command = ("{0} -e {1} {2} --safe-interval " "{3} {4} -b 0.5 -o {5}").format(
             self.ev_fileBcal,
             3,
             50,
             100,
             300,
-            os.path.join(
-                self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION
-            ),
+            os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION),
         )
         hen.lcurve.main(command.split())
         assert os.path.exists(
-            os.path.join(
-                self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION
-            )
+            os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
         )
 
     def test_lcurve_noclobber(self):
         input_file = self.ev_fileAcal
         new_filename = os.path.join(
-            os.path.join(
-                self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-            )
+            os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )
 
         with pytest.warns(AstropyUserWarning) as record:
-            command = ("{0} -o {1} --noclobber").format(
-                input_file, new_filename
-            )
+            command = ("{0} -o {1} --noclobber").format(input_file, new_filename)
             hen.lcurve.main(command.split())
-        assert [
-            "File exists, and noclobber" in r.message.args[0] for r in record
-        ]
+        assert ["File exists, and noclobber" in r.message.args[0] for r in record]
 
     def test_lcurve_split(self):
         """Test lc with gti-split option."""
@@ -234,9 +219,7 @@ class TestFullRun(object):
         with pytest.warns(AstropyUserWarning) as record:
             command = command + " --noclobber"
             hen.lcurve.main(command.split())
-        assert [
-            "File exists, and noclobber" in r.message.args[0] for r in record
-        ]
+        assert ["File exists, and noclobber" in r.message.args[0] for r in record]
 
     def test_fits_lcurve1(self):
         """Test light curves from FITS."""
@@ -244,9 +227,7 @@ class TestFullRun(object):
             self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION
         )
 
-        lcurve_mp = os.path.join(
-            self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION
-        )
+        lcurve_mp = os.path.join(self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION)
 
         lcdata_mp = hen.io.load_data(lcurve_mp)
         lcdata_ftools = hen.io.load_data(lcurve_ftools)
@@ -266,9 +247,7 @@ class TestFullRun(object):
 
     def test_txt_lcurve(self):
         """Test light curves from txt."""
-        lcurve_mp = os.path.join(
-            self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION
-        )
+        lcurve_mp = os.path.join(self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION)
         lcdata_mp = hen.io.load_data(lcurve_mp)
         lc_mp = lcdata_mp["counts"]
         time_mp = lcdata_mp["time"]
@@ -277,9 +256,7 @@ class TestFullRun(object):
 
         hen.io.save_as_ascii([time_mp, lc_mp], lcurve_txt_orig)
 
-        lcurve_txt = os.path.join(
-            self.datadir, "lcurve_txt_lc" + HEN_FILE_EXTENSION
-        )
+        lcurve_txt = os.path.join(self.datadir, "lcurve_txt_lc" + HEN_FILE_EXTENSION)
         command = "--txt-input " + lcurve_txt_orig + " --outfile " + lcurve_txt
         hen.lcurve.main(command.split())
         lcdata_txt = hen.io.load_data(lcurve_txt)
@@ -293,9 +270,7 @@ class TestFullRun(object):
         with pytest.warns(AstropyUserWarning) as record:
             command = command + " --noclobber"
             hen.lcurve.main(command.split())
-        assert [
-            "File exists, and noclobber" in r.message.args[0] for r in record
-        ]
+        assert ["File exists, and noclobber" in r.message.args[0] for r in record]
 
     def test_joinlcs(self):
         """Test produce joined light curves."""
@@ -309,12 +284,8 @@ class TestFullRun(object):
         lcA_pattern = "monol_testA_nustar_fpma_gti[0-9][0-9][0-9]_lc*"
         lcB_pattern = "monol_testB_nustar_fpmb_gti[0-9][0-9][0-9]_lc*"
         hen.lcurve.join_lightcurves(
-            glob.glob(
-                os.path.join(self.datadir, lcA_pattern + HEN_FILE_EXTENSION)
-            )
-            + glob.glob(
-                os.path.join(self.datadir, lcB_pattern + HEN_FILE_EXTENSION)
-            ),
+            glob.glob(os.path.join(self.datadir, lcA_pattern + HEN_FILE_EXTENSION))
+            + glob.glob(os.path.join(self.datadir, lcB_pattern + HEN_FILE_EXTENSION)),
             new_filename,
         )
 
@@ -325,15 +296,9 @@ class TestFullRun(object):
 
     def test_scrunchlcs(self):
         """Test produce scrunched light curves."""
-        a_in = os.path.join(
-            self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-        )
-        b_in = os.path.join(
-            self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION
-        )
-        out = os.path.join(
-            self.datadir, "monol_test_scrunchlc" + HEN_FILE_EXTENSION
-        )
+        a_in = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
+        b_in = os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
+        out = os.path.join(self.datadir, "monol_test_scrunchlc" + HEN_FILE_EXTENSION)
         command = "{0} {1} -o {2}".format(a_in, b_in, out)
 
         a_lc = hen.io.load_lcurve(a_in)
@@ -349,9 +314,7 @@ class TestFullRun(object):
 
     def testbaselinelc(self):
         """Test produce scrunched light curves."""
-        a_in = os.path.join(
-            self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-        )
+        a_in = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         out = os.path.join(self.datadir, "monol_test_baselc")
         command = "{0} -o {1} -p 0.001 --lam 1e5".format(a_in, out)
 
@@ -363,9 +326,7 @@ class TestFullRun(object):
 
     def testbaselinelc_nooutroot(self):
         """Test produce scrunched light curves."""
-        a_in = os.path.join(
-            self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-        )
+        a_in = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         command = "{0} -p 0.001 --lam 1e5".format(a_in)
 
         hen.lcurve.baseline_main(command.split())
@@ -406,63 +367,45 @@ class TestFullRun(object):
     def test_rebinlc(self):
         """Test LC rebinning."""
         command = "{0} -r 4".format(
-            os.path.join(self.datadir, "monol_testA_E3-50_lc")
-            + HEN_FILE_EXTENSION
+            os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
         )
         hen.rebin.main(command.split())
 
     def test_save_fvar_from_lc(self):
-        fname = os.path.join(
-            self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-        )
-        hen.exvar.main(
-            [fname, "-c", "10", "--fraction-step", "0.6", "--norm", "fvar"]
-        )
+        fname = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
+        hen.exvar.main([fname, "-c", "10", "--fraction-step", "0.6", "--norm", "fvar"])
         out = hen.base.hen_root(fname) + "_fvar" + ".qdp"
         os.path.exists(out)
 
     def test_save_excvar_from_lc(self):
-        fname = os.path.join(
-            self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-        )
+        fname = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         hen.exvar.main([fname])
         out = hen.base.hen_root(fname) + "_excvar" + ".qdp"
         os.path.exists(out)
 
     def test_save_excvar_norm_from_lc(self):
-        fname = os.path.join(
-            self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-        )
+        fname = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         hen.exvar.main([fname, "--norm", "norm_excvar"])
         out = hen.base.hen_root(fname) + "_norm_excvar" + ".qdp"
         os.path.exists(out)
 
     def test_save_excvar_wrong_norm_from_lc(self):
-        fname = os.path.join(
-            self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-        )
+        fname = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         with pytest.raises(ValueError) as excinfo:
             hen.exvar.main([fname, "--norm", "cicciput"])
         assert "Normalization must be fvar, " in str(excinfo.value)
 
     def test_create_gti_lc(self):
         """Test creating a GTI file."""
-        fname = (
-            os.path.join(self.datadir, "monol_testA_E3-50_lc")
-            + HEN_FILE_EXTENSION
-        )
+        fname = os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
         command = "{0} -f counts>0 -c --debug".format(fname)
         hen.create_gti.main(command.split())
 
     def test_apply_gti_lc(self):
         """Test applying a GTI file."""
-        fname = (
-            os.path.join(self.datadir, "monol_testA_E3-50_gti")
-            + HEN_FILE_EXTENSION
-        )
+        fname = os.path.join(self.datadir, "monol_testA_E3-50_gti") + HEN_FILE_EXTENSION
         lcfname = (
-            os.path.join(self.datadir, "monol_testA_E3-50_lc")
-            + HEN_FILE_EXTENSION
+            os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
         )
         lcoutname = (
             os.path.join(self.datadir, "monol_testA_E3-50_lc_gtifilt")
@@ -473,12 +416,8 @@ class TestFullRun(object):
         hen.io.load_lcurve(lcoutname)
 
     def test_plot_lcurve_baseline(self):
-        a_in = os.path.join(
-            self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-        )
-        base_file = (
-            hen.base.hen_root(a_in) + "_lc_baseline" + HEN_FILE_EXTENSION
-        )
+        a_in = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
+        base_file = hen.base.hen_root(a_in) + "_lc_baseline" + HEN_FILE_EXTENSION
         hen.plot.main([base_file, "--noplot", "-o", "dummy_base.qdp"])
         filedata = np.genfromtxt("dummy_base.qdp")
 
@@ -494,17 +433,13 @@ class TestFullRun(object):
 
     def test_pds_txt(self):
         """Test PDS production with light curves obtained from txt files."""
-        lcurve_txt = os.path.join(
-            self.datadir, "lcurve_txt_lc" + HEN_FILE_EXTENSION
-        )
+        lcurve_txt = os.path.join(self.datadir, "lcurve_txt_lc" + HEN_FILE_EXTENSION)
         command = "{0} --save-all -f 128".format(lcurve_txt)
         hen.fspec.main(command.split())
 
     def test_exposure(self):
         """Test exposure calculations from unfiltered files."""
-        lcname = os.path.join(
-            self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-        )
+        lcname = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         ufname = os.path.join(self.datadir, "monol_testA_uf.evt")
         command = "{0} {1}".format(lcname, ufname)
 

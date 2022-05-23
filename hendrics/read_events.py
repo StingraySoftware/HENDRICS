@@ -88,9 +88,7 @@ def treat_event_file(
         detectors = np.array(list(set(detector_id)))
     else:
         detectors = [None]
-    outfile_root = (
-        hen_root(filename) + "_" + mission.lower() + "_" + instr.lower()
-    )
+    outfile_root = hen_root(filename) + "_" + mission.lower() + "_" + instr.lower()
 
     if randomize_by is not None:
         outfile_root += f"_randomize_by_{randomize_by:g}s"
@@ -106,23 +104,15 @@ def treat_event_file(
             outroot_local = outfile_root
 
         outfile = outroot_local + "_ev" + HEN_FILE_EXTENSION
-        if (
-            noclobber
-            and os.path.exists(outfile)
-            and (not (gti_split or length_split))
-        ):
-            warnings.warn(
-                "{0} exists and using noclobber. Skipping".format(outfile)
-            )
+        if noclobber and os.path.exists(outfile) and (not (gti_split or length_split)):
+            warnings.warn("{0} exists and using noclobber. Skipping".format(outfile))
             return
 
         if gti_split or (length_split is not None):
             if length_split:
                 gti0 = np.arange(gti[0, 0], gti[-1, 1], length_split)
                 gti1 = gti0 + length_split
-                gti_chunks = np.array(
-                    [[g0, g1] for (g0, g1) in zip(gti0, gti1)]
-                )
+                gti_chunks = np.array([[g0, g1] for (g0, g1) in zip(gti0, gti1)])
                 label = "chunk"
             else:
                 gti_chunks = gti
@@ -224,15 +214,11 @@ def multiple_event_concatenate(event_lists):
     for attr in event_lists[0].array_attrs():
         if attr == "time":
             continue
-        if (
-            getattr(event_lists[0], attr) is not None
-        ):
+        if getattr(event_lists[0], attr) is not None:
             setattr(
                 ev_new,
                 attr,
-                np.concatenate([getattr(ev, attr) for ev in event_lists])[
-                    order
-                ],
+                np.concatenate([getattr(ev, attr) for ev in event_lists])[order],
             )
         else:
             setattr(ev_new, attr, None)
@@ -243,9 +229,7 @@ def multiple_event_concatenate(event_lists):
     return ev_new
 
 
-def join_eventlists(
-    event_file1, event_file2, new_event_file=None, ignore_instr=False
-):
+def join_eventlists(event_file1, event_file2, new_event_file=None, ignore_instr=False):
     """Join two event files.
 
     Parameters
@@ -277,9 +261,7 @@ def join_eventlists(
     events2 = load_events(event_file2)
 
     if ignore_instr:
-        events1.instr = events2.instr = ",".join(
-            (events1.instr, events2.instr)
-        )
+        events1.instr = events2.instr = ",".join((events1.instr, events2.instr))
 
     if events2.time.size == 0 or events2.gti.size == 0:
         warnings.warn(f"{event_file2} has no good events")
@@ -574,9 +556,7 @@ def main(args=None):
         help="Minimum length of GTIs to consider",
         default=0,
     )
-    parser.add_argument(
-        "--gti-string", type=str, help="GTI string", default=None
-    )
+    parser.add_argument("--gti-string", type=str, help="GTI string", default=None)
     parser.add_argument(
         "--randomize-by",
         type=float,

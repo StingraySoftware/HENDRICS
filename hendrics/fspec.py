@@ -69,9 +69,7 @@ def average_periodograms(fspec_iterable, total=None):
             tot_npds = nchunks
             tot_contents = copy.deepcopy(contents)
         else:
-            assert np.all(
-                rebin == rebin0
-            ), "Files must be rebinned in the same way"
+            assert np.all(rebin == rebin0), "Files must be rebinned in the same way"
             np.testing.assert_array_almost_equal(
                 freq,
                 freq0,
@@ -173,9 +171,7 @@ def _distribute_events(events, chunk_length):
     start_times, stop_times = time_intervals_from_gtis(gti, chunk_length)
     for start, end in zip(start_times, stop_times):
         first, last = np.searchsorted(events.time, [start, end])
-        new_ev = EventList(
-            events.time[first:last], gti=np.asarray([[start, end]])
-        )
+        new_ev = EventList(events.time[first:last], gti=np.asarray([[start, end]]))
         for attr in events.__dict__.keys():
             if attr == "gti":
                 continue
@@ -613,9 +609,7 @@ def calc_fspec(
         if outr is not None:
             outname = os.path.join(
                 outdir,
-                outr.replace(HEN_FILE_EXTENSION, "")
-                + "_cpds"
-                + HEN_FILE_EXTENSION,
+                outr.replace(HEN_FILE_EXTENSION, "") + "_cpds" + HEN_FILE_EXTENSION,
             )
 
         funcargs.append([f1, f2, outname, argdict])

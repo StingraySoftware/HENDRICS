@@ -21,9 +21,7 @@ class TestTiming(object):
         phase = np.random.uniform(0, 1)
         temp_func = normalized_template_func(self.template)
 
-        prof_smooth = self.real_base + self.real_amp * temp_func(
-            self.phases - phase
-        )
+        prof_smooth = self.real_base + self.real_amp * temp_func(self.phases - phase)
         if err is not None:
             profile = np.random.normal(prof_smooth, err)
         else:

@@ -100,10 +100,7 @@ class TestPhasetag:
                 ]
             )
         assert np.any(
-            [
-                "Exposure has NaNs or zeros. " in r.message.args[0]
-                for r in record
-            ]
+            ["Exposure has NaNs or zeros. " in r.message.args[0] for r in record]
         )
 
     def test_phase_tag_invalid0(self):

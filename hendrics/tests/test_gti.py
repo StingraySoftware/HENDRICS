@@ -71,13 +71,9 @@ class TestFullRun(object):
         cls.lcB = os.path.join(
             os.path.join(cls.datadir, "monol_testB_lc" + HEN_FILE_EXTENSION)
         )
-        command = ("{}  --nproc 2 -b 2 " "-o {}").format(
-            cls.ev_fileAcal, cls.lcA
-        )
+        command = ("{}  --nproc 2 -b 2 " "-o {}").format(cls.ev_fileAcal, cls.lcA)
         hen.lcurve.main(command.split())
-        command = ("{}  --nproc 2 -b 2 " "-o {}").format(
-            cls.ev_fileBcal, cls.lcB
-        )
+        command = ("{}  --nproc 2 -b 2 " "-o {}").format(cls.ev_fileBcal, cls.lcB)
         hen.lcurve.main(command.split())
 
         command = "{0} -f time>0 -c --debug".format(cls.ev_fileA)

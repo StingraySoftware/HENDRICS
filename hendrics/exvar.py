@@ -84,9 +84,7 @@ def main(args=None):
                     args.chunk_length, excvar_norm, args.fraction_step
                 )
             else:
-                raise ValueError(
-                    "Normalization must be fvar, norm_excvar " "or excvar"
-                )
+                raise ValueError("Normalization must be fvar, norm_excvar " "or excvar")
             var, var_err = res
             out = hen_root(fname) + "_" + args.norm + ".qdp"
             save_as_qdp(

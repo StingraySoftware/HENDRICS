@@ -74,9 +74,7 @@ class TestMergeEvents:
                     self.f0,
                     self.f1,
                     "-o",
-                    os.path.join(
-                        self.datadir, "monol_merg_ev" + HEN_FILE_EXTENSION
-                    ),
+                    os.path.join(self.datadir, "monol_merg_ev" + HEN_FILE_EXTENSION),
                 ]
             )
         assert np.any(["changing MJDREF" in r.message.args[0] for r in record])
@@ -92,15 +90,11 @@ class TestMergeEvents:
                     self.f0,
                     self.f3,
                     "-o",
-                    os.path.join(
-                        self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION
-                    ),
+                    os.path.join(self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION),
                 ]
             )
 
-        out = os.path.join(
-            self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION
-        )
+        out = os.path.join(self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION)
         assert os.path.exists(out)
         os.unlink(out)
 
@@ -112,15 +106,11 @@ class TestMergeEvents:
                 self.f3,
                 "--ignore-instr",
                 "-o",
-                os.path.join(
-                    self.datadir, "monol_merg1023_ev" + HEN_FILE_EXTENSION
-                ),
+                os.path.join(self.datadir, "monol_merg1023_ev" + HEN_FILE_EXTENSION),
             ]
         )
 
-        out = os.path.join(
-            self.datadir, "monol_merg1023_ev" + HEN_FILE_EXTENSION
-        )
+        out = os.path.join(self.datadir, "monol_merg1023_ev" + HEN_FILE_EXTENSION)
         assert os.path.exists(out)
         ev = load_events(out)
         assert ev.instr.lower() == "BA,BA,BU".lower()
@@ -133,15 +123,11 @@ class TestMergeEvents:
                 self.f3,
                 "--ignore-instr",
                 "-o",
-                os.path.join(
-                    self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION
-                ),
+                os.path.join(self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION),
             ]
         )
 
-        out = os.path.join(
-            self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION
-        )
+        out = os.path.join(self.datadir, "monol_merg13_ev" + HEN_FILE_EXTENSION)
         assert os.path.exists(out)
         ev = load_events(out)
         assert ev.instr.lower() == "BA,BU".lower()
@@ -157,36 +143,25 @@ class TestMergeEvents:
 
     def test_merge_many_events_warnings(self):
 
-        out = os.path.join(
-            self.datadir, "monol_merg_many_ev" + HEN_FILE_EXTENSION
-        )
+        out = os.path.join(self.datadir, "monol_merg_many_ev" + HEN_FILE_EXTENSION)
         with pytest.warns(UserWarning) as record:
             hen.read_events.main_join([self.f0, self.f1, self.f2, "-o", out])
         assert np.any(
-            [
-                f"{self.f1} has a different MJDREF" in r.message.args[0]
-                for r in record
-            ]
+            [f"{self.f1} has a different MJDREF" in r.message.args[0] for r in record]
         )
         assert os.path.exists(out)
         os.unlink(out)
         with pytest.warns(UserWarning) as record:
             hen.read_events.main_join([self.f0, self.f2, self.f3, "-o", out])
         assert np.any(
-            [
-                f"{self.f3} is from a different" in r.message.args[0]
-                for r in record
-            ]
+            [f"{self.f3} is from a different" in r.message.args[0] for r in record]
         )
         assert os.path.exists(out)
         os.unlink(out)
         with pytest.warns(UserWarning) as record:
             hen.read_events.main_join([self.f0, self.f2, self.f4, "-o", out])
         assert np.any(
-            [
-                f"{self.f4} has no good events" in r.message.args[0]
-                for r in record
-            ]
+            [f"{self.f4} has no good events" in r.message.args[0] for r in record]
         )
         assert os.path.exists(out)
         os.unlink(out)
@@ -272,9 +247,7 @@ class TestReadEvents:
     def test_treat_event_file_xmm_gtisplit(self):
 
         treat_event_file(self.fits_file, gti_split=True)
-        new_filename = (
-            "monol_test_fake_xmm_epn_det01_gti000_ev" + HEN_FILE_EXTENSION
-        )
+        new_filename = "monol_test_fake_xmm_epn_det01_gti000_ev" + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir, new_filename))
         data = load_data(os.path.join(self.datadir, new_filename))
         assert "instr" in data
@@ -284,9 +257,7 @@ class TestReadEvents:
     def test_treat_event_file_xmm_lensplit(self):
 
         treat_event_file(self.fits_file, length_split=100)
-        new_filename = (
-            "monol_test_fake_xmm_epn_det01_chunk000_ev" + HEN_FILE_EXTENSION
-        )
+        new_filename = "monol_test_fake_xmm_epn_det01_chunk000_ev" + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir, new_filename))
         data = load_data(os.path.join(self.datadir, new_filename))
         assert "instr" in data
@@ -384,11 +355,7 @@ class TestReadEvents:
             command = "{0} --noclobber".format(self.fits_fileB)
             hen.read_events.main(command.split())
         assert np.any(
-            [
-                str(w.message)
-                .strip()
-                .endswith("exists and using noclobber. Skipping")
-            ]
+            [str(w.message).strip().endswith("exists and using noclobber. Skipping")]
             for w in record
         ), "Unexpected warning output"
 

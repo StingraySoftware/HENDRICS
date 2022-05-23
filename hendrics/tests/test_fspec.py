@@ -43,9 +43,7 @@ def test_pds_fails_noclobber_exists():
     touch("bububu")
     with pytest.warns(UserWarning) as record:
         calc_pds("bla.p", 512, outname="bububu", noclobber=True)
-    assert np.any(
-        ["File exists, and noclobber" in r.message.args[0] for r in record]
-    )
+    assert np.any(["File exists, and noclobber" in r.message.args[0] for r in record])
     os.unlink("bububu")
 
 
@@ -53,9 +51,7 @@ def test_cpds_fails_noclobber_exists():
     touch("bububu")
     with pytest.warns(UserWarning) as record:
         calc_cpds("bla.p", "blu.p", 512, outname="bububu", noclobber=True)
-    assert np.any(
-        ["File exists, and noclobber" in r.message.args[0] for r in record]
-    )
+    assert np.any(["File exists, and noclobber" in r.message.args[0] for r in record])
     os.unlink("bububu")
 
 
@@ -167,13 +163,17 @@ class TestFullRun(object):
             "monol_test_nustar_fpm_3-50keV_cpds" + HEN_FILE_EXTENSION,
         )
 
-        command = "{} {} -f 128 -k PDS --save-all --norm leahy --emin 3 --emax 50".format(
-            cls.ev_fileA, cls.ev_fileB
+        command = (
+            "{} {} -f 128 -k PDS --save-all --norm leahy --emin 3 --emax 50".format(
+                cls.ev_fileA, cls.ev_fileB
+            )
         )
         hen.fspec.main(command.split())
 
-        command = "{} {} -f 128 -k CPDS --save-all --norm leahy --emin 3 --emax 50".format(
-            cls.ev_fileA, cls.ev_fileB
+        command = (
+            "{} {} -f 128 -k CPDS --save-all --norm leahy --emin 3 --emax 50".format(
+                cls.ev_fileA, cls.ev_fileB
+            )
         )
         hen.fspec.main(command.split())
 
@@ -202,10 +202,8 @@ class TestFullRun(object):
         """Test PDS production."""
         evdata = self.ev_fileA
 
-        command = (
-            "{0} -f 128 -k PDS --save-all --norm leahy -b {1} --emin 3".format(
-                evdata, 1
-            )
+        command = "{0} -f 128 -k PDS --save-all --norm leahy -b {1} --emin 3".format(
+            evdata, 1
         )
         hen.fspec.main(command.split())
 
@@ -243,14 +241,11 @@ class TestFullRun(object):
         else:
             label = "_lc"
 
-        command = (
-            "{0} {1} -f 128 --save-all --save-dyn -k PDS "
-            "--norm frac".format(
-                os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
-                + HEN_FILE_EXTENSION,
-            )
+        command = "{0} {1} -f 128 --save-all --save-dyn -k PDS " "--norm frac".format(
+            os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
+            + HEN_FILE_EXTENSION,
+            os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
+            + HEN_FILE_EXTENSION,
         )
         hen.fspec.main(command.split())
 
@@ -324,8 +319,7 @@ class TestFullRun(object):
             " -o {2} --debug".format(
                 self.lcA,
                 self.lcB,
-                os.path.join(self.datadir, "ignore_instr")
-                + HEN_FILE_EXTENSION,
+                os.path.join(self.datadir, "ignore_instr") + HEN_FILE_EXTENSION,
             )
         )
 
@@ -346,21 +340,16 @@ class TestFullRun(object):
 
     def test_cpds_wrong_norm(self):
         """Test CPDS production."""
-        command = (
-            "{0} {1} -f 128 --save-dyn -k CPDS --norm blablabla -o {2}".format(
-                self.lcA,
-                self.lcB,
-                os.path.join(self.datadir, "monol_test_3-50keV"),
-            )
+        command = "{0} {1} -f 128 --save-dyn -k CPDS --norm blablabla -o {2}".format(
+            self.lcA,
+            self.lcB,
+            os.path.join(self.datadir, "monol_test_3-50keV"),
         )
         with pytest.warns(UserWarning) as record:
             hen.fspec.main(command.split())
 
         assert np.any(
-            [
-                "Beware! Unknown normalization" in r.message.args[0]
-                for r in record
-            ]
+            ["Beware! Unknown normalization" in r.message.args[0] for r in record]
         )
 
     def test_cpds_dtbig(self):
@@ -390,18 +379,12 @@ class TestFullRun(object):
         """Test the sum of pdss."""
         hen.sum_fspec.main(
             [
-                os.path.join(
-                    self.datadir, "monol_testA_nustar_fpma_3-50keV_pds"
-                )
+                os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds")
                 + HEN_FILE_EXTENSION,
-                os.path.join(
-                    self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds"
-                )
+                os.path.join(self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds")
                 + HEN_FILE_EXTENSION,
                 "-o",
-                os.path.join(
-                    self.datadir, "monol_test_sum" + HEN_FILE_EXTENSION
-                ),
+                os.path.join(self.datadir, "monol_test_sum" + HEN_FILE_EXTENSION),
             ]
         )
 
@@ -425,8 +408,7 @@ class TestFullRun(object):
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testA_nustar_fpma_3-50keV_pds_rebin2"
-                + HEN_FILE_EXTENSION,
+                "monol_testA_nustar_fpma_3-50keV_pds_rebin2" + HEN_FILE_EXTENSION,
             )
         )
 
@@ -442,15 +424,13 @@ class TestFullRun(object):
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03"
-                + HEN_FILE_EXTENSION,
+                "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03" + HEN_FILE_EXTENSION,
             )
         )
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testB_nustar_fpmb_3-50keV_pds_rebin1.03"
-                + HEN_FILE_EXTENSION,
+                "monol_testB_nustar_fpmb_3-50keV_pds_rebin1.03" + HEN_FILE_EXTENSION,
             )
         )
 
@@ -464,8 +444,7 @@ class TestFullRun(object):
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_test_nustar_fpm_3-50keV_cpds_rebin2"
-                + HEN_FILE_EXTENSION,
+                "monol_test_nustar_fpm_3-50keV_cpds_rebin2" + HEN_FILE_EXTENSION,
             )
         )
 
@@ -479,8 +458,7 @@ class TestFullRun(object):
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03"
-                + HEN_FILE_EXTENSION,
+                "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03" + HEN_FILE_EXTENSION,
             )
         )
 
@@ -524,9 +502,7 @@ model = models.Const1D()
         assert os.path.exists(out0)
         assert os.path.exists(out1)
         m, k, c = hen.io.load_model(
-            os.path.join(
-                self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds_bestfit.p"
-            )
+            os.path.join(self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds_bestfit.p")
         )
         assert hasattr(m, "amplitude")
         os.unlink(out0)
@@ -558,9 +534,7 @@ model = models.Const1D()
             "monol_test_nustar_fpm_3-50keV_cpds" + HEN_FILE_EXTENSION,
         )
 
-        command = "{0} -m {1} --frequency-interval 0 10".format(
-            pdsfile1, modelfile
-        )
+        command = "{0} -m {1} --frequency-interval 0 10".format(pdsfile1, modelfile)
         hen.modeling.main_model(command.split())
 
         out0 = os.path.join(
@@ -607,24 +581,18 @@ model = models.Const1D()
     def test_savexspec(self):
         """Test save as Xspec 1."""
         command = "{0}".format(
-            os.path.join(
-                self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_rebin2"
-            )
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_rebin2")
             + HEN_FILE_EXTENSION
         )
         hen.save_as_xspec.main(command.split())
         os.path.exists(
-            os.path.join(
-                self.datadir, "monol_testA_nustar_fpmb_3-50keV_pds_rebin2.pha"
-            )
+            os.path.join(self.datadir, "monol_testA_nustar_fpmb_3-50keV_pds_rebin2.pha")
         )
 
     def test_savexspec_geom(self):
         """Test save as Xspec 2."""
         command = "{0}".format(
-            os.path.join(
-                self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03"
-            )
+            os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03")
             + HEN_FILE_EXTENSION
         )
         hen.save_as_xspec.main(command.split())
@@ -645,15 +613,11 @@ model = models.Const1D()
     def test_plot_lin(self):
         """Test plotting with linear axes."""
         pname = (
-            os.path.join(
-                self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_fit"
-            )
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_fit")
             + HEN_FILE_EXTENSION
         )
         cname = (
-            os.path.join(
-                self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_fit"
-            )
+            os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_fit")
             + HEN_FILE_EXTENSION
         )
         lname = (
@@ -690,17 +654,13 @@ model = models.Const1D()
         """Test plotting with log axes."""
         pname = os.path.join(
             self.datadir,
-            "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03"
-            + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03" + HEN_FILE_EXTENSION,
         )
         cname = os.path.join(
             self.datadir,
-            "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03"
-            + HEN_FILE_EXTENSION,
+            "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03" + HEN_FILE_EXTENSION,
         )
-        hen.plot.main(
-            [pname, cname, "--noplot", "--xlog", "--ylog", "-o", "dummy.qdp"]
-        )
+        hen.plot.main([pname, cname, "--noplot", "--xlog", "--ylog", "-o", "dummy.qdp"])
         hen.plot.main(
             [
                 pname,
@@ -719,8 +679,7 @@ model = models.Const1D()
         """Test plotting and saving figure."""
         pname = os.path.join(
             self.datadir,
-            "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03"
-            + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03" + HEN_FILE_EXTENSION,
         )
         hen.plot.main(
             [

@@ -37,9 +37,7 @@ def main(args=None):
     )
 
     args = check_negative_numbers_in_args(args)
-    _add_default_args(
-        parser, ["bintime", "usepi", "output", "loglevel", "debug"]
-    )
+    _add_default_args(parser, ["bintime", "usepi", "output", "loglevel", "debug"])
     args = parser.parse_args(args)
     files = args.files
     if args.debug:
@@ -53,9 +51,7 @@ def main(args=None):
             option = "--pi-interval"
 
         if args.outfile is not None and len(files) > 1:
-            raise ValueError(
-                "Specify --output only when processing " "a single file"
-            )
+            raise ValueError("Specify --output only when processing " "a single file")
         for f in files:
             henlcurve(
                 [f]
@@ -88,9 +84,7 @@ def main(args=None):
 
             time = lc0.time
             counts = lc1.countrate / lc0.countrate
-            counts_err = np.sqrt(
-                lc1.countrate_err**2 + lc0.countrate_err**2
-            )
+            counts_err = np.sqrt(lc1.countrate_err**2 + lc0.countrate_err**2)
             scolor = Lightcurve(
                 time=time,
                 counts=counts,

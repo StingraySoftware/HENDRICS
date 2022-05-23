@@ -315,18 +315,14 @@ class TestIO:
         assert not hasattr(xps2, "pds1")
 
     def test_high_precision_split1(self):
-        C_I, C_F, C_l, k = _split_high_precision_number(
-            "C", np.double(0.01), 8
-        )
+        C_I, C_F, C_l, k = _split_high_precision_number("C", np.double(0.01), 8)
         assert C_I == 1
         np.testing.assert_almost_equal(C_F, 0, 6)
         assert C_l == -2
         assert k == "double"
 
     def test_high_precision_split2(self):
-        C_I, C_F, C_l, k = _split_high_precision_number(
-            "C", np.double(1.01), 8
-        )
+        C_I, C_F, C_l, k = _split_high_precision_number("C", np.double(1.01), 8)
         assert C_I == 1
         np.testing.assert_almost_equal(C_F, np.double(0.01), 6)
         assert C_l == 0
@@ -355,9 +351,7 @@ class TestIO:
         """Test saving arrays in a qdp file."""
         arrays = [np.array([0, 1, 3]), np.array([1, 4, 5])]
         errors = [np.array([1, 1, 1]), np.array([[1, 0.5], [1, 0.5], [1, 1]])]
-        save_as_qdp(
-            arrays, errors, filename=os.path.join(self.datadir, "bububu.txt")
-        )
+        save_as_qdp(arrays, errors, filename=os.path.join(self.datadir, "bububu.txt"))
         save_as_qdp(
             arrays,
             errors,
@@ -443,9 +437,7 @@ class TestIOModel:
         a = "g"
         with pytest.raises(TypeError) as record:
             save_model(a, "bad.p", constraints={"bounds": ()})
-        assert "The model has to be an Astropy model or a callable" in str(
-            record.value
-        )
+        assert "The model has to be an Astropy model or a callable" in str(record.value)
         assert not os.path.exists("bad.p")
 
     def test_load_python_model_callable(self):
@@ -481,9 +473,7 @@ model = models.Const1D()
         """Input is not a string"""
         with pytest.raises(TypeError) as record:
             b, kind, _ = load_model(1)
-        assert "modelstring has to be an existing file name" in str(
-            record.value
-        )
+        assert "modelstring has to be an existing file name" in str(record.value)
 
     def test_load_model_input_file_doesnt_exist(self):
         with pytest.raises(FileNotFoundError) as record:

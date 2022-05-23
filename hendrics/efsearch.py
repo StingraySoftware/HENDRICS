@@ -106,9 +106,7 @@ def check_phase_error_after_casting_to_double(tref, f, fdot=0):
     times = np.array(np.random.normal(tref, 0.1, 1000), dtype=np.longdouble)
     times_dbl = times.astype(np.double)
     phase = times * f + 0.5 * times**2 * fdot
-    phase_dbl = times_dbl * np.double(f) + 0.5 * times_dbl**2 * np.double(
-        fdot
-    )
+    phase_dbl = times_dbl * np.double(f) + 0.5 * times_dbl**2 * np.double(fdot)
     return np.max(np.abs(phase_dbl - phase))
 
 
@@ -139,9 +137,7 @@ def decide_binary_parameters(
 
     df = 1 / length
     log.info(
-        "Recommended frequency steps: {}".format(
-            int(np.diff(freq_range)[0] // df + 1)
-        )
+        "Recommended frequency steps: {}".format(int(np.diff(freq_range)[0] // df + 1))
     )
     while count < NMAX:
         # In any case, only the first loop deletes the file
@@ -206,9 +202,7 @@ def folding_orbital_search(
             T0s = np.random.uniform(0, Porb, int(Porb // dT0 + 1))
             for T0 in T0s:
                 # one iteration
-                new_values = times - X * np.sin(
-                    2 * np.pi * (times - T0) / Porb
-                )
+                new_values = times - X * np.sin(2 * np.pi * (times - T0) / Porb)
                 new_values = new_values - X * np.sin(
                     2 * np.pi * (new_values - T0) / Porb
                 )
@@ -229,9 +223,7 @@ def folding_orbital_search(
         _save_df_to_csv(chunk, outfile)
 
 
-def fit(
-    frequencies, stats, center_freq, width=None, obs_length=None, baseline=0
-):
+def fit(frequencies, stats, center_freq, width=None, obs_length=None, baseline=0):
     estimated_amp = stats[np.argmin(np.abs(frequencies - center_freq))]
 
     if obs_length is not None:
@@ -258,9 +250,7 @@ def fit(
 
 
 @njit()
-def calculate_shifts(
-    nprof: int, nbin: int, nshift: int, order: int = 1
-) -> np.array:
+def calculate_shifts(nprof: int, nbin: int, nshift: int, order: int = 1) -> np.array:
     shifts = np.linspace(-1.0, 1.0, nprof) ** order
     return nshift * shifts
 
@@ -329,9 +319,7 @@ def z_n_fast(phase, norm, n=2):
 
     for k in range(1, n + 1):
         kph += phase
-        result += (
-            np.sum(np.cos(kph) * norm) ** 2 + np.sum(np.sin(kph) * norm) ** 2
-        )
+        result += np.sum(np.cos(kph) * norm) ** 2 + np.sum(np.sin(kph) * norm) ** 2
 
     return 2 / total_norm * result
 
@@ -387,9 +375,7 @@ def _average_and_z_sub_search(profiles, n=2):
         shape_0 = int(profiles.shape[0] / n_ave_i)
         # new_profiles = np.zeros((shape_0, profiles.shape[1]))
         for i in range(shape_0):
-            new_profiles = np.sum(
-                profiles[i * n_ave_i : (i + 1) * n_ave_i], axis=0
-            )
+            new_profiles = np.sum(profiles[i * n_ave_i : (i + 1) * n_ave_i], axis=0)
 
             # Work around strange numba bug. Will reinstate np.max when it's
             # solved
@@ -496,8 +482,7 @@ def transient_search(
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
     log.info(
-        f"Maximum error on the phase expected when casting to double: "
-        f"{maxerr}"
+        f"Maximum error on the phase expected when casting to double: " f"{maxerr}"
     )
     if maxerr > 1 / nbin / 10:
         warnings.warn(
@@ -552,9 +537,7 @@ def transient_search(
     results.nave = nave
     results.freqs = all_freqs
     results.times = times
-    results.stats = np.array(
-        [all_results[:, i, :].T for i in range(nave.size)]
-    )
+    results.stats = np.array([all_results[:, i, :].T for i in range(nave.size)])
 
     return results
 
@@ -596,18 +579,14 @@ def plot_transient_search(results, gif_name=None):
             axf = plt.subplot(gs[0, i_f])
             axima = plt.subplot(gs[1, i_f], sharex=axf)
 
-            axima.pcolormesh(
-                f, t, ima / detl * 3, vmax=3, vmin=0.3, shading="nearest"
-            )
+            axima.pcolormesh(f, t, ima / detl * 3, vmax=3, vmin=0.3, shading="nearest")
 
             mean_line = np.mean(ima, axis=0) / sum_detl * 3
             maxidx = np.argmax(mean_line)
             maxline = mean_line[maxidx]
             best_f = f[maxidx]
             for il, line in enumerate(ima / detl * 3):
-                axf.plot(
-                    f, line, lw=0.2, ls="-", c="grey", alpha=0.5, label=f"{il}"
-                )
+                axf.plot(f, line, lw=0.2, ls="-", c="grey", alpha=0.5, label=f"{il}")
                 maxidx = np.argmax(mean_line)
                 if line[maxidx] > maxline:
                     best_f = f[maxidx]
@@ -621,9 +600,7 @@ def plot_transient_search(results, gif_name=None):
                     f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
                 )
 
-            axf.plot(
-                f, mean_line, lw=1, c="k", zorder=10, label="mean", ls="-"
-            )
+            axf.plot(f, mean_line, lw=1, c="k", zorder=10, label="mean", ls="-")
 
             axima.set_xlabel("Frequency")
             axima.set_ylabel("Time")
@@ -649,8 +626,7 @@ def plot_transient_search(results, gif_name=None):
         imageio.mimsave(gif_name, all_images, fps=1)
     else:
         warnings.warn(
-            "imageio needed to save the transient search results "
-            "into a gif image."
+            "imageio needed to save the transient search results " "into a gif image."
         )
 
     return all_images
@@ -687,9 +663,7 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
                 base_shift,
                 quad_base_shift,
             )
-            local_stat = _z_n_fast_cached(
-                splat_prof, cached_cos, cached_sin, n=n
-            )
+            local_stat = _z_n_fast_cached(splat_prof, cached_cos, cached_sin, n=n)
             stats[i, j] = local_stat
 
     return stats
@@ -707,11 +681,7 @@ ONE_SIXTH = 1 / 6
 @njit(parallel=True)
 def _fast_phase_fddot(ts, mean_f, mean_fdot=0, mean_fddot=0):
     tssq = ts * ts
-    phases = (
-        ts * mean_f
-        + 0.5 * tssq * mean_fdot
-        + ONE_SIXTH * tssq * ts * mean_fddot
-    )
+    phases = ts * mean_f + 0.5 * tssq * mean_fdot + ONE_SIXTH * tssq * ts * mean_fddot
     return phases - np.floor(phases)
 
 
@@ -755,9 +725,7 @@ def search_with_qffa_step(
     t1, t0 = times[-1], times[0]
 
     # dn = max(1, int(nbin / oversample))
-    linbinshifts = np.linspace(
-        -nbin * npfact, nbin * npfact, int(oversample * npfact)
-    )
+    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, int(oversample * npfact))
     if search_fdot:
         quabinshifts = np.linspace(
             -nbin * npfact, nbin * npfact, int(oversample * npfact)
@@ -844,8 +812,7 @@ def search_with_qffa(
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
     if maxerr > 1 / nbin / 10:
         warnings.warn(
-            f"Maximum error on the phase expected when casting to "
-            f"double: {maxerr}"
+            f"Maximum error on the phase expected when casting to " f"double: {maxerr}"
         )
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
@@ -1094,11 +1061,7 @@ def print_qffa_results(best_cand_table):
             for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
         ]
 
-    print(
-        newtable["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"][
-            good
-        ]
-    )
+    print(newtable["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"][good])
     return
 
 
@@ -1210,9 +1173,7 @@ def analyze_qffa_results(fname):
         label = "$" + "Z^2_{" + f"{ef.N}" + "}$"
     else:
         ndof = ef.nbin
-        detlev = fold_detection_level(
-            nbin=int(ef.nbin), epsilon=0.001, ntrial=ntrial
-        )
+        detlev = fold_detection_level(nbin=int(ef.nbin), epsilon=0.001, ntrial=ntrial)
         nbin = max(16, ef.nbin)
         label = rf"$\chi^2_{ndof}$ Stat"
     n_cands = 5
@@ -1286,9 +1247,7 @@ def analyze_qffa_results(fname):
             allstats_fdot = ef.stat[:, fdot_idx]
             f, fdot = ef.freq[f_idx, fdot_idx], ef.fdots[f_idx, fdot_idx]
             max_stat = ef.stat[f_idx, fdot_idx]
-            sig_e1_m, sig_e1 = power_confidence_limits(
-                max_stat, c=0.68, n=ef.N
-            )
+            sig_e1_m, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
             fmin, fmax, fdotmin, fdotmax = get_xy_boundaries_from_level(
                 ef.freq, ef.fdots, ef.stat, sig_e1_m, f, fdot
             )
@@ -1298,12 +1257,8 @@ def analyze_qffa_results(fname):
             allstats_f = ef.stat
             f = ef.freq[f_idx]
             max_stat = ef.stat[f_idx]
-            sig_e1_m, sig_e1 = power_confidence_limits(
-                max_stat, c=0.68, n=ef.N
-            )
-            fmin, fmax = get_boundaries_from_level(
-                ef.freq, ef.stat, sig_e1_m, f
-            )
+            sig_e1_m, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=ef.N)
+            fmin, fmax = get_boundaries_from_level(ef.freq, ef.stat, sig_e1_m, f)
             fdot = fdotmin = fdotmax = 0
             allfdots = None
             allstats_fdot = None
@@ -1384,9 +1339,7 @@ def analyze_qffa_results(fname):
 def _common_parser(args=None):
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = (
-        "Search for pulsars using the epoch folding or the Z_n^2 " "algorithm"
-    )
+    description = "Search for pulsars using the epoch folding or the Z_n^2 " "algorithm"
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs="+")
@@ -1623,9 +1576,7 @@ def _common_main(args, func):
             out_fname += "_fast"
         elif args.ffa:
             out_fname += "_ffa"
-        if args.mean_fdot is not None and not np.isclose(
-            args.mean_fdot * 1e10, 0
-        ):
+        if args.mean_fdot is not None and not np.isclose(args.mean_fdot * 1e10, 0):
             out_fname += f"_fd{args.mean_fdot * 1e10:g}e-10s-2"
 
         if ftype == "events":
@@ -1759,9 +1710,7 @@ def _common_main(args, func):
         efperiodogram.ncounts = events.time.size
         best_peaks = None
         if args.find_candidates:
-            best_peaks, best_stat = efperiodogram.find_peaks(
-                conflevel=args.conflevel
-            )
+            best_peaks, best_stat = efperiodogram.find_peaks(conflevel=args.conflevel)
         elif args.fit_frequency is not None:
             best_peaks = np.array([args.fit_frequency])
             efperiodogram.peaks = best_peaks
@@ -1785,9 +1734,7 @@ def _common_main(args, func):
                         baseline=baseline,
                     )
                 elif args.curve.lower() == "gaussian":
-                    best_fun = fit(
-                        frequencies[good], stats[good], f, baseline=baseline
-                    )
+                    best_fun = fit(frequencies[good], stats[good], f, baseline=baseline)
                 else:
                     raise ValueError("`--curve` arg must be sinc or gaussian")
 
@@ -1941,9 +1888,7 @@ def main_accelsearch(args=None):
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("fname", help="Input file name")
-    parser.add_argument(
-        "--outfile", default=None, type=str, help="Output file name"
-    )
+    parser.add_argument("--outfile", default=None, type=str, help="Output file name")
     parser.add_argument(
         "--emin",
         default=None,
@@ -2048,8 +1993,7 @@ def main_accelsearch(args=None):
     Nbins = int(np.rint(max_length / dt))
     if Nbins > 10**8:
         log.info(
-            f"The number of bins is more than 100 millions: {Nbins}. "
-            "Using memmap."
+            f"The number of bins is more than 100 millions: {Nbins}. " "Using memmap."
         )
 
     dt = adjust_dt_for_power_of_two(dt, max_length)
@@ -2115,9 +2059,7 @@ def main_accelsearch(args=None):
         results.sort("power")
 
         print("Best candidates:")
-        results["time", "frequency", "fdot", "power", "pepoch"][-10:][
-            ::-1
-        ].pprint()
+        results["time", "frequency", "fdot", "power", "pepoch"][-10:][::-1].pprint()
         print(f"See all {len(results)} candidates in {outfile}")
     else:
         print("No candidates found")
