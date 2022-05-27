@@ -196,7 +196,7 @@ def create_template_from_profile_harm(
     >>> phase = np.arange(0.005, 1, 0.01)
     >>> profile = np.cos(2 * np.pi * phase)
     >>> profile_err = profile * 0
-    >>> template, additional_phase = create_template_from_profile(
+    >>> template, additional_phase = create_template_from_profile_harm(
     ...     phase, profile, profile_err)
     ...
     >>> np.allclose(template, profile, atol=0.001)
@@ -204,6 +204,7 @@ def create_template_from_profile_harm(
     """
     import matplotlib.pyplot as plt
 
+    nbin = profile.size
     prof = np.concatenate((profile, profile, profile))
     dph = 1 / profile.size
     ft = fft(prof)
@@ -213,7 +214,7 @@ def create_template_from_profile_harm(
         nharm = max(1, int(prof.size / 16))
 
     if final_nbin is None:
-        final_nbin = profile.size
+        final_nbin = nbin
 
     new_ft = np.zeros(final_nbin * 3, dtype=complex)
     new_ft_freq = fftfreq(final_nbin * 3, 1 / final_nbin)
@@ -230,8 +231,13 @@ def create_template_from_profile_harm(
     template_fine = templ_func(phases_fine)
 
     additional_phase = np.argmax(template_fine) / len(template_fine) + dph_fine / 2
-    print(nharm, additional_phase, 1 / len(template_fine), 1 - additional_phase)
-    return template[:final_nbin].real, additional_phase
+    template = template[:final_nbin].real
+    fig = plt.figure()
+    plt.plot(phase, profile, drawstyle="steps-mid")
+    plt.plot(phas[:final_nbin], template, drawstyle="steps-mid")
+    plt.savefig(imagefile)
+    plt.close(fig)
+    return template * final_nbin / nbin, additional_phase
 
 
 def create_default_template(template_raw):
@@ -253,13 +259,20 @@ def create_default_template(template_raw):
 
     Examples
     --------
-    >>> phase = np.arange(0.005, 1, 0.01)
+    >>> phase = np.arange(0.005, 1, 0.001)
     >>> profile = np.cos(2 * np.pi * phase)
     >>> profile_err = profile * 0
-    >>> template, additional_phase = create_template_from_profile(
-    ...     phase, profile, profile_err)
+    >>> template, additional_phase = create_default_template(
+    ...     profile)
     ...
-    >>> np.allclose(template, profile, atol=0.001)
+    >>> np.allclose(template.max(), profile.max(), atol=0.1)
+    True
+    >>> profile = np.exp(-(phase - 0.5)**2 / (2 * 0.0001))
+    >>> profile_err = profile * 0
+    >>> template, additional_phase = create_default_template(
+    ...     profile)
+    ...
+    >>> np.allclose(template.max(), profile.max(), atol=0.1)
     True
     """
     nbin = template_raw.size
@@ -272,7 +285,6 @@ def create_default_template(template_raw):
         )
     else:
         from scipy.signal import savgol_filter
-
         template = savgol_filter(template_raw, 4, 2, mode="wrap")
         phase = np.concatenate((phase - 1, phase, phase + 1))
         template = np.concatenate((template, template, template))
@@ -283,8 +295,8 @@ def create_default_template(template_raw):
         phases_fine += (phases_fine[1] - phases_fine[0]) / 2
         template = templ_func(phases_fine)
 
+    # print(template_raw.max(), template.max())
     additional_phase = np.argmax(template) / len(template)
-    print(template, additional_phase, nharm)
 
     return template, additional_phase
 
