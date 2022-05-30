@@ -12,9 +12,7 @@ class TestNormalize:
     def setup_class(cls):
         cls.mean = 20
         cls.std = 2
-        cls.hist = [
-            np.random.normal(cls.mean, cls.std, 100_000) for i in range(4)
-        ]
+        cls.hist = [np.random.normal(cls.mean, cls.std, 100_000) for i in range(4)]
 
     @pytest.mark.parametrize("kind", ["mean", "median", ""])
     def test_normalize_norm(self, kind):
@@ -56,9 +54,7 @@ def test_deorbit_badpar():
     ev = np.asarray(1)
     with pytest.warns(UserWarning) as record:
         ev_deor = deorbit_events(ev, None)
-    assert np.any(
-        ["No parameter file specified" in r.message.args[0] for r in record]
-    )
+    assert np.any(["No parameter file specified" in r.message.args[0] for r in record])
     assert ev_deor == ev
 
 
@@ -66,9 +62,7 @@ def test_deorbit_non_existing_par():
     ev = np.asarray(1)
     with pytest.raises(FileNotFoundError) as excinfo:
         ev_deor = deorbit_events(ev, "warjladsfjqpeifjsdk.par")
-    assert "Parameter file warjladsfjqpeifjsdk.par does not exist" in str(
-        excinfo.value
-    )
+    assert "Parameter file warjladsfjqpeifjsdk.par does not exist" in str(excinfo.value)
 
 
 @pytest.mark.remote_data

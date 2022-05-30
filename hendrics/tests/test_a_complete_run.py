@@ -105,14 +105,10 @@ class TestFullRun(object):
         )
         hen.calibrate.main(command.split())
         cls.lcA = os.path.join(
-            os.path.join(
-                cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-            )
+            os.path.join(cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )
         cls.lcB = os.path.join(
-            os.path.join(
-                cls.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION
-            )
+            os.path.join(cls.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
         )
         command = (
             "{} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " "-o {}"
@@ -133,9 +129,7 @@ class TestFullRun(object):
             cls.datadir, "monol_test_E3-50_cpds" + HEN_FILE_EXTENSION
         )
 
-        command = "{} {} -f 128 -k PDS --save-all --norm leahy".format(
-            cls.lcA, cls.lcB
-        )
+        command = "{} {} -f 128 -k PDS --save-all --norm leahy".format(cls.lcA, cls.lcB)
         hen.fspec.main(command.split())
 
         command = "{} {} -f 128 -k CPDS --save-all --norm leahy".format(
@@ -161,9 +155,7 @@ class TestFullRun(object):
             "cpds": "monol_test_E3-50_cpds",
         }
         for realtype in file_list.keys():
-            fname = os.path.join(
-                self.datadir, file_list[realtype] + HEN_FILE_EXTENSION
-            )
+            fname = os.path.join(self.datadir, file_list[realtype] + HEN_FILE_EXTENSION)
             ftype, _ = hen.io.get_file_type(fname)
             assert ftype == realtype, "File types do not match"
 
@@ -204,9 +196,7 @@ class TestFullRun(object):
 
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
-        command = ("{0} -b 100 -e {1} {2} {2} {3}").format(
-            self.ev_fileA, 3, 5, 10
-        )
+        command = ("{0} -b 100 -e {1} {2} {2} {3}").format(self.ev_fileA, 3, 5, 10)
         with catch_warnings():
             with pytest.raises(ValueError) as excinfo:
                 hen.colors.main(command.split())
@@ -216,9 +206,7 @@ class TestFullRun(object):
     def test_colors(self):
         """Test light curve using PI filtering."""
         # calculate colors
-        command = ("{0} -b 100 -e {1} {2} {2} {3}").format(
-            self.ev_fileAcal, 3, 5, 10
-        )
+        command = ("{0} -b 100 -e {1} {2} {2} {3}").format(self.ev_fileAcal, 3, 5, 10)
         hen.colors.main(command.split())
 
         new_filename = os.path.join(
@@ -241,15 +229,11 @@ class TestFullRun(object):
     def test_plot_color(self):
         """Test plotting with linear axes."""
         lname = (
-            os.path.join(
-                self.datadir, "monol_testA_nustar_fpma_E_10-5_over_5-3"
-            )
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_E_10-5_over_5-3")
             + HEN_FILE_EXTENSION
         )
         cname = (
-            os.path.join(
-                self.datadir, "monol_testA_nustar_fpma_E_10-5_over_5-3"
-            )
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_E_10-5_over_5-3")
             + HEN_FILE_EXTENSION
         )
         hen.plot.main(
@@ -284,9 +268,7 @@ class TestFullRun(object):
         )
         os.path.exists(lname)
         cname = (
-            os.path.join(
-                self.datadir, "monol_testA_nustar_fpma_E_10-5_over_5-3"
-            )
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_E_10-5_over_5-3")
             + HEN_FILE_EXTENSION
         )
         hen.plot.main(
@@ -304,9 +286,7 @@ class TestFullRun(object):
 
     def test_all_files_get_read(self):
         # Test that HENreadfile works with all file types
-        fnames = find_file_pattern_in_dir(
-            "*" + HEN_FILE_EXTENSION, self.datadir
-        )
+        fnames = find_file_pattern_in_dir("*" + HEN_FILE_EXTENSION, self.datadir)
         io.main(fnames)
 
     @classmethod

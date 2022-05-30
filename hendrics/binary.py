@@ -41,9 +41,7 @@ def get_header_info(obj):
         .replace("h", ":")
         .replace("m", ":")
     )
-    info.decj = (
-        (a.ra.to_string()).replace("s", "").replace("d", ":").replace("m", ":")
-    )
+    info.decj = (a.ra.to_string()).replace("s", "").replace("d", ":").replace("m", ":")
     if hasattr(obj, "e_interval"):
         e0, e1 = obj.e_interval
     elif hasattr(obj, "energy") and obj.energy is not None:
@@ -151,9 +149,7 @@ def save_events_to_binary(
         good = (events.time >= t0) & (events.time < t1)
 
         goodev = events.time[good]
-        hist, times = np.histogram(
-            goodev, bins=np.linspace(t0, t1, lastbin + 1)
-        )
+        hist, times = np.histogram(goodev, bins=np.linspace(t0, t1, lastbin + 1))
 
         lclen += lastbin
         s = struct.pack("f" * len(hist), *hist)
@@ -162,12 +158,8 @@ def save_events_to_binary(
     file.close()
 
     lcinfo = type("", (), {})()
-    lcinfo.bin_intervals_start = np.floor(
-        (events.gti[:, 0] - tstart) / bin_time
-    )
-    lcinfo.bin_intervals_stop = np.floor(
-        (events.gti[:, 1] - tstart) / bin_time
-    )
+    lcinfo.bin_intervals_start = np.floor((events.gti[:, 0] - tstart) / bin_time)
+    lcinfo.bin_intervals_stop = np.floor((events.gti[:, 1] - tstart) / bin_time)
     lcinfo.lclen = lclen
     lcinfo.tstart = tstart
     lcinfo.dt = bin_time
@@ -194,44 +186,36 @@ def save_inf(lcinfo, info, filename):
             file=f,
         )
         print(
-            " Telescope used                        "
-            " =  {}".format(info.telescope),
+            " Telescope used                        " " =  {}".format(info.telescope),
             file=f,
         )
         print(
-            " Instrument used                       "
-            " =  {}".format(info.instrument),
+            " Instrument used                       " " =  {}".format(info.instrument),
             file=f,
         )
         print(
-            " Object being observed                 "
-            " =  {}".format(info.source),
+            " Object being observed                 " " =  {}".format(info.source),
             file=f,
         )
         print(
-            " J2000 Right Ascension (hh:mm:ss.ssss) "
-            " =  {}".format(info.raj),
+            " J2000 Right Ascension (hh:mm:ss.ssss) " " =  {}".format(info.raj),
             file=f,
         )
         print(
-            " J2000 Declination     (dd:mm:ss.ssss) "
-            " =  {}".format(info.decj),
+            " J2000 Declination     (dd:mm:ss.ssss) " " =  {}".format(info.decj),
             file=f,
         )
         print(
-            " Data observed by                      "
-            " =  {}".format(info.observer),
+            " Data observed by                      " " =  {}".format(info.observer),
             file=f,
         )
         print(
-            " Epoch of observation (MJD)            "
-            " =  {:05.15f}".format(epoch),
+            " Epoch of observation (MJD)            " " =  {:05.15f}".format(epoch),
             file=f,
         )
         print(" Barycentered?           (1=yes, 0=no) " " =  1", file=f)
         print(
-            " Number of bins in the time series     "
-            " =  {lclen}".format(lclen=lclen),
+            " Number of bins in the time series     " " =  {lclen}".format(lclen=lclen),
             file=f,
         )
         print(
@@ -252,18 +236,15 @@ def save_inf(lcinfo, info, filename):
         print(" Type of observation (EM band)         " " =  X-ray", file=f)
         print(" Field-of-view diameter (arcsec)       " " =  400", file=f)
         print(
-            " Central energy (kev)                  "
-            " =  {}".format(info.centralE),
+            " Central energy (kev)                  " " =  {}".format(info.centralE),
             file=f,
         )
         print(
-            " Energy bandpass (kev)                 "
-            " =  {}".format(info.bandpass),
+            " Energy bandpass (kev)                 " " =  {}".format(info.bandpass),
             file=f,
         )
         print(
-            " Data analyzed by                      "
-            " =  {}".format(info.user),
+            " Data analyzed by                      " " =  {}".format(info.user),
             file=f,
         )
         print(" Any additional notes:", file=f)

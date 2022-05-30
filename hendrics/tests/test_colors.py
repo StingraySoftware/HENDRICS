@@ -101,19 +101,13 @@ class TestFullRun(object):
         hen.calibrate.main(command.split())
 
         cls.lc3_10 = os.path.join(
-            os.path.join(
-                cls.datadir, "monol_testA_E3-10_lc" + HEN_FILE_EXTENSION
-            )
+            os.path.join(cls.datadir, "monol_testA_E3-10_lc" + HEN_FILE_EXTENSION)
         )
 
-        command = ("{} -e 3 10 -b 100 " "-o {}").format(
-            cls.ev_fileAcal, cls.lc3_10
-        )
+        command = ("{} -e 3 10 -b 100 " "-o {}").format(cls.ev_fileAcal, cls.lc3_10)
         hen.lcurve.main(command.split())
 
-        command = ("{0} -b 100 -e {1} {2} {2} {3}").format(
-            cls.ev_fileAcal, 3, 5, 10
-        )
+        command = ("{0} -b 100 -e {1} {2} {2} {3}").format(cls.ev_fileAcal, 3, 5, 10)
         hen.colors.main(command.split())
 
         cls.colorfile = os.path.join(
@@ -132,9 +126,7 @@ class TestFullRun(object):
 
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
-        command = ("{0} -b 100 -e {1} {2} {2} {3}").format(
-            self.ev_fileA, 3, 5, 10
-        )
+        command = ("{0} -b 100 -e {1} {2} {2} {3}").format(self.ev_fileA, 3, 5, 10)
         with pytest.raises(ValueError) as excinfo:
             hen.colors.main(command.split())
 

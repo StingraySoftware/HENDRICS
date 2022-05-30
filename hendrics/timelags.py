@@ -11,8 +11,7 @@ def main(args=None):
     from .base import _add_default_args
 
     description = (
-        "Read timelags from cross spectrum results and save them"
-        " to a qdp file"
+        "Read timelags from cross spectrum results and save them" " to a qdp file"
     )
     parser = argparse.ArgumentParser(description=description)
 

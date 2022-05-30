@@ -223,9 +223,7 @@ def main(args=None):
                 label = "_calib"
                 if args.rough:
                     label = "_rough_calib"
-                outname = f.replace(
-                    get_file_extension(f), label + HEN_FILE_EXTENSION
-                )
+                outname = f.replace(get_file_extension(f), label + HEN_FILE_EXTENSION)
             funcargs.append([f, outname, args.rmf, args.rough])
 
         if os.name == "nt" or args.nproc == 1:

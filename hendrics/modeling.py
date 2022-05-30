@@ -13,8 +13,7 @@ def main_model(args=None):
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
-        "Fit frequency spectra (PDS, CPDS, cospectrum) "
-        "with user-defined models"
+        "Fit frequency spectra (PDS, CPDS, cospectrum) " "with user-defined models"
     )
     parser = argparse.ArgumentParser(description=description)
 

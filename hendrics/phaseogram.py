@@ -18,11 +18,13 @@ from matplotlib.gridspec import GridSpec
 from scipy.ndimage import gaussian_filter1d
 
 from .base import normalize_dyn_profile
-from .fold import filter_energy
 from .io import load_events, load_folding
+from .fold import filter_energy
 from .fold import get_TOAs_from_events
+from .fold import create_default_template
 from .base import hen_root, deorbit_events, get_model
 from .efsearch import h_test
+from .ml_timing import normalized_template, ml_pulsefit
 
 
 DEFAULT_COLORMAP = "cubehelix"
@@ -135,9 +137,7 @@ class BasePhaseogram(object):
 
         self.pepoch = assign_value_if_none(pepoch, ev_times[0])
 
-        self.time_corr = assign_value_if_none(
-            time_corr, np.zeros_like(ev_times)
-        )
+        self.time_corr = assign_value_if_none(time_corr, np.zeros_like(ev_times))
         self.freq = freq
         self.norm = norm
         self.position = position
@@ -166,12 +166,7 @@ class BasePhaseogram(object):
         colorbax = plt.subplot(gs[2])
 
         corrected_times = self.ev_times - self._delay_fun(self.ev_times)
-        (
-            self.unnorm_phaseogr,
-            phases,
-            times,
-            additional_info,
-        ) = normalized_phaseogram(
+        (self.unnorm_phaseogr, phases, times, additional_info,) = normalized_phaseogram(
             None,
             corrected_times,
             freq,
@@ -240,15 +235,9 @@ class BasePhaseogram(object):
             ax = self.fig.add_axes(*args, facecolor=axcolor)
             return ax
 
-        self.slider_axes.append(
-            newax_fn([0.15, 0.1, 0.75, 0.03], facecolor=axcolor)
-        )
-        self.slider_axes.append(
-            newax_fn([0.15, 0.15, 0.75, 0.03], facecolor=axcolor)
-        )
-        self.slider_axes.append(
-            newax_fn([0.15, 0.2, 0.75, 0.03], facecolor=axcolor)
-        )
+        self.slider_axes.append(newax_fn([0.15, 0.1, 0.75, 0.03], facecolor=axcolor))
+        self.slider_axes.append(newax_fn([0.15, 0.15, 0.75, 0.03], facecolor=axcolor))
+        self.slider_axes.append(newax_fn([0.15, 0.2, 0.75, 0.03], facecolor=axcolor))
 
         self._construct_widgets(**kwargs)
 
@@ -278,9 +267,7 @@ class BasePhaseogram(object):
         )
 
         self.toaax = self.fig.add_axes([0.8, 0.020, 0.1, 0.04])
-        self.button_toa = Button(
-            self.toaax, "TOA", color=axcolor, hovercolor="0.975"
-        )
+        self.button_toa = Button(self.toaax, "TOA", color=axcolor, hovercolor="0.975")
 
         self.button_reset.on_clicked(self.reset)
         self.button_zoomin.on_clicked(self.zoom_in)
@@ -463,15 +450,11 @@ class BasePhaseogram(object):
         if hasattr(self.model, "F1"):
             self.model.F1.value = self.fdot
         else:
-            warnings.warn(
-                "Parameter F1 not in parfile. It will not be updated"
-            )
+            warnings.warn("Parameter F1 not in parfile. It will not be updated")
         if hasattr(self.model, "F2"):
             self.model.F2.value = self.fddot
         else:
-            warnings.warn(
-                "Parameter F2 not in parfile. It will not be updated"
-            )
+            warnings.warn("Parameter F2 not in parfile. It will not be updated")
         start, stop = self.gti.min(), self.gti.max()
         self.model.START.value = start / 86400 + self.mjdref
         self.model.FINISH.value = stop / 86400 + self.mjdref
@@ -493,9 +476,7 @@ class BasePhaseogram(object):
         tm_string = ""
 
         if self.mjdref is not None:
-            tm_string += "PEPOCH         {}\n".format(
-                self.pepoch / 86400 + self.mjdref
-            )
+            tm_string += "PEPOCH         {}\n".format(self.pepoch / 86400 + self.mjdref)
         tm_string += "PSRJ           {}\n".format(self.object)
         if self.position is not None:
             tm_string += "RAJ            {}\n".format(
@@ -511,14 +492,10 @@ class BasePhaseogram(object):
 
         if hasattr(self, "orbital_period") and self.orbital_period is not None:
             tm_string += "BINARY BT\n"
-            tm_string += "PB             {}\n".format(
-                self.orbital_period / 86400
-            )
+            tm_string += "PB             {}\n".format(self.orbital_period / 86400)
             tm_string += "A1             {}\n".format(self.asini)
             if self.mjdref is not None:
-                tm_string += "T0             {}\n".format(
-                    self.t0 / 86400 + self.mjdref
-                )
+                tm_string += "T0             {}\n".format(self.t0 / 86400 + self.mjdref)
             tm_string += "T0(MET)        {}\n".format(self.t0)
             tm_string += "PB(s)          {}\n".format(self.orbital_period)
 
@@ -550,12 +527,8 @@ class InteractivePhaseogram(BasePhaseogram):
         delta_dfddot = delta_dfddot_start / 10**self.dfddot_order_of_mag
 
         freq_str = r"$\Delta$ F0" "x$10^{" + f"{self.df_order_of_mag}" + r"}$"
-        fdot_str = (
-            r"$\Delta$ F1" r"x$10^{" + f"{self.dfdot_order_of_mag}" + r"}$"
-        )
-        fddot_str = (
-            r"$\Delta$ F2" r"x$10^{" + f"{self.dfddot_order_of_mag}" + r"}$"
-        )
+        fdot_str = r"$\Delta$ F1" r"x$10^{" + f"{self.dfdot_order_of_mag}" + r"}$"
+        fddot_str = r"$\Delta$ F2" r"x$10^{" + f"{self.dfddot_order_of_mag}" + r"}$"
 
         self.sfreq = SliderOnSteroids(
             self.slider_axes[0],
@@ -648,34 +621,43 @@ class InteractivePhaseogram(BasePhaseogram):
         print("------------------------")
 
     def toa(self, event):
-        self.timing_model_string = self.get_timing_model_string()
 
         dfreq, dfdot, dfddot = self._read_sliders()
         freqs = [self.freq - dfreq, self.fdot - dfdot, self.fddot - dfddot]
         folding_length = np.median(np.diff(self.times))
         nbin = self.nph
-        template_raw = np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1)
-        template = gaussian_filter1d(template_raw, sigma=1)
 
-        if self.nph < 64:
-            warnings.warn(
-                "TOA calculation is not robust if the "
-                "number of bins is < 64. Oversampling."
-            )
-            nbin = 64
-            phases = np.arange(self.nph * 2 + 1) / (self.nph * 2)
-            fun = interp1d(
-                phases, np.concatenate((template, [template[0]])), kind="cubic"
-            )
-            new_phases = np.arange(0, nbin * 2) / (nbin * 2)
-            template = fun(new_phases)
+        corrected_times = self.ev_times - self._delay_fun(self.ev_times)
+        raw_times = corrected_times - self.pepoch
+        raw_phases = (
+            raw_times * self.freq
+            + 0.5 * raw_times**2 * self.fdot
+            + 1 / 6 * raw_times**2 * self.fddot
+        )
+        raw_phases -= np.floor(raw_phases)
 
-        template = template[nbin // 2 : nbin // 2 + template.size // 2]
+        template_raw, _ = np.histogram(raw_phases, bins=self.nph * 4)
 
-        template = np.roll(template, -np.argmax(template)) / self.nt
+        template, additional = create_default_template(template_raw)
+
+        template = normalized_template(template, tomax=True, subtract_min=False)
+
+        pars, errs = ml_pulsefit(template_raw, template, calculate_errors=True)
+        ph, phe = pars[1], errs[1]
+        if ph is None:
+            warnings.warn("The pulse profile is not adequate for TOA fitting.")
+            return
+        toa = (ph + additional) / freqs[0] + self.times[0]
+        toaerr = phe / freqs[0]
+        full_toa = toa / 86400 + self.mjdref
+        full_toaerr = toaerr * 1e6
+        print(full_toa, full_toaerr)
+
+        # template = np.roll(template, -np.argmax(template)) / self.nt
         ephem = "DE421"
         if self.model is not None and hasattr(self.model, "EPHEM"):
             ephem = self.model.EPHEM.value
+
         toa, toaerr = get_TOAs_from_events(
             self.ev_times,
             folding_length,
@@ -691,7 +673,12 @@ class InteractivePhaseogram(BasePhaseogram):
             position=None,
             ephem=ephem,
         )
+        if toa is None:
+            warnings.warn("No valid TOAs found")
+            return
         toa_corr = toa + self.time_corr_mjd_fun(toa)
+        full_toa_corr = full_toa + self.time_corr_mjd_fun(full_toa)
+
         corr_string = ""
 
         if np.any(toa_corr != toa):
@@ -701,6 +688,14 @@ class InteractivePhaseogram(BasePhaseogram):
             print("FORMAT 1", file=fobj)
             for t, te in zip(toa_corr, toaerr):
                 print(self.label, 0, t, te, "@", file=fobj)
+
+        if hasattr(self, "model"):
+            if hasattr(self.model, "TZRMJD"):
+
+                self.model.TZRMJD.value = full_toa_corr
+                self.model.TZRSITE.value = "@"
+
+        self.timing_model_string = self.get_timing_model_string()
 
         with open(self.label + ".par", "w") as fobj:
             print(self.timing_model_string, file=fobj)
@@ -813,9 +808,7 @@ class BinaryPhaseogram(BasePhaseogram):
         if self.orbital_period is None:
             self.orbital_period = self.ev_times[-1] - self.ev_times[0]
 
-        return self.asini * np.sin(
-            2 * np.pi * (times - self.t0) / self.orbital_period
-        )
+        return self.asini * np.sin(2 * np.pi * (times - self.t0) / self.orbital_period)
 
     def recalculate(self, event):
         self.orbital_period, self.asini, self.t0 = self._read_sliders()
@@ -1027,8 +1020,7 @@ def main_phaseogram(args=None):
     )
     parser.add_argument(
         "--binary",
-        help="Interact on binary parameters "
-        "instead of frequency derivatives",
+        help="Interact on binary parameters " "instead of frequency derivatives",
         default=False,
         action="store_true",
     )
@@ -1057,7 +1049,12 @@ def main_phaseogram(args=None):
         default=False,
         action="store_true",
     )
-
+    parser.add_argument(
+        "--get-toa",
+        help="Only calculate TOAs",
+        default=False,
+        action="store_true",
+    )
     _add_default_args(
         parser,
         [
@@ -1101,7 +1098,7 @@ def main_phaseogram(args=None):
             fddot=fddot,
             nbin=args.nbin,
             nt=args.ntimes,
-            test=args.test,
+            test=args.test or args.get_toa,
             binary=args.binary,
             binary_parameters=args.binary_parameters,
             pepoch=args.pepoch,
@@ -1112,4 +1109,7 @@ def main_phaseogram(args=None):
             emax=args.emax,
             colormap=args.colormap,
         )
+    if args.get_toa:
+        ip.toa(1)
+
     plt.close(ip.fig)

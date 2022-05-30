@@ -40,16 +40,13 @@ if not _ASTROPY_SETUP_:  # noqa
         config_template = os.path.join(config_dir, __package__ + ".cfg")
         if os.path.isfile(config_template):
             try:
-                update_default_config(
-                    __package__, config_dir, version=__version__
-                )
+                update_default_config(__package__, config_dir, version=__version__)
             except TypeError as orig_error:
                 try:
                     update_default_config(__package__, config_dir)
                 except ConfigurationDefaultMissingError as e:
                     wmsg = (
-                        e.args[0]
-                        + " Cannot install default profile. If you are "
+                        e.args[0] + " Cannot install default profile. If you are "
                         "importing from source, this is expected."
                     )
                     warn(ConfigurationDefaultMissingWarning(wmsg))

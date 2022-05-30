@@ -51,12 +51,8 @@ class TestPhaseogram:
         cls.tseg = cls.tend - cls.tstart
         cls.dt = 0.00606
         cls.times = np.arange(cls.tstart, cls.tend, cls.dt) + cls.dt / 2
-        cls.counts = 100 + 20 * np.cos(
-            2 * np.pi * cls.times * cls.pulse_frequency
-        )
-        lc = Lightcurve(
-            cls.times, cls.counts, gti=[[cls.tstart, cls.tend]], dt=cls.dt
-        )
+        cls.counts = 100 + 20 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
+        lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]], dt=cls.dt)
         events = EventList()
         events.simulate_times(lc)
         events.mjdref = 57000.0
@@ -108,9 +104,7 @@ class TestPhaseogram:
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
-        assert np.isclose(
-            efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25
-        )
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25)
         # Defaults to 2 harmonics
         assert efperiod.N == 2
 
@@ -169,10 +163,7 @@ class TestPhaseogram:
                 ]
             )
             assert np.any(
-                [
-                    "Profile normalization arsdfajl" in r.message.args[0]
-                    for r in record
-                ]
+                ["Profile normalization arsdfajl" in r.message.args[0] for r in record]
             )
 
     def test_phaseogram_input_f(self):
@@ -190,14 +181,7 @@ class TestPhaseogram:
         ip = run_interactive_phaseogram(evfile, 9.9, test=True, nbin=16, nt=8)
         ip.update(1)
         ip.recalculate(1)
-        with pytest.warns(UserWarning) as record:
-            ip.toa(1)
-        assert np.any(
-            [
-                "TOA calculation is not robust" in r.message.args[0]
-                for r in record
-            ]
-        )
+        ip.toa(1)
         ip.reset(1)
         ip.fdot = 2
         f, fdot, fddot = ip.get_values()
@@ -223,14 +207,8 @@ class TestPhaseogram:
         )
         ip.update(1)
         ip.recalculate(1)
-        with pytest.warns(UserWarning) as record:
-            ip.toa(1)
-        assert np.any(
-            [
-                "TOA calculation is not robust" in r.message.args[0]
-                for r in record
-            ]
-        )
+        ip.toa(1)
+
         ip.reset(1)
         ip.fdot = 2
         f, fdot, fddot = ip.get_values()
@@ -284,10 +262,7 @@ class TestPhaseogram:
         with pytest.warns(UserWarning) as record:
             ip.toa(1)
         assert np.any(
-            [
-                "This function was not implemented" in r.message.args[0]
-                for r in record
-            ]
+            ["This function was not implemented" in r.message.args[0] for r in record]
         )
         ip.orbital_period = 2
         orbital_period, fdot, fddot = ip.get_values()
@@ -311,10 +286,7 @@ class TestPhaseogram:
         with pytest.warns(UserWarning) as record:
             ip.toa(1)
         assert np.any(
-            [
-                "This function was not implemented" in r.message.args[0]
-                for r in record
-            ]
+            ["This function was not implemented" in r.message.args[0] for r in record]
         )
         ip.orbital_period = 2
         orbital_period, fdot, fddot = ip.get_values()

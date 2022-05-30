@@ -283,9 +283,7 @@ def start_value(prof_n, step):
     return val
 
 
-@vectorize(
-    [(float64, float64), (int64, int64), (float32, float32), (int32, int32)]
-)
+@vectorize([(float64, float64), (int64, int64), (float32, float32), (int32, int32)])
 def sum_arrays(arr1, arr2):
     return arr1 + arr2
 
@@ -319,9 +317,7 @@ def ffa_step(array, step, ntables):
         jumpstart = start + jump
         if sh > 0:
             rolled = roll(array[start + jump, :], -sh)
-            array_reshaped_dum[prof_n, :] = sum_arrays(
-                array[start, :], rolled[:]
-            )
+            array_reshaped_dum[prof_n, :] = sum_arrays(array[start, :], rolled[:])
 
         else:
             array_reshaped_dum[prof_n, :] = sum_arrays(
@@ -334,9 +330,7 @@ def ffa_step(array, step, ntables):
 @njit()
 def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
     """Fast folding algorithm search."""
-    periods = np.array(
-        [bin_period + n / (ntables - 1) for n in range(ntables)]
-    )
+    periods = np.array([bin_period + n / (ntables - 1) for n in range(ntables)])
 
     for step in range(0, int(np.log2(ntables))):
         array_reshaped = ffa_step(array_reshaped, step, ntables)

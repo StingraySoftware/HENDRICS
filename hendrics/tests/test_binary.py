@@ -61,9 +61,7 @@ class TestBinary(object):
         )
         hen.calibrate.main(command.split())
         cls.lcA = os.path.join(
-            os.path.join(
-                cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION
-            )
+            os.path.join(cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )
         command = (
             "{} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " "-o {}"
@@ -73,9 +71,7 @@ class TestBinary(object):
     def test_save_binary_events(self):
         f = self.ev_fileA
         with pytest.raises(ValueError) as excinfo:
-            hen.binary.main_presto(
-                "{} -b 0.1 -e 3 59 --debug".format(f).split()
-            )
+            hen.binary.main_presto("{} -b 0.1 -e 3 59 --debug".format(f).split())
 
         assert "Energy filtering requested" in str(excinfo.value)
 
@@ -84,9 +80,7 @@ class TestBinary(object):
     def test_save_binary_calibrated_events(self):
         f = self.ev_fileAcal
         hen.binary.main_presto(
-            "{} -b 0.1 -e 3 59 --debug --deorbit-par {}".format(
-                f, self.par
-            ).split()
+            "{} -b 0.1 -e 3 59 --debug --deorbit-par {}".format(f, self.par).split()
         )
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, ".dat"))
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, ".inf"))

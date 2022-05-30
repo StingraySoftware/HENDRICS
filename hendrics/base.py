@@ -128,16 +128,12 @@ DEFAULT_PARSER_ARGS["nproc"] = dict(
 )
 DEFAULT_PARSER_ARGS["debug"] = dict(
     args=["--debug"],
-    kwargs=dict(
-        help=("set DEBUG logging level"), default=False, action="store_true"
-    ),
+    kwargs=dict(help=("set DEBUG logging level"), default=False, action="store_true"),
 )
 DEFAULT_PARSER_ARGS["colormap"] = dict(
     args=["--colormap"],
     kwargs=dict(
-        help=(
-            "Change the color map of the image. Any matplotlib colormap is valid"
-        ),
+        help=("Change the color map of the image. Any matplotlib colormap is valid"),
         default="cubehelix",
         type=str,
     ),
@@ -189,9 +185,7 @@ DEFAULT_PARSER_ARGS["pi"] = dict(
 DEFAULT_PARSER_ARGS["deorbit"] = dict(
     args=["-p", "--deorbit-par"],
     kwargs=dict(
-        help=(
-            "Deorbit data with this parameter file (requires PINT installed)"
-        ),
+        help=("Deorbit data with this parameter file (requires PINT installed)"),
         default=None,
         type=str,
     ),
@@ -210,9 +204,7 @@ DEFAULT_PARSER_ARGS["usepi"] = dict(
 )
 DEFAULT_PARSER_ARGS["test"] = dict(
     args=["--test"],
-    kwargs=dict(
-        help="Only used for tests", default=False, action="store_true"
-    ),
+    kwargs=dict(help="Only used for tests", default=False, action="store_true"),
 )
 DEFAULT_PARSER_ARGS["pepoch"] = dict(
     args=["--pepoch"],
@@ -476,8 +468,7 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     events = copy.deepcopy(events)
     if parameter_file is None:
         warnings.warn(
-            "No parameter file specified for deorbit. Returning"
-            " unaltered event list"
+            "No parameter file specified for deorbit. Returning" " unaltered event list"
         )
         return events
     if not os.path.exists(parameter_file):
@@ -486,9 +477,7 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
         )
 
     if events.mjdref < 33282.0:
-        raise ValueError(
-            "MJDREF is very low (<01-01-1950), " "this is unsupported."
-        )
+        raise ValueError("MJDREF is very low (<01-01-1950), " "this is unsupported.")
 
     model = get_model(parameter_file)
     porb = model.PB.value
@@ -1007,9 +996,7 @@ def adjust_dt_for_small_power(dt, length):
     return new_dt
 
 
-def memmapped_arange(
-    i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=float
-):
+def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=float):
     """Arange plus memory mapping.
 
     Examples
@@ -1031,9 +1018,7 @@ def memmapped_arange(
     if fname is None:
         _, fname = tempfile.mkstemp(suffix=".npy")
 
-    hist_arr = np.lib.format.open_memmap(
-        fname, mode="w+", dtype=dtype, shape=(Nbins,)
-    )
+    hist_arr = np.lib.format.open_memmap(fname, mode="w+", dtype=dtype, shape=(Nbins,))
 
     for start in range(0, Nbins, chunklen):
         stop = min(start + chunklen, Nbins)

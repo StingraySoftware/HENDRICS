@@ -59,9 +59,7 @@ def plot_generic(
 
     if is_string(fnames):
         fnames = [fnames]
-    figname = _assign_value_if_none(
-        figname, "{0} vs {1}".format(vars[1], vars[0])
-    )
+    figname = _assign_value_if_none(figname, "{0} vs {1}".format(vars[1], vars[0]))
     plt.figure(figname)
     ax = plt.gca()
     if xlog:
@@ -144,11 +142,7 @@ def _get_const(models):
     if models is None:
         return None
 
-    if (
-        isinstance(models, Iterable)
-        and not is_string(models)
-        and len(models) != 0
-    ):
+    if isinstance(models, Iterable) and not is_string(models) and len(models) != 0:
         for model in models:
             return _get_const(model)
 
@@ -197,9 +191,7 @@ def plot_pds(
         npds = pds_obj.m
         norm = pds_obj.norm
 
-        lev = detection_level(
-            epsilon=0.015, n_summed_spectra=npds, ntrial=pds.size
-        )
+        lev = detection_level(epsilon=0.015, n_summed_spectra=npds, ntrial=pds.size)
 
         if norm == "rms":
             # we need the unnormalized power
@@ -225,9 +217,7 @@ def plot_pds(
         if norm.lower() == "leahy" or (
             norm.lower() in ["rms", "frac"] and (not xlog or not ylog)
         ):
-            plt.plot(
-                freq[1:], y, drawstyle="steps-mid", color=color, label=fname
-            )
+            plt.plot(freq[1:], y, drawstyle="steps-mid", color=color, label=fname)
             for i, func in enumerate(models):
                 plt.plot(
                     freq,
@@ -241,9 +231,7 @@ def plot_pds(
             # TODO: Very rough! Use new machinery
             const = _get_const(models)
             if const is None:
-                p, pcov = curve_fit(
-                    _baseline_fun, freq, pds, p0=[2], sigma=epds
-                )
+                p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
                 log.info("White noise level is {0}".format(p[0]))
                 const = p[0]
 
@@ -252,9 +240,7 @@ def plot_pds(
 
             y = pds[1:] * freq[1:]
             yerr = epds[1:] * freq[1:]
-            plt.plot(
-                freq[1:], y, drawstyle="steps-mid", color=color, label=fname
-            )
+            plt.plot(freq[1:], y, drawstyle="steps-mid", color=color, label=fname)
             level *= freq
             for i, func in enumerate(models):
                 const = _get_const(func)
@@ -292,9 +278,7 @@ def plot_pds(
         plt.savefig(figname)
 
 
-def plot_cospectrum(
-    fnames, figname=None, xlog=None, ylog=None, output_data_file=None
-):
+def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None, output_data_file=None):
     """Plot the cospectra from a list of CPDSs, or a single one."""
     import matplotlib.pyplot as plt
 
@@ -338,16 +322,12 @@ def plot_cospectrum(
             y = freq[1:] * cospectrum[1:]
             plt.plot(freq[1:], y, drawstyle="steps-mid", label=fname)
             for i, func in enumerate(models):
-                plt.plot(
-                    freq, freq * func(freq), label="Model {}".format(i + 1)
-                )
+                plt.plot(freq, freq * func(freq), label="Model {}".format(i + 1))
 
             plt.ylabel("Cospectrum * Frequency")
         else:
             y = cospectrum[1:]
-            plt.plot(
-                freq[1:], cospectrum[1:], drawstyle="steps-mid", label=fname
-            )
+            plt.plot(freq[1:], cospectrum[1:], drawstyle="steps-mid", label=fname)
 
             plt.ylabel("Cospectrum")
             for i, func in enumerate(models):
@@ -361,9 +341,7 @@ def plot_cospectrum(
         plt.savefig(figname)
 
 
-def plot_folding(
-    fnames, figname=None, xlog=None, ylog=None, output_data_file=None
-):
+def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=None):
     from matplotlib import gridspec
     import matplotlib.pyplot as plt
 
@@ -488,9 +466,7 @@ def plot_folding(
             if hasattr(events, "mjdref") and events.mjdref is not None:
                 phascommand += " --pepoch {}".format(pepoch)
 
-            log.info(
-                "To see the detailed phaseogram, " "run {}".format(phascommand)
-            )
+            log.info("To see the detailed phaseogram, " "run {}".format(phascommand))
 
         elif not os.path.exists(ef.filename):
             warnings.warn(ef.filename + " does not exist")
@@ -538,19 +514,15 @@ def plot_folding(
                 [max_stat_cl_90],
                 colors="white",
                 zorder=20,
-                label=r"90% C.L.",
             )
 
             if np.shape(cs.allsegs[0])[0] > 1:
                 warnings.warn(
-                    "More than one contour found. "
-                    "Frequency estimates might be wrong"
+                    "More than one contour found. " "Frequency estimates might be wrong"
                 )
             else:
                 for ax in (axffdot, axf):
-                    ax.axvline(
-                        cs.allsegs[0][0][:, 0].min(), label=f"90% conf. lim."
-                    )
+                    ax.axvline(cs.allsegs[0][0][:, 0].min(), label=f"90% conf. lim.")
                     ax.axvline(cs.allsegs[0][0][:, 0].max())
 
                 for ax in (axffdot, axfdot):
@@ -612,9 +584,7 @@ def plot_folding(
         ):
 
             for f in ef.best_fits:
-                xs = np.linspace(
-                    np.min(ef.freq), np.max(ef.freq), len(ef.freq) * 2
-                )
+                xs = np.linspace(np.min(ef.freq), np.max(ef.freq), len(ef.freq) * 2)
                 plt.plot(xs, f(xs))
 
         if output_data_file is not None:
@@ -650,9 +620,7 @@ def plot_folding(
         plt.savefig(figname)
 
 
-def plot_color(
-    file0, file1, xlog=None, ylog=None, figname=None, output_data_file=None
-):
+def plot_color(file0, file1, xlog=None, ylog=None, figname=None, output_data_file=None):
     import matplotlib.pyplot as plt
 
     type0, lc0 = get_file_type(file0)
@@ -761,9 +729,7 @@ def main(args=None):
     import argparse
     from .base import check_negative_numbers_in_args
 
-    description = (
-        "Plot the content of HENDRICS light curves and frequency spectra"
-    )
+    description = "Plot the content of HENDRICS light curves and frequency spectra"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs="+")
     parser.add_argument(
@@ -789,9 +755,7 @@ def main(args=None):
         default=False,
         action="store_true",
     )
-    parser.add_argument(
-        "--figname", help="Figure name", default=None, type=str
-    )
+    parser.add_argument("--figname", help="Figure name", default=None, type=str)
     parser.add_argument(
         "-o",
         "--outfile",

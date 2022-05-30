@@ -3,15 +3,20 @@
 import warnings
 import copy
 import argparse
-from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
-from stingray.utils import assign_value_if_none
-from stingray.events import EventList
-
 import numpy as np
 from scipy.signal import savgol_filter
+from scipy.interpolate import interp1d
 from scipy import optimize
 from astropy.stats import poisson_conf_interval
 from astropy import log
+from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
+from stingray.pulse.pulsar import pulse_phase, htest
+from stingray.utils import assign_value_if_none, fft, fftfreq, ifft
+
+from stingray.events import EventList
+
+from hendrics.ml_timing import get_template_func
+
 from .base import hen_root, normalize_dyn_profile
 from .io import load_events, filter_energy
 
@@ -30,8 +35,7 @@ try:
     HAS_PINT = True
 except ImportError:
     warnings.warn(
-        "PINT is not installed. "
-        "Some pulsar functionality will not be available"
+        "PINT is not installed. " "Some pulsar functionality will not be available"
     )
     HAS_PINT = False
 from .base import deorbit_events
@@ -161,9 +165,143 @@ def create_template_from_profile(
     return template, additional_phase
 
 
-def get_TOAs_from_events(
-    events, folding_length, *frequency_derivatives, **kwargs
+def create_template_from_profile_harm(
+    phase,
+    profile,
+    profile_err=0,
+    imagefile="template.png",
+    norm=1,
+    nharm=None,
+    final_nbin=None,
 ):
+    """
+    Parameters
+    ----------
+    phase: :class:`np.array`
+    profile: :class:`np.array`
+    profile_err: :class:`np.array`
+        Phase, pulse profile, and error bars
+    imagefile: str
+    norm: float or :class:`np.array`
+    final_nbin: int
+
+    Returns
+    -------
+    template: :class:`np.array`
+        The calculated template
+    additional_phase: float
+
+    Examples
+    --------
+    >>> phase = np.arange(0.005, 1, 0.01)
+    >>> profile = np.cos(2 * np.pi * phase)
+    >>> profile_err = profile * 0
+    >>> template, additional_phase = create_template_from_profile_harm(
+    ...     phase, profile, profile_err)
+    ...
+    >>> np.allclose(template, profile, atol=0.001)
+    True
+    """
+    import matplotlib.pyplot as plt
+
+    nbin = profile.size
+    prof = np.concatenate((profile, profile, profile))
+    dph = 1 / profile.size
+    ft = fft(prof)
+    freq = fftfreq(prof.size, dph)
+
+    if nharm is None:
+        nharm = max(1, int(prof.size / 16))
+
+    if final_nbin is None:
+        final_nbin = nbin
+
+    new_ft = np.zeros(final_nbin * 3, dtype=complex)
+    new_ft_freq = fftfreq(final_nbin * 3, 1 / final_nbin)
+
+    new_ft[np.abs(new_ft_freq) <= nharm] = ft[np.abs(freq) <= nharm]
+
+    template = ifft(new_ft)
+    dph = 1 / final_nbin
+    phas = np.arange(dph / 2, 3, dph)
+    templ_func = interp1d(phas, template, kind="cubic", assume_sorted=True)
+    phases_fine = np.linspace(1, 2, 1_000 * nharm)
+    dph_fine = phases_fine[1] - phases_fine[0]
+    # phases_fine += 0.5 * dph_fine
+    template_fine = templ_func(phases_fine)
+
+    additional_phase = np.argmax(template_fine) / len(template_fine) + dph_fine / 2
+    template = template[:final_nbin].real
+    fig = plt.figure()
+    plt.plot(phase, profile, drawstyle="steps-mid")
+    plt.plot(phas[:final_nbin], template, drawstyle="steps-mid")
+    plt.savefig(imagefile)
+    plt.close(fig)
+    return template * final_nbin / nbin, additional_phase
+
+
+def create_default_template(template_raw):
+    """Create a smooth-ish template from an input folded profile.
+
+    An initial H test assesses the kind of profile. If M > 5, the profile is
+    approximated through a Savitzky-Golay filter. Otherwise, through a Fourier
+    interpolation with M harmonics.
+
+    Parameters
+    ----------
+    template: :class:`np.array`
+
+    Returns
+    -------
+    template: :class:`np.array`
+        The calculated template
+    additional_phase: float
+
+    Examples
+    --------
+    >>> phase = np.arange(0.005, 1, 0.001)
+    >>> profile = np.cos(2 * np.pi * phase)
+    >>> profile_err = profile * 0
+    >>> template, additional_phase = create_default_template(
+    ...     profile)
+    ...
+    >>> np.allclose(template.max(), profile.max(), atol=0.1)
+    True
+    >>> profile = np.exp(-(phase - 0.5)**2 / (2 * 0.0001))
+    >>> profile_err = profile * 0
+    >>> template, additional_phase = create_default_template(
+    ...     profile)
+    ...
+    >>> np.allclose(template.max(), profile.max(), atol=0.1)
+    True
+    """
+    nbin = template_raw.size
+    nharm = min(max(1, nbin // 16), htest(template_raw)[0])
+    dph = 1 / nbin
+    phase = np.arange(0.5 * dph, 1, dph)
+    if nharm <= 5:
+        template, _ = create_template_from_profile_harm(
+            phase, template_raw, nharm=nharm, final_nbin=nbin * 100
+        )
+    else:
+        from scipy.signal import savgol_filter
+        template = savgol_filter(template_raw, 4, 2, mode="wrap")
+        phase = np.concatenate((phase - 1, phase, phase + 1))
+        template = np.concatenate((template, template, template))
+
+        templ_func = interp1d(phase, template, kind="cubic", assume_sorted=True)
+
+        phases_fine = np.linspace(0, 1, nbin * 100 + 1)[:-1]
+        phases_fine += (phases_fine[1] - phases_fine[0]) / 2
+        template = templ_func(phases_fine)
+
+    # print(template_raw.max(), template.max())
+    additional_phase = np.argmax(template) / len(template)
+
+    return template, additional_phase
+
+
+def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwargs):
     """Get TOAs of pulsation.
 
     Parameters
@@ -224,10 +362,9 @@ def get_TOAs_from_events(
     expocorr = folding_length < (1000 / frequency_derivatives[0])
 
     if template is not None:
-        nbin = len(template)
-        additional_phase = np.argmax(template) / nbin
+        additional_phase = np.argmax(template) / template.size
     else:
-        phase, profile, profile_err = fold_events(
+        _, profile, _ = fold_events(
             copy.deepcopy(events),
             *frequency_derivatives,
             ref_time=pepoch,
@@ -235,39 +372,45 @@ def get_TOAs_from_events(
             expocorr=expocorr,
             nbin=nbin,
         )
+        template, additional_phase = create_default_template(profile)
+    print(template.size)
 
-        template, additional_phase = create_template_from_profile(
-            phase,
-            profile,
-            profile_err,
-            imagefile=timfile.replace(".tim", "") + ".png",
-            norm=folding_length / length,
-        )
+    min_phase_err = 1 / template.size
+    fit_base = False
+    if np.any(template < 0):
+        fit_base = True
 
     starts = np.arange(gti[0, 0], gti[-1, 1], folding_length)
 
+    freqs = np.zeros_like(starts) + frequency_derivatives[0]
+
+    factorial = 1
+    for i_f, f in enumerate(frequency_derivatives[1:]):
+        factorial *= i_f + 1
+        freqs += 1 / factorial * (starts - pepoch) ** (i_f + 1) * f
+
+    phase_starts = pulse_phase((starts - pepoch), *frequency_derivatives, to_1=True)
+
+    # Make each start happen at phase 0 or 1!
+    starts -= phase_starts / freqs
+    stops = starts + folding_length
+    startidxs = np.searchsorted(events, starts)
+    stopidxs = np.searchsorted(events, stops)
+
     toas = []
     toa_errs = []
-    for start in show_progress(starts):
-        stop = start + folding_length
-        good = (events >= start) & (events < stop)
-        events_tofold = events[good]
+    phs = []
+    phs_errs = []
+    for start, stop, startidx, stopidx, local_f in show_progress(
+        zip(starts, stops, startidxs, stopidxs, freqs)
+    ):
+        # good = (events >= start) & (events < stop)
+        events_tofold = events[startidx:stopidx]
         if len(events_tofold) < nbin:
             continue
-        gti_tofold = copy.deepcopy(
-            gti[(gti[:, 0] < stop) & (gti[:, 1] > start)]
-        )
+        gti_tofold = copy.deepcopy(gti[(gti[:, 0] < stop) & (gti[:, 1] > start)])
         gti_tofold[0, 0] = start
         gti_tofold[-1, 1] = stop
-
-        local_f = frequency_derivatives[0]
-        for i_f, f in enumerate(frequency_derivatives[1:]):
-            local_f += (
-                1
-                / np.math.factorial(i_f + 1)
-                * (start - pepoch) ** (i_f + 1)
-                * f
-            )
 
         fder = copy.deepcopy(list(frequency_derivatives))
         fder[0] = local_f
@@ -280,31 +423,48 @@ def get_TOAs_from_events(
             nbin=nbin,
         )
 
-        # BAD!BAD!BAD!
-        # [[Pay attention to time reference here.
-        # We are folding wrt pepoch, and calculating TOAs wrt start]]
-        toa, toaerr = get_TOA(
-            profile,
-            1 / frequency_derivatives[0],
-            start,
-            template=template,
-            additional_phase=additional_phase,
-            quick=quick,
-            debug=True,
+        from .ml_timing import ml_pulsefit
+
+        pars, errs = ml_pulsefit(
+            profile, template, calculate_errors=True, fit_base=fit_base
         )
+
+        if np.any(np.isnan(pars)) or pars[0] == 0.0 or np.any(np.isnan(errs)):
+            continue
+
+        ph, phe = pars[1], errs[1]
+
+        phe = max(min_phase_err, phe)
+
+        toa = (ph + additional_phase) / frequency_derivatives[0] + start
+        toaerr = phe / frequency_derivatives[0]
         toas.append(toa)
         toa_errs.append(toaerr)
+        phs.append(ph)
+        phs_errs.append(phe)
+
+    if np.size(toas) == 0:
+        return None, None
 
     toas, toa_errs = np.array(toas), np.array(toa_errs)
+    phs, phs_errs = np.array(phs), np.array(phs_errs)
+
+    factor = np.std(phs) / np.mean(phs_errs)
+
+    if phs.size > 15:
+        log.info(
+            "Correcting TOA errors for the real scatter. Don't trust them " "literally"
+        )
+
+        # print(phs, phs_errs, factor)
+        toa_errs = toa_errs * factor
 
     if mjdref is not None:
         toas = toas / 86400 + mjdref
         toa_errs = toa_errs * 1e6
         if HAS_PINT:
             label = assign_value_if_none(label, "hendrics")
-            toa_list = _load_and_prepare_TOAs(
-                toas, errs_us=toa_errs, ephem=ephem
-            )
+            toa_list = _load_and_prepare_TOAs(toas, errs_us=toa_errs, ephem=ephem)
             # workaround until PR #368 is accepted in pint
             toa_list.table["clkcorr"] = 0
             toa_list.write_TOA_file(timfile, name=label, format="Tempo2")
@@ -333,9 +493,7 @@ def dbl_cos_fit_func(p, x):
     if len(p) % 2 != 0:
         base = p[0]
         startidx = 1
-    first_harm = p[startidx] * np.cos(
-        2 * np.pi * x + 2 * np.pi * p[startidx + 1]
-    )
+    first_harm = p[startidx] * np.cos(2 * np.pi * x + 2 * np.pi * p[startidx + 1])
     second_harm = p[startidx + 2] * np.cos(
         4.0 * np.pi * x + 4 * np.pi * p[startidx + 3]
     )
@@ -585,8 +743,7 @@ def run_folding(
         meanbins,
         smooth,
         drawstyle="steps-mid",
-        label="Smooth profile "
-        "(P.F. = {:.1f}%)".format(100 * (max - min) / max),
+        label="Smooth profile " "(P.F. = {:.1f}%)".format(100 * (max - min) / max),
         color="k",
         zorder=3,
     )
@@ -621,9 +778,7 @@ def run_folding(
     ax0.axhline(min, lw=1, color="k")
 
     mean = np.mean(profile)
-    ax0.fill_between(
-        meanbins, mean - np.sqrt(mean), mean + np.sqrt(mean), alpha=0.5
-    )
+    ax0.fill_between(meanbins, mean - np.sqrt(mean), mean + np.sqrt(mean), alpha=0.5)
     ax0.axhline(mean, ls="--")
     ax0.legend()
     ax0.set_ylim([0, None])
@@ -672,9 +827,7 @@ def run_folding(
             ax2.legend()
         ax2.set_xlim([0, 2])
 
-        ax3.errorbar(
-            meannrgs, pfs, fmt="o", yerr=errs, xerr=(biny[1:] - biny[:-1]) / 2
-        )
+        ax3.errorbar(meannrgs, pfs, fmt="o", yerr=errs, xerr=(biny[1:] - biny[:-1]) / 2)
         from astropy.table import Table
 
         pf_results = Table(

@@ -119,9 +119,7 @@ def phase_tag(
     elif ref_to_max:
         phase_to1 = phase - np.floor(phase)
 
-        raw_profile, bins = np.histogram(
-            phase_to1, bins=np.linspace(0, 1, nbin + 1)
-        )
+        raw_profile, bins = np.histogram(phase_to1, bins=np.linspace(0, 1, nbin + 1))
         exposure = phase_exposure(
             gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gti=gti_phases
         )
@@ -145,9 +143,7 @@ def phase_tag(
     gti_phases -= ref_phase
     phase_to1 = phase - np.floor(phase)
 
-    raw_profile, bins = np.histogram(
-        phase_to1, bins=np.linspace(0, 1, nbin + 1)
-    )
+    raw_profile, bins = np.histogram(phase_to1, bins=np.linspace(0, 1, nbin + 1))
 
     exposure = phase_exposure(
         gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gti=gti_phases
@@ -172,9 +168,7 @@ def phase_tag(
     fig = None
     if plot:
         fig = plt.figure()
-        plt.errorbar(
-            phs, profile / exposure, yerr=profile_err / exposure, fmt="none"
-        )
+        plt.errorbar(phs, profile / exposure, yerr=profile_err / exposure, fmt="none")
         plt.plot(phs, profile / exposure, "k-", drawstyle="steps-mid")
         plt.xlabel("Phase")
         plt.ylabel("Counts")
@@ -281,9 +275,7 @@ def phase_tag_fits(
     create = False
     if "Orbit_bary" in table.names:
         table.field("Orbit_bary")[:] = evreturns.ev_list
-        table.field("TotPhase_s")[:] = (
-            phase / frequency_derivatives[0] + ref_time
-        )
+        table.field("TotPhase_s")[:] = phase / frequency_derivatives[0] + ref_time
         table.field("Phase")[:] = phase_to1
     else:
         create = True
@@ -317,9 +309,7 @@ def phase_tag_fits(
         newlist.append(newcol)
 
         # Do the same with fractional phase
-        newcol = pf.Column(
-            name="Phase", format="1D", unit="phase", array=phase_to1
-        )
+        newcol = pf.Column(name="Phase", format="1D", unit="phase", array=phase_to1)
 
         newlist.append(newcol)
 
@@ -365,9 +355,7 @@ def main_phasetag(args=None):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("file", help="Event file", type=str)
-    parser.add_argument(
-        "--parfile", help="Parameter file", type=str, default=None
-    )
+    parser.add_argument("--parfile", help="Parameter file", type=str, default=None)
     parser.add_argument(
         "-f",
         "--freqs",
@@ -402,8 +390,7 @@ def main_phasetag(args=None):
         "--refTOA",
         default=None,
         type=np.longdouble,
-        help="Reference TOA in MJD (overrides --tomax) for "
-        "reference pulse phase",
+        help="Reference TOA in MJD (overrides --tomax) for " "reference pulse phase",
         dest="pulse_ref_time",
     )
     parser.add_argument(

@@ -58,9 +58,7 @@ except Exception:
 
 cpl128 = np.dtype([(str("real"), np.double), (str("imag"), np.double)])
 if HAS_C256:
-    cpl256 = np.dtype(
-        [(str("real"), np.longdouble), (str("imag"), np.longdouble)]
-    )
+    cpl256 = np.dtype([(str("real"), np.longdouble), (str("imag"), np.longdouble)])
 
 
 class EFPeriodogram(object):
@@ -132,13 +130,9 @@ class EFPeriodogram(object):
             )
 
         if len(self.stat.shape) == 1:
-            best_peaks, best_stat = search_best_peaks(
-                self.freq, self.stat, threshold
-            )
+            best_peaks, best_stat = search_best_peaks(self.freq, self.stat, threshold)
         else:
-            best_cands = find_peaks_in_image(
-                self.stat, n=10, threshold_abs=threshold
-            )
+            best_cands = find_peaks_in_image(self.stat, n=10, threshold_abs=threshold)
             best_peaks = []
             best_stat = []
             for i, idx in enumerate(best_cands):
@@ -167,9 +161,7 @@ def get_energy_from_events(ev):
     return elabel, energy
 
 
-def filter_energy(
-    ev: EventList, emin: float, emax: float
-) -> Tuple[EventList, str]:
+def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, str]:
     """Filter event list by energy (or PI)
 
     If an ``energy`` attribute is present, uses it. Otherwise, it switches
@@ -540,9 +532,7 @@ def get_file_type(fname, raw_data=False):
     if isinstance(contents_raw, Table):
         ftype_raw = recognize_stingray_table(contents_raw)
         if raw_data:
-            contents = dict(
-                [(col, contents_raw[col]) for col in contents_raw.colnames]
-            )
+            contents = dict([(col, contents_raw[col]) for col in contents_raw.colnames])
             contents.update(contents_raw.meta)
     else:
         ftype_raw = contents_raw["__sr__class__type__"]
@@ -844,9 +834,7 @@ def save_pds(cpds, fname, save_all=False):
             for i, c in enumerate(cpds.cs_all):
                 save_pds(
                     c,
-                    os.path.join(
-                        outdir, "__cs__{}__".format(i) + HEN_FILE_EXTENSION
-                    ),
+                    os.path.join(outdir, "__cs__{}__".format(i) + HEN_FILE_EXTENSION),
                 )
         outdata.pop("cs_all")
 
@@ -915,9 +903,7 @@ def load_pds(fname, nosub=False):
     lc2_name = os.path.join(outdir, "__lc2__" + HEN_FILE_EXTENSION)
     pds1_name = os.path.join(outdir, "__pds1__" + HEN_FILE_EXTENSION)
     pds2_name = os.path.join(outdir, "__pds2__" + HEN_FILE_EXTENSION)
-    cs_all_names = glob.glob(
-        os.path.join(outdir, "__cs__[0-9]__" + HEN_FILE_EXTENSION)
-    )
+    cs_all_names = glob.glob(os.path.join(outdir, "__cs__[0-9]__" + HEN_FILE_EXTENSION))
 
     if os.path.exists(lc1_name):
         cpds.lc1 = load_lcurve(lc1_name)
@@ -990,9 +976,7 @@ def _load_data_nc(fname):
             elif contents[kind_key] == "double":
                 dtype = np.double
             else:
-                raise ValueError(
-                    contents[kind_key] + ": unrecognized kind string"
-                )
+                raise ValueError(contents[kind_key] + ": unrecognized kind string")
 
             log10_part = contents[log10_key]
             if isinstance(contents[integer_key], Iterable):
@@ -1249,11 +1233,7 @@ def print_fits_info(fits_file, hdu=1):
     print("ObsID:         {0}\n".format(info["OBS_ID"]))
     print("Date:          {0} -- {1}\n".format(info["Start"], info["Stop"]))
     print("Date (MJD):    {0} -- {1}\n".format(start_mjd, stop_mjd))
-    print(
-        "Instrument:    {0}/{1}\n".format(
-            info["Telescope"], info["Instrument"]
-        )
-    )
+    print("Instrument:    {0}/{1}\n".format(info["Telescope"], info["Instrument"]))
     print("Target:        {0}\n".format(info["Target"]))
     print("N. Events:     {0}\n".format(info["N. events"]))
 
@@ -1387,8 +1367,7 @@ def save_model(model, fname="model.p", constraints=None):
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
             raise TypeError(
-                "Accepted callable models have only one "
-                "non-keyword argument"
+                "Accepted callable models have only one " "non-keyword argument"
             )
         modeldata["kind"] = "callable"
         modeldata["constraints"] = constraints
@@ -1447,8 +1426,7 @@ def load_model(modelstring):
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
             raise TypeError(
-                "Accepted callable models have only one "
-                "non-keyword argument"
+                "Accepted callable models have only one " "non-keyword argument"
             )
         return model, "callable", constraints
 

@@ -40,18 +40,15 @@ class TestEFsearch:
         cls.pulse_period = 0.101
         cls.pulse_frequency = 1 / cls.pulse_period
         cls.tstart = 0
+        # cls.toa = 0.2 * cls.pulse_period
         cls.tend = 25.25
         cls.tseg = cls.tend - cls.tstart
         cls.dt = 0.00606
         cls.times = np.arange(cls.tstart, cls.tend, cls.dt) + cls.dt / 2
-        cls.counts = 200 + 40 * np.cos(
-            2 * np.pi * cls.times * cls.pulse_frequency
-        )
+        cls.counts = 200 + 40 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
         cls.mjdref = 56000
 
-        lc = Lightcurve(
-            cls.times, cls.counts, gti=[[cls.tstart, cls.tend]], dt=cls.dt
-        )
+        lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]], dt=cls.dt)
         cls.lcfile = "lcurve" + HEN_FILE_EXTENSION
         save_lcurve(lc, cls.lcfile)
         events = EventList()
@@ -81,23 +78,22 @@ class TestEFsearch:
 
     def test_get_TOAs(self):
         events = load_events(self.dum)
+        nbin = 32
         toas, toaerrs = get_TOAs_from_events(
             events.time,
             self.tseg,
             self.pulse_frequency,
             gti=events.gti,
-            nbin=32,
+            nbin=nbin,
             mjdref=events.mjdref,
             template=None,
         )
 
-        possible_toas = (
-            events.mjdref + np.arange(-1, 3) * self.pulse_period / 86400
-        )
+        possible_toas = events.mjdref + np.arange(2) * self.pulse_period / 86400
         closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
 
         delta_toa_s = (toas[0] - closest) * 86400
-        toa_err_s = toaerrs[0] / 1e6
+        toa_err_s = max(toaerrs[0] / 1e6, 1 / nbin / self.pulse_frequency)
 
         assert np.abs(delta_toa_s) < toa_err_s * 4
 
@@ -115,9 +111,7 @@ class TestEFsearch:
             template=template,
             nbin=nbin,
         )
-        possible_toas = (
-            events.mjdref + np.arange(2) * self.pulse_period / 86400
-        )
+        possible_toas = events.mjdref + np.arange(2) * self.pulse_period / 86400
         closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
 
         assert (toas[0] - closest) < toaerrs[0] / 86400000000
@@ -237,9 +231,7 @@ class TestEFsearch:
         plot_folding([outfile], ylog=True)
         ftype, efperiod = get_file_type(outfile)
         assert ftype == "folding"
-        assert np.isclose(
-            efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25
-        )
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25)
         os.unlink(outfile)
 
     def test_efsearch_bad_freq(self):
@@ -261,9 +253,7 @@ class TestEFsearch:
                     "--fit-candidates",
                 ]
             )
-        assert np.any(
-            ["No peaks detected" in r.message.args[0] for r in record]
-        )
+        assert np.any(["No peaks detected" in r.message.args[0] for r in record])
 
     def test_efsearch_from_lc(self):
         evfile = self.lcfile
@@ -284,9 +274,7 @@ class TestEFsearch:
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
-        assert np.isclose(
-            efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25
-        )
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25)
 
     def test_zsearch(self):
         evfile = self.dum
@@ -314,9 +302,7 @@ class TestEFsearch:
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
-        assert np.isclose(
-            efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25
-        )
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25)
         # Defaults to 2 harmonics
         assert efperiod.N == 2
         os.unlink(outfile)
@@ -344,9 +330,7 @@ class TestEFsearch:
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
-        assert np.isclose(
-            efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25
-        )
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25)
         # Defaults to 2 harmonics
         assert efperiod.N == 2
         os.unlink(outfile)
@@ -375,9 +359,7 @@ class TestEFsearch:
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file="bla.qdp")
         efperiod = load_folding(outfile)
-        assert np.isclose(
-            efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25
-        )
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25)
         # Defaults to 2 harmonics
         assert len(efperiod.fdots) > 1
         assert efperiod.N == 2
@@ -433,9 +415,7 @@ class TestEFsearch:
     def test_zsearch_print_upperlim(self):
         evfile = self.empty
 
-        outfile = main_zsearch(
-            [evfile, "-f", "4", "-F", "6", "-N", "1", "--fast"]
-        )[0]
+        outfile = main_zsearch([evfile, "-f", "4", "-F", "6", "-N", "1", "--fast"])[0]
         plot_folding([outfile], ylog=True, output_data_file="bla.qdp")
 
         # assert "Upper limit for sinusoids:" in caplog.text
@@ -489,10 +469,7 @@ class TestEFsearch:
         assert os.path.exists(outfile)
         efperiod = load_folding(outfile)
 
-        assert (
-            not isinstance(efperiod.fdots, Iterable)
-            or len(efperiod.fdots) <= 1
-        )
+        assert not isinstance(efperiod.fdots, Iterable) or len(efperiod.fdots) <= 1
         assert efperiod.N == 2
         os.unlink(outfile)
 
@@ -512,10 +489,7 @@ class TestEFsearch:
                 ]
             )
         assert np.any(
-            [
-                "The number of bins is too small" in r.message.args[0]
-                for r in record
-            ]
+            ["The number of bins is too small" in r.message.args[0] for r in record]
         )
 
     def test_zsearch_fdots_fast(self):
@@ -589,10 +563,7 @@ class TestEFsearch:
                 ]
             )
         assert np.any(
-            [
-                "Folding Algorithm functionality" in r.message.args[0]
-                for r in record
-            ]
+            ["Folding Algorithm functionality" in r.message.args[0] for r in record]
         )
         outfile = "events_Z22_9.89-9.92Hz_ffa" + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
@@ -600,18 +571,14 @@ class TestEFsearch:
         efperiod = load_folding(outfile)
 
         assert efperiod.N == 2
-        assert np.isclose(
-            efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25
-        )
+        assert np.isclose(efperiod.peaks[0], self.pulse_frequency, atol=1 / 25.25)
         os.unlink(outfile)
 
     def test_fold_fast_fails(self):
         evfile = self.dum
 
         with pytest.raises(ValueError) as excinfo:
-            main_efsearch(
-                [evfile, "-f", "9.85", "-F", "9.95", "-n", "64", "--fast"]
-            )
+            main_efsearch([evfile, "-f", "9.85", "-F", "9.95", "-n", "64", "--fast"])
         assert "The fast option is only available for z " in str(excinfo.value)
 
     def test_zsearch_fdots_fast_transient(self):
@@ -648,9 +615,7 @@ class TestEFsearch:
         )
         table = pd.read_csv(csv_file)
         assert len(table) == 10
-        folding_orbital_search(
-            events, csv_file, chunksize=10, outfile="out.csv"
-        )
+        folding_orbital_search(events, csv_file, chunksize=10, outfile="out.csv")
         table = pd.read_csv("out.csv")
         assert len(table) == 10
         assert np.all(table["done"])
@@ -749,10 +714,7 @@ class TestEFsearch:
                 ]
             )
         assert np.any(
-            [
-                "The accelsearch functionality is " in r.message.args[0]
-                for r in record
-            ]
+            ["The accelsearch functionality is " in r.message.args[0] for r in record]
         )
         assert os.path.exists(outfile)
         os.unlink(outfile)
@@ -764,10 +726,7 @@ class TestEFsearch:
                 [evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1"]
             )
         assert np.any(
-            [
-                "The accelsearch functionality is " in r.message.args[0]
-                for r in record
-            ]
+            ["The accelsearch functionality is " in r.message.args[0] for r in record]
         )
         assert os.path.exists(outfile)
         os.unlink(outfile)
@@ -791,10 +750,7 @@ class TestEFsearch:
                 ]
             )
         assert np.any(
-            [
-                "The accelsearch functionality is " in r.message.args[0]
-                for r in record
-            ]
+            ["The accelsearch functionality is " in r.message.args[0] for r in record]
         )
         assert os.path.exists(outfile)
         os.unlink(outfile)
@@ -802,14 +758,9 @@ class TestEFsearch:
     def test_accelsearch_pad(self):
         evfile = self.dum
         with pytest.warns(UserWarning) as record:
-            outfile = main_accelsearch(
-                [evfile, "--pad-to-double", "--zmax", "1"]
-            )
+            outfile = main_accelsearch([evfile, "--pad-to-double", "--zmax", "1"])
         assert np.any(
-            [
-                "The accelsearch functionality is " in r.message.args[0]
-                for r in record
-            ]
+            ["The accelsearch functionality is " in r.message.args[0] for r in record]
         )
         assert os.path.exists(outfile)
         os.unlink(outfile)
@@ -819,10 +770,7 @@ class TestEFsearch:
         with pytest.warns(UserWarning) as record:
             outfile = main_accelsearch([evfile, "--interbin", "--zmax", "1"])
         assert np.any(
-            [
-                "The accelsearch functionality is " in r.message.args[0]
-                for r in record
-            ]
+            ["The accelsearch functionality is " in r.message.args[0] for r in record]
         )
         assert os.path.exists(outfile)
         os.unlink(outfile)

@@ -41,23 +41,17 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
 
     np.savetxt(outname, np.transpose([flo, fhi, power, power_err]))
     if direct_save:
-        sp.check_call(
-            "flx2xsp {0} {1}.pha {1}.rsp".format(outname, outroot).split()
-        )
+        sp.check_call("flx2xsp {0} {1}.pha {1}.rsp".format(outname, outroot).split())
 
     if save_lags and ftype == "cpds":
         lags, lags_err = contents.time_lag()
         np.savetxt(
             outname_lags,
-            np.transpose(
-                [flo, fhi, lags * contents.df, lags_err * contents.df]
-            ),
+            np.transpose([flo, fhi, lags * contents.df, lags_err * contents.df]),
         )
         if direct_save:
             sp.check_call(
-                "flx2xsp {0} {1}.pha {1}.rsp".format(
-                    outname_lags, outroot_lags
-                ).split()
+                "flx2xsp {0} {1}.pha {1}.rsp".format(outname_lags, outroot_lags).split()
             )
 
 

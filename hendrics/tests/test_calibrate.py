@@ -14,15 +14,12 @@ def test_default_nustar_rmf(caplog):
     caldb_path = "fake_caldb"
     os.environ["CALDB"] = caldb_path
     path_to_rmf = os.path.join(
-        caldb_path,
-        *"data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf".split("/")
+        caldb_path, *"data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf".split("/")
     )
     with pytest.warns(UserWarning) as record:
         newpath = default_nustar_rmf()
 
-    assert np.any(
-        ["Using default NuSTAR rmf." in r.message.args[0] for r in record]
-    )
+    assert np.any(["Using default NuSTAR rmf." in r.message.args[0] for r in record])
     assert newpath == path_to_rmf
 
 
@@ -67,9 +64,7 @@ class TestCalibrate(object):
             cls.rmf,
         )
         hen.calibrate.main(command.split())
-        cls.xmm_fits_file = os.path.join(
-            cls.datadir, "monol_test_fake_lc_xmm.evt"
-        )
+        cls.xmm_fits_file = os.path.join(cls.datadir, "monol_test_fake_lc_xmm.evt")
         # Note that I don't specify the instrument. This is because
         # I want the internal machinery to understand that this is
         # XMM and this has to be given EPIC-pn by default.

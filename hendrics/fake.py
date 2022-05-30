@@ -158,9 +158,7 @@ def generate_fake_fits_observation(
     livetime = assign_value_if_none(livetime, tstop - tstart)
 
     if livetime > tstop - tstart:
-        raise ValueError(
-            "Livetime must be equal or smaller than " "tstop - tstart"
-        )
+        raise ValueError("Livetime must be equal or smaller than " "tstop - tstart")
 
     mission_info = read_mission_info(mission)
     allowed_instr = []
@@ -179,9 +177,7 @@ def generate_fake_fits_observation(
     if ccol is not None and ccol.lower() == "none":
         ccol = None
     ecol = get_key_from_mission_info(mission_info, "ecol", "PI", inst=instr)
-    ext = get_key_from_mission_info(
-        mission_info, "events", "EVENTS", inst=instr
-    )
+    ext = get_key_from_mission_info(mission_info, "events", "EVENTS", inst=instr)
 
     # Create primary header
     prihdr = fits.Header()
@@ -199,10 +195,7 @@ def generate_fake_fits_observation(
     allcols = [col1]
 
     if ccol is not None:
-        if (
-            not hasattr(event_list, "detector_id")
-            or event_list.detector_id is None
-        ):
+        if not hasattr(event_list, "detector_id") or event_list.detector_id is None:
 
             ccdnr = np.zeros(np.size(ev_list)) + 1
             ccdnr[1] = 2  # Make it less trivial
@@ -259,9 +252,7 @@ def generate_fake_fits_observation(
     tbheader["TSTOP"] = (tstop, "Elapsed seconds since MJDREF at end of file")
     tbheader["LIVETIME"] = (livetime, "On-source time")
     tbheader["TIMEZERO"] = (0.000000e00, "Time Zero")
-    tbheader["HISTORY"] = "Generated with HENDRICS by {0}".format(
-        os.getenv("USER")
-    )
+    tbheader["HISTORY"] = "Generated with HENDRICS by {0}".format(os.getenv("USER"))
 
     tbhdu = fits.BinTableHDU.from_columns(cols, header=tbheader)
     tbhdu.name = ext
@@ -296,9 +287,7 @@ def generate_fake_fits_observation(
 
     thdulist = fits.HDUList(all_new_hdus)
     assert thdulist[1].verify_datasum() == 1
-    thdulist.writeto(
-        filename, overwrite=True, checksum=True, output_verify="exception"
-    )
+    thdulist.writeto(filename, overwrite=True, checksum=True, output_verify="exception")
 
     thdulist.close()
     return filename
@@ -488,9 +477,7 @@ def scramble(
                 )
             )
             new_events = filter_for_deadtime(new_events, deadtime)
-            new_event_list.time[i_start:i_stop] = new_events[
-                : i_stop - i_start
-            ]
+            new_event_list.time[i_start:i_stop] = new_events[: i_stop - i_start]
             continue
         elif smooth_kind == "smooth":
             if dt is None:
@@ -519,9 +506,7 @@ def scramble(
             dt = length / n_bins
 
             times = np.arange(t_start, t_stop, dt)
-            sinusoid = (
-                pulsed_fraction / 2 * np.sin(np.pi * 2 * times * frequency)
-            )
+            sinusoid = pulsed_fraction / 2 * np.sin(np.pi * 2 * times * frequency)
 
             lc = 1 - pulsed_fraction / 2 + sinusoid
 
@@ -595,9 +580,7 @@ def main_scramble(args=None):
         default=1,
         help="Pulsed fraction of simulated pulsations",
     )
-    parser.add_argument(
-        "--outfile", type=str, default=None, help="Output file name"
-    )
+    parser.add_argument("--outfile", type=str, default=None, help="Output file name")
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ["deorbit", "energies", "loglevel", "debug"])
 
@@ -692,9 +675,7 @@ def main(args=None):
     parser.add_argument(
         "-i", "--instrument", type=str, default=None, help="Instrument name"
     )
-    parser.add_argument(
-        "-m", "--mission", type=str, default=None, help="Mission name"
-    )
+    parser.add_argument("-m", "--mission", type=str, default=None, help="Mission name")
     parser.add_argument(
         "--tstart",
         type=float,
@@ -732,11 +713,7 @@ def main(args=None):
     with log.log_to_file("HENfake.log"):
         additional_columns = {}
         livetime = None
-        if (
-            args.lc is None
-            and args.ctrate is None
-            and args.event_list is not None
-        ):
+        if args.lc is None and args.ctrate is None and args.event_list is not None:
             event_list = _read_event_list(args.event_list)
         elif args.lc is not None or args.ctrate is not None:
             event_list = EventList()
@@ -747,9 +724,7 @@ def main(args=None):
                 tstop = assign_value_if_none(args.tstop, 1024)
                 dt = (tstop - tstart) / 1024
                 t = np.arange(tstart, tstop + 1, dt)
-                lc = Lightcurve(
-                    time=t, counts=args.ctrate + np.zeros_like(t), dt=dt
-                )
+                lc = Lightcurve(time=t, counts=args.ctrate + np.zeros_like(t), dt=dt)
             event_list.simulate_times(lc)
             nevents = len(event_list.time)
             event_list.pi = np.zeros(nevents, dtype=int)

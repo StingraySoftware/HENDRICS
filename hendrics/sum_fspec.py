@@ -13,9 +13,7 @@ def sum_fspec(files, outname=None):
     # Read first file
     ftype0, contents = get_file_type(files[0])
     pdstype = ftype0.replace("reb", "")
-    outname = _assign_value_if_none(
-        outname, "tot_" + ftype0 + HEN_FILE_EXTENSION
-    )
+    outname = _assign_value_if_none(outname, "tot_" + ftype0 + HEN_FILE_EXTENSION)
 
     def check_and_distribute_files(files):
         for i, f in enumerate(files):

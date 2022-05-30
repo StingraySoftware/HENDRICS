@@ -58,9 +58,7 @@ def create_gti(
 
     instr = data["instr"]
     if ftype == "lc" and instr.lower() == "pca":
-        warnings.warn(
-            "RXTE/PCA data; normalizing lc per no. PCUs", AstropyUserWarning
-        )
+        warnings.warn("RXTE/PCA data; normalizing lc per no. PCUs", AstropyUserWarning)
         # If RXTE, plot per PCU count rate
         data["counts"] /= data["nPCUs"]
     mjdref = data["mjdref"]
@@ -69,18 +67,14 @@ def create_gti(
 
     good = eval(filter_expr)
 
-    gti = create_gti_from_condition(
-        locals()["time"], good, safe_interval=safe_interval
-    )
+    gti = create_gti_from_condition(locals()["time"], good, safe_interval=safe_interval)
 
     gti = filter_gti_by_length(gti, minimum_length)
 
     outfile = _assign_value_if_none(
         outfile, hen_root(fname) + "_gti" + HEN_FILE_EXTENSION
     )
-    save_data(
-        {"gti": gti, "mjdref": mjdref, "__sr__class__type__": "gti"}, outfile
-    )
+    save_data({"gti": gti, "mjdref": mjdref, "__sr__class__type__": "gti"}, outfile)
 
     return gti
 
@@ -177,10 +171,7 @@ def main(args=None):
         "--minimum-length",
         type=float,
         default=0,
-        help=(
-            "Minimum length of GTIs (below this length, they"
-            " will be discarded)"
-        ),
+        help=("Minimum length of GTIs (below this length, they" " will be discarded)"),
     )
 
     parser.add_argument(

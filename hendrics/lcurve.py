@@ -393,9 +393,7 @@ def lcurve_from_events(
         )
 
     # Assign default value if None
-    outfile = assign_value_if_none(
-        outfile, hen_root(f) + tag + deorbit_tag + "_lc"
-    )
+    outfile = assign_value_if_none(outfile, hen_root(f) + tag + deorbit_tag + "_lc")
 
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
@@ -430,9 +428,7 @@ def lcurve_from_events(
     )
 
     if len(lc.gti) == 0:
-        warnings.warn(
-            "No GTIs above min_length ({0}s) found.".format(min_length)
-        )
+        warnings.warn("No GTIs above min_length ({0}s) found.".format(min_length))
         return
 
     lc.header = None
@@ -447,9 +443,7 @@ def lcurve_from_events(
             local_tag = tag + "_gti{:03d}".format(ib)
             outf = hen_root(outfile) + local_tag + "_lc" + HEN_FILE_EXTENSION
             if noclobber and os.path.exists(outf):
-                warnings.warn(
-                    "File exists, and noclobber option used. Skipping"
-                )
+                warnings.warn("File exists, and noclobber option used. Skipping")
                 outfiles.append(outf)
             l0.instr = lc.instr
             l0.header = lc.header
@@ -525,9 +519,7 @@ def lcurve_from_fits(
 
     outfile = assign_value_if_none(outfile, hen_root(fits_file) + "_lc")
     outfile = outfile.replace(HEN_FILE_EXTENSION, "") + HEN_FILE_EXTENSION
-    outdir = assign_value_if_none(
-        outdir, os.path.dirname(os.path.abspath(fits_file))
-    )
+    outdir = assign_value_if_none(outdir, os.path.dirname(os.path.abspath(fits_file)))
 
     _, outfile = os.path.split(outfile)
     mkdir_p(outdir)
@@ -547,9 +539,7 @@ def lcurve_from_fits(
     tunit = lchdulist[ratehdu].header["TIMEUNIT"]
 
     try:
-        mjdref = high_precision_keyword_read(
-            lchdulist[ratehdu].header, "MJDREF"
-        )
+        mjdref = high_precision_keyword_read(lchdulist[ratehdu].header, "MJDREF")
         mjdref = Time(mjdref, scale="tdb", format="mjd")
     except Exception:
         mjdref = None
@@ -563,18 +553,14 @@ def lcurve_from_fits(
     # Trying to comply with all different formats of fits light curves.
     # It's a madness...
     try:
-        tstart = high_precision_keyword_read(
-            lchdulist[ratehdu].header, "TSTART"
-        )
+        tstart = high_precision_keyword_read(lchdulist[ratehdu].header, "TSTART")
         tstop = high_precision_keyword_read(lchdulist[ratehdu].header, "TSTOP")
     except Exception:
         raise (Exception("TSTART and TSTOP need to be specified"))
 
     # For nulccorr lcs this whould work
 
-    timezero = high_precision_keyword_read(
-        lchdulist[ratehdu].header, "TIMEZERO"
-    )
+    timezero = high_precision_keyword_read(lchdulist[ratehdu].header, "TIMEZERO")
     # Sometimes timezero is "from tstart", sometimes it's an absolute time.
     # This tries to detect which case is this, and always consider it
     # referred to tstart
@@ -591,9 +577,7 @@ def lcurve_from_fits(
         # if None, use NuSTAR defaulf MJDREF
         mjdref = assign_value_if_none(
             mjdref,
-            Time(
-                np.longdouble("55197.00076601852"), scale="tdb", format="mjd"
-            ),
+            Time(np.longdouble("55197.00076601852"), scale="tdb", format="mjd"),
         )
 
         timezero = (timezero - mjdref).to("s").value
@@ -643,9 +627,7 @@ def lcurve_from_fits(
     except Exception:
         fracexp = np.ones_like(rate)
 
-    good_intervals = (
-        (rate == rate) * (fracexp >= fracexp_limit) * (fracexp <= 1)
-    )
+    good_intervals = (rate == rate) * (fracexp >= fracexp_limit) * (fracexp <= 1)
 
     rate[good_intervals] /= fracexp[good_intervals]
     rate_e[good_intervals] /= fracexp[good_intervals]
@@ -655,12 +637,7 @@ def lcurve_from_fits(
     try:
         gtitable = lchdulist[gtistring].data
         gti_list = np.array(
-            [
-                [a, b]
-                for a, b in zip(
-                    gtitable.field("START"), gtitable.field("STOP")
-                )
-            ],
+            [[a, b] for a, b in zip(gtitable.field("START"), gtitable.field("STOP"))],
             dtype=np.longdouble,
         )
     except Exception:
@@ -723,9 +700,7 @@ def lcurve_from_txt(
     outfile = assign_value_if_none(outfile, hen_root(txt_file) + "_lc")
     outfile = outfile.replace(HEN_FILE_EXTENSION, "") + HEN_FILE_EXTENSION
 
-    outdir = assign_value_if_none(
-        outdir, os.path.dirname(os.path.abspath(txt_file))
-    )
+    outdir = assign_value_if_none(outdir, os.path.dirname(os.path.abspath(txt_file)))
 
     _, outfile = os.path.split(outfile)
     mkdir_p(outdir)
@@ -1002,9 +977,7 @@ def baseline_main(args=None):
     )
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs="+")
-    parser.add_argument(
-        "-o", "--out", type=str, default=None, help="Output file"
-    )
+    parser.add_argument("-o", "--out", type=str, default=None, help="Output file")
     parser.add_argument(
         "--loglevel",
         help=(

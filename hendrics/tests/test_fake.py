@@ -168,9 +168,7 @@ class TestFake(object):
             cls.first_event_file, cls.first_event_file_cal, rough=True
         )
 
-        cls.xmm_fits_file = os.path.join(
-            cls.datadir, "monol_test_fake_lc_xmm.evt"
-        )
+        cls.xmm_fits_file = os.path.join(cls.datadir, "monol_test_fake_lc_xmm.evt")
         # Note that I don't specify the instrument. This is because
         # I want the internal machinery to understand that this is
         # XMM and this has to be given EPIC-pn by default.
@@ -214,10 +212,7 @@ class TestFake(object):
         with pytest.warns(UserWarning) as record:
             hen.fake.main(["--lc", lcurve_in, "-o", fits_file])
         assert np.any(
-            [
-                "FITS light curve handling is st" in r.message.args[0]
-                for r in record
-            ]
+            ["FITS light curve handling is st" in r.message.args[0] for r in record]
         )
 
         verify_all_checksums(fits_file)
@@ -225,9 +220,7 @@ class TestFake(object):
     def test_fake_file_with_deadtime(self):
         """Test produce a fake event file and apply deadtime."""
         fits_file = os.path.join(self.datadir, "monol_test_fake_lc.evt")
-        hen.fake.main(
-            ["--deadtime", "2.5e-3", "--ctrate", "2000", "-o", fits_file]
-        )
+        hen.fake.main(["--deadtime", "2.5e-3", "--ctrate", "2000", "-o", fits_file])
         verify_all_checksums(fits_file)
 
     def test_fake_file_xmm(self):
@@ -245,9 +238,7 @@ class TestFake(object):
 
     def test_load_events_randomize(self):
         """Test event file reading."""
-        newfiles = hen.read_events.treat_event_file(
-            self.fits_fileA, randomize_by=0.073
-        )
+        newfiles = hen.read_events.treat_event_file(self.fits_fileA, randomize_by=0.073)
         clean_file = self.first_event_file
         ev_clean = hen.io.load_events(clean_file)
         ev = hen.io.load_events(newfiles[0])
@@ -294,9 +285,7 @@ class TestFake(object):
         with pytest.raises(ValueError):
             with pytest.warns(UserWarning) as record:
                 _ = hen.fake.main_scramble(command.split())
-        assert np.any(
-            ["No energy information" in r.message.args[0] for r in record]
-        )
+        assert np.any(["No energy information" in r.message.args[0] for r in record])
 
     def test_scramble_calibrated_events_file(self):
         command = f"{self.first_event_file_cal} -e 3 30"

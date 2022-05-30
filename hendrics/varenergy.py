@@ -78,7 +78,7 @@ def varenergy_from_astropy_table(fname):
     True
     >>> np.allclose(spec.ref_band, varen.ref_band)
     True
-    >>> table.write("varenergyboubou.ecsv")
+    >>> table.write("varenergyboubou.ecsv", overwrite=True)
     >>> spec_file = varenergy_from_astropy_table("varenergyboubou.ecsv")
     >>> np.allclose(spec.spectrum, spec_file.spectrum)
     True
@@ -104,9 +104,7 @@ def varenergy_from_astropy_table(fname):
         if attr in data.meta:
             setattr(varenergy, attr, data.meta[attr])
 
-    varenergy.energy_intervals = list(
-        zip(data["start_energy"], data["stop_energy"])
-    )
+    varenergy.energy_intervals = list(zip(data["start_energy"], data["stop_energy"]))
     varenergy.spectrum = data["spectrum"]
     varenergy.spectrum_error = data["error"]
     return varenergy
@@ -153,8 +151,7 @@ def main(args=None):
         nargs=4,
         type=str,
         default="0.3 12 5 lin".split(" "),
-        help="Choose Emin, Emax, number of intervals,"
-        "interval spacing, lin or log",
+        help="Choose Emin, Emax, number of intervals," "interval spacing, lin or log",
     )
     parser.add_argument(
         "--segment-size",
@@ -302,9 +299,7 @@ def main(args=None):
                 )
                 outfile = hen_root(fname) + label + "_rms." + args.format
                 out_table = varenergy_to_astropy_table(rms)
-                out_table.write(
-                    outfile, overwrite=True, **additional_output_args
-                )
+                out_table.write(outfile, overwrite=True, **additional_output_args)
                 filelist.append(outfile)
 
             if args.lag:
@@ -320,9 +315,7 @@ def main(args=None):
                 )
                 outfile = hen_root(fname) + label + "_lag." + args.format
                 out_table = varenergy_to_astropy_table(lag)
-                out_table.write(
-                    outfile, overwrite=True, **additional_output_args
-                )
+                out_table.write(outfile, overwrite=True, **additional_output_args)
                 filelist.append(outfile)
 
             if args.count:
@@ -333,9 +326,7 @@ def main(args=None):
                 )
                 outfile = hen_root(fname) + label + "_count." + args.format
                 out_table = varenergy_to_astropy_table(cts)
-                out_table.write(
-                    outfile, overwrite=True, **additional_output_args
-                )
+                out_table.write(outfile, overwrite=True, **additional_output_args)
                 filelist.append(outfile)
 
             if args.covariance:
@@ -352,9 +343,7 @@ def main(args=None):
                 )
                 outfile = hen_root(fname) + label + "_cov." + args.format
                 out_table = varenergy_to_astropy_table(cov)
-                out_table.write(
-                    outfile, overwrite=True, **additional_output_args
-                )
+                out_table.write(outfile, overwrite=True, **additional_output_args)
 
                 filelist.append(outfile)
 
