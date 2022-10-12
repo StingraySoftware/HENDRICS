@@ -603,7 +603,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
 
             cbar = plt.colorbar(pcol, cax=axcolor, ticks=colorticks)
 
-            if np.shape(cs.allsegs[0])[0] > 1:
+            if len(cs.allsegs[0]) > 1:
                 warnings.warn(
                     "More than one contour found. " "Frequency estimates might be wrong"
                 )
