@@ -158,6 +158,7 @@ class BasePhaseogram(object):
         )
 
         self.fig = plt.figure(label, figsize=(6, 8))
+        plt.clf()
         gs = GridSpec(3, 1, height_ratios=[2, 3, 0.2])
         plt.subplots_adjust(left=0.1, bottom=0.30, top=0.95, right=0.95)
         ax = plt.subplot(gs[1])

@@ -403,6 +403,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
     for fname in fnames:
 
         plt.figure(fname, figsize=(7, 7))
+        plt.clf()
         ef, best_cand_table = analyze_qffa_results(fname)
         nbin = best_cand_table.meta["nbin"]
         label = best_cand_table.meta["label"]

@@ -186,6 +186,7 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
 
     bin_centers = bins[:-1] + np.diff(bins) / 2
     fig = plt.figure("Dead time distribution", figsize=(10, 10))
+    plt.clf()
     gs = GridSpec(2, 1, hspace=0)
     ax1 = plt.subplot(gs[0])
     ax1.loglog(bin_centers, hist_all, drawstyle="steps-mid", label="all")

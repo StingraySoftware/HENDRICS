@@ -574,6 +574,7 @@ def plot_transient_search(results, gif_name=None):
             n_summed_spectra=nprof / nave,
         )
         fig = plt.figure(figsize=(10, 10))
+        plt.clf()
         gs = plt.GridSpec(2, 2, height_ratios=(1, 3))
         for i_f in [0, 1]:
             axf = plt.subplot(gs[0, i_f])

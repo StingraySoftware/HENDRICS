@@ -725,6 +725,7 @@ def run_folding(
     out_file_root = out_file_root + file_label
 
     plt.figure(figsize=(8, 8))
+    plt.clf()
     if plot_energy:
         gs = GridSpec(2, 2, height_ratios=(1.5, 3))
         ax0 = plt.subplot(gs[0, 0])
