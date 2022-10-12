@@ -45,6 +45,58 @@ def _value_or_none(dict_like, key):
         return None
 
 
+def rescale_plot_units(values):
+    """Rescale the values to an order of magnitude that allows better plotting.
+
+    Subtracts the mean ``mean`` from the values, then rescales the residuals
+    to a comfortable order of magnitude ``oom``.
+    If ``out`` are the rescaled values, this should always work::
+
+        out * 10**oom + mean == values
+
+    Parameters
+    ----------
+    values: array-like
+        Input values to be rescaled
+
+    Returns
+    -------
+    mean: float
+        The mean of the input values, rounded to the order of magnitude of the data span
+    oom : int
+        The order of magnitude of the data span
+    values : array-like
+        The rescaled values
+
+    Examples
+    --------
+    >>> values = np.arange(-0.003, 0.0032, 0.0002) + 5.0001
+    >>> mean, oom, rescaled = rescale_plot_units(values)
+    >>> mean
+    5.0
+    >>> oom
+    -3
+    >>> np.allclose(rescaled * 10**oom + mean, values)
+    True
+    >>> values = np.arange(-3, 3.2, 0.2) + 5.0001
+    >>> mean, oom, rescaled = rescale_plot_units(values)
+    >>> oom
+    0
+    >>> mean
+    0.0
+    >>> np.allclose(rescaled, values)
+    True
+    """
+    span = values.max() - values.min()
+
+    oom = np.int(np.log10((span))) - 1
+    if abs(oom) <= 2:
+        return 0.0, 0, values
+
+    mean = round(values.mean(), -oom)
+    return mean, oom, (values - mean) / 10**oom
+
+
 def plot_generic(
     fnames,
     vars,
@@ -350,7 +402,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
 
     for fname in fnames:
 
-        plt.figure(fname, figsize=(8, 8))
+        plt.figure(fname, figsize=(7, 7))
+        plt.clf()
         ef, best_cand_table = analyze_qffa_results(fname)
         nbin = best_cand_table.meta["nbin"]
         label = best_cand_table.meta["label"]
@@ -476,12 +529,31 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             external_gs = gridspec.GridSpec(1, 1)
             search_gs_no = 0
 
+        f_mean, f_oom, f_rescale = rescale_plot_units(ef.freq)
+
+        if f_oom != 0:
+            flabel = f"Frequency"
+            if f_mean != 0.0:
+                flabel = "(" + flabel + f"- {f_mean})"
+            flabel += rf" ($10^{{{f_oom}}}$ Hz)"
+        else:
+            flabel = f"Frequency (Hz)"
+
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
+            fd_mean, fd_oom, fd_rescale = rescale_plot_units(ef.fdots)
+            if fd_oom != 0:
+                fdlabel = f"Fdot"
+                if fd_mean != 0.0:
+                    fdlabel = "(" + flabel + " - {fd_mean:g})"
+                fdlabel += rf" ($10^{{{fd_oom}}}$ Hz/s)"
+            else:
+                fdlabel = f"Fdot (Hz/s)"
+
             gs = gridspec.GridSpecFromSubplotSpec(
                 2,
-                2,
+                3,
                 height_ratios=(1, 3),
-                width_ratios=(3, 1),
+                width_ratios=(3, 1, 0.2),
                 hspace=0,
                 wspace=0,
                 subplot_spec=external_gs[search_gs_no],
@@ -489,18 +561,25 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
 
             axf = plt.subplot(gs[0, 0])
             axfdot = plt.subplot(gs[1, 1])
-            if detlev is not None:
-                axf.axhline(detlev, ls="--", label=r"99.9\% det. lev.")
+            axcolor = plt.subplot(gs[:, 2])
+
+            plt.setp(axf.get_xticklabels(), visible=False)
+            plt.setp(axfdot.get_yticklabels(), visible=False)
+
+            if detlev is not None and ef.stat.max() < 20 * detlev:
+                axf.axhline(detlev, ls="--", label=r"99.9% det. lev.")
                 axfdot.axvline(detlev)
 
             axffdot = plt.subplot(gs[1, 0], sharex=axf, sharey=axfdot)
-            divnorm = colors.TwoSlopeNorm(
-                vmin=ndof, vcenter=detlev, vmax=max(detlev + 1, ef.stat.max())
-            )
+            vmin = ndof
+            vcenter = detlev
+            vmax = max(detlev + 1, ef.stat.max())
 
-            axffdot.pcolormesh(
-                ef.freq,
-                np.asarray(ef.fdots),
+            divnorm = colors.TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
+
+            pcol = axffdot.pcolormesh(
+                f_rescale,
+                fd_rescale,
                 ef.stat,
                 shading="nearest",
                 norm=divnorm,
@@ -508,15 +587,24 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             )
 
             cs = axffdot.contour(
-                ef.freq,
-                np.asarray(ef.fdots),
+                f_rescale,
+                fd_rescale,
                 ef.stat,
                 [max_stat_cl_90],
                 colors="white",
                 zorder=20,
             )
+            colorticks = list(
+                set(
+                    np.concatenate(
+                        (np.linspace(vmin, vcenter, 3), np.linspace(vcenter, vmax, 3))
+                    ).astype(int)
+                )
+            )
 
-            if np.shape(cs.allsegs[0])[0] > 1:
+            cbar = plt.colorbar(pcol, cax=axcolor, ticks=colorticks)
+
+            if len(cs.allsegs[0]) > 1:
                 warnings.warn(
                     "More than one contour found. " "Frequency estimates might be wrong"
                 )
@@ -531,7 +619,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
 
             if detlev is not None:
                 axf.plot(
-                    ef.freq[f_idx, :],
+                    f_rescale[f_idx, :],
                     ef.stat[f_idx, :],
                     lw=1,
                     color="k",
@@ -539,13 +627,13 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             for cand_row in best_cand_table:
                 axfdot.plot(
                     ef.stat[:, cand_row["fdot_idx"]],
-                    np.asarray(ef.fdots)[:, cand_row["fdot_idx"]],
+                    fd_rescale[:, cand_row["fdot_idx"]],
                     alpha=0.5,
                     lw=0.2,
                     color="k",
                 )
                 axf.plot(
-                    np.asarray(ef.freq)[cand_row["f_idx"], :],
+                    np.asarray(f_rescale)[cand_row["f_idx"], :],
                     ef.stat[cand_row["f_idx"], :],
                     alpha=0.5,
                     lw=0.2,
@@ -555,7 +643,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             if detlev is not None:
                 axfdot.plot(
                     ef.stat[:, fdot_idx],
-                    np.asarray(ef.fdots)[:, fdot_idx],
+                    fd_rescale[:, fdot_idx],
                     lw=1,
                     color="k",
                 )
@@ -563,17 +651,17 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             axfdot.set_xlabel(label)
 
             # plt.colorbar()
-            axffdot.set_xlabel("Frequency (Hz)")
-            axffdot.set_ylabel("Fdot (Hz/s)")
-            axffdot.set_xlim([np.min(ef.freq), np.max(ef.freq)])
-            axffdot.set_ylim([np.min(ef.fdots), np.max(ef.fdots)])
-            axffdot.axvline(f, ls="--", color="white")
-            axffdot.axhline(fdot, ls="--", color="white")
+            axffdot.set_xlabel(flabel)
+            axffdot.set_ylabel(fdlabel)
+            axffdot.set_xlim([np.min(f_rescale), np.max(f_rescale)])
+            axffdot.set_ylim([np.min(fd_rescale), np.max(fd_rescale)])
+            axffdot.axvline((f - f_mean) / 10**f_oom, ls="--", color="white")
+            axffdot.axhline((fdot - fd_mean) / 10**fd_oom, ls="--", color="white")
             axf.legend(loc=4)
         else:
             axf = plt.subplot(external_gs[search_gs_no])
-            axf.plot(ef.freq, ef.stat, drawstyle="steps-mid", label=fname)
-            axf.set_xlabel("Frequency (Hz)")
+            axf.plot(f_rescale, ef.stat, drawstyle="steps-mid", label=fname)
+            axf.set_xlabel(flabel)
             axf.set_ylabel(ef.kind + " stat")
             axf.legend(loc=4)
 
@@ -591,7 +679,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             fdots = ef.fdots
             if not isinstance(fdots, Iterable) or len(fdots) == 1:
                 fdots = fdots + np.zeros_like(ef.freq.flatten())
-            # print(fdots.shape, ef.freq.shape, ef.stat.shape)
+
             out = [ef.freq.flatten(), fdots.flatten(), ef.stat.flatten()]
             out_err = [None, None, None]
 
