@@ -4,6 +4,7 @@
 import sys
 import copy
 import os
+import urllib
 import warnings
 from collections.abc import Iterable
 from pathlib import Path
@@ -28,7 +29,7 @@ try:
     from pint.models import get_model
 
     HAS_PINT = True
-except ImportError:
+except (ImportError, urllib.error.URLError):
     HAS_PINT = False
     get_model = None
 
