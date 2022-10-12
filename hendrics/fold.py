@@ -4,6 +4,7 @@ import warnings
 import copy
 import argparse
 import numpy as np
+import urllib
 from scipy.signal import savgol_filter
 from scipy.interpolate import interp1d
 from scipy import optimize
@@ -33,7 +34,7 @@ try:
 
     # import pint
     HAS_PINT = True
-except ImportError:
+except (ImportError, urllib.error.URLError):
     warnings.warn(
         "PINT is not installed. " "Some pulsar functionality will not be available"
     )
