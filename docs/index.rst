@@ -42,6 +42,7 @@ aperiodic timing analysis on X-ray data from, in principle, any other
 satellite (for sure XMM-Newton and RXTE).
 
 What's new
+----------
 
 HENDRICS 7.0
 ~~~~~~~~~~~~
