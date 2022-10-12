@@ -534,7 +534,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             flabel = f"Frequency"
             if f_mean != 0.0:
                 flabel = "(" + flabel + f"- {f_mean})"
-            flabel += fr" ($10^{{{f_oom}}}$ Hz)"
+            flabel += rf" ($10^{{{f_oom}}}$ Hz)"
         else:
             flabel = f"Frequency (Hz)"
 
@@ -543,8 +543,8 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             if fd_oom != 0:
                 fdlabel = f"Fdot"
                 if fd_mean != 0.0:
-                    fdlabel = "("+ flabel + " - {fd_mean:g})"
-                fdlabel += fr" ($10^{{{fd_oom}}}$ Hz/s)"
+                    fdlabel = "(" + flabel + " - {fd_mean:g})"
+                fdlabel += rf" ($10^{{{fd_oom}}}$ Hz/s)"
             else:
                 fdlabel = f"Fdot (Hz/s)"
 
@@ -574,8 +574,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             vcenter = detlev
             vmax = max(detlev + 1, ef.stat.max())
 
-            divnorm = colors.TwoSlopeNorm(
-                vmin=vmin, vcenter=vcenter, vmax=vmax)
+            divnorm = colors.TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
 
             pcol = axffdot.pcolormesh(
                 f_rescale,
@@ -594,10 +593,13 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
                 colors="white",
                 zorder=20,
             )
-            colorticks = list(set(np.concatenate(
-                (np.linspace(vmin, vcenter, 3),
-                np.linspace(vcenter, vmax, 3))
-                ).astype(int)))
+            colorticks = list(
+                set(
+                    np.concatenate(
+                        (np.linspace(vmin, vcenter, 3), np.linspace(vcenter, vmax, 3))
+                    ).astype(int)
+                )
+            )
 
             cbar = plt.colorbar(pcol, cax=axcolor, ticks=colorticks)
 
