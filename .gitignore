@@ -65,3 +65,6 @@ pip-wheel-metadata/
 .hypothesis
 .tox
 .vscode
+.tmp/*
+.eggs/*
+notebooks/*
