@@ -48,7 +48,7 @@ from stingray.pulse.modeling import SincSquareModel
 from stingray.pulse.search import search_best_peaks
 
 from .base import _order_list_of_arrays, _empty, is_string, force_iterable
-from .base import find_peaks_in_image
+from .base import find_peaks_in_image, hen_root
 
 try:
     _ = np.complex256
@@ -1459,3 +1459,47 @@ def find_file_in_allowed_paths(fname, other_paths=None):
                 return fullpath
 
     return False
+
+
+def main_filter_events(args=None):
+    import argparse
+    from .base import _add_default_args, check_negative_numbers_in_args
+
+    description = "Filter events"
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument("files", help="Input event files", type=str, nargs="+")
+
+    parser.add_argument(
+        "--emin",
+        default=None,
+        type=float,
+        help="Minimum energy (or PI if uncalibrated) to plot",
+    )
+    parser.add_argument(
+        "--emax",
+        default=None,
+        type=float,
+        help="Maximum energy (or PI if uncalibrated) to plot",
+    )
+
+    _add_default_args(
+        parser,
+        [
+            "loglevel",
+            "debug",
+            "test",
+        ],
+    )
+
+    args = check_negative_numbers_in_args(args)
+    args = parser.parse_args(args)
+
+    if args.debug:
+        args.loglevel = "DEBUG"
+
+    for fname in args.files:
+        events = load_events(fname)
+        events, _ = filter_energy(events, args.emin, args.emax)
+
+        save_events(events, hen_root(fname) + f"_{args.emin:g}-{args.emax:g}keV" + HEN_FILE_EXTENSION)
