@@ -119,7 +119,7 @@ class TestIO:
         from astropy.table import Table
 
         if fmt == ".hdf5" and not HAS_H5PY:
-            return True
+            return
 
         struct = Table(
             {
@@ -147,7 +147,7 @@ class TestIO:
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_events(self, fmt):
         if fmt == ".hdf5" and not HAS_H5PY:
-            return True
+            return
         events = EventList(
             [0, 2, 3.0],
             pi=[1, 2, 3],
@@ -172,7 +172,7 @@ class TestIO:
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_lcurve(self, fmt):
         if fmt == ".hdf5" and not HAS_H5PY:
-            return True
+            return
         lcurve = Lightcurve(
             np.linspace(0, 10, 15),
             np.random.poisson(30, 15),
@@ -196,7 +196,7 @@ class TestIO:
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_pds(self, fmt):
         if fmt == ".hdf5" and not HAS_H5PY:
-            return True
+            return
         pds = Powerspectrum()
         pds.freq = np.linspace(0, 10, 15)
         pds.power = np.random.poisson(30, 15)
@@ -213,7 +213,7 @@ class TestIO:
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_cpds(self, fmt):
         if fmt == ".hdf5" and not HAS_H5PY:
-            return True
+            return
         pds = Crossspectrum()
         pds.freq = np.linspace(0, 10, 15)
         pds.power = np.random.poisson(30, 15) + 1.0j
