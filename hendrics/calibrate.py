@@ -105,6 +105,8 @@ def rough_calibration(pis, mission):
     --------
     >>> rough_calibration(0, 'nustar')
     1.6
+    >>> rough_calibration(0.0, 'ixpe')
+    0.0
     >>> # It's case-insensitive
     >>> rough_calibration(1200, 'XMm')
     1.2
@@ -121,6 +123,8 @@ def rough_calibration(pis, mission):
         return pis * 0.001
     elif mission.lower() == "nicer":
         return pis * 0.01
+    elif mission.lower() == "ixpe":
+        return pis / 375 * 15
     raise ValueError(f"Mission {mission.lower()} not recognized")
 
 
