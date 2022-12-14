@@ -89,7 +89,7 @@ def rescale_plot_units(values):
     """
     span = values.max() - values.min()
 
-    oom = np.int(np.log10((span))) - 1
+    oom = int(np.log10((span))) - 1
     if abs(oom) <= 2:
         return 0.0, 0, values
 
