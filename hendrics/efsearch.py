@@ -964,7 +964,7 @@ def folding_search(
         fdotstep = 1 / oversample / length**2
     gti = None
     if expocorr:
-        gti = events.gti
+        gti = (events.gti - events.gti[0, 0]).astype(np.float64)
 
     # epsilon is needed if fmin == fmax
     epsilon = 1e-8 * step
