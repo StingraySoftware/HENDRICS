@@ -544,7 +544,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             if fd_oom != 0:
                 fdlabel = f"Fdot"
                 if fd_mean != 0.0:
-                    fdlabel = "(" + flabel + " - {fd_mean:g})"
+                    fdlabel = "(" + flabel + f" - {fd_mean:g})"
                 fdlabel += rf" ($10^{{{fd_oom}}}$ Hz/s)"
             else:
                 fdlabel = f"Fdot (Hz/s)"
