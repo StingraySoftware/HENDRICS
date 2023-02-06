@@ -1001,20 +1001,28 @@ def _split_high_precision_number(varname, var, probesize):
     if probesize == 16:
         kind_str = "longdouble"
     if isinstance(var, Iterable):
-        dum = np.min(np.abs(var))
+        var = np.asarray(var)
+        bad = np.isnan(var)
+        dum = np.min(np.abs(var[~bad]))
         if dum < 1 and dum > 0.0:
             var_log10 = np.floor(np.log10(dum))
 
         var = np.asarray(var) / (10.0**var_log10)
+        var[bad] = 0
         var_I = np.floor(var).astype(int)
         var_F = np.array(var - var_I, dtype=np.double)
+        var_F[bad] = np.nan
     else:
         if np.abs(var) < 1 and np.abs(var) > 0.0:
             var_log10 = np.floor(np.log10(np.abs(var)))
 
-        var = np.asarray(var) / 10.0**var_log10
-        var_I = int(np.floor(var))
-        var_F = np.double(var - var_I)
+        if np.isnan(var):
+            var_I = np.asarray(0).astype(int)
+            var_F = np.asarray(np.nan)
+        else:
+            var = np.asarray(var) / 10.0**var_log10
+            var_I = int(np.floor(var))
+            var_F = np.double(var - var_I)
     return var_I, var_F, var_log10, kind_str
 
 
