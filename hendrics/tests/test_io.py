@@ -7,13 +7,14 @@ from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.powerspectrum import Crossspectrum, AveragedCrossspectrum
 import numpy as np
 import os
+from hendrics.base import hen_root
 from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
 from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
 from hendrics.io import find_file_in_allowed_paths, get_file_type
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
-from hendrics.io import main
+from hendrics.io import main, main_filter_events
 
 import pytest
 import glob
@@ -36,7 +37,6 @@ def _dummy(x, y=0):
 
 
 def test_find_files_in_allowed_paths(capsys):
-
     with open("bu", "w") as fobj:
         print("blabla", file=fobj)
     fakepath = os.path.join("directory", "bu")
@@ -164,6 +164,34 @@ class TestIO:
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
         assert np.allclose(events.energy, events2.energy)
+        assert events.header == events2.header
+        assert events2.mission == events.mission
+
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_filter_events(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return
+        events = EventList(
+            [0, 2, 3.0],
+            pi=[1, 2, 3],
+            mjdref=54385.3254923845,
+            gti=np.longdouble([[-0.5, 3.5]]),
+        )
+        events.cal_pi = events.pi.copy()
+        events.energy = np.array([3.0, 4.0, 5.0])
+        events.mission = "nustar"
+        events.header = Header().tostring()
+        outfile = "bubu" + fmt
+        save_events(events, outfile)
+        main_filter_events([outfile, "--emin", "4", "--emax", "6"])
+        outfile_filt = hen_root(outfile) + f"_4-6keV" + HEN_FILE_EXTENSION
+        events2 = load_events(outfile_filt)
+        assert np.allclose(events.time[1:], events2.time)
+        assert np.allclose(events.cal_pi[1:], events2.cal_pi)
+        assert np.allclose(events.pi[1:], events2.pi)
+        assert np.allclose(events.mjdref, events2.mjdref)
+        assert np.allclose(events.gti, events2.gti)
+        assert np.allclose(events.energy[1:], events2.energy)
         assert events.header == events2.header
         assert events2.mission == events.mission
 
@@ -424,13 +452,13 @@ class TestIOModel:
         assert np.all(constraints == constraints0)
 
     def test_save_callable_model_wrong(self):
-        with pytest.raises(TypeError, match="Accepted callable models have only") :
+        with pytest.raises(TypeError, match="Accepted callable models have only"):
             save_model(_dummy_bad, "callable_bad.p")
         assert not os.path.exists("callable_bad.p")
 
     def test_save_junk_model(self):
         a = "g"
-        with pytest.raises(TypeError, match="The model has to be an Astropy model") :
+        with pytest.raises(TypeError, match="The model has to be an Astropy model"):
             save_model(a, "bad.p", constraints={"bounds": ()})
         assert not os.path.exists("bad.p")
 
@@ -475,11 +503,11 @@ model = models.Const1D()
     def test_load_model_input_invalid_file_format(self):
         with open("bubu.txt", "w") as fobj:
             print(1, file=fobj)
-        with pytest.raises(TypeError, match="Unknown file type") :
+        with pytest.raises(TypeError, match="Unknown file type"):
             b, kind, _ = load_model("bubu.txt")
 
     def test_load_data_fails(self):
-        with pytest.raises(TypeError, match="The file type is not recognized") :
+        with pytest.raises(TypeError, match="The file type is not recognized"):
             load_data("afile.fits")
 
     @classmethod
