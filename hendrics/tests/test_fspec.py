@@ -41,17 +41,15 @@ log.setLevel("DEBUG")
 
 def test_pds_fails_noclobber_exists():
     touch("bububu")
-    with pytest.warns(UserWarning) as record:
+    with pytest.warns(UserWarning, match="File exists, and noclobber"):
         calc_pds("bla.p", 512, outname="bububu", noclobber=True)
-    assert np.any(["File exists, and noclobber" in r.message.args[0] for r in record])
     os.unlink("bububu")
 
 
 def test_cpds_fails_noclobber_exists():
     touch("bububu")
-    with pytest.warns(UserWarning) as record:
+    with pytest.warns(UserWarning, match="File exists, and noclobber"):
         calc_cpds("bla.p", "blu.p", 512, outname="bububu", noclobber=True)
-    assert np.any(["File exists, and noclobber" in r.message.args[0] for r in record])
     os.unlink("bububu")
 
 
@@ -345,12 +343,8 @@ class TestFullRun(object):
             self.lcB,
             os.path.join(self.datadir, "monol_test_3-50keV"),
         )
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="Beware! Unknown normalization"):
             hen.fspec.main(command.split())
-
-        assert np.any(
-            ["Beware! Unknown normalization" in r.message.args[0] for r in record]
-        )
 
     def test_cpds_dtbig(self):
         """Test CPDS production."""
@@ -573,10 +567,8 @@ model = models.Const1D()
         command = "{0} {1} -m {2} --frequency-interval 0 1 9".format(
             pdsfile1, pdsfile2, modelfile
         )
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Invalid number of frequencies specified"):
             hen.modeling.main_model(command.split())
-
-        assert "Invalid number of frequencies specified" in str(excinfo.value)
 
     def test_savexspec(self):
         """Test save as Xspec 1."""

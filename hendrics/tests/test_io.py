@@ -109,10 +109,8 @@ class TestIO:
             "c": np.longdouble([[-0.5, 3.5]]),
             "d": 1,
         }
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Unrecognized data"):
             save_data(struct, "bubu.hdf5")
-
-        assert "Unrecognized data" in str(excinfo.value)
 
     @pytest.mark.parametrize("fmt", [".ecsv", ".hdf5"])
     def test_save_data(self, fmt):
@@ -238,9 +236,8 @@ class TestIO:
     def test_load_pds_fails(self):
         pds = EventList()
         save_events(pds, self.dum)
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Unrecognized data"):
             load_pds(self.dum)
-        assert "Unrecognized data type" in str(excinfo.value)
 
     def test_load_and_save_xps(self):
         lcurve1 = Lightcurve(
@@ -340,9 +337,8 @@ class TestIO:
     def test_save_longcomplex(self):
         val = np.complex256(1.01 + 2.3j)
         data = {"val": val}
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="complex256 yet"):
             save_data(data, "bubu" + HEN_FILE_EXTENSION)
-        assert "complex256 yet unsupported" in record[0].message.args[0]
         data_out = load_data("bubu" + HEN_FILE_EXTENSION)
 
         assert np.allclose(data["val"], data_out["val"])
@@ -428,16 +424,14 @@ class TestIOModel:
         assert np.all(constraints == constraints0)
 
     def test_save_callable_model_wrong(self):
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(TypeError, match="Accepted callable models have only") :
             save_model(_dummy_bad, "callable_bad.p")
-        assert "Accepted callable models have only" in str(record.value)
         assert not os.path.exists("callable_bad.p")
 
     def test_save_junk_model(self):
         a = "g"
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(TypeError, match="The model has to be an Astropy model") :
             save_model(a, "bad.p", constraints={"bounds": ()})
-        assert "The model has to be an Astropy model or a callable" in str(record.value)
         assert not os.path.exists("bad.p")
 
     def test_load_python_model_callable(self):
@@ -471,26 +465,22 @@ model = models.Const1D()
 
     def test_load_model_input_not_string(self):
         """Input is not a string"""
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(TypeError, match="modelstring has to be an existing file name"):
             b, kind, _ = load_model(1)
-        assert "modelstring has to be an existing file name" in str(record.value)
 
     def test_load_model_input_file_doesnt_exist(self):
-        with pytest.raises(FileNotFoundError) as record:
+        with pytest.raises(FileNotFoundError, match="Model file"):
             b, kind, _ = load_model("dfasjkdaslfj")
-        assert "Model file not found" in str(record.value)
 
     def test_load_model_input_invalid_file_format(self):
         with open("bubu.txt", "w") as fobj:
             print(1, file=fobj)
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(TypeError, match="Unknown file type") :
             b, kind, _ = load_model("bubu.txt")
-        assert "Unknown file type" in str(record.value)
 
     def test_load_data_fails(self):
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(TypeError, match="The file type is not recognized") :
             load_data("afile.fits")
-        assert "The file type is not recognized" in str(record.value)
 
     @classmethod
     def teardown_class(cls):

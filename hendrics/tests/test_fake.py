@@ -209,11 +209,8 @@ class TestFake(object):
         """Test produce a fake event file from input light curve."""
         lcurve_in = os.path.join(self.datadir, "lcurveA.fits")
         fits_file = os.path.join(self.datadir, "monol_test_fake_lc.evt")
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="FITS light curve handling is st"):
             hen.fake.main(["--lc", lcurve_in, "-o", fits_file])
-        assert np.any(
-            ["FITS light curve handling is st" in r.message.args[0] for r in record]
-        )
 
         verify_all_checksums(fits_file)
 
@@ -283,9 +280,8 @@ class TestFake(object):
     def test_scramble_uncalibrated_events_file_raises(self):
         command = f"{self.first_event_file} -e 3 30"
         with pytest.raises(ValueError):
-            with pytest.warns(UserWarning) as record:
+            with pytest.warns(UserWarning, match="No energy information"):
                 _ = hen.fake.main_scramble(command.split())
-        assert np.any(["No energy information" in r.message.args[0] for r in record])
 
     def test_scramble_calibrated_events_file(self):
         command = f"{self.first_event_file_cal} -e 3 30"

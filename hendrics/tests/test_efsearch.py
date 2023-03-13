@@ -192,7 +192,7 @@ class TestEFsearch:
     def test_fold_invalid(self):
         evfile = self.dum
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Only specify one between "):
             main_fold(
                 [
                     evfile,
@@ -209,7 +209,6 @@ class TestEFsearch:
                     "0",
                 ]
             )
-        assert "Only specify one between " in str(excinfo.value)
 
     def test_efsearch(self):
         evfile = self.dum
@@ -239,7 +238,7 @@ class TestEFsearch:
 
     def test_efsearch_bad_freq(self):
         evfile = self.dum_scramble
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="No peaks detected"):
             main_efsearch(
                 [
                     evfile,
@@ -256,7 +255,6 @@ class TestEFsearch:
                     "--fit-candidates",
                 ]
             )
-        assert np.any(["No peaks detected" in r.message.args[0] for r in record])
 
     def test_efsearch_from_lc(self):
         evfile = self.lcfile
@@ -396,7 +394,7 @@ class TestEFsearch:
     @pytest.mark.skipif("HAS_IMAGEIO")
     def test_transient_warn_if_no_imageio(self):
         evfile = self.dum
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="imageio needed"):
             main_zsearch(
                 [
                     evfile,
@@ -413,7 +411,6 @@ class TestEFsearch:
                     "--transient",
                 ]
             )
-        assert np.any(["imageio needed" in r.message.args[0] for r in record])
 
     def test_zsearch_print_upperlim(self):
         evfile = self.empty
@@ -478,7 +475,7 @@ class TestEFsearch:
 
     def test_zsearch_fast_nbin_small_warns(self):
         evfile = self.dum
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="The number of bins is too small"):
             _ = main_zsearch(
                 [
                     evfile,
@@ -491,9 +488,6 @@ class TestEFsearch:
                     "--fast",
                 ]
             )
-        assert np.any(
-            ["The number of bins is too small" in r.message.args[0] for r in record]
-        )
 
     def test_zsearch_fdots_fast(self):
         evfile = self.dum
@@ -551,7 +545,7 @@ class TestEFsearch:
 
     def test_zsearch_fdots_ffa(self):
         evfile = self.dum
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="Folding Algorithm functionality"):
             main_zsearch(
                 [
                     evfile,
@@ -565,9 +559,7 @@ class TestEFsearch:
                     "--find-candidates",
                 ]
             )
-        assert np.any(
-            ["Folding Algorithm functionality" in r.message.args[0] for r in record]
-        )
+
         outfile = "events_Z22_9.89-9.92Hz_ffa" + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True, output_data_file="bla_ffa.qdp")
@@ -580,9 +572,8 @@ class TestEFsearch:
     def test_fold_fast_fails(self):
         evfile = self.dum
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="The fast option is only available for z "):
             main_efsearch([evfile, "-f", "9.85", "-F", "9.95", "-n", "64", "--fast"])
-        assert "The fast option is only available for z " in str(excinfo.value)
 
     def test_zsearch_fdots_fast_transient(self):
         evfile = self.dum
@@ -684,7 +675,7 @@ class TestEFsearch:
 
     def test_efsearch_deorbit_invalid(self):
         evfile = self.dum
-        with pytest.raises(FileNotFoundError) as excinfo:
+        with pytest.raises(FileNotFoundError, match="Parameter file"):
             ip = main_efsearch(
                 [
                     evfile,
@@ -698,11 +689,10 @@ class TestEFsearch:
                     "nonexistent.par",
                 ]
             )
-        assert "Parameter file" in str(excinfo.value)
 
     def test_accelsearch(self):
         evfile = self.dum
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="The accelsearch functionality is "):
             outfile = main_accelsearch(
                 [
                     evfile,
@@ -716,27 +706,23 @@ class TestEFsearch:
                     "0.5",
                 ]
             )
-        assert np.any(
-            ["The accelsearch functionality is " in r.message.args[0] for r in record]
-        )
+
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_accelsearch_nodetections(self):
         evfile = self.dum_scramble
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="The accelsearch functionality"):
             outfile = main_accelsearch(
                 [evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1"]
             )
-        assert np.any(
-            ["The accelsearch functionality is " in r.message.args[0] for r in record]
-        )
+
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_accelsearch_energy_and_freq_filt(self):
         evfile = self.dum
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="The accelsearch functionality"):
             outfile = main_accelsearch(
                 [
                     evfile,
@@ -752,29 +738,23 @@ class TestEFsearch:
                     "5",
                 ]
             )
-        assert np.any(
-            ["The accelsearch functionality is " in r.message.args[0] for r in record]
-        )
+
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_accelsearch_pad(self):
         evfile = self.dum
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="The accelsearch functionality"):
             outfile = main_accelsearch([evfile, "--pad-to-double", "--zmax", "1"])
-        assert np.any(
-            ["The accelsearch functionality is " in r.message.args[0] for r in record]
-        )
+
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
     def test_accelsearch_interbin(self):
         evfile = self.dum
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="The accelsearch functionality"):
             outfile = main_accelsearch([evfile, "--interbin", "--zmax", "1"])
-        assert np.any(
-            ["The accelsearch functionality is " in r.message.args[0] for r in record]
-        )
+
         assert os.path.exists(outfile)
         os.unlink(outfile)
 

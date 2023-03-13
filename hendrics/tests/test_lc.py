@@ -178,10 +178,9 @@ class TestFullRun(object):
             os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )
 
-        with pytest.warns(AstropyUserWarning) as record:
+        with pytest.warns(AstropyUserWarning, match="File exists, and noclobber"):
             command = ("{0} -o {1} --noclobber").format(input_file, new_filename)
             hen.lcurve.main(command.split())
-        assert ["File exists, and noclobber" in r.message.args[0] for r in record]
 
     def test_lcurve_split(self):
         """Test lc with gti-split option."""
@@ -216,10 +215,9 @@ class TestFullRun(object):
             lcurve_ftools_orig, lcurve_ftools
         )
         hen.lcurve.main(command.split())
-        with pytest.warns(AstropyUserWarning) as record:
+        with pytest.warns(AstropyUserWarning, match="File exists, and noclobber"):
             command = command + " --noclobber"
             hen.lcurve.main(command.split())
-        assert ["File exists, and noclobber" in r.message.args[0] for r in record]
 
     def test_fits_lcurve1(self):
         """Test light curves from FITS."""
@@ -267,10 +265,9 @@ class TestFullRun(object):
             np.abs(lc_mp - lc_txt) <= 1e-3
         ), "Light curve data do not coincide between txt and HEN"
 
-        with pytest.warns(AstropyUserWarning) as record:
+        with pytest.warns(AstropyUserWarning, match="File exists, and noclobber"):
             command = command + " --noclobber"
             hen.lcurve.main(command.split())
-        assert ["File exists, and noclobber" in r.message.args[0] for r in record]
 
     def test_joinlcs(self):
         """Test produce joined light curves."""
@@ -347,10 +344,8 @@ class TestFullRun(object):
             50,
         )
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Did you run HENcalibrate?"):
             hen.lcurve.main(command.split())
-        message = str(excinfo.value)
-        assert str(message).strip().endswith("Did you run HENcalibrate?")
 
     def test_lcurve_pi_filtering(self):
         """Test light curve using PI filtering."""
@@ -391,9 +386,8 @@ class TestFullRun(object):
 
     def test_save_excvar_wrong_norm_from_lc(self):
         fname = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Normalization must be fvar,"):
             hen.exvar.main([fname, "--norm", "cicciput"])
-        assert "Normalization must be fvar, " in str(excinfo.value)
 
     def test_create_gti_lc(self):
         """Test creating a GTI file."""

@@ -67,7 +67,7 @@ class TestMergeEvents:
         cls.f0, cls.f1, cls.f2, cls.f3, cls.f4 = f0, f1, f2, f3, f4
 
     def test_merge_events(self):
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="changing MJDREF"):
             hen.read_events.main_join(
                 [
                     self.f0,
@@ -76,14 +76,13 @@ class TestMergeEvents:
                     os.path.join(self.datadir, "monol_merg_ev" + HEN_FILE_EXTENSION),
                 ]
             )
-        assert np.any(["changing MJDREF" in r.message.args[0] for r in record])
 
         out = os.path.join(self.datadir, "monol_merg_ev" + HEN_FILE_EXTENSION)
         assert os.path.exists(out)
         os.unlink(out)
 
     def test_merge_events_different_instr(self):
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning):
             hen.read_events.main_join(
                 [
                     self.f0,
@@ -133,9 +132,8 @@ class TestMergeEvents:
         os.unlink(out)
 
     def test_merge_events_no_out_fname(self):
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="changing MJDREF"):
             hen.read_events.main_join([self.f0, self.f1])
-        assert np.any(["changing MJDREF" in r.message.args[0] for r in record])
         out = os.path.join(self.datadir, "ev_ev" + HEN_FILE_EXTENSION)
         assert os.path.exists(out)
         os.unlink(out)
@@ -143,32 +141,25 @@ class TestMergeEvents:
     def test_merge_many_events_warnings(self):
 
         out = os.path.join(self.datadir, "monol_merg_many_ev" + HEN_FILE_EXTENSION)
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match=f"{self.f1} has a different MJDREF"):
             hen.read_events.main_join([self.f0, self.f1, self.f2, "-o", out])
-        assert np.any(
-            [f"{self.f1} has a different MJDREF" in r.message.args[0] for r in record]
-        )
         assert os.path.exists(out)
         os.unlink(out)
-        with pytest.warns(UserWarning) as record:
+
+        with pytest.warns(UserWarning, match=f"{self.f3} is from a different"):
             hen.read_events.main_join([self.f0, self.f2, self.f3, "-o", out])
-        assert np.any(
-            [f"{self.f3} is from a different" in r.message.args[0] for r in record]
-        )
         assert os.path.exists(out)
         os.unlink(out)
-        with pytest.warns(UserWarning) as record:
+
+        with pytest.warns(UserWarning, match=f"{self.f4} has no good events"):
             hen.read_events.main_join([self.f0, self.f2, self.f4, "-o", out])
-        assert np.any(
-            [f"{self.f4} has no good events" in r.message.args[0] for r in record]
-        )
         assert os.path.exists(out)
         os.unlink(out)
 
     def test_merge_many_events(self):
         outfile = "joint_ev" + HEN_FILE_EXTENSION
         # Note that only 0 and 2 are valid
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning):
             hen.read_events.main_join([self.f0, self.f2, self.f3])
 
         assert os.path.exists(outfile)
@@ -306,9 +297,8 @@ class TestReadEvents:
             self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
         )
 
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Overlap cannot be >=1. Exiting."):
             hen.read_events.split_eventlist(filea, 10, overlap=1.5)
-        assert "Overlap cannot be >=1. Exiting." in str(excinfo.value)
 
     def test_load_events(self):
         """Test event file reading."""
@@ -350,7 +340,7 @@ class TestReadEvents:
 
     def test_load_events_noclobber(self):
         """Test event file reading w. noclobber option."""
-        with pytest.warns(UserWarning, match="exists and using noclobber. Skipping") as record:
+        with pytest.warns(UserWarning, match="exists and using noclobber. Skipping"):
             command = "{0} --noclobber".format(self.fits_fileB)
             hen.read_events.main(command.split())
 
