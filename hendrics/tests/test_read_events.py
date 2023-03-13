@@ -4,7 +4,6 @@ import os
 import glob
 import pytest
 import numpy as np
-from astropy.tests.helper import catch_warnings
 
 from stingray.events import EventList
 from hendrics.read_events import treat_event_file
@@ -351,13 +350,9 @@ class TestReadEvents:
 
     def test_load_events_noclobber(self):
         """Test event file reading w. noclobber option."""
-        with catch_warnings() as record:
+        with pytest.warns(UserWarning, match="exists and using noclobber. Skipping") as record:
             command = "{0} --noclobber".format(self.fits_fileB)
             hen.read_events.main(command.split())
-        assert np.any(
-            [str(w.message).strip().endswith("exists and using noclobber. Skipping")]
-            for w in record
-        ), "Unexpected warning output"
 
     @classmethod
     def teardown_class(cls):

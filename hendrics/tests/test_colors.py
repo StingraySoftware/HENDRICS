@@ -8,7 +8,6 @@ import subprocess as sp
 
 import numpy as np
 from astropy import log
-from astropy.tests.helper import catch_warnings
 from astropy.logger import AstropyUserWarning
 import pytest
 from stingray.lightcurve import Lightcurve

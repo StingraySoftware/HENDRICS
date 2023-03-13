@@ -9,7 +9,6 @@ import subprocess as sp
 import numpy as np
 from astropy.io.registry import IORegistryError
 from astropy import log
-from astropy.tests.helper import catch_warnings
 from astropy.logger import AstropyUserWarning
 import pytest
 from stingray.lightcurve import Lightcurve
@@ -197,11 +196,9 @@ class TestFullRun(object):
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
         command = ("{0} -b 100 -e {1} {2} {2} {3}").format(self.ev_fileA, 3, 5, 10)
-        with catch_warnings():
-            with pytest.raises(ValueError) as excinfo:
+        with pytest.warns(UserWarning):
+            with pytest.raises(ValueError, match="Did you run HENcalibrate"):
                 hen.colors.main(command.split())
-
-        assert "No energy information is present " in str(excinfo.value)
 
     def test_colors(self):
         """Test light curve using PI filtering."""
