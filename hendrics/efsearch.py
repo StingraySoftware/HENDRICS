@@ -7,6 +7,7 @@ import argparse
 import copy
 
 import numpy as np
+from scipy.ndimage import gaussian_filter
 from astropy import log
 from astropy.table import Table
 from astropy.logger import AstropyUserWarning
@@ -1942,6 +1943,24 @@ def main_accelsearch(args=None):
         action="store_true",
         help="Pad to the double of bins " "(sort-of interbinning)",
     )
+    parser.add_argument(
+        "--detrend",
+        default=None,
+        type=float,
+        help="Detrending timescale",
+    )
+    parser.add_argument(
+        "--deorbit-par",
+        default=None,
+        type=str,
+        help="Parameter file in TEMPO2/PINT format",
+    )
+    parser.add_argument(
+        "--red-noise-filter",
+        default=False,
+        action="store_true",
+        help="Correct FFT for red noise (use with caution)",
+    )
 
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ["loglevel", "debug"])
@@ -1960,10 +1979,16 @@ def main_accelsearch(args=None):
             emin = assign_value_if_none(args.emin, HENDRICS_STAR_VALUE)
             emax = assign_value_if_none(args.emax, HENDRICS_STAR_VALUE)
             label += f"_{emin:g}-{emax:g}keV"
+
         if args.interbin:
             label += "_interbin"
         elif args.pad_to_double:
             label += "_pad"
+
+        if args.red_noise_filter:
+            label += "_rednoise"
+        if args.detrend:
+            label += f"_detrend{args.detrend}"
 
         outfile = hen_root(args.fname) + label + ".csv"
 
@@ -1979,6 +2004,10 @@ def main_accelsearch(args=None):
 
     log.info(f"Opening file {args.fname}")
     events = load_events(args.fname)
+
+    if args.deorbit_par is not None:
+        events = deorbit_events(events, args.deorbit_par)
+
     nyq = fmax * 5
     dt = 0.5 / nyq
     log.info(f"Searching using dt={dt}")
@@ -2018,6 +2047,22 @@ def main_accelsearch(args=None):
             range=[0, np.double(max_length - dt)],
         )
 
+    if args.detrend is not None:
+        log.info("Detrending light curve")
+        Nsmooth = args.detrend / dt / 3
+        plt.figure("Bu")
+        plt.plot(times, counts)
+        for g in GTI - t0:
+            print(g, Nsmooth)
+            good = (times > g[0])&(times <= g[1])
+            if (g[1] - g[0]) < args.detrend:
+                counts[good] = 0
+            else:
+                counts[good] -= gaussian_filter(counts[good], Nsmooth, mode="reflect")
+        counts += 2
+        plt.plot(times, counts)
+        plt.show()
+
     log.info(f"Times and counts have {times.size} bins")
     # Note: det_p_value was calculated as
     # pds_probability(pds_detection_level(0.015) * 0.64) => 0.068
@@ -2030,6 +2075,14 @@ def main_accelsearch(args=None):
     elif args.pad_to_double:
         # Half of the bins are zeros.
         det_p_value = 0.068 * 2
+
+    fft_rescale = None
+    if args.red_noise_filter:
+        def fft_rescale(fourier_trans):
+            pds = (fourier_trans * fourier_trans.conj()).real
+            smooth = gaussian_filter(pds, 31)
+            rescale = 2 / smooth
+            return fourier_trans * rescale**0.5
 
     results = accelsearch(
         times,
@@ -2044,6 +2097,8 @@ def main_accelsearch(args=None):
         interbin=interbin,
         nproc=nproc,
         det_p_value=det_p_value,
+        fft_rescale=fft_rescale,
+        candidate_file=outfile.replace(".csv", "")
     )
 
     if len(results) > 0:
@@ -2066,6 +2121,7 @@ def main_accelsearch(args=None):
     else:
         print("No candidates found")
 
+    log.info("Writing results to file")
     results.write(outfile, overwrite=True)
 
     return outfile
