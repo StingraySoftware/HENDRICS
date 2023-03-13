@@ -439,7 +439,7 @@ class BasePhaseogram(object):
         else:
 
             def func(x):
-                return 0
+                return np.zeros_like(self.times)
 
         for i, ph0 in enumerate(self.line_phases):
             linephase = ph0 + func(self.times) - func(self.times[0])
