@@ -45,7 +45,7 @@ class TestEFsearch:
         cls.tseg = cls.tend - cls.tstart
         cls.dt = 0.00606
         cls.times = np.arange(cls.tstart, cls.tend, cls.dt) + cls.dt / 2
-        cls.counts = 200 + 40 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
+        cls.counts = 400 + 100 * np.cos(2 * np.pi * cls.times * cls.pulse_frequency)
         cls.mjdref = 56000
 
         lc = Lightcurve(cls.times, cls.counts, gti=[[cls.tstart, cls.tend]], dt=cls.dt)
@@ -89,6 +89,7 @@ class TestEFsearch:
             template=None,
         )
 
+        assert toas is not None, toaerrs is not None
         possible_toas = events.mjdref + np.arange(2) * self.pulse_period / 86400
         closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
 
@@ -111,6 +112,8 @@ class TestEFsearch:
             template=template,
             nbin=nbin,
         )
+        assert toas is not None, toaerrs is not None
+
         possible_toas = events.mjdref + np.arange(2) * self.pulse_period / 86400
         closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
 
