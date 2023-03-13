@@ -71,7 +71,7 @@ def test_deorbit_bad_mjdref():
     ev = EventList(np.arange(100), gti=np.asarray([[0, 2]]))
     ev.mjdref = 2
     par = _dummy_par("bububu.par")
-    with pytest.raises(ValueError, match="MJDREF is very low (<01-01-1950), "):
+    with pytest.raises(ValueError, match="MJDREF is very low .<01-01-1950., "):
         deorbit_events(ev, par)
     os.remove("bububu.par")
 
