@@ -734,6 +734,7 @@ class TestEFsearch:
         assert os.path.exists(outfile)
         os.unlink(outfile)
 
+    @pytest.mark.skipif("not HAS_PINT")
     def test_accelsearch_deorbit(self):
         evfile = self.dum_scramble
         with pytest.warns(UserWarning, match="The accelsearch functionality"):
@@ -753,6 +754,25 @@ class TestEFsearch:
 
         assert os.path.exists(outfile)
         os.unlink(outfile)
+
+    @pytest.mark.skipif("HAS_PINT")
+    def test_accelsearch_deorbit_fails_no_pint(self):
+        evfile = self.dum_scramble
+        with pytest.warns(UserWarning, match="The accelsearch functionality"):
+            with pytest.raises(ImportError, match="PINT"):
+                main_accelsearch(
+                    [
+                        evfile,
+                        "--fmin",
+                        "1",
+                        "--fmax",
+                        "1.1",
+                        "--zmax",
+                        "1",
+                        "--deorbit-par",
+                        self.par,
+                    ]
+                )
 
     def test_accelsearch_energy_and_freq_filt(self):
         evfile = self.dum
