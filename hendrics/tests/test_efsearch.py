@@ -66,9 +66,7 @@ class TestEFsearch:
         cls.dum_scramble = "events_scramble" + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
         events_scramble = copy.deepcopy(events)
-        events_scramble.time = np.sort(
-            np.random.uniform(cls.tstart, cls.tend, events.time.size)
-        )
+        events_scramble.time = np.sort(np.random.uniform(cls.tstart, cls.tend, events.time.size))
         save_events(events_scramble, cls.dum_scramble)
         cls.par = "bububububu.par"
         _dummy_par(cls.par)
@@ -122,9 +120,7 @@ class TestEFsearch:
     def test_fit_profile_with_sinusoids(self):
         nbin = 32
         phases = np.arange(0, 1, 1 / nbin)
-        prof_smooth = np.cos(2 * np.pi * phases) + 0.5 * np.cos(
-            4 * np.pi * (phases + 0.5)
-        )
+        prof_smooth = np.cos(2 * np.pi * phases) + 0.5 * np.cos(4 * np.pi * (phases + 0.5))
         prof_smooth = (prof_smooth + 5) * 64
         prof = np.random.poisson(prof_smooth)
         baseline = np.mean(prof)
@@ -713,8 +709,46 @@ class TestEFsearch:
     def test_accelsearch_nodetections(self):
         evfile = self.dum_scramble
         with pytest.warns(UserWarning, match="The accelsearch functionality"):
+            outfile = main_accelsearch([evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1"])
+
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    def test_accelsearch_detrend(self):
+        evfile = self.dum_scramble
+        with pytest.warns(UserWarning, match="The accelsearch functionality"):
             outfile = main_accelsearch(
-                [evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1"]
+                [evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1", "--detrend", "20"]
+            )
+
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    def test_accelsearch_rednoise(self):
+        evfile = self.dum_scramble
+        with pytest.warns(UserWarning, match="The accelsearch functionality"):
+            outfile = main_accelsearch(
+                [evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1", "--red-noise-filter"]
+            )
+
+        assert os.path.exists(outfile)
+        os.unlink(outfile)
+
+    def test_accelsearch_deorbit(self):
+        evfile = self.dum_scramble
+        with pytest.warns(UserWarning, match="The accelsearch functionality"):
+            outfile = main_accelsearch(
+                [
+                    evfile,
+                    "--fmin",
+                    "1",
+                    "--fmax",
+                    "1.1",
+                    "--zmax",
+                    "1",
+                    "--deorbit-par",
+                    self.par,
+                ]
             )
 
         assert os.path.exists(outfile)
