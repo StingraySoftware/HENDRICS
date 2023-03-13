@@ -139,19 +139,19 @@ class TestMergeEvents:
         os.unlink(out)
 
     def test_merge_many_events_warnings(self):
-
         out = os.path.join(self.datadir, "monol_merg_many_ev" + HEN_FILE_EXTENSION)
-        with pytest.warns(UserWarning, match=f"{self.f1} has a different MJDREF"):
+        with pytest.warns(
+            UserWarning, match=f"{os.path.split(self.f1)[1]}.* has a different MJDREF"
+        ):
             hen.read_events.main_join([self.f0, self.f1, self.f2, "-o", out])
         assert os.path.exists(out)
         os.unlink(out)
-
-        with pytest.warns(UserWarning, match=f"{self.f3} is from a different"):
+        with pytest.warns(UserWarning, match=f"{os.path.split(self.f3)[1]}.* is from a different"):
             hen.read_events.main_join([self.f0, self.f2, self.f3, "-o", out])
         assert os.path.exists(out)
         os.unlink(out)
 
-        with pytest.warns(UserWarning, match=f"{self.f4} has no good events"):
+        with pytest.warns(UserWarning, match=f"{os.path.split(self.f4)[1]}.* has no good events"):
             hen.read_events.main_join([self.f0, self.f2, self.f4, "-o", out])
         assert os.path.exists(out)
         os.unlink(out)
@@ -203,12 +203,8 @@ class TestReadEvents:
                 cls.fits_file,
             ]
         )
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
-        cls.ev_fileB = os.path.join(
-            cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
+        cls.ev_fileB = os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION)
 
     def test_start(self):
         """Make any warnings in setup_class be dumped here."""
@@ -235,7 +231,6 @@ class TestReadEvents:
         assert "pi" in data and data["pi"].size > 0
 
     def test_treat_event_file_xmm_gtisplit(self):
-
         treat_event_file(self.fits_file, gti_split=True)
         new_filename = "monol_test_fake_xmm_epn_det01_gti000_ev" + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir, new_filename))
@@ -245,7 +240,6 @@ class TestReadEvents:
         assert "mjdref" in data
 
     def test_treat_event_file_xmm_lensplit(self):
-
         treat_event_file(self.fits_file, length_split=100)
         new_filename = "monol_test_fake_xmm_epn_det01_chunk000_ev" + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir, new_filename))
@@ -261,9 +255,7 @@ class TestReadEvents:
     def test_split_events(self):
         treat_event_file(self.fits_fileA)
 
-        filea = os.path.join(
-            self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        filea = os.path.join(self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
 
         files = hen.read_events.main_splitevents([filea, "-l", "50"])
         for f in files:
@@ -272,16 +264,12 @@ class TestReadEvents:
     def test_split_events_at_mjd(self):
         treat_event_file(self.fits_fileA)
 
-        filea = os.path.join(
-            self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        filea = os.path.join(self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
         data = load_events(filea)
         mean_met = np.mean(data.time)
         mean_mjd = mean_met / 86400 + data.mjdref
 
-        files = hen.read_events.main_splitevents(
-            [filea, "--split-at-mjd", f"{mean_mjd}"]
-        )
+        files = hen.read_events.main_splitevents([filea, "--split-at-mjd", f"{mean_mjd}"])
         assert "before" in files[0]
         assert "after" in files[1]
 
@@ -293,9 +281,7 @@ class TestReadEvents:
     def test_split_events_bad_overlap_raises(self):
         treat_event_file(self.fits_fileA)
 
-        filea = os.path.join(
-            self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        filea = os.path.join(self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
 
         with pytest.raises(ValueError, match="Overlap cannot be >=1. Exiting."):
             hen.read_events.split_eventlist(filea, 10, overlap=1.5)
