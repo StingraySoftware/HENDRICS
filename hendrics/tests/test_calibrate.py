@@ -16,10 +16,9 @@ def test_default_nustar_rmf(caplog):
     path_to_rmf = os.path.join(
         caldb_path, *"data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf".split("/")
     )
-    with pytest.warns(UserWarning) as record:
+    with pytest.warns(UserWarning, match="Using default NuSTAR rmf."):
         newpath = default_nustar_rmf()
 
-    assert np.any(["Using default NuSTAR rmf." in r.message.args[0] for r in record])
     assert newpath == path_to_rmf
 
 
@@ -106,10 +105,8 @@ class TestCalibrate(object):
 
         command = "{0} -r {1}".format(self.xmm_ev_file, self.rmf)
 
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(RuntimeError, match="Calibration for XMM should work"):
             hen.calibrate.main(command.split())
-
-        assert "Calibration for XMM should work" in str(excinfo.value)
 
     def test_calibrate_raises_missing_mission(self):
         """Test event file calibration."""

@@ -86,7 +86,7 @@ class TestPhasetag:
         assert os.path.exists(self.phasetagged)
 
     def test_phase_tag_badexposure(self):
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="Exposure has NaNs or zeros. "):
             main_phasetag(
                 [
                     self.fits_fileA,
@@ -99,23 +99,26 @@ class TestPhasetag:
                     "--plot",
                 ]
             )
-        assert np.any(
-            ["Exposure has NaNs or zeros. " in r.message.args[0] for r in record]
-        )
 
     def test_phase_tag_invalid0(self):
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Specify one between"):
             main_phasetag([self.fits_fileA, "--test"])
-        assert "Specify one between" in str(excinfo.value)
 
     def test_phase_tag_invalid1(self):
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Specify only one between"):
             main_phasetag(
-                [self.fits_fileA, "-f", "1", "--parfile", "bubu.par", "--test"]
+                [
+                    self.fits_fileA,
+                    "-f",
+                    "1",
+                    "--parfile",
+                    "bubu.par",
+                    "--test",
+                ]
             )
-        assert "Specify only one between" in str(excinfo.value)
 
     def test_phase_tag_parfile(self):
-        with pytest.raises(NotImplementedError) as excinfo:
+        with pytest.raises(
+            NotImplementedError, match="This part is not yet implemented"
+        ):
             main_phasetag([self.fits_fileA, "--parfile", "bubu.par", "--test"])
-        assert "This part is not yet implemented" in str(excinfo.value)

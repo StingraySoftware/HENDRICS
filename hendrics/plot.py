@@ -401,7 +401,6 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
         fnames = [fnames]
 
     for fname in fnames:
-
         plt.figure(fname, figsize=(7, 7))
         plt.clf()
         ef, best_cand_table = analyze_qffa_results(fname)
@@ -544,7 +543,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             if fd_oom != 0:
                 fdlabel = f"Fdot"
                 if fd_mean != 0.0:
-                    fdlabel = "(" + flabel + " - {fd_mean:g})"
+                    fdlabel = "(" + flabel + f" - {fd_mean:g})"
                 fdlabel += rf" ($10^{{{fd_oom}}}$ Hz/s)"
             else:
                 fdlabel = f"Fdot (Hz/s)"
@@ -597,7 +596,10 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             colorticks = list(
                 set(
                     np.concatenate(
-                        (np.linspace(vmin, vcenter, 3), np.linspace(vcenter, vmax, 3))
+                        (
+                            np.linspace(vmin, vcenter, 3),
+                            np.linspace(vcenter, vmax, 3),
+                        )
                     ).astype(int)
                 )
             )
@@ -670,7 +672,6 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             and ef.best_fits is not None
             and not len(ef.stat.shape) > 1
         ):
-
             for f in ef.best_fits:
                 xs = np.linspace(np.min(ef.freq), np.max(ef.freq), len(ef.freq) * 2)
                 plt.plot(xs, f(xs))
@@ -900,7 +901,6 @@ def main(args=None):
         args.files = zip(args.files[:-1:2], args.files[1::2])
 
     for fname in args.files:
-
         if args.CCD or args.HID:
             plot_color(
                 fname[0],

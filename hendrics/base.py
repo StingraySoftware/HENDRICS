@@ -480,6 +480,12 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     if events.mjdref < 33282.0:
         raise ValueError("MJDREF is very low (<01-01-1950), " "this is unsupported.")
 
+    if not HAS_PINT:
+        raise ImportError(
+            "You need the optional dependency PINT to use this "
+            "functionality: github.com/nanograv/pint"
+        )
+
     model = get_model(parameter_file)
     porb = model.PB.value
     pepoch = events.gti[0, 0]

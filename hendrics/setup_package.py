@@ -7,7 +7,6 @@ ROOT = os.path.dirname(__file__)
 
 
 def get_package_data():
-
     # Find all files in data/ sub-directories since this is a standard location
     # for data files. We then need to adjust the paths to be relative to here
     # (otherwise glob will be evaluated relative to setup.py)

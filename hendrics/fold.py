@@ -286,6 +286,7 @@ def create_default_template(template_raw):
         )
     else:
         from scipy.signal import savgol_filter
+
         template = savgol_filter(template_raw, 4, 2, mode="wrap")
         phase = np.concatenate((phase - 1, phase, phase + 1))
         template = np.concatenate((template, template, template))
@@ -431,6 +432,9 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
         )
 
         if np.any(np.isnan(pars)) or pars[0] == 0.0 or np.any(np.isnan(errs)):
+            warnings.warn(
+                f"Invalid TOA in interval {start}-{stop} (idxs {startidx:stopidx}): {pars}, {errs}"
+            )
             continue
 
         ph, phe = pars[1], errs[1]
@@ -454,7 +458,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
 
     if phs.size > 15:
         log.info(
-            "Correcting TOA errors for the real scatter. Don't trust them " "literally"
+            "Correcting TOA errors for the real scatter. Don't trust them literally"
         )
 
         # print(phs, phs_errs, factor)
@@ -634,7 +638,11 @@ def fit_profile(
     baseline=False,
 ):
     return fit_profile_with_sinusoids(
-        profile, profile_err, debug=debug, nperiods=nperiods, baseline=baseline
+        profile,
+        profile_err,
+        debug=debug,
+        nperiods=nperiods,
+        baseline=baseline,
     )
 
 

@@ -63,7 +63,10 @@ def _fill_in_default_information(tbheader):
         "SOLARSYSTEM",
         "Times are pathlength-corrected to barycenter",
     )
-    tbheader["CLOCKAPP"] = (False, "TRUE if timestamps corrected by gnd sware")
+    tbheader["CLOCKAPP"] = (
+        False,
+        "TRUE if timestamps corrected by gnd sware",
+    )
     tbheader["COMMENT"] = (
         "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
     )
@@ -196,7 +199,6 @@ def generate_fake_fits_observation(
 
     if ccol is not None:
         if not hasattr(event_list, "detector_id") or event_list.detector_id is None:
-
             ccdnr = np.zeros(np.size(ev_list)) + 1
             ccdnr[1] = 2  # Make it less trivial
             ccdnr[10] = 7
@@ -689,7 +691,10 @@ def main(args=None):
         help="End time of the observation (s from MJDREF)",
     )
     parser.add_argument(
-        "--mjdref", type=float, default=55197.00076601852, help="Reference MJD"
+        "--mjdref",
+        type=float,
+        default=55197.00076601852,
+        help="Reference MJD",
     )
     parser.add_argument(
         "--deadtime",
@@ -749,7 +754,10 @@ def main(args=None):
             prior[1:] = np.diff(event_list.time) - info.deadtime[:-1]
 
             additional_columns["PRIOR"] = {"data": prior, "format": "D"}
-            additional_columns["KIND"] = {"data": info.is_event, "format": "L"}
+            additional_columns["KIND"] = {
+                "data": info.is_event,
+                "format": "L",
+            }
             livetime = np.sum(prior)
 
         generate_fake_fits_observation(

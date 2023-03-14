@@ -136,7 +136,10 @@ class EFPeriodogram(object):
             best_peaks = []
             best_stat = []
             for i, idx in enumerate(best_cands):
-                f, fdot = self.freq[idx[0], idx[1]], self.fdots[idx[0], idx[1]]
+                f, fdot = (
+                    self.freq[idx[0], idx[1]],
+                    self.fdots[idx[0], idx[1]],
+                )
                 best_peaks.append([f, fdot])
                 best_stat.append(self.stat[idx[0], idx[1]])
         best_peaks = np.asarray(best_peaks)
@@ -232,8 +235,9 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, s
         emax = np.max(energy)
 
     good = (energy >= emin) & (energy <= emax)
-    ev.time = times[good]
-    ev.energy = energy[good]
+    ev.apply_mask(good, inplace=True)
+    # ev.time = times[good]
+    # ev.energy = energy[good]
     return ev, elabel
 
 
@@ -1001,20 +1005,28 @@ def _split_high_precision_number(varname, var, probesize):
     if probesize == 16:
         kind_str = "longdouble"
     if isinstance(var, Iterable):
-        dum = np.min(np.abs(var))
+        var = np.asarray(var)
+        bad = np.isnan(var)
+        dum = np.min(np.abs(var[~bad]))
         if dum < 1 and dum > 0.0:
             var_log10 = np.floor(np.log10(dum))
 
         var = np.asarray(var) / (10.0**var_log10)
+        var[bad] = 0
         var_I = np.floor(var).astype(int)
         var_F = np.array(var - var_I, dtype=np.double)
+        var_F[bad] = np.nan
     else:
         if np.abs(var) < 1 and np.abs(var) > 0.0:
             var_log10 = np.floor(np.log10(np.abs(var)))
 
-        var = np.asarray(var) / 10.0**var_log10
-        var_I = int(np.floor(var))
-        var_F = np.double(var - var_I)
+        if np.isnan(var):
+            var_I = np.asarray(0).astype(int)
+            var_F = np.asarray(np.nan)
+        else:
+            var = np.asarray(var) / 10.0**var_log10
+            var_I = int(np.floor(var))
+            var_F = np.double(var - var_I)
     return var_I, var_F, var_log10, kind_str
 
 
@@ -1096,7 +1108,6 @@ def load_data(fname):
     try:
         return Table.read(fname, format=fmt)
     except Exception as e:
-
         raise TypeError(
             "The file type is not recognized. Did you convert the"
             " original files into HENDRICS format (e.g. with "
@@ -1382,7 +1393,6 @@ def save_model(model, fname="model.p", constraints=None):
 
 
 def load_model(modelstring):
-
     if not is_string(modelstring):
         raise TypeError("modelstring has to be an existing file name")
     if not os.path.exists(modelstring):
@@ -1502,4 +1512,7 @@ def main_filter_events(args=None):
         events = load_events(fname)
         events, _ = filter_energy(events, args.emin, args.emax)
 
-        save_events(events, hen_root(fname) + f"_{args.emin:g}-{args.emax:g}keV" + HEN_FILE_EXTENSION)
+        save_events(
+            events,
+            hen_root(fname) + f"_{args.emin:g}-{args.emax:g}keV" + HEN_FILE_EXTENSION,
+        )

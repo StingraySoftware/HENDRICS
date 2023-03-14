@@ -52,17 +52,17 @@ class TestNormalize:
 
 def test_deorbit_badpar():
     ev = np.asarray(1)
-    with pytest.warns(UserWarning) as record:
+    with pytest.warns(UserWarning, match="No parameter file specified"):
         ev_deor = deorbit_events(ev, None)
-    assert np.any(["No parameter file specified" in r.message.args[0] for r in record])
     assert ev_deor == ev
 
 
 def test_deorbit_non_existing_par():
     ev = np.asarray(1)
-    with pytest.raises(FileNotFoundError) as excinfo:
-        ev_deor = deorbit_events(ev, "warjladsfjqpeifjsdk.par")
-    assert "Parameter file warjladsfjqpeifjsdk.par does not exist" in str(excinfo.value)
+    with pytest.raises(
+        FileNotFoundError, match="Parameter file warjladsfjqpeifjsdk.par"
+    ):
+        deorbit_events(ev, "warjladsfjqpeifjsdk.par")
 
 
 @pytest.mark.remote_data
@@ -73,9 +73,8 @@ def test_deorbit_bad_mjdref():
     ev = EventList(np.arange(100), gti=np.asarray([[0, 2]]))
     ev.mjdref = 2
     par = _dummy_par("bububu.par")
-    with pytest.raises(ValueError) as excinfo:
-        _ = deorbit_events(ev, par)
-    assert "MJDREF is very low (<01-01-1950), " in str(excinfo.value)
+    with pytest.raises(ValueError, match="MJDREF is very low .<01-01-1950., "):
+        deorbit_events(ev, par)
     os.remove("bububu.par")
 
 

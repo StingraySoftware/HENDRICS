@@ -7,13 +7,14 @@ from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
 from stingray.powerspectrum import Crossspectrum, AveragedCrossspectrum
 import numpy as np
 import os
+from hendrics.base import hen_root
 from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
 from hendrics.io import save_data, load_data, save_pds, load_pds
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
 from hendrics.io import find_file_in_allowed_paths, get_file_type
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
-from hendrics.io import main
+from hendrics.io import main, main_filter_events
 
 import pytest
 import glob
@@ -36,7 +37,6 @@ def _dummy(x, y=0):
 
 
 def test_find_files_in_allowed_paths(capsys):
-
     with open("bu", "w") as fobj:
         print("blabla", file=fobj)
     fakepath = os.path.join("directory", "bu")
@@ -109,10 +109,8 @@ class TestIO:
             "c": np.longdouble([[-0.5, 3.5]]),
             "d": 1,
         }
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Unrecognized data"):
             save_data(struct, "bubu.hdf5")
-
-        assert "Unrecognized data" in str(excinfo.value)
 
     @pytest.mark.parametrize("fmt", [".ecsv", ".hdf5"])
     def test_save_data(self, fmt):
@@ -124,7 +122,10 @@ class TestIO:
         struct = Table(
             {
                 "a": [0, 0.1],
-                "b": [np.longdouble("123.4567890123456789"), np.longdouble(0)],
+                "b": [
+                    np.longdouble("123.4567890123456789"),
+                    np.longdouble(0),
+                ],
             }
         )
         save_data(struct, "bubu" + fmt)
@@ -166,6 +167,34 @@ class TestIO:
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
         assert np.allclose(events.energy, events2.energy)
+        assert events.header == events2.header
+        assert events2.mission == events.mission
+
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_filter_events(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return
+        events = EventList(
+            [0, 2, 3.0],
+            pi=[1, 2, 3],
+            mjdref=54385.3254923845,
+            gti=np.longdouble([[-0.5, 3.5]]),
+        )
+        events.cal_pi = events.pi.copy()
+        events.energy = np.array([3.0, 4.0, 5.0])
+        events.mission = "nustar"
+        events.header = Header().tostring()
+        outfile = "bubu" + fmt
+        save_events(events, outfile)
+        main_filter_events([outfile, "--emin", "4", "--emax", "6"])
+        outfile_filt = hen_root(outfile) + f"_4-6keV" + HEN_FILE_EXTENSION
+        events2 = load_events(outfile_filt)
+        assert np.allclose(events.time[1:], events2.time)
+        assert np.allclose(events.cal_pi[1:], events2.cal_pi)
+        assert np.allclose(events.pi[1:], events2.pi)
+        assert np.allclose(events.mjdref, events2.mjdref)
+        assert np.allclose(events.gti, events2.gti)
+        assert np.allclose(events.energy[1:], events2.energy)
         assert events.header == events2.header
         assert events2.mission == events.mission
 
@@ -238,9 +267,8 @@ class TestIO:
     def test_load_pds_fails(self):
         pds = EventList()
         save_events(pds, self.dum)
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Unrecognized data"):
             load_pds(self.dum)
-        assert "Unrecognized data type" in str(excinfo.value)
 
     def test_load_and_save_xps(self):
         lcurve1 = Lightcurve(
@@ -340,9 +368,8 @@ class TestIO:
     def test_save_longcomplex(self):
         val = np.complex256(1.01 + 2.3j)
         data = {"val": val}
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="complex256 yet"):
             save_data(data, "bubu" + HEN_FILE_EXTENSION)
-        assert "complex256 yet unsupported" in record[0].message.args[0]
         data_out = load_data("bubu" + HEN_FILE_EXTENSION)
 
         assert np.allclose(data["val"], data_out["val"])
@@ -428,16 +455,14 @@ class TestIOModel:
         assert np.all(constraints == constraints0)
 
     def test_save_callable_model_wrong(self):
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(TypeError, match="Accepted callable models have only"):
             save_model(_dummy_bad, "callable_bad.p")
-        assert "Accepted callable models have only" in str(record.value)
         assert not os.path.exists("callable_bad.p")
 
     def test_save_junk_model(self):
         a = "g"
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(TypeError, match="The model has to be an Astropy model"):
             save_model(a, "bad.p", constraints={"bounds": ()})
-        assert "The model has to be an Astropy model or a callable" in str(record.value)
         assert not os.path.exists("bad.p")
 
     def test_load_python_model_callable(self):
@@ -471,26 +496,24 @@ model = models.Const1D()
 
     def test_load_model_input_not_string(self):
         """Input is not a string"""
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(
+            TypeError, match="modelstring has to be an existing file name"
+        ):
             b, kind, _ = load_model(1)
-        assert "modelstring has to be an existing file name" in str(record.value)
 
     def test_load_model_input_file_doesnt_exist(self):
-        with pytest.raises(FileNotFoundError) as record:
+        with pytest.raises(FileNotFoundError, match="Model file"):
             b, kind, _ = load_model("dfasjkdaslfj")
-        assert "Model file not found" in str(record.value)
 
     def test_load_model_input_invalid_file_format(self):
         with open("bubu.txt", "w") as fobj:
             print(1, file=fobj)
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(TypeError, match="Unknown file type"):
             b, kind, _ = load_model("bubu.txt")
-        assert "Unknown file type" in str(record.value)
 
     def test_load_data_fails(self):
-        with pytest.raises(TypeError) as record:
+        with pytest.raises(TypeError, match="The file type is not recognized"):
             load_data("afile.fits")
-        assert "The file type is not recognized" in str(record.value)
 
     @classmethod
     def teardown_class(cls):

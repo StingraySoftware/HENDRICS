@@ -44,6 +44,13 @@ satellite (for sure XMM-Newton and RXTE).
 What's new
 ----------
 
+HENDRICS 8.0 (under development)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
++ ``HENaccelsearch`` now has additional options for detrending, denoising and deorbiting
++ An improved Maximum likelihood algorithm as FFTFIT substitute for TOA calculation
++ NASA's IXPE added to supported missions
+
 HENDRICS 7.0
 ~~~~~~~~~~~~
 

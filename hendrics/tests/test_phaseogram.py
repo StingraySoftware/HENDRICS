@@ -1,3 +1,4 @@
+import warnings
 from astropy.io.fits import Header
 from stingray.lightcurve import Lightcurve
 from stingray.events import EventList
@@ -138,20 +139,18 @@ class TestPhaseogram:
 
     def test_phaseogram_all_defaults(self):
         times = [0, 3.0, 4.0]
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="MJDREF not set."):
             _ = InteractivePhaseogram(times, 1.0, test=True)
-        assert np.any(["MJDREF not set." in r.message.args[0] for r in record])
 
     def test_binary_all_no_orb(self):
         times = [0, 3.0, 4.0]
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(RuntimeError, match="Please specify all binary parameters"):
             # Missing t0
             _ = BinaryPhaseogram(times, 1.0, orbital_period=3.0, asini=3.0)
-        assert "Please specify all binary parameters" in str(excinfo.value)
 
     def test_phaseogram_input_norm_invalid(self):
         evfile = self.dum
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="Profile normalization arsdfajl"):
             main_phaseogram(
                 [
                     evfile,
@@ -161,9 +160,6 @@ class TestPhaseogram:
                     "--norm",
                     "arsdfajl",
                 ]
-            )
-            assert np.any(
-                ["Profile normalization arsdfajl" in r.message.args[0] for r in record]
             )
 
     def test_phaseogram_input_f(self):
@@ -206,7 +202,11 @@ class TestPhaseogram:
             evfile, 9.9, test=True, nbin=16, nt=8, deorbit_par=par
         )
         ip.update(1)
-        ip.recalculate(1)
+        with warnings.catch_warnings(record=True) as ws:
+            ip.recalculate(1)
+            if not withfX:
+                assert np.any(["Parameter F1" in str(w.message) for w in ws])
+                assert np.any(["Parameter F2" in str(w.message) for w in ws])
         ip.toa(1)
 
         ip.reset(1)
@@ -259,11 +259,9 @@ class TestPhaseogram:
         ip.reset(1)
         ip.zoom_in(1)
         ip.zoom_out(1)
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="This function was not implemented"):
             ip.toa(1)
-        assert np.any(
-            ["This function was not implemented" in r.message.args[0] for r in record]
-        )
+
         ip.orbital_period = 2
         orbital_period, fdot, fddot = ip.get_values()
         assert orbital_period == 2
@@ -279,15 +277,17 @@ class TestPhaseogram:
             evfile, 9.9, test=True, binary=True, deorbit_par=par
         )
         ip.update(1)
-        ip.recalculate(1)
+        with warnings.catch_warnings(record=True) as ws:
+            ip.recalculate(1)
+            assert np.any(["Parameter F1" in str(w.message) for w in ws])
+            assert np.any(["Parameter F2" in str(w.message) for w in ws])
+
         ip.reset(1)
         ip.zoom_in(1)
         ip.zoom_out(1)
-        with pytest.warns(UserWarning) as record:
+        with pytest.warns(UserWarning, match="This function was not implemented"):
             ip.toa(1)
-        assert np.any(
-            ["This function was not implemented" in r.message.args[0] for r in record]
-        )
+
         ip.orbital_period = 2
         orbital_period, fdot, fddot = ip.get_values()
         assert orbital_period == 2

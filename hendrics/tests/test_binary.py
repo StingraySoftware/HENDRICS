@@ -70,10 +70,8 @@ class TestBinary(object):
 
     def test_save_binary_events(self):
         f = self.ev_fileA
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ValueError, match="Energy filtering requested"):
             hen.binary.main_presto("{} -b 0.1 -e 3 59 --debug".format(f).split())
-
-        assert "Energy filtering requested" in str(excinfo.value)
 
     @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
