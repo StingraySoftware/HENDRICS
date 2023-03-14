@@ -338,7 +338,8 @@ class TestFullRun(object):
         """Test light curve error from uncalibrated file."""
         command = ("{0} -e {1} {2}").format(
             os.path.join(
-                self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
+                self.datadir,
+                "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION,
             ),
             3,
             50,
@@ -351,7 +352,8 @@ class TestFullRun(object):
         """Test light curve using PI filtering."""
         command = ("{0} --pi-interval {1} {2}").format(
             os.path.join(
-                self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
+                self.datadir,
+                "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION,
             ),
             10,
             300,

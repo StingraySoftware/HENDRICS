@@ -6,7 +6,11 @@ import warnings
 import numpy as np
 from astropy import log
 from astropy.logger import AstropyUserWarning
-from stingray.gti import cross_gtis, create_gti_from_condition, create_gti_mask
+from stingray.gti import (
+    cross_gtis,
+    create_gti_from_condition,
+    create_gti_mask,
+)
 from .io import HEN_FILE_EXTENSION, save_data, load_data, get_file_type
 from .base import hen_root, _assign_value_if_none
 

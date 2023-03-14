@@ -29,7 +29,6 @@ from .io import save_as_qdp
 
 
 def varenergy_to_astropy_table(spectrum):
-
     start_energy = np.asarray(spectrum.energy_intervals)[:, 0]
     stop_energy = np.asarray(spectrum.energy_intervals)[:, 1]
     res = Table(
@@ -112,7 +111,6 @@ def varenergy_from_astropy_table(fname):
 
 class VarEnergySpectrum(VES):
     def __init__(self):
-
         for attr in [
             "ref_band",
             "freq_interval",

@@ -150,7 +150,7 @@ class TestPhaseogram:
 
     def test_phaseogram_input_norm_invalid(self):
         evfile = self.dum
-        with pytest.warns(UserWarning, match="Profile normalization arsdfajl") :
+        with pytest.warns(UserWarning, match="Profile normalization arsdfajl"):
             main_phaseogram(
                 [
                     evfile,

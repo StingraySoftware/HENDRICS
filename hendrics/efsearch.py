@@ -546,7 +546,8 @@ def transient_search(
 def plot_transient_search(results, gif_name=None):
     import matplotlib.pyplot as plt
     import matplotlib
-    matplotlib.use('Agg')
+
+    matplotlib.use("Agg")
     if gif_name is None:
         gif_name = "transients.gif"
 
@@ -589,7 +590,15 @@ def plot_transient_search(results, gif_name=None):
             maxline = mean_line[maxidx]
             best_f = f[maxidx]
             for il, line in enumerate(ima / detl * 3):
-                axf.plot(f, line, lw=0.2, ls="-", c="grey", alpha=0.5, label=f"{il}")
+                axf.plot(
+                    f,
+                    line,
+                    lw=0.2,
+                    ls="-",
+                    c="grey",
+                    alpha=0.5,
+                    label=f"{il}",
+                )
                 maxidx = np.argmax(mean_line)
                 if line[maxidx] > maxline:
                     best_f = f[maxidx]
@@ -884,7 +893,14 @@ def search_with_qffa(
     step = np.median(np.diff(all_fgrid[:, 0]))
     fdotstep = np.median(np.diff(all_fdotgrid[0]))
     if search_fdot:
-        return all_fgrid.T, all_fdotgrid.T, all_stats.T, step, fdotstep, length
+        return (
+            all_fgrid.T,
+            all_fdotgrid.T,
+            all_stats.T,
+            step,
+            fdotstep,
+            length,
+        )
     else:
         return all_fgrid.T[0], all_stats.T[0], step, length
 
@@ -951,7 +967,6 @@ def folding_search(
     expocorr=False,
     **kwargs,
 ):
-
     times = (events.time - events.gti[0, 0]).astype(np.float64)
     weights = 1
     if hasattr(events, "counts"):
@@ -2054,7 +2069,7 @@ def main_accelsearch(args=None):
         plt.plot(times, counts)
         for g in GTI - t0:
             print(g, Nsmooth)
-            good = (times > g[0])&(times <= g[1])
+            good = (times > g[0]) & (times <= g[1])
             if (g[1] - g[0]) < args.detrend:
                 counts[good] = 0
             else:
@@ -2078,6 +2093,7 @@ def main_accelsearch(args=None):
 
     fft_rescale = None
     if args.red_noise_filter:
+
         def fft_rescale(fourier_trans):
             pds = (fourier_trans * fourier_trans.conj()).real
             smooth = gaussian_filter(pds, 31)
@@ -2098,7 +2114,7 @@ def main_accelsearch(args=None):
         nproc=nproc,
         det_p_value=det_p_value,
         fft_rescale=fft_rescale,
-        candidate_file=outfile.replace(".csv", "")
+        candidate_file=outfile.replace(".csv", ""),
     )
 
     if len(results) > 0:

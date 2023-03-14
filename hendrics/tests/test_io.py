@@ -122,7 +122,10 @@ class TestIO:
         struct = Table(
             {
                 "a": [0, 0.1],
-                "b": [np.longdouble("123.4567890123456789"), np.longdouble(0)],
+                "b": [
+                    np.longdouble("123.4567890123456789"),
+                    np.longdouble(0),
+                ],
             }
         )
         save_data(struct, "bubu" + fmt)
@@ -493,7 +496,9 @@ model = models.Const1D()
 
     def test_load_model_input_not_string(self):
         """Input is not a string"""
-        with pytest.raises(TypeError, match="modelstring has to be an existing file name"):
+        with pytest.raises(
+            TypeError, match="modelstring has to be an existing file name"
+        ):
             b, kind, _ = load_model(1)
 
     def test_load_model_input_file_doesnt_exist(self):

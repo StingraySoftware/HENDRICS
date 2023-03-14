@@ -7,6 +7,7 @@ from ..ffa import ffa_search
 from ..efsearch import fit
 import pytest
 
+
 # @pytest.mark.skipif('not HAS_NUMBA')
 def test_ffa():
     period = 0.01

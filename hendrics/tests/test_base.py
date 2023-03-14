@@ -59,7 +59,9 @@ def test_deorbit_badpar():
 
 def test_deorbit_non_existing_par():
     ev = np.asarray(1)
-    with pytest.raises(FileNotFoundError, match="Parameter file warjladsfjqpeifjsdk.par"):
+    with pytest.raises(
+        FileNotFoundError, match="Parameter file warjladsfjqpeifjsdk.par"
+    ):
         deorbit_events(ev, "warjladsfjqpeifjsdk.par")
 
 

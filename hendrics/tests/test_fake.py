@@ -69,7 +69,11 @@ def test_filter_for_deadtime_par_bkg():
     events = np.array([1.1, 2, 2.2, 3, 3.2])
     bkg_events = np.array([1, 3.1])
     filt_events, info = hen.fake.filter_for_deadtime(
-        events, 0.11, bkg_ev_list=bkg_events, paralyzable=True, return_all=True
+        events,
+        0.11,
+        bkg_ev_list=bkg_events,
+        paralyzable=True,
+        return_all=True,
     )
     expected_ev = np.array([2, 2.2, 3])
     expected_bk = np.array([1])
@@ -89,7 +93,11 @@ def test_filter_for_deadtime_par_bkg_obj():
     events = EventList(time=times, energy=energies, pi=pis)
     bkg_events = np.array([1, 3.1])
     filt_events, info = hen.fake.filter_for_deadtime(
-        events, 0.11, bkg_ev_list=bkg_events, paralyzable=True, return_all=True
+        events,
+        0.11,
+        bkg_ev_list=bkg_events,
+        paralyzable=True,
+        return_all=True,
     )
     expected_ev = np.array([2, 2.2, 3])
     expected_bk = np.array([1])
@@ -118,7 +126,11 @@ def test_deadtime_mask_par():
     events = np.array([1.1, 2, 2.2, 3, 3.2])
     bkg_events = np.array([1, 3.1])
     filt_events, info = hen.fake.filter_for_deadtime(
-        events, 0.11, bkg_ev_list=bkg_events, paralyzable=True, return_all=True
+        events,
+        0.11,
+        bkg_ev_list=bkg_events,
+        paralyzable=True,
+        return_all=True,
     )
 
     assert np.allclose(filt_events, [2.0, 2.2, 3.0])

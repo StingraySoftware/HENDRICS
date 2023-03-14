@@ -663,7 +663,12 @@ def lcurve_from_fits(
 
 
 def lcurve_from_txt(
-    txt_file, outfile=None, noclobber=False, outdir=None, mjdref=None, gti=None
+    txt_file,
+    outfile=None,
+    noclobber=False,
+    outdir=None,
+    mjdref=None,
+    gti=None,
 ):
     """
     Load a lightcurve from a text file.
@@ -887,7 +892,10 @@ def main(args=None):
         type=float,
     )
     parser.add_argument(
-        "--ignore-gtis", help="Ignore GTIs", default=False, action="store_true"
+        "--ignore-gtis",
+        help="Ignore GTIs",
+        default=False,
+        action="store_true",
     )
     parser.add_argument(
         "-d", "--outdir", type=str, default=None, help="Output directory"

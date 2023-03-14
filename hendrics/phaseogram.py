@@ -167,7 +167,12 @@ class BasePhaseogram(object):
         colorbax = plt.subplot(gs[2])
 
         corrected_times = self.ev_times - self._delay_fun(self.ev_times)
-        (self.unnorm_phaseogr, phases, times, additional_info,) = normalized_phaseogram(
+        (
+            self.unnorm_phaseogr,
+            phases,
+            times,
+            additional_info,
+        ) = normalized_phaseogram(
             None,
             corrected_times,
             freq,
@@ -470,7 +475,6 @@ class BasePhaseogram(object):
         return self.model.as_parfile()
 
     def get_timing_model_string(self):
-
         if hasattr(self, "model") and self.model is not None:
             return self.update_pint_model()
 
@@ -622,7 +626,6 @@ class InteractivePhaseogram(BasePhaseogram):
         print("------------------------")
 
     def toa(self, event):
-
         dfreq, dfdot, dfddot = self._read_sliders()
         freqs = [self.freq - dfreq, self.fdot - dfdot, self.fddot - dfddot]
         folding_length = np.median(np.diff(self.times))
@@ -692,7 +695,6 @@ class InteractivePhaseogram(BasePhaseogram):
 
         if hasattr(self, "model"):
             if hasattr(self.model, "TZRMJD"):
-
                 self.model.TZRMJD.value = full_toa_corr
                 self.model.TZRSITE.value = "@"
 

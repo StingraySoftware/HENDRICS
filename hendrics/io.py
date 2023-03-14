@@ -125,7 +125,9 @@ class EFPeriodogram(object):
                 n_summed_spectra=int(self.M),
             )
         else:
-            threshold = fold_detection_level(nbin=int(self.nbin), epsilon=epsilon, ntrial=ntrial)
+            threshold = fold_detection_level(
+                nbin=int(self.nbin), epsilon=epsilon, ntrial=ntrial
+            )
 
         if len(self.stat.shape) == 1:
             best_peaks, best_stat = search_best_peaks(self.freq, self.stat, threshold)
@@ -134,7 +136,10 @@ class EFPeriodogram(object):
             best_peaks = []
             best_stat = []
             for i, idx in enumerate(best_cands):
-                f, fdot = self.freq[idx[0], idx[1]], self.fdots[idx[0], idx[1]]
+                f, fdot = (
+                    self.freq[idx[0], idx[1]],
+                    self.fdots[idx[0], idx[1]],
+                )
                 best_peaks.append([f, fdot])
                 best_stat.append(self.stat[idx[0], idx[1]])
         best_peaks = np.asarray(best_peaks)
@@ -208,7 +213,10 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, s
     # For some reason the doctest doesn't work if I don't do this instead
     # of using warnings.warn
     if elabel == "":
-        log.error("No Energy or PI information available. " "No energy filter applied to events")
+        log.error(
+            "No Energy or PI information available. "
+            "No energy filter applied to events"
+        )
         return ev, ""
 
     if emax is None and emin is None:
@@ -881,7 +889,9 @@ def load_pds(fname, nosub=False):
         setattr(cpds, key, data[key])
 
     outdir = fname.replace(HEN_FILE_EXTENSION, "")
-    modelfiles = glob.glob(os.path.join(outdir, fname.replace(HEN_FILE_EXTENSION, "__mod*__.p")))
+    modelfiles = glob.glob(
+        os.path.join(outdir, fname.replace(HEN_FILE_EXTENSION, "__mod*__.p"))
+    )
     cpds.best_fits = None
     if len(modelfiles) >= 1:
         bmodels = []
@@ -1049,7 +1059,9 @@ def _save_data_nc(struct, fname, kind="data"):
             # If a (long)double, split it in integer + floating part.
             # If the number is below zero, also use a logarithm of 10 before
             # that, so that we don't lose precision
-            var_I, var_F, var_log10, kind_str = _split_high_precision_number(k, var, probesize)
+            var_I, var_F, var_log10, kind_str = _split_high_precision_number(
+                k, var, probesize
+            )
             values.extend([var_I, var_log10, var_F, kind_str])
             formats.extend(["i8", "i8", "f8", str])
             varnames.extend([k + "_I", k + "_L", k + "_F", k + "_k"])
@@ -1365,7 +1377,9 @@ def save_model(model, fname="model.p", constraints=None):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError("Accepted callable models have only one " "non-keyword argument")
+            raise TypeError(
+                "Accepted callable models have only one " "non-keyword argument"
+            )
         modeldata["kind"] = "callable"
         modeldata["constraints"] = constraints
     else:
@@ -1421,7 +1435,9 @@ def load_model(modelstring):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError("Accepted callable models have only one " "non-keyword argument")
+            raise TypeError(
+                "Accepted callable models have only one " "non-keyword argument"
+            )
         return model, "callable", constraints
 
 
@@ -1497,5 +1513,6 @@ def main_filter_events(args=None):
         events, _ = filter_energy(events, args.emin, args.emax)
 
         save_events(
-            events, hen_root(fname) + f"_{args.emin:g}-{args.emax:g}keV" + HEN_FILE_EXTENSION
+            events,
+            hen_root(fname) + f"_{args.emin:g}-{args.emax:g}keV" + HEN_FILE_EXTENSION,
         )
