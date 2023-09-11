@@ -590,27 +590,23 @@ def save_events(eventlist, fname):
 
     out = dict(
         time=eventlist.time,
-        gti=eventlist.gti,
-        pi=eventlist.pi,
-        mjdref=eventlist.mjdref,
         tstart=np.min(eventlist.gti),
         tstop=np.max(eventlist.gti),
     )
 
-    out["__sr__class__type__"] = str(type(eventlist))
-
-    if hasattr(eventlist, "instr") and eventlist.instr is not None:
-        out["instr"] = eventlist.instr.lower()
-    else:
-        out["instr"] = "unknown"
     for attr in eventlist.array_attrs():
+        if attr == "mask":
+            continue
         out[attr] = getattr(eventlist, attr)
+    for attr in eventlist.meta_attrs():
+        val = getattr(eventlist, attr)
+        if val is None:
+            continue
+        if isinstance(val, str) and attr.lower() != "header":
+            val = val.lower()
+        out[attr] = val
 
-    if hasattr(eventlist, "header") and eventlist.header is not None:
-        out["header"] = eventlist.header
-    for attr in ["mission", "ephem", "timeref", "timesys"]:
-        if hasattr(eventlist, attr) and getattr(eventlist, attr) is not None:
-            out[attr] = getattr(eventlist, attr).lower()
+    out["__sr__class__type__"] = str(type(eventlist))
 
     if fmt == "pickle":
         _save_data_pickle(out, fname)
@@ -629,28 +625,16 @@ def load_events(fname):
         # Try one of the known files from Astropy
         return EventList.read(fname, fmt=fmt)
 
-    eventlist = EventList()
-
-    eventlist.time = out["time"]
-    eventlist.gti = out["gti"]
-
-    for attr in ["pi", "cal_pi", "detector_id", "energy"]:
-        if attr in out:
-            setattr(eventlist, attr, force_iterable(out[attr]))
-    if "mjdref" in list(out.keys()):
-        eventlist.mjdref = out["mjdref"]
-    if "instr" in list(out.keys()):
-        eventlist.instr = out["instr"].lower()
-    if "header" in list(out.keys()):
-        eventlist.header = out["header"]
-    if "mission" in list(out.keys()):
-        eventlist.mission = out["mission"].lower()
-    else:
-        eventlist.mission = ""
-
-    for attr in ["mission", "ephem", "timeref", "timesys"]:
-        if attr in list(out.keys()):
-            setattr(eventlist, attr, out[attr].lower())
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
+        eventlist = EventList(**out)
+    for key in out.keys():
+        if hasattr(eventlist, key):
+            continue
+        setattr(eventlist, key, out[key])
+    for attr in ["mission", "instr"]:
+        if attr not in list(out.keys()):
+            setattr(eventlist, attr, "")
     return eventlist
 
 
@@ -675,37 +659,23 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
 
     out["__sr__class__type__"] = str(lctype)
 
-    out["counts"] = lcurve.counts
-    out["counts_err"] = lcurve.counts_err
-    for attr in lcurve.array_attrs():
-        out[attr] = getattr(lcurve, attr)
-
+    # Initialize if they aren't already
+    lcurve.counts, lcurve.counts_err
     out["time"] = lcurve.time
-    out["dt"] = lcurve.dt
-    out["gti"] = lcurve.gti
-    out["err_dist"] = lcurve.err_dist
-    out["mjdref"] = lcurve.mjdref
-    out["tstart"] = lcurve.tstart
-    out["tseg"] = lcurve.tseg
-    if hasattr(lcurve, "header"):
-        out["header"] = lcurve.header
-    if hasattr(lcurve, "expo"):
-        out["expo"] = lcurve.expo
-    if hasattr(lcurve, "base"):
-        out["base"] = lcurve.base
-    if lctype == "Color":
-        out["e_intervals"] = lcurve.e_intervals
-    elif hasattr(lcurve, "e_interval") and lcurve.e_interval is not None:
-        out["e_interval"] = lcurve.e_interval
-    if hasattr(lcurve, "use_pi"):
-        out["use_pi"] = lcurve.use_pi
 
-    if hasattr(lcurve, "instr") and lcurve.instr is not None:
-        out["instr"] = lcurve.instr.lower()
-    else:
-        out["instr"] = "unknown"
-    if hasattr(lcurve, "mission") and lcurve.mission is not None:
-        out["mission"] = lcurve.mission.lower()
+    for attr in lcurve.array_attrs():
+        if attr == "mask":
+            continue
+        out[attr] = getattr(lcurve, attr)
+    for attr in lcurve.meta_attrs():
+        val = getattr(lcurve, attr)
+        if isinstance(val, bool):
+            val = int(val)
+        if val is None:
+            continue
+        if isinstance(val, str) and attr.lower() != "header":
+            val = val.lower()
+        out[attr] = val
 
     if fmt == "pickle":
         return _save_data_pickle(out, fname)
@@ -724,33 +694,15 @@ def load_lcurve(fname):
         # Try one of the known files from Lightcurve
         return Lightcurve.read(fname, fmt=fmt, skip_checks=True)
 
-    lcurve = Lightcurve(
-        data["time"],
-        data["counts"],
-        err=data["counts_err"],
-        gti=data["gti"],
-        err_dist=data["err_dist"],
-        mjdref=data["mjdref"],
-        dt=data["dt"],
-        skip_checks=True,
-    )
-
-    if "instr" in list(data.keys()) and data["instr"] is not None:
-        lcurve.instr = data["instr"].lower()
-    if "mission" in list(data.keys()) and data["mission"] is not None:
-        lcurve.mission = data["mission"].lower()
-    if "expo" in list(data.keys()):
-        lcurve.expo = data["expo"]
-    if "e_intervals" in list(data.keys()):
-        lcurve.e_intervals = data["e_intervals"]
-    if "e_interval" in list(data.keys()):
-        lcurve.e_interval = data["e_interval"]
-    if "use_pi" in list(data.keys()):
-        lcurve.use_pi = data["use_pi"]
-    if "header" in list(data.keys()):
-        lcurve.header = data["header"]
-    if "base" in list(data.keys()):
-        lcurve.base = data["base"]
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
+        lcurve = Lightcurve(**data, skip_checks=True)
+    for key in data.keys():
+        if hasattr(lcurve, key):
+            continue
+        setattr(lcurve, key, data[key])
+    if "mission" not in list(data.keys()):
+        lcurve.mission = ""
 
     return lcurve
 
