@@ -18,15 +18,15 @@ def phases_from_zero_to_one(phase):
 
     Examples
     --------
-    >>> phases_from_zero_to_one(0.1)
-    0.1
-    >>> phases_from_zero_to_one(-0.9)
-    0.1
-    >>> phases_from_zero_to_one(0.9)
-    0.9
-    >>> phases_from_zero_to_one(3.1)
-    0.1
-    >>> assert np.allclose(phases_from_zero_to_one([0.1, 3.1, -0.9]), 0.1)
+    >>> np.isclose(phases_from_zero_to_one(0.1), 0.1)
+    True
+    >>> np.isclose(phases_from_zero_to_one(-0.9), 0.1)
+    True
+    >>> np.isclose(phases_from_zero_to_one(0.9), 0.9)
+    True
+    >>> np.isclose(phases_from_zero_to_one(3.1), 0.1)
+    True
+    >>> np.allclose(phases_from_zero_to_one([0.1, 3.1, -0.9]), 0.1)
     True
     """
     while phase > 1:
@@ -42,13 +42,13 @@ def phases_around_zero(phase):
 
     Examples
     --------
-    >>> phases_around_zero(0.6)
-    -0.4
-    >>> phases_around_zero(-0.9)
-    0.1
-    >>> phases_around_zero(3.9)
-    -0.1
-    >>> assert np.allclose(phases_from_zero_to_one([0.6, -0.4]), -0.4)
+    >>> np.isclose(phases_around_zero(0.6), -0.4)
+    True
+    >>> np.isclose(phases_around_zero(-0.9), 0.1)
+    True
+    >>> np.isclose(phases_around_zero(3.9), -0.1)
+    True
+    >>> np.allclose(phases_around_zero([0.6, -0.4]), -0.4)
     True
     """
     ph = phase
