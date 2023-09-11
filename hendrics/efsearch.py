@@ -150,7 +150,7 @@ def decide_binary_parameters(
 
         dX = 1 / (TWOPI * freq)
 
-        nX = int(np.diff(asini_range) // dX) + 1
+        nX = int(np.diff(asini_range)[0] // dX) + 1
         Xs = np.random.uniform(asini_range[0], asini_range[1], nX)
 
         for X in Xs:
