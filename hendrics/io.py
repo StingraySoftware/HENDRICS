@@ -603,9 +603,8 @@ def save_events(eventlist, fname):
         out["instr"] = eventlist.instr.lower()
     else:
         out["instr"] = "unknown"
-    for attr in ["energy", "cal_pi", "detector_id"]:
-        if hasattr(eventlist, attr) and getattr(eventlist, attr) is not None:
-            out[attr] = getattr(eventlist, attr)
+    for attr in eventlist.array_attrs():
+        out[attr] = getattr(eventlist, attr)
 
     if hasattr(eventlist, "header") and eventlist.header is not None:
         out["header"] = eventlist.header
@@ -678,6 +677,9 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
 
     out["counts"] = lcurve.counts
     out["counts_err"] = lcurve.counts_err
+    for attr in lcurve.array_attrs():
+        out[attr] = getattr(lcurve, attr)
+
     out["time"] = lcurve.time
     out["dt"] = lcurve.dt
     out["gti"] = lcurve.gti
