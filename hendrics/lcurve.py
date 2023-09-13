@@ -438,8 +438,6 @@ def lcurve_from_events(
         gti=gti,
         mjdref=evdata.mjdref,
         dt=bintime,
-        tstart=tstart,
-        tseg=tstop - tstart,
         err_dist=err_dist,
     )
 
