@@ -296,6 +296,7 @@ def lcurve_from_events(
     outfile=None,
     noclobber=False,
     deorbit_par=None,
+    weight_on=None,
 ):
     """Bin an event list in a light curve.
 
@@ -341,6 +342,11 @@ def lcurve_from_events(
     log.info("Loading file %s..." % f)
     evdata = load_events(f)
     log.info("Done.")
+    weight_on_tag = ""
+    weights = None
+    if weight_on is not None:
+        weights = getattr(evdata, weight_on)
+        weight_on_tag = f"_weight{weight_on}"
 
     deorbit_tag = ""
     if deorbit_par is not None:
@@ -393,7 +399,9 @@ def lcurve_from_events(
         )
 
     # Assign default value if None
-    outfile = assign_value_if_none(outfile, hen_root(f) + tag + deorbit_tag + "_lc")
+    outfile = assign_value_if_none(
+        outfile, hen_root(f) + tag + deorbit_tag + weight_on_tag + "_lc"
+    )
 
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
@@ -411,13 +419,28 @@ def lcurve_from_events(
         )
         return [outfile]
 
-    lc = Lightcurve.make_lightcurve(
-        events,
-        bintime,
+    times = np.arange(tstart + bintime / 2, tstop + bintime, bintime)
+    time_edges = np.arange(tstart, tstop + bintime, bintime)
+
+    counts, _ = np.histogram(events, bins=time_edges, weights=weights)
+
+    counts_err = None
+    if weights is not None:
+        err_dist = "gauss"
+        counts_err = counts * np.std(weights)
+    else:
+        err_dist = "poisson"
+
+    lc = Lightcurve(
+        times,
+        counts,
+        err=counts_err,
+        gti=gti,
+        mjdref=evdata.mjdref,
+        dt=bintime,
         tstart=tstart,
         tseg=tstop - tstart,
-        mjdref=evdata.mjdref,
-        gti=gti,
+        err_dist=err_dist,
     )
 
     lc.instr = instr
@@ -803,6 +826,7 @@ def _execute_lcurve(args):
             "bintime": bintime,
             "outdir": args.outdir,
             "deorbit_par": args.deorbit_par,
+            "weight_on": args.weight_on,
         }
 
     arglist = [[f, argdict.copy()] for f in args.files]
@@ -917,6 +941,12 @@ def main(args=None):
         help="Input files are light curves in txt format",
         default=False,
         action="store_true",
+    )
+    parser.add_argument(
+        "--weight-on",
+        default=None,
+        type=str,
+        help="Use a given attribute of the event list as weights for the light curve",
     )
     parser = _add_default_args(
         parser, ["deorbit", "output", "loglevel", "debug", "nproc"]
