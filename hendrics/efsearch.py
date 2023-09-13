@@ -635,7 +635,7 @@ def plot_transient_search(results, gif_name=None):
         all_images.append(image)
 
     if HAS_IMAGEIO:
-        imageio.mimsave(gif_name, all_images, fps=1)
+        imageio.v3.imwrite(gif_name, all_images, duration=1000.0)
     else:
         warnings.warn(
             "imageio needed to save the transient search results " "into a gif image."
