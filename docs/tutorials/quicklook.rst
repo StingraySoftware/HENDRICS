@@ -11,12 +11,12 @@ techniques, so that I don't repeat concepts as Nyquist frequency, the
 importance of choosing carefully the binning time and the FFT length,
 and so on. If you are not familiar with these concepts, `this paper by
 Michiel is a very good place to
-start <http://dare.uva.nl/document/2/47104>`__.
+start <https://pure.uva.nl/ws/files/2212461/47104_Fourier_techniques.pdf>`__.
 In this tutorial we will show an example based on _NuSTAR_ data. For this
 satellite, it is advisable to use the cospectrum (real part of the cross
 spectrum) of the data from the two separated detectors instead of the
 power spectrum of the full light curve, to work around the effect of
-dead time. See our `timing paper <http://arxiv.org/abs/1409.3248>`__ for
+dead time. See our `timing paper <https://arxiv.org/abs/1409.3248>`__ for
 details.
 
 This software works in separated steps. One starts from cleaned event
@@ -248,8 +248,7 @@ Calculating the cospectrum and phase/time lags
 The calculation of lags and their errors is implemented in ``HENlags``,
 and needs to be tested properly. For the cospectrum, it is sufficient to
 read the real part of the cross power spectrum as depicted in the
-relevant function in ``plot.py`` (`Use the source,
-Luke! <http://adastraerrans.com/archivos/use-the-source-luke.png>`__).
+relevant function in ``plot.py`` (Use the source, Luke!).
 
 Saving the spectra in a format readable to XSpec
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

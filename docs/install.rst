@@ -7,35 +7,35 @@ Prerequisites
 You'll need a recent python 3.8+ installation.
 The main dependency is
 
-1. `Stingray <http://github.com/stingraysoftware/stingray>`__,
+1. `Stingray <https://github.com/stingraysoftware/stingray>`__,
 
 which in turn depends on
 
-2. `Numpy <http://www.numpy.org/>`__;
+2. `Numpy <https://www.numpy.org/>`__;
 
-3. `Matplotlib <http://matplotlib.org/>`__;
+3. `Matplotlib <https://matplotlib.org/>`__;
 
-4. `Scipy <http://scipy.org/>`__;
+4. `Scipy <https://scipy.org/>`__;
 
-5. `Astropy <http://www.astropy.org/>`__
+5. `Astropy <https://www.astropy.org/>`__
 
 **Optional but recommended** dependencies are:
 
-6. the `netCDF 4 library <http://www.unidata.ucar.edu/software/netcdf/>`__ with its
+6. the `netCDF 4 library <https://www.unidata.ucar.edu/software/netcdf/>`__ with its
 `python bindings <https://github.com/Unidata/netcdf4-python>`__;
 
-7. `Numba <http://numba.pydata.org>`__;
+7. `Numba <https://numba.pydata.org>`__;
 
-8. `statsmodels <http://www.statsmodels.org/stable/index.html>`__
+8. `statsmodels <https://www.statsmodels.org/stable/index.html>`__
 
 9. `emcee <https://emcee.readthedocs.io/en/stable/>`__
 
-10. `pint <http://github.com/nanograv/pint/>`__
+10. `pint <https://github.com/nanograv/pint/>`__
 
 You should also
-have a working `HEASoft <http://heasarc.nasa.gov/lheasoft/>`__
+have a working `HEASoft <https://heasarc.gsfc.nasa.gov/lheasoft/>`__
 installation to produce the cleaned event files and to use
-`XSpec <http://heasarc.nasa.gov/lheasoft/xanadu/xspec/index.html>`__.
+`XSpec <https://heasarc.gsfc.nasa.gov/xanadu/xspec/>`__.
 
 Installing releases
 -------------------
