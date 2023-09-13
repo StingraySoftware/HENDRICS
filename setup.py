@@ -31,10 +31,10 @@ directly with::
 
 For more information, see:
 
-  http://docs.astropy.org/en/latest/development/testguide.html#running-tests
+  https://docs.astropy.org/en/latest/development/testguide.html#running-tests
 """
 
-if 'test' in sys.argv:
+if "test" in sys.argv:
     print(TEST_HELP)
     sys.exit(1)
 
@@ -56,10 +56,10 @@ You can also build the documentation with Sphinx directly using::
 
 For more information, see:
 
-  http://docs.astropy.org/en/latest/install.html#builddocs
+  https://docs.astropy.org/en/latest/install.html#builddocs
 """
 
-if 'build_docs' in sys.argv or 'build_sphinx' in sys.argv:
+if "build_docs" in sys.argv or "build_sphinx" in sys.argv:
     print(DOCS_HELP)
     sys.exit(1)
 
@@ -74,5 +74,9 @@ except Exception:
     version = '{version}'
 """.lstrip()
 
-setup(use_scm_version={'write_to': os.path.join('hendrics', 'version.py'),
-                       'write_to_template': VERSION_TEMPLATE})
+setup(
+    use_scm_version={
+        "write_to": os.path.join("hendrics", "version.py"),
+        "write_to_template": VERSION_TEMPLATE,
+    }
+)

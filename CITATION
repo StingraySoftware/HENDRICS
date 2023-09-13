@@ -15,7 +15,7 @@ howpublished = {Astrophysics Source Code Library},
     month = feb,
 archivePrefix = "ascl",
    eprint = {1502.021},
-   adsurl = {http://adsabs.harvard.edu/abs/2015ascl.soft02021B},
+   adsurl = {https://adsabs.harvard.edu/abs/2015ascl.soft02021B},
   adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 
@@ -39,7 +39,7 @@ archivePrefix = "arXiv",
       eid = {109},
     pages = {109},
       doi = {10.1088/0004-637X/800/2/109},
-   adsurl = {http://adsabs.harvard.edu/abs/2015ApJ...800..109B},
+   adsurl = {https://adsabs.harvard.edu/abs/2015ApJ...800..109B},
   adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 

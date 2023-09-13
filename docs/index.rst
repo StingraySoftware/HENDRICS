@@ -49,6 +49,8 @@ HENDRICS 8.0 (under development)
 + ``HENaccelsearch`` now has additional options for detrending, denoising and deorbiting
 + An improved Maximum likelihood algorithm as FFTFIT substitute for TOA calculation
 + NASA's IXPE added to supported missions
++ Compatible with `Stingray 1.1 <https://github.com/StingraySoftware/stingray/releases/tag/v1.1>`__ or newer
+
 
 HENDRICS 7.0
 ~~~~~~~~~~~~
@@ -228,8 +230,6 @@ API documentation
    :maxdepth: 2
 
    hendrics/modules
-   hendrics/index
-
 
 Indices and tables
 ==================

@@ -41,7 +41,7 @@ Installing releases
 -------------------
 ::
 
-    $ pip install hendrics numba emcee statsmodels netcdf4 matplotlib stingray>=1.0b1
+    $ pip install hendrics numba emcee statsmodels netcdf4 matplotlib stingray>=1.1
 
 
 Installing the Development version
