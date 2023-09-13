@@ -594,8 +594,6 @@ def save_events(eventlist, fname):
     )
 
     for attr in eventlist.array_attrs():
-        if attr.startswith("_") or "mask" in attr:
-            continue
         out[attr] = getattr(eventlist, attr)
     for attr in eventlist.meta_attrs():
         val = getattr(eventlist, attr)
