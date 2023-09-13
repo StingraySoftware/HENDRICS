@@ -155,7 +155,7 @@ def decide_binary_parameters(
 
         for X in Xs:
             dOmega = 1 / (TWOPI * freq * X * length) * D_OMEGA_FACTOR
-            nOmega = int(np.diff(omega_range) // dOmega) + 1
+            nOmega = int(np.diff(omega_range)[0] // dOmega) + 1
             Omegas = np.random.uniform(omega_range[0], omega_range[1], nOmega)
 
             for Omega in Omegas:
