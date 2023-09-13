@@ -28,7 +28,7 @@ which in turn depends on
 
 8. `statsmodels <http://www.statsmodels.org/stable/index.html>`__
 
-9. `emcee <http://dfm.io/emcee/current/>`__
+9. `emcee <https://emcee.readthedocs.io/en/stable/>`__
 
 10. `pint <http://github.com/nanograv/pint/>`__
 
