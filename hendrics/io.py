@@ -438,7 +438,6 @@ def save_as_netcdf(vars, varnames, formats, fname):
 
         for dimname in dims.keys():
             rootgrp.createDimension(dimname, dims[dimname])
-
         vnc = rootgrp.createVariable(varnames[iv], formats[iv], dimspec)
         try:
             if formats[iv] == str:
@@ -595,7 +594,7 @@ def save_events(eventlist, fname):
     )
 
     for attr in eventlist.array_attrs():
-        if attr == "mask":
+        if attr.startswith("_") or "mask" in attr:
             continue
         out[attr] = getattr(eventlist, attr)
     for attr in eventlist.meta_attrs():
@@ -629,7 +628,7 @@ def load_events(fname):
         warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
         eventlist = EventList(**out)
     for key in out.keys():
-        if hasattr(eventlist, key):
+        if hasattr(eventlist, key) and getattr(eventlist, key) is not None:
             continue
         setattr(eventlist, key, out[key])
     for attr in ["mission", "instr"]:
@@ -664,7 +663,7 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     out["time"] = lcurve.time
 
     for attr in lcurve.array_attrs():
-        if attr == "mask":
+        if attr.startswith("_") or "mask" in attr:
             continue
         out[attr] = getattr(lcurve, attr)
     for attr in lcurve.meta_attrs():
@@ -698,7 +697,7 @@ def load_lcurve(fname):
         warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
         lcurve = Lightcurve(**data, skip_checks=True)
     for key in data.keys():
-        if hasattr(lcurve, key):
+        if hasattr(lcurve, key) and getattr(lcurve, key) is not None:
             continue
         setattr(lcurve, key, data[key])
     if "mission" not in list(data.keys()):
