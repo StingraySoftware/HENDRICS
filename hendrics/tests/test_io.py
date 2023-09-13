@@ -155,6 +155,7 @@ class TestIO:
             mjdref=54385.3254923845,
             gti=np.longdouble([[-0.5, 3.5]]),
         )
+        events.q = [2, 3, 4]
         events.cal_pi = events.pi.copy()
         events.energy = np.array([3.0, 4.0, 5.0])
         events.mission = "nustar"
@@ -164,6 +165,7 @@ class TestIO:
         assert np.allclose(events.time, events2.time)
         assert np.allclose(events.cal_pi, events2.cal_pi)
         assert np.allclose(events.pi, events2.pi)
+        assert np.allclose(events.q, events2.q)
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
         assert np.allclose(events.energy, events2.energy)
@@ -180,6 +182,7 @@ class TestIO:
             mjdref=54385.3254923845,
             gti=np.longdouble([[-0.5, 3.5]]),
         )
+        events.q = [2, 3, 4]
         events.cal_pi = events.pi.copy()
         events.energy = np.array([3.0, 4.0, 5.0])
         events.mission = "nustar"
@@ -192,6 +195,7 @@ class TestIO:
         assert np.allclose(events.time[1:], events2.time)
         assert np.allclose(events.cal_pi[1:], events2.cal_pi)
         assert np.allclose(events.pi[1:], events2.pi)
+        assert np.allclose(events.q[1:], events2.q)
         assert np.allclose(events.mjdref, events2.mjdref)
         assert np.allclose(events.gti, events2.gti)
         assert np.allclose(events.energy[1:], events2.energy)
@@ -261,7 +265,6 @@ class TestIO:
             "amplitude",
             "power",
         ]:
-            print(attr, getattr(pds, attr), getattr(pds2, attr))
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
     def test_load_pds_fails(self):
