@@ -34,8 +34,7 @@ users will have the choice to analyze single datasets with an easy
 interactive interface, and continue the analysis in batch mode with
 HENDRICS. The periodograms produced by HENDRICS (like a power density
 spectrum or a cospectrum), can be saved in a format compatible with
-`Xspec <https://heasarc.gsfc.nasa.gov/xanadu/xspec/>`__ or
-`Isis <https://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html>`__, for
+``XSpec`` or ``ISIS``, for
 those who are familiar with those fitting packages. Despite its original
 main focus on NuSTAR, the software can be used to make standard
 aperiodic timing analysis on X-ray data from, in principle, any other
