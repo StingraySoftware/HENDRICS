@@ -14,17 +14,85 @@ env:
   TOXARGS: '-v'
 
 jobs:
-  ci-tests:
-    name: ${{ matrix.os }}, ${{ matrix.tox_env }}
+
+  check_commit:
+    # Check the commit message for the presence of keywords that indicate
+    # that the CI tests should be skipped, in favor of running doc builds only.
+    # Messages like [docs only], [docs-only], or [skip-tests] will skip
+    # Only the CI part of the workflow, not the doc build.
+    # [skip ci], [ci skip] etc. are instead handled by GitHub itself and will skip
+    # the entire workflow.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # Found this solution at
+      # https://monadical.com/posts/filters-github-actions.html#Case-2-Pull-request
+      - name: check if message indicates that tests should be skipped
+        id: check_commit
+        run: |
+          message=$(git log -1 --pretty=format:'%B')
+          re="\[(docs.only|skip-tests).*\]"
+          if [[ $message =~ $re ]]; then
+            echo "match=true" >> $GITHUB_OUTPUT
+            echo "$message -> Match is true"
+          else
+            echo "$message -> Match is false"
+          fi
+    outputs:
+      match: ${{ steps.check_commit.outputs.match }}
+
+  docs-tests:
+    name: ${{ matrix.tox_env }}
     runs-on: ${{ matrix.os }}
-    if: "!(contains(github.event.head_commit.message, '[skip ci]') || contains(github.event.head_commit.message, '[ci skip]'))"
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
-            python: '3.8'
+            python: '3.10'
             tox_env: 'build_docs'
+          - os: ubuntu-latest
+            python: '3.10'
+            tox_env: 'linkcheck'
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Check out that no sensitive environment variable is shared
+        run: env
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install base dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tox
+      - name: Install system dependencies
+        run: sudo apt-get -y install graphviz pandoc
+      - name: Print Python, pip, setuptools, and tox versions
+        run: |
+          python -c "import sys; print(f'Python {sys.version}')"
+          python -c "import pip; print(f'pip {pip.__version__}')"
+          python -c "import setuptools; print(f'setuptools {setuptools.__version__}')"
+          python -c "import tox; print(f'tox {tox.__version__}')"
+      - name: Run tests
+        run: tox -e ${{ matrix.tox_env }}
+
+  ci-tests:
+    needs: check_commit
+    if: ${{ needs.check_commit.outputs.match != 'true' }}
+    name: ${{ matrix.os }}, ${{ matrix.tox_env }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - os: ubuntu-latest
             python: '3.10'
             tox_env: 'codestyle'
