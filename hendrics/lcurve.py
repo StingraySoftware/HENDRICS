@@ -15,6 +15,7 @@ from .base import (
     hen_root,
     mkdir_p,
     interpret_bintime,
+    histogram,
 )
 from .io import load_events, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
@@ -419,10 +420,12 @@ def lcurve_from_events(
         )
         return [outfile]
 
-    times = np.arange(tstart + bintime / 2, tstop + bintime, bintime)
-    time_edges = np.arange(tstart, tstop + bintime, bintime)
+    n_times = int((tstop - tstart) / bintime)
+    time_ranges = [tstart, tstart + n_times * bintime]
+    time_edges = np.linspace(time_ranges[0], time_ranges[1], n_times + 1)
 
-    counts, _ = np.histogram(events, bins=time_edges, weights=weights)
+    counts = histogram(events, ranges=time_ranges, bins=n_times, weights=weights)
+    times = (time_edges[1:] + time_edges[:-1]) / 2
 
     counts_err = None
     if weights is not None:
