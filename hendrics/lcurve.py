@@ -423,7 +423,7 @@ def lcurve_from_events(
     n_times = int((tstop - tstart) / bintime)
     ev_times = (events - tstart).astype(float)
     time_ranges = [0, n_times * bintime]
-    time_edges = np.linspace(time_ranges[0], time_ranges[1], n_times + 1)
+    time_edges = np.linspace(time_ranges[0], time_ranges[1], n_times + 1).astype(float)
 
     raw_counts = histogram(
         ev_times,
@@ -435,7 +435,7 @@ def lcurve_from_events(
             ev_times,
             range=time_ranges,
             bins=n_times,
-            weights=weights,
+            weights=weights.astype(float),
         )
         counts = weighted
         counts_err = raw_counts * np.std(weights)
