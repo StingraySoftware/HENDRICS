@@ -425,20 +425,27 @@ def lcurve_from_events(
     time_ranges = [0, n_times * bintime]
     time_edges = np.linspace(time_ranges[0], time_ranges[1], n_times + 1)
 
-    counts = histogram(
+    raw_counts = histogram(
         ev_times,
         range=time_ranges,
         bins=n_times,
-        weights=weights,
     )
-    times = (time_edges[1:] + time_edges[:-1]) / 2 + tstart
-
-    counts_err = None
     if weights is not None:
+        weighted = histogram(
+            ev_times,
+            range=time_ranges,
+            bins=n_times,
+            weights=weights,
+        )
+        counts = weighted
+        counts_err = raw_counts * np.std(weights)
         err_dist = "gauss"
-        counts_err = counts * np.std(weights)
     else:
+        counts = raw_counts
         err_dist = "poisson"
+        counts_err = None
+
+    times = (time_edges[1:] + time_edges[:-1]) / 2 + tstart
 
     lc = Lightcurve(
         times,
