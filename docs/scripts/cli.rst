@@ -516,7 +516,8 @@ HENlcurve
 
     usage: HENlcurve [-h] [-b BINTIME] [--safe-interval SAFE_INTERVAL SAFE_INTERVAL] [-e ENERGY_INTERVAL ENERGY_INTERVAL]
                      [--pi-interval PI_INTERVAL PI_INTERVAL] [-s] [-j] [-g] [--minlen MINLEN] [--ignore-gtis] [-d OUTDIR] [--noclobber]
-                     [--fits-input] [--txt-input] [-p DEORBIT_PAR] [-o OUTFILE] [--loglevel LOGLEVEL] [--debug] [--nproc NPROC]
+                     [--fits-input] [--txt-input] [--weight-on WEIGHT_ON] [-p DEORBIT_PAR] [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
+                     [--nproc NPROC]
                      files [files ...]
 
     Create lightcurves starting from event files. It is possible to specify energy or channel filtering options
@@ -544,6 +545,8 @@ HENlcurve
       --noclobber           Do not overwrite existing files
       --fits-input          Input files are light curves in FITS format
       --txt-input           Input files are light curves in txt format
+      --weight-on WEIGHT_ON
+                            Use a given attribute of the event list as weights for the light curve
       -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT installed)
       -o OUTFILE, --outfile OUTFILE
