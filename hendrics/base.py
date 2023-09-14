@@ -671,10 +671,15 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     ...                       use_memmap=True)
     >>> assert np.all(H == Hn)
     >>> assert os.path.exists('out.npy')
+    >>> os.unlink('out.npy')
+    >>> # Now use memmap but do not specify a tmp file
+    >>> Hn = hist1d_numba_seq(x, bins=10**8, ranges=[0., 1.],
+    ...                       use_memmap=True)
+    >>> assert np.all(H == Hn)
     """
     if bins > 10**7 and use_memmap:
         if tmp is None:
-            tmp = tempfile.NamedTemporaryFile("w+")
+            tmp = tempfile.NamedTemporaryFile("w+").name
         hist_arr = np.lib.format.open_memmap(
             tmp, mode="w+", dtype=a.dtype, shape=(bins,)
         )
@@ -779,10 +784,15 @@ def hist1d_numba_seq_weight(a, weights, bins, ranges, use_memmap=False, tmp=None
     ...                              use_memmap=True)
     >>> assert np.all(H == Hn)
     >>> assert os.path.exists('out.npy')
+    >>> os.unlink('out.npy')
+    >>> # Now use memmap but do not specify a tmp file
+    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=10**8, ranges=[0., 1.],
+    ...                              use_memmap=True)
+    >>> assert np.all(H == Hn)
     """
     if bins > 10**7 and use_memmap:
         if tmp is None:
-            tmp = tempfile.NamedTemporaryFile("w+")
+            tmp = tempfile.NamedTemporaryFile("w+").name
         hist_arr = np.lib.format.open_memmap(
             tmp, mode="w+", dtype=a.dtype, shape=(bins,)
         )
