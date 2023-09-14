@@ -951,12 +951,24 @@ if HAS_NUMBA:
         ...                  ranges=[[0., 1.], [2., 3.]],
         ...                  weights=weight)
         >>> assert np.all(H == Hn)
+        >>> Hn1 = histogram2d(x, y, bins=(5, 5),
+        ...                   ranges=[[0., 1.], [2., 3.]],
+        ...                   weights=None)
+        >>> Hn2 = histogram2d(x, y, bins=(5, 5),
+        ...                   ranges=[[0., 1.], [2., 3.]])
+        >>> assert np.all(Hn1 == Hn2)
         """
         if "range" in kwargs:
             kwargs["ranges"] = kwargs.pop("range")
-        if "weights" in kwargs:
-            weights = kwargs.pop("weights")
+
+        if "weights" not in kwargs:
+            return hist2d_numba_seq(*args, **kwargs)
+
+        weights = kwargs.pop("weights")
+
+        if weights is not None:
             return hist2d_numba_seq_weight(*args, weights, **kwargs)
+
         return hist2d_numba_seq(*args, **kwargs)
 
     def histogram(*args, **kwargs):
@@ -969,12 +981,21 @@ if HAS_NUMBA:
         >>> Hn = histogram(x, weights=weights, bins=5, ranges=[0., 1.], tmp='out.npy',
         ...                use_memmap=True)
         >>> assert np.all(H == Hn)
+        >>> Hn1 = histogram(x, weights=None, bins=5, ranges=[0., 1.])
+        >>> Hn2 = histogram(x, bins=5, ranges=[0., 1.])
+        >>> assert np.all(Hn1 == Hn2)
         """
         if "range" in kwargs:
             kwargs["ranges"] = kwargs.pop("range")
-        if "weights" in kwargs:
-            weights = kwargs.pop("weights")
+
+        if "weights" not in kwargs:
+            return hist1d_numba_seq(*args, **kwargs)
+
+        weights = kwargs.pop("weights")
+
+        if weights is not None:
             return hist1d_numba_seq_weight(*args, weights, **kwargs)
+
         return hist1d_numba_seq(*args, **kwargs)
 
 else:
