@@ -13,9 +13,9 @@ HENDRICS documentation
 .. |Build Status| image:: https://github.com/StingraySoftware/HENDRICS/workflows/CI%20Tests/badge.svg
     :target: https://github.com/StingraySoftware/HENDRICS/actions/
 .. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/main/graph/badge.svg
-  :target: https://codecov.io/gh/StingraySoftware/HENDRICS
+  :target: https://app.codecov.io/gh/StingraySoftware/HENDRICS
 .. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=main
-   :target: http://hendrics.readthedocs.io/en/main/?badge=main
+   :target: https://hendrics.stingray.science/en/main/?badge=main
 
 Description
 -----------
@@ -34,8 +34,7 @@ users will have the choice to analyze single datasets with an easy
 interactive interface, and continue the analysis in batch mode with
 HENDRICS. The periodograms produced by HENDRICS (like a power density
 spectrum or a cospectrum), can be saved in a format compatible with
-`Xspec <http://heasarc.gsfc.nasa.gov/xanadu/xspec/>`__ or
-`Isis <http://space.mit.edu/home/mnowak/isis_vs_xspec/mod.html>`__, for
+``XSpec`` or ``ISIS``, for
 those who are familiar with those fitting packages. Despite its original
 main focus on NuSTAR, the software can be used to make standard
 aperiodic timing analysis on X-ray data from, in principle, any other
@@ -50,11 +49,14 @@ HENDRICS 8.0 (under development)
 + ``HENaccelsearch`` now has additional options for detrending, denoising and deorbiting
 + An improved Maximum likelihood algorithm as FFTFIT substitute for TOA calculation
 + NASA's IXPE added to supported missions
++ Compatible with `Stingray 1.1 <https://github.com/StingraySoftware/stingray/releases/tag/v1.1>`__ or newer
++ Add option to obtain weighted light curves
+
 
 HENDRICS 7.0
 ~~~~~~~~~~~~
 
-+ Based on `Stingray 1.0 <https://github.com/StingraySoftware/stingray/releases/tag/v1.>`__, bringing a huge bump in performance
++ Based on `Stingray 1.0 <https://github.com/StingraySoftware/stingray/releases/tag/v1.0>`__, bringing a huge bump in performance
 + Following Astropy, Numpy and Scipy, HENDRICS 7.0 is only compatible with Python >3.8
 + Accepts many more file formats for round-trip of Stingray objects, thanks to the new functionality of Stingray.
 + Energy-filtered periodograms
@@ -114,7 +116,7 @@ Functionality additions:
 .. Note ::
 
     MaLTPyNT provisionally accepted as an
-    `Astropy affiliated package <http://www.astropy.org/affiliated/index.html>`__
+    `Astropy affiliated package <https://www.astropy.org/affiliated/index.html>`__
 
 
 In preparation for the 2.0 release, the API has received some visible changes.
@@ -176,13 +178,13 @@ license information in the ``LICENSE.rst`` file.
 **If you use this software in a publication**, please refer to its
 Astrophysics Source Code Library identifier:
 
-1. Bachetti, M. 2018, HENDRICS: High ENergy Data Reduction Interface from the Command Shell, record `ascl:1805.019 <http://ascl.net/1805.019>`__.
+1. Bachetti, M. 2018, HENDRICS: High ENergy Data Reduction Interface from the Command Shell, record `ascl:1805.019 <https://ascl.net/1805.019>`__.
 
 and please also cite `stingray <https://stingray.science/stingray/citing.html>`
 
 In particular, **if you use the cospectrum**, please also refer to:
 
-2. Bachetti et al. 2015, `ApJ <http://iopscience.iop.org/0004-637X/800/2/109/>`__ , **800**, 109.
+2. Bachetti et al. 2015, `ApJ <https://iopscience.iop.org/article/10.1088/0004-637X/800/2/109>`__ , **800**, 109.
 
 If you have found a bug please report it by creating a
 new issue on the `HENDRICS GitHub issue tracker. <https://github.com/StingraySoftware/HENDRICS/issues>`_
@@ -193,7 +195,7 @@ Acknowledgements
 (MaLTPyNT) 2.0
 ~~~~~~~~~~~~~~
 I would like to thank all the co-authors of `the NuSTAR timing
-paper <http://arxiv.org/abs/1409.3248>`__ and the NuSTAR X-ray binaries
+paper <https://arxiv.org/abs/1409.3248>`__ and the NuSTAR X-ray binaries
 working group. This software would not exist without the interesting
 discussions before and around that paper. In particular, I would like to
 thank Ivan Zolotukhin, Francesca Fornasini, Erin Kara, Felix Fürst,
@@ -201,7 +203,7 @@ Poshak Gandhi, John Tomsick and Abdu Zoghbi for helping testing the code
 and giving various suggestions on how to improve it. Last but not least,
 I would like to thank Marco Buttu (by the way, `check out his book if
 you speak
-Italian <http://www.amazon.it/Programmare-con-Python-completa-DigitalLifeStyle-ebook/dp/B00L95VURC/ref=sr_1_1?s=books&ie=UTF8&qid=1424298092&sr=1-1>`__)
+Italian <https://www.amazon.it/Programmare-con-Python-completa-DigitalLifeStyle-ebook/dp/B00L95VURC/ref=sr_1_1?s=books&ie=UTF8&qid=1424298092&sr=1-1>`__)
 for his priceless pointers on Python coding and code management
 techniques.
 
@@ -229,8 +231,6 @@ API documentation
    :maxdepth: 2
 
    hendrics/modules
-   hendrics/index
-
 
 Indices and tables
 ==================

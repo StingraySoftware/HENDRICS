@@ -158,7 +158,7 @@ class TestFake(object):
     Usually considered bad practice, but in this
     case I need to test the full run of the codes, and files depend on each
     other.
-    Inspired by http://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
+    Inspired by https://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
 
     When command line is missing, uses some function calls
     """  # NOQA

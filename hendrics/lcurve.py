@@ -15,6 +15,7 @@ from .base import (
     hen_root,
     mkdir_p,
     interpret_bintime,
+    histogram,
 )
 from .io import load_events, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
@@ -296,6 +297,7 @@ def lcurve_from_events(
     outfile=None,
     noclobber=False,
     deorbit_par=None,
+    weight_on=None,
 ):
     """Bin an event list in a light curve.
 
@@ -341,6 +343,11 @@ def lcurve_from_events(
     log.info("Loading file %s..." % f)
     evdata = load_events(f)
     log.info("Done.")
+    weight_on_tag = ""
+    weights = None
+    if weight_on is not None:
+        weights = getattr(evdata, weight_on)
+        weight_on_tag = f"_weight{weight_on}"
 
     deorbit_tag = ""
     if deorbit_par is not None:
@@ -393,7 +400,9 @@ def lcurve_from_events(
         )
 
     # Assign default value if None
-    outfile = assign_value_if_none(outfile, hen_root(f) + tag + deorbit_tag + "_lc")
+    outfile = assign_value_if_none(
+        outfile, hen_root(f) + tag + deorbit_tag + weight_on_tag + "_lc"
+    )
 
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
@@ -411,13 +420,41 @@ def lcurve_from_events(
         )
         return [outfile]
 
-    lc = Lightcurve.make_lightcurve(
-        events,
-        bintime,
-        tstart=tstart,
-        tseg=tstop - tstart,
-        mjdref=evdata.mjdref,
+    n_times = int((tstop - tstart) / bintime)
+    ev_times = (events - tstart).astype(float)
+    time_ranges = [0, float(n_times * bintime)]
+    time_edges = np.linspace(time_ranges[0], time_ranges[1], n_times + 1).astype(float)
+
+    raw_counts = histogram(
+        ev_times,
+        range=time_ranges,
+        bins=n_times,
+    )
+    if weights is not None:
+        weighted = histogram(
+            ev_times,
+            range=time_ranges,
+            bins=n_times,
+            weights=weights.astype(float),
+        )
+        counts = weighted
+        counts_err = raw_counts * np.std(weights)
+        err_dist = "gauss"
+    else:
+        counts = raw_counts
+        err_dist = "poisson"
+        counts_err = None
+
+    times = (time_edges[1:] + time_edges[:-1]) / 2 + tstart
+
+    lc = Lightcurve(
+        times,
+        counts,
+        err=counts_err,
         gti=gti,
+        mjdref=evdata.mjdref,
+        dt=bintime,
+        err_dist=err_dist,
     )
 
     lc.instr = instr
@@ -803,6 +840,7 @@ def _execute_lcurve(args):
             "bintime": bintime,
             "outdir": args.outdir,
             "deorbit_par": args.deorbit_par,
+            "weight_on": args.weight_on,
         }
 
     arglist = [[f, argdict.copy()] for f in args.files]
@@ -917,6 +955,12 @@ def main(args=None):
         help="Input files are light curves in txt format",
         default=False,
         action="store_true",
+    )
+    parser.add_argument(
+        "--weight-on",
+        default=None,
+        type=str,
+        help="Use a given attribute of the event list as weights for the light curve",
     )
     parser = _add_default_args(
         parser, ["deorbit", "output", "loglevel", "debug", "nproc"]

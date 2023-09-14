@@ -96,7 +96,7 @@ class TestFullRun(object):
     Usually considered bad practice, but in this
     case I need to test the full run of the codes, and files depend on each
     other.
-    Inspired by http://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
+    Inspired by https://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
 
     When command line is missing, uses some function calls
     """  # NOQA
@@ -171,6 +171,32 @@ class TestFullRun(object):
         assert os.path.exists(
             os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
         )
+
+    def test_weight_lcurve(self):
+        """Test light curve production."""
+        from astropy.io.fits import Header
+
+        new_lc = "polar_weightbla_lc" + HEN_FILE_EXTENSION
+        new_ev = "polar_ev" + HEN_FILE_EXTENSION
+
+        events = hen.io.load_events(self.ev_fileAcal)
+        events.bla = np.random.uniform(0, 1, events.time.size)
+
+        hen.io.save_events(events, new_ev)
+
+        command = f"{new_ev} -b 10 --weight-on bla"
+        hen.lcurve.main(command.split())
+
+        assert os.path.exists(new_lc)
+        lc = hen.io.load_lcurve(new_lc)
+        assert hasattr(lc, "header")
+
+        # Test that the header is correctly conserved
+        Header.fromstring(lc.header)
+        assert hasattr(lc, "gti")
+        gti_to_test = hen.io.load_events(new_ev).gti
+        assert np.allclose(gti_to_test, lc.gti)
+        assert lc.err_dist == "gauss"
 
     def test_lcurve_noclobber(self):
         input_file = self.ev_fileAcal

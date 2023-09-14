@@ -150,12 +150,12 @@ def decide_binary_parameters(
 
         dX = 1 / (TWOPI * freq)
 
-        nX = int(np.diff(asini_range) // dX) + 1
+        nX = int(np.diff(asini_range)[0] // dX) + 1
         Xs = np.random.uniform(asini_range[0], asini_range[1], nX)
 
         for X in Xs:
             dOmega = 1 / (TWOPI * freq * X * length) * D_OMEGA_FACTOR
-            nOmega = int(np.diff(omega_range) // dOmega) + 1
+            nOmega = int(np.diff(omega_range)[0] // dOmega) + 1
             Omegas = np.random.uniform(omega_range[0], omega_range[1], nOmega)
 
             for Omega in Omegas:
@@ -635,7 +635,7 @@ def plot_transient_search(results, gif_name=None):
         all_images.append(image)
 
     if HAS_IMAGEIO:
-        imageio.mimsave(gif_name, all_images, fps=1)
+        imageio.v3.imwrite(gif_name, all_images, duration=1000.0)
     else:
         warnings.warn(
             "imageio needed to save the transient search results " "into a gif image."
