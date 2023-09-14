@@ -421,11 +421,17 @@ def lcurve_from_events(
         return [outfile]
 
     n_times = int((tstop - tstart) / bintime)
-    time_ranges = [tstart, tstart + n_times * bintime]
+    ev_times = (events - tstart).astype(float)
+    time_ranges = [0, n_times * bintime]
     time_edges = np.linspace(time_ranges[0], time_ranges[1], n_times + 1)
 
-    counts = histogram(events, ranges=time_ranges, bins=n_times, weights=weights)
-    times = (time_edges[1:] + time_edges[:-1]) / 2
+    counts = histogram(
+        ev_times,
+        range=time_ranges,
+        bins=n_times,
+        weights=weights,
+    )
+    times = (time_edges[1:] + time_edges[:-1]) / 2 + tstart
 
     counts_err = None
     if weights is not None:
