@@ -629,8 +629,9 @@ def plot_transient_search(results, gif_name=None):
                 axf.set_xlim([xmin, xmax])
 
             fig.canvas.draw()
-            image = np.frombuffer(fig.canvas.tostring_rgb(), dtype="uint8")
-            image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+            image = np.frombuffer(fig.canvas.buffer_rgba().cast("B"), dtype="uint8")
+            image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
+
         plt.close(fig)
         all_images.append(image)
 
