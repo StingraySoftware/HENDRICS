@@ -27,10 +27,12 @@ from .base import deorbit_events
 
 
 def _next_color(ax):
-    try:
-        return next(ax._get_lines.color_cycle)
-    except Exception:
-        return next(ax._get_lines.prop_cycler)["color"]
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+    p = ax.plot(xlim, ylim)
+    color = p[0].get_color()
+    p[0].remove()
+    return color
 
 
 def _baseline_fun(x, a):
