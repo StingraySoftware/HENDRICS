@@ -14,7 +14,7 @@ from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
 from hendrics.io import find_file_in_allowed_paths, get_file_type
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
-from hendrics.io import main, main_filter_events
+from hendrics.io import main, main_filter_events, remove_pds
 
 import pytest
 import glob
@@ -244,7 +244,7 @@ class TestIO:
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
-    def test_load_and_save_cpds(self, fmt):
+    def test_load_and_save_cpds_only(self, fmt):
         if fmt == ".hdf5" and not HAS_H5PY:
             return
         pds = Crossspectrum()
@@ -254,8 +254,15 @@ class TestIO:
         pds.gti = np.longdouble([[-0.5, 3.5]])
         pds.show_progress = True
         pds.amplitude = False
+        import copy
 
-        save_pds(pds, "bubup" + fmt)
+        pds.cs_all = [copy.deepcopy(pds)]
+        pds.subcs = [copy.deepcopy(pds)]
+        pds.pds1 = copy.deepcopy(pds)
+        pds.unnorm_cs_all = [copy.deepcopy(pds)]
+        pds.lc1 = Lightcurve(np.arange(2), [1, 2])
+
+        save_pds(pds, "bubup" + fmt, no_auxil=True)
         pds2 = load_pds("bubup" + fmt)
         for attr in [
             "gti",
@@ -266,6 +273,44 @@ class TestIO:
             "power",
         ]:
             assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
+
+        assert not hasattr(pds2, "pds1")
+        assert not hasattr(pds2, "subcs")
+        assert not hasattr(pds2, "cs_all")
+        assert not hasattr(pds2, "unnorm_cs_all")
+        assert not hasattr(pds2, "lc1")
+
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_cpds_all(self, fmt):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return
+        pds = Crossspectrum()
+        pds.freq = np.linspace(0, 10, 15)
+        pds.power = np.random.poisson(30, 15) + 1.0j
+        pds.mjdref = 54385.3254923845
+        pds.gti = np.longdouble([[-0.5, 3.5]])
+        pds.show_progress = True
+        pds.amplitude = False
+        pds.cs_all = [pds]
+        pds.unnorm_cs_all = [pds]
+        pds.subcs = [pds]
+        pds.lc1 = Lightcurve(np.arange(2), [1, 2])
+
+        save_pds(pds, "bubup" + fmt, save_all=True)
+        pds2 = load_pds("bubup" + fmt)
+        for attr in [
+            "gti",
+            "mjdref",
+            "m",
+            "show_progress",
+            "amplitude",
+            "power",
+        ]:
+            assert np.allclose(getattr(pds, attr), getattr(pds2, attr))
+
+        assert hasattr(pds2, "cs_all")
+        assert hasattr(pds2, "lc1")
+        assert hasattr(pds2, "unnorm_cs_all")
 
     def test_load_pds_fails(self):
         pds = EventList()
@@ -292,7 +337,10 @@ class TestIO:
         xps2 = load_pds(self.dum)
         assert np.allclose(xps.gti, xps2.gti)
         assert hasattr(xps2, "cs_all")
-        assert np.allclose(xps.cs_all[0].power, xps2.cs_all[0].power)
+        if hasattr(xps.cs_all[0], "power"):
+            assert np.allclose(xps.cs_all[0].power, xps2.cs_all[0].power)
+        else:
+            assert np.allclose(xps.cs_all[0], xps2.cs_all[0])
         assert xps.m == xps2.m
         lag, lag_err = xps.time_lag()
         lag2, lag2_err = xps2.time_lag()
@@ -316,11 +364,13 @@ class TestIO:
         xps = AveragedCrossspectrum(lcurve1, lcurve2, 1)
 
         outfile = "small_xps" + HEN_FILE_EXTENSION
-        save_pds(xps, outfile, save_all=False)
+
+        save_pds(xps, outfile, save_all=False, no_auxil=True)
         xps2 = load_pds(outfile)
         assert np.allclose(xps.gti, xps2.gti)
         assert xps.m == xps2.m
         assert not hasattr(xps2, "pds1")
+        remove_pds(outfile)
 
     def test_load_and_save_xps_quick(self):
         lcurve1 = Lightcurve(
@@ -424,10 +474,11 @@ class TestIO:
     def teardown_class(cls):
         import shutil
 
-        for dum in glob.glob("bubu*.*"):
-            os.unlink(dum)
-        if os.path.exists("bubu"):
-            shutil.rmtree("bubu")
+        for dum in glob.glob("bubu*"):
+            try:
+                os.unlink(dum)
+            except:
+                shutil.rmtree(dum)
 
 
 class TestIOModel:

@@ -2,6 +2,7 @@
 """Functions to perform input/output operations."""
 
 import sys
+import shutil
 import os
 import glob
 import copy
@@ -750,11 +751,96 @@ def load_folding(fname):
 
 
 # ---- Functions to save PDSs
-def save_pds(cpds, fname, save_all=False):
+def save_pds(
+    cpds, fname, save_all=False, save_dyn=False, no_auxil=False, save_lcs=False
+):
     """Save PDS in a file."""
     from .base import mkdir_p
 
+    if os.path.exists(fname):
+        os.unlink(fname)
+    cpds = copy.deepcopy(cpds)
+
+    if save_all:
+        save_dyn = True
+        no_auxil = False
+        save_lcs = True
+
+    outdir = os.path.splitext(fname.replace(".gz", ""))[0]
+    if save_dyn or not no_auxil or save_lcs:
+        mkdir_p(outdir)
+
     fmt = get_file_format(fname)
+
+    if hasattr(cpds, "subcs"):
+        del cpds.subcs
+    if hasattr(cpds, "unnorm_subcs"):
+        del cpds.unnorm_subcs
+
+    if no_auxil:
+        for attr in ["pds1", "pds2"]:
+            if hasattr(cpds, attr):
+                delattr(cpds, attr)
+    for attr in ["pds1", "pds2"]:
+        if hasattr(cpds, attr):
+            value = getattr(cpds, attr)
+
+            outf = f"__{attr}__." + fmt
+            if "pds" in attr and isinstance(value, Crossspectrum):
+                outfile = os.path.join(outdir, outf)
+                save_pds(value, outfile, save_all=False)
+        if hasattr(cpds, attr):
+            delattr(cpds, attr)
+
+    for lcattr in ("lc1", "lc2"):
+        if hasattr(cpds, lcattr) and save_lcs:
+            lc_name = os.path.join(outdir, f"__{lcattr}__." + fmt)
+            save_lcurve(getattr(cpds, lcattr), lc_name)
+            delattr(cpds, lcattr)
+
+    if hasattr(cpds, "cs_all") and not save_dyn:
+        del cpds.cs_all
+        if hasattr(cpds, "unnorm_cs_all"):
+            del cpds.unnorm_cs_all
+    elif hasattr(cpds, "cs_all"):
+        saved_outside = False
+        for i, c in enumerate(cpds.cs_all):
+            if hasattr(c, "freq"):
+                save_pds(
+                    c,
+                    os.path.join(outdir, "__cs__{}__.".format(i) + fmt),
+                )
+                saved_outside = True
+        for i, c in enumerate(cpds.unnorm_cs_all):
+            if hasattr(c, "freq"):
+                save_pds(
+                    c,
+                    os.path.join(outdir, "__unnorm_cs__{}__.".format(i) + fmt),
+                )
+                saved_outside = True
+        if saved_outside:
+            del cpds.cs_all
+            if hasattr(cpds, "unnorm_cs_all"):
+                del cpds.unnorm_cs_all
+
+    if hasattr(cpds, "lc1"):
+        del cpds.lc1
+    if hasattr(cpds, "lc2"):
+        del cpds.lc2
+
+    if not hasattr(cpds, "instr"):
+        cpds.instr = "unknown"
+
+    if hasattr(cpds, "best_fits") and cpds.best_fits is not None:
+        model_files = []
+        for i, b in enumerate(cpds.best_fits):
+            mfile = os.path.join(
+                outdir,
+                os.path.splitext(fname.replace(".gz", ""))[0] + "__mod{}__.p".format(i),
+            )
+            save_model(b, mfile)
+            model_files.append(mfile)
+        del cpds.best_fits
 
     if fmt not in ["nc", "pickle"]:
         return cpds.write(fname, fmt=fmt)
@@ -762,89 +848,62 @@ def save_pds(cpds, fname, save_all=False):
     outdata = copy.copy(cpds.__dict__)
     outdata["__sr__class__type__"] = str(type(cpds))
 
-    if not hasattr(cpds, "instr"):
-        outdata["instr"] = "unknown"
-
-    for attr in ["show_progress", "amplitude"]:
-        if hasattr(cpds, attr):
-            outdata[attr] = getattr(cpds, attr)
-
-    outdir = fname.replace(HEN_FILE_EXTENSION, "")
-    if save_all:
-        mkdir_p(outdir)
-
-    for attr in ["lc1", "lc2", "pds1", "pds2"]:
-        if save_all and hasattr(cpds, attr):
-            value = getattr(cpds, attr)
-
-            outf = f"__{attr}__" + HEN_FILE_EXTENSION
-            if "lc" in attr and isinstance(value, Lightcurve):
-                save_lcurve(value, os.path.join(outdir, outf))
-            elif "pds" in attr and isinstance(value, Crossspectrum):
-                save_pds(value, os.path.join(outdir, outf), save_all=False)
-        outdata.pop(attr, None)
-
-    if "cs_all" in outdata and not save_all:
-        outdata.pop("cs_all")
-    elif "cs_all" in outdata:
-        for i, c in enumerate(cpds.cs_all):
-            if hasattr(c, "power"):
-                save_pds(
-                    c,
-                    os.path.join(outdir, "__cs__{}__".format(i) + HEN_FILE_EXTENSION),
-                )
-        outdata.pop("cs_all")
-
-    if "best_fits" in outdata and cpds.best_fits is not None:
-        model_files = []
-        for i, b in enumerate(cpds.best_fits):
-            mfile = os.path.join(
-                outdir,
-                fname.replace(HEN_FILE_EXTENSION, "__mod{}__.p".format(i)),
-            )
-            save_model(b, mfile)
-            model_files.append(mfile)
-        outdata.pop("best_fits")
-
     if fmt == "pickle":
         return _save_data_pickle(outdata, fname)
     elif fmt == "nc":
         return _save_data_nc(outdata, fname)
 
 
-def load_pds(fname, nosub=False):
-    """Load PDS from a file."""
-    fmt = get_file_format(fname)
-    if fmt == "pickle":
-        data = _load_data_pickle(fname)
-    elif fmt == "nc":
-        data = _load_data_nc(fname)
-    else:
-        data = Table.read(fname, format=fmt)
-        if "pds1" in data.colnames or "power.real" in data.colnames:
-            return AveragedCrossspectrum.read(fname, fmt=fmt)
-        return AveragedPowerspectrum.read(fname, fmt=fmt)
-
-    type_string = data["__sr__class__type__"]
-    if "AveragedPowerspectrum" in type_string:
-        cpds = AveragedPowerspectrum()
-    elif "Powerspectrum" in type_string:
-        cpds = Powerspectrum()
-    elif "AveragedCrossspectrum" in type_string:
-        cpds = AveragedCrossspectrum()
-    elif "Crossspectrum" in type_string:
-        cpds = Crossspectrum()
-    else:
-        raise ValueError("Unrecognized data type in file")
-
-    data.pop("__sr__class__type__")
-    for key in data.keys():
-        setattr(cpds, key, data[key])
-
-    outdir = fname.replace(HEN_FILE_EXTENSION, "")
+def remove_pds(fname):
+    outdir = os.path.splitext(fname.replace(".gz", ""))[0]
+    print(fname, outdir)
     modelfiles = glob.glob(
         os.path.join(outdir, fname.replace(HEN_FILE_EXTENSION, "__mod*__.p"))
     )
+    for mfile in modelfiles:
+        os.unlink(mfile)
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    os.unlink(fname)
+
+
+def load_pds(fname, nosub=False):
+    """Load PDS from a file."""
+    fmt = get_file_format(fname)
+
+    if fmt not in ["pickle", "nc"]:
+        dummy = Table.read(fname, format=fmt)
+        if "pds1" in dummy.colnames or "power.real" in dummy.colnames:
+            cpds = AveragedCrossspectrum.read(fname, fmt=fmt)
+        else:
+            cpds = AveragedPowerspectrum.read(fname, fmt=fmt)
+
+    else:
+        if fmt == "pickle":
+            data = _load_data_pickle(fname)
+        elif fmt == "nc":
+            data = _load_data_nc(fname)
+
+        type_string = data["__sr__class__type__"]
+        if "AveragedPowerspectrum" in type_string:
+            cpds = AveragedPowerspectrum()
+        elif "Powerspectrum" in type_string:
+            cpds = Powerspectrum()
+        elif "AveragedCrossspectrum" in type_string:
+            cpds = AveragedCrossspectrum()
+        elif "Crossspectrum" in type_string:
+            cpds = Crossspectrum()
+        else:
+            raise ValueError("Unrecognized data type in file")
+
+        data.pop("__sr__class__type__")
+
+        for key in data.keys():
+            setattr(cpds, key, data[key])
+
+    rootname = os.path.splitext(fname.replace(".gz", ""))[0]
+    outdir = rootname
+    modelfiles = glob.glob(os.path.join(outdir, rootname + "__mod*__.p"))
     cpds.best_fits = None
     if len(modelfiles) >= 1:
         bmodels = []
@@ -856,12 +915,13 @@ def load_pds(fname, nosub=False):
     if nosub:
         return cpds
 
-    lc1_name = os.path.join(outdir, "__lc1__" + HEN_FILE_EXTENSION)
-    lc2_name = os.path.join(outdir, "__lc2__" + HEN_FILE_EXTENSION)
-    pds1_name = os.path.join(outdir, "__pds1__" + HEN_FILE_EXTENSION)
-    pds2_name = os.path.join(outdir, "__pds2__" + HEN_FILE_EXTENSION)
-    cs_all_names = glob.glob(
-        os.path.join(outdir, "__cs__[0-9]*__" + HEN_FILE_EXTENSION)
+    lc1_name = os.path.join(outdir, "__lc1__." + fmt)
+    lc2_name = os.path.join(outdir, "__lc2__." + fmt)
+    pds1_name = os.path.join(outdir, "__pds1__." + fmt)
+    pds2_name = os.path.join(outdir, "__pds2__." + fmt)
+    cs_all_names = glob.glob(os.path.join(outdir, "__cs__[0-9]*__." + fmt))
+    unnorm_cs_all_names = glob.glob(
+        os.path.join(outdir, "__unnorm_cs__[0-9]*__." + fmt)
     )
 
     if os.path.exists(lc1_name):
@@ -877,6 +937,11 @@ def load_pds(fname, nosub=False):
         for c in sorted(cs_all_names):
             cs_all.append(load_pds(c))
         cpds.cs_all = cs_all
+    if len(unnorm_cs_all_names) > 0:
+        unnorm_cs_all = []
+        for c in sorted(unnorm_cs_all_names):
+            unnorm_cs_all.append(load_pds(c))
+        cpds.unnorm_cs_all = unnorm_cs_all
 
     return cpds
 
