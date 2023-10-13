@@ -92,6 +92,93 @@ __all__ = [
 ]
 
 
+def find_nearest_contour(cs, x, y, indices=None, pixel=True):
+    """
+    Find the point in the contour plot that is closest to ``(x, y)``.
+
+    This method does not support filled contours.
+
+    ..note::
+
+        This function was deprecated from matplotlib, and we copied it here to
+        ensure code stability
+
+    Parameters
+    ----------
+    x, y : float
+        The reference point.
+    indices : list of int or None, default: None
+        Indices of contour levels to consider.  If None (the default), all
+        levels are considered.
+    pixel : bool, default: True
+        If *True*, measure distance in pixel (screen) space, which is
+        useful for manual contour labeling; else, measure distance in axes
+        space.
+
+    Returns
+    -------
+    contour : `.Collection`
+        The contour that is closest to ``(x, y)``.
+    segment : int
+        The index of the `.Path` in *contour* that is closest to
+        ``(x, y)``.
+    index : int
+        The index of the path segment in *segment* that is closest to
+        ``(x, y)``.
+    xmin, ymin : float
+        The point in the contour plot that is closest to ``(x, y)``.
+    d2 : float
+        The squared distance from ``(xmin, ymin)`` to ``(x, y)``.
+    """
+
+    from matplotlib.contour import _find_closest_point_on_path
+
+    # This function uses a method that is probably quite
+    # inefficient based on converting each contour segment to
+    # pixel coordinates and then comparing the given point to
+    # those coordinates for each contour.  This will probably be
+    # quite slow for complex contours, but for normal use it works
+    # sufficiently well that the time is not noticeable.
+    # Nonetheless, improvements could probably be made.
+
+    if cs.filled:
+        raise ValueError("Method does not support filled contours.")
+
+    if indices is None:
+        indices = range(len(cs.collections))
+
+    d2min = np.inf
+    conmin = None
+    segmin = None
+    imin = None
+    xmin = None
+    ymin = None
+
+    point = np.array([x, y])
+
+    for icon in indices:
+        con = cs.collections[icon]
+        trans = con.get_transform()
+        paths = con.get_paths()
+
+        for segNum, linepath in enumerate(paths):
+            lc = linepath.vertices
+            # transfer all data points to screen coordinates if desired
+            if pixel:
+                lc = trans.transform(lc)
+
+            d2, xc, leg = _find_closest_point_on_path(lc, point)
+            if d2 < d2min:
+                d2min = d2
+                conmin = icon
+                segmin = segNum
+                imin = leg[1]
+                xmin = xc[0]
+                ymin = xc[1]
+
+    return (conmin, segmin, imin, xmin, ymin, d2min)
+
+
 def _save_df_to_csv(df, csv_file, reset=False):
     if not os.path.exists(csv_file) or reset:
         mode = "w"
@@ -1111,7 +1198,7 @@ def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
     fig = plt.figure(np.random.random())
     cs = fig.gca().contour(x, y, image, [level])
 
-    cont, seg, idx, xm, ym, d2 = cs.find_nearest_contour(x0, y0, pixel=False)
+    cont, seg, idx, xm, ym, d2 = find_nearest_contour(cs, x0, y0, pixel=False)
 
     min_x = cs.allsegs[cont][seg][:, 0].min()
     max_x = cs.allsegs[cont][seg][:, 0].max()
