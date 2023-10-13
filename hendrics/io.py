@@ -786,6 +786,14 @@ def save_pds(cpds, fname, save_all=False):
 
     if "cs_all" in outdata and not save_all:
         outdata.pop("cs_all")
+    elif "cs_all" in outdata:
+        for i, c in enumerate(cpds.cs_all):
+            if hasattr(c, "power"):
+                save_pds(
+                    c,
+                    os.path.join(outdir, "__cs__{}__".format(i) + HEN_FILE_EXTENSION),
+                )
+        outdata.pop("cs_all")
 
     if "best_fits" in outdata and cpds.best_fits is not None:
         model_files = []
@@ -852,7 +860,9 @@ def load_pds(fname, nosub=False):
     lc2_name = os.path.join(outdir, "__lc2__" + HEN_FILE_EXTENSION)
     pds1_name = os.path.join(outdir, "__pds1__" + HEN_FILE_EXTENSION)
     pds2_name = os.path.join(outdir, "__pds2__" + HEN_FILE_EXTENSION)
-    cs_all_names = glob.glob(os.path.join(outdir, "__cs__[0-9]__" + HEN_FILE_EXTENSION))
+    cs_all_names = glob.glob(
+        os.path.join(outdir, "__cs__[0-9]*__" + HEN_FILE_EXTENSION)
+    )
 
     if os.path.exists(lc1_name):
         cpds.lc1 = load_lcurve(lc1_name)

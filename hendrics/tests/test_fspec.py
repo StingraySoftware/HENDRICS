@@ -239,7 +239,7 @@ class TestFullRun(object):
         else:
             label = "_lc"
 
-        command = "{0} {1} -f 128 --save-all --save-dyn -k PDS " "--norm frac".format(
+        command = "{0} {1} -f 16 --save-all --save-dyn -k PDS " "--norm frac".format(
             os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
             + HEN_FILE_EXTENSION,
             os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
