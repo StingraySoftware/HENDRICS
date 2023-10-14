@@ -51,6 +51,7 @@ HENDRICS 8.0 (under development)
 + NASA's IXPE added to supported missions
 + Compatible with `Stingray 1.1 <https://github.com/StingraySoftware/stingray/releases/tag/v1.1>`__ or newer
 + Add option to obtain weighted light curves
++ Better support of Stingray's native file formats
 
 
 HENDRICS 7.0
