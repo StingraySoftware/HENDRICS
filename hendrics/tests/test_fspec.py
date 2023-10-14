@@ -328,15 +328,10 @@ class TestFullRun(object):
         labelA = "nustar_fpma_ev"
         labelB = "nustar_fpmb_ev"
 
-        command = (
-            "{0} {1} -f 16 --save-all --save-dyn -k {2} "
-            "--norm frac --test".format(
-                os.path.join(self.datadir, f"monol_testA_{labelA}")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, f"monol_testB_{labelB}")
-                + HEN_FILE_EXTENSION,
-                kind,
-            )
+        command = "{0} {1} -f 16 -k {2} --norm frac --test".format(
+            os.path.join(self.datadir, f"monol_testA_{labelA}") + HEN_FILE_EXTENSION,
+            os.path.join(self.datadir, f"monol_testB_{labelB}") + HEN_FILE_EXTENSION,
+            kind,
         )
         hen.fspec.main(command.split())
 
