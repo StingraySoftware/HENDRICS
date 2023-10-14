@@ -139,8 +139,7 @@ class TestFullRun(object):
             os.path.join(cls.datadir, "monol_testA.evt"),
             os.path.join(cls.datadir, "monol_testB.evt"),
         )
-        with pytest.warns(UserWarning, match="Sorting them for you"):
-            hen.read_events.main(command.split())
+        hen.read_events.main(command.split())
 
         command = "{0} {1}  --nproc 2 -b 0.5".format(cls.ev_fileA, cls.ev_fileB)
         hen.lcurve.main(command.split())

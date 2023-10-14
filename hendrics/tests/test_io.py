@@ -477,7 +477,7 @@ class TestIO:
         for dum in glob.glob("bubu*"):
             try:
                 os.unlink(dum)
-            except PermissionError:
+            except (PermissionError, IsADirectoryError):
                 shutil.rmtree(dum)
 
 
