@@ -295,8 +295,12 @@ class TestIO:
         pds.unnorm_cs_all = [pds]
         pds.subcs = [pds]
         pds.lc1 = Lightcurve(np.arange(2), [1, 2])
+        pds.lc2 = [Lightcurve(np.arange(2), [1, 2]), Lightcurve(np.arange(2), [3, 4])]
 
-        save_pds(pds, "bubup" + fmt, save_all=True)
+        with pytest.warns(
+            UserWarning, match="Saving multiple light curves is not supported"
+        ):
+            save_pds(pds, "bubup" + fmt, save_all=True)
         pds2 = load_pds("bubup" + fmt)
         for attr in [
             "gti",
@@ -310,6 +314,8 @@ class TestIO:
 
         assert hasattr(pds2, "cs_all")
         assert hasattr(pds2, "lc1")
+        assert hasattr(pds2, "lc2")
+        assert np.allclose(pds2.lc2, pds.lc2[0])
         assert hasattr(pds2, "unnorm_cs_all")
 
     def test_load_pds_fails(self):

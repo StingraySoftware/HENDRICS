@@ -747,18 +747,26 @@ def save_pds(
         if hasattr(cpds, attr):
             value = getattr(cpds, attr)
 
-            outf = f"__{attr}__." + ext
+            outf = f"__{attr}__" + ext
             if "pds" in attr and isinstance(value, Crossspectrum):
                 outfile = os.path.join(outdir, outf)
-                save_pds(value, outfile, save_all=False)
+                save_pds(value, outfile, no_auxil=True)
         if hasattr(cpds, attr):
             delattr(cpds, attr)
 
     for lcattr in ("lc1", "lc2"):
         if hasattr(cpds, lcattr) and save_lcs:
-            lc_name = os.path.join(outdir, f"__{lcattr}__." + ext)
-            save_lcurve(getattr(cpds, lcattr), lc_name)
-            delattr(cpds, lcattr)
+            lc_name = os.path.join(outdir, f"__{lcattr}__" + ext)
+            lc = getattr(cpds, lcattr)
+            if isinstance(lc, Iterable):
+                if len(lc) > 1:
+                    warnings.warn(
+                        "Saving multiple light curves is not supported. Saving only one"
+                    )
+                lc = lc[0]
+            if isinstance(lc, Lightcurve):
+                save_lcurve(lc, lc_name)
+                delattr(cpds, lcattr)
 
     for attr in ["cs_all", "unnorm_cs_all"]:
         if not hasattr(cpds, attr):
@@ -774,7 +782,8 @@ def save_pds(
                 break
             save_pds(
                 c,
-                os.path.join(outdir, f"__{label}__{i}__." + ext),
+                os.path.join(outdir, f"__{label}__{i}__" + ext),
+                no_auxil=True,
             )
             saved_outside = True
         if saved_outside:
@@ -872,14 +881,12 @@ def load_pds(fname, nosub=False):
     if nosub:
         return cpds
 
-    lc1_name = os.path.join(outdir, "__lc1__." + ext)
-    lc2_name = os.path.join(outdir, "__lc2__." + ext)
-    pds1_name = os.path.join(outdir, "__pds1__." + ext)
-    pds2_name = os.path.join(outdir, "__pds2__." + ext)
-    cs_all_names = glob.glob(os.path.join(outdir, "__cs__[0-9]*__." + ext))
-    unnorm_cs_all_names = glob.glob(
-        os.path.join(outdir, "__unnorm_cs__[0-9]*__." + ext)
-    )
+    lc1_name = os.path.join(outdir, "__lc1__" + ext)
+    lc2_name = os.path.join(outdir, "__lc2__" + ext)
+    pds1_name = os.path.join(outdir, "__pds1__" + ext)
+    pds2_name = os.path.join(outdir, "__pds2__" + ext)
+    cs_all_names = glob.glob(os.path.join(outdir, "__cs__[0-9]*__" + ext))
+    unnorm_cs_all_names = glob.glob(os.path.join(outdir, "__unnorm_cs__[0-9]*__" + ext))
 
     if os.path.exists(lc1_name):
         cpds.lc1 = load_lcurve(lc1_name)

@@ -329,7 +329,7 @@ class TestFullRun(object):
         labelB = "nustar_fpmb_ev"
 
         command = (
-            "{0} {1} -f 1 --save-all --save-dyn -k {2} "
+            "{0} {1} -f 16 --save-all --save-dyn -k {2} "
             "--norm frac --test".format(
                 os.path.join(self.datadir, f"monol_testA_{labelA}")
                 + HEN_FILE_EXTENSION,
