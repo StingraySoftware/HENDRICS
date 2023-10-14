@@ -14,9 +14,9 @@ from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 from stingray.filters import filter_for_deadtime
 from stingray.io import read_mission_info, get_key_from_mission_info
-from .io import get_file_format, load_lcurve
+from .io import load_lcurve
 from .io import load_events, save_events, HEN_FILE_EXTENSION
-from .base import _empty, r_in
+from .base import _empty, get_file_format, r_in
 from .fold import filter_energy
 from .lcurve import lcurve_from_fits
 from .base import njit, deorbit_events

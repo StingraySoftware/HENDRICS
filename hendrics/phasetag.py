@@ -12,7 +12,7 @@ from astropy.logger import AstropyUserWarning
 from stingray.io import load_events_and_gtis, ref_mjd
 from stingray.pulse.pulsar import pulse_phase, phase_exposure
 from .io import is_string, save_as_qdp
-from .base import _assign_value_if_none, hen_root
+from .base import _assign_value_if_none, hen_root, splitext_improved
 from .fold import fit_profile, std_fold_fit_func
 
 
@@ -28,10 +28,8 @@ def outfile_name(file):
     >>> outfile_name('file.s.a.evct')
     'file.s.a_phasetag.evct'
     """
-    root, ext = os.path.splitext(file)
-    if ext.lower() in [".gz", ".z"]:
-        root, newext = os.path.splitext(root)
-        ext = newext + ext
+
+    root, ext = splitext_improved(file)
 
     return root + "_phasetag" + ext
 

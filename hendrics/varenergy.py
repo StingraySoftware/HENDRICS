@@ -283,6 +283,8 @@ def main(args=None):
             additional_output_args = {}
             if args.format == "qdp":
                 additional_output_args["err_specs"] = {"serr": [3]}
+            if args.format in ["hdf5"]:
+                additional_output_args["serialize_meta"] = True
 
             if args.rms:
                 rms = RmsSpectrum(

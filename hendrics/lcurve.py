@@ -19,7 +19,7 @@ from .base import (
 )
 from .io import load_events, save_lcurve, load_lcurve
 from .io import HEN_FILE_EXTENSION, high_precision_keyword_read, get_file_type
-from .base import deorbit_events
+from .base import deorbit_events, splitext_improved
 
 
 def join_lightcurve_objs(lclist):
@@ -847,7 +847,7 @@ def _execute_lcurve(args):
     na = len(arglist)
     outfile = args.outfile
     if outfile is not None:
-        outname = os.path.splitext(outfile)[0]
+        outname, ext = splitext_improved(outfile)
         for i in range(na):
             if na > 1:
                 outname = outfile + "_{0}".format(i)

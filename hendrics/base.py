@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """A miscellaneous collection of basic functions."""
 
+import os.path
 import sys
 import copy
 import os
@@ -9,6 +10,8 @@ import warnings
 from collections.abc import Iterable
 from pathlib import Path
 import tempfile
+from astropy.io.registry import identify_format
+from astropy.table import Table
 
 from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter
@@ -364,8 +367,7 @@ def hen_root(filename):
     >>> hen_root(fname)
     'blablu_lc_asrd'
     """
-    fname = filename.replace(".gz", "")
-    fname = os.path.splitext(fname)[0]
+    fname, _ = splitext_improved(filename)
     todo = True
     while todo:
         todo = False
@@ -1304,3 +1306,87 @@ def normalize_dyn_profile(dynprof, norm):
     else:
         warnings.warn(f"Profile normalization {norm} not known. Using default")
     return dynprof
+
+
+def get_file_extension(fname):
+    """Get the file extension, including (if any) the compression format.
+
+    Examples
+    --------
+    >>> get_file_extension('bu.p')
+    '.p'
+    >>> get_file_extension('bu.nc')
+    '.nc'
+    >>> get_file_extension('bu.evt.Z')
+    '.evt.Z'
+    >>> get_file_extension('bu.ecsv')
+    '.ecsv'
+    >>> get_file_extension('bu.fits.Gz')
+    '.fits.Gz'
+    """
+
+    raw_ext = os.path.splitext(fname)[1]
+    if raw_ext.lower() in [".gz", ".bz", ".z", ".bz2"]:
+        fname = fname.replace(raw_ext, "")
+        return os.path.splitext(fname)[1] + raw_ext
+
+    return raw_ext
+
+
+def splitext_improved(fname):
+    """Get the file name and extension, including compression format.
+
+    Examples
+    --------
+    >>> splitext_improved('bu.p')
+    ('bu', '.p')
+    >>> splitext_improved('bu.nc')
+    ('bu', '.nc')
+    >>> splitext_improved('bu.evt.Z')
+    ('bu', '.evt.Z')
+    >>> splitext_improved('bu.ecsv')
+    ('bu', '.ecsv')
+    >>> splitext_improved('bu.fits.Gz')
+    ('bu', '.fits.Gz')
+    """
+    ext = get_file_extension(fname)
+    root = fname.replace(ext, "")
+    return root, ext
+
+
+def get_file_format(fname):
+    """Decide the file format of the file.
+
+    Examples
+    --------
+    >>> get_file_format('bu.p')
+    'pickle'
+    >>> get_file_format('bu.nc')
+    'nc'
+    >>> get_file_format('bu.evt')
+    'ogip'
+    >>> get_file_format('bu.ecsv')
+    'ascii.ecsv'
+    >>> get_file_format('bu.fits.gz')
+    'ogip'
+    >>> get_file_format('bu.pdfghj')
+    Traceback (most recent call last):
+        ...
+    RuntimeError: File format pdfghj not recognized
+    """
+    ext = get_file_extension(fname)
+    if ext in [".p", ".pickle"]:
+        return "pickle"
+
+    if ext == ".nc":
+        return "nc"
+
+    if ext in [".evt", ".fits", ".fits.gz"]:
+        return "ogip"
+
+    # For the rest of formats, use Astropy
+    fmts = identify_format("write", Table, fname, None, [], {})
+    if len(fmts) > 0:
+        return fmts[0]
+
+    raise RuntimeError(f"File format {ext[1:]} " f"not recognized")
