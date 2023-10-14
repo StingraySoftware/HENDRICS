@@ -3,9 +3,11 @@
 
 import numpy as np
 from astropy import log
+
+from .base import get_file_extension
 from .io import get_file_type
 from .io import save_lcurve, save_pds
-from .io import HEN_FILE_EXTENSION, get_file_extension
+from .io import HEN_FILE_EXTENSION
 
 
 def rebin_file(filename, rebin):

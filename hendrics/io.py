@@ -16,7 +16,8 @@ import pickle
 import os.path
 import numpy as np
 from astropy.table import Table
-from astropy.io.registry import identify_format
+
+from hendrics.base import get_file_extension, get_file_format, splitext_improved
 
 try:
     import h5py
@@ -352,53 +353,6 @@ def ref_mjd(fits_file, hdu=1):
         log.info("opening %s", fits_file)
     with pf.open(fits_file) as hdul:
         return high_precision_keyword_read(hdul[hdu].header, "MJDREF")
-
-
-def get_file_extension(fname):
-    """Get the file extension."""
-    additional = ""
-    if fname.endswith(".gz"):
-        additional = ".gz"
-        fname = fname.replace(".gz", "")
-    return os.path.splitext(fname)[1] + additional
-
-
-def get_file_format(fname):
-    """Decide the file format of the file.
-
-    Examples
-    --------
-    >>> get_file_format('bu.p')
-    'pickle'
-    >>> get_file_format('bu.nc')
-    'nc'
-    >>> get_file_format('bu.evt')
-    'ogip'
-    >>> get_file_format('bu.ecsv')
-    'ascii.ecsv'
-    >>> get_file_format('bu.fits.gz')
-    'ogip'
-    >>> get_file_format('bu.pdfghj')
-    Traceback (most recent call last):
-        ...
-    RuntimeError: File format pdfghj not recognized
-    """
-    ext = get_file_extension(fname)
-    if ext in [".p", ".pickle"]:
-        return "pickle"
-
-    if ext == ".nc":
-        return "nc"
-
-    if ext in [".evt", ".fits", ".fits.gz"]:
-        return "ogip"
-
-    # For the rest of formats, use Astropy
-    fmts = identify_format("write", Table, fname, None, [], {})
-    if len(fmts) > 0:
-        return fmts[0]
-
-    raise RuntimeError(f"File format {ext[1:]} " f"not recognized")
 
 
 # ---- Base function to save NetCDF4 files
@@ -772,7 +726,9 @@ def save_pds(
         no_auxil = False
         save_lcs = True
 
-    outdir = os.path.splitext(fname.replace(".gz", ""))[0]
+    basename, ext = splitext_improved(fname)
+    outdir = basename
+
     if save_dyn or not no_auxil or save_lcs:
         mkdir_p(outdir)
 
@@ -791,7 +747,7 @@ def save_pds(
         if hasattr(cpds, attr):
             value = getattr(cpds, attr)
 
-            outf = f"__{attr}__." + fmt
+            outf = f"__{attr}__." + ext
             if "pds" in attr and isinstance(value, Crossspectrum):
                 outfile = os.path.join(outdir, outf)
                 save_pds(value, outfile, save_all=False)
@@ -800,7 +756,7 @@ def save_pds(
 
     for lcattr in ("lc1", "lc2"):
         if hasattr(cpds, lcattr) and save_lcs:
-            lc_name = os.path.join(outdir, f"__{lcattr}__." + fmt)
+            lc_name = os.path.join(outdir, f"__{lcattr}__." + ext)
             save_lcurve(getattr(cpds, lcattr), lc_name)
             delattr(cpds, lcattr)
 
@@ -814,14 +770,14 @@ def save_pds(
             if hasattr(c, "freq"):
                 save_pds(
                     c,
-                    os.path.join(outdir, "__cs__{}__.".format(i) + fmt),
+                    os.path.join(outdir, "__cs__{}__.".format(i) + ext),
                 )
                 saved_outside = True
         for i, c in enumerate(cpds.unnorm_cs_all):
             if hasattr(c, "freq"):
                 save_pds(
                     c,
-                    os.path.join(outdir, "__unnorm_cs__{}__.".format(i) + fmt),
+                    os.path.join(outdir, "__unnorm_cs__{}__.".format(i) + ext),
                 )
                 saved_outside = True
         if saved_outside:
@@ -842,7 +798,7 @@ def save_pds(
         for i, b in enumerate(cpds.best_fits):
             mfile = os.path.join(
                 outdir,
-                os.path.splitext(fname.replace(".gz", ""))[0] + "__mod{}__.p".format(i),
+                basename + "__mod{}__.p".format(i),
             )
             save_model(b, mfile)
             model_files.append(mfile)
@@ -861,8 +817,8 @@ def save_pds(
 
 
 def remove_pds(fname):
-    outdir = os.path.splitext(fname.replace(".gz", ""))[0]
-    print(fname, outdir)
+    """Remove the pds file and the directory with auxiliary information."""
+    outdir, _ = splitext_improved(fname)
     modelfiles = glob.glob(
         os.path.join(outdir, fname.replace(HEN_FILE_EXTENSION, "__mod*__.p"))
     )
@@ -875,6 +831,7 @@ def remove_pds(fname):
 
 def load_pds(fname, nosub=False):
     """Load PDS from a file."""
+    rootname, ext = splitext_improved(fname)
     fmt = get_file_format(fname)
 
     if fmt not in ["pickle", "nc"]:
@@ -907,7 +864,6 @@ def load_pds(fname, nosub=False):
         for key in data.keys():
             setattr(cpds, key, data[key])
 
-    rootname = os.path.splitext(fname.replace(".gz", ""))[0]
     outdir = rootname
     modelfiles = glob.glob(os.path.join(outdir, rootname + "__mod*__.p"))
     cpds.best_fits = None
@@ -921,13 +877,13 @@ def load_pds(fname, nosub=False):
     if nosub:
         return cpds
 
-    lc1_name = os.path.join(outdir, "__lc1__." + fmt)
-    lc2_name = os.path.join(outdir, "__lc2__." + fmt)
-    pds1_name = os.path.join(outdir, "__pds1__." + fmt)
-    pds2_name = os.path.join(outdir, "__pds2__." + fmt)
-    cs_all_names = glob.glob(os.path.join(outdir, "__cs__[0-9]*__." + fmt))
+    lc1_name = os.path.join(outdir, "__lc1__." + ext)
+    lc2_name = os.path.join(outdir, "__lc2__." + ext)
+    pds1_name = os.path.join(outdir, "__pds1__." + ext)
+    pds2_name = os.path.join(outdir, "__pds2__." + ext)
+    cs_all_names = glob.glob(os.path.join(outdir, "__cs__[0-9]*__." + ext))
     unnorm_cs_all_names = glob.glob(
-        os.path.join(outdir, "__unnorm_cs__[0-9]*__." + fmt)
+        os.path.join(outdir, "__unnorm_cs__[0-9]*__." + ext)
     )
 
     if os.path.exists(lc1_name):
