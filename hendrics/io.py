@@ -760,30 +760,25 @@ def save_pds(
             save_lcurve(getattr(cpds, lcattr), lc_name)
             delattr(cpds, lcattr)
 
-    if hasattr(cpds, "cs_all") and not save_dyn:
-        del cpds.cs_all
-        if hasattr(cpds, "unnorm_cs_all"):
-            del cpds.unnorm_cs_all
-    elif hasattr(cpds, "cs_all"):
+    for attr in ["cs_all", "unnorm_cs_all"]:
+        if not hasattr(cpds, attr):
+            continue
+        if not save_dyn:
+            delattr(cpds, attr)
+            continue
+
         saved_outside = False
-        for i, c in enumerate(cpds.cs_all):
-            if hasattr(c, "freq"):
-                save_pds(
-                    c,
-                    os.path.join(outdir, "__cs__{}__.".format(i) + ext),
-                )
-                saved_outside = True
-        for i, c in enumerate(cpds.unnorm_cs_all):
-            if hasattr(c, "freq"):
-                save_pds(
-                    c,
-                    os.path.join(outdir, "__unnorm_cs__{}__.".format(i) + ext),
-                )
-                saved_outside = True
+        for i, c in enumerate(getattr(cpds, attr)):
+            label = attr.replace("_all", "")
+            if not hasattr(c, "freq"):
+                break
+            save_pds(
+                c,
+                os.path.join(outdir, f"__{label}__{i}__." + ext),
+            )
+            saved_outside = True
         if saved_outside:
-            del cpds.cs_all
-            if hasattr(cpds, "unnorm_cs_all"):
-                del cpds.unnorm_cs_all
+            delattr(cpds, attr)
 
     if hasattr(cpds, "lc1"):
         del cpds.lc1
