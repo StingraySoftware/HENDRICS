@@ -378,7 +378,7 @@ def get_file_format(fname):
     RuntimeError: File format pdfghj not recognized
     """
     ext = get_file_extension(fname)
-    if ext == ".p":
+    if ext in [".p", ".pickle"]:
         return "pickle"
 
     if ext == ".nc":
