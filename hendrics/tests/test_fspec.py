@@ -572,7 +572,6 @@ model = models.Const1D()
         assert os.path.exists(out0)
         spec = hen.io.load_pds(out0)
         assert hasattr(spec, "best_fits")
-        io.remove_pds(out0)
 
     def test_fit_pds_f_no_of_intervals_invalid(self):
         modelstring = """
@@ -668,6 +667,8 @@ model = models.Const1D()
                 "dummy.qdp",
             ]
         )
+        io.remove_pds(pname)
+        io.remove_pds(cname)
 
     def test_plot_log(self):
         """Test plotting with log axes."""
