@@ -356,7 +356,11 @@ def ref_mjd(fits_file, hdu=1):
 
 def get_file_extension(fname):
     """Get the file extension."""
-    return os.path.splitext(fname)[1]
+    additional = ""
+    if fname.endswith(".gz"):
+        additional = ".gz"
+        fname = fname.replace(".gz", "")
+    return os.path.splitext(fname)[1] + additional
 
 
 def get_file_format(fname):
@@ -372,6 +376,8 @@ def get_file_format(fname):
     'ogip'
     >>> get_file_format('bu.ecsv')
     'ascii.ecsv'
+    >>> get_file_format('bu.fits.gz')
+    'ogip'
     >>> get_file_format('bu.pdfghj')
     Traceback (most recent call last):
         ...
@@ -384,7 +390,7 @@ def get_file_format(fname):
     if ext == ".nc":
         return "nc"
 
-    if ext in [".evt", ".fits"]:
+    if ext in [".evt", ".fits", ".fits.gz"]:
         return "ogip"
 
     # For the rest of formats, use Astropy
