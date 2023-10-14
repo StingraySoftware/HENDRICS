@@ -294,6 +294,7 @@ class TestIO:
         pds.cs_all = [pds]
         pds.unnorm_cs_all = [pds]
         pds.subcs = [pds]
+        pds.unnorm_subcs = [pds]
         pds.lc1 = Lightcurve(np.arange(2), [1, 2])
         pds.lc2 = [Lightcurve(np.arange(2), [1, 2]), Lightcurve(np.arange(2), [3, 4])]
 
@@ -317,6 +318,8 @@ class TestIO:
         assert hasattr(pds2, "lc2")
         assert np.allclose(pds2.lc2, pds.lc2[0])
         assert hasattr(pds2, "unnorm_cs_all")
+        assert not hasattr(pds2, "unnorm_subcs")
+        assert not hasattr(pds2, "subcs")
 
     def test_load_pds_fails(self):
         pds = EventList()
