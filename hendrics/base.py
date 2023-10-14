@@ -1309,16 +1309,46 @@ def normalize_dyn_profile(dynprof, norm):
 
 
 def get_file_extension(fname):
-    """Get the file extension."""
-    additional = ""
-    if fname.endswith(".gz") or fname.endswith(".z"):
-        additional = ".gz"
-        fname = fname.replace(".gz", "")
-    return os.path.splitext(fname)[1] + additional
+    """Get the file extension, including (if any) the compression format.
+
+    Examples
+    --------
+    >>> get_file_extension('bu.p')
+    '.p'
+    >>> get_file_extension('bu.nc')
+    '.nc'
+    >>> get_file_extension('bu.evt.Z')
+    '.evt.Z'
+    >>> get_file_extension('bu.ecsv')
+    '.ecsv'
+    >>> get_file_extension('bu.fits.Gz')
+    '.fits.Gz'
+    """
+
+    raw_ext = os.path.splitext(fname)[1]
+    if raw_ext.lower() in [".gz", ".bz", ".z", ".bz2"]:
+        fname = fname.replace(raw_ext, "")
+        return os.path.splitext(fname)[1] + raw_ext
+
+    return raw_ext
 
 
 def splitext_improved(fname):
-    """Get the file name and extension."""
+    """Get the file name and extension, including compression format.
+
+    Examples
+    --------
+    >>> splitext_improved('bu.p')
+    ('bu', '.p')
+    >>> splitext_improved('bu.nc')
+    ('bu', '.nc')
+    >>> splitext_improved('bu.evt.Z')
+    ('bu', '.evt.Z')
+    >>> splitext_improved('bu.ecsv')
+    ('bu', '.ecsv')
+    >>> splitext_improved('bu.fits.Gz')
+    ('bu', '.fits.Gz')
+    """
     ext = get_file_extension(fname)
     root = fname.replace(ext, "")
     return root, ext

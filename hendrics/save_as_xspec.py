@@ -5,7 +5,7 @@ import subprocess as sp
 import numpy as np
 from astropy import log
 from .io import get_file_type
-from .io import get_file_extension
+from .base import get_file_extension
 
 
 def save_as_xspec(fname, direct_save=False, save_lags=True):

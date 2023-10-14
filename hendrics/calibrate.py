@@ -5,7 +5,9 @@ import os
 import warnings
 import numpy as np
 from astropy import log
-from .io import load_events, save_events, get_file_extension
+
+from .base import get_file_extension
+from .io import load_events, save_events
 from .io import HEN_FILE_EXTENSION
 
 
