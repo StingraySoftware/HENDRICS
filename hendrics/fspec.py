@@ -219,7 +219,6 @@ def _provide_cross_periodograms(events1, events2, fftlen, dt, norm):
 def calc_pds(
     lcfile,
     fftlen,
-    save_dyn=False,
     bintime=1,
     pdsrebin=1,
     normalization="leahy",
@@ -227,6 +226,9 @@ def calc_pds(
     noclobber=False,
     outname=None,
     save_all=False,
+    save_dyn=False,
+    save_lcs=False,
+    no_auxil=False,
     test=False,
     emin=None,
     emax=None,
@@ -319,7 +321,14 @@ def calc_pds(
     pds.mjdref = mjdref
 
     log.info("Saving PDS to %s" % outname)
-    save_pds(pds, outname, save_all=save_all)
+    save_pds(
+        pds,
+        outname,
+        save_all=save_all,
+        save_dyn=save_dyn,
+        save_lcs=save_lcs,
+        no_auxil=no_auxil,
+    )
     return outname
 
 
@@ -327,7 +336,6 @@ def calc_cpds(
     lcfile1,
     lcfile2,
     fftlen,
-    save_dyn=False,
     bintime=1,
     pdsrebin=1,
     outname=None,
@@ -335,6 +343,9 @@ def calc_cpds(
     back_ctrate=0.0,
     noclobber=False,
     save_all=False,
+    save_dyn=False,
+    save_lcs=False,
+    no_auxil=False,
     test=False,
     emin=None,
     emax=None,
@@ -456,7 +467,14 @@ def calc_cpds(
     cpds.lag_err = lags
 
     log.info("Saving CPDS to %s" % outname)
-    save_pds(cpds, outname, save_all=save_all)
+    save_pds(
+        cpds,
+        outname,
+        save_all=save_all,
+        save_dyn=save_dyn,
+        save_lcs=save_lcs,
+        no_auxil=no_auxil,
+    )
     return outname
 
 
@@ -468,6 +486,8 @@ def calc_fspec(
     do_calc_cospectrum=True,
     do_calc_lags=True,
     save_dyn=False,
+    no_auxil=False,
+    save_lcs=False,
     bintime=1,
     pdsrebin=1,
     outroot=None,
@@ -537,6 +557,8 @@ def calc_fspec(
             wfd = dict(
                 fftlen=fftlen,
                 save_dyn=save_dyn,
+                no_auxil=no_auxil,
+                save_lcs=save_lcs,
                 bintime=bintime,
                 pdsrebin=pdsrebin,
                 normalization=normalization.lower(),
@@ -579,6 +601,8 @@ def calc_fspec(
     argdict = dict(
         fftlen=fftlen,
         save_dyn=save_dyn,
+        no_auxil=no_auxil,
+        save_lcs=save_lcs,
         bintime=bintime,
         pdsrebin=pdsrebin,
         normalization=normalization.lower(),
@@ -768,8 +792,22 @@ def main(args=None):
     )
     parser.add_argument(
         "--save-all",
-        help="Save all information contained in spectra,"
-        " including single pdss and light curves.",
+        help=(
+            "Save all information contained in spectra, including light curves "
+            "and dynamical spectra."
+        ),
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--save-lcs",
+        help="Save all information contained in spectra, including light curves.",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--no-auxil",
+        help="Do not save auxiliary spectra (e.g. pds1 and pds2 of cross spectrum)",
         default=False,
         action="store_true",
     )
@@ -840,7 +878,6 @@ def main(args=None):
             do_calc_cpds=do_cpds,
             do_calc_cospectrum=do_cos,
             do_calc_lags=do_lag,
-            save_dyn=args.save_dyn,
             bintime=bintime,
             pdsrebin=pdsrebin,
             outroot=args.outroot,
@@ -850,6 +887,9 @@ def main(args=None):
             noclobber=args.noclobber,
             ignore_instr=args.ignore_instr,
             save_all=args.save_all,
+            save_dyn=args.save_dyn,
+            save_lcs=args.save_lcs,
+            no_auxil=args.no_auxil,
             test=args.test,
             emin=args.emin,
             emax=args.emax,
