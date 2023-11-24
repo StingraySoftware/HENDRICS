@@ -621,9 +621,11 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     lcurve.counts, lcurve.counts_err
     out["time"] = lcurve.time
 
-    for attr in lcurve.array_attrs():
-        if attr.startswith("_") or "mask" in attr:
-            continue
+    array_attrs = lcurve.array_attrs()
+    if hasattr(lcurve, "internal_array_attrs"):
+        array_attrs += lcurve.internal_array_attrs()
+
+    for attr in array_attrs:
         out[attr] = getattr(lcurve, attr)
     for attr in lcurve.meta_attrs():
         val = getattr(lcurve, attr)
@@ -654,7 +656,15 @@ def load_lcurve(fname):
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
-        lcurve = Lightcurve(**data, skip_checks=True)
+        lcurve = Lightcurve()
+        lcurve.time = data["time"]
+        for key in data.keys():
+            print(key)
+            if key == "time":
+                continue
+            print("    done")
+            setattr(lcurve, key, data[key])
+    print()
     for key in data.keys():
         if hasattr(lcurve, key) and getattr(lcurve, key) is not None:
             continue
