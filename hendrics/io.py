@@ -233,9 +233,9 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, s
             f"Definition of events.energy is now based on PI."
         )
     if emin is None:
-        emin = np.min(energy)
+        emin = np.min(energy) - 1
     if emax is None:
-        emax = np.max(energy)
+        emax = np.max(energy) + 1
 
     good = (energy >= emin) & (energy <= emax)
     ev.apply_mask(good, inplace=True)
@@ -509,9 +509,13 @@ def get_file_type(fname, raw_data=False):
         ftype_raw = contents_raw["__sr__class__type__"]
         contents = contents_raw
 
+    print(ftype_raw)
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
         fun = load_lcurve
+    elif "StingrayTimeseries" in ftype_raw:
+        ftype = "color"
+        fun = load_timeseries
     elif "Color" in ftype_raw:
         ftype = "color"
         fun = load_lcurve
@@ -550,33 +554,7 @@ def save_events(eventlist, fname):
     fname: str
         Name of output file
     """
-    fmt = get_file_format(fname)
-
-    if fmt not in ["nc", "pickle"]:
-        return eventlist.write(fname)
-
-    out = dict(
-        time=eventlist.time,
-        tstart=np.min(eventlist.gti),
-        tstop=np.max(eventlist.gti),
-    )
-
-    for attr in eventlist.array_attrs():
-        out[attr] = getattr(eventlist, attr)
-    for attr in eventlist.meta_attrs():
-        val = getattr(eventlist, attr)
-        if val is None:
-            continue
-        if isinstance(val, str) and attr.lower() != "header":
-            val = val.lower()
-        out[attr] = val
-
-    out["__sr__class__type__"] = str(type(eventlist))
-
-    if fmt == "pickle":
-        _save_data_pickle(out, fname)
-    elif fmt == "nc":
-        _save_data_nc(out, fname)
+    save_data(eventlist, fname)
 
 
 def load_events(fname):
@@ -617,37 +595,16 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
 
     fmt = get_file_format(fname)
 
+    if hasattr(lcurve, "_mask") and lcurve._mask is not None and np.any(~lcurve._mask):
+        lcurve.apply_mask(lcurve._mask, inplace=True)
+        lcurve._mask = None
+
     if fmt not in ["nc", "pickle"]:
         return lcurve.write(fname)
 
-    out = {}
-
-    out["__sr__class__type__"] = str(lctype)
-
-    # Initialize if they aren't already
-    lcurve.counts, lcurve.counts_err
-    out["time"] = lcurve.time
-
-    array_attrs = lcurve.array_attrs()
-    if hasattr(lcurve, "internal_array_attrs"):
-        array_attrs += lcurve.internal_array_attrs()
-
-    for attr in array_attrs:
-        out[attr] = getattr(lcurve, attr)
-    for attr in lcurve.meta_attrs():
-        val = getattr(lcurve, attr)
-        if isinstance(val, bool):
-            val = int(val)
-        if val is None:
-            continue
-        if isinstance(val, str) and attr.lower() != "header":
-            val = val.lower()
-        out[attr] = val
-
-    if fmt == "pickle":
-        return _save_data_pickle(out, fname)
-    elif fmt == "nc":
-        return _save_data_nc(out, fname)
+    lcdict = lcurve.dict()
+    lcdict["__sr__class__type__"] = str(lctype)
+    save_data(lcdict, fname)
 
 
 def load_lcurve(fname):
@@ -661,24 +618,22 @@ def load_lcurve(fname):
         # Try one of the known files from Lightcurve
         return Lightcurve.read(fname, fmt=fmt, skip_checks=True)
 
+    print("\n\n\n\n\n")
+    print(data)
+
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
         time = data["time"]
         data.pop("time")
 
-        if "counts" in data:
-            counts = data["counts"]
-            data.pop("counts")
-        elif "_counts" in data:
-            counts = data["_counts"]
-            data.pop("_counts")
-        else:
-            raise ValueError("No counts in file")
-
-        lcurve = Lightcurve(time, counts, skip_checks=True)
+        lcurve = Lightcurve()
+        lcurve.time = time
 
         for key in data.keys():
-            setattr(lcurve, key, data[key])
+            vals = data[key]
+            if key == "mask":
+                key = "_mask"
+            setattr(lcurve, key, vals)
 
     if "mission" not in list(data.keys()):
         lcurve.mission = ""
@@ -1098,10 +1053,13 @@ def save_data(struct, fname, ftype="data"):
     if isinstance(struct, StingrayObject):
         struct_dict = struct.dict()
 
-    if fmt == "pickle":
-        return _save_data_pickle(struct_dict, fname)
-    elif fmt == "nc":
-        return _save_data_nc(struct_dict, fname)
+    if fmt in ["pickle", "nc"]:
+        if not "__sr__class__type__" in struct_dict:
+            struct_dict["__sr__class__type__"] = str(type(struct))
+        if fmt == "pickle":
+            return _save_data_pickle(struct_dict, fname, kind=ftype)
+        elif fmt == "nc":
+            return _save_data_nc(struct_dict, fname, kind=ftype)
 
     if not has_write_method:
         raise ValueError("Unrecognized data format or file format")
