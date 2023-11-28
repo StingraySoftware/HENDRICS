@@ -127,7 +127,7 @@ def plot_generic(
         xlabel_err, ylabel_err = errs
 
     for i, fname in enumerate(fnames):
-        data = load_data(fname)
+        data = get_file_type(fname)[1].dict()
         color = _next_color(ax)
         xdata = data[xlabel]
         ydata = data[ylabel]

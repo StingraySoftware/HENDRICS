@@ -55,7 +55,7 @@ def test_cpds_fails_noclobber_exists():
 
 def test_distributed_pds():
     events = EventList(
-        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0, 1000]])
+        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]])
     )
     if hasattr(stingray.AveragedPowerspectrum, "from_events"):
         single_periodogram = stingray.AveragedPowerspectrum(
@@ -81,10 +81,10 @@ def test_distributed_pds():
 
 def test_distributed_cpds():
     events1 = EventList(
-        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0, 1000]])
+        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]])
     )
     events2 = EventList(
-        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0, 1000]])
+        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]])
     )
     if hasattr(stingray.AveragedCrossspectrum, "from_events"):
         single_periodogram = stingray.AveragedCrossspectrum(
