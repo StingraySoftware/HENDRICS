@@ -18,7 +18,7 @@ import numpy as np
 from astropy.table import Table
 
 from hendrics.base import get_file_extension, get_file_format, splitext_improved
-from stingray.base import StingrayObject
+from stingray.base import StingrayObject, StingrayTimeseries
 
 try:
     import h5py
@@ -556,6 +556,19 @@ def save_events(eventlist, fname):
     save_data(eventlist, fname)
 
 
+def save_timeseries(timeseries, fname):
+    """Save a time series in a file.
+
+    Parameters
+    ----------
+    timeseries: :class:`stingray.EventList` object
+        Event list to be saved
+    fname: str
+        Name of output file
+    """
+    save_data(timeseries, fname)
+
+
 def load_events(fname):
     """Load events from a file."""
     fmt = get_file_format(fname)
@@ -577,6 +590,30 @@ def load_events(fname):
     for attr in ["mission", "instr"]:
         if attr not in list(out.keys()):
             setattr(eventlist, attr, "")
+    return eventlist
+
+
+def load_timeseries(fname):
+    """Load events from a file."""
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
+        out = _load_data_pickle(fname)
+    elif fmt == "nc":
+        out = _load_data_nc(fname)
+    else:
+        # Try one of the known files from Astropy
+        return StingrayTimeseries.read(fname, fmt=fmt)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
+        eventlist = StingrayTimeseries(**out)
+    # for key in out.keys():
+    #     if hasattr(eventlist, key) and getattr(eventlist, key) is not None:
+    #         continue
+    #     setattr(eventlist, key, out[key])
+    # for attr in ["mission", "instr"]:
+    #     if attr not in list(out.keys()):
+    #         setattr(eventlist, attr, "")
     return eventlist
 
 

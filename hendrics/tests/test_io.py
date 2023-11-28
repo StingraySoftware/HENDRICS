@@ -1,15 +1,28 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 from astropy.io.fits import Header
-from stingray.events import EventList
-from stingray.lightcurve import Lightcurve
-from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
-from stingray.powerspectrum import Crossspectrum, AveragedCrossspectrum
+from stingray import (
+    StingrayTimeseries,
+    EventList,
+    Lightcurve,
+    Powerspectrum,
+    Crossspectrum,
+    AveragedCrossspectrum,
+)
+
+
 import numpy as np
 import os
 from hendrics.base import hen_root
 from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
-from hendrics.io import save_data, load_data, save_pds, load_pds
+from hendrics.io import (
+    save_data,
+    load_data,
+    save_pds,
+    load_pds,
+    save_timeseries,
+    load_timeseries,
+)
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
 from hendrics.io import find_file_in_allowed_paths, get_file_type
@@ -162,6 +175,37 @@ class TestIO:
         events.header = Header().tostring()
         save_events(events, "bubu" + fmt)
         events2 = load_events("bubu" + fmt)
+        assert np.allclose(events.time, events2.time)
+        assert np.allclose(events.cal_pi, events2.cal_pi)
+        assert np.allclose(events.pi, events2.pi)
+        assert np.allclose(events.q, events2.q)
+        assert np.allclose(events.mjdref, events2.mjdref)
+        assert np.allclose(events.gti, events2.gti)
+        assert np.allclose(events.energy, events2.energy)
+        assert events.header == events2.header
+        assert events2.mission == events.mission
+        print(events2)
+        captured = capsys.readouterr()
+        assert "(size 3)" in captured.out
+        assert "MJD" in captured.out
+
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_timeseries(self, fmt, capsys):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return
+        events = StingrayTimeseries(
+            [0, 2, 3.0],
+            pi=[1, 2, 3],
+            mjdref=54385.3254923845,
+            gti=np.longdouble([[-0.5, 3.5]]),
+        )
+        events.q = [2, 3, 4]
+        events.cal_pi = events.pi.copy()
+        events.energy = np.array([3.0, 4.0, 5.0])
+        events.mission = "nustar"
+        events.header = Header().tostring()
+        save_timeseries(events, "bubu_ts" + fmt)
+        events2 = load_timeseries("bubu_ts" + fmt)
         assert np.allclose(events.time, events2.time)
         assert np.allclose(events.cal_pi, events2.cal_pi)
         assert np.allclose(events.pi, events2.pi)

@@ -108,8 +108,6 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
     newgti = filter_gti_by_length(newgti, minimum_length)
 
     data.gti = newgti
-    # good = create_gti_mask(data.time, newgti)
-    print(data)
     data = data.apply_gtis()
     data._mask = None
 
