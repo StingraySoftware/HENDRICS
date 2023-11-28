@@ -438,7 +438,13 @@ def read_from_netcdf(fname):
         else:
             to_save = values
         if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool_"):
+            # Boolean single value
             to_save = eval(to_save.replace("__bool__", ""))
+        # Boolean array
+        elif k.startswith("__bool__"):
+            to_save = to_save.astype(bool)
+            k = k.replace("__bool__", "")
+
         out[k] = to_save
 
     rootgrp.close()
@@ -1068,6 +1074,10 @@ def _save_data_nc(struct, fname, kind="data"):
             values.append(var)
             formats.append(probekind)
             varnames.append(k)
+        elif probekind == "b":
+            values.append(var.astype("u1"))
+            formats.append("u1")
+            varnames.append("__bool__" + k)
         elif probekind is None:
             values.append("__hen__None__type__")
             formats.append(str)
