@@ -146,7 +146,7 @@ class TestIO:
         assert isinstance(newdata, dict)
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
-    def test_load_and_save_events(self, fmt):
+    def test_load_and_save_events(self, fmt, capsys):
         if fmt == ".hdf5" and not HAS_H5PY:
             return
         events = EventList(
@@ -171,6 +171,10 @@ class TestIO:
         assert np.allclose(events.energy, events2.energy)
         assert events.header == events2.header
         assert events2.mission == events.mission
+        print(events2)
+        captured = capsys.readouterr()
+        assert "(size 3)" in captured.out
+        assert "MJD" in captured.out
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_filter_events(self, fmt):

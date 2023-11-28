@@ -58,16 +58,20 @@ def create_gti(
     # Necessary as nc variables are sometimes defined as array
     from numpy import array  # NOQA
 
-    ftype, data = get_file_type(fname, raw_data=True)
+    ftype, data = get_file_type(fname, raw_data=False)
 
-    instr = data["instr"]
+    instr = data.instr
+
     if ftype == "lc" and instr.lower() == "pca":
         warnings.warn("RXTE/PCA data; normalizing lc per no. PCUs", AstropyUserWarning)
         # If RXTE, plot per PCU count rate
-        data["counts"] /= data["nPCUs"]
-    mjdref = data["mjdref"]
+        data.counts /= data.nPCUs
+    mjdref = data.mjdref
     # Map all entries of data to local variables
-    locals().update(data)
+    array_attrs = data.array_attrs() + ["time"]
+    if hasattr(data, "internal_array_attrs"):
+        array_attrs += data.array_attrs()
+    locals().update(zip(array_attrs, [getattr(data, attr) for attr in array_attrs]))
 
     good = eval(filter_expr)
 
@@ -88,10 +92,10 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
 
     File MUST have a GTI extension already, and an extension called `time`.
     """
-    ftype, data = get_file_type(fname, raw_data=True)
+    ftype, data = get_file_type(fname, raw_data=False)
 
     try:
-        datagti = data["gti"]
+        datagti = data.gti
         newgti = cross_gtis([gti, datagti])
     except Exception:  # pragma: no cover
         warnings.warn("Data have no GTI extension", AstropyUserWarning)
@@ -99,20 +103,10 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
 
     newgti = filter_gti_by_length(newgti, minimum_length)
 
-    data["gti"] = newgti
-    good = create_gti_mask(data["time"], newgti)
+    data.gti = newgti
+    # good = create_gti_mask(data.time, newgti)
 
-    data["time"] = data["time"][good]
-    if ftype == "lc":
-        data["counts"] = data["counts"][good]
-        data["counts_err"] = data["counts_err"][good]
-    elif ftype == "events":
-        for key in ["pi", "energy"]:
-            if key in data:
-                data[key] = data[key][good]
-
-        if data["instr"] == "PCA":  # pragma: no cover
-            data["PCU"] = data["PCU"][good]
+    data = data.apply_gtis()
 
     newext = "_gtifilt" + HEN_FILE_EXTENSION
     outname = _assign_value_if_none(

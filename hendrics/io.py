@@ -18,6 +18,7 @@ import numpy as np
 from astropy.table import Table
 
 from hendrics.base import get_file_extension, get_file_format, splitext_improved
+from stingray.base import StingrayObject
 
 try:
     import h5py
@@ -656,19 +657,23 @@ def load_lcurve(fname):
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
-        lcurve = Lightcurve()
-        lcurve.time = data["time"]
+        time = data["time"]
+        data.pop("time")
+
+        if "counts" in data:
+            counts = data["counts"]
+            data.pop("counts")
+        elif "_counts" in data:
+            counts = data["_counts"]
+            data.pop("_counts")
+        else:
+            raise ValueError("No counts in file")
+
+        lcurve = Lightcurve(time, counts, skip_checks=True)
+
         for key in data.keys():
-            print(key)
-            if key == "time":
-                continue
-            print("    done")
             setattr(lcurve, key, data[key])
-    print()
-    for key in data.keys():
-        if hasattr(lcurve, key) and getattr(lcurve, key) is not None:
-            continue
-        setattr(lcurve, key, data[key])
+
     if "mission" not in list(data.keys()):
         lcurve.mission = ""
 
@@ -1079,11 +1084,33 @@ def save_data(struct, fname, ftype="data"):
     """Save generic data in hendrics format."""
     fmt = get_file_format(fname)
     has_write_method = hasattr(struct, "write")
+    struct_dict = struct
+    if isinstance(struct, StingrayObject):
+        struct_dict = {}
+        struct_dict.update(
+            zip(
+                struct.array_attrs(),
+                [getattr(struct, val) for val in struct.array_attrs()],
+            )
+        )
+        struct_dict.update(
+            zip(
+                struct.meta_attrs(),
+                [getattr(struct, val) for val in struct.meta_attrs()],
+            )
+        )
+        if hasattr(struct, "internal_array_attrs"):
+            struct_dict.update(
+                zip(
+                    struct.internal_array_attrs(),
+                    [getattr(struct, val) for val in struct.internal_array_attrs()],
+                )
+            )
 
     if fmt == "pickle":
-        return _save_data_pickle(struct, fname)
+        return _save_data_pickle(struct_dict, fname)
     elif fmt == "nc":
-        return _save_data_nc(struct, fname)
+        return _save_data_nc(struct_dict, fname)
 
     if not has_write_method:
         raise ValueError("Unrecognized data format or file format")
@@ -1274,43 +1301,8 @@ def main(args=None):
             print_fits_info(fname)
             print("-" * len(fname))
             continue
-        ftype, contents = get_file_type(fname, raw_data=True)
-        print("This file contains:", end="\n\n")
-        mjdref = 0.0 * u.d
-        if "mjdref" in contents:
-            mjdref = Time(contents["mjdref"], format="mjd")
-
-        tstart = None
-        tstop = None
-        tseg = None
-
-        for k in sorted(contents.keys()):
-            if k == "header" and not args.print_header:
-                continue
-            if k == "tstart":
-                timeval = contents[k] * u.s
-                val = f"MET {contents[k]} s (MJD {mjdref + timeval.to(u.d)})"
-                tstart = timeval
-            elif k == "tstop":
-                timeval = contents[k] * u.s
-                val = f"MET {contents[k]} s (MJD {mjdref + timeval.to(u.d)})"
-                tstop = timeval
-            elif k == "tseg":
-                val = f"{contents[k]} s"
-                tseg = contents[k] * u.s
-            else:
-                val = contents[k]
-            if isinstance(val, Iterable) and not is_string(val):
-                length = len(val)
-                if len(val) < 4:
-                    val = repr(list(val[:4]))
-                else:
-                    val = repr(list(val[:4])).replace("]", "") + "...]"
-                    val = "{} (len {})".format(val, length)
-            print((k + ":").ljust(15), val, end="\n\n")
-
-        if tseg is None and (tstart is not None and tstop is not None):
-            print(("length:").ljust(15), tstop - tstart, end="\n\n")
+        ftype, contents = get_file_type(fname, raw_data=False)
+        print(contents)
 
         print("-" * len(fname))
 
