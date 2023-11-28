@@ -253,13 +253,13 @@ class TestFullRun(object):
 
         lcurve_mp = os.path.join(self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION)
 
-        lcdata_mp = hen.io.load_data(lcurve_mp)
-        lcdata_ftools = hen.io.load_data(lcurve_ftools)
+        _, lcdata_mp = hen.io.get_file_type(lcurve_mp, raw_data=False)
+        _, lcdata_ftools = hen.io.get_file_type(lcurve_ftools, raw_data=False)
 
-        lc_mp = lcdata_mp["counts"]
+        lc_mp = lcdata_mp.counts
 
         lenmp = len(lc_mp)
-        lc_ftools = lcdata_ftools["counts"]
+        lc_ftools = lcdata_ftools.counts
         lenftools = len(lc_ftools)
         goodlen = min([lenftools, lenmp])
 
@@ -272,9 +272,9 @@ class TestFullRun(object):
     def test_txt_lcurve(self):
         """Test light curves from txt."""
         lcurve_mp = os.path.join(self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION)
-        lcdata_mp = hen.io.load_data(lcurve_mp)
-        lc_mp = lcdata_mp["counts"]
-        time_mp = lcdata_mp["time"]
+        _, lcdata_mp = hen.io.get_file_type(lcurve_mp, raw_data=False)
+        lc_mp = lcdata_mp.counts
+        time_mp = lcdata_mp.time
 
         lcurve_txt_orig = os.path.join(self.datadir, "lcurve_txt_lc.txt")
 
@@ -283,9 +283,9 @@ class TestFullRun(object):
         lcurve_txt = os.path.join(self.datadir, "lcurve_txt_lc" + HEN_FILE_EXTENSION)
         command = "--txt-input " + lcurve_txt_orig + " --outfile " + lcurve_txt
         hen.lcurve.main(command.split())
-        lcdata_txt = hen.io.load_data(lcurve_txt)
+        lcdata_txt = hen.io.get_file_type(lcurve_txt, raw_data=False)[1]
 
-        lc_txt = lcdata_txt["counts"]
+        lc_txt = lcdata_txt.counts
 
         assert np.all(
             np.abs(lc_mp - lc_txt) <= 1e-3

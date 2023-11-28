@@ -373,11 +373,12 @@ def main(args=None):
 
         outfile = correct_lightcurve(lc_file, uf_file, outname)
 
-        outdata = load_data(outfile)
-        time = outdata["time"]
-        lc = outdata["counts"]
-        expo = outdata["expo"]
-        gti = outdata["gti"]
+        # outdata = load_data(outfile)
+        _, outdata = get_file_type(outfile, raw_data=False)
+        time = outdata.time
+        lc = outdata.counts
+        expo = outdata.expo
+        gti = outdata.gti
 
         try:
             _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)

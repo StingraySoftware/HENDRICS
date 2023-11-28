@@ -1086,26 +1086,7 @@ def save_data(struct, fname, ftype="data"):
     has_write_method = hasattr(struct, "write")
     struct_dict = struct
     if isinstance(struct, StingrayObject):
-        struct_dict = {}
-        struct_dict.update(
-            zip(
-                struct.array_attrs(),
-                [getattr(struct, val) for val in struct.array_attrs()],
-            )
-        )
-        struct_dict.update(
-            zip(
-                struct.meta_attrs(),
-                [getattr(struct, val) for val in struct.meta_attrs()],
-            )
-        )
-        if hasattr(struct, "internal_array_attrs"):
-            struct_dict.update(
-                zip(
-                    struct.internal_array_attrs(),
-                    [getattr(struct, val) for val in struct.internal_array_attrs()],
-                )
-            )
+        struct_dict = struct.dict()
 
     if fmt == "pickle":
         return _save_data_pickle(struct_dict, fname)

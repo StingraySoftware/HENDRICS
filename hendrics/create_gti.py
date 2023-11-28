@@ -69,9 +69,13 @@ def create_gti(
     mjdref = data.mjdref
     # Map all entries of data to local variables
     array_attrs = data.array_attrs() + ["time"]
-    if hasattr(data, "internal_array_attrs"):
-        array_attrs += data.array_attrs()
     locals().update(zip(array_attrs, [getattr(data, attr) for attr in array_attrs]))
+    if hasattr(data, "internal_array_attrs"):
+        array_attrs = data.internal_array_attrs()
+        mod_array_attrs = [attr.replace("_", "") for attr in array_attrs]
+        locals().update(
+            zip(mod_array_attrs, [getattr(data, attr) for attr in array_attrs])
+        )
 
     good = eval(filter_expr)
 
@@ -105,8 +109,9 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
 
     data.gti = newgti
     # good = create_gti_mask(data.time, newgti)
-
+    print(data)
     data = data.apply_gtis()
+    data._mask = None
 
     newext = "_gtifilt" + HEN_FILE_EXTENSION
     outname = _assign_value_if_none(
