@@ -132,7 +132,8 @@ def save_events_to_binary(
             )
 
         good = (events.energy >= emin) & (events.energy < emax)
-        events.time = events.time[good]
+        events = events.apply_mask(good)
+        # events.time = events.time[good]
 
     tstop = events.gti[-1, 1]
     nbin = (tstop - tstart) / bin_time
