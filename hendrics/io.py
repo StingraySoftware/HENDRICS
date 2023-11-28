@@ -509,7 +509,6 @@ def get_file_type(fname, raw_data=False):
         ftype_raw = contents_raw["__sr__class__type__"]
         contents = contents_raw
 
-    print(ftype_raw)
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
         fun = load_lcurve
@@ -617,9 +616,6 @@ def load_lcurve(fname):
     else:
         # Try one of the known files from Lightcurve
         return Lightcurve.read(fname, fmt=fmt, skip_checks=True)
-
-    print("\n\n\n\n\n")
-    print(data)
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
