@@ -1087,7 +1087,7 @@ def save_data(struct, fname, ftype="data"):
         struct_dict = struct.dict()
 
     if fmt in ["pickle", "nc"]:
-        if not "__sr__class__type__" in struct_dict:
+        if "__sr__class__type__" not in struct_dict:
             struct_dict["__sr__class__type__"] = str(type(struct))
         if fmt == "pickle":
             return _save_data_pickle(struct_dict, fname, kind=ftype)
