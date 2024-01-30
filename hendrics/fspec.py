@@ -254,7 +254,7 @@ def calc_pds(
     noclobber : bool
         If True, do not overwrite existing files
     outname : str
-        If speficied, output file name. If not specified or None, the new file
+        If specified, output file name. If not specified or None, the new file
         will have the same root as the input light curve and the '_pds' suffix
     emin : float, default None
         Minimum energy of the photons
