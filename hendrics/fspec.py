@@ -23,6 +23,8 @@ from .base import (
     interpret_bintime,
     HENDRICS_STAR_VALUE,
 )
+from stingray.lombscargle import LombScargleCrossspectrum, LombScarglePowerspectrum
+
 from .io import sort_files, save_pds, load_data
 from .io import HEN_FILE_EXTENSION, get_file_type
 from .io import filter_energy
@@ -227,6 +229,7 @@ def calc_pds(
     emin=None,
     emax=None,
     ignore_gti=False,
+    lombscargle=False,
 ):
     """Calculate the PDS from an input light curve file.
 
@@ -260,6 +263,8 @@ def calc_pds(
         Minimum energy of the photons
     emax : float, default None
         Maximum energy of the photons
+    lombscargle : bool
+        Use the Lomb-Scargle periodogram instead of AveragedPowerspectrum
 
     """
     root = hen_root(lcfile)
@@ -268,7 +273,8 @@ def calc_pds(
         emin_label = f"{emin:g}" if emin is not None else HENDRICS_STAR_VALUE
         emax_label = f"{emax:g}" if emax is not None else HENDRICS_STAR_VALUE
         label += f"_{emin_label}-{emax_label}keV"
-
+    if lombscargle:
+        label += "_LS"
     if outname is None:
         outname = root + label + "_pds" + HEN_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
@@ -290,17 +296,20 @@ def calc_pds(
     if hasattr(data, "dt"):
         bintime = max(data.dt, bintime)
 
-    if ftype == "events":
+    if ftype != "events":
+        bintime = None
+
+    if lombscargle:
+        pds = LombScarglePowerspectrum(
+            data,
+            dt=bintime,
+            norm=normalization.lower(),
+        )
+        save_all = False
+    else:
         pds = AveragedPowerspectrum(
             data,
             dt=bintime,
-            segment_size=fftlen,
-            save_all=save_dyn,
-            norm=normalization.lower(),
-        )
-    elif ftype == "lc":
-        pds = AveragedPowerspectrum(
-            data,
             segment_size=fftlen,
             save_all=save_dyn,
             norm=normalization.lower(),
@@ -344,6 +353,7 @@ def calc_cpds(
     emin=None,
     emax=None,
     ignore_gti=False,
+    lombscargle=False,
 ):
     """Calculate the CPDS from a pair of input light curve files.
 
@@ -378,6 +388,8 @@ def calc_cpds(
         Minimum energy of the photons
     emax : float, default None
         Maximum energy of the photons
+    lombscargle : bool
+        Use the Lomb-Scargle periodogram instead of AveragedPowerspectrum
 
     """
     label = ""
@@ -385,7 +397,8 @@ def calc_cpds(
         emin_label = f"{emin:g}" if emin is not None else HENDRICS_STAR_VALUE
         emax_label = f"{emax:g}" if emax is not None else HENDRICS_STAR_VALUE
         label += f"_{emin_label}-{emax_label}keV"
-
+    if lombscargle:
+        label += "_LS"
     if outname is None:
         root = cn if (cn := common_name(lcfile1, lcfile2)) != "" else "cpds"
         outname = root + label + "_cpds" + HEN_FILE_EXTENSION
@@ -430,20 +443,22 @@ def calc_cpds(
     if hasattr(lc1, "dt"):
         bintime = max(lc1.dt, bintime)
 
-    # New Stingray machinery, hopefully more efficient and consistent
-    if ftype1 == "events":
+    if ftype1 != "events":
+        bintime = None
+
+    if lombscargle:
+        cpds = LombScargleCrossspectrum(
+            lc1,
+            lc2,
+            dt=bintime,
+            norm=normalization.lower(),
+        )
+        save_all = False
+    else:
         cpds = AveragedCrossspectrum(
             lc1,
             lc2,
             dt=bintime,
-            segment_size=fftlen,
-            save_all=save_dyn,
-            norm=normalization.lower(),
-        )
-    elif ftype1 == "lc":
-        cpds = AveragedCrossspectrum(
-            lc1,
-            lc2,
             segment_size=fftlen,
             save_all=save_dyn,
             norm=normalization.lower(),
@@ -495,6 +510,7 @@ def calc_fspec(
     emin=None,
     emax=None,
     ignore_gti=False,
+    lombscargle=False,
 ):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
@@ -531,6 +547,8 @@ def calc_fspec(
         Minimum energy of the photons
     emax : float, default None
         Maximum energy of the photons
+    lombscargle : bool
+        Use the Lomb-Scargle periodogram instead of AveragedPowerspectrum
 
     References
     ----------
@@ -563,6 +581,7 @@ def calc_fspec(
                 emin=emin,
                 emax=emax,
                 ignore_gti=ignore_gti,
+                lombscargle=lombscargle,
             )
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
@@ -607,6 +626,7 @@ def calc_fspec(
         emin=emin,
         emax=emax,
         ignore_gti=ignore_gti,
+        lombscargle=lombscargle,
     )
 
     funcargs = []
@@ -823,6 +843,12 @@ def main(args=None):
         type=float,
         help="Maximum energy (or PI if uncalibrated) to plot",
     )
+    parser.add_argument(
+        "--lombscargle",
+        help="Use Lomb-Scargle periodogram or cross spectrum (will ignore segment_size)",
+        default=False,
+        action="store_true",
+    )
     _add_default_args(parser, ["loglevel", "debug"])
 
     args = check_negative_numbers_in_args(args)
@@ -888,4 +914,5 @@ def main(args=None):
             emin=args.emin,
             emax=args.emax,
             ignore_gti=args.ignore_gtis,
+            lombscargle=args.lombscargle,
         )

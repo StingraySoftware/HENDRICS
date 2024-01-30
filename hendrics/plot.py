@@ -223,6 +223,8 @@ def plot_pds(
 
     for i, fname in enumerate(fnames):
         pds_obj = load_pds(fname, nosub=True)
+        if pds_obj.df is None:
+            pds_obj.df = pds_obj.freq[1] - pds_obj.freq[0]
         if np.allclose(np.diff(pds_obj.freq), pds_obj.df):
             freq = pds_obj.freq
             xlog = _assign_value_if_none(xlog, False)
@@ -266,7 +268,7 @@ def plot_pds(
 
         level = lev  # Can be modified below
         y = pds[1:]
-        yerr = epds[1:]
+        yerr = yerr = None if epds is None else epds[1:]
 
         if norm.lower() == "leahy" or (
             norm.lower() in ["rms", "frac"] and (not xlog or not ylog)
@@ -293,7 +295,7 @@ def plot_pds(
             level = lev - const
 
             y = pds[1:] * freq[1:]
-            yerr = epds[1:] * freq[1:]
+            yerr = None if epds is None else epds[1:] * freq[1:]
             plt.plot(freq[1:], y, drawstyle="steps-mid", color=color, label=fname)
             level *= freq
             for i, func in enumerate(models):

@@ -255,7 +255,8 @@ class TestFullRun(object):
         assert np.allclose(evpds.power, lcpds.power)
 
     @pytest.mark.parametrize("data_kind", ["events", "lc"])
-    def test_pds(self, data_kind):
+    @pytest.mark.parametrize("lombscargle", [False, True])
+    def test_pds(self, data_kind, lombscargle):
         """Test PDS production."""
         if data_kind == "events":
             label = "_ev"
@@ -268,18 +269,23 @@ class TestFullRun(object):
         outB = os.path.join(
             self.datadir, f"monol_testB_nustar_fpmb_pds" + HEN_FILE_EXTENSION
         )
+        if lombscargle:
+            outA = outA.replace("pds", "ls_pds")
+            outB = outB.replace("pds", "ls_pds")
+
         if os.path.exists(outA):
             io.remove_pds(outA)
         if os.path.exists(outB):
             io.remove_pds(outB)
-
-        command = (
-            "{0} {1} -f 16 --save-all --save-dyn -k PDS -b 0.5 --norm frac".format(
-                os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
-                + HEN_FILE_EXTENSION,
-            )
+        opts = "-f 16 --save-all --save-dyn -k PDS -b 0.5 --norm frac"
+        if lombscargle:
+            opts += " --lombscargle"
+        command = "{0} {1} {2}".format(
+            opts,
+            os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
+            + HEN_FILE_EXTENSION,
+            os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
+            + HEN_FILE_EXTENSION,
         )
         hen.fspec.main(command.split())
 
@@ -288,9 +294,10 @@ class TestFullRun(object):
 
         new_pdsA = hen.io.load_pds(outA)
         new_pdsB = hen.io.load_pds(outB)
-        for pds in [new_pdsA, new_pdsB]:
-            assert hasattr(pds, "cs_all")
-            assert len(pds.cs_all) == pds.m
+        if not lombscargle:
+            for pds in [new_pdsA, new_pdsB]:
+                assert hasattr(pds, "cs_all")
+                assert len(pds.cs_all) == pds.m
         shutil.rmtree(outA.replace(HEN_FILE_EXTENSION, ""))
         shutil.rmtree(outB.replace(HEN_FILE_EXTENSION, ""))
         os.unlink(outA)
