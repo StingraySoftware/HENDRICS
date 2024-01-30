@@ -126,7 +126,7 @@ class TestFullRun(object):
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
         command = ("{0} -b 100 -e {1} {2} {2} {3}").format(self.ev_fileA, 3, 5, 10)
-        with pytest.raises(ValueError, match="No energy information is present "):
+        with pytest.raises(ValueError, match="Energy information not found in file"):
             hen.colors.main(command.split())
 
     def test_plot_color(self):
