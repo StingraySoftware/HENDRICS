@@ -270,8 +270,8 @@ class TestFullRun(object):
             self.datadir, f"monol_testB_nustar_fpmb_pds" + HEN_FILE_EXTENSION
         )
         if lombscargle:
-            outA = outA.replace("pds", "ls_pds")
-            outB = outB.replace("pds", "ls_pds")
+            outA = outA.replace("pds", "LS_pds")
+            outB = outB.replace("pds", "LS_pds")
 
         if os.path.exists(outA):
             io.remove_pds(outA)
