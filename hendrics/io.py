@@ -481,6 +481,8 @@ def recognize_stingray_table(obj):
     ...
     ValueError: Object not recognized...
     """
+    if "hue" in obj.colnames:
+        return "Powercolors"
     if "power" in obj.colnames:
         if np.iscomplex(obj["power"][1]) or "pds1" in obj.colnames:
             return "AveragedCrossspectrum"
@@ -512,6 +514,12 @@ def get_file_type(fname, raw_data=False):
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
         fun = load_lcurve
+    elif "Powercolor" in ftype_raw:
+        ftype = "powercolor"
+        fun = load_timeseries
+    elif "StingrayTimeseries" in ftype_raw and "hue" in contents:
+        ftype = "powercolor"
+        fun = load_timeseries
     elif "StingrayTimeseries" in ftype_raw:
         ftype = "color"
         fun = load_timeseries

@@ -24,6 +24,7 @@ from .io import find_file_in_allowed_paths
 from .base import _assign_value_if_none
 from .base import pds_detection_level as detection_level
 from .base import deorbit_events
+from .power_colors import plot_hues_rms, plot_hues_rms_polar, plot_power_colors
 
 
 def _next_color(ax):
@@ -201,6 +202,22 @@ def _get_const(models):
             return _get_const(model)
 
     return None
+
+
+def plot_powercolors(fnames):
+    if isinstance(fnames, Iterable) and not is_string(fnames):
+        outs = []
+        for fname in fnames:
+            outs.append(plot_powercolors(fname))
+        return outs
+
+    ts = load_data(fnames)
+
+    plot_power_colors(ts["pc1"], ts["pc1_err"], ts["pc2"], ts["pc2_err"])
+    plot_hues_rms_polar(ts["hue"], ts["rms"], ts["rms_err"])
+    plot_hues_rms(ts["hue"], ts["rms"], ts["rms_err"])
+    print("Bu")
+    return ts
 
 
 def plot_pds(
@@ -935,6 +952,8 @@ def main(args=None):
                 figname=args.figname,
                 output_data_file=args.outfile,
             )
+        elif ftype == "powercolor":
+            plot_powercolors(fname)
         elif ftype == "folding":
             plot_folding(
                 fname,
