@@ -72,16 +72,16 @@ def main(args=None):
         for fname in args.files:
             lcurve = load_lcurve(fname)
             if args.norm == "fvar":
-                start, stop, res = lcurve.analyze_lc_chunks(
-                    args.chunk_length, fvar, args.fraction_step
+                start, stop, res = lcurve.analyze_segments(
+                    fvar, args.chunk_length, args.fraction_step
                 )
             elif args.norm == "excvar":
-                start, stop, res = lcurve.analyze_lc_chunks(
-                    args.chunk_length, excvar_none, args.fraction_step
+                start, stop, res = lcurve.analyze_segments(
+                    excvar_none, args.chunk_length, args.fraction_step
                 )
             elif args.norm == "norm_excvar":
-                start, stop, res = lcurve.analyze_lc_chunks(
-                    args.chunk_length, excvar_norm, args.fraction_step
+                start, stop, res = lcurve.analyze_segments(
+                    excvar_norm, args.chunk_length, args.fraction_step
                 )
             else:
                 raise ValueError("Normalization must be fvar, norm_excvar " "or excvar")
