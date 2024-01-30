@@ -46,11 +46,11 @@ What's new
 HENDRICS 8.0 (under development)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
++ Compatible with `Stingray 2.0 <https://github.com/StingraySoftware/stingray/releases/tag/v2.0>`__ or newer
 + ``HENaccelsearch`` now has additional options for detrending, denoising and deorbiting
 + An improved Maximum likelihood algorithm as FFTFIT substitute for TOA calculation
 + NASA's IXPE added to supported missions
-+ Compatible with `Stingray 1.1 <https://github.com/StingraySoftware/stingray/releases/tag/v1.1>`__ or newer
-+ Add option to obtain weighted light curves
++ Add option to obtain weighted light curves -- including polarimetric data
 + Better support of Stingray's native file formats
 
 
