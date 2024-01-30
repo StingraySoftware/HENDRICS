@@ -41,7 +41,7 @@ def get_header_info(obj):
         .replace("h", ":")
         .replace("m", ":")
     )
-    info.decj = (a.ra.to_string()).replace("s", "").replace("d", ":").replace("m", ":")
+    info.decj = (a.dec.to_string()).replace("s", "").replace("d", ":").replace("m", ":")
     if hasattr(obj, "e_interval"):
         e0, e1 = obj.e_interval
     elif hasattr(obj, "energy") and obj.energy is not None:
