@@ -216,7 +216,6 @@ def plot_powercolors(fnames):
     plot_power_colors(ts["pc1"], ts["pc1_err"], ts["pc2"], ts["pc2_err"])
     plot_hues_rms_polar(ts["hue"], ts["rms"], ts["rms_err"])
     plot_hues_rms(ts["hue"], ts["rms"], ts["rms_err"])
-    print("Bu")
     return ts
 
 

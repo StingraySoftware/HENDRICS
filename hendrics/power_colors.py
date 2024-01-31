@@ -390,7 +390,6 @@ def main(args=None):
         if args.outfile is not None and len(files) > 1:
             raise ValueError("Specify --output only when processing " "a single file")
         bintime = np.longdouble(interpret_bintime(args.bintime))
-        print(bintime, 0.5 / bintime)
 
         for f in files:
             outfile = treat_power_colors(
