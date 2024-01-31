@@ -215,6 +215,15 @@ class TestFullRun(object):
         gti_to_test = hen.io.load_events(self.ev_fileA).gti
         assert np.allclose(gti_to_test, out_lc.gti)
 
+    def test_power_colors(self):
+        """Test light curve using PI filtering."""
+        # calculate colors
+        command = f"{self.ev_fileAcal} -s 16 -b -6 -f 1 2 4 8 16 "
+        new_filenames = hen.power_colors.main(command.split())
+
+        assert os.path.exists(new_filenames[0])
+        hen.plot.plot_powercolors(new_filenames)
+
     def test_readfile_fits(self):
         """Test reading and dumping a FITS file."""
         fitsname = os.path.join(self.datadir, "monol_testA.evt")

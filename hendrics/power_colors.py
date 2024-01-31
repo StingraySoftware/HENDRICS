@@ -11,7 +11,7 @@ from stingray import StingrayTimeseries, DynamicalPowerspectrum, DynamicalCrosss
 from stingray.fourier import hue_from_power_color
 
 from .io import HEN_FILE_EXTENSION, load_events, save_timeseries
-from .base import hen_root
+from .base import hen_root, interpret_bintime
 
 
 def trace_hue_line(center, angle):
@@ -186,7 +186,6 @@ def create_rms_hue_plot():
 
 
 def create_rms_hue_polar_plot():
-    plt.figure()
     fig, ax = plt.subplots(subplot_kw={"projection": "polar"})
     ax.set_rmax(0.75)
     ax.set_rticks([0, 0.25, 0.5, 0.75, 1])
@@ -238,10 +237,83 @@ def plot_hues_rms(hues, rms, rmse):
 
 
 def plot_hues_rms_polar(hues, rms, rmse):
-    ax = create_rms_hue_plot()
+    ax = create_rms_hue_polar_plot()
     hues = hues % (np.pi * 2)
 
     ax.errorbar(np.degrees(hues), rms, yerr=rmse, fmt="o", alpha=0.5)
+
+
+def treat_power_colors(
+    fname,
+    frequency_edges=[1 / 256, 1 / 32, 0.25, 2, 16],
+    segment_size=256,
+    bintime=1 / 32,
+    rebin=5,
+    outfile=None,
+    poisson_noise=None,
+):
+    if isinstance(fname, Iterable) and not isinstance(fname, str) and len(fname) == 2:
+        events1 = load_events(fname[0])
+        events2 = load_events(fname[1])
+        dynps = DynamicalCrossspectrum(
+            events1,
+            events2,
+            segment_size=segment_size,
+            sample_time=bintime,
+            norm="leahy",
+        )
+        gti = events1.gti
+        local_poisson_noise = 2 if poisson_noise is None else poisson_noise
+    else:
+        events = load_events(fname)
+        dynps = DynamicalPowerspectrum(
+            events,
+            segment_size=segment_size,
+            sample_time=bintime,
+            norm="leahy",
+        )
+        gti = events.gti
+
+        local_poisson_noise = 2 if poisson_noise is None else poisson_noise
+
+    dynps_reb = dynps.rebin_by_n_intervals(rebin, method="average")
+    p1, p1e, p2, p2e = dynps_reb.power_colors(
+        freq_edges=frequency_edges, poisson_power=local_poisson_noise
+    )
+
+    hues = hue_from_power_color(p1, p2)
+
+    rms, rmse = dynps_reb.compute_rms(
+        frequency_edges[0],
+        frequency_edges[-1],
+        poisson_noise_level=local_poisson_noise,
+    )
+    times = dynps_reb.time
+
+    scolor = StingrayTimeseries(
+        time=times,
+        pc1=p1,
+        pc1_err=np.abs(p1e),
+        pc2=p2,
+        pc2_err=np.abs(p2e),
+        hue=hues,
+        rms=rms,
+        rms_err=rmse,
+        input_counts=False,
+        err_dist="gauss",
+        gti=gti,
+        dt=segment_size,
+        skip_checks=True,
+    )
+
+    if outfile is None:
+        label = "_edges_" + "_".join([f"{f:g}" for f in frequency_edges])
+        outfile = hen_root(fname) + label + "_pc" + HEN_FILE_EXTENSION
+
+    scolor.f_intervals = np.asarray([float(k) for k in frequency_edges])
+    scolor.__sr__class__type__ = "Powercolor"
+    save_timeseries(scolor, outfile)
+    return outfile
 
 
 def main(args=None):
@@ -294,7 +366,7 @@ def main(args=None):
         "-b",
         "--bintime",
         type=float,
-        default=1 / 4096,
+        default=1 / 64,
         help="Light curve bin time; if negative, interpreted"
         + " as negative power of 2."
         + " Default: 2^-10, or keep input lc bin time"
@@ -313,71 +385,23 @@ def main(args=None):
     if len(args.files) % 2 == 0:
         files = [frange for frange in zip(files[::2], files[1::2])]
 
+    outfiles = []
     with log.log_to_file("HENcolors.log"):
         if args.outfile is not None and len(files) > 1:
             raise ValueError("Specify --output only when processing " "a single file")
+        bintime = np.longdouble(interpret_bintime(args.bintime))
+        print(bintime, 0.5 / bintime)
 
-        poisson_noise = 0
         for f in files:
-            if isinstance(f, Iterable) and not isinstance(f, str) and len(f) == 2:
-                events1 = load_events(f[0])
-                events2 = load_events(f[1])
-                dynps = DynamicalCrossspectrum(
-                    events1,
-                    events2,
-                    segment_size=args.segment_size,
-                    sample_time=args.bintime,
-                    norm="leahy",
-                )
-                gti = events1.gti
-            else:
-                events = load_events(f)
-                dynps = DynamicalPowerspectrum(
-                    events,
-                    segment_size=args.segment_size,
-                    sample_time=args.bintime,
-                    norm="leahy",
-                )
-                gti = events.gti
-
-                if args.poisson_noise is None:
-                    poisson_noise = 2
-            dynps_reb = dynps.rebin_by_n_intervals(args.rebin, method="average")
-            p1, p1e, p2, p2e = dynps_reb.power_colors(
-                freq_edges=args.frequency_edges, poisson_power=poisson_noise
+            outfile = treat_power_colors(
+                f,
+                args.frequency_edges,
+                args.segment_size,
+                bintime,
+                args.rebin,
+                args.outfile,
+                args.poisson_noise,
             )
+            outfiles.append(outfile)
 
-            hues = hue_from_power_color(p1, p2)
-
-            rms, rmse = dynps_reb.compute_rms(
-                args.frequency_edges[0],
-                args.frequency_edges[-1],
-                poisson_noise_level=poisson_noise,
-            )
-            times = dynps_reb.time
-
-            scolor = StingrayTimeseries(
-                time=times,
-                pc1=p1,
-                pc1_err=np.abs(p1e),
-                pc2=p2,
-                pc2_err=np.abs(p2e),
-                hue=hues,
-                rms=rms,
-                rms_err=rmse,
-                input_counts=False,
-                err_dist="gauss",
-                gti=gti,
-                dt=args.segment_size,
-                skip_checks=True,
-            )
-
-            if args.outfile is None:
-                label = "_edges_" + "_".join([f"{f:g}" for f in args.frequency_edges])
-                args.outfile = hen_root(f) + label + "_pc" + HEN_FILE_EXTENSION
-
-            scolor.f_intervals = np.asarray([float(k) for k in args.frequency_edges])
-            scolor.__sr__class__type__ = "Powercolor"
-            save_timeseries(scolor, args.outfile)
-            print(args.outfile)
-            print(scolor)
+    return outfiles
