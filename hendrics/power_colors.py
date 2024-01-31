@@ -232,15 +232,13 @@ def create_rms_hue_polar_plot():
 def plot_hues_rms(hues, rms, rmse):
     ax = create_rms_hue_plot()
     hues = hues % (np.pi * 2)
-
     ax.errorbar(np.degrees(hues), rms, yerr=rmse, fmt="o", alpha=0.5)
 
 
 def plot_hues_rms_polar(hues, rms, rmse):
     ax = create_rms_hue_polar_plot()
     hues = hues % (np.pi * 2)
-
-    ax.errorbar(np.degrees(hues), rms, yerr=rmse, fmt="o", alpha=0.5)
+    ax.errorbar(hues, rms, yerr=rmse, fmt="o", alpha=0.5)
 
 
 def treat_power_colors(
