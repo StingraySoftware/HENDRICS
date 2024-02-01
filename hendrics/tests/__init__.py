@@ -33,7 +33,6 @@ def cleanup_test_dir(datadir):
     patterns = [
         "*" + HEN_FILE_EXTENSION,
         "*lcurve*.txt",
-        "*.log",
         "*monol_test*.dat",
         "*monol_test*.png",
         "*monol_test*.txt",
@@ -44,6 +43,8 @@ def cleanup_test_dir(datadir):
         "*.inf",
         "*.hdf5",
         "*.ecsv",
+        "*.csv",
+        "*.dat",
     ]
 
     file_list = []
