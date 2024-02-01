@@ -27,6 +27,7 @@ from hendrics import (
 
 from hendrics.base import touch, HENDRICS_STAR_VALUE
 from hendrics.fspec import calc_cpds, calc_pds
+from . import cleanup_test_dir
 
 try:
     FileNotFoundError
@@ -726,43 +727,5 @@ model = models.Const1D()
     def teardown_class(self):
         """Test a full run of the scripts (command lines)."""
 
-        def find_file_pattern_in_dir(pattern, directory):
-            return glob.glob(os.path.join(directory, pattern))
-
-        patterns = [
-            "*" + HEN_FILE_EXTENSION,
-            "*lcurve*.txt",
-            "*.log",
-            "*monol_test*.dat",
-            "*monol_test*.png",
-            "*monol_test*.txt",
-            "*monol_test_fake*.evt",
-            "*bubu*",
-            "*.p",
-            "*.qdp",
-            "out.*",
-            "*.png",
-            "*.inf",
-            "*.hdf5",
-            "*.ecsv",
-        ]
-
-        file_list = []
-        for pattern in patterns:
-            file_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-            file_list.extend(find_file_pattern_in_dir(pattern, "."))
-
-        for f in file_list:
-            if os.path.exists(f):
-                print("Removing " + f)
-                os.remove(f)
-
-        patterns = ["*_pds*/", "*_cpds*/", "*_sum/"]
-
-        dir_list = []
-        for pattern in patterns:
-            dir_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-            dir_list.extend(find_file_pattern_in_dir(pattern, "."))
-        for f in dir_list:
-            if os.path.exists(f):
-                shutil.rmtree(f)
+        cleanup_test_dir(self.datadir)
+        cleanup_test_dir(".")
