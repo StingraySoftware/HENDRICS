@@ -730,8 +730,7 @@ model = models.Const1D()
             return glob.glob(os.path.join(directory, pattern))
 
         patterns = [
-            "*monol_test*" + HEN_FILE_EXTENSION,
-            "*lcurve*" + HEN_FILE_EXTENSION,
+            "*" + HEN_FILE_EXTENSION,
             "*lcurve*.txt",
             "*.log",
             "*monol_test*.dat",
@@ -741,14 +740,17 @@ model = models.Const1D()
             "*bubu*",
             "*.p",
             "*.qdp",
+            "out.*",
+            "*.png",
             "*.inf",
-            "*_cpds" + HEN_FILE_EXTENSION,
-            "*_ev" + HEN_FILE_EXTENSION,
+            "*.hdf5",
+            "*.ecsv",
         ]
 
         file_list = []
         for pattern in patterns:
             file_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
+            file_list.extend(find_file_pattern_in_dir(pattern, "."))
 
         for f in file_list:
             if os.path.exists(f):
@@ -760,6 +762,7 @@ model = models.Const1D()
         dir_list = []
         for pattern in patterns:
             dir_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
+            dir_list.extend(find_file_pattern_in_dir(pattern, "."))
         for f in dir_list:
             if os.path.exists(f):
                 shutil.rmtree(f)
