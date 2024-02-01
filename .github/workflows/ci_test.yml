@@ -112,7 +112,7 @@ jobs:
             python: '3.8'
             tox_env: 'py38-test-oldestdeps-cov'
             use_remote_data: true
-          - os: macos-latest
+          - os: macos-14
             python: '3.10'
             tox_env: 'py310-test'
           - os: windows-latest
