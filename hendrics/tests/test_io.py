@@ -529,13 +529,8 @@ class TestIO:
 
     @classmethod
     def teardown_class(cls):
-        import shutil
-
-        for dum in glob.glob("bubu*"):
-            try:
-                os.unlink(dum)
-            except (PermissionError, IsADirectoryError):
-                shutil.rmtree(dum)
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")
 
 
 class TestIOModel:
@@ -628,5 +623,4 @@ model = models.Const1D()
 
     @classmethod
     def teardown_class(cls):
-        cleanup_test_dir(cls.datadir)
         cleanup_test_dir(".")
