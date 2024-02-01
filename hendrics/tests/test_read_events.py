@@ -189,6 +189,11 @@ class TestMergeEvents:
         assert np.allclose(data.gti, allgti)
         os.unlink(outfile)
 
+    @classmethod
+    def teardown_class(cls):
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")
+
 
 class TestReadEvents:
     """Real unit tests."""

@@ -89,6 +89,11 @@ class TestLcurve:
         assert hasattr(data, "mjdref")
         assert data.mjdref > 0
 
+    @classmethod
+    def teardown_class(cls):
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")
+
 
 class TestFullRun(object):
     """Test how command lines work.
