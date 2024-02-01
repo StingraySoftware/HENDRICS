@@ -51,9 +51,12 @@ def cleanup_test_dir(datadir):
         file_list.extend(find_file_pattern_in_dir(pattern, datadir))
 
     for f in file_list:
-        if os.path.exists(f):
+        if os.path.exists(f) and not os.path.isdir(f):
             print("Removing " + f)
             os.remove(f)
+        elif os.path.exists(f) and os.path.isdir(f):
+            print("Removing directory " + f)
+            shutil.rmtree(f)
 
     patterns = ["*_pds*/", "*_cpds*/", "*_sum/"]
 
