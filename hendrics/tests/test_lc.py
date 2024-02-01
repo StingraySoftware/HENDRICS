@@ -26,10 +26,10 @@ from hendrics import (
     read_events,
     rebin,
 )
-
 from hendrics.read_events import treat_event_file
 from hendrics.io import HEN_FILE_EXTENSION, get_file_type
 from hendrics.lcurve import lcurve_from_events
+from . import cleanup_test_dir
 
 try:
     FileNotFoundError
@@ -476,41 +476,6 @@ class TestFullRun(object):
         assert hasattr(contents, "expo")
 
     @classmethod
-    def teardown_class(self):
-        """Test a full run of the scripts (command lines)."""
-
-        def find_file_pattern_in_dir(pattern, directory):
-            return glob.glob(os.path.join(directory, pattern))
-
-        patterns = [
-            "*monol_test*" + HEN_FILE_EXTENSION,
-            "*lcurve*" + HEN_FILE_EXTENSION,
-            "*lcurve*.txt",
-            "*.log",
-            "*monol_test*.dat",
-            "*monol_test*.png",
-            "*monol_test*.txt",
-            "*monol_test_fake*.evt",
-            "*bubu*",
-            "*.p",
-            "*.qdp",
-            "*.inf",
-        ]
-
-        file_list = []
-        for pattern in patterns:
-            file_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-
-        for f in file_list:
-            if os.path.exists(f):
-                print("Removing " + f)
-                os.remove(f)
-
-        patterns = ["*_pds*/", "*_cpds*/", "*_sum/"]
-
-        dir_list = []
-        for pattern in patterns:
-            dir_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-        for f in dir_list:
-            if os.path.exists(f):
-                shutil.rmtree(f)
+    def teardown_class(cls):
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")

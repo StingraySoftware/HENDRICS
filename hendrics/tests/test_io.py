@@ -28,7 +28,7 @@ from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
 from hendrics.io import find_file_in_allowed_paths, get_file_type
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
 from hendrics.io import main, main_filter_events, remove_pds
-
+from . import cleanup_test_dir
 import pytest
 import glob
 from astropy.modeling import models
@@ -628,7 +628,5 @@ model = models.Const1D()
 
     @classmethod
     def teardown_class(cls):
-        import shutil
-
-        for dum in glob.glob("bubu*.*"):
-            os.unlink(dum)
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")

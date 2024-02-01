@@ -4,6 +4,8 @@ import numpy as np
 import pytest
 from ..phasetag import main_phasetag
 
+from . import cleanup_test_dir
+
 
 class TestPhasetag:
     """Real unit tests."""
@@ -122,3 +124,8 @@ class TestPhasetag:
             NotImplementedError, match="This part is not yet implemented"
         ):
             main_phasetag([self.fits_fileA, "--parfile", "bubu.par", "--test"])
+
+    @classmethod
+    def teardown_class(cls):
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")

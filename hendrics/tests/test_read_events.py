@@ -17,6 +17,7 @@ from hendrics.io import ref_mjd
 from hendrics.io import main as main_readfile
 from hendrics.fake import main
 import hendrics as hen
+from . import cleanup_test_dir
 
 
 class TestMergeEvents:
@@ -356,12 +357,5 @@ class TestReadEvents:
 
     @classmethod
     def teardown_class(cls):
-        for pattern in [
-            "monol_*" + HEN_FILE_EXTENSION,
-            "*phasetag*",
-            "*fake*",
-            "monol*.pdf",
-        ]:
-            files = glob.glob(os.path.join(cls.datadir, pattern))
-            for file in files:
-                os.unlink(file)
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")

@@ -36,9 +36,4 @@ class TestTiming(object):
             calculate_errors=True,
             fit_base=fit_base,
         )
-        # for (fit_par, err, real_par) in zip(
-        #     pars, errs, [self.real_amp, phase, self.real_base]
-        # ):
-        #     print(fit_par, real_par, fit_par - real_par, err)
-
         assert np.abs(minimum_phase_diff(pars[1], phase)) < 3 * errs[1]

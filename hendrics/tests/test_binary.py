@@ -9,6 +9,7 @@ import hendrics as hen
 from hendrics.tests import _dummy_par
 from hendrics.fold import HAS_PINT
 from hendrics import binary, calibrate, io, lcurve, read_events
+from . import cleanup_test_dir
 
 HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
@@ -88,3 +89,8 @@ class TestBinary(object):
         hen.binary.main_presto("{}".format(f).split())
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, ".dat"))
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, ".inf"))
+
+    @classmethod
+    def teardown_class(cls):
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")

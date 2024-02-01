@@ -6,6 +6,7 @@ import hendrics as hen
 from hendrics.tests import _dummy_par
 from hendrics import io, lcurve, read_events, fake
 from hendrics.io import load_events, save_events
+from . import cleanup_test_dir
 
 HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
@@ -122,3 +123,8 @@ class TestCalibrate(object):
         with pytest.raises(ValueError):
             hen.calibrate.main(command.split())
         os.unlink(bubu_fname)
+
+    @classmethod
+    def teardown_class(cls):
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")

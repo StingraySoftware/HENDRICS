@@ -37,6 +37,7 @@ from hendrics import (
     sum_fspec,
 )
 from hendrics.io import HAS_H5PY
+from . import cleanup_test_dir, find_file_pattern_in_dir
 
 try:
     FileNotFoundError
@@ -47,10 +48,6 @@ HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
 log.setLevel("DEBUG")
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
-
-
-def find_file_pattern_in_dir(pattern, directory):
-    return glob.glob(os.path.join(directory, pattern))
 
 
 class TestFullRun(object):
@@ -298,38 +295,5 @@ class TestFullRun(object):
     def teardown_class(self):
         """Test a full run of the scripts (command lines)."""
 
-        patterns = [
-            "*" + HEN_FILE_EXTENSION,
-            "*lcurve*.txt",
-            "*.log",
-            "*monol_test*.dat",
-            "*monol_test*.png",
-            "*monol_test*.txt",
-            "*monol_test_fake*.evt",
-            "*bubu*",
-            "*.p",
-            "*.qdp",
-            "*.inf",
-            "*.hdf5",
-            "*.ecsv",
-        ]
-
-        file_list = []
-        for pattern in patterns:
-            file_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-            file_list.extend(find_file_pattern_in_dir(pattern, "."))
-
-        for f in file_list:
-            if os.path.exists(f):
-                print("Removing " + f)
-                os.remove(f)
-
-        patterns = ["*_pds*/", "*_cpds*/", "*_sum/"]
-
-        dir_list = []
-        for pattern in patterns:
-            dir_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-            dir_list.extend(find_file_pattern_in_dir(pattern, "."))
-        for f in dir_list:
-            if os.path.exists(f):
-                shutil.rmtree(f)
+        cleanup_test_dir(self.datadir)
+        cleanup_test_dir(".")
