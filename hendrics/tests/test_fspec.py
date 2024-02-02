@@ -134,6 +134,9 @@ class TestFullRun(object):
         cls.ev_fileB = os.path.join(
             cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
         )
+        for fname in [cls.ev_fileA, cls.ev_fileB]:
+            if os.path.exists(fname):
+                os.unlink(fname)
 
         cls.par = _dummy_par("bubububu.par")
         command = "{0} {1}".format(
