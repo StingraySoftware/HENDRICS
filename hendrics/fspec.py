@@ -470,9 +470,12 @@ def calc_cpds(
     cpds.fftlen = fftlen
     cpds.back_phots = back_ctrate * fftlen
     cpds.mjdref = mjdref
-    lags, lags_err = cpds.time_lag()
+    lags = cpds.time_lag()
+    lags_err = np.nan
+    if len(lags) == 2:
+        lags, lags_err = lags
     cpds.lag = lags
-    cpds.lag_err = lags
+    cpds.lag_err = lags_err
 
     log.info("Saving CPDS to %s" % outname)
     save_pds(

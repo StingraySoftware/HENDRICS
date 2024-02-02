@@ -235,6 +235,43 @@ class TestFullRun(object):
 
         assert np.allclose(evpds.power, lcpds.power)
 
+    def test_pds_leahy_lombscargle(self):
+        """Test PDS production."""
+        evdata = self.ev_fileA
+        lcdata = self.lcA
+
+        command = "{0} -k PDS --norm leahy --lombscargle -b -1".format(evdata)
+        hen.fspec.main(command.split())
+        evout = evdata.replace("_ev", "_LS_pds")
+        assert os.path.exists(evout)
+        evpds = hen.io.load_pds(evout)
+        io.remove_pds(evout)
+
+        command = "{0} -k PDS --norm leahy --lombscargle".format(lcdata)
+        hen.fspec.main(command.split())
+        lcout = lcdata.replace("_lc", "_LS_pds")
+        assert os.path.exists(lcout)
+        lcpds = hen.io.load_pds(lcout)
+        io.remove_pds(lcout)
+
+        assert np.allclose(evpds.power, lcpds.power)
+
+    def test_cpds_leahy_lombscargle(self):
+        """Test PDS production."""
+        evdata1 = self.ev_fileA
+        evdata2 = self.ev_fileB
+
+        command = f"{evdata1} {evdata2} -k CPDS --norm leahy --lombscargle -b -1"
+        hen.fspec.main(command.split())
+        evout = (
+            evdata1.replace("fpma", "fpm")
+            .replace("testA", "test")
+            .replace("_ev", "_LS_cpds")
+        )
+        assert os.path.exists(evout)
+        evpds = hen.io.load_pds(evout)
+        io.remove_pds(evout)
+
     def test_pds_save_nothing(self):
         evdata = self.ev_fileA
         lcdata = self.lcA
