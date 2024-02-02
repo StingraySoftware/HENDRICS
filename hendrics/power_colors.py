@@ -11,7 +11,7 @@ from stingray import StingrayTimeseries, DynamicalPowerspectrum, DynamicalCrosss
 from stingray.fourier import hue_from_power_color
 
 from .io import HEN_FILE_EXTENSION, load_events, save_timeseries
-from .base import hen_root, interpret_bintime
+from .base import hen_root, interpret_bintime, common_name
 
 
 def trace_hue_line(center, angle):
@@ -261,7 +261,14 @@ def treat_power_colors(
             norm="leahy",
         )
         gti = events1.gti
-        local_poisson_noise = 2 if poisson_noise is None else poisson_noise
+        local_poisson_noise = 0 if poisson_noise is None else poisson_noise
+        base_name = hen_root(
+            common_name(
+                fname[0],
+                fname[1],
+                default=f"power_colors_{np.random.randint(0, 10000)}",
+            )
+        )
     else:
         events = load_events(fname)
         dynps = DynamicalPowerspectrum(
@@ -273,6 +280,7 @@ def treat_power_colors(
         gti = events.gti
 
         local_poisson_noise = 2 if poisson_noise is None else poisson_noise
+        base_name = hen_root(fname)
 
     dynps_reb = dynps.rebin_by_n_intervals(rebin, method="average")
     p1, p1e, p2, p2e = dynps_reb.power_colors(
@@ -286,6 +294,8 @@ def treat_power_colors(
         frequency_edges[-1],
         poisson_noise_level=local_poisson_noise,
     )
+    rms = np.asarray(rms).real
+    rmse = np.abs(np.asarray(rmse))
     times = dynps_reb.time
 
     scolor = StingrayTimeseries(
@@ -306,7 +316,7 @@ def treat_power_colors(
 
     if outfile is None:
         label = "_edges_" + "_".join([f"{f:g}" for f in frequency_edges])
-        outfile = hen_root(fname) + label + "_pc" + HEN_FILE_EXTENSION
+        outfile = base_name + label + "_pc" + HEN_FILE_EXTENSION
 
     scolor.f_intervals = np.asarray([float(k) for k in frequency_edges])
     scolor.__sr__class__type__ = "Powercolor"

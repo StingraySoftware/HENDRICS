@@ -372,6 +372,7 @@ def save_as_netcdf(vars, varnames, formats, fname):
             formats[iv] = "c16"
 
         if formats[iv] == "c16":
+            v = np.asarray(v)
             # unicode_literals breaks something, I need to specify str.
             if "cpl128" not in rootgrp.cmptypes.keys():
                 complex128_t = rootgrp.createCompoundType(cpl128, "cpl128")

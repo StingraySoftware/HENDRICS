@@ -219,7 +219,16 @@ class TestFullRun(object):
         new_filenames = hen.power_colors.main(command.split())
 
         assert os.path.exists(new_filenames[0])
-        hen.plot.plot_powercolors(new_filenames)
+        hen.plot.main(new_filenames)
+
+    def test_power_colors_2files(self):
+        """Test light curve using PI filtering."""
+        # calculate colors
+        command = f"{self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 "
+        new_filenames = hen.power_colors.main(command.split())
+
+        assert os.path.exists(new_filenames[0])
+        hen.plot.main(new_filenames)
 
     def test_readfile_fits(self):
         """Test reading and dumping a FITS file."""
