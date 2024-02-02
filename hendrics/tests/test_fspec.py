@@ -145,7 +145,7 @@ class TestFullRun(object):
         )
         hen.read_events.main(command.split())
 
-        command = "{0} {1}  --nproc 2 -b 0.5".format(cls.ev_fileA, cls.ev_fileB)
+        command = "{0} {1}  --nproc 2 -b -1".format(cls.ev_fileA, cls.ev_fileB)
         hen.lcurve.main(command.split())
         cls.lcA = cls.ev_fileA.replace("_ev", "_lc")
         cls.lcB = cls.ev_fileB.replace("_ev", "_lc")
@@ -219,14 +219,14 @@ class TestFullRun(object):
         evdata = self.ev_fileA
         lcdata = self.lcA
 
-        command = "{0} -f 128 -k PDS --norm leahy -b 0.5".format(evdata)
+        command = "{0} -f 128. -k PDS --norm leahy -b -1".format(evdata)
         hen.fspec.main(command.split())
         evout = evdata.replace("_ev", "_pds")
         assert os.path.exists(evout)
         evpds = hen.io.load_pds(evout)
         io.remove_pds(evout)
 
-        command = "{0} -f 128 -k PDS --save-all --norm leahy".format(lcdata)
+        command = "{0} -f 128. -k PDS --save-all --norm leahy".format(lcdata)
         hen.fspec.main(command.split())
         lcout = lcdata.replace("_lc", "_pds")
         assert os.path.exists(lcout)

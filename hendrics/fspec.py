@@ -317,7 +317,6 @@ def calc_pds(
 
     if pdsrebin is not None and pdsrebin != 1:
         pds = pds.rebin(pdsrebin)
-
     pds.instr = instr
     pds.fftlen = fftlen
     pds.back_phots = back_ctrate * fftlen
@@ -860,7 +859,7 @@ def main(args=None):
     log.setLevel(args.loglevel)
 
     with log.log_to_file("HENfspec.log"):
-        bintime = np.longdouble(interpret_bintime(args.bintime))
+        bintime = interpret_bintime(args.bintime)
 
         fftlen = args.fftlen
         pdsrebin = args.rebin
