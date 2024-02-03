@@ -360,6 +360,11 @@ class TestReadEvents:
             command = "{0} --noclobber".format(self.fits_fileB)
             hen.read_events.main(command.split())
 
+    def test_fix_gaps_events(self):
+        """Test event file reading w. noclobber option."""
+        command = "{0} --fix-small-gaps 4".format(self.fits_fileB)
+        hen.read_events.main(command.split())
+
     @classmethod
     def teardown_class(cls):
         cleanup_test_dir(cls.datadir)
