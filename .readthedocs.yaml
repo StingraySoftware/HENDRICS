@@ -39,4 +39,4 @@ python:
       extra_requirements:
         - docs
 
-    - requirements: docs/requirements.txt
+    - requirements: requirements.txt
