@@ -286,9 +286,10 @@ def plot_pds(
         y = pds[1:]
         yerr = yerr = None if epds is None else epds[1:]
 
-        if norm.lower() == "leahy" or (
-            norm.lower() in ["rms", "frac"] and (not xlog or not ylog)
-        ):
+        if not white_sub:
+            white_sub = norm.lower() in ["rms", "frac"] and xlog and ylog
+
+        if not white_sub:
             plt.plot(freq[1:], y, drawstyle="steps-mid", color=color, label=fname)
             for i, func in enumerate(models):
                 plt.plot(
@@ -298,8 +299,7 @@ def plot_pds(
                     zorder=20,
                     color="k",
                 )
-
-        elif norm.lower() in ["rms", "frac"] and xlog and ylog:
+        else:
             # TODO: Very rough! Use new machinery
             const = _get_const(models)
             if const is None:
@@ -885,10 +885,16 @@ def main(args=None):
         action="store_true",
     )
     parser.add_argument(
-        "--xlin", help="Use linear X axis", default=None, action="store_true"
+        "--xlin", help="Use linear X axis", default=False, action="store_true"
     )
     parser.add_argument(
-        "--ylin", help="Use linear Y axis", default=None, action="store_true"
+        "--ylin", help="Use linear Y axis", default=False, action="store_true"
+    )
+    parser.add_argument(
+        "--white-sub",
+        help="Subtract Poisson noise (only applies to PDS)",
+        default=False,
+        action="store_true",
     )
     parser.add_argument(
         "--fromstart",
@@ -912,9 +918,9 @@ def main(args=None):
         import matplotlib
 
         matplotlib.use("Agg")
-    if args.xlin is not None:
+    if args.xlin:
         args.xlog = False
-    if args.ylin is not None:
+    if args.ylin:
         args.ylog = False
 
     if args.CCD or args.HID:
@@ -976,6 +982,7 @@ def main(args=None):
                 ylog=args.ylog,
                 figname=args.figname,
                 output_data_file=args.outfile,
+                white_sub=args.white_sub,
             )
 
     if not args.noplot:

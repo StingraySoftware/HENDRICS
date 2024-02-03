@@ -335,10 +335,12 @@ class TestFullRun(object):
 
         new_pdsA = hen.io.load_pds(outA)
         new_pdsB = hen.io.load_pds(outB)
-        if not lombscargle:
-            for pds in [new_pdsA, new_pdsB]:
+        for pds in [new_pdsA, new_pdsB]:
+            if not lombscargle:
                 assert hasattr(pds, "cs_all")
                 assert len(pds.cs_all) == pds.m
+            assert pds.norm == "frac"
+
         shutil.rmtree(outA.replace(HEN_FILE_EXTENSION, ""))
         shutil.rmtree(outB.replace(HEN_FILE_EXTENSION, ""))
         os.unlink(outA)
@@ -728,7 +730,19 @@ model = models.Const1D()
             self.datadir,
             "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03" + HEN_FILE_EXTENSION,
         )
-        hen.plot.main([pname, cname, "--noplot", "--xlog", "--ylog", "-o", "dummy.qdp"])
+
+        hen.plot.main(
+            [
+                pname,
+                cname,
+                "--xlog",
+                "--ylog",
+                "--noplot",
+                "--white-sub",
+                "-o",
+                "dummy.qdp",
+            ]
+        )
         hen.plot.main(
             [
                 pname,
