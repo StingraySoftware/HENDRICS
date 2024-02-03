@@ -260,13 +260,15 @@ class TestIO:
             mjdref=54385.3254923845,
             gti=np.longdouble([[-0.5, 3.5]]),
         )
+        mask = lcurve.mask
         # Monkeypatch for compatibility with old versions
         lcurve.mission = "bububu"
         lcurve.instr = "bababa"
+
         save_lcurve(lcurve, "bubu" + fmt)
         lcurve2 = load_lcurve("bubu" + fmt)
-        assert np.allclose(lcurve.time, lcurve2.time)
-        assert np.allclose(lcurve.counts, lcurve2.counts)
+        assert np.allclose(lcurve.time[mask], lcurve2.time)
+        assert np.allclose(lcurve.counts[mask], lcurve2.counts)
         assert np.allclose(lcurve.mjdref, lcurve2.mjdref)
         assert np.allclose(lcurve.gti, lcurve2.gti)
         assert lcurve.err_dist == lcurve2.err_dist

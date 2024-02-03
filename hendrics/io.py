@@ -8,6 +8,7 @@ import glob
 import copy
 import re
 from typing import Tuple
+import logging
 
 from collections.abc import Iterable
 import importlib
@@ -641,7 +642,8 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     fmt = get_file_format(fname)
 
     if hasattr(lcurve, "_mask") and lcurve._mask is not None and np.any(~lcurve._mask):
-        lcurve.apply_mask(lcurve._mask, inplace=True)
+        logging.info("The light curve has a mask. Applying it before saving.")
+        lcurve = lcurve.apply_mask(lcurve._mask, inplace=False)
         lcurve._mask = None
 
     if fmt not in ["nc", "pickle"]:
