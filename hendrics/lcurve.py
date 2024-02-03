@@ -354,7 +354,7 @@ def lcurve_from_events(
         evdata = deorbit_events(evdata, deorbit_par)
         deorbit_tag = "_deorb"
 
-    bintime = np.longdouble(interpret_bintime(bintime))
+    bintime = interpret_bintime(bintime)
 
     tag = ""
 

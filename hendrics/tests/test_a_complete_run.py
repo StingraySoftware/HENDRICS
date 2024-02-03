@@ -37,6 +37,7 @@ from hendrics import (
     sum_fspec,
 )
 from hendrics.io import HAS_H5PY
+from . import cleanup_test_dir, find_file_pattern_in_dir
 
 try:
     FileNotFoundError
@@ -47,10 +48,6 @@ HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
 
 log.setLevel("DEBUG")
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
-
-
-def find_file_pattern_in_dir(pattern, directory):
-    return glob.glob(os.path.join(directory, pattern))
 
 
 class TestFullRun(object):
@@ -196,9 +193,8 @@ class TestFullRun(object):
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
         command = ("{0} -b 100 -e {1} {2} {2} {3}").format(self.ev_fileA, 3, 5, 10)
-        with pytest.warns(UserWarning):
-            with pytest.raises(ValueError, match="Did you run HENcalibrate"):
-                hen.colors.main(command.split())
+        with pytest.raises(ValueError, match="Energy information not found in file"):
+            hen.colors.main(command.split())
 
     def test_colors(self):
         """Test light curve using PI filtering."""
@@ -215,6 +211,33 @@ class TestFullRun(object):
         out_lc = hen.io.load_lcurve(new_filename)
         gti_to_test = hen.io.load_events(self.ev_fileA).gti
         assert np.allclose(gti_to_test, out_lc.gti)
+
+    def test_power_colors(self):
+        """Test light curve using PI filtering."""
+        # calculate colors
+        command = f"{self.ev_fileAcal} --debug -s 16 -b -6 -f 1 2 4 8 16 "
+        new_filenames = hen.power_colors.main(command.split())
+
+        assert os.path.exists(new_filenames[0])
+        hen.plot.main(new_filenames)
+
+    def test_power_colors_2files(self):
+        """Test light curve using PI filtering."""
+        # calculate colors
+        command = (
+            f"--cross {self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 "
+        )
+        new_filenames = hen.power_colors.main(command.split())
+
+        assert os.path.exists(new_filenames[0])
+        hen.plot.main(new_filenames)
+
+    def test_power_colors_2files_raises_no_cross_output(self):
+        """Test light curve using PI filtering."""
+        # calculate colors
+        with pytest.raises(ValueError, match="Specify --output only when processing"):
+            command = f"{self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 -o bubu.nc"
+            hen.power_colors.main(command.split())
 
     def test_readfile_fits(self):
         """Test reading and dumping a FITS file."""
@@ -290,35 +313,5 @@ class TestFullRun(object):
     def teardown_class(self):
         """Test a full run of the scripts (command lines)."""
 
-        patterns = [
-            "*monol_test*" + HEN_FILE_EXTENSION,
-            "*lcurve*" + HEN_FILE_EXTENSION,
-            "*lcurve*.txt",
-            "*.log",
-            "*monol_test*.dat",
-            "*monol_test*.png",
-            "*monol_test*.txt",
-            "*monol_test_fake*.evt",
-            "*bubu*",
-            "*.p",
-            "*.qdp",
-            "*.inf",
-        ]
-
-        file_list = []
-        for pattern in patterns:
-            file_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-
-        for f in file_list:
-            if os.path.exists(f):
-                print("Removing " + f)
-                os.remove(f)
-
-        patterns = ["*_pds*/", "*_cpds*/", "*_sum/"]
-
-        dir_list = []
-        for pattern in patterns:
-            dir_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-        for f in dir_list:
-            if os.path.exists(f):
-                shutil.rmtree(f)
+        cleanup_test_dir(self.datadir)
+        cleanup_test_dir(".")

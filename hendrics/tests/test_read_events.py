@@ -17,6 +17,7 @@ from hendrics.io import ref_mjd
 from hendrics.io import main as main_readfile
 from hendrics.fake import main
 import hendrics as hen
+from . import cleanup_test_dir
 
 
 class TestMergeEvents:
@@ -188,6 +189,11 @@ class TestMergeEvents:
         assert np.allclose(data.gti, allgti)
         os.unlink(outfile)
 
+    @classmethod
+    def teardown_class(cls):
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")
+
 
 class TestReadEvents:
     """Real unit tests."""
@@ -354,14 +360,12 @@ class TestReadEvents:
             command = "{0} --noclobber".format(self.fits_fileB)
             hen.read_events.main(command.split())
 
+    def test_fix_gaps_events(self):
+        """Test event file reading w. noclobber option."""
+        command = "{0} --fill-small-gaps 4".format(self.fits_fileB)
+        hen.read_events.main(command.split())
+
     @classmethod
     def teardown_class(cls):
-        for pattern in [
-            "monol_*" + HEN_FILE_EXTENSION,
-            "*phasetag*",
-            "*fake*",
-            "monol*.pdf",
-        ]:
-            files = glob.glob(os.path.join(cls.datadir, pattern))
-            for file in files:
-                os.unlink(file)
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")

@@ -26,10 +26,10 @@ from hendrics import (
     read_events,
     rebin,
 )
-
 from hendrics.read_events import treat_event_file
 from hendrics.io import HEN_FILE_EXTENSION, get_file_type
 from hendrics.lcurve import lcurve_from_events
+from . import cleanup_test_dir
 
 try:
     FileNotFoundError
@@ -88,6 +88,11 @@ class TestLcurve:
         assert isinstance(data, Lightcurve)
         assert hasattr(data, "mjdref")
         assert data.mjdref > 0
+
+    @classmethod
+    def teardown_class(cls):
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")
 
 
 class TestFullRun(object):
@@ -253,13 +258,13 @@ class TestFullRun(object):
 
         lcurve_mp = os.path.join(self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION)
 
-        lcdata_mp = hen.io.load_data(lcurve_mp)
-        lcdata_ftools = hen.io.load_data(lcurve_ftools)
+        _, lcdata_mp = hen.io.get_file_type(lcurve_mp, raw_data=False)
+        _, lcdata_ftools = hen.io.get_file_type(lcurve_ftools, raw_data=False)
 
-        lc_mp = lcdata_mp["counts"]
+        lc_mp = lcdata_mp.counts
 
         lenmp = len(lc_mp)
-        lc_ftools = lcdata_ftools["counts"]
+        lc_ftools = lcdata_ftools.counts
         lenftools = len(lc_ftools)
         goodlen = min([lenftools, lenmp])
 
@@ -272,9 +277,9 @@ class TestFullRun(object):
     def test_txt_lcurve(self):
         """Test light curves from txt."""
         lcurve_mp = os.path.join(self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION)
-        lcdata_mp = hen.io.load_data(lcurve_mp)
-        lc_mp = lcdata_mp["counts"]
-        time_mp = lcdata_mp["time"]
+        _, lcdata_mp = hen.io.get_file_type(lcurve_mp, raw_data=False)
+        lc_mp = lcdata_mp.counts
+        time_mp = lcdata_mp.time
 
         lcurve_txt_orig = os.path.join(self.datadir, "lcurve_txt_lc.txt")
 
@@ -283,9 +288,9 @@ class TestFullRun(object):
         lcurve_txt = os.path.join(self.datadir, "lcurve_txt_lc" + HEN_FILE_EXTENSION)
         command = "--txt-input " + lcurve_txt_orig + " --outfile " + lcurve_txt
         hen.lcurve.main(command.split())
-        lcdata_txt = hen.io.load_data(lcurve_txt)
+        lcdata_txt = hen.io.get_file_type(lcurve_txt, raw_data=False)[1]
 
-        lc_txt = lcdata_txt["counts"]
+        lc_txt = lcdata_txt.counts
 
         assert np.all(
             np.abs(lc_mp - lc_txt) <= 1e-3
@@ -476,41 +481,6 @@ class TestFullRun(object):
         assert hasattr(contents, "expo")
 
     @classmethod
-    def teardown_class(self):
-        """Test a full run of the scripts (command lines)."""
-
-        def find_file_pattern_in_dir(pattern, directory):
-            return glob.glob(os.path.join(directory, pattern))
-
-        patterns = [
-            "*monol_test*" + HEN_FILE_EXTENSION,
-            "*lcurve*" + HEN_FILE_EXTENSION,
-            "*lcurve*.txt",
-            "*.log",
-            "*monol_test*.dat",
-            "*monol_test*.png",
-            "*monol_test*.txt",
-            "*monol_test_fake*.evt",
-            "*bubu*",
-            "*.p",
-            "*.qdp",
-            "*.inf",
-        ]
-
-        file_list = []
-        for pattern in patterns:
-            file_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-
-        for f in file_list:
-            if os.path.exists(f):
-                print("Removing " + f)
-                os.remove(f)
-
-        patterns = ["*_pds*/", "*_cpds*/", "*_sum/"]
-
-        dir_list = []
-        for pattern in patterns:
-            dir_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-        for f in dir_list:
-            if os.path.exists(f):
-                shutil.rmtree(f)
+    def teardown_class(cls):
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")

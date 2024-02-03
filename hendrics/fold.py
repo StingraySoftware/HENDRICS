@@ -433,7 +433,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
 
         if np.any(np.isnan(pars)) or pars[0] == 0.0 or np.any(np.isnan(errs)):
             warnings.warn(
-                f"Invalid TOA in interval {start}-{stop} (idxs {startidx:stopidx}): {pars}, {errs}"
+                f"Invalid TOA in interval {start}-{stop} (idxs {startidx}:{stopidx}): {pars}, {errs}"
             )
             continue
 

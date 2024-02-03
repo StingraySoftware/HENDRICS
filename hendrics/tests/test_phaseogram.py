@@ -13,6 +13,7 @@ from hendrics.plot import plot_folding
 import os
 import pytest
 import subprocess as sp
+from . import cleanup_test_dir
 
 
 def create_parfile(parfile, withfX=False, withbt=False, withell1=False):
@@ -300,4 +301,4 @@ class TestPhaseogram:
 
     @classmethod
     def teardown_class(cls):
-        os.unlink(cls.dum)
+        cleanup_test_dir(".")

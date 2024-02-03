@@ -1,21 +1,34 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 from astropy.io.fits import Header
-from stingray.events import EventList
-from stingray.lightcurve import Lightcurve
-from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
-from stingray.powerspectrum import Crossspectrum, AveragedCrossspectrum
+from stingray import (
+    StingrayTimeseries,
+    EventList,
+    Lightcurve,
+    Powerspectrum,
+    Crossspectrum,
+    AveragedCrossspectrum,
+)
+
+
 import numpy as np
 import os
 from hendrics.base import hen_root
 from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
-from hendrics.io import save_data, load_data, save_pds, load_pds
+from hendrics.io import (
+    save_data,
+    load_data,
+    save_pds,
+    load_pds,
+    save_timeseries,
+    load_timeseries,
+)
 from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
 from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
 from hendrics.io import find_file_in_allowed_paths, get_file_type
 from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
 from hendrics.io import main, main_filter_events, remove_pds
-
+from . import cleanup_test_dir
 import pytest
 import glob
 from astropy.modeling import models
@@ -146,7 +159,7 @@ class TestIO:
         assert isinstance(newdata, dict)
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
-    def test_load_and_save_events(self, fmt):
+    def test_load_and_save_events(self, fmt, capsys):
         if fmt == ".hdf5" and not HAS_H5PY:
             return
         events = EventList(
@@ -171,6 +184,41 @@ class TestIO:
         assert np.allclose(events.energy, events2.energy)
         assert events.header == events2.header
         assert events2.mission == events.mission
+        print(events2)
+        captured = capsys.readouterr()
+        assert "(size 3)" in captured.out
+        assert "MJD" in captured.out
+
+    @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
+    def test_load_and_save_timeseries(self, fmt, capsys):
+        if fmt == ".hdf5" and not HAS_H5PY:
+            return
+        events = StingrayTimeseries(
+            [0, 2, 3.0],
+            pi=[1, 2, 3],
+            mjdref=54385.3254923845,
+            gti=np.longdouble([[-0.5, 3.5]]),
+        )
+        events.q = [2, 3, 4]
+        events.cal_pi = events.pi.copy()
+        events.energy = np.array([3.0, 4.0, 5.0])
+        events.mission = "nustar"
+        events.header = Header().tostring()
+        save_timeseries(events, "bubu_ts" + fmt)
+        events2 = load_timeseries("bubu_ts" + fmt)
+        assert np.allclose(events.time, events2.time)
+        assert np.allclose(events.cal_pi, events2.cal_pi)
+        assert np.allclose(events.pi, events2.pi)
+        assert np.allclose(events.q, events2.q)
+        assert np.allclose(events.mjdref, events2.mjdref)
+        assert np.allclose(events.gti, events2.gti)
+        assert np.allclose(events.energy, events2.energy)
+        assert events.header == events2.header
+        assert events2.mission == events.mission
+        print(events2)
+        captured = capsys.readouterr()
+        assert "(size 3)" in captured.out
+        assert "MJD" in captured.out
 
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_filter_events(self, fmt):
@@ -212,13 +260,15 @@ class TestIO:
             mjdref=54385.3254923845,
             gti=np.longdouble([[-0.5, 3.5]]),
         )
+        mask = lcurve.mask
         # Monkeypatch for compatibility with old versions
         lcurve.mission = "bububu"
         lcurve.instr = "bababa"
+
         save_lcurve(lcurve, "bubu" + fmt)
         lcurve2 = load_lcurve("bubu" + fmt)
-        assert np.allclose(lcurve.time, lcurve2.time)
-        assert np.allclose(lcurve.counts, lcurve2.counts)
+        assert np.allclose(lcurve.time[mask], lcurve2.time)
+        assert np.allclose(lcurve.counts[mask], lcurve2.counts)
         assert np.allclose(lcurve.mjdref, lcurve2.mjdref)
         assert np.allclose(lcurve.gti, lcurve2.gti)
         assert lcurve.err_dist == lcurve2.err_dist
@@ -481,13 +531,8 @@ class TestIO:
 
     @classmethod
     def teardown_class(cls):
-        import shutil
-
-        for dum in glob.glob("bubu*"):
-            try:
-                os.unlink(dum)
-            except (PermissionError, IsADirectoryError):
-                shutil.rmtree(dum)
+        cleanup_test_dir(cls.datadir)
+        cleanup_test_dir(".")
 
 
 class TestIOModel:
@@ -580,7 +625,4 @@ model = models.Const1D()
 
     @classmethod
     def teardown_class(cls):
-        import shutil
-
-        for dum in glob.glob("bubu*.*"):
-            os.unlink(dum)
+        cleanup_test_dir(".")

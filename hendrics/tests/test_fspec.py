@@ -27,6 +27,7 @@ from hendrics import (
 
 from hendrics.base import touch, HENDRICS_STAR_VALUE
 from hendrics.fspec import calc_cpds, calc_pds
+from . import cleanup_test_dir
 
 try:
     FileNotFoundError
@@ -55,7 +56,7 @@ def test_cpds_fails_noclobber_exists():
 
 def test_distributed_pds():
     events = EventList(
-        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0, 1000]])
+        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]])
     )
     if hasattr(stingray.AveragedPowerspectrum, "from_events"):
         single_periodogram = stingray.AveragedPowerspectrum(
@@ -81,10 +82,10 @@ def test_distributed_pds():
 
 def test_distributed_cpds():
     events1 = EventList(
-        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0, 1000]])
+        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]])
     )
     events2 = EventList(
-        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0, 1000]])
+        np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]])
     )
     if hasattr(stingray.AveragedCrossspectrum, "from_events"):
         single_periodogram = stingray.AveragedCrossspectrum(
@@ -133,6 +134,9 @@ class TestFullRun(object):
         cls.ev_fileB = os.path.join(
             cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
         )
+        for fname in [cls.ev_fileA, cls.ev_fileB]:
+            if os.path.exists(fname):
+                os.unlink(fname)
 
         cls.par = _dummy_par("bubububu.par")
         command = "{0} {1}".format(
@@ -141,7 +145,7 @@ class TestFullRun(object):
         )
         hen.read_events.main(command.split())
 
-        command = "{0} {1}  --nproc 2 -b 0.5".format(cls.ev_fileA, cls.ev_fileB)
+        command = "{0} {1}  --nproc 2 -b -1".format(cls.ev_fileA, cls.ev_fileB)
         hen.lcurve.main(command.split())
         cls.lcA = cls.ev_fileA.replace("_ev", "_lc")
         cls.lcB = cls.ev_fileB.replace("_ev", "_lc")
@@ -215,14 +219,14 @@ class TestFullRun(object):
         evdata = self.ev_fileA
         lcdata = self.lcA
 
-        command = "{0} -f 128 -k PDS --norm leahy -b 0.5".format(evdata)
+        command = "{0} -f 128. -k PDS --norm leahy -b -1".format(evdata)
         hen.fspec.main(command.split())
         evout = evdata.replace("_ev", "_pds")
         assert os.path.exists(evout)
         evpds = hen.io.load_pds(evout)
         io.remove_pds(evout)
 
-        command = "{0} -f 128 -k PDS --save-all --norm leahy".format(lcdata)
+        command = "{0} -f 128. -k PDS --save-all --norm leahy".format(lcdata)
         hen.fspec.main(command.split())
         lcout = lcdata.replace("_lc", "_pds")
         assert os.path.exists(lcout)
@@ -230,6 +234,43 @@ class TestFullRun(object):
         io.remove_pds(lcout)
 
         assert np.allclose(evpds.power, lcpds.power)
+
+    def test_pds_leahy_lombscargle(self):
+        """Test PDS production."""
+        evdata = self.ev_fileA
+        lcdata = self.lcA
+
+        command = "{0} -k PDS --norm leahy --lombscargle -b -1".format(evdata)
+        hen.fspec.main(command.split())
+        evout = evdata.replace("_ev", "_LS_pds")
+        assert os.path.exists(evout)
+        evpds = hen.io.load_pds(evout)
+        io.remove_pds(evout)
+
+        command = "{0} -k PDS --norm leahy --lombscargle".format(lcdata)
+        hen.fspec.main(command.split())
+        lcout = lcdata.replace("_lc", "_LS_pds")
+        assert os.path.exists(lcout)
+        lcpds = hen.io.load_pds(lcout)
+        io.remove_pds(lcout)
+
+        assert np.allclose(evpds.power, lcpds.power)
+
+    def test_cpds_leahy_lombscargle(self):
+        """Test PDS production."""
+        evdata1 = self.ev_fileA
+        evdata2 = self.ev_fileB
+
+        command = f"{evdata1} {evdata2} -k CPDS --norm leahy --lombscargle -b -1"
+        hen.fspec.main(command.split())
+        evout = (
+            evdata1.replace("fpma", "fpm")
+            .replace("testA", "test")
+            .replace("_ev", "_LS_cpds")
+        )
+        assert os.path.exists(evout)
+        evpds = hen.io.load_pds(evout)
+        io.remove_pds(evout)
 
     def test_pds_save_nothing(self):
         evdata = self.ev_fileA
@@ -255,7 +296,8 @@ class TestFullRun(object):
         assert np.allclose(evpds.power, lcpds.power)
 
     @pytest.mark.parametrize("data_kind", ["events", "lc"])
-    def test_pds(self, data_kind):
+    @pytest.mark.parametrize("lombscargle", [False, True])
+    def test_pds(self, data_kind, lombscargle):
         """Test PDS production."""
         if data_kind == "events":
             label = "_ev"
@@ -268,18 +310,23 @@ class TestFullRun(object):
         outB = os.path.join(
             self.datadir, f"monol_testB_nustar_fpmb_pds" + HEN_FILE_EXTENSION
         )
+        if lombscargle:
+            outA = outA.replace("pds", "LS_pds")
+            outB = outB.replace("pds", "LS_pds")
+
         if os.path.exists(outA):
             io.remove_pds(outA)
         if os.path.exists(outB):
             io.remove_pds(outB)
-
-        command = (
-            "{0} {1} -f 16 --save-all --save-dyn -k PDS -b 0.5 --norm frac".format(
-                os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
-                + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
-                + HEN_FILE_EXTENSION,
-            )
+        opts = "-f 16 --save-all --save-dyn -k PDS -b 0.5 --norm frac"
+        if lombscargle:
+            opts += " --lombscargle"
+        command = "{0} {1} {2}".format(
+            opts,
+            os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}")
+            + HEN_FILE_EXTENSION,
+            os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}")
+            + HEN_FILE_EXTENSION,
         )
         hen.fspec.main(command.split())
 
@@ -289,8 +336,11 @@ class TestFullRun(object):
         new_pdsA = hen.io.load_pds(outA)
         new_pdsB = hen.io.load_pds(outB)
         for pds in [new_pdsA, new_pdsB]:
-            assert hasattr(pds, "cs_all")
-            assert len(pds.cs_all) == pds.m
+            if not lombscargle:
+                assert hasattr(pds, "cs_all")
+                assert len(pds.cs_all) == pds.m
+            assert pds.norm == "frac"
+
         shutil.rmtree(outA.replace(HEN_FILE_EXTENSION, ""))
         shutil.rmtree(outB.replace(HEN_FILE_EXTENSION, ""))
         os.unlink(outA)
@@ -680,7 +730,19 @@ model = models.Const1D()
             self.datadir,
             "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03" + HEN_FILE_EXTENSION,
         )
-        hen.plot.main([pname, cname, "--noplot", "--xlog", "--ylog", "-o", "dummy.qdp"])
+
+        hen.plot.main(
+            [
+                pname,
+                cname,
+                "--xlog",
+                "--ylog",
+                "--noplot",
+                "--white-sub",
+                "-o",
+                "dummy.qdp",
+            ]
+        )
         hen.plot.main(
             [
                 pname,
@@ -719,40 +781,5 @@ model = models.Const1D()
     def teardown_class(self):
         """Test a full run of the scripts (command lines)."""
 
-        def find_file_pattern_in_dir(pattern, directory):
-            return glob.glob(os.path.join(directory, pattern))
-
-        patterns = [
-            "*monol_test*" + HEN_FILE_EXTENSION,
-            "*lcurve*" + HEN_FILE_EXTENSION,
-            "*lcurve*.txt",
-            "*.log",
-            "*monol_test*.dat",
-            "*monol_test*.png",
-            "*monol_test*.txt",
-            "*monol_test_fake*.evt",
-            "*bubu*",
-            "*.p",
-            "*.qdp",
-            "*.inf",
-            "*_cpds" + HEN_FILE_EXTENSION,
-            "*_ev" + HEN_FILE_EXTENSION,
-        ]
-
-        file_list = []
-        for pattern in patterns:
-            file_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-
-        for f in file_list:
-            if os.path.exists(f):
-                print("Removing " + f)
-                os.remove(f)
-
-        patterns = ["*_pds*/", "*_cpds*/", "*_sum/"]
-
-        dir_list = []
-        for pattern in patterns:
-            dir_list.extend(find_file_pattern_in_dir(pattern, self.datadir))
-        for f in dir_list:
-            if os.path.exists(f):
-                shutil.rmtree(f)
+        cleanup_test_dir(self.datadir)
+        cleanup_test_dir(".")

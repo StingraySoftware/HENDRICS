@@ -23,6 +23,7 @@ from hendrics.fold import fit_profile_with_sinusoids, get_TOAs_from_events
 from hendrics.plot import plot_folding
 from hendrics.tests import _dummy_par
 from hendrics.base import hen_root
+from . import cleanup_test_dir
 
 try:
     import pandas as pd
@@ -847,12 +848,4 @@ class TestEFsearch:
 
     @classmethod
     def teardown_class(cls):
-        os.unlink(cls.empty)
-        os.unlink(cls.dum_scramble)
-        os.unlink(cls.dum_noe)
-        os.unlink(cls.dum_pi)
-        os.unlink(cls.par)
-        for fname in glob.glob("*cand*.csv"):
-            os.unlink(fname)
-        for fname in glob.glob("*cand*.dat"):
-            os.unlink(fname)
+        cleanup_test_dir(".")

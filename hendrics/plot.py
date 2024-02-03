@@ -24,6 +24,7 @@ from .io import find_file_in_allowed_paths
 from .base import _assign_value_if_none
 from .base import pds_detection_level as detection_level
 from .base import deorbit_events
+from .power_colors import plot_hues_rms, plot_hues_rms_polar, plot_power_colors
 
 
 def _next_color(ax):
@@ -127,7 +128,7 @@ def plot_generic(
         xlabel_err, ylabel_err = errs
 
     for i, fname in enumerate(fnames):
-        data = load_data(fname)
+        data = get_file_type(fname)[1].dict()
         color = _next_color(ax)
         xdata = data[xlabel]
         ydata = data[ylabel]
@@ -203,6 +204,21 @@ def _get_const(models):
     return None
 
 
+def plot_powercolors(fnames):
+    if isinstance(fnames, Iterable) and not is_string(fnames):
+        outs = []
+        for fname in fnames:
+            outs.append(plot_powercolors(fname))
+        return outs
+
+    ts = load_data(fnames)
+
+    plot_power_colors(ts["pc1"], ts["pc1_err"], ts["pc2"], ts["pc2_err"])
+    plot_hues_rms_polar(ts["hue"], ts["rms"], ts["rms_err"])
+    plot_hues_rms(ts["hue"], ts["rms"], ts["rms_err"])
+    return ts
+
+
 def plot_pds(
     fnames,
     figname=None,
@@ -223,6 +239,8 @@ def plot_pds(
 
     for i, fname in enumerate(fnames):
         pds_obj = load_pds(fname, nosub=True)
+        if pds_obj.df is None:
+            pds_obj.df = pds_obj.freq[1] - pds_obj.freq[0]
         if np.allclose(np.diff(pds_obj.freq), pds_obj.df):
             freq = pds_obj.freq
             xlog = _assign_value_if_none(xlog, False)
@@ -266,11 +284,12 @@ def plot_pds(
 
         level = lev  # Can be modified below
         y = pds[1:]
-        yerr = epds[1:]
+        yerr = yerr = None if epds is None else epds[1:]
 
-        if norm.lower() == "leahy" or (
-            norm.lower() in ["rms", "frac"] and (not xlog or not ylog)
-        ):
+        if not white_sub:
+            white_sub = norm.lower() in ["rms", "frac"] and xlog and ylog
+
+        if not white_sub:
             plt.plot(freq[1:], y, drawstyle="steps-mid", color=color, label=fname)
             for i, func in enumerate(models):
                 plt.plot(
@@ -280,8 +299,7 @@ def plot_pds(
                     zorder=20,
                     color="k",
                 )
-
-        elif norm.lower() in ["rms", "frac"] and xlog and ylog:
+        else:
             # TODO: Very rough! Use new machinery
             const = _get_const(models)
             if const is None:
@@ -293,7 +311,7 @@ def plot_pds(
             level = lev - const
 
             y = pds[1:] * freq[1:]
-            yerr = epds[1:] * freq[1:]
+            yerr = None if epds is None else epds[1:] * freq[1:]
             plt.plot(freq[1:], y, drawstyle="steps-mid", color=color, label=fname)
             level *= freq
             for i, func in enumerate(models):
@@ -867,10 +885,16 @@ def main(args=None):
         action="store_true",
     )
     parser.add_argument(
-        "--xlin", help="Use linear X axis", default=None, action="store_true"
+        "--xlin", help="Use linear X axis", default=False, action="store_true"
     )
     parser.add_argument(
-        "--ylin", help="Use linear Y axis", default=None, action="store_true"
+        "--ylin", help="Use linear Y axis", default=False, action="store_true"
+    )
+    parser.add_argument(
+        "--white-sub",
+        help="Subtract Poisson noise (only applies to PDS)",
+        default=False,
+        action="store_true",
     )
     parser.add_argument(
         "--fromstart",
@@ -894,9 +918,9 @@ def main(args=None):
         import matplotlib
 
         matplotlib.use("Agg")
-    if args.xlin is not None:
+    if args.xlin:
         args.xlog = False
-    if args.ylin is not None:
+    if args.ylin:
         args.ylog = False
 
     if args.CCD or args.HID:
@@ -933,6 +957,8 @@ def main(args=None):
                 figname=args.figname,
                 output_data_file=args.outfile,
             )
+        elif ftype == "powercolor":
+            plot_powercolors(fname)
         elif ftype == "folding":
             plot_folding(
                 fname,
@@ -956,6 +982,7 @@ def main(args=None):
                 ylog=args.ylog,
                 figname=args.figname,
                 output_data_file=args.outfile,
+                white_sub=args.white_sub,
             )
 
     if not args.noplot:

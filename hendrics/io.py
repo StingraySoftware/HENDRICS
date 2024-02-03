@@ -8,6 +8,7 @@ import glob
 import copy
 import re
 from typing import Tuple
+import logging
 
 from collections.abc import Iterable
 import importlib
@@ -18,6 +19,7 @@ import numpy as np
 from astropy.table import Table
 
 from hendrics.base import get_file_extension, get_file_format, splitext_improved
+from stingray.base import StingrayObject, StingrayTimeseries
 
 try:
     import h5py
@@ -232,9 +234,9 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, s
             f"Definition of events.energy is now based on PI."
         )
     if emin is None:
-        emin = np.min(energy)
+        emin = np.min(energy) - 1
     if emax is None:
-        emax = np.max(energy)
+        emax = np.max(energy) + 1
 
     good = (energy >= emin) & (energy <= emax)
     ev.apply_mask(good, inplace=True)
@@ -371,6 +373,7 @@ def save_as_netcdf(vars, varnames, formats, fname):
             formats[iv] = "c16"
 
         if formats[iv] == "c16":
+            v = np.asarray(v)
             # unicode_literals breaks something, I need to specify str.
             if "cpl128" not in rootgrp.cmptypes.keys():
                 complex128_t = rootgrp.createCompoundType(cpl128, "cpl128")
@@ -437,7 +440,13 @@ def read_from_netcdf(fname):
         else:
             to_save = values
         if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool_"):
+            # Boolean single value
             to_save = eval(to_save.replace("__bool__", ""))
+        # Boolean array
+        elif k.startswith("__bool__"):
+            to_save = to_save.astype(bool)
+            k = k.replace("__bool__", "")
+
         out[k] = to_save
 
     rootgrp.close()
@@ -474,6 +483,8 @@ def recognize_stingray_table(obj):
     ...
     ValueError: Object not recognized...
     """
+    if "hue" in obj.colnames:
+        return "Powercolors"
     if "power" in obj.colnames:
         if np.iscomplex(obj["power"][1]) or "pds1" in obj.colnames:
             return "AveragedCrossspectrum"
@@ -505,7 +516,12 @@ def get_file_type(fname, raw_data=False):
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
         fun = load_lcurve
-    elif "Color" in ftype_raw:
+    elif ("Powercolor" in ftype_raw) or (
+        "StingrayTimeseries" in ftype_raw and "hue" in contents
+    ):
+        ftype = "powercolor"
+        fun = load_timeseries
+    elif "StingrayTimeseries" in ftype_raw or "Color" in ftype_raw:
         ftype = "color"
         fun = load_lcurve
     elif "EventList" in ftype_raw:
@@ -543,33 +559,20 @@ def save_events(eventlist, fname):
     fname: str
         Name of output file
     """
-    fmt = get_file_format(fname)
+    save_data(eventlist, fname)
 
-    if fmt not in ["nc", "pickle"]:
-        return eventlist.write(fname)
 
-    out = dict(
-        time=eventlist.time,
-        tstart=np.min(eventlist.gti),
-        tstop=np.max(eventlist.gti),
-    )
+def save_timeseries(timeseries, fname):
+    """Save a time series in a file.
 
-    for attr in eventlist.array_attrs():
-        out[attr] = getattr(eventlist, attr)
-    for attr in eventlist.meta_attrs():
-        val = getattr(eventlist, attr)
-        if val is None:
-            continue
-        if isinstance(val, str) and attr.lower() != "header":
-            val = val.lower()
-        out[attr] = val
-
-    out["__sr__class__type__"] = str(type(eventlist))
-
-    if fmt == "pickle":
-        _save_data_pickle(out, fname)
-    elif fmt == "nc":
-        _save_data_nc(out, fname)
+    Parameters
+    ----------
+    timeseries: :class:`stingray.EventList` object
+        Event list to be saved
+    fname: str
+        Name of output file
+    """
+    save_data(timeseries, fname)
 
 
 def load_events(fname):
@@ -596,6 +599,30 @@ def load_events(fname):
     return eventlist
 
 
+def load_timeseries(fname):
+    """Load events from a file."""
+    fmt = get_file_format(fname)
+    if fmt == "pickle":
+        out = _load_data_pickle(fname)
+    elif fmt == "nc":
+        out = _load_data_nc(fname)
+    else:
+        # Try one of the known files from Astropy
+        return StingrayTimeseries.read(fname, fmt=fmt)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
+        eventlist = StingrayTimeseries(**out)
+    # for key in out.keys():
+    #     if hasattr(eventlist, key) and getattr(eventlist, key) is not None:
+    #         continue
+    #     setattr(eventlist, key, out[key])
+    # for attr in ["mission", "instr"]:
+    #     if attr not in list(out.keys()):
+    #         setattr(eventlist, attr, "")
+    return eventlist
+
+
 # ----- functions to save and load LCURVE data
 def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     """Save Light curve to file
@@ -610,35 +637,17 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
 
     fmt = get_file_format(fname)
 
+    if hasattr(lcurve, "_mask") and lcurve._mask is not None and np.any(~lcurve._mask):
+        logging.info("The light curve has a mask. Applying it before saving.")
+        lcurve = lcurve.apply_mask(lcurve._mask, inplace=False)
+        lcurve._mask = None
+
     if fmt not in ["nc", "pickle"]:
         return lcurve.write(fname)
 
-    out = {}
-
-    out["__sr__class__type__"] = str(lctype)
-
-    # Initialize if they aren't already
-    lcurve.counts, lcurve.counts_err
-    out["time"] = lcurve.time
-
-    for attr in lcurve.array_attrs():
-        if attr.startswith("_") or "mask" in attr:
-            continue
-        out[attr] = getattr(lcurve, attr)
-    for attr in lcurve.meta_attrs():
-        val = getattr(lcurve, attr)
-        if isinstance(val, bool):
-            val = int(val)
-        if val is None:
-            continue
-        if isinstance(val, str) and attr.lower() != "header":
-            val = val.lower()
-        out[attr] = val
-
-    if fmt == "pickle":
-        return _save_data_pickle(out, fname)
-    elif fmt == "nc":
-        return _save_data_nc(out, fname)
+    lcdict = lcurve.dict()
+    lcdict["__sr__class__type__"] = str(lctype)
+    save_data(lcdict, fname)
 
 
 def load_lcurve(fname):
@@ -654,11 +663,18 @@ def load_lcurve(fname):
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
-        lcurve = Lightcurve(**data, skip_checks=True)
-    for key in data.keys():
-        if hasattr(lcurve, key) and getattr(lcurve, key) is not None:
-            continue
-        setattr(lcurve, key, data[key])
+        time = data["time"]
+        data.pop("time")
+
+        lcurve = Lightcurve()
+        lcurve.time = time
+
+        for key in data.keys():
+            vals = data[key]
+            if key == "mask":
+                key = "_mask"
+            setattr(lcurve, key, vals)
+
     if "mission" not in list(data.keys()):
         lcurve.mission = ""
 
@@ -1053,6 +1069,10 @@ def _save_data_nc(struct, fname, kind="data"):
             values.append(var)
             formats.append(probekind)
             varnames.append(k)
+        elif probekind == "b":
+            values.append(var.astype("u1"))
+            formats.append("u1")
+            varnames.append("__bool__" + k)
         elif probekind is None:
             values.append("__hen__None__type__")
             formats.append(str)
@@ -1069,11 +1089,17 @@ def save_data(struct, fname, ftype="data"):
     """Save generic data in hendrics format."""
     fmt = get_file_format(fname)
     has_write_method = hasattr(struct, "write")
+    struct_dict = struct
+    if isinstance(struct, StingrayObject):
+        struct_dict = struct.dict()
 
-    if fmt == "pickle":
-        return _save_data_pickle(struct, fname)
-    elif fmt == "nc":
-        return _save_data_nc(struct, fname)
+    if fmt in ["pickle", "nc"]:
+        if "__sr__class__type__" not in struct_dict:
+            struct_dict["__sr__class__type__"] = str(type(struct))
+        if fmt == "pickle":
+            return _save_data_pickle(struct_dict, fname, kind=ftype)
+        elif fmt == "nc":
+            return _save_data_nc(struct_dict, fname, kind=ftype)
 
     if not has_write_method:
         raise ValueError("Unrecognized data format or file format")
@@ -1264,43 +1290,8 @@ def main(args=None):
             print_fits_info(fname)
             print("-" * len(fname))
             continue
-        ftype, contents = get_file_type(fname, raw_data=True)
-        print("This file contains:", end="\n\n")
-        mjdref = 0.0 * u.d
-        if "mjdref" in contents:
-            mjdref = Time(contents["mjdref"], format="mjd")
-
-        tstart = None
-        tstop = None
-        tseg = None
-
-        for k in sorted(contents.keys()):
-            if k == "header" and not args.print_header:
-                continue
-            if k == "tstart":
-                timeval = contents[k] * u.s
-                val = f"MET {contents[k]} s (MJD {mjdref + timeval.to(u.d)})"
-                tstart = timeval
-            elif k == "tstop":
-                timeval = contents[k] * u.s
-                val = f"MET {contents[k]} s (MJD {mjdref + timeval.to(u.d)})"
-                tstop = timeval
-            elif k == "tseg":
-                val = f"{contents[k]} s"
-                tseg = contents[k] * u.s
-            else:
-                val = contents[k]
-            if isinstance(val, Iterable) and not is_string(val):
-                length = len(val)
-                if len(val) < 4:
-                    val = repr(list(val[:4]))
-                else:
-                    val = repr(list(val[:4])).replace("]", "") + "...]"
-                    val = "{} (len {})".format(val, length)
-            print((k + ":").ljust(15), val, end="\n\n")
-
-        if tseg is None and (tstart is not None and tstop is not None):
-            print(("length:").ljust(15), tstop - tstart, end="\n\n")
+        ftype, contents = get_file_type(fname, raw_data=False)
+        print(contents)
 
         print("-" * len(fname))
 
