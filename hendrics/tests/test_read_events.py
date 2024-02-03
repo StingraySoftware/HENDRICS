@@ -362,7 +362,7 @@ class TestReadEvents:
 
     def test_fix_gaps_events(self):
         """Test event file reading w. noclobber option."""
-        command = "{0} --fix-small-gaps 4".format(self.fits_fileB)
+        command = "{0} --fill-small-gaps 4".format(self.fits_fileB)
         hen.read_events.main(command.split())
 
     @classmethod

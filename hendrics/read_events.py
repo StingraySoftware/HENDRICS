@@ -26,7 +26,7 @@ def treat_event_file(
     randomize_by=None,
     discard_calibration=False,
     additional_columns=None,
-    fix_small_gaps=None,
+    fill_small_gaps=None,
 ):
     """Read data from an event file, with no external GTI information.
 
@@ -49,7 +49,7 @@ def treat_event_file(
         length_split is not None)
     discard_calibration: bool
         discard the automatic calibration done by Stingray (if any)
-    fix_small_gaps: float
+    fill_small_gaps: float
         fill gaps between GTIs with random data, if shorter than this amount
     """
     # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
@@ -87,8 +87,8 @@ def treat_event_file(
             -randomize_by / 2, randomize_by / 2, events.time.size
         )
 
-    if fix_small_gaps is not None:
-        events = events.fill_bad_time_intervals(fix_small_gaps)
+    if fill_small_gaps is not None:
+        events = events.fill_bad_time_intervals(fill_small_gaps)
 
     if detector_id is not None:
         detectors = np.array(list(set(detector_id)))
@@ -99,8 +99,8 @@ def treat_event_file(
 
     if randomize_by is not None:
         outfile_root += f"_randomize_by_{randomize_by:g}s"
-    if fix_small_gaps is not None:
-        outfile_root += f"_fix_{fix_small_gaps:g}s"
+    if fill_small_gaps is not None:
+        outfile_root += f"_fix_{fill_small_gaps:g}s"
 
     output_files = []
     for d in detectors:
@@ -575,7 +575,7 @@ def main(args=None):
         default=None,
     )
     parser.add_argument(
-        "--fix-small-gaps",
+        "--fill-small-gaps",
         type=float,
         help="Fill gaps between GTIs with random data, if shorter than this amount",
         default=None,
@@ -608,7 +608,7 @@ def main(args=None):
             "randomize_by": args.randomize_by,
             "discard_calibration": args.discard_calibration,
             "additional_columns": args.additional,
-            "fix_small_gaps": args.fix_small_gaps,
+            "fill_small_gaps": args.fill_small_gaps,
         }
 
         arglist = [[f, argdict] for f in files]
