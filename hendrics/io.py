@@ -516,16 +516,12 @@ def get_file_type(fname, raw_data=False):
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
         fun = load_lcurve
-    elif "Powercolor" in ftype_raw:
+    elif ("Powercolor" in ftype_raw) or (
+        "StingrayTimeseries" in ftype_raw and "hue" in contents
+    ):
         ftype = "powercolor"
         fun = load_timeseries
-    elif "StingrayTimeseries" in ftype_raw and "hue" in contents:
-        ftype = "powercolor"
-        fun = load_timeseries
-    elif "StingrayTimeseries" in ftype_raw:
-        ftype = "color"
-        fun = load_timeseries
-    elif "Color" in ftype_raw:
+    elif "StingrayTimeseries" in ftype_raw or "Color" in ftype_raw:
         ftype = "color"
         fun = load_lcurve
     elif "EventList" in ftype_raw:
