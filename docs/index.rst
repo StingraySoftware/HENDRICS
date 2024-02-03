@@ -43,14 +43,19 @@ satellite (for sure XMM-Newton and RXTE).
 What's new
 ----------
 
-HENDRICS 8.0 (under development)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+HENDRICS 8.0.0rc1
+~~~~~~~~~~~~~~~~~
 
-+ Compatible with `Stingray 2.0.0rc1 <https://github.com/StingraySoftware/stingray/releases/tag/v2.0.0rc1>`__ or newer
++ Compatible with `Stingray 2.0.0rc1 <https://github.com/StingraySoftware/stingray/releases/tag/v2.0.0rc1>`__, which introduced:
+
+    + Lomb-Scargle periodograms and cross spectra are now available
+    + Power colors
+    + Easy filling of small gaps in light curves with random data
+    + Generic timeseries (complex data, multi-dimensional data)
+
 + ``HENaccelsearch`` now has additional options for detrending, denoising and deorbiting
 + An improved Maximum likelihood algorithm as FFTFIT substitute for TOA calculation
 + NASA's IXPE added to supported missions
-+ Add option to obtain weighted light curves -- including polarimetric data
 + Better support of Stingray's native file formats
 
 
