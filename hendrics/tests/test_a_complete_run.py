@@ -215,7 +215,7 @@ class TestFullRun(object):
     def test_power_colors(self):
         """Test light curve using PI filtering."""
         # calculate colors
-        command = f"{self.ev_fileAcal} -s 16 -b -6 -f 1 2 4 8 16 "
+        command = f"{self.ev_fileAcal} --debug -s 16 -b -6 -f 1 2 4 8 16 "
         new_filenames = hen.power_colors.main(command.split())
 
         assert os.path.exists(new_filenames[0])
@@ -224,11 +224,20 @@ class TestFullRun(object):
     def test_power_colors_2files(self):
         """Test light curve using PI filtering."""
         # calculate colors
-        command = f"{self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 "
+        command = (
+            f"--cross {self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 "
+        )
         new_filenames = hen.power_colors.main(command.split())
 
         assert os.path.exists(new_filenames[0])
         hen.plot.main(new_filenames)
+
+    def test_power_colors_2files_raises_no_cross_output(self):
+        """Test light curve using PI filtering."""
+        # calculate colors
+        with pytest.raises(ValueError, match="Specify --output only when processing"):
+            command = f"{self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 -o bubu.nc"
+            hen.power_colors.main(command.split())
 
     def test_readfile_fits(self):
         """Test reading and dumping a FITS file."""

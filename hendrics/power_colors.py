@@ -380,6 +380,12 @@ def main(args=None):
         + " Default: 2^-10, or keep input lc bin time"
         + " (whatever is larger)",
     )
+    parser.add_argument(
+        "--cross",
+        default=False,
+        action="store_true",
+        help="Use cross spectrum from pairs of files",
+    )
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ["output", "loglevel", "debug"])
     args = parser.parse_args(args)
@@ -390,7 +396,7 @@ def main(args=None):
     log.setLevel(args.loglevel)
 
     files = args.files
-    if len(args.files) % 2 == 0:
+    if args.cross:
         files = [frange for frange in zip(files[::2], files[1::2])]
 
     outfiles = []
