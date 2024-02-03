@@ -10,8 +10,8 @@ HENDRICS documentation
 ======================
 |Build Status| |Coverage Status| |Documentation Status|
 
-.. |Build Status| image:: https://github.com/StingraySoftware/HENDRICS/workflows/CI%20Tests/badge.svg
-    :target: https://github.com/StingraySoftware/HENDRICS/actions/
+.. |Build Status| image:: https://github.com/StingraySoftware/HENDRICS/actions/workflows/ci_test.yml/badge.svg
+    :target: https://github.com/StingraySoftware/HENDRICS/actions/workflows/ci_test.yml
 .. |Coverage Status| image:: https://codecov.io/gh/StingraySoftware/HENDRICS/branch/main/graph/badge.svg
   :target: https://app.codecov.io/gh/StingraySoftware/HENDRICS
 .. |Documentation Status| image:: https://readthedocs.org/projects/hendrics/badge/?version=main
