@@ -61,7 +61,7 @@ HENDRICS 8.0.0rc1
 Older releases
 ~~~~~~~~~~~~~~
 
-.. collapse:: **HENDRICS 7.0**
+.. collapse:: HENDRICS 7.0
 
     + Based on `Stingray 1.0 <https://github.com/StingraySoftware/stingray/releases/tag/v1.0>`__, bringing a huge bump in performance
     + Following Astropy, Numpy and Scipy, HENDRICS 7.0 is only compatible with Python >3.8
@@ -75,7 +75,7 @@ Older releases
     + Add ability to split files at a given MJD
 
 
-.. collapse:: **HENDRICS 6.0**
+.. collapse:: HENDRICS 6.0
 
     + Much Improved mission support
     + Lots of performance improvements with large datasets
@@ -83,7 +83,7 @@ Older releases
     + Improved candidate searching in Z searches
     + Lots of documentation fixes
 
-.. collapse:: **HENDRICS 5.0**
+.. collapse:: HENDRICS 5.0
 
     More improvements to pulsar functionalities:
 
@@ -94,7 +94,7 @@ Older releases
     Developed as part of CICLOPS -- Citizen Computing Pulsar Search, a project supported by *POR FESR Sardegna 2014 – 2020 Asse 1 Azione 1.1.3* (code RICERCA_1C-181), call for proposal "Aiuti per Progetti di Ricerca e Sviluppo 2017" managed by Sardegna Ricerche.
 
 
-.. collapse:: **HENDRICS 4.0**
+.. collapse:: HENDRICS 4.0
 
     Lots of improvements to pulsar functionalities;
 
@@ -104,7 +104,7 @@ Older releases
         but the difficulty of tracking down library versions to test in Appveyor forces me
         to drop the obsolescent versions of Python from testing on that architecture.
 
-.. collapse:: **HENDRICS 3.0**
+.. collapse:: HENDRICS 3.0
 
     The API is now rewritten to use
     `Stingray <https://github.com/StingraySoftware/stingray>`__ where possible.
@@ -117,7 +117,7 @@ Older releases
     + Color-Color Diagrams and Hardness-Intensity Diagrams
     + Power spectral fitting
 
-.. collapse:: **(MaLTPyNT) 2.0**
+.. collapse:: (MaLTPyNT) 2.0
 
     .. Note ::
 
