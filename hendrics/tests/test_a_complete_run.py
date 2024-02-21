@@ -29,6 +29,7 @@ from hendrics import (
     lcurve,
     modeling,
     plot,
+    power_colors,
     read_events,
     rebin,
     save_as_xspec,
@@ -216,7 +217,11 @@ class TestFullRun(object):
         """Test light curve using PI filtering."""
         # calculate colors
         command = f"{self.ev_fileAcal} --debug -s 16 -b -6 -f 1 2 4 8 16 "
-        new_filenames = hen.power_colors.main(command.split())
+        with pytest.warns(
+            UserWarning,
+            match="(Some .non-log. power colors)|(All power spectral)|(Poisson-subtracted power)",
+        ):
+            new_filenames = hen.power_colors.main(command.split())
 
         assert os.path.exists(new_filenames[0])
         hen.plot.main(new_filenames)
@@ -227,7 +232,11 @@ class TestFullRun(object):
         command = (
             f"--cross {self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 "
         )
-        new_filenames = hen.power_colors.main(command.split())
+        with pytest.warns(
+            UserWarning,
+            match="(Some .non-log.)|(All power spectral)|(Poisson-subtracted)|(cast to real)",
+        ):
+            new_filenames = hen.power_colors.main(command.split())
 
         assert os.path.exists(new_filenames[0])
         hen.plot.main(new_filenames)

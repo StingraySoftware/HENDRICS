@@ -24,7 +24,7 @@ from .io import find_file_in_allowed_paths
 from .base import _assign_value_if_none
 from .base import pds_detection_level as detection_level
 from .base import deorbit_events
-from .power_colors import plot_hues_rms, plot_hues_rms_polar, plot_power_colors
+from stingray.power_colors import plot_hues, plot_power_colors
 
 
 def _next_color(ax):
@@ -213,9 +213,15 @@ def plot_powercolors(fnames):
 
     ts = load_data(fnames)
 
-    plot_power_colors(ts["pc1"], ts["pc1_err"], ts["pc2"], ts["pc2_err"])
-    plot_hues_rms_polar(ts["hue"], ts["rms"], ts["rms_err"])
-    plot_hues_rms(ts["hue"], ts["rms"], ts["rms_err"])
+    plot_power_colors(
+        ts["pc1"], ts["pc1_err"], ts["pc2"], ts["pc2_err"], plot_spans=True
+    )
+    plot_hues(
+        ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=True, plot_spans=True
+    )
+    plot_hues(
+        ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=False, plot_spans=True
+    )
     return ts
 
 
