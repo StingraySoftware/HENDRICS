@@ -1,6 +1,8 @@
 """Functions to calculate power colors."""
+
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
+import warnings
 from collections.abc import Iterable
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,237 +10,10 @@ from scipy.interpolate import interp1d
 
 from astropy import log
 from stingray import StingrayTimeseries, DynamicalPowerspectrum, DynamicalCrossspectrum
-from stingray.fourier import hue_from_power_color
+from stingray.power_colors import hue_from_power_color
 
 from .io import HEN_FILE_EXTENSION, load_events, save_timeseries
 from .base import hen_root, interpret_bintime, common_name
-
-
-def trace_hue_line(center, angle):
-    plot_angle = (-angle + 3 * np.pi / 4) % (np.pi * 2)
-
-    m = np.tan(plot_angle)
-    if np.isinf(m):
-        x = np.zeros_like(x) + center[0]
-        y = np.linspace(-4, 4, 20)
-    else:
-        x = np.linspace(0, 4, 20) * np.sign(np.cos(plot_angle)) + center[0]
-        y = center[1] + m * (x - center[0])
-    return x, y
-
-
-state_hue_limits = {
-    "HSS": [300, 360],
-    "LHS": [-20, 140],
-    "HIMS": [140, 220],
-    "SIMS": [220, 300],
-}
-
-
-def trace_state_areas(center, state, color, alpha=0.5):
-    hue0, hue1 = state_hue_limits[state]
-    x0, y0 = trace_hue_line(center, np.radians(hue0))
-
-    next_angle = hue0 + 5.0
-    x1, y1 = trace_hue_line(center, np.radians(hue0))
-    previous_angle = hue0
-    while next_angle <= hue1:
-        x0, y0 = x1, y1
-        x1, y1 = trace_hue_line(center, np.radians(next_angle))
-        t1 = plt.Polygon(
-            [[x0[0], y0[0]], [x0[-1], y0[-1]], [x1[-1], y1[-1]]],
-            alpha=alpha,
-            color=color,
-            ls=None,
-            lw=0,
-        )
-        plt.gca().add_patch(t1)
-        #         previous_angle += 5.
-        next_angle += 5.0
-
-
-def trace_state_name(center, state):
-    hue0, hue1 = state_hue_limits[state]
-    x0, y0 = trace_hue_line(center, np.radians(hue0))
-    hue_mean = (hue0 + hue1) / 2
-    hue_angle = (-np.radians(hue_mean) + 3 * np.pi / 4) % (np.pi * 2)
-
-    radius = 1.4
-    txt_x = radius * np.cos(hue_angle) + center[0]
-    txt_y = radius * np.sin(hue_angle) + center[1]
-    plt.text(txt_x, txt_y, state, color="k", ha="center", va="center")
-
-
-def create_pc_plot(center, xrange=[-2, 2], yrange=[-2, 2]):
-    """Creates an empty power color plot with labels in the right place."""
-    fig = plt.figure()
-
-    plt.gca().set_aspect("equal")
-
-    plt.xlabel(r"log$_{10}$PC1")
-    plt.ylabel(r"log$_{10}$PC2")
-    plt.scatter(*center, marker="+", color="k")
-    for angle in range(0, 360, 20):
-        color = "k"
-        x, y = trace_hue_line(center, np.radians(angle))
-        alpha = 0.3
-        lw = 0.2
-        if angle in [0, 140, 220, 300, 340]:
-            color = "k"
-            alpha = 1
-            lw = 1
-        plt.plot(x, y, lw=lw, ls=":", color=color, alpha=alpha, zorder=10)
-
-    trace_state_areas(center, "LHS", "blue", 0.1)
-    trace_state_areas(center, "HIMS", "green", 0.1)
-    trace_state_areas(center, "SIMS", "yellow", 0.1)
-    trace_state_areas(center, "HSS", "red", 0.1)
-    for state in state_hue_limits.keys():
-        trace_state_name(center, state)
-
-    plt.xlim(center[0] + np.asarray(xrange))
-    plt.ylim(center[1] + np.asarray(yrange))
-    plt.grid(False)
-    return fig
-
-
-def plot_power_colors(p1, p1e, p2, p2e, center=(4.51920, 0.453724)):
-    hues = hue_from_power_color(p1, p2)
-
-    p1e = np.abs(1 / p1 * p1e)
-    p2e = np.abs(1 / p2 * p2e)
-    p1 = np.log10(p1)
-    p2 = np.log10(p2)
-    center = np.log10(np.asarray(center))
-    # Create empty power color plot
-    fig = create_pc_plot(center)
-    ax = fig.gca()
-    ax.errorbar(p1, p2, xerr=p1e, yerr=p2e, alpha=0.4, color="k")
-    ax.scatter(p1, p2, zorder=10, color="k")
-
-
-heil_et_al_rms_span = {
-    -20: [0.3, 0.7],
-    0: [0.3, 0.7],
-    10: [0.3, 0.6],
-    40: [0.25, 0.4],
-    100: [0.25, 0.35],
-    150: [0.2, 0.3],
-    170: [0.0, 0.3],
-    200: [0, 0.15],
-    220: [0, 0.15],
-    250: [0, 0.15],
-    300: [0, 0.15],
-    360: [0, 0.15],
-}
-heil_et_al_x = list(heil_et_al_rms_span.keys())
-heil_et_al_ymin = list([v[0] for v in heil_et_al_rms_span.values()])
-heil_et_al_ymax = list([v[1] for v in heil_et_al_rms_span.values()])
-
-ymin_func = interp1d(heil_et_al_x, heil_et_al_ymin, kind="linear")
-ymax_func = interp1d(heil_et_al_x, heil_et_al_ymax, kind="linear")
-
-
-def create_rms_hue_plot():
-    plt.figure()
-    plt.xlim(0, 360)
-    plt.ylim(0, 0.7)
-    plt.ylabel("Fractional rms")
-    plt.xlabel("Hue")
-    # state_hue_limits = {"HSS": [300, 360], "LHS": [-20, 140], "HIMS": [140, 220], "SIMS":[220, 300]}
-
-    plt.fill_between(
-        np.linspace(300, 360, 20),
-        ymin_func(np.linspace(300, 360, 20)),
-        ymax_func(np.linspace(300, 360, 20)),
-        color="red",
-        alpha=0.1,
-    )
-    plt.fill_between(
-        np.linspace(340, 360, 20),
-        ymin_func(np.linspace(-20, 0, 20)),
-        ymax_func(np.linspace(-20, 0, 20)),
-        color="b",
-        alpha=0.1,
-    )
-    plt.fill_between(
-        np.linspace(0, 140, 20),
-        ymin_func(np.linspace(0, 140, 20)),
-        ymax_func(np.linspace(0, 140, 20)),
-        color="b",
-        alpha=0.1,
-    )
-    plt.fill_between(
-        np.linspace(140, 220, 20),
-        ymin_func(np.linspace(140, 220, 20)),
-        ymax_func(np.linspace(140, 220, 20)),
-        color="g",
-        alpha=0.1,
-    )
-    plt.fill_between(
-        np.linspace(220, 300, 20),
-        ymin_func(np.linspace(220, 300, 20)),
-        ymax_func(np.linspace(220, 300, 20)),
-        color="yellow",
-        alpha=0.1,
-    )
-    return plt.gca()
-
-
-def create_rms_hue_polar_plot():
-    fig, ax = plt.subplots(subplot_kw={"projection": "polar"})
-    ax.set_rmax(0.75)
-    ax.set_rticks([0, 0.25, 0.5, 0.75, 1])
-    ax.grid(True)
-    ax.set_rlim([0, 0.75])
-    plt.fill_between(
-        np.radians(np.linspace(300, 360, 20)),
-        ymin_func(np.linspace(300, 360, 20)),
-        ymax_func(np.linspace(300, 360, 20)),
-        color="red",
-        alpha=0.1,
-    )
-    ax.fill_between(
-        np.radians(np.linspace(340, 360, 20)),
-        ymin_func(np.linspace(-20, 0, 20)),
-        ymax_func(np.linspace(-20, 0, 20)),
-        color="b",
-        alpha=0.1,
-    )
-    ax.fill_between(
-        np.radians(np.linspace(0, 140, 20)),
-        ymin_func(np.linspace(0, 140, 20)),
-        ymax_func(np.linspace(0, 140, 20)),
-        color="b",
-        alpha=0.1,
-    )
-    ax.fill_between(
-        np.radians(np.linspace(140, 220, 20)),
-        ymin_func(np.linspace(140, 220, 20)),
-        ymax_func(np.linspace(140, 220, 20)),
-        color="g",
-        alpha=0.1,
-    )
-    ax.fill_between(
-        np.radians(np.linspace(220, 300, 20)),
-        ymin_func(np.linspace(220, 300, 20)),
-        ymax_func(np.linspace(220, 300, 20)),
-        color="yellow",
-        alpha=0.1,
-    )
-    return ax
-
-
-def plot_hues_rms(hues, rms, rmse):
-    ax = create_rms_hue_plot()
-    hues = hues % (np.pi * 2)
-    ax.errorbar(np.degrees(hues), rms, yerr=rmse, fmt="o", alpha=0.5)
-
-
-def plot_hues_rms_polar(hues, rms, rmse):
-    ax = create_rms_hue_polar_plot()
-    hues = hues % (np.pi * 2)
-    ax.errorbar(hues, rms, yerr=rmse, fmt="o", alpha=0.5)
 
 
 def treat_power_colors(
@@ -260,6 +35,7 @@ def treat_power_colors(
             sample_time=bintime,
             norm="leahy",
         )
+
         gti = events1.gti
         local_poisson_noise = 0 if poisson_noise is None else poisson_noise
         base_name = hen_root(
@@ -313,6 +89,12 @@ def treat_power_colors(
         dt=segment_size,
         skip_checks=True,
     )
+    good = (scolor.pc1 > 0) & (scolor.pc2 > 0)
+    if np.any(~good):
+        warnings.warn(
+            "Some (non-log) power colors are negative. Neglecting them", UserWarning
+        )
+        scolor = scolor.apply_mask(good)
 
     if outfile is None:
         label = "_edges_" + "_".join([f"{f:g}" for f in frequency_edges])
