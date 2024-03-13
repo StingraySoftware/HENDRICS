@@ -69,20 +69,14 @@ def varenergy_from_astropy_table(fname):
     >>> varen.ref_band = [0, 3]
     >>> table = varenergy_to_astropy_table(varen)
     >>> spec = varenergy_from_astropy_table(table)
-    >>> np.allclose(spec.spectrum, varen.spectrum)
-    True
-    >>> np.allclose(spec.spectrum_error, varen.spectrum_error)
-    True
-    >>> np.allclose(spec.energy_intervals, varen.energy_intervals)
-    True
-    >>> np.allclose(spec.ref_band, varen.ref_band)
-    True
+    >>> assert np.allclose(spec.spectrum, varen.spectrum)
+    >>> assert np.allclose(spec.spectrum_error, varen.spectrum_error)
+    >>> assert np.allclose(spec.energy_intervals, varen.energy_intervals)
+    >>> assert np.allclose(spec.ref_band, varen.ref_band)
     >>> table.write("varenergyboubou.ecsv", overwrite=True)
     >>> spec_file = varenergy_from_astropy_table("varenergyboubou.ecsv")
-    >>> np.allclose(spec.spectrum, spec_file.spectrum)
-    True
-    >>> np.allclose(spec.spectrum_error, spec_file.spectrum_error)
-    True
+    >>> assert np.allclose(spec.spectrum, spec_file.spectrum)
+    >>> assert np.allclose(spec.spectrum_error, spec_file.spectrum_error)
     """
     if isinstance(fname, Table):
         data = fname

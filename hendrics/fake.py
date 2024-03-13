@@ -318,14 +318,10 @@ def acceptance_rejection(
     >>> counts_per_bin = [10, 5, 5]
     >>> dt = 0.1
     >>> ev = acceptance_rejection(dt, counts_per_bin)
-    >>> ev.size == 20
-    True
-    >>> ev.max() < 0.3
-    True
-    >>> ev.min() > 0
-    True
-    >>> np.all(np.diff(ev) >= 0)
-    True
+    >>> assert ev.size == 20
+    >>> assert ev.max() < 0.3
+    >>> assert ev.min() > 0
+    >>> assert np.all(np.diff(ev) >= 0)
     """
     counts_per_bin = np.asarray(counts_per_bin)
     rates = counts_per_bin / dt
@@ -368,11 +364,9 @@ def make_counts_pulsed(nevents, t_start, t_stop, pulsed_fraction=0.0):
     --------
     >>> nevents = 10
     >>> dt, counts = make_counts_pulsed(nevents, 0, 100)
-    >>> np.isclose(np.sum(counts), nevents)
-    True
+    >>> assert np.isclose(np.sum(counts), nevents)
     >>> dt, counts = make_counts_pulsed(nevents, 0, 100, pulsed_fraction=1)
-    >>> np.isclose(np.sum(counts), nevents)
-    True
+    >>> assert np.isclose(np.sum(counts), nevents)
     """
     dt = 0.0546372810934756
     length = t_start - t_stop
@@ -433,15 +427,11 @@ def scramble(
     >>> event_list = EventList(
     ...     times, gti=np.array([[0, 0.9], [111, 123.2], [125.123, 1000]]))
     >>> new_event_list = scramble(event_list, 'smooth')
-    >>> new_event_list.time.size == times.size
-    True
-    >>> np.all(new_event_list.gti == event_list.gti)
-    True
+    >>> assert new_event_list.time.size == times.size
+    >>> assert np.all(new_event_list.gti == event_list.gti)
     >>> new_event_list = scramble(event_list, 'flat')
-    >>> new_event_list.time.size == times.size
-    True
-    >>> np.all(new_event_list.gti == event_list.gti)
-    True
+    >>> assert new_event_list.time.size == times.size
+    >>> assert np.all(new_event_list.gti == event_list.gti)
     """
     new_event_list = copy.deepcopy(event_list)
     assert np.all(np.diff(new_event_list.time) > 0)

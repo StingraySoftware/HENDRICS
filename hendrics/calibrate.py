@@ -105,19 +105,15 @@ def rough_calibration(pis, mission):
 
     Examples
     --------
-    >>> rough_calibration(0, 'nustar')
-    1.6
-    >>> rough_calibration(0.0, 'ixpe')
-    0.0
+    >>> assert rough_calibration(0, 'nustar') == 1.6
+    >>> assert rough_calibration(0.0, 'ixpe') == 0.0
     >>> # It's case-insensitive
-    >>> rough_calibration(1200, 'XMm')
-    1.2
+    >>> assert rough_calibration(1200, 'XMm') == 1.2
     >>> rough_calibration(10, 'asDf')
     Traceback (most recent call last):
         ...
     ValueError: Mission asdf not recognized
-    >>> rough_calibration(100, 'nicer')
-    1.0
+    >>> assert rough_calibration(100, 'nicer') == 1.0
     """
     if mission.lower() == "nustar":
         return pis * 0.04 + 1.6

@@ -89,8 +89,7 @@ def create_template_from_profile_sins(
     >>> template, additional_phase = create_template_from_profile_sins(
     ...     phase, profile, profile_err)
     ...
-    >>> np.allclose(template, profile, atol=0.01)
-    True
+    >>> assert np.allclose(template, profile, atol=0.01)
     """
     import matplotlib.pyplot as plt
 
@@ -139,8 +138,7 @@ def create_template_from_profile(
     >>> template, additional_phase = create_template_from_profile(
     ...     phase, profile, profile_err)
     ...
-    >>> np.allclose(template, profile, atol=0.001)
-    True
+    >>> assert np.allclose(template, profile, atol=0.001)
     """
     from scipy.interpolate import splrep, splev
     import matplotlib.pyplot as plt
@@ -200,8 +198,7 @@ def create_template_from_profile_harm(
     >>> template, additional_phase = create_template_from_profile_harm(
     ...     phase, profile, profile_err)
     ...
-    >>> np.allclose(template, profile, atol=0.001)
-    True
+    >>> assert np.allclose(template, profile, atol=0.001)
     """
     import matplotlib.pyplot as plt
 
@@ -266,15 +263,13 @@ def create_default_template(template_raw):
     >>> template, additional_phase = create_default_template(
     ...     profile)
     ...
-    >>> np.allclose(template.max(), profile.max(), atol=0.1)
-    True
+    >>> assert np.allclose(template.max(), profile.max(), atol=0.1)
     >>> profile = np.exp(-(phase - 0.5)**2 / (2 * 0.0001))
     >>> profile_err = profile * 0
     >>> template, additional_phase = create_default_template(
     ...     profile)
     ...
-    >>> np.allclose(template.max(), profile.max(), atol=0.1)
-    True
+    >>> assert np.allclose(template.max(), profile.max(), atol=0.1)
     """
     nbin = template_raw.size
     nharm = min(max(1, nbin // 16), htest(template_raw)[0])
@@ -526,12 +521,9 @@ def adjust_amp_phase(pars):
 
     Examples
     --------
-    >>> np.allclose(adjust_amp_phase([-0.5, 0.2]), [0.5, 0.7])
-    True
-    >>> np.allclose(adjust_amp_phase([0.5, -1.2]), [0.5, 0.8])
-    True
-    >>> np.allclose(adjust_amp_phase([0.5, 1.2]), [0.5, 0.2])
-    True
+    >>> assert np.allclose(adjust_amp_phase([-0.5, 0.2]), [0.5, 0.7])
+    >>> assert np.allclose(adjust_amp_phase([0.5, -1.2]), [0.5, 0.8])
+    >>> assert np.allclose(adjust_amp_phase([0.5, 1.2]), [0.5, 0.2])
     """
     if pars[0] < 0:
         pars[0] = -pars[0]

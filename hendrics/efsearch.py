@@ -393,10 +393,8 @@ def z_n_fast(phase, norm, n=2):
     --------
     >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
     >>> norm = np.sin(phase) + 1
-    >>> np.isclose(z_n_fast(phase, norm, n=4), 50)
-    True
-    >>> np.isclose(z_n_fast(phase, norm, n=2), 50)
-    True
+    >>> assert np.isclose(z_n_fast(phase, norm, n=4), 50)
+    >>> assert np.isclose(z_n_fast(phase, norm, n=2), 50)
     """
 
     total_norm = np.sum(norm)
@@ -434,14 +432,10 @@ def _average_and_z_sub_search(profiles, n=2):
     >>> profiles = np.ones((16, len(norm)))
     >>> profiles[8] = norm
     >>> n_ave, results = _average_and_z_sub_search(profiles, n=2)
-    >>> np.isclose(results[0, 8], 50)
-    True
-    >>> np.isclose(results[1, 8], 50/2)
-    True
-    >>> np.isclose(results[2, 8], 50/4)
-    True
-    >>> np.isclose(results[3, 8], 50/8)
-    True
+    >>> assert np.isclose(results[0, 8], 50)
+    >>> assert np.isclose(results[1, 8], 50/2)
+    >>> assert np.isclose(results[2, 8], 50/4)
+    >>> assert np.isclose(results[3, 8], 50/8)
     """
     nprof = len(profiles)
     # Only use powers of two
@@ -1192,8 +1186,7 @@ def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
     >>> X, Y = np.meshgrid(x, y)
     >>> Z = Z = np.sinc(np.sqrt(X**2 + Y**2))**2 + np.sinc(np.sqrt((X - 5)**2 + Y**2))**2
     >>> vals = get_xy_boundaries_from_level(X, Y, Z, 0.5, 0, 0)
-    >>> np.allclose(np.abs(vals), 0.44, atol=0.1)
-    True
+    >>> assert np.allclose(np.abs(vals), 0.44, atol=0.1)
     """
     fig = plt.figure(np.random.random())
     cs = fig.gca().contour(x, y, image, [level])
@@ -1226,8 +1219,7 @@ def get_boundaries_from_level(x, y, level, x0):
     >>> x = np.linspace(-10, 10, 1000)
     >>> y = np.sinc(x)**2 + np.sinc((x - 5))**2
     >>> vals = get_boundaries_from_level(x, y, 0.5, 0)
-    >>> np.allclose(np.abs(vals), 0.44, atol=0.1)
-    True
+    >>> assert np.allclose(np.abs(vals), 0.44, atol=0.1)
     """
     max_idx = np.argmin(np.abs(x - x0))
     idx = max_idx

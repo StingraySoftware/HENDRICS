@@ -44,10 +44,8 @@ def average_periodograms(fspec_iterable, total=None):
     >>> pds1 = copy.deepcopy(pds)
     >>> pds1.m = 2
     >>> tot_pds = average_periodograms([pds, pds1])
-    >>> np.allclose(tot_pds.power, pds.power)
-    True
-    >>> np.allclose(tot_pds.power_err, pds.power_err / np.sqrt(3))
-    True
+    >>> assert np.allclose(tot_pds.power, pds.power)
+    >>> assert np.allclose(tot_pds.power_err, pds.power_err / np.sqrt(3))
     >>> tot_pds.m
     3
     """
@@ -118,10 +116,8 @@ def sync_gtis(lc1, lc2):
     ...     time=np.sort(np.random.uniform(1, 10, 3)), gti=[[1, 10]])
     >>> ev2 = EventList(time=np.sort(np.random.uniform(0, 9, 4)), gti=[[0, 9]])
     >>> e1, e2 = sync_gtis(ev1, ev2)
-    >>> np.allclose(e1.gti, [[1, 9]])
-    True
-    >>> np.allclose(e2.gti, [[1, 9]])
-    True
+    >>> assert np.allclose(e1.gti, [[1, 9]])
+    >>> assert np.allclose(e2.gti, [[1, 9]])
     >>> lc1 = Lightcurve(
     ...     time=[0.5, 1.5, 2.5], counts=[2, 2, 3], dt=1, gti=[[0, 3]])
     >>> lc2 = Lightcurve(
@@ -129,10 +125,8 @@ def sync_gtis(lc1, lc2):
     >>> lc1._apply_gtis = lc1.apply_gtis
     >>> lc2._apply_gtis = lc2.apply_gtis
     >>> l1, l2 = sync_gtis(lc1, lc2)
-    >>> np.allclose(l1.gti, [[1, 3]])
-    True
-    >>> np.allclose(l2.gti, [[1, 3]])
-    True
+    >>> assert np.allclose(l1.gti, [[1, 3]])
+    >>> assert np.allclose(l2.gti, [[1, 3]])
     """
     gti = cross_gtis([lc1.gti, lc2.gti])
     lc1.gti = gti
@@ -154,20 +148,13 @@ def _distribute_events(events, chunk_length):
     >>> ev.pi = np.ones_like(ev.time)
     >>> ev.mjdref = 56780.
     >>> ev_lists = list(_distribute_events(ev, 2))
-    >>> np.allclose(ev_lists[0].time, [1, 2])
-    True
-    >>> np.allclose(ev_lists[1].time, [3, 4])
-    True
-    >>> np.allclose(ev_lists[2].time, [5, 6])
-    True
-    >>> np.allclose(ev_lists[0].gti, [[0.5, 2.5]])
-    True
-    >>> ev_lists[0].mjdref == ev.mjdref
-    True
-    >>> ev_lists[2].mjdref == ev.mjdref
-    True
-    >>> np.allclose(ev_lists[1].pi, [1, 1])
-    True
+    >>> assert np.allclose(ev_lists[0].time, [1, 2])
+    >>> assert np.allclose(ev_lists[1].time, [3, 4])
+    >>> assert np.allclose(ev_lists[2].time, [5, 6])
+    >>> assert np.allclose(ev_lists[0].gti, [[0.5, 2.5]])
+    >>> assert ev_lists[0].mjdref == ev.mjdref
+    >>> assert ev_lists[2].mjdref == ev.mjdref
+    >>> assert np.allclose(ev_lists[1].pi, [1, 1])
     """
     gti = events.gti
     start_times, stop_times = time_intervals_from_gtis(gti, chunk_length)
@@ -667,8 +654,7 @@ def _normalize(array, ref=0):
     >>> array2 = np.random.normal(0, 1, n)
     >>> array = array1 ** 2 + array2 ** 2
     >>> newarr = _normalize(array)
-    >>> np.isclose(np.std(newarr), 1, atol=0.0001)
-    True
+    >>> assert np.isclose(np.std(newarr), 1, atol=0.0001)
     """
     m = ref
     std = np.std(array)

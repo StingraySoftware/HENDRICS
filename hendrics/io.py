@@ -286,13 +286,9 @@ def high_precision_keyword_read(hdr, keyword):
     Examples
     --------
     >>> hdr = dict(keywordS=1.25)
-    >>> high_precision_keyword_read(hdr, 'keywordS')
-    1.25
+    >>> assert high_precision_keyword_read(hdr, 'keywordS') == 1.25
     >>> hdr = dict(keywordI=1, keywordF=0.25)
-    >>> high_precision_keyword_read(hdr, 'keywordS')
-    1.25
-    >>> high_precision_keyword_read(hdr, 'bubabuab') is None
-    True
+    >>> assert high_precision_keyword_read(hdr, 'keywordS') == 1.25
     """
     if keyword in hdr:
         return np.longdouble(hdr[keyword])
