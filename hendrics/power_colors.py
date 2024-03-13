@@ -11,6 +11,7 @@ from scipy.interpolate import interp1d
 from astropy import log
 from stingray import StingrayTimeseries, DynamicalPowerspectrum, DynamicalCrossspectrum
 from stingray.power_colors import hue_from_power_color
+from stingray.gti import cross_two_gtis
 
 from .io import HEN_FILE_EXTENSION, load_events, save_timeseries
 from .base import hen_root, interpret_bintime, common_name
@@ -36,7 +37,7 @@ def treat_power_colors(
             norm="leahy",
         )
 
-        gti = events1.gti
+        gti = cross_two_gtis(events1.gti, events2.gti)
         local_poisson_noise = 0 if poisson_noise is None else poisson_noise
         base_name = hen_root(
             common_name(

@@ -609,17 +609,15 @@ def load_timeseries(fname):
     else:
         # Try one of the known files from Astropy
         return StingrayTimeseries.read(fname, fmt=fmt)
+    # Fix issue when reading a single-element time array from the nc file
+    for attr in ["time", "_time"]:
+        if attr in out and out[attr] is not None and len(np.shape(out[attr])) == 0:
+            out[attr] = np.array([out[attr]])
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
         eventlist = StingrayTimeseries(**out)
-    # for key in out.keys():
-    #     if hasattr(eventlist, key) and getattr(eventlist, key) is not None:
-    #         continue
-    #     setattr(eventlist, key, out[key])
-    # for attr in ["mission", "instr"]:
-    #     if attr not in list(out.keys()):
-    #         setattr(eventlist, attr, "")
+
     return eventlist
 
 
