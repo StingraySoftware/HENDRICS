@@ -81,8 +81,7 @@ def rescale_plot_units(values):
     >>> assert np.allclose(rescaled * 10**oom + mean, values)
     >>> values = np.arange(-3, 3.2, 0.2) + 5.0001
     >>> mean, oom, rescaled = rescale_plot_units(values)
-    >>> oom
-    0
+    >>> assert oom == 0
     >>> assert mean == 0.0
     >>> assert np.allclose(rescaled, values)
     """

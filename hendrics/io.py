@@ -250,8 +250,7 @@ def _get_key(dict_like, key):
     Examples
     --------
     >>> a = dict(b=1)
-    >>> _get_key(a, 'b')
-    1
+    >>> assert _get_key(a, 'b') == 1
     >>> _get_key(a, 'c') == ""
      True
     """

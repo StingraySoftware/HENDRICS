@@ -182,8 +182,7 @@ def z_n_fast_cached_all(norm, nmax=20):
     >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
     >>> norm = np.sin(phase) + 1
     >>> allks, allzs = z_n_fast_cached_all(norm, nmax=4)
-    >>> allks[1]
-    2
+    >>> assert allks[1] == 2
     >>> assert np.isclose(allzs[1], 50)
     >>> assert np.isclose(allzs[3], 50)
     """
@@ -207,8 +206,7 @@ def h_test(norm, nmax=20):
     >>> norm = np.sin(phase) + 1
     >>> h, m = h_test(norm, nmax=4)
     >>> assert np.isclose(h, 50)
-    >>> m
-    1
+    >>> assert m == 1
     """
     ks, zs = z_n_fast_cached_all(norm, nmax=nmax)
     hs = zs - 4 * ks + 4
@@ -250,18 +248,12 @@ def start_value(prof_n, step):
 
     Examples
     --------
-    >>> start_value(0, 0)
-    0
-    >>> start_value(4, 0)
-    4
-    >>> start_value(5, 2)
-    2
-    >>> start_value(8, 1)
-    8
-    >>> start_value(7, 1)
-    5
-    >>> start_value(10, 2)
-    9
+    >>> assert start_value(0, 0) == 0
+    >>> assert start_value(4, 0) == 4
+    >>> assert start_value(5, 2) == 2
+    >>> assert start_value(8, 1) == 8
+    >>> assert start_value(7, 1) == 5
+    >>> assert start_value(10, 2) == 9
     """
 
     n = prof_n

@@ -46,8 +46,7 @@ def average_periodograms(fspec_iterable, total=None):
     >>> tot_pds = average_periodograms([pds, pds1])
     >>> assert np.allclose(tot_pds.power, pds.power)
     >>> assert np.allclose(tot_pds.power_err, pds.power_err / np.sqrt(3))
-    >>> tot_pds.m
-    3
+    >>> assert tot_pds.m == 3
     """
 
     all_spec = []

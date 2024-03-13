@@ -1118,14 +1118,10 @@ def nchars_in_int_value(value):
 
     Examples
     --------
-    >>> nchars_in_int_value(2)
-    1
-    >>> nchars_in_int_value(1356)
-    4
-    >>> nchars_in_int_value(9999)
-    4
-    >>> nchars_in_int_value(10000)
-    5
+    >>> assert nchars_in_int_value(2) == 1
+    >>> assert nchars_in_int_value(1356) == 4
+    >>> assert nchars_in_int_value(9999) == 4
+    >>> assert nchars_in_int_value(10000) == 5
     """
     #  "+1" because, e.g., 10000 would return 4
     return int(np.ceil(np.log10(value + 1)))
