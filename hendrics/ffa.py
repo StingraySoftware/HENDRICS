@@ -85,10 +85,8 @@ def _z_n_fast_cached(norm, cached_sin, cached_cos, n=2):
     >>> norm = np.sin(phase) + 1
     >>> cached_sin = np.sin(np.concatenate((phase, phase, phase, phase)))
     >>> cached_cos = np.cos(np.concatenate((phase, phase, phase, phase)))
-    >>> np.isclose(_z_n_fast_cached(norm, cached_sin, cached_cos, n=4), 50)
-    True
-    >>> np.isclose(_z_n_fast_cached(norm, cached_sin, cached_cos, n=2), 50)
-    True
+    >>> assert np.isclose(_z_n_fast_cached(norm, cached_sin, cached_cos, n=4), 50)
+    >>> assert np.isclose(_z_n_fast_cached(norm, cached_sin, cached_cos, n=2), 50)
     """
 
     total_norm = np.sum(norm)
@@ -128,10 +126,8 @@ def z_n_fast_cached(norm, n=2):
     --------
     >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
     >>> norm = np.sin(phase) + 1
-    >>> np.isclose(z_n_fast_cached(norm, n=4), 50)
-    True
-    >>> np.isclose(z_n_fast_cached(norm, n=2), 50)
-    True
+    >>> assert np.isclose(z_n_fast_cached(norm, n=4), 50)
+    >>> assert np.isclose(z_n_fast_cached(norm, n=2), 50)
     """
 
     cached_sin = cached_sin_harmonics(norm.size, n)
@@ -186,12 +182,9 @@ def z_n_fast_cached_all(norm, nmax=20):
     >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
     >>> norm = np.sin(phase) + 1
     >>> allks, allzs = z_n_fast_cached_all(norm, nmax=4)
-    >>> allks[1]
-    2
-    >>> np.isclose(allzs[1], 50)
-    True
-    >>> np.isclose(allzs[3], 50)
-    True
+    >>> assert allks[1] == 2
+    >>> assert np.isclose(allzs[1], 50)
+    >>> assert np.isclose(allzs[3], 50)
     """
 
     cached_sin = cached_sin_harmonics(norm.size, nmax)
@@ -212,10 +205,8 @@ def h_test(norm, nmax=20):
     >>> phase = 2 * np.pi * np.arange(0, 1, 0.01)
     >>> norm = np.sin(phase) + 1
     >>> h, m = h_test(norm, nmax=4)
-    >>> np.isclose(h, 50)
-    True
-    >>> m
-    1
+    >>> assert np.isclose(h, 50)
+    >>> assert m == 1
     """
     ks, zs = z_n_fast_cached_all(norm, nmax=nmax)
     hs = zs - 4 * ks + 4
@@ -257,18 +248,12 @@ def start_value(prof_n, step):
 
     Examples
     --------
-    >>> start_value(0, 0)
-    0
-    >>> start_value(4, 0)
-    4
-    >>> start_value(5, 2)
-    2
-    >>> start_value(8, 1)
-    8
-    >>> start_value(7, 1)
-    5
-    >>> start_value(10, 2)
-    9
+    >>> assert start_value(0, 0) == 0
+    >>> assert start_value(4, 0) == 4
+    >>> assert start_value(5, 2) == 2
+    >>> assert start_value(8, 1) == 8
+    >>> assert start_value(7, 1) == 5
+    >>> assert start_value(10, 2) == 9
     """
 
     n = prof_n
@@ -297,8 +282,7 @@ def sum_rolled(arr1, arr2, out, shift):
     >>> arr2 = np.random.random(10000)
     >>> shift = np.random.randint(0, 10000)
     >>> out = sum_rolled(arr1, arr2, np.zeros_like(arr1), shift)
-    >>> np.all(out == arr1 + np.roll(arr2, -shift))
-    True
+    >>> assert np.all(out == arr1 + np.roll(arr2, -shift))
     """
     out[:-shift] = sum_arrays(arr1[:-shift], arr2[shift:])
     out[-shift:] = sum_arrays(arr1[-shift:], arr2[:shift])
@@ -375,8 +359,7 @@ def _quick_rebin(counts, current_rebin):
     --------
     >>> counts = np.arange(1, 11)
     >>> reb = _quick_rebin(counts, 2)
-    >>> np.allclose(reb, [3, 7, 11, 15, 19])
-    True
+    >>> assert np.allclose(reb, [3, 7, 11, 15, 19])
     """
     n = int(counts.size // current_rebin)
     rebinned_counts = np.sum(

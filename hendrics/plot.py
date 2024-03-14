@@ -75,20 +75,15 @@ def rescale_plot_units(values):
     --------
     >>> values = np.arange(-0.003, 0.0032, 0.0002) + 5.0001
     >>> mean, oom, rescaled = rescale_plot_units(values)
-    >>> mean
-    5.0
+    >>> assert mean == 5.0
     >>> oom
     -3
-    >>> np.allclose(rescaled * 10**oom + mean, values)
-    True
+    >>> assert np.allclose(rescaled * 10**oom + mean, values)
     >>> values = np.arange(-3, 3.2, 0.2) + 5.0001
     >>> mean, oom, rescaled = rescale_plot_units(values)
-    >>> oom
-    0
-    >>> mean
-    0.0
-    >>> np.allclose(rescaled, values)
-    True
+    >>> assert oom == 0
+    >>> assert mean == 0.0
+    >>> assert np.allclose(rescaled, values)
     """
     span = values.max() - values.min()
 
@@ -168,14 +163,10 @@ def _get_const(models):
     --------
     >>> from astropy.modeling.models import Const1D, Gaussian1D
     >>> model = Const1D(2) + Gaussian1D(1, 4, 5)
-    >>> _get_const(model)
-    2.0
-    >>> _get_const(model[0])
-    2.0
-    >>> _get_const([model[0]])
-    2.0
-    >>> _get_const([[model]])
-    2.0
+    >>> assert _get_const(model) == 2.0
+    >>> assert _get_const(model[0]) == 2.0
+    >>> assert _get_const([model[0]]) == 2.0
+    >>> assert _get_const([[model]]) == 2.0
     >>> _get_const(model[1])
 
     >>> _get_const(None)

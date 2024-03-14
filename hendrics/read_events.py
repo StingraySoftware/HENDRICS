@@ -198,12 +198,9 @@ def multiple_event_concatenate(event_lists):
     >>> ev2 = EventList(time=[2, 3], gti=gti, energy=[3, 4])
     >>> ev3 = EventList(time=[4, 4.5], gti=gti, energy=[3, 4])
     >>> ev_new = multiple_event_concatenate([ev1, ev2, ev3])
-    >>> np.allclose(ev_new.time, [0.3, 1, 2, 3, 4, 4.5])
-    True
-    >>> np.allclose(ev_new.energy, [3, 4, 3, 4, 3, 4])
-    True
-    >>> ev_new.pi is None
-    True
+    >>> assert np.allclose(ev_new.time, [0.3, 1, 2, 3, 4, 4.5])
+    >>> assert np.allclose(ev_new.energy, [3, 4, 3, 4, 3, 4])
+    >>> assert ev_new.pi is None
     """
 
     ev_new = EventList()

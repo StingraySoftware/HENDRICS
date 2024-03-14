@@ -18,16 +18,11 @@ def phases_from_zero_to_one(phase):
 
     Examples
     --------
-    >>> np.isclose(phases_from_zero_to_one(0.1), 0.1)
-    True
-    >>> np.isclose(phases_from_zero_to_one(-0.9), 0.1)
-    True
-    >>> np.isclose(phases_from_zero_to_one(0.9), 0.9)
-    True
-    >>> np.isclose(phases_from_zero_to_one(3.1), 0.1)
-    True
-    >>> np.allclose(phases_from_zero_to_one([0.1, 3.1, -0.9]), 0.1)
-    True
+    >>> assert np.isclose(phases_from_zero_to_one(0.1), 0.1)
+    >>> assert np.isclose(phases_from_zero_to_one(-0.9), 0.1)
+    >>> assert np.isclose(phases_from_zero_to_one(0.9), 0.9)
+    >>> assert np.isclose(phases_from_zero_to_one(3.1), 0.1)
+    >>> assert np.allclose(phases_from_zero_to_one([0.1, 3.1, -0.9]), 0.1)
     """
     while phase > 1:
         phase -= 1.0
@@ -42,14 +37,10 @@ def phases_around_zero(phase):
 
     Examples
     --------
-    >>> np.isclose(phases_around_zero(0.6), -0.4)
-    True
-    >>> np.isclose(phases_around_zero(-0.9), 0.1)
-    True
-    >>> np.isclose(phases_around_zero(3.9), -0.1)
-    True
-    >>> np.allclose(phases_around_zero([0.6, -0.4]), -0.4)
-    True
+    >>> assert np.isclose(phases_around_zero(0.6), -0.4)
+    >>> assert np.isclose(phases_around_zero(-0.9), 0.1)
+    >>> assert np.isclose(phases_around_zero(3.9), -0.1)
+    >>> assert np.allclose(phases_around_zero([0.6, -0.4]), -0.4)
     """
     ph = phase
     while ph >= 0.5:
@@ -91,9 +82,7 @@ def normal_loglike(model, input_data):
     """
     data, sigma = input_data
 
-    return 0.5 * np.sum(
-        (model - data) ** 2 / sigma**2 + np.log(2 * np.pi * sigma**2)
-    )
+    return 0.5 * np.sum((model - data) ** 2 / sigma**2 + np.log(2 * np.pi * sigma**2))
 
 
 def minimum_phase_diff(phase_est, phase_0):
@@ -199,8 +188,7 @@ def normalized_template(template, tomax=False, subtract_min=True):
     --------
     >>> temp = np.sin(np.arange(0, 1, 0.01))
     >>> t2 = normalized_template(temp, tomax=True)
-    >>> t2.max() == t2[-1]
-    True
+    >>> assert t2.max() == t2[-1]
     """
     dph = 1 / template.size
     phase = np.arange(dph / 2, 1, dph)

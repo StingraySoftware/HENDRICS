@@ -50,10 +50,8 @@ def join_lightcurve_objs(lclist):
     >>> lcB = Lightcurve(np.arange(4) + 4, [1, 3, 4, 5])
     >>> lcB.instr='bu'
     >>> lcC = join_lightcurve_objs((lcA, lcB))
-    >>> np.all(lcC['bu'].time == np.arange(8))
-    True
-    >>> np.all(lcC['bu'].counts == [0, 0, 0, 0, 1, 3, 4, 5])
-    True
+    >>> assert np.all(lcC['bu'].time == np.arange(8))
+    >>> assert np.all(lcC['bu'].counts == [0, 0, 0, 0, 1, 3, 4, 5])
     """
     # --------------- Check consistency of data --------------
     lcdts = [lcdata.dt for lcdata in lclist]
@@ -157,12 +155,9 @@ def scrunch_lightcurve_objs(lclist):
     >>> lcB = Lightcurve(np.arange(4), [1, 3, 4, 5])
     >>> lcB.instr='bu2'
     >>> lcC = scrunch_lightcurve_objs((lcA, lcB))
-    >>> np.all(lcC.time == np.arange(4))
-    True
-    >>> np.all(lcC.counts == [2, 4, 5, 6])
-    True
-    >>> np.all(lcC.instr == 'bu1,bu2')
-    True
+    >>> assert np.all(lcC.time == np.arange(4))
+    >>> assert np.all(lcC.counts == [2, 4, 5, 6])
+    >>> assert np.all(lcC.instr == 'bu1,bu2')
     """
 
     instrs = [lc.instr for lc in lclist]

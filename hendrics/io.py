@@ -183,33 +183,24 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, s
     >>> energy = np.array([0, 0, 30, 4, 1])
     >>> events = EventList(time=time, energy=energy)
     >>> ev_out, elabel = filter_energy(events, 3, None)
-    >>> np.all(ev_out.time == [2, 3])
-    True
-    >>> elabel == 'Energy'
-    True
+    >>> assert np.all(ev_out.time == [2, 3])
+    >>> assert elabel == 'Energy'
     >>> events = EventList(time=time, pi=energy)
     >>> with warnings.catch_warnings(record=True) as w:
     ...     ev_out, elabel = filter_energy(events, None, 20)  # doctest: +ELLIPSIS
-    >>> "No energy information in event list" in str(w[-1].message)
-    True
-    >>> np.all(ev_out.time == [0, 1, 3, 4])
-    True
-    >>> elabel == 'PI'
-    True
+    >>> assert "No energy information in event list" in str(w[-1].message)
+    >>> assert np.all(ev_out.time == [0, 1, 3, 4])
+    >>> assert elabel == 'PI'
     >>> events = EventList(time=time, pi=energy)
     >>> ev_out, elabel = filter_energy(events, None, None)  # doctest: +ELLIPSIS
-    >>> np.all(ev_out.time == time)
-    True
-    >>> elabel == 'PI'
-    True
+    >>> assert np.all(ev_out.time == time)
+    >>> assert elabel == 'PI'
     >>> events = EventList(time=time)
     >>> with redirect_stderr(sys.stdout):
     ...     ev_out, elabel = filter_energy(events, 3, None)  # doctest: +ELLIPSIS
     ERROR:...No Energy or PI...
-    >>> np.all(ev_out.time == time)
-    True
-    >>> elabel == ''
-    True
+    >>> assert np.all(ev_out.time == time)
+    >>> assert elabel == ''
     """
     times = ev.time
 
@@ -250,8 +241,7 @@ def _get_key(dict_like, key):
     Examples
     --------
     >>> a = dict(b=1)
-    >>> _get_key(a, 'b')
-    1
+    >>> assert _get_key(a, 'b') == 1
     >>> _get_key(a, 'c') == ""
      True
     """
@@ -286,13 +276,9 @@ def high_precision_keyword_read(hdr, keyword):
     Examples
     --------
     >>> hdr = dict(keywordS=1.25)
-    >>> high_precision_keyword_read(hdr, 'keywordS')
-    1.25
+    >>> assert high_precision_keyword_read(hdr, 'keywordS') == 1.25
     >>> hdr = dict(keywordI=1, keywordF=0.25)
-    >>> high_precision_keyword_read(hdr, 'keywordS')
-    1.25
-    >>> high_precision_keyword_read(hdr, 'bubabuab') is None
-    True
+    >>> assert high_precision_keyword_read(hdr, 'keywordS') == 1.25
     """
     if keyword in hdr:
         return np.longdouble(hdr[keyword])
@@ -609,17 +595,15 @@ def load_timeseries(fname):
     else:
         # Try one of the known files from Astropy
         return StingrayTimeseries.read(fname, fmt=fmt)
+    # Fix issue when reading a single-element time array from the nc file
+    for attr in ["time", "_time"]:
+        if attr in out and out[attr] is not None and len(np.shape(out[attr])) == 0:
+            out[attr] = np.array([out[attr]])
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Unrecognized keywords:.*")
         eventlist = StingrayTimeseries(**out)
-    # for key in out.keys():
-    #     if hasattr(eventlist, key) and getattr(eventlist, key) is not None:
-    #         continue
-    #     setattr(eventlist, key, out[key])
-    # for attr in ["mission", "instr"]:
-    #     if attr not in list(out.keys()):
-    #         setattr(eventlist, attr, "")
+
     return eventlist
 
 

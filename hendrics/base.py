@@ -243,10 +243,8 @@ def _look_for_array_in_array(array1, array2):
     """
     Examples
     --------
-    >>> _look_for_array_in_array([1, 2], [2, 3, 4])
-    2
-    >>> _look_for_array_in_array([1, 2], [3, 4, 5]) is None
-    True
+    >>> assert _look_for_array_in_array([1, 2], [2, 3, 4]) == 2
+    >>> assert _look_for_array_in_array([1, 2], [3, 4, 5]) is None
     """
     for a1 in array1:
         if a1 in array2:
@@ -265,17 +263,12 @@ def _order_list_of_arrays(data, order):
     --------
     >>> order = [1, 2, 0]
     >>> new = _order_list_of_arrays({'a': [4, 5, 6], 'b':[7, 8, 9]}, order)
-    >>> np.all(new['a'] == [5, 6, 4])
-    True
-    >>> np.all(new['b'] == [8, 9, 7])
-    True
+    >>> assert np.all(new['a'] == [5, 6, 4])
+    >>> assert np.all(new['b'] == [8, 9, 7])
     >>> new = _order_list_of_arrays([[4, 5, 6], [7, 8, 9]], order)
-    >>> np.all(new[0] == [5, 6, 4])
-    True
-    >>> np.all(new[1] == [8, 9, 7])
-    True
-    >>> _order_list_of_arrays(2, order) is None
-    True
+    >>> assert np.all(new[0] == [5, 6, 4])
+    >>> assert np.all(new[1] == [8, 9, 7])
+    >>> assert _order_list_of_arrays(2, order) is None
     """
     if hasattr(data, "items"):
         data = dict((i[0], np.asarray(i[1])[order]) for i in data.items())
@@ -388,8 +381,7 @@ def optimal_bin_time(fftlen, tbin):
 
     Examples
     --------
-    >>> optimal_bin_time(512, 1.1)
-    1.0
+    >>> assert optimal_bin_time(512, 1.1) == 1.0
     """
     current_nbin = fftlen / tbin
     new_nbin = 2 ** np.ceil(np.log2(current_nbin))
@@ -401,8 +393,7 @@ def gti_len(gti):
 
     Examples
     --------
-    >>> gti_len([[0, 1], [2, 4]])
-    3
+    >>> assert gti_len([[0, 1], [2, 4]]) == 3
     """
     return np.sum(np.diff(gti, axis=1))
 
@@ -543,10 +534,8 @@ def check_negative_numbers_in_args(args):
     --------
     >>> args = ['events.nc', '-f', '103', '--fdot', '-2e-10']
     >>> newargs = check_negative_numbers_in_args(args)
-    >>> args[:4] == newargs[:4]
-    True
-    >>> newargs[4] == ' -2e-10'
-    True
+    >>> assert args[:4] == newargs[:4]
+    >>> assert newargs[4] == ' -2e-10'
     """
     if args is None:
         args = sys.argv[1:]
@@ -569,10 +558,8 @@ def interpret_bintime(bintime):
 
     Examples
     --------
-    >>> interpret_bintime(2)
-    2
-    >>> interpret_bintime(-2) == 0.25
-    True
+    >>> assert interpret_bintime(2) == 2
+    >>> assert interpret_bintime(-2) == 0.25
     >>> interpret_bintime(0)
     Traceback (most recent call last):
         ...
@@ -604,8 +591,7 @@ def get_bin_edges(a, bins):
     --------
     >>> array = np.array([0., 10.])
     >>> bins = 2
-    >>> np.allclose(get_bin_edges(array, bins), [0, 5, 10])
-    True
+    >>> assert np.allclose(get_bin_edges(array, bins), [0, 5, 10])
     """
     a_min = np.min(a)
     a_max = np.max(a)
@@ -619,12 +605,9 @@ def compute_bin(x, bin_edges):
     Examples
     --------
     >>> bin_edges = np.array([0, 5, 10])
-    >>> compute_bin(1, bin_edges)
-    0
-    >>> compute_bin(5, bin_edges)
-    1
-    >>> compute_bin(10, bin_edges)
-    1
+    >>> assert compute_bin(1, bin_edges) == 0
+    >>> assert compute_bin(5, bin_edges) == 1
+    >>> assert compute_bin(10, bin_edges) == 1
     """
 
     # assuming uniform bins for now
@@ -1023,8 +1006,7 @@ def touch(fname):
     Examples
     --------
     >>> touch('bububu')
-    >>> os.path.exists('bububu')
-    True
+    >>> assert os.path.exists('bububu')
     >>> os.unlink('bububu')
     """
     Path(fname).touch()
@@ -1059,18 +1041,15 @@ def adjust_dt_for_power_of_two(dt, length, strict=False):
     >>> new_dt = adjust_dt_for_power_of_two(dt, length)
     INFO: ...
     INFO: ...
-    >>> np.isclose(new_dt, 0.078125)
-    True
-    >>> length / new_dt == 128
-    True
+    >>> assert np.isclose(new_dt, 0.078125)
+    >>> assert length / new_dt == 128
     >>> length, dt = 6.5, 0.1
     >>> # There are 100 bins there. I want them to be 128.
     >>> new_dt = adjust_dt_for_power_of_two(dt, length)
     INFO: ...
     INFO: Too many ...
     INFO: ...
-    >>> length / new_dt == 72
-    True
+    >>> assert length / new_dt == 72
     """
     log.info("Adjusting bin time to closest power of 2 of bins.")
     nbin = length / dt
@@ -1091,10 +1070,8 @@ def adjust_dt_for_small_power(dt, length):
     >>> # There are 99 bins there. I want them to be 100 (2**2 * 5**2).
     >>> new_dt = adjust_dt_for_small_power(dt, length)
     INFO:...
-    >>> np.isclose(new_dt, 0.099)
-    True
-    >>> np.isclose(length / new_dt, 100)
-    True
+    >>> assert np.isclose(new_dt, 0.099)
+    >>> assert np.isclose(length / new_dt, 100)
     """
     nbin = length / dt
     losp = get_list_of_small_powers(2 * nbin)
@@ -1113,11 +1090,9 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=floa
     Examples
     --------
     >>> i0, i1, istep = 0, 10, 1e-2
-    >>> np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
-    True
+    >>> assert np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
     >>> i0, i1, istep = 0, 10, 1e-7
-    >>> np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
-    True
+    >>> assert np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
 
     """
     import tempfile
@@ -1143,14 +1118,10 @@ def nchars_in_int_value(value):
 
     Examples
     --------
-    >>> nchars_in_int_value(2)
-    1
-    >>> nchars_in_int_value(1356)
-    4
-    >>> nchars_in_int_value(9999)
-    4
-    >>> nchars_in_int_value(10000)
-    5
+    >>> assert nchars_in_int_value(2) == 1
+    >>> assert nchars_in_int_value(1356) == 4
+    >>> assert nchars_in_int_value(9999) == 4
+    >>> assert nchars_in_int_value(10000) == 5
     """
     #  "+1" because, e.g., 10000 would return 4
     return int(np.ceil(np.log10(value + 1)))
@@ -1183,11 +1154,9 @@ def find_peaks_in_image(image, n=5, rough=False, **kwargs):
     >>> image[7, 2] = 1
     >>> image[8, 1] = 3
     >>> idxs = find_peaks_in_image(image, n=2)
-    >>> np.allclose(idxs, [(8, 1), (5, 5)])
-    True
+    >>> assert np.allclose(idxs, [(8, 1), (5, 5)])
     >>> idxs = find_peaks_in_image(image, n=2, rough=True)
-    >>> np.allclose(idxs, [(8, 1), (5, 5)])
-    True
+    >>> assert np.allclose(idxs, [(8, 1), (5, 5)])
     """
     if not HAS_SKIMAGE or rough:
         best_cands = [
@@ -1209,14 +1178,11 @@ def force_iterable(val):
     Examples
     --------
     >>> val = 5.
-    >>> force_iterable(val)[0] == val
-    True
+    >>> assert force_iterable(val)[0] == val
     >>> val = None
-    >>> force_iterable(val) is None
-    True
+    >>> assert force_iterable(val) is None
     >>> val = np.array([5., 5])
-    >>> np.all(force_iterable(val) == val)
-    True
+    >>> assert np.all(force_iterable(val) == val)
     """
     if val is None:
         return val
@@ -1254,14 +1220,11 @@ def normalize_dyn_profile(dynprof, norm):
     --------
     >>> hist = [[1, 2], [2, 3], [3, 4]]
     >>> hnorm = normalize_dyn_profile(hist, "meansub")
-    >>> np.allclose(hnorm[0], [-0.5, 0.5])
-    True
+    >>> assert np.allclose(hnorm[0], [-0.5, 0.5])
     >>> hnorm = normalize_dyn_profile(hist, "meannorm")
-    >>> np.allclose(hnorm[0], [-1/3, 1/3])
-    True
+    >>> assert np.allclose(hnorm[0], [-1/3, 1/3])
     >>> hnorm = normalize_dyn_profile(hist, "ratios")
-    >>> np.allclose(hnorm[1], [1, 1])
-    True
+    >>> assert np.allclose(hnorm[1], [1, 1])
     """
     dynprof = np.array(dynprof, dtype=float)
 
