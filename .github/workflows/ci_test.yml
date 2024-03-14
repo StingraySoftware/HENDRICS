@@ -116,6 +116,11 @@ jobs:
             use_remote_data: true
             continue-on-error: true
           - os: ubuntu-latest
+            python: '3.12'
+            tox_env: 'py312-test-devpint'
+            use_remote_data: true
+            continue-on-error: true
+          - os: ubuntu-latest
             python: '3.8'
             tox_env: 'py38-test-oldestdeps-cov'
             use_remote_data: true
