@@ -183,33 +183,24 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, s
     >>> energy = np.array([0, 0, 30, 4, 1])
     >>> events = EventList(time=time, energy=energy)
     >>> ev_out, elabel = filter_energy(events, 3, None)
-    >>> np.all(ev_out.time == [2, 3])
-    True
-    >>> elabel == 'Energy'
-    True
+    >>> assert np.all(ev_out.time == [2, 3])
+    >>> assert elabel == 'Energy'
     >>> events = EventList(time=time, pi=energy)
     >>> with warnings.catch_warnings(record=True) as w:
     ...     ev_out, elabel = filter_energy(events, None, 20)  # doctest: +ELLIPSIS
-    >>> "No energy information in event list" in str(w[-1].message)
-    True
-    >>> np.all(ev_out.time == [0, 1, 3, 4])
-    True
-    >>> elabel == 'PI'
-    True
+    >>> assert "No energy information in event list" in str(w[-1].message)
+    >>> assert np.all(ev_out.time == [0, 1, 3, 4])
+    >>> assert elabel == 'PI'
     >>> events = EventList(time=time, pi=energy)
     >>> ev_out, elabel = filter_energy(events, None, None)  # doctest: +ELLIPSIS
-    >>> np.all(ev_out.time == time)
-    True
-    >>> elabel == 'PI'
-    True
+    >>> assert np.all(ev_out.time == time)
+    >>> assert elabel == 'PI'
     >>> events = EventList(time=time)
     >>> with redirect_stderr(sys.stdout):
     ...     ev_out, elabel = filter_energy(events, 3, None)  # doctest: +ELLIPSIS
     ERROR:...No Energy or PI...
-    >>> np.all(ev_out.time == time)
-    True
-    >>> elabel == ''
-    True
+    >>> assert np.all(ev_out.time == time)
+    >>> assert elabel == ''
     """
     times = ev.time
 

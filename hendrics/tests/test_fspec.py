@@ -4,6 +4,13 @@ import glob
 import subprocess as sp
 
 import numpy as np
+
+try:
+    from numpy import exceptions
+    from numpy.exceptions import ComplexWarning
+except ImportError:
+    from numpy import ComplexWarning
+
 import stingray
 from astropy import log
 import pytest
@@ -604,7 +611,8 @@ model = models.Const1D()
         )
 
         command = "{0} -m {1} --frequency-interval 0 10".format(pdsfile1, modelfile)
-        with pytest.warns(np.ComplexWarning):
+
+        with pytest.warns(ComplexWarning):
             hen.modeling.main_model(command.split())
 
         out0 = os.path.join(
