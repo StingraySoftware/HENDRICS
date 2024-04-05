@@ -901,7 +901,7 @@ def run_interactive_phaseogram(
                 unit="deg",
                 frame=header["RADECSYS"].lower(),
             )
-        except (KeyError, AttributeError):
+        except (KeyError, AttributeError, ValueError):
             position = None
 
         if "OBJECT" in header:
