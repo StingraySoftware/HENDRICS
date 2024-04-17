@@ -18,6 +18,9 @@ from hendrics.io import main as main_readfile
 from hendrics.fake import main
 import hendrics as hen
 from . import cleanup_test_dir
+from astropy.utils import minversion
+
+STINGRAY_LT_2_0 = not minversion(np, "2.0.0.dev")
 
 
 class TestMergeEvents:
@@ -263,9 +266,11 @@ class TestReadEvents:
         assert "gti" in data
         assert "mjdref" in data
         assert "pi" in data and data["pi"].size > 0
-        assert "detector_id" in data and set(data["detector_id"]) == {2, 4}
+        if not STINGRAY_LT_2_0:
+            assert "detector_id" in data and set(data["detector_id"]) == {2, 4}
 
-    def test_treat_event_file_xte_se(self):
+    @pytest.mark.skipif(STINGRAY_LT_2_0, reason="Stingray > 2.0.0 required")
+    def test_treat_event_file_xte_se_split(self):
         treat_event_file(self.fits_file_xte, split_by_detector=True)
         new_filename = "xte_test_xte_pca_det02_ev" + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir, new_filename))
