@@ -25,6 +25,7 @@ def treat_event_file(
     length_split=None,
     randomize_by=None,
     discard_calibration=False,
+    split_by_detector=True,
     additional_columns=None,
     fill_small_gaps=None,
 ):
@@ -49,6 +50,8 @@ def treat_event_file(
         length_split is not None)
     discard_calibration: bool
         discard the automatic calibration done by Stingray (if any)
+    split_by_detector: bool, default True
+        split data from different detectors
     fill_small_gaps: float
         fill gaps between GTIs with random data, if shorter than this amount
     """
@@ -83,7 +86,7 @@ def treat_event_file(
     if fill_small_gaps is not None:
         events = events.fill_bad_time_intervals(fill_small_gaps)
 
-    if detector_id is not None:
+    if detector_id is not None and split_by_detector:
         detectors = np.array(list(set(detector_id)))
     else:
         detectors = [None]
@@ -543,6 +546,12 @@ def main(args=None):
         action="store_true",
     )
     parser.add_argument(
+        "--ignore-detectors",
+        help="Do not split by detector",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "-l",
         "--length-split",
         help="Split event list by length",
@@ -599,6 +608,7 @@ def main(args=None):
             "discard_calibration": args.discard_calibration,
             "additional_columns": args.additional,
             "fill_small_gaps": args.fill_small_gaps,
+            "split_by_detector": not args.ignore_detectors,
         }
 
         arglist = [[f, argdict] for f in files]
