@@ -55,27 +55,20 @@ def treat_event_file(
     # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
 
-    try:
-        events = EventList.read(
-            filename,
-            fmt="hea",
-            gtistring=gtistring,
-            additional_columns=additional_columns,
-        )
-    except Exception:  # pragma: no cover
-        events = EventList.read(
-            filename,
-            format_="hea",
-            gtistring=gtistring,
-            additional_columns=additional_columns,
-        )
+    events = EventList.read(
+        filename,
+        fmt="hea",
+        gtistring=gtistring,
+        additional_columns=additional_columns,
+    )
 
     if discard_calibration:
         events.energy = None
         events.cal_pi = None
 
     mission = events.mission
-    instr = events.instr.lower()
+    if hasattr(events, "instr") and isinstance(events.instr, str):
+        instr = events.instr.lower()
     gti = events.gti
     lengths = np.array([g1 - g0 for (g0, g1) in gti])
     gti = gti[lengths >= min_length]
