@@ -202,6 +202,8 @@ class TestReadEvents:
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
+        cls.fits_file_xte = os.path.join(cls.datadir, "xte_test.evt.gz")
+        cls.fits_file_xte_gx = os.path.join(cls.datadir, "xte_gx_test.evt.gz")
         cls.fits_fileA = os.path.join(cls.datadir, "monol_testA.evt")
         cls.fits_fileB = os.path.join(cls.datadir, "monol_testB.evt")
         cls.fits_file = os.path.join(cls.datadir, "monol_test_fake.evt")
@@ -248,6 +250,37 @@ class TestReadEvents:
         assert os.path.exists(os.path.join(self.datadir, new_filename))
         data = load_data(os.path.join(self.datadir, new_filename))
         assert "instr" in data
+        assert "gti" in data
+        assert "mjdref" in data
+        assert "pi" in data and data["pi"].size > 0
+
+    def test_treat_event_file_xte_se(self):
+        treat_event_file(self.fits_file_xte, split_by_detector=False)
+        new_filename = "xte_test_xte_pca_ev" + HEN_FILE_EXTENSION
+        assert os.path.exists(os.path.join(self.datadir, new_filename))
+        data = load_data(os.path.join(self.datadir, new_filename))
+        assert "instr" in data and data["instr"].lower() == "pca"
+        assert "gti" in data
+        assert "mjdref" in data
+        assert "pi" in data and data["pi"].size > 0
+        assert "detector_id" in data and set(data["detector_id"]) == {2, 4}
+
+    def test_treat_event_file_xte_se(self):
+        treat_event_file(self.fits_file_xte, split_by_detector=True)
+        new_filename = "xte_test_xte_pca_det02_ev" + HEN_FILE_EXTENSION
+        assert os.path.exists(os.path.join(self.datadir, new_filename))
+        data = load_data(os.path.join(self.datadir, new_filename))
+        assert "instr" in data and data["instr"].lower() == "pca"
+        assert "gti" in data
+        assert "mjdref" in data
+        assert "pi" in data and data["pi"].size > 0
+
+    def test_treat_event_file_xte_gx(self):
+        treat_event_file(self.fits_file_xte_gx, split_by_detector=False)
+        new_filename = "xte_gx_test_xte_pca_ev" + HEN_FILE_EXTENSION
+        assert os.path.exists(os.path.join(self.datadir, new_filename))
+        data = load_data(os.path.join(self.datadir, new_filename))
+        assert "instr" in data and data["instr"].lower() == "pca"
         assert "gti" in data
         assert "mjdref" in data
         assert "pi" in data and data["pi"].size > 0
