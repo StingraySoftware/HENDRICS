@@ -79,7 +79,7 @@ def treat_event_file(
     if hasattr(events, "instr") and isinstance(events.instr, str):
         instr = events.instr.lower()
     gti = events.gti
-    if bin_time_for_occultations is not None:
+    if bin_time_for_occultations is not None and bin_time_for_occultations > 0:
         lc = events.to_lc(bin_time_for_occultations)
         meanrate = np.median(lc.counts)
 
@@ -594,7 +594,7 @@ def main(args=None):
             "Create a light curve with this bin time and infer occultations not recorded in GTIs."
             " (The flux drops to zero and the average count rate is significantly above 25 ct/s)"
         ),
-        default=0,
+        default=None,
     )
     parser.add_argument("--gti-string", type=str, help="GTI string", default=None)
     parser.add_argument(
