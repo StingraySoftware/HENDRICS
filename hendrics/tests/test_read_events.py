@@ -258,7 +258,9 @@ class TestReadEvents:
         assert "pi" in data and data["pi"].size > 0
 
     def test_treat_event_file_xte_se(self):
-        treat_event_file(self.fits_file_xte, split_by_detector=False)
+        treat_event_file(
+            self.fits_file_xte, split_by_detector=False, bin_time_for_occultations=1
+        )
         new_filename = "xte_test_xte_pca_ev" + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir, new_filename))
         data = load_data(os.path.join(self.datadir, new_filename))
@@ -281,7 +283,9 @@ class TestReadEvents:
         assert "pi" in data and data["pi"].size > 0
 
     def test_treat_event_file_xte_gx(self):
-        treat_event_file(self.fits_file_xte_gx, split_by_detector=False)
+        treat_event_file(
+            self.fits_file_xte_gx, split_by_detector=False, bin_time_for_occultations=1
+        )
         new_filename = "xte_gx_test_xte_pca_ev" + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir, new_filename))
         data = load_data(os.path.join(self.datadir, new_filename))
