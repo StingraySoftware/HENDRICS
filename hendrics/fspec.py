@@ -93,13 +93,21 @@ def average_periodograms(fspec_iterable, total=None):
 
 def _wrap_fun_cpds(arglist):
     f1, f2, outname, kwargs = arglist
-    return calc_cpds(f1, f2, outname=outname, **kwargs)
+    try:
+        return calc_cpds(f1, f2, outname=outname, **kwargs)
+    except Exception as e:
+        log.error(f"Error in {f1}/{f2}: {e}")
+        return None
 
 
 def _wrap_fun_pds(argdict):
     fname = argdict["fname"]
     argdict.pop("fname")
-    return calc_pds(fname, **argdict)
+    try:
+        return calc_pds(fname, **argdict)
+    except Exception as e:
+        log.error(f"Error in {fname}: {e}")
+        return None
 
 
 def sync_gtis(lc1, lc2):

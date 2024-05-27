@@ -9,6 +9,7 @@ from astropy import log
 from stingray.io import load_events_and_gtis
 from stingray.events import EventList
 from stingray.gti import cross_two_gtis, cross_gtis, check_separate
+from stingray.gti import create_gti_from_condition, create_gti_mask
 from .io import load_events
 from .base import common_name
 from .base import hen_root
@@ -25,8 +26,10 @@ def treat_event_file(
     length_split=None,
     randomize_by=None,
     discard_calibration=False,
+    split_by_detector=True,
     additional_columns=None,
     fill_small_gaps=None,
+    bin_time_for_occultations=None,
 ):
     """Read data from an event file, with no external GTI information.
 
@@ -49,8 +52,14 @@ def treat_event_file(
         length_split is not None)
     discard_calibration: bool
         discard the automatic calibration done by Stingray (if any)
+    split_by_detector: bool, default True
+        split data from different detectors
     fill_small_gaps: float
         fill gaps between GTIs with random data, if shorter than this amount
+    bin_time_for_occultations: float
+        Create a light curve with this bin time and infer occultations not
+        recorded in GTIs. The rule is that the flux drops to zero and the average
+        counts per bin are significantly above 25 ct/s.
     """
     # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info("Opening %s" % filename)
@@ -70,6 +79,23 @@ def treat_event_file(
     if hasattr(events, "instr") and isinstance(events.instr, str):
         instr = events.instr.lower()
     gti = events.gti
+    if bin_time_for_occultations is not None and bin_time_for_occultations > 0:
+        lc = events.to_lc(bin_time_for_occultations)
+        meanrate = np.median(lc.counts)
+
+        if meanrate > 25:
+            good_gti = create_gti_mask(lc.time, lc.gti)
+            good = lc.counts > 0
+            new_bad = (~good) & good_gti
+            if np.any(new_bad):
+                warnings.warn(
+                    f"Found zero counts in the light curve at times{lc.time[new_bad]}"
+                )
+                gti = create_gti_from_condition(
+                    lc.time, (good_gti & good), safe_interval=bin_time_for_occultations
+                )
+                events.gti = gti
+
     lengths = np.array([g1 - g0 for (g0, g1) in gti])
     gti = gti[lengths >= min_length]
     events.gti = gti
@@ -83,7 +109,7 @@ def treat_event_file(
     if fill_small_gaps is not None:
         events = events.fill_bad_time_intervals(fill_small_gaps)
 
-    if detector_id is not None:
+    if detector_id is not None and split_by_detector:
         detectors = np.array(list(set(detector_id)))
     else:
         detectors = [None]
@@ -543,6 +569,12 @@ def main(args=None):
         action="store_true",
     )
     parser.add_argument(
+        "--ignore-detectors",
+        help="Do not split by detector",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "-l",
         "--length-split",
         help="Split event list by length",
@@ -554,6 +586,15 @@ def main(args=None):
         type=int,
         help="Minimum length of GTIs to consider",
         default=0,
+    )
+    parser.add_argument(
+        "--bin-time-for-occultations",
+        type=float,
+        help=(
+            "Create a light curve with this bin time and infer occultations not recorded in GTIs."
+            " (The flux drops to zero and the average count rate is significantly above 25 ct/s)"
+        ),
+        default=None,
     )
     parser.add_argument("--gti-string", type=str, help="GTI string", default=None)
     parser.add_argument(
@@ -599,6 +640,8 @@ def main(args=None):
             "discard_calibration": args.discard_calibration,
             "additional_columns": args.additional,
             "fill_small_gaps": args.fill_small_gaps,
+            "split_by_detector": not args.ignore_detectors,
+            "bin_time_for_occultations": args.bin_time_for_occultations,
         }
 
         arglist = [[f, argdict] for f in files]

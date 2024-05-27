@@ -791,10 +791,20 @@ def plot_lc(
         lc = lcdata.counts
         gti = lcdata.gti
         instr = lcdata.instr
+        if not hasattr(lcdata, "mjdref") or lcdata.mjdref is None:
+            lcdata.mjdref = 0
+
+        mjd = lcdata.mjdref + np.mean(lcdata.time) / 86400
+        mjd = np.round(mjd, 2)
 
         if fromstart:
-            time -= lcdata.gti[0, 0]
-            gti -= lcdata.gti[0, 0]
+            tref = lcdata.gti[0, 0]
+            mjd = lcdata.gti[0, 0] / 86400 + lcdata.mjdref
+        else:
+            tref = (mjd - lcdata.mjdref) * 86400
+
+        time -= tref
+        gti -= tref
 
         if instr == "PCA":
             # If RXTE, plot per PCU count rate
@@ -819,7 +829,8 @@ def plot_lc(
                 outqdpdata.append(lcdata.base[good])
             save_as_qdp(outqdpdata, filename=output_data_file, mode="a")
 
-    plt.xlabel("Time (s)")
+    plt.xlabel(f"Time (s from MJD {mjd}, MET {tref})")
+    print(f"Time (s from MJD {mjd}, MET {tref})")
     if instr == "PCA":
         plt.ylabel("light curve (Ct/bin/PCU)")
     else:
