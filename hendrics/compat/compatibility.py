@@ -9,19 +9,19 @@ try:
     from numba import types
     from numba.extending import overload_method
 
-    @overload_method(types.Array, "take")  # pragma: no cover
-    def array_take(arr, indices):
-        """Adapt np.take to arrays"""
-        if isinstance(indices, types.Array):
+    # @overload_method(types.Array, "take")  # pragma: no cover
+    # def array_take(arr, indices):
+    #     """Adapt np.take to arrays"""
+    #     if isinstance(indices, types.Array):
 
-            def take_impl(arr, indices):
-                n = indices.shape[0]
-                res = np.empty(n, arr.dtype)
-                for i in range(n):
-                    res[i] = arr[indices[i]]
-                return res
+    #         def take_impl(arr, indices):
+    #             n = indices.shape[0]
+    #             res = np.empty(n, arr.dtype)
+    #             for i in range(n):
+    #                 res[i] = arr[indices[i]]
+    #             return res
 
-            return take_impl
+    #         return take_impl
 
     HAS_NUMBA = True
 except ImportError:
@@ -57,6 +57,7 @@ except ImportError:
 
     float32 = float64 = int32 = int64 = lambda x, y: None
 
-    def array_take(arr, indices):
-        """Adapt np.take to arrays"""
-        return np.take(arr, indices)
+
+def array_take(arr, indices):
+    """Adapt np.take to arrays"""
+    return np.take(arr, indices)
