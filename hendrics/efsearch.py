@@ -9,7 +9,7 @@ import copy
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from astropy import log
-from astropy.table import Table
+from astropy.table import Table, vstack
 from astropy.logger import AstropyUserWarning
 from .io import get_file_type
 from stingray.pulse.search import (
