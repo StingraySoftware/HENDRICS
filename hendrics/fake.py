@@ -719,7 +719,9 @@ def main(args=None):
                 tstop = assign_value_if_none(args.tstop, 1024)
                 dt = (tstop - tstart) / 1024
                 t = np.arange(tstart, tstop + 1, dt)
-                lc = Lightcurve(time=t, counts=args.ctrate + np.zeros_like(t), dt=dt)
+                lc = Lightcurve(
+                    time=t, counts=args.ctrate * dt + np.zeros_like(t), dt=dt
+                )
             event_list.simulate_times(lc)
             nevents = len(event_list.time)
             event_list.pi = np.zeros(nevents, dtype=int)

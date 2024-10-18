@@ -495,9 +495,12 @@ def get_file_type(fname, raw_data=False):
         if raw_data:
             contents = dict([(col, contents_raw[col]) for col in contents_raw.colnames])
             contents.update(contents_raw.meta)
-    else:
+    elif "__sr__class__type__" in contents_raw:
         ftype_raw = contents_raw["__sr__class__type__"]
         contents = contents_raw
+    else:
+        ftype_raw = type(contents_raw).__name__
+        return ftype_raw, contents_raw
 
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
