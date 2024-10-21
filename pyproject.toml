@@ -261,7 +261,11 @@ lint.select = ["ALL"]
 line-length = 100
 exclude=[
     "notebooks/*.ipynb",
-    "*.svg"
+    "*.svg",
+    "docs/conf.py",
+    "_astropy_init.py",
+    "__init__.py",
+    "compatibility.py",
 ]
 lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml` instead.
 
@@ -307,6 +311,8 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
 
     # pandas-vet (PD)
     "PD",
+
+    "PGH004", # noqa
 
     # pylint (PLR and PLW)
     "PLR1730", # if-stmt-min-max (not always clearer, and sometimes slower)
@@ -396,6 +402,8 @@ skip = """
 ignore-words-list = """
     aas,
     ans,
+    bu,
+    bubu,
     clen,
     coo,
     datas,
