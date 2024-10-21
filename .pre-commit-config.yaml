@@ -8,7 +8,7 @@ repos:
     hooks:
       - id: check-added-large-files
         args: ["--enforce-all", "--maxkb=300"]
-        exclude:
+        # exclude:
         # Prevent giant files from being committed.
       - id: check-case-conflict
         # Check for files with names that would conflict on a case-insensitive

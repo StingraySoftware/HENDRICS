@@ -216,8 +216,6 @@ filterwarnings = [
       name = "Internal Changes"
       showcontent = true
 
-[tool.black]
-line-length = 100
 
 [tool.coverage]
 
@@ -258,21 +256,13 @@ line-length = 100
             "def _ipython_key_completions_",
         ]
 
-[tool.flake8]
-max-line-length = 100
-exclude = ".git,__pycache__,docs/source/conf.py,old,build,dist,*.egg-info"
-extend-ignore = "E203, W503, W605"
-
-[tool.pycodestyle]
-max-line-length = 100
-exclude = ".git,__pycache__,docs/source/conf.py,old,build,dist,*.egg-info"
-
 [tool.ruff]
 lint.select = ["ALL"]
 exclude=[
     "astropy/extern/*",
     "*_parsetab.py",
-    "*_lextab.py"
+    "*_lextab.py",
+    "*.svg"
 ]
 lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml` instead.
 
@@ -385,3 +375,46 @@ known-first-party = ["astropy", "extension_helpers"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.codespell]
+skip = """
+    *.cff,
+    */data/*,
+    *extern/*,
+    hendrics/CITATION,
+    docs/credits.rst,
+    *_lextab.py,
+    *_parsetab.py,
+"""
+# The following list of words for codespell to ignore may contain some
+# misspellings that should be revisited and fixed in the future.
+ignore-words-list = """
+    aas,
+    ans,
+    clen,
+    coo,
+    datas,
+    ded,
+    dum,
+    fo,
+    hel,
+    lightyear,
+    livetime,
+    lond,
+    nax,
+    nd,
+    ned,
+    nin,
+    numer,
+    observe.length,
+    precess,
+    precessed,
+    precesses,
+    precessing,
+    pres,
+    som,
+    splitted,
+    stil,
+    te,
+    wirth,
+"""
