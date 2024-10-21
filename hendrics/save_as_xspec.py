@@ -50,9 +50,7 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
             np.transpose([flo, fhi, lags * contents.df, lags_err * contents.df]),
         )
         if direct_save:
-            sp.check_call(
-                "flx2xsp {0} {1}.pha {1}.rsp".format(outname_lags, outroot_lags).split()
-            )
+            sp.check_call("flx2xsp {0} {1}.pha {1}.rsp".format(outname_lags, outroot_lags).split())
 
 
 def main(args=None):

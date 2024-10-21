@@ -12,9 +12,7 @@ def main_model(args=None):
     import argparse
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = (
-        "Fit frequency spectra (PDS, CPDS, cospectrum) " "with user-defined models"
-    )
+    description = "Fit frequency spectra (PDS, CPDS, cospectrum) " "with user-defined models"
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs="+")

@@ -67,9 +67,7 @@ def _fill_in_default_information(tbheader):
         False,
         "TRUE if timestamps corrected by gnd sware",
     )
-    tbheader["COMMENT"] = (
-        "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
-    )
+    tbheader["COMMENT"] = "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
     tbheader["TIMEUNIT"] = ("s", "unit for time keywords")
     return tbheader
 
@@ -135,9 +133,7 @@ def generate_fake_fits_observation(
             inheader = _clean_up_header(inheader)
 
         ev_list = event_list.time
-        gti = assign_value_if_none(
-            event_list.gti, np.asarray([[ev_list[0], ev_list[-1]]])
-        )
+        gti = assign_value_if_none(event_list.gti, np.asarray([[ev_list[0], ev_list[-1]]]))
         mission = assign_value_if_none(mission, event_list.mission)
         instr = assign_value_if_none(instr, event_list.instr)
         tstart = assign_value_if_none(tstart, gti[0, 0])
@@ -309,9 +305,7 @@ def _read_light_curve(filename):
     return lc
 
 
-def acceptance_rejection(
-    dt, counts_per_bin, t0=0.0, poissonize_n_events=False, deadtime=0.0
-):
+def acceptance_rejection(dt, counts_per_bin, t0=0.0, poissonize_n_events=False, deadtime=0.0):
     """
     Examples
     --------
@@ -527,8 +521,7 @@ def main_scramble(args=None):
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
-        "Scramble the events inside an event list, maintaining the same "
-        "energies and GTIs"
+        "Scramble the events inside an event list, maintaining the same " "energies and GTIs"
     )
     parser = argparse.ArgumentParser(description=description)
 
@@ -589,9 +582,7 @@ def main_scramble(args=None):
         emin, emax = args.energy_interval
         event_list, elabel = filter_energy(event_list, emin, emax)
         if elabel != "Energy":
-            raise ValueError(
-                "You are filtering by energy but the data are not calibrated"
-            )
+            raise ValueError("You are filtering by energy but the data are not calibrated")
 
     new_event_list = scramble(
         event_list,
@@ -617,9 +608,7 @@ def main_scramble(args=None):
         if args.energy_interval is not None:
             label += f"_{emin:g}-{emax:g}keV"
 
-        outfile = args.fname.replace(
-            HEN_FILE_EXTENSION, f"{label}" + HEN_FILE_EXTENSION
-        )
+        outfile = args.fname.replace(HEN_FILE_EXTENSION, f"{label}" + HEN_FILE_EXTENSION)
     save_events(new_event_list, outfile)
     return outfile
 
@@ -664,9 +653,7 @@ def main(args=None):
         default="events.evt",
         help="Output file name",
     )
-    parser.add_argument(
-        "-i", "--instrument", type=str, default=None, help="Instrument name"
-    )
+    parser.add_argument("-i", "--instrument", type=str, default=None, help="Instrument name")
     parser.add_argument("-m", "--mission", type=str, default=None, help="Mission name")
     parser.add_argument(
         "--tstart",
@@ -719,9 +706,7 @@ def main(args=None):
                 tstop = assign_value_if_none(args.tstop, 1024)
                 dt = (tstop - tstart) / 1024
                 t = np.arange(tstart, tstop + 1, dt)
-                lc = Lightcurve(
-                    time=t, counts=args.ctrate * dt + np.zeros_like(t), dt=dt
-                )
+                lc = Lightcurve(time=t, counts=args.ctrate * dt + np.zeros_like(t), dt=dt)
             event_list.simulate_times(lc)
             nevents = len(event_list.time)
             event_list.pi = np.zeros(nevents, dtype=int)

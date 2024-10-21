@@ -63,17 +63,11 @@ class TestFullRun(object):
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
         cls.par = _dummy_par("bubububu.par")
 
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
-        cls.ev_fileB = os.path.join(
-            cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
+        cls.ev_fileB = os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION)
         cls.ev_fileAcal = os.path.join(
             cls.datadir,
             "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
@@ -90,12 +84,8 @@ class TestFullRun(object):
         hen.read_events.main(command.split())
 
         command = "{} {} -r {}".format(
-            os.path.join(
-                cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-            ),
-            os.path.join(
-                cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-            ),
+            os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
+            os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "test.rmf"),
         )
         hen.calibrate.main(command.split())
@@ -150,9 +140,7 @@ class TestFullRun(object):
     def test_plot_hid(self):
         """Test plotting with linear axes."""
         # also produce a light curve with the same binning
-        command = ("{0} -b 100 --energy-interval {1} {2}").format(
-            self.ev_fileAcal, 3, 10
-        )
+        command = ("{0} -b 100 --energy-interval {1} {2}").format(self.ev_fileAcal, 3, 10)
         hen.lcurve.main(command.split())
 
         lname = self.lc3_10

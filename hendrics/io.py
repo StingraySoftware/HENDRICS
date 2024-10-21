@@ -129,9 +129,7 @@ class EFPeriodogram(object):
                 n_summed_spectra=int(self.M),
             )
         else:
-            threshold = fold_detection_level(
-                nbin=int(self.nbin), epsilon=epsilon, ntrial=ntrial
-            )
+            threshold = fold_detection_level(nbin=int(self.nbin), epsilon=epsilon, ntrial=ntrial)
 
         if len(self.stat.shape) == 1:
             best_peaks, best_stat = search_best_peaks(self.freq, self.stat, threshold)
@@ -208,10 +206,7 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, s
     # For some reason the doctest doesn't work if I don't do this instead
     # of using warnings.warn
     if elabel == "":
-        log.error(
-            "No Energy or PI information available. "
-            "No energy filter applied to events"
-        )
+        log.error("No Energy or PI information available. " "No energy filter applied to events")
         return ev, ""
 
     if emax is None and emin is None:
@@ -505,9 +500,7 @@ def get_file_type(fname, raw_data=False):
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
         fun = load_lcurve
-    elif ("Powercolor" in ftype_raw) or (
-        "StingrayTimeseries" in ftype_raw and "hue" in contents
-    ):
+    elif ("Powercolor" in ftype_raw) or ("StingrayTimeseries" in ftype_raw and "hue" in contents):
         ftype = "powercolor"
         fun = load_timeseries
     elif "StingrayTimeseries" in ftype_raw or "Color" in ftype_raw:
@@ -714,9 +707,7 @@ def load_folding(fname):
 
 
 # ---- Functions to save PDSs
-def save_pds(
-    cpds, fname, save_all=False, save_dyn=False, no_auxil=False, save_lcs=False
-):
+def save_pds(cpds, fname, save_all=False, save_dyn=False, no_auxil=False, save_lcs=False):
     """Save PDS in a file."""
     from .base import mkdir_p
 
@@ -763,9 +754,7 @@ def save_pds(
             lc = getattr(cpds, lcattr)
             if isinstance(lc, Iterable):
                 if len(lc) > 1:
-                    warnings.warn(
-                        "Saving multiple light curves is not supported. Saving only one"
-                    )
+                    warnings.warn("Saving multiple light curves is not supported. Saving only one")
                 lc = lc[0]
             if isinstance(lc, Lightcurve):
                 save_lcurve(lc, lc_name)
@@ -826,9 +815,7 @@ def save_pds(
 def remove_pds(fname):
     """Remove the pds file and the directory with auxiliary information."""
     outdir, _ = splitext_improved(fname)
-    modelfiles = glob.glob(
-        os.path.join(outdir, fname.replace(HEN_FILE_EXTENSION, "__mod*__.p"))
-    )
+    modelfiles = glob.glob(os.path.join(outdir, fname.replace(HEN_FILE_EXTENSION, "__mod*__.p")))
     for mfile in modelfiles:
         os.unlink(mfile)
     if os.path.exists(outdir):
@@ -1046,9 +1033,7 @@ def _save_data_nc(struct, fname, kind="data"):
             # If a (long)double, split it in integer + floating part.
             # If the number is below zero, also use a logarithm of 10 before
             # that, so that we don't lose precision
-            var_I, var_F, var_log10, kind_str = _split_high_precision_number(
-                k, var, probesize
-            )
+            var_I, var_F, var_log10, kind_str = _split_high_precision_number(k, var, probesize)
             values.extend([var_I, var_log10, var_F, kind_str])
             formats.extend(["i8", "i8", "f8", str])
             varnames.extend([k + "_I", k + "_L", k + "_F", k + "_k"])
@@ -1339,9 +1324,7 @@ def save_model(model, fname="model.p", constraints=None):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError(
-                "Accepted callable models have only one " "non-keyword argument"
-            )
+            raise TypeError("Accepted callable models have only one " "non-keyword argument")
         modeldata["kind"] = "callable"
         modeldata["constraints"] = constraints
     else:
@@ -1397,9 +1380,7 @@ def load_model(modelstring):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError(
-                "Accepted callable models have only one " "non-keyword argument"
-            )
+            raise TypeError("Accepted callable models have only one " "non-keyword argument")
         return model, "callable", constraints
 
 

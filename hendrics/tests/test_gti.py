@@ -37,17 +37,11 @@ class TestFullRun(object):
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
         cls.par = _dummy_par("bubububu.par")
 
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
-        cls.ev_fileB = os.path.join(
-            cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
+        cls.ev_fileB = os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION)
         cls.ev_fileAcal = os.path.join(
             cls.datadir,
             "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
@@ -66,12 +60,8 @@ class TestFullRun(object):
             cls.ev_fileA, cls.ev_fileB, os.path.join(cls.datadir, "test.rmf")
         )
         hen.calibrate.main(command.split())
-        cls.lcA = os.path.join(
-            os.path.join(cls.datadir, "monol_testA_lc" + HEN_FILE_EXTENSION)
-        )
-        cls.lcB = os.path.join(
-            os.path.join(cls.datadir, "monol_testB_lc" + HEN_FILE_EXTENSION)
-        )
+        cls.lcA = os.path.join(os.path.join(cls.datadir, "monol_testA_lc" + HEN_FILE_EXTENSION))
+        cls.lcB = os.path.join(os.path.join(cls.datadir, "monol_testB_lc" + HEN_FILE_EXTENSION))
         command = ("{}  --nproc 2 -b 2 " "-o {}").format(cls.ev_fileAcal, cls.lcA)
         hen.lcurve.main(command.split())
         command = ("{}  --nproc 2 -b 2 " "-o {}").format(cls.ev_fileBcal, cls.lcB)
@@ -79,10 +69,7 @@ class TestFullRun(object):
 
         command = "{0} -f time>0 -c --debug".format(cls.ev_fileA)
         hen.create_gti.main(command.split())
-        cls.gtifile = (
-            os.path.join(cls.datadir, "monol_testA_nustar_fpma_gti")
-            + HEN_FILE_EXTENSION
-        )
+        cls.gtifile = os.path.join(cls.datadir, "monol_testA_nustar_fpma_gti") + HEN_FILE_EXTENSION
 
     def test_create_gti(self):
         """Test creating a GTI file."""
@@ -92,9 +79,7 @@ class TestFullRun(object):
         """Test applying a GTI file."""
         fname = self.gtifile
         lcfname = self.ev_fileA
-        lcoutname = self.ev_fileA.replace(
-            HEN_FILE_EXTENSION, "_gtifilt" + HEN_FILE_EXTENSION
-        )
+        lcoutname = self.ev_fileA.replace(HEN_FILE_EXTENSION, "_gtifilt" + HEN_FILE_EXTENSION)
         command = "{0} -a {1} --debug".format(lcfname, fname)
         hen.create_gti.main(command.split())
         hen.io.load_events(lcoutname)

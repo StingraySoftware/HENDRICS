@@ -35,12 +35,7 @@ def get_header_info(obj):
         dec = header["DEC_PNT"]
 
     a = SkyCoord(ra, dec, unit="degree")
-    info.raj = (
-        (a.ra.to_string("hourangle"))
-        .replace("s", "")
-        .replace("h", ":")
-        .replace("m", ":")
-    )
+    info.raj = (a.ra.to_string("hourangle")).replace("s", "").replace("h", ":").replace("m", ":")
     info.decj = (a.dec.to_string()).replace("s", "").replace("d", ":").replace("m", ":")
     if hasattr(obj, "e_interval"):
         e0, e1 = obj.e_interval
@@ -92,9 +87,7 @@ def save_lc_to_binary(lc, filename):
     return lcinfo
 
 
-def save_events_to_binary(
-    events, filename, bin_time, tstart=None, emin=None, emax=None
-):
+def save_events_to_binary(events, filename, bin_time, tstart=None, emin=None, emax=None):
     """Save an event list to binary format.
 
     Parameters
@@ -127,9 +120,7 @@ def save_events_to_binary(
 
     if emin is not None and emax is not None:
         if not hasattr(events, "energy") or events.energy is None:
-            raise ValueError(
-                "Energy filtering requested for uncalibrated event " "list"
-            )
+            raise ValueError("Energy filtering requested for uncalibrated event " "list")
 
         good = (events.energy >= emin) & (events.energy < emax)
         events = events.apply_mask(good)
@@ -182,8 +173,7 @@ def save_inf(lcinfo, info, filename):
 
     with open(filename, "w") as f:
         print(
-            " Data file name without suffix         "
-            " =  {}".format(filename.replace(".inf", "")),
+            " Data file name without suffix         " " =  {}".format(filename.replace(".inf", "")),
             file=f,
         )
         print(
@@ -220,8 +210,7 @@ def save_inf(lcinfo, info, filename):
             file=f,
         )
         print(
-            " Width of each time series bin (sec)   "
-            " =  {bintime}".format(bintime=lcinfo.dt),
+            " Width of each time series bin (sec)   " " =  {bintime}".format(bintime=lcinfo.dt),
             file=f,
         )
         print(" Any breaks in the data? (1 yes, 0 no) " " =  1", file=f)
@@ -229,9 +218,7 @@ def save_inf(lcinfo, info, filename):
             print(
                 " On/Off bin pair # {ngti:>2}                  "
                 " =  {binstart:<11}, "
-                "{binstop:<11}".format(
-                    ngti=i + 1, binstart=st, binstop=bin_intervals_stop[i]
-                ),
+                "{binstop:<11}".format(ngti=i + 1, binstart=st, binstop=bin_intervals_stop[i]),
                 file=f,
             )
         print(" Type of observation (EM band)         " " =  X-ray", file=f)
@@ -250,9 +237,7 @@ def save_inf(lcinfo, info, filename):
         )
         print(" Any additional notes:", file=f)
         print(
-            "       T = {length}, Nphot={nphot}".format(
-                length=lcinfo.tseg, nphot=lcinfo.nphot
-            ),
+            "       T = {length}, Nphot={nphot}".format(length=lcinfo.tseg, nphot=lcinfo.nphot),
             file=f,
         )
 

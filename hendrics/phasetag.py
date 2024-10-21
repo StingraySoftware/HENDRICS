@@ -101,9 +101,7 @@ def phase_tag(
     f = frequency_derivatives[0]
 
     phase = pulse_phase(times, *frequency_derivatives, to_1=False)
-    gti_phases = pulse_phase(
-        (gti_mjd - pepoch) * 86400, *frequency_derivatives, to_1=False
-    )
+    gti_phases = pulse_phase((gti_mjd - pepoch) * 86400, *frequency_derivatives, to_1=False)
 
     # ------- now apply period derivatives ------
 
@@ -118,15 +116,11 @@ def phase_tag(
         phase_to1 = phase - np.floor(phase)
 
         raw_profile, bins = np.histogram(phase_to1, bins=np.linspace(0, 1, nbin + 1))
-        exposure = phase_exposure(
-            gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gti=gti_phases
-        )
+        exposure = phase_exposure(gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gti=gti_phases)
         profile = raw_profile / exposure
         profile_err = np.sqrt(raw_profile) / exposure
 
-        sinpars, bu, bu = fit_profile(
-            profile, profile_err, nperiods=2, baseline=True, debug=test
-        )
+        sinpars, bu, bu = fit_profile(profile, profile_err, nperiods=2, baseline=True, debug=test)
         fine_phases = np.linspace(0, 2, 1000 * 2)
         fitted_profile = std_fold_fit_func(sinpars, fine_phases)
         maxp = np.argmax(fitted_profile)
@@ -143,9 +137,7 @@ def phase_tag(
 
     raw_profile, bins = np.histogram(phase_to1, bins=np.linspace(0, 1, nbin + 1))
 
-    exposure = phase_exposure(
-        gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gti=gti_phases
-    )
+    exposure = phase_exposure(gti_phases[0, 0], gti_phases[-1, 1], 1, nbin=nbin, gti=gti_phases)
     if np.any(np.logical_or(exposure != exposure, exposure == 0)):
         warnings.warn(
             "Exposure has NaNs or zeros. Profile is not normalized",
@@ -197,7 +189,7 @@ def phase_tag_fits(
     gti_file=None,
     hduname="EVENTS",
     column="TIME",
-    **kwargs
+    **kwargs,
 ):
     """Phase-tag events in a FITS file with a given ephemeris.
 
@@ -245,11 +237,7 @@ def phase_tag_fits(
     mjdref = ref_mjd(filename)
 
     results = phase_tag(
-        evreturns.ev_list,
-        parameter_info,
-        gti=evreturns.gti_list,
-        mjdref=mjdref,
-        **kwargs
+        evreturns.ev_list, parameter_info, gti=evreturns.gti_list, mjdref=mjdref, **kwargs
     )
     if results.figure is not None:
         results.figure.savefig(hen_root(filename) + ".pdf")
@@ -289,9 +277,7 @@ def phase_tag_fits(
 
     if create:
         # then, create new column with orbital demodulation
-        newcol = pf.Column(
-            name="Orbit_bary", format="1D", unit="s", array=results.ev_list
-        )
+        newcol = pf.Column(name="Orbit_bary", format="1D", unit="s", array=results.ev_list)
 
         # append it to new table
         newlist.append(newcol)
@@ -318,9 +304,7 @@ def phase_tag_fits(
     newrec = pf.FITS_rec.from_columns(coldefs)
 
     # and new hdu
-    newtbhdu = pf.BinTableHDU(
-        data=newrec, header=tbhdu.header.copy(), name=hduname, uint=False
-    )
+    newtbhdu = pf.BinTableHDU(data=newrec, header=tbhdu.header.copy(), name=hduname, uint=False)
 
     # Copy primary HDU from old file
     prihdu = hdulist[0].copy()

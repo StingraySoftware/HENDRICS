@@ -176,9 +176,7 @@ def _provide_periodograms(events, fftlen, dt, norm):
     for new_ev in _distribute_events(events, fftlen):
         # Hack: epsilon slightly below zero, to allow for a GTI to be recognized as such
         new_ev.gti[:, 1] += dt / 10
-        pds = AveragedPowerspectrum(
-            new_ev, dt=dt, segment_size=fftlen, norm=norm, silent=True
-        )
+        pds = AveragedPowerspectrum(new_ev, dt=dt, segment_size=fftlen, norm=norm, silent=True)
         pds.fftlen = fftlen
         yield pds
 
@@ -413,9 +411,7 @@ def calc_cpds(
             "series (e.g. both events or both light curves)"
         )
 
-    if (emin is not None or emax is not None) and (
-        ftype1 != "events" or ftype2 != "events"
-    ):
+    if (emin is not None or emax is not None) and (ftype1 != "events" or ftype2 != "events"):
         warnings.warn("Energy selection only makes sense for event lists")
     if ftype1 == "events":
         lc1, _ = filter_energy(lc1, emin, emax)
@@ -697,9 +693,7 @@ def dumpdyn_main(args=None):
         help=("List of files in any valid HENDRICS " "format for PDS or CPDS"),
         nargs="+",
     )
-    parser.add_argument(
-        "--noplot", help="plot results", default=False, action="store_true"
-    )
+    parser.add_argument("--noplot", help="plot results", default=False, action="store_true")
 
     args = parser.parse_args(args)
 
@@ -758,9 +752,7 @@ def main(args=None):
         "--norm",
         type=str,
         default="leahy",
-        help="Normalization to use"
-        + " (Accepted: leahy and rms;"
-        + ' Default: "leahy")',
+        help="Normalization to use" + " (Accepted: leahy and rms;" + ' Default: "leahy")',
     )
     parser.add_argument(
         "--noclobber",

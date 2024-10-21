@@ -34,39 +34,29 @@ class TestBinary(object):
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
         cls.par = _dummy_par("bubububu.par")
 
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
-        cls.ev_fileB = os.path.join(
-            cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
+        cls.ev_fileB = os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION)
         cls.ev_fileAcal = os.path.join(
             cls.datadir,
             "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
         )
         cls.par = _dummy_par("bubububu.par")
-        command = "{0} --discard-calibration".format(
-            os.path.join(cls.datadir, "monol_testA.evt")
-        )
+        command = "{0} --discard-calibration".format(os.path.join(cls.datadir, "monol_testA.evt"))
         hen.read_events.main(command.split())
         command = "{} -r {}".format(
-            os.path.join(
-                cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-            ),
+            os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "test.rmf"),
         )
         hen.calibrate.main(command.split())
         cls.lcA = os.path.join(
             os.path.join(cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )
-        command = (
-            "{} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " "-o {}"
-        ).format(cls.ev_fileAcal, cls.lcA)
+        command = ("{} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " "-o {}").format(
+            cls.ev_fileAcal, cls.lcA
+        )
         hen.lcurve.main(command.split())
 
     def test_save_binary_events(self):

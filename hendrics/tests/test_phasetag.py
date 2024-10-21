@@ -120,9 +120,7 @@ class TestPhasetag:
             )
 
     def test_phase_tag_parfile(self):
-        with pytest.raises(
-            NotImplementedError, match="This part is not yet implemented"
-        ):
+        with pytest.raises(NotImplementedError, match="This part is not yet implemented"):
             main_phasetag([self.fits_fileA, "--parfile", "bubu.par", "--test"])
 
     @classmethod

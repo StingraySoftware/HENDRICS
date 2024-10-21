@@ -304,9 +304,7 @@ def ffa_step(array, step, ntables):
             array_reshaped_dum[prof_n, :] = sum_arrays(array[start, :], rolled[:])
 
         else:
-            array_reshaped_dum[prof_n, :] = sum_arrays(
-                array[start, :], array[jumpstart, :]
-            )
+            array_reshaped_dum[prof_n, :] = sum_arrays(array[start, :], array[jumpstart, :])
 
     return array_reshaped_dum
 
@@ -330,9 +328,7 @@ def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
 
     stats = np.zeros(ntables)
     for i in range(array_reshaped.shape[0]):
-        stats[i] = _z_n_fast_cached(
-            array_reshaped[i, :], cached_cos, cached_sin, n=z_n_n
-        )
+        stats[i] = _z_n_fast_cached(array_reshaped[i, :], cached_cos, cached_sin, n=z_n_n)
 
     return periods, stats
 
@@ -362,9 +358,7 @@ def _quick_rebin(counts, current_rebin):
     >>> assert np.allclose(reb, [3, 7, 11, 15, 19])
     """
     n = int(counts.size // current_rebin)
-    rebinned_counts = np.sum(
-        counts[: n * current_rebin].reshape(n, current_rebin), axis=1
-    )
+    rebinned_counts = np.sum(counts[: n * current_rebin].reshape(n, current_rebin), axis=1)
     return rebinned_counts
 
 

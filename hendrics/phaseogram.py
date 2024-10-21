@@ -201,12 +201,8 @@ class BasePhaseogram(object):
         self.phases, self.times = phases, times
         vmin = None
 
-        self.pcolor = ax.pcolormesh(
-            phases, times, self.phaseogr.T, cmap=self.colormap, vmin=vmin
-        )
-        self.colorbar = plt.colorbar(
-            self.pcolor, cax=colorbax, orientation="horizontal"
-        )
+        self.pcolor = ax.pcolormesh(phases, times, self.phaseogr.T, cmap=self.colormap, vmin=vmin)
+        self.colorbar = plt.colorbar(self.pcolor, cax=colorbax, orientation="horizontal")
         ax.set_xlabel("Phase")
 
         def s2d(x):
@@ -227,9 +223,7 @@ class BasePhaseogram(object):
         self.lines = []
         self.line_phases = np.arange(-2, 3, 0.5)
         for ph0 in self.line_phases:
-            (newline,) = ax.plot(
-                np.zeros_like(times) + ph0, times, zorder=10, lw=2, color="w"
-            )
+            (newline,) = ax.plot(np.zeros_like(times) + ph0, times, zorder=10, lw=2, color="w")
             self.lines.append(newline)
 
         ax.set_xlim([0, 2])
@@ -248,29 +242,19 @@ class BasePhaseogram(object):
         self._construct_widgets(**kwargs)
 
         self.closeax = self.fig.add_axes([0.15, 0.020, 0.15, 0.04])
-        self.button_close = Button(
-            self.closeax, "Quit", color=axcolor, hovercolor="0.8"
-        )
+        self.button_close = Button(self.closeax, "Quit", color=axcolor, hovercolor="0.8")
 
         self.recalcax = self.fig.add_axes([0.3, 0.020, 0.15, 0.04])
-        self.button_recalc = Button(
-            self.recalcax, "Recalculate", color=axcolor, hovercolor="0.975"
-        )
+        self.button_recalc = Button(self.recalcax, "Recalculate", color=axcolor, hovercolor="0.975")
 
         self.resetax = self.fig.add_axes([0.45, 0.020, 0.15, 0.04])
-        self.button_reset = Button(
-            self.resetax, "Reset", color=axcolor, hovercolor="0.975"
-        )
+        self.button_reset = Button(self.resetax, "Reset", color=axcolor, hovercolor="0.975")
 
         self.zoominax = self.fig.add_axes([0.6, 0.020, 0.1, 0.04])
-        self.button_zoomin = Button(
-            self.zoominax, "+Zoom", color=axcolor, hovercolor="0.975"
-        )
+        self.button_zoomin = Button(self.zoominax, "+Zoom", color=axcolor, hovercolor="0.975")
 
         self.zoomoutax = self.fig.add_axes([0.7, 0.020, 0.1, 0.04])
-        self.button_zoomout = Button(
-            self.zoomoutax, "-Zoom", color=axcolor, hovercolor="0.975"
-        )
+        self.button_zoomout = Button(self.zoomoutax, "-Zoom", color=axcolor, hovercolor="0.975")
 
         self.toaax = self.fig.add_axes([0.8, 0.020, 0.1, 0.04])
         self.button_toa = Button(self.toaax, "TOA", color=axcolor, hovercolor="0.975")
@@ -286,21 +270,13 @@ class BasePhaseogram(object):
         prof = np.sum(np.nan_to_num(self.unnorm_phaseogr), axis=1)
         nbin = len(prof)
         phas = np.linspace(0, 2, nbin + 1)[:-1]
-        (self.profile_fixed,) = self.profax.plot(
-            phas, prof, drawstyle="steps-post", color="grey"
-        )
-        (self.profile,) = self.profax.plot(
-            phas, prof, drawstyle="steps-post", color="k"
-        )
+        (self.profile_fixed,) = self.profax.plot(phas, prof, drawstyle="steps-post", color="grey")
+        (self.profile,) = self.profax.plot(phas, prof, drawstyle="steps-post", color="k")
         mean = np.mean(prof)
-        low, high = poisson_conf_interval(
-            mean, interval="frequentist-confidence", sigma=2
-        )
+        low, high = poisson_conf_interval(mean, interval="frequentist-confidence", sigma=2)
         self.profax.fill_between(phas, low, high, alpha=0.5)
         z2_label = get_H_label(phas, prof)
-        self.proftext = self.profax.text(
-            0.1, 0.8, z2_label, transform=self.profax.transAxes
-        )
+        self.proftext = self.profax.text(0.1, 0.8, z2_label, transform=self.profax.transAxes)
         if not test and not plot_only:
             plt.show()
         if plot_only:
@@ -320,8 +296,7 @@ class BasePhaseogram(object):
 
     def toa(self, event):  # pragma: no cover
         warnings.warn(
-            "This function was not implemented for this Phaseogram. "
-            "Try the basic one.",
+            "This function was not implemented for this Phaseogram. " "Try the basic one.",
             AstropyUserWarning,
         )
 
@@ -484,12 +459,8 @@ class BasePhaseogram(object):
             tm_string += "PEPOCH         {}\n".format(self.pepoch / 86400 + self.mjdref)
         tm_string += "PSRJ           {}\n".format(self.object)
         if self.position is not None:
-            tm_string += "RAJ            {}\n".format(
-                self.position.ra.to_string("hour", sep=":")
-            )
-            tm_string += "DECJ           {}\n".format(
-                self.position.dec.to_string(sep=":")
-            )
+            tm_string += "RAJ            {}\n".format(self.position.ra.to_string("hour", sep=":"))
+            tm_string += "DECJ           {}\n".format(self.position.dec.to_string(sep=":"))
 
         tm_string += "F0             {}\n".format(self.freq)
         tm_string += "F1             {}\n".format(self.fdot)
@@ -800,9 +771,7 @@ class BinaryPhaseogram(BasePhaseogram):
         orbital_period, asini, t0 = self._read_sliders()
 
         new_values = asini * np.sin(2 * np.pi * (times - t0) / orbital_period)
-        old_values = self.asini * np.sin(
-            2 * np.pi * (times - self.t0) / (self.orbital_period)
-        )
+        old_values = self.asini * np.sin(2 * np.pi * (times - self.t0) / (self.orbital_period))
         return (new_values - old_values) * self.freq
 
     def _delay_fun(self, times):
@@ -995,12 +964,8 @@ def main_phaseogram(args=None):
         help="Initial frequency to fold",
         default=None,
     )
-    parser.add_argument(
-        "--fdot", type=float, required=False, help="Initial fdot", default=0
-    )
-    parser.add_argument(
-        "--fddot", type=float, required=False, help="Initial fddot", default=0
-    )
+    parser.add_argument("--fdot", type=float, required=False, help="Initial fdot", default=0)
+    parser.add_argument("--fddot", type=float, required=False, help="Initial fddot", default=0)
     parser.add_argument(
         "--periodogram",
         type=str,
@@ -1081,9 +1046,7 @@ def main_phaseogram(args=None):
 
     with log.log_to_file("HENphaseogram.log"):
         if args.periodogram is None and args.freq is None:
-            raise ValueError(
-                "One of -f or --periodogram arguments MUST be " "specified"
-            )
+            raise ValueError("One of -f or --periodogram arguments MUST be " "specified")
         elif args.periodogram is not None:
             periodogram = load_folding(args.periodogram)
             frequency = float(periodogram.peaks[0])

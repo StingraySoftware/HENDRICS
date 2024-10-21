@@ -348,9 +348,7 @@ class TestIO:
         pds.lc1 = Lightcurve(np.arange(2), [1, 2])
         pds.lc2 = [Lightcurve(np.arange(2), [1, 2]), Lightcurve(np.arange(2), [3, 4])]
 
-        with pytest.warns(
-            UserWarning, match="Saving multiple light curves is not supported"
-        ):
+        with pytest.warns(UserWarning, match="Saving multiple light curves is not supported"):
             save_pds(pds, "bubup" + fmt, save_all=True)
         pds2 = load_pds("bubup" + fmt)
         for attr in [
@@ -604,9 +602,7 @@ model = models.Const1D()
 
     def test_load_model_input_not_string(self):
         """Input is not a string"""
-        with pytest.raises(
-            TypeError, match="modelstring has to be an existing file name"
-        ):
+        with pytest.raises(TypeError, match="modelstring has to be an existing file name"):
             b, kind, _ = load_model(1)
 
     def test_load_model_input_file_doesnt_exist(self):
