@@ -248,7 +248,7 @@ def generate_fake_fits_observation(
     tbheader["TSTOP"] = (tstop, "Elapsed seconds since MJDREF at end of file")
     tbheader["LIVETIME"] = (livetime, "On-source time")
     tbheader["TIMEZERO"] = (0.000000e00, "Time Zero")
-    tbheader["HISTORY"] = "Generated with HENDRICS by {0}".format(os.getenv("USER"))
+    tbheader["HISTORY"] = f"Generated with HENDRICS by {os.getenv('USER')}"
 
     tbhdu = fits.BinTableHDU.from_columns(cols, header=tbheader)
     tbhdu.name = ext

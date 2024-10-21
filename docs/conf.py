@@ -72,7 +72,7 @@ rst_epilog += """
 # This does not *have* to match the package name, but typically does
 project = setup_cfg["name"]
 author = setup_cfg["author"]
-copyright = "{0}, {1}".format(datetime.datetime.now().year, setup_cfg["author"])
+copyright = f"{datetime.datetime.now().year}, {setup_cfg['author']}"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -165,7 +165,7 @@ if setup_cfg.get("edit_on_github").lower() == "true":
     edit_on_github_doc_root = "docs"
 
 # -- Resolving issue number to links in changelog -----------------------------
-github_issues_url = "https://github.com/{0}/issues/".format(setup_cfg["github_project"])
+github_issues_url = f"https://github.com/{setup_cfg['github_project']}/issues/"
 
 # -- Turn on nitpicky mode for sphinx (to warn about references not found) ----
 #

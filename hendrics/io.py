@@ -898,7 +898,7 @@ def load_pds(fname, nosub=False):
 # ---- GENERIC function to save stuff.
 def _load_data_pickle(fname, kind="data"):
     """Load generic data in pickle format."""
-    log.info("Loading %s and info from %s" % (kind, fname))
+    log.info(f"Loading {kind} and info from {fname}")
     with open(fname, "rb") as fobj:
         result = pickle.load(fobj)
     return result
@@ -906,7 +906,7 @@ def _load_data_pickle(fname, kind="data"):
 
 def _save_data_pickle(struct, fname, kind="data"):
     """Save generic data in pickle format."""
-    log.info("Saving %s and info to %s" % (kind, fname))
+    log.info(f"Saving {kind} and info to {fname}")
     with open(fname, "wb") as fobj:
         pickle.dump(struct, fobj)
 
@@ -999,7 +999,7 @@ def _split_high_precision_number(varname, var, probesize):
 
 def _save_data_nc(struct, fname, kind="data"):
     """Save generic data in netcdf format."""
-    log.info("Saving %s and info to %s" % (kind, fname))
+    log.info(f"Saving {kind} and info to {fname}")
     varnames = []
     values = []
     formats = []
@@ -1044,7 +1044,7 @@ def _save_data_nc(struct, fname, kind="data"):
             varnames.append(k)
         else:
             values.append(var)
-            formats.append(probekind + "%d" % probesize)
+            formats.append(probekind + f"{probesize}")
             varnames.append(k)
 
     save_as_netcdf(values, varnames, formats, fname)
@@ -1143,7 +1143,7 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp", mode="w"):
     if print_header:
         for lerr in list_of_errs:
             i, kind = lerr
-            print("READ %s" % kind + "ERR %d" % (i + 1), file=outfile)
+            print(f"READ {kind}" + f"ERR {i + 1}", file=outfile)
 
     length = len(data_to_write[0])
     for i in range(length):
@@ -1168,7 +1168,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, append=False):
         return -1
     lcol = len(cols[0])
 
-    log.debug("%s %s" % (repr(cols), repr(np.shape(cols))))
+    log.debug(f"{repr(cols)} {repr(np.shape(cols))}")
     if append:
         txtfile = open(filename, "a")
     else:
@@ -1216,12 +1216,12 @@ def print_fits_info(fits_file, hdu=1):
     start_mjd = Time(mjdref, format="mjd") + tstart * Unit(tunit)
     stop_mjd = Time(mjdref, format="mjd") + tstop * Unit(tunit)
 
-    print("ObsID:         {0}\n".format(info["OBS_ID"]))
-    print("Date:          {0} -- {1}\n".format(info["Start"], info["Stop"]))
+    print(f"ObsID:         {info['OBS_ID']}\n")
+    print(f"Date:          {info['Start']} -- {info['Stop']}\n")
     print(f"Date (MJD):    {start_mjd} -- {stop_mjd}\n")
-    print("Instrument:    {0}/{1}\n".format(info["Telescope"], info["Instrument"]))
-    print("Target:        {0}\n".format(info["Target"]))
-    print("N. Events:     {0}\n".format(info["N. events"]))
+    print(f"Instrument:    {info['Telescope']}/{info['Instrument']}\n")
+    print(f"Target:        {info['Target']}\n")
+    print(f"N. Events:     {info["N. events"]}\n")
 
     lchdulist.close()
     return info

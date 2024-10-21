@@ -43,13 +43,17 @@ class TestBinary:
             "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
         )
         cls.par = _dummy_par("bubububu.par")
-        command = "{0} --discard-calibration".format(os.path.join(cls.datadir, "monol_testA.evt"))
+        data = os.path.join(cls.datadir, "monol_testA.evt")
+        command = f"{data} --discard-calibration"
         hen.read_events.main(command.split())
-        command = "{} -r {}".format(
+
+        data, rmf = (
             os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "test.rmf"),
         )
+        command = f"{data} -r {rmf}"
         hen.calibrate.main(command.split())
+
         cls.lcA = os.path.join(
             os.path.join(cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )

@@ -58,16 +58,19 @@ class TestFullRun:
             "monol_testB_nustar_fpmb_ev_calib" + HEN_FILE_EXTENSION,
         )
         cls.par = _dummy_par("bubububu.par")
-        command = "{0} {1} --discard-calibration".format(
+        data_a, data_b = (
             os.path.join(cls.datadir, "monol_testA.evt"),
             os.path.join(cls.datadir, "monol_testB.evt"),
         )
+        command = f"{data_a} {data_b} --discard-calibration"
         hen.read_events.main(command.split())
-        command = "{} {} -r {}".format(
+
+        data_a, data_b, rmf = (
             os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "test.rmf"),
         )
+        command = f"{data_a} {data_b} -r {rmf}"
         hen.calibrate.main(command.split())
         cls.lcA = os.path.join(
             os.path.join(cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
@@ -239,14 +242,11 @@ class TestFullRun:
     def test_plot_hid(self):
         """Test plotting with linear axes."""
         # also produce a light curve with the same binning
-        command = ("{0} -b 100 --energy-interval {1} {2}").format(
-            os.path.join(
-                self.datadir,
-                "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
-            ),
-            3,
-            10,
+        data = os.path.join(
+            self.datadir,
+            "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
         )
+        command = f"{data} -b 100 --energy-interval 3 10"
 
         hen.lcurve.main(command.split())
         lname = os.path.join(self.datadir, "monol_testA_nustar_fpma_E3-10_lc") + HEN_FILE_EXTENSION

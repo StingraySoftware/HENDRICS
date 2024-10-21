@@ -65,7 +65,7 @@ def treat_event_file(
         counts per bin are significantly above 25 ct/s.
     """
     # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
-    log.info("Opening %s" % filename)
+    log.info(f"Opening {filename}")
 
     events = EventList.read(
         filename,

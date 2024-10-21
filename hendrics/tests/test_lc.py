@@ -56,9 +56,8 @@ class TestLcurve:
         assert data.mjdref > 0
 
     def test_treat_event_file_nustar_energy(self):
-        command = "{0} -r {1} --nproc 2".format(
-            self.new_filename, os.path.join(self.datadir, "test.rmf")
-        )
+        rmf = os.path.join(self.datadir, "test.rmf")
+        command = f"{self.new_filename} -r {rmf} --nproc 2"
         hen.calibrate.main(command.split())
         lcurve_from_events(self.calib_filename, e_interval=[3, 50])
 
@@ -106,16 +105,18 @@ class TestFullRun:
             "monol_testB_nustar_fpmb_ev_calib" + HEN_FILE_EXTENSION,
         )
         cls.par = _dummy_par("bubububu.par")
-        command = "{0} {1} --discard-calibration".format(
+        data_a, data_b = (
             os.path.join(cls.datadir, "monol_testA.evt"),
             os.path.join(cls.datadir, "monol_testB.evt"),
         )
+        command = f"{data_a} {data_b} --discard-calibration"
         hen.read_events.main(command.split())
-        command = "{} {} -r {}".format(
+        data_a, data_b, rmf = (
             os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "test.rmf"),
         )
+        command = f"{data_a} {data_b} -r {rmf}"
         hen.calibrate.main(command.split())
 
     def test_lcurve(self):
@@ -141,14 +142,8 @@ class TestFullRun:
         assert np.allclose(gti_to_test, lc.gti)
 
     def test_lcurve_B(self):
-        command = ("{0} -e {1} {2} --safe-interval " "{3} {4} -b 0.5 -o {5}").format(
-            self.ev_fileBcal,
-            3,
-            50,
-            100,
-            300,
-            os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION),
-        )
+        out = os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
+        command = f"{self.ev_fileBcal} -e 3 50 --safe-interval 100 300 -b 0.5 -o {out}"
         hen.lcurve.main(command.split())
         assert os.path.exists(
             os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
@@ -209,9 +204,9 @@ class TestFullRun:
 
         lcurve_ftools = os.path.join(self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION)
 
-        command = "{0} --outfile {1}".format(
-            self.ev_fileAcal, os.path.join(self.datadir, "lcurve_lc")
-        )
+        out = os.path.join(self.datadir, "lcurve_lc")
+        command = f"{self.ev_fileAcal} --outfile {out}"
+
         hen.lcurve.main(command.split())
         assert os.path.exists(os.path.join(self.datadir, "lcurve_lc") + HEN_FILE_EXTENSION)
 
@@ -330,36 +325,29 @@ class TestFullRun:
 
     def test_lcurve_error_uncalibrated(self):
         """Test light curve error from uncalibrated file."""
-        command = ("{0} -e {1} {2}").format(
-            os.path.join(
-                self.datadir,
-                "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION,
-            ),
-            3,
-            50,
+        data = os.path.join(
+            self.datadir,
+            "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION,
         )
+        command = f"{data} -e 3 50"
 
         with pytest.raises(ValueError, match="Did you run HENcalibrate?"):
             hen.lcurve.main(command.split())
 
     def test_lcurve_pi_filtering(self):
         """Test light curve using PI filtering."""
-        command = ("{0} --pi-interval {1} {2}").format(
-            os.path.join(
-                self.datadir,
-                "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION,
-            ),
-            10,
-            300,
+        data = os.path.join(
+            self.datadir,
+            "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION,
         )
+        command = f"{data} --pi-interval {10} {300}"
 
         hen.lcurve.main(command.split())
 
     def test_rebinlc(self):
         """Test LC rebinning."""
-        command = "{0} -r 4".format(
-            os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
-        )
+        data = os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
+        command = f"{data} -r 4"
         hen.rebin.main(command.split())
 
     def test_save_fvar_from_lc(self):

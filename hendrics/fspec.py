@@ -314,7 +314,7 @@ def calc_pds(
     pds.back_phots = back_ctrate * fftlen
     pds.mjdref = mjdref
 
-    log.info("Saving PDS to %s" % outname)
+    log.info(f"Saving PDS to {outname}")
     save_pds(
         pds,
         outname,
@@ -398,9 +398,9 @@ def calc_cpds(
         warnings.warn("File exists, and noclobber option used. Skipping")
         return
 
-    log.info("Loading file %s..." % lcfile1)
+    log.info(f"Loading file {lcfile1}...")
     ftype1, lc1 = get_file_type(lcfile1)
-    log.info("Loading file %s..." % lcfile2)
+    log.info(f"Loading file {lcfile2}...")
     ftype2, lc2 = get_file_type(lcfile2)
     instr1 = lc1.instr
     instr2 = lc2.instr
@@ -467,7 +467,7 @@ def calc_cpds(
     cpds.lag = lags
     cpds.lag_err = lags_err
 
-    log.info("Saving CPDS to %s" % outname)
+    log.info(f"Saving CPDS to {outname}")
     save_pds(
         cpds,
         outname,
@@ -551,8 +551,8 @@ def calc_fspec(
     [5] Miyamoto et al. 1991, ApJ, 383, 784
 
     """
-    log.info("Using %s normalization" % normalization)
-    log.info("Using %s processors" % nproc)
+    log.info(f"Using {normalization} normalization")
+    log.info(f"Using {nproc} processors")
 
     if do_calc_pds:
         wrapped_file_dicts = []
@@ -633,7 +633,7 @@ def calc_fspec(
         outr = outroot
 
         if len(files1) > 1 and outroot is None:
-            outr = common_name(f1, f2, default="%d" % i_f)
+            outr = common_name(f1, f2, default=f"{i_f}")
 
         if outr is not None:
             outname = os.path.join(

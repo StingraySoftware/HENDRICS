@@ -45,16 +45,19 @@ class TestCalibrate:
         )
         cls.par = _dummy_par("bubububu.par")
         cls.rmf = os.path.join(cls.datadir, "test.rmf")
-        command = "{0} {1} ".format(
+        data_a, data_b = (
             os.path.join(cls.datadir, "monol_testA.evt"),
             os.path.join(cls.datadir, "monol_testB.evt"),
         )
+        command = f"{data_a} {data_b} ".format()
         hen.read_events.main(command.split())
-        command = "{} {} -r {} --nproc 2".format(
+
+        data_a, data_b, rmf = (
             os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION),
             cls.rmf,
         )
+        command = f"{data_a} {data_b} -r {rmf} --nproc 2"
         hen.calibrate.main(command.split())
         cls.xmm_fits_file = os.path.join(cls.datadir, "monol_test_fake_lc_xmm.evt")
         # Note that I don't specify the instrument. This is because

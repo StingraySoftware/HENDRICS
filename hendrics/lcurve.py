@@ -116,7 +116,7 @@ def join_lightcurves(lcfilelist, outfile="out_lc" + HEN_FILE_EXTENSION):
     lcdatas = []
 
     for lfc in lcfilelist:
-        log.info("Loading file %s..." % lfc)
+        log.info(f"Loading file {lfc}...")
         lcdata = load_lcurve(lfc)
         log.info("Done.")
         lcdatas.append(lcdata)
@@ -131,7 +131,7 @@ def join_lightcurves(lcfilelist, outfile="out_lc" + HEN_FILE_EXTENSION):
                 tag = ""
             else:
                 tag = instr
-            log.info("Saving joined light curve to %s" % outfile)
+            log.info(f"Saving joined light curve to {outfile}")
 
             dname, fname = os.path.split(outfile)
             save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
@@ -226,7 +226,7 @@ def scrunch_lightcurves(lcfilelist, outfile="out_scrlc" + HEN_FILE_EXTENSION, sa
         lcdata = join_lightcurves(lcfilelist, outfile=None)
 
     lc0 = scrunch_lightcurve_objs(list(lcdata.values()))
-    log.info("Saving scrunched light curve to %s" % outfile)
+    log.info(f"Saving scrunched light curve to {outfile}")
     save_lcurve(lc0, outfile)
 
     return lc0
@@ -341,7 +341,7 @@ def lcurve_from_events(
         If True, do not overwrite existing files
 
     """
-    log.info("Loading file %s..." % f)
+    log.info(f"Loading file {f}...")
     evdata = load_events(f)
     log.info("Done.")
     weight_on_tag = ""
@@ -380,7 +380,7 @@ def lcurve_from_events(
         pis = evdata.pi
         good = np.logical_and(pis > pi_interval[0], pis <= pi_interval[1])
         events = events[good]
-        tag = "_PI%g-%g" % (pi_interval[0], pi_interval[1])
+        tag = f"_PI{pi_interval[0]}-{pi_interval[1]}"
     elif e_interval is not None and np.all(np.array(e_interval) > 0):
         if not hasattr(evdata, "energy") or evdata.energy is None:
             raise ValueError(
@@ -389,7 +389,7 @@ def lcurve_from_events(
         es = evdata.energy
         good = np.logical_and(es > e_interval[0], es <= e_interval[1])
         events = events[good]
-        tag = "_E%g-%g" % (e_interval[0], e_interval[1])
+        tag = f"_E{e_interval[0]}-{e_interval[1]}"
     else:
         pass
 
@@ -484,7 +484,7 @@ def lcurve_from_events(
             save_lcurve(l0, outf)
             outfiles.append(outf)
     else:
-        log.info("Saving light curve to %s" % outfile)
+        log.info(f"Saving light curve to {outfile}")
         save_lcurve(lc, outfile)
         outfiles = [outfile]
 
@@ -690,7 +690,7 @@ def lcurve_from_fits(
     lc.instr = instr
     lc.header = lchdulist[ratehdu].header.tostring()
 
-    log.info("Saving light curve to %s" % outfile)
+    log.info(f"Saving light curve to {outfile}")
     save_lcurve(lc, outfile)
     return [outfile]
 
@@ -759,7 +759,7 @@ def lcurve_from_txt(
 
     lc.instr = "EXTERN"
 
-    log.info("Saving light curve to %s" % outfile)
+    log.info(f"Saving light curve to {outfile}")
     save_lcurve(lc, outfile)
     return [outfile]
 

@@ -769,7 +769,7 @@ def plot_lc(
 
     plt.figure("LC " + figlabel)
     for lcfile in lcfiles:
-        log.info("Loading %s..." % lcfile)
+        log.info(f"Loading {lcfile}...")
         lcdata = load_lcurve(lcfile)
 
         time = lcdata.time

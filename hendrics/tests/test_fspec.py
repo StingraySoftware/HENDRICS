@@ -122,10 +122,11 @@ class TestFullRun:
                 os.unlink(fname)
 
         cls.par = _dummy_par("bubububu.par")
-        command = "{0} {1}".format(
+        data_a, data_b = (
             os.path.join(cls.datadir, "monol_testA.evt"),
             os.path.join(cls.datadir, "monol_testB.evt"),
         )
+        command = f"{data_a} {data_b}"
         hen.read_events.main(command.split())
 
         command = f"{cls.ev_fileA} {cls.ev_fileB}  --nproc 2 -b -1"
@@ -282,11 +283,11 @@ class TestFullRun:
         opts = "-f 16 --save-all --save-dyn -k PDS -b 0.5 --norm frac"
         if lombscargle:
             opts += " --lombscargle"
-        command = "{0} {1} {2}".format(
-            opts,
+        data_a, data_b = (
             os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}") + HEN_FILE_EXTENSION,
             os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}") + HEN_FILE_EXTENSION,
         )
+        command = f"{opts} {data_a} {data_b}"
         hen.fspec.main(command.split())
 
         assert os.path.exists(outA)
@@ -313,11 +314,13 @@ class TestFullRun:
         else:
             label = "_lc"
 
-        command = "{0} {1} -f 128 --ignore-gtis".format(
+        data_a, data_b = (
             os.path.join(self.datadir, f"monol_testA_nustar_fpma{label}") + HEN_FILE_EXTENSION,
             os.path.join(self.datadir, f"monol_testB_nustar_fpmb{label}") + HEN_FILE_EXTENSION,
         )
+        command = f"{data_a} {data_b} -f 128 --ignore-gtis"
         hen.fspec.main(command.split())
+
         outA = os.path.join(self.datadir, "monol_testA_nustar_fpma_pds" + HEN_FILE_EXTENSION)
         outB = os.path.join(self.datadir, "monol_testB_nustar_fpmb_pds" + HEN_FILE_EXTENSION)
         assert os.path.exists(outA)
@@ -330,54 +333,41 @@ class TestFullRun:
         """Test PDS production."""
         labelA = "nustar_fpma_ev"
         labelB = "nustar_fpmb_ev"
-
-        command = "{0} {1} -f 16 -k {2} --norm frac --test".format(
+        data_a, data_b = (
             os.path.join(self.datadir, f"monol_testA_{labelA}") + HEN_FILE_EXTENSION,
             os.path.join(self.datadir, f"monol_testB_{labelB}") + HEN_FILE_EXTENSION,
-            kind,
         )
+        command = f"{data_a} {data_b} -f 16 -k {kind} --norm frac --test"
         hen.fspec.main(command.split())
 
     def test_cpds_ignore_instr(self):
         """Test CPDS production."""
+        out = os.path.join(self.datadir, "ignore_instr") + HEN_FILE_EXTENSION
         command = (
-            "{0} {1} -f 128 --save-dyn -k CPDS,lag --save-all --ignore-instr"
-            " -o {2} --debug".format(
-                self.lcA,
-                self.lcB,
-                os.path.join(self.datadir, "ignore_instr") + HEN_FILE_EXTENSION,
-            )
+            f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS,lag --save-all --ignore-instr"
+            f" -o {out} --debug"
         )
 
         hen.fspec.main(command.split())
 
     def test_cpds_rms_norm(self):
         """Test CPDS production."""
-        command = "{0} {1} -f 128 --save-dyn -k CPDS --save-all " "--norm rms -o {2}".format(
-            self.lcA,
-            self.lcB,
-            os.path.join(self.datadir, "monol_test_3-50keV_rms"),
-        )
+        out = os.path.join(self.datadir, "monol_test_3-50keV_rms")
+        command = f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS --save-all --norm rms -o {out}"
 
         hen.fspec.main(command.split())
 
     def test_cpds_wrong_norm(self):
         """Test CPDS production."""
-        command = "{0} {1} -f 128 --save-dyn -k CPDS --norm blablabla -o {2}".format(
-            self.lcA,
-            self.lcB,
-            os.path.join(self.datadir, "monol_test_3-50keV_wrong"),
-        )
+        out = os.path.join(self.datadir, "monol_test_3-50keV_wrong")
+        command = f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS --norm blablabla -o {out}"
         with pytest.warns(UserWarning, match="Beware! Unknown normalization"):
             hen.fspec.main(command.split())
 
     def test_cpds_dtbig(self):
         """Test CPDS production."""
-        command = "{0} {1} -f 128 --save-dyn -k CPDS --save-all --norm " "frac -o {2}".format(
-            self.lcA,
-            self.lcB,
-            os.path.join(self.datadir, "monol_test_3-50keV_dtb"),
-        )
+        out = os.path.join(self.datadir, "monol_test_3-50keV_dtb")
+        command = f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS --save-all --norm frac -o {out}"
         command += " -b 1"
         hen.fspec.main(command.split())
 
@@ -414,9 +404,10 @@ class TestFullRun:
 
     def test_rebinpds(self):
         """Test PDS rebinning 1."""
-        command = "{0} -r 2".format(
+        data = (
             os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds") + HEN_FILE_EXTENSION
         )
+        command = f"{data} -r 2"
         hen.rebin.main(command.split())
         os.path.exists(
             os.path.join(
@@ -427,10 +418,11 @@ class TestFullRun:
 
     def test_rebinpds_geom(self):
         """Test geometrical PDS rebinning."""
-        command = "{0} {1} -r 1.03".format(
+        data_a, data_b = (
             os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds") + HEN_FILE_EXTENSION,
             os.path.join(self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds") + HEN_FILE_EXTENSION,
         )
+        command = f"{data_a} {data_b} -r 1.03"
         hen.rebin.main(command.split())
         os.path.exists(
             os.path.join(
@@ -447,9 +439,8 @@ class TestFullRun:
 
     def test_rebincpds(self):
         """Test CPDS rebinning."""
-        command = "{0} -r 2".format(
-            os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds") + HEN_FILE_EXTENSION
-        )
+        data = os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds") + HEN_FILE_EXTENSION
+        command = f"{data} -r 2"
         hen.rebin.main(command.split())
         os.path.exists(
             os.path.join(
@@ -460,9 +451,8 @@ class TestFullRun:
 
     def test_rebincpds_geom(self):
         """Test CPDS geometrical rebinning."""
-        command = "{0} -r 1.03".format(
-            os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds") + HEN_FILE_EXTENSION
-        )
+        data = os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds") + HEN_FILE_EXTENSION
+        command = f"{data} -r 1.03"
         hen.rebin.main(command.split())
         os.path.exists(
             os.path.join(
@@ -579,19 +569,22 @@ model = models.Const1D()
 
     def test_savexspec(self):
         """Test save as Xspec 1."""
-        command = "{0}".format(
+        data = (
             os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_rebin2")
             + HEN_FILE_EXTENSION
         )
+        command = f"{data}"
         hen.save_as_xspec.main(command.split())
         os.path.exists(os.path.join(self.datadir, "monol_testA_nustar_fpmb_3-50keV_pds_rebin2.pha"))
 
     def test_savexspec_geom(self):
         """Test save as Xspec 2."""
-        command = "{0}".format(
+        data = (
             os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03")
             + HEN_FILE_EXTENSION
         )
+
+        command = f"{data}"
         hen.save_as_xspec.main(command.split())
 
         os.path.exists(

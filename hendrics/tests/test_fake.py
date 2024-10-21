@@ -309,7 +309,8 @@ class TestFake:
     def test_calibrate_xmm(self):
         """Test event file calibration."""
         xmm_file = self.xmm_ev_file
-        command = "{0} -r {1} --nproc 2".format(xmm_file, os.path.join(self.datadir, "test.rmf"))
+        rmf = os.path.join(self.datadir, "test.rmf")
+        command = f"{xmm_file} -r {rmf} --nproc 2"
         with pytest.raises(RuntimeError):
             hen.calibrate.main(command.split())
 
