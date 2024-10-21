@@ -1,6 +1,7 @@
 import glob
 import os
 import shutil
+from pathlib import Path
 
 
 def _dummy_par(par, pb=1e20, a1=0.0, f0=1.0):
@@ -52,12 +53,13 @@ def cleanup_test_dir(datadir):
         file_list.extend(find_file_pattern_in_dir(pattern, datadir))
 
     for f in file_list:
-        if os.path.exists(f) and not os.path.isdir(f):
+        f = Path(f)
+        if f.exists() and not f.is_dir():
             print("Removing " + f)
-            os.remove(f)
-        elif os.path.exists(f) and os.path.isdir(f):
+            f.unlink()
+        elif f.exists() and f.is_dir():
             print("Removing directory " + f)
-            shutil.rmtree(f)
+            shutil.rmtree(str(f))
 
     patterns = ["*_pds*/", "*_cpds*/", "*_sum/"]
 
@@ -65,5 +67,5 @@ def cleanup_test_dir(datadir):
     for pattern in patterns:
         dir_list.extend(find_file_pattern_in_dir(pattern, datadir))
     for f in dir_list:
-        if os.path.exists(f):
+        if Path(f).exists():
             shutil.rmtree(f)
