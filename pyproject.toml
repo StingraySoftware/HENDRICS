@@ -258,6 +258,7 @@ filterwarnings = [
 
 [tool.ruff]
 lint.select = ["ALL"]
+line-length = 100
 exclude=[
     "notebooks/*.ipynb",
     "*.svg"
@@ -336,6 +337,8 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
 [tool.ruff.lint.extend-per-file-ignores]
 "setup.py" = ["INP001"]  # Part of configuration, not a package.
 ".github/workflows/*.py" = ["INP001"]
+"notebooks/*.py" = ["INP001"]
+
 "test_*.py" = [
     "ANN201",  # Public function without return type annotation
     "B018",  # UselessExpression
