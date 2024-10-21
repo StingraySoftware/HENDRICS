@@ -280,7 +280,7 @@ def plot_pds(
 
         level = lev  # Can be modified below
         y = pds[1:]
-        yerr = yerr = None if epds is None else epds[1:]
+        yerr = None if epds is None else epds[1:]
 
         if not white_sub:
             white_sub = norm.lower() in ["rms", "frac"] and xlog and ylog

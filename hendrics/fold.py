@@ -334,15 +334,15 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
     toa_err : array-like
         errorbars on TOAs, in the same units as TOAs.
     """
-    template = kwargs["template"] if "template" in kwargs else None
-    mjdref = kwargs["mjdref"] if "mjdref" in kwargs else None
-    nbin = kwargs["nbin"] if "nbin" in kwargs else 16
-    pepoch = kwargs["pepoch"] if "pepoch" in kwargs else None
-    timfile = kwargs["timfile"] if "timfile" in kwargs else "out.tim"
-    gti = kwargs["gti"] if "gti" in kwargs else None
-    label = kwargs["label"] if "label" in kwargs else None
-    quick = kwargs["quick"] if "quick" in kwargs else False
-    ephem = kwargs["ephem"] if "ephem" in kwargs else "DE421"
+    template = kwargs.get("template")
+    mjdref = kwargs.get("mjdref")
+    nbin = kwargs.get("nbin", 16)
+    pepoch = kwargs.get("pepoch")
+    timfile = kwargs.get("timfile", "out.tim")
+    gti = kwargs.get("gti")
+    label = kwargs.get("label")
+    quick = kwargs.get("quick", False)
+    ephem = kwargs.get("ephem", "DE421")
 
     pepoch = assign_value_if_none(pepoch, events[0])
     gti = np.asarray(assign_value_if_none(gti, [[events[0], events[-1]]]))

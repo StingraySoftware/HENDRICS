@@ -17,23 +17,6 @@ from collections.abc import Iterable
 
 import numpy as np
 from stingray.base import StingrayObject, StingrayTimeseries
-
-from astropy.table import Table
-from hendrics.base import get_file_format, splitext_improved
-
-HAS_H5PY = importlib.util.find_spec("h5py") is not None
-
-
-try:
-    import netCDF4 as nc
-
-    HEN_FILE_EXTENSION = ".nc"
-    HAS_NETCDF = True
-except ImportError:
-    msg = "Warning! NetCDF is not available. Using pickle format."
-    warnings.warn(msg)
-    HEN_FILE_EXTENSION = ".p"
-    HAS_NETCDF = False
 from stingray.crossspectrum import AveragedCrossspectrum, Crossspectrum
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
@@ -45,8 +28,23 @@ from stingray.utils import assign_value_if_none
 from astropy import log
 from astropy.logger import AstropyUserWarning
 from astropy.modeling.core import Model
+from astropy.table import Table
+from hendrics.base import get_file_format, splitext_improved
 
 from .base import find_peaks_in_image, hen_root, is_string
+
+try:
+    import netCDF4 as nc
+
+    HEN_FILE_EXTENSION = ".nc"
+    HAS_NETCDF = True
+except ImportError:
+    msg = "Warning! NetCDF is not available. Using pickle format."
+    warnings.warn(msg)
+    HEN_FILE_EXTENSION = ".p"
+    HAS_NETCDF = False
+
+HAS_H5PY = importlib.util.find_spec("h5py") is not None
 
 try:
     _ = np.complex256

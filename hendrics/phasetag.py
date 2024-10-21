@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import argparse
 import warnings
 
@@ -120,7 +118,7 @@ def phase_tag(
         profile = raw_profile / exposure
         profile_err = np.sqrt(raw_profile) / exposure
 
-        sinpars, bu, bu = fit_profile(profile, profile_err, nperiods=2, baseline=True, debug=test)
+        sinpars, _, _ = fit_profile(profile, profile_err, nperiods=2, baseline=True, debug=test)
         fine_phases = np.linspace(0, 2, 1000 * 2)
         fitted_profile = std_fold_fit_func(sinpars, fine_phases)
         maxp = np.argmax(fitted_profile)

@@ -1,6 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Search for pulsars."""
 
+from __future__ import annotations
+
 import argparse
 import copy
 import os
@@ -781,7 +783,7 @@ def search_with_qffa_step(
     oversample=8,
     n=1,
     search_fdot=True,
-):
+) -> tuple[np.array, np.array, np.array]:
     """Single step of quasi-fast folding algorithm."""
     # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
