@@ -385,6 +385,9 @@ skip = """
     docs/credits.rst,
     *_lextab.py,
     *_parsetab.py,
+    *.svg,
+    docs/scripts/cli.rst,
+    *.ipynb,
 """
 # The following list of words for codespell to ignore may contain some
 # misspellings that should be revisited and fixed in the future.
@@ -406,7 +409,7 @@ ignore-words-list = """
     ned,
     nin,
     numer,
-    observe.length,
+    observ.length,
     precess,
     precessed,
     precesses,
