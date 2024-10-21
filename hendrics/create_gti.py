@@ -132,9 +132,11 @@ def main(args=None):
         "--filter",
         type=str,
         default=None,
-        help="Filter expression, that has to be a valid "
-        + "Python boolean operation on a data variable "
-        + "contained in the files",
+        help=(
+            "Filter expression, that has to be a valid "
+            "Python boolean operation on a data variable "
+            "contained in the files"
+        ),
     )
 
     parser.add_argument(

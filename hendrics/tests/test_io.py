@@ -628,7 +628,7 @@ model = models.Const1D()
 
     def test_load_data_fails(self):
         with pytest.raises(TypeError, match="The file type is not recognized"):
-            load_data("afile.fits")
+            load_data("a_file.fits")
 
     @classmethod
     def teardown_class(cls):

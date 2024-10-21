@@ -21,12 +21,8 @@ from stingray.base import StingrayObject, StingrayTimeseries
 from astropy.table import Table
 from hendrics.base import get_file_format, splitext_improved
 
-try:
-    import h5py
+HAS_H5PY = importlib.util.find_spec("h5py") is not None
 
-    HAS_H5PY = True
-except ImportError:
-    HAS_H5PY = False
 
 try:
     import netCDF4 as nc

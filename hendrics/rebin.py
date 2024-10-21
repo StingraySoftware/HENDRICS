@@ -46,10 +46,12 @@ def main(args=None):
         "--rebin",
         type=float,
         default=1,
-        help="Rebinning to apply. Only if the quantity to"
-        + " rebin is a (C)PDS, it is possible to specify a"
-        + " non-integer rebin factor, in which case it is"
-        + " interpreted as a geometrical binning factor",
+        help=(
+            "Rebinning to apply. Only if the quantity to"
+            " rebin is a (C)PDS, it is possible to specify a"
+            " non-integer rebin factor, in which case it is"
+            " interpreted as a geometrical binning factor"
+        ),
     )
 
     _add_default_args(parser, ["loglevel", "debug"])

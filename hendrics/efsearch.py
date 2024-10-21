@@ -614,10 +614,10 @@ def transient_search(
 
 
 def plot_transient_search(results, gif_name=None):
-    import matplotlib
+    import matplotlib as mpl
     import matplotlib.pyplot as plt
 
-    matplotlib.use("Agg")
+    mpl.use("Agg")
     if gif_name is None:
         gif_name = "transients.gif"
 

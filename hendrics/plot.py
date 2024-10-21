@@ -905,9 +905,9 @@ def main(args=None):
     args = parser.parse_args(args)
     if args.noplot and args.figname is None:
         args.figname = args.files[0].replace(HEN_FILE_EXTENSION, ".png")
-        import matplotlib
+        import matplotlib as mpl
 
-        matplotlib.use("Agg")
+        mpl.use("Agg")
     if args.xlin:
         args.xlog = False
     if args.ylin:

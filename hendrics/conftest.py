@@ -17,11 +17,11 @@ except ImportError:
 
 
 try:
-    import matplotlib
+    import matplotlib as mpl
 except ImportError:
     pass
 else:
-    matplotlib.use("Agg")
+    mpl.use("Agg")
 
 
 def pytest_configure(config):

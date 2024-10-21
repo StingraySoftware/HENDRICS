@@ -155,10 +155,12 @@ def main(args=None):
         "--bintime",
         type=float,
         default=1 / 64,
-        help="Light curve bin time; if negative, interpreted"
-        + " as negative power of 2."
-        + " Default: 2^-10, or keep input lc bin time"
-        + " (whatever is larger)",
+        help=(
+            "Light curve bin time; if negative, interpreted"
+            " as negative power of 2."
+            " Default: 2^-10, or keep input lc bin time"
+            " (whatever is larger)"
+        ),
     )
     parser.add_argument(
         "--cross",
@@ -177,7 +179,7 @@ def main(args=None):
 
     files = args.files
     if args.cross:
-        files = [frange for frange in zip(files[::2], files[1::2])]
+        files = list(zip(files[::2], files[1::2]))
 
     outfiles = []
     with log.log_to_file("HENcolors.log"):

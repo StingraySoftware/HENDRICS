@@ -720,10 +720,12 @@ def main(args=None):
         "--bintime",
         type=float,
         default=1 / 4096,
-        help="Light curve bin time; if negative, interpreted"
-        + " as negative power of 2."
-        + " Default: 2^-10, or keep input lc bin time"
-        + " (whatever is larger)",
+        help=(
+            "Light curve bin time; if negative, interpreted"
+            " as negative power of 2."
+            " Default: 2^-10, or keep input lc bin time"
+            " (whatever is larger)"
+        ),
     )
     parser.add_argument(
         "-r",
@@ -744,9 +746,11 @@ def main(args=None):
         "--kind",
         type=str,
         default="PDS,CPDS,cos",
-        help="Spectra to calculate, as comma-separated list"
-        + " (Accepted: PDS and CPDS;"
-        + ' Default: "PDS,CPDS")',
+        help=(
+            "Spectra to calculate, as comma-separated list"
+            " (Accepted: PDS and CPDS;"
+            ' Default: "PDS,CPDS")'
+        ),
     )
     parser.add_argument(
         "--norm",

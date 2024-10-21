@@ -278,7 +278,7 @@ def join_eventlists(event_file1, event_file2, new_event_file=None, ignore_instr=
     events2 = load_events(event_file2)
 
     if ignore_instr:
-        events1.instr = events2.instr = ",".join((events1.instr, events2.instr))
+        events1.instr = events2.instr = f"{events1.instr},{events2.instr}"
 
     if events2.time.size == 0 or events2.gti.size == 0:
         warnings.warn(f"{event_file2} has no good events")
@@ -410,18 +410,18 @@ def split_eventlist(fname, max_length, overlap=None):
     event_times = ev.time
     GTI = ev.gti
     t0 = GTI[0, 0]
-    count = 0
+
     from .base import nchars_in_int_value
 
     nchars = nchars_in_int_value((GTI.max() - t0) / max_length)
 
     all_files = []
-    for new_ev in _split_events(ev, max_length, overlap):
+    for count, new_ev in enumerate(_split_events(ev, max_length, overlap)):
         newfname = root + f"_{count:0{nchars}d}" + HEN_FILE_EXTENSION
 
         save_events(new_ev, newfname)
         all_files.append(newfname)
-        count += 1
+
     return all_files
 
 

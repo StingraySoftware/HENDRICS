@@ -30,8 +30,6 @@ from astropy.io.registry import identify_format
 from astropy.table import Table
 
 try:
-    import pint
-    import pint.toa as toa
     from pint.models import get_model
 
     HAS_PINT = True
@@ -269,7 +267,7 @@ def _order_list_of_arrays(data, order):
     >>> assert _order_list_of_arrays(2, order) is None
     """
     if hasattr(data, "items"):
-        data = dict((i[0], np.asarray(i[1])[order]) for i in data.items())
+        data = {i[0]: np.asarray(i[1])[order] for i in data.items()}
     elif hasattr(data, "index"):
         data = [np.asarray(i)[order] for i in data]
     else:

@@ -121,8 +121,8 @@ def test_deadtime_conversion():
     original_rate = np.arange(1, 1000, 10)
     deadtime = 2.5e-3
     rdet = hen.base.r_det(deadtime, original_rate)
-    rin = hen.base.r_in(deadtime, rdet)
-    np.testing.assert_almost_equal(rin, original_rate)
+    inner_radius = hen.base.r_in(deadtime, rdet)
+    np.testing.assert_almost_equal(inner_radius, original_rate)
 
 
 def verify_all_checksums(filename):
