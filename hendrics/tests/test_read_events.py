@@ -227,12 +227,8 @@ class TestReadEvents:
                 cls.fits_file,
             ]
         )
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
-        cls.ev_fileB = os.path.join(
-            cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
+        cls.ev_fileB = os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION)
 
     def test_start(self):
         """Make any warnings in setup_class be dumped here."""
@@ -258,9 +254,7 @@ class TestReadEvents:
         assert "pi" in data and data["pi"].size > 0
 
     def test_treat_event_file_xte_se(self):
-        treat_event_file(
-            self.fits_file_xte, split_by_detector=False, bin_time_for_occultations=1
-        )
+        treat_event_file(self.fits_file_xte, split_by_detector=False, bin_time_for_occultations=1)
         new_filename = "xte_test_xte_pca_ev" + HEN_FILE_EXTENSION
         assert os.path.exists(os.path.join(self.datadir, new_filename))
         data = load_data(os.path.join(self.datadir, new_filename))
@@ -319,9 +313,7 @@ class TestReadEvents:
     def test_split_events(self):
         treat_event_file(self.fits_fileA)
 
-        filea = os.path.join(
-            self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        filea = os.path.join(self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
 
         files = hen.read_events.main_splitevents([filea, "-l", "50"])
         for f in files:
@@ -330,16 +322,12 @@ class TestReadEvents:
     def test_split_events_at_mjd(self):
         treat_event_file(self.fits_fileA)
 
-        filea = os.path.join(
-            self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        filea = os.path.join(self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
         data = load_events(filea)
         mean_met = np.mean(data.time)
         mean_mjd = mean_met / 86400 + data.mjdref
 
-        files = hen.read_events.main_splitevents(
-            [filea, "--split-at-mjd", f"{mean_mjd}"]
-        )
+        files = hen.read_events.main_splitevents([filea, "--split-at-mjd", f"{mean_mjd}"])
         assert "before" in files[0]
         assert "after" in files[1]
 
@@ -351,9 +339,7 @@ class TestReadEvents:
     def test_split_events_bad_overlap_raises(self):
         treat_event_file(self.fits_fileA)
 
-        filea = os.path.join(
-            self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        filea = os.path.join(self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
 
         with pytest.raises(ValueError, match="Overlap cannot be >=1. Exiting."):
             hen.read_events.split_eventlist(filea, 10, overlap=1.5)

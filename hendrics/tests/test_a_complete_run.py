@@ -44,17 +44,11 @@ class TestFullRun:
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
         cls.par = _dummy_par("bubububu.par")
 
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
-        cls.ev_fileB = os.path.join(
-            cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
+        cls.ev_fileB = os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION)
         cls.ev_fileAcal = os.path.join(
             cls.datadir,
             "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
@@ -70,12 +64,8 @@ class TestFullRun:
         )
         hen.read_events.main(command.split())
         command = "{} {} -r {}".format(
-            os.path.join(
-                cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-            ),
-            os.path.join(
-                cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-            ),
+            os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
+            os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "test.rmf"),
         )
         hen.calibrate.main(command.split())
@@ -86,25 +76,17 @@ class TestFullRun:
             os.path.join(cls.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
         )
         command = (
-            f"{cls.ev_fileAcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 "
-            f"-o {cls.lcA}"
+            f"{cls.ev_fileAcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " f"-o {cls.lcA}"
         )
         hen.lcurve.main(command.split())
         command = (
-            f"{cls.ev_fileBcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 "
-            f"-o {cls.lcB}"
+            f"{cls.ev_fileBcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " f"-o {cls.lcB}"
         )
         hen.lcurve.main(command.split())
 
-        cls.pdsA = os.path.join(
-            cls.datadir, "monol_testA_E3-50_pds" + HEN_FILE_EXTENSION
-        )
-        cls.pdsB = os.path.join(
-            cls.datadir, "monol_testB_E3-50_pds" + HEN_FILE_EXTENSION
-        )
-        cls.cpds = os.path.join(
-            cls.datadir, "monol_test_E3-50_cpds" + HEN_FILE_EXTENSION
-        )
+        cls.pdsA = os.path.join(cls.datadir, "monol_testA_E3-50_pds" + HEN_FILE_EXTENSION)
+        cls.pdsB = os.path.join(cls.datadir, "monol_testB_E3-50_pds" + HEN_FILE_EXTENSION)
+        cls.cpds = os.path.join(cls.datadir, "monol_test_E3-50_cpds" + HEN_FILE_EXTENSION)
 
         command = f"{cls.lcA} {cls.lcB} -f 128 -k PDS --save-all --norm leahy"
         hen.fspec.main(command.split())
@@ -207,9 +189,7 @@ class TestFullRun:
     def test_power_colors_2files(self):
         """Test light curve using PI filtering."""
         # calculate colors
-        command = (
-            f"--cross {self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 "
-        )
+        command = f"--cross {self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 "
         with pytest.warns(
             UserWarning,
             match="(Some .non-log.)|(All power spectral)|(Poisson-subtracted)|(cast to real)",
@@ -269,10 +249,7 @@ class TestFullRun:
         )
 
         hen.lcurve.main(command.split())
-        lname = (
-            os.path.join(self.datadir, "monol_testA_nustar_fpma_E3-10_lc")
-            + HEN_FILE_EXTENSION
-        )
+        lname = os.path.join(self.datadir, "monol_testA_nustar_fpma_E3-10_lc") + HEN_FILE_EXTENSION
         os.path.exists(lname)
         cname = (
             os.path.join(self.datadir, "monol_testA_nustar_fpma_E_10-5_over_5-3")

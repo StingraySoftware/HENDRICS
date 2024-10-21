@@ -52,8 +52,7 @@ def test_filter_for_deadtime_par():
     """Test dead time filter, paralyzable case."""
     events = np.array([1, 1.1, 2, 2.2, 3, 3.1, 3.2])
     assert np.all(
-        hen.fake.filter_for_deadtime(events, 0.11, paralyzable=True)
-        == np.array([1, 2, 2.2, 3])
+        hen.fake.filter_for_deadtime(events, 0.11, paralyzable=True) == np.array([1, 2, 2.2, 3])
     )
 
 
@@ -157,9 +156,7 @@ class TestFake:
         hen.read_events.main(command.split())
 
         cls.first_event_file_cal = "calibrated" + HEN_FILE_EXTENSION
-        hen.calibrate.calibrate(
-            cls.first_event_file, cls.first_event_file_cal, rough=True
-        )
+        hen.calibrate.calibrate(cls.first_event_file, cls.first_event_file_cal, rough=True)
 
         cls.xmm_fits_file = os.path.join(cls.datadir, "monol_test_fake_lc_xmm.evt")
         # Note that I don't specify the instrument. This is because
@@ -299,9 +296,7 @@ class TestFake:
         # Put exactly one photon inside a very short GTI
         times[0] = 0.5
         times = np.sort(times)
-        event_list = EventList(
-            times, gti=np.array([[0, 0.9], [111, 123.2], [125.123, 1000]])
-        )
+        event_list = EventList(times, gti=np.array([[0, 0.9], [111, 123.2], [125.123, 1000]]))
 
         new_event_list = scramble(event_list, "smooth")
         assert new_event_list.time.size == times.size
@@ -314,9 +309,7 @@ class TestFake:
     def test_calibrate_xmm(self):
         """Test event file calibration."""
         xmm_file = self.xmm_ev_file
-        command = "{0} -r {1} --nproc 2".format(
-            xmm_file, os.path.join(self.datadir, "test.rmf")
-        )
+        command = "{0} -r {1} --nproc 2".format(xmm_file, os.path.join(self.datadir, "test.rmf"))
         with pytest.raises(RuntimeError):
             hen.calibrate.main(command.split())
 

@@ -46,9 +46,7 @@ class TestLcurve:
 
         treat_event_file(self.fits_fileA, discard_calibration=True)
         lcurve_from_events(self.new_filename)
-        newfile = os.path.join(
-            self.datadir, "monol_testA_nustar_fpma_lc" + HEN_FILE_EXTENSION
-        )
+        newfile = os.path.join(self.datadir, "monol_testA_nustar_fpma_lc" + HEN_FILE_EXTENSION)
         assert os.path.exists(newfile)
         type, data = get_file_type(newfile)
         assert type == "lc"
@@ -97,12 +95,8 @@ class TestFullRun:
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
 
-        cls.ev_fileA = os.path.join(
-            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-        )
-        cls.ev_fileB = os.path.join(
-            cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-        )
+        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
+        cls.ev_fileB = os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION)
         cls.ev_fileAcal = os.path.join(
             cls.datadir,
             "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
@@ -118,12 +112,8 @@ class TestFullRun:
         )
         hen.read_events.main(command.split())
         command = "{} {} -r {}".format(
-            os.path.join(
-                cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
-            ),
-            os.path.join(
-                cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
-            ),
+            os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
+            os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "test.rmf"),
         )
         hen.calibrate.main(command.split())
@@ -217,17 +207,13 @@ class TestFullRun:
         """Test light curves from FITS."""
         lcurve_ftools_orig = os.path.join(self.datadir, "lcurveA.fits")
 
-        lcurve_ftools = os.path.join(
-            self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION
-        )
+        lcurve_ftools = os.path.join(self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION)
 
         command = "{0} --outfile {1}".format(
             self.ev_fileAcal, os.path.join(self.datadir, "lcurve_lc")
         )
         hen.lcurve.main(command.split())
-        assert os.path.exists(
-            os.path.join(self.datadir, "lcurve_lc") + HEN_FILE_EXTENSION
-        )
+        assert os.path.exists(os.path.join(self.datadir, "lcurve_lc") + HEN_FILE_EXTENSION)
 
         command = f"--fits-input {lcurve_ftools_orig} --outfile {lcurve_ftools}"
         hen.lcurve.main(command.split())
@@ -237,9 +223,7 @@ class TestFullRun:
 
     def test_fits_lcurve1(self):
         """Test light curves from FITS."""
-        lcurve_ftools = os.path.join(
-            self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION
-        )
+        lcurve_ftools = os.path.join(self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION)
 
         lcurve_mp = os.path.join(self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION)
 
@@ -255,9 +239,7 @@ class TestFullRun:
 
         diff = lc_mp[:goodlen] - lc_ftools[:goodlen]
 
-        assert np.all(
-            np.abs(diff) <= 1e-3
-        ), "Light curve data do not coincide between FITS and HEN"
+        assert np.all(np.abs(diff) <= 1e-3), "Light curve data do not coincide between FITS and HEN"
 
     def test_txt_lcurve(self):
         """Test light curves from txt."""
@@ -287,9 +269,7 @@ class TestFullRun:
 
     def test_joinlcs(self):
         """Test produce joined light curves."""
-        new_filename = os.path.join(
-            self.datadir, "monol_test_joinlc" + HEN_FILE_EXTENSION
-        )
+        new_filename = os.path.join(self.datadir, "monol_test_joinlc" + HEN_FILE_EXTENSION)
         # because join_lightcurves separates by instrument
         new_actual_filename = os.path.join(
             self.datadir, "fpmamonol_test_joinlc" + HEN_FILE_EXTENSION
@@ -343,9 +323,7 @@ class TestFullRun:
         command = f"{a_in} -p 0.001 --lam 1e5"
 
         hen.lcurve.baseline_main(command.split())
-        out_lc = hen.io.load_lcurve(
-            hen.base.hen_root(a_in) + "_lc_baseline" + HEN_FILE_EXTENSION
-        )
+        out_lc = hen.io.load_lcurve(hen.base.hen_root(a_in) + "_lc_baseline" + HEN_FILE_EXTENSION)
         assert hasattr(out_lc, "base")
         gti_to_test = hen.io.load_events(self.ev_fileA).gti
         assert np.allclose(gti_to_test, out_lc.gti)
@@ -416,13 +394,8 @@ class TestFullRun:
     def test_apply_gti_lc(self):
         """Test applying a GTI file."""
         fname = os.path.join(self.datadir, "monol_testA_E3-50_gti") + HEN_FILE_EXTENSION
-        lcfname = (
-            os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
-        )
-        lcoutname = (
-            os.path.join(self.datadir, "monol_testA_E3-50_lc_gtifilt")
-            + HEN_FILE_EXTENSION
-        )
+        lcfname = os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
+        lcoutname = os.path.join(self.datadir, "monol_testA_E3-50_lc_gtifilt") + HEN_FILE_EXTENSION
         command = f"{lcfname} -a {fname} --debug"
         hen.create_gti.main(command.split())
         hen.io.load_lcurve(lcoutname)
@@ -437,9 +410,7 @@ class TestFullRun:
 
     def test_pds_fits(self):
         """Test PDS production with light curves obtained from FITS files."""
-        lcurve_ftools = os.path.join(
-            self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION
-        )
+        lcurve_ftools = os.path.join(self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION)
         command = f"{lcurve_ftools} --save-all -f 128"
         hen.fspec.main(command.split())
 
@@ -456,9 +427,7 @@ class TestFullRun:
         command = f"{lcname} {ufname}"
 
         hen.exposure.main(command.split())
-        fname = os.path.join(
-            self.datadir, "monol_testA_E3-50_lccorr" + HEN_FILE_EXTENSION
-        )
+        fname = os.path.join(self.datadir, "monol_testA_E3-50_lccorr" + HEN_FILE_EXTENSION)
         assert os.path.exists(fname)
         ftype, contents = hen.io.get_file_type(fname)
 

@@ -128,9 +128,7 @@ class TestPhaseogram:
             ]
         )
 
-    @pytest.mark.parametrize(
-        "norm", ["to1", "mediansub", "mediannorm", "meansub", "meannorm"]
-    )
+    @pytest.mark.parametrize("norm", ["to1", "mediansub", "mediannorm", "meansub", "meannorm"])
     def test_phaseogram_input_norm(self, norm):
         evfile = self.dum
         main_phaseogram(
@@ -205,9 +203,7 @@ class TestPhaseogram:
         withbt = not withfX
         create_parfile(par, withfX=withfX, withell1=withell1, withbt=withbt)
 
-        ip = run_interactive_phaseogram(
-            evfile, 9.9, test=True, nbin=16, nt=8, deorbit_par=par
-        )
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True, nbin=16, nt=8, deorbit_par=par)
         ip.update(1)
         with warnings.catch_warnings(record=True) as ws:
             ip.recalculate(1)
@@ -280,9 +276,7 @@ class TestPhaseogram:
         evfile = self.dum
         par = "orbit.par"
         create_parfile(par, withell1=use_ell1, withbt=not use_ell1)
-        ip = run_interactive_phaseogram(
-            evfile, 9.9, test=True, binary=True, deorbit_par=par
-        )
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True, binary=True, deorbit_par=par)
         ip.update(1)
         with warnings.catch_warnings(record=True) as ws:
             ip.recalculate(1)
