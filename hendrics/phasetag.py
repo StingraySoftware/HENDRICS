@@ -273,10 +273,7 @@ def phase_tag_fits(
     cols = table.columns
 
     # create new list of columns, copying all columns from other table
-    newlist = []
-
-    for c in cols:
-        newlist.append(c)
+    newlist = list(cols)
 
     if create:
         # then, create new column with orbital demodulation

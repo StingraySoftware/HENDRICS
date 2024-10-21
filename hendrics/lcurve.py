@@ -542,8 +542,7 @@ def lcurve_from_fits(
         """WARNING! FITS light curve handling is still under testing.
         Absolute times might be incorrect."""
     )
-    # TODO:
-    # treat consistently TDB, UTC, TAI, etc. This requires some documentation
+    # TODO: treat consistently TDB, UTC, TAI, etc. This requires some documentation
     # reading. For now, we assume TDB
     import numpy as np
     from stingray.gti import create_gti_from_condition
@@ -602,8 +601,7 @@ def lcurve_from_fits(
 
     # for lcurve light curves this should instead work
     if tunit == "d":
-        # TODO:
-        # Check this. For now, I assume TD (JD - 2440000.5).
+        # TODO: Check this. For now, I assume TD (JD - 2440000.5).
         # This is likely wrong
         timezero = Time(2440000.5 + timezero, scale="tdb", format="jd")
         tstart = Time(2440000.5 + tstart, scale="tdb", format="jd")
@@ -857,8 +855,7 @@ def _execute_lcurve(args):
             outfiles.append(wrap_fun(a))
     else:
         pool = Pool(processes=args.nproc)
-        for i in pool.imap_unordered(wrap_fun, arglist):
-            outfiles.append(i)
+        outfiles = list(pool.imap_unordered(wrap_fun, arglist))
         pool.close()
 
     log.debug(f"{outfiles}")

@@ -314,6 +314,16 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
 
     # flake8-use-pathlib (PTH)
     "PTH123", # builtin-open (not worth creating a Path object, builtin open is fine)
+    "PTH118", # os.path.join is fine
+    "PTH207", # standard glob is fine
+    "PTH120", # os.path.dirname is fine
+    "PTH110", # os.path.exists is fine
+    "PTH100", # os.path.abspath is fine
+    "PTH122", # os.path.splitext is fine
+    "PTH119", # os.path.basename is fine
+    "PTH109", # os.getcwd is fine
+    "PTH108", # os.unlink is fine
+    "PTH103", # os.makedirs is fine
 
     # flake8-simplify (SIM)
     "SIM103", # needless-bool (cannot be safely applied in all contexts (np.True_ is not True))

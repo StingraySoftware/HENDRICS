@@ -25,7 +25,7 @@ def _dummy_par(par, pb=1e20, a1=0.0, f0=1.0):
 
 
 def find_file_pattern_in_dir(pattern, directory):
-    return glob.glob(os.path.join(directory, pattern))
+    return Path(directory).glob(pattern)
 
 
 def cleanup_test_dir(datadir):

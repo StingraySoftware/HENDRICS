@@ -1,6 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to perform input/output operations."""
 
+from __future__ import annotations
+
 import copy
 import glob
 import importlib
@@ -12,7 +14,6 @@ import shutil
 import sys
 import warnings
 from collections.abc import Iterable
-from typing import Tuple
 
 import numpy as np
 from stingray.base import StingrayObject, StingrayTimeseries
@@ -163,7 +164,7 @@ def get_energy_from_events(ev):
     return elabel, energy
 
 
-def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, str]:
+def filter_energy(ev: EventList, emin: float, emax: float) -> tuple[EventList, str]:
     """Filter event list by energy (or PI)
 
     If an ``energy`` attribute is present, uses it. Otherwise, it switches
@@ -485,7 +486,7 @@ def get_file_type(fname, raw_data=False):
     if isinstance(contents_raw, Table):
         ftype_raw = recognize_stingray_table(contents_raw)
         if raw_data:
-            contents = dict([(col, contents_raw[col]) for col in contents_raw.colnames])
+            contents = {col: contents_raw[col] for col in contents_raw.colnames}
             contents.update(contents_raw.meta)
     elif "__sr__class__type__" in contents_raw:
         ftype_raw = contents_raw["__sr__class__type__"]
@@ -1248,7 +1249,7 @@ def main(args=None):
         print("-" * len(fname))
         print(f"{fname}")
         print("-" * len(fname))
-        if fname.endswith(".fits") or fname.endswith(".evt"):
+        if fname.endswith((".fits", ".evt")):
             print("This FITS file contains:", end="\n\n")
             print_fits_info(fname)
             print("-" * len(fname))
