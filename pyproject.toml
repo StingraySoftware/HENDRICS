@@ -388,6 +388,7 @@ skip = """
     *.svg,
     docs/scripts/cli.rst,
     *.ipynb,
+    pyproject.toml,
 """
 # The following list of words for codespell to ignore may contain some
 # misspellings that should be revisited and fixed in the future.
