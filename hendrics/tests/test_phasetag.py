@@ -2,10 +2,10 @@ import os
 
 import numpy as np
 import pytest
+from stingray.phasetag import main_phasetag
 
 from astropy.io import fits
 
-from ..phasetag import main_phasetag
 from . import cleanup_test_dir
 
 

@@ -1,9 +1,8 @@
 import numpy as np
+from stingray.efsearch import fit
 from stingray.events import EventList
+from stingray.ffa import ffa_search
 from stingray.lightcurve import Lightcurve
-
-from ..efsearch import fit
-from ..ffa import ffa_search
 
 
 # @pytest.mark.skipif('not HAS_NUMBA')
