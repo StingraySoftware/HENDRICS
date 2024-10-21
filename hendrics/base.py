@@ -3,7 +3,7 @@
 
 import copy
 import os
-import os.path
+from pathlib import Path
 import sys
 import tempfile
 import urllib
@@ -1267,12 +1267,12 @@ def get_file_extension(fname):
     >>> get_file_extension('bu.fits.Gz')
     '.fits.Gz'
     """
-    raw_ext = os.path.splitext(fname)[1]
-    if raw_ext.lower() in [".gz", ".bz", ".z", ".bz2"]:
-        fname = fname.replace(raw_ext, "")
-        return os.path.splitext(fname)[1] + raw_ext
-
-    return raw_ext
+    if not isinstance(fname, Path):
+        fname = Path(fname)
+    ext = fname.suffix
+    if ext.lower() in [".gz", ".bz", ".z", ".bz2"]:
+        ext = "".join(fname.suffixes[-2:])
+    return ext
 
 
 def splitext_improved(fname):
@@ -1290,9 +1290,15 @@ def splitext_improved(fname):
     ('bu', '.ecsv')
     >>> splitext_improved('bu.fits.Gz')
     ('bu', '.fits.Gz')
+    >>> path = splitext_improved(Path('bu.fits.Gz'))
+    >>> assert str(path[0]) == 'bu'
+    >>> assert path[1] == '.fits.Gz'
     """
+    is_path = isinstance(fname, Path)
     ext = get_file_extension(fname)
-    root = fname.replace(ext, "")
+    root = str(fname).removesuffix(ext)
+    if is_path:
+        root = Path(root)
     return root, ext
 
 
