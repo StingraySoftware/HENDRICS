@@ -1,11 +1,10 @@
-#!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 # NOTE: The configuration for the package, including the name, version, and
 # other information are set in the setup.cfg file.
 
-import os
 import sys
+from pathlib import Path
 
 from setuptools import setup
 
@@ -75,7 +74,7 @@ except Exception:
 
 setup(
     use_scm_version={
-        "write_to": os.path.join("hendrics", "version.py"),
+        "write_to": Path("hendrics", "version.py"),
         "write_to_template": VERSION_TEMPLATE,
     }
 )
