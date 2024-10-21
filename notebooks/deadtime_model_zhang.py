@@ -156,4 +156,3 @@ def check_pds_rate(td, tb, N=100):
     plt.xlabel(r'$\tau$')
     plt.ylabel(r'Max($P_j$)')
     plt.loglog()
-
