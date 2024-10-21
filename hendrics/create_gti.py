@@ -31,9 +31,7 @@ def filter_gti_by_length(gti, minimum_length):
     return np.array(newgti)
 
 
-def create_gti(
-    fname, filter_expr, safe_interval=[0, 0], outfile=None, minimum_length=0
-):
+def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None, minimum_length=0):
     """Create a GTI list by using boolean operations on file data.
 
     Parameters
@@ -75,9 +73,7 @@ def create_gti(
     if hasattr(data, "internal_array_attrs"):
         array_attrs = data.internal_array_attrs()
         mod_array_attrs = [attr.replace("_", "") for attr in array_attrs]
-        locals().update(
-            zip(mod_array_attrs, [getattr(data, attr) for attr in array_attrs])
-        )
+        locals().update(zip(mod_array_attrs, [getattr(data, attr) for attr in array_attrs]))
 
     good = eval(filter_expr)
 
@@ -85,9 +81,7 @@ def create_gti(
 
     gti = filter_gti_by_length(gti, minimum_length)
 
-    outfile = _assign_value_if_none(
-        outfile, hen_root(fname) + "_gti" + HEN_FILE_EXTENSION
-    )
+    outfile = _assign_value_if_none(outfile, hen_root(fname) + "_gti" + HEN_FILE_EXTENSION)
     save_data({"gti": gti, "mjdref": mjdref, "__sr__class__type__": "gti"}, outfile)
 
     return gti
@@ -114,9 +108,7 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
     data._mask = None
 
     newext = "_gtifilt" + HEN_FILE_EXTENSION
-    outname = _assign_value_if_none(
-        outname, fname.replace(HEN_FILE_EXTENSION, "") + newext
-    )
+    outname = _assign_value_if_none(outname, fname.replace(HEN_FILE_EXTENSION, "") + newext)
     save_data(data, outname)
 
     return newgti
@@ -129,8 +121,7 @@ def main(args=None):
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
-        "Create GTI files from a filter expression, or applies "
-        "previously created GTIs to a file"
+        "Create GTI files from a filter expression, or applies " "previously created GTIs to a file"
     )
     parser = argparse.ArgumentParser(description=description)
 
@@ -151,8 +142,7 @@ def main(args=None):
         "--create-only",
         default=False,
         action="store_true",
-        help="If specified, creates GTIs without applying"
-        + "them to files (Default: False)",
+        help="If specified, creates GTIs without applying" + "them to files (Default: False)",
     )
 
     parser.add_argument(
@@ -200,8 +190,7 @@ def main(args=None):
         filter_expr = args.filter
         if filter_expr is None and args.apply_gti is None:
             sys.exit(
-                "Please specify filter expression (-f option) or input "
-                "GTI file (-a option)"
+                "Please specify filter expression (-f option) or input " "GTI file (-a option)"
             )
 
         for fname in files:

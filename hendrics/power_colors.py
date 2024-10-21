@@ -90,9 +90,7 @@ def treat_power_colors(
     )
     good = (scolor.pc1 > 0) & (scolor.pc2 > 0)
     if np.any(~good):
-        warnings.warn(
-            "Some (non-log) power colors are negative. Neglecting them", UserWarning
-        )
+        warnings.warn("Some (non-log) power colors are negative. Neglecting them", UserWarning)
         scolor = scolor.apply_mask(good)
 
     if outfile is None:

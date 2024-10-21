@@ -459,9 +459,7 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     """
     events = copy.deepcopy(events)
     if parameter_file is None:
-        warnings.warn(
-            "No parameter file specified for deorbit. Returning" " unaltered event list"
-        )
+        warnings.warn("No parameter file specified for deorbit. Returning" " unaltered event list")
         return events
     if not os.path.exists(parameter_file):
         raise FileNotFoundError(f"Parameter file {parameter_file} does not exist")
@@ -537,6 +535,7 @@ def check_negative_numbers_in_args(args):
         args = sys.argv[1:]
     newargs = []
     for arg in args:
+        arg = str(arg)
         try:
             # Has to be a number, has to be negative
             assert -float(arg) > 0
@@ -659,9 +658,7 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(
-            tmp, mode="w+", dtype=a.dtype, shape=(bins,)
-        )
+        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
     else:
         hist_arr = np.zeros((bins,), dtype=a.dtype)
 
@@ -694,9 +691,7 @@ def hist2d_numba_seq(x, y, bins, ranges):
     >>> assert np.all(H == Hn)
     """
     H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
-    return _hist2d_numba_seq(
-        H, np.array([x, y]), np.asarray(list(bins)), np.asarray(ranges)
-    )
+    return _hist2d_numba_seq(H, np.array([x, y]), np.asarray(list(bins)), np.asarray(ranges))
 
 
 @njit(nogil=True, parallel=False)
@@ -727,9 +722,7 @@ def hist3d_numba_seq(tracks, bins, ranges):
     >>> assert np.all(H == Hn)
     """
     H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.uint64)
-    return _hist3d_numba_seq(
-        H, np.asarray(tracks), np.asarray(list(bins)), np.asarray(ranges)
-    )
+    return _hist3d_numba_seq(H, np.asarray(tracks), np.asarray(list(bins)), np.asarray(ranges))
 
 
 @njit(nogil=True, parallel=False)
@@ -770,9 +763,7 @@ def hist1d_numba_seq_weight(a, weights, bins, ranges, use_memmap=False, tmp=None
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(
-            tmp, mode="w+", dtype=a.dtype, shape=(bins,)
-        )
+        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
     else:
         hist_arr = np.zeros((bins,), dtype=a.dtype)
 
@@ -877,10 +868,7 @@ def _histnd_numba_seq(H, tracks, bins, ranges, slice_int):
 
     for t in range(tracks.shape[1]):
         slicearr = np.array(
-            [
-                (tracks[dim, t] - ranges[dim, 0]) * delta[dim]
-                for dim in range(tracks.shape[0])
-            ]
+            [(tracks[dim, t] - ranges[dim, 0]) * delta[dim] for dim in range(tracks.shape[0])]
         )
 
         good = np.all((slicearr < bins) & (slicearr >= 0))
@@ -1153,8 +1141,7 @@ def find_peaks_in_image(image, n=5, rough=False, **kwargs):
     """
     if not HAS_SKIMAGE or rough:
         best_cands = [
-            np.unravel_index(idx, image.shape)
-            for idx in np.argpartition(image.flatten(), -n)[-n:]
+            np.unravel_index(idx, image.shape) for idx in np.argpartition(image.flatten(), -n)[-n:]
         ]
         __best_stats = [image[bci] for bci in best_cands]
         best_cands = np.asarray(best_cands)[np.argsort(__best_stats)][::-1]

@@ -46,9 +46,7 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
          [[time[0] - dt[0]/2, time[-1] + dt[-1]/2]]
 
     """
-    assert len(events) == len(
-        priors
-    ), "`events` and `priors` must be of the same length"
+    assert len(events) == len(priors), "`events` and `priors` must be of the same length"
 
     dt = _assign_value_if_none(dt, np.median(np.diff(times)))
 
@@ -177,15 +175,9 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
 
     bins = np.percentile(dead_times, np.linspace(0, 100, 1000))
     hist_all, bins_all = histogram(dead_times, bins=bins, density=True)
-    hist_shield, bins_shield = histogram(
-        dead_times[shields > 0], bins=bins, density=True
-    )
-    hist_noshield, bins_noshield = histogram(
-        dead_times[shields == 0], bins=bins, density=True
-    )
-    hist_shld_hi, bins_shld_hi = histogram(
-        dead_times[shld_hi > 0], bins=bins, density=True
-    )
+    hist_shield, bins_shield = histogram(dead_times[shields > 0], bins=bins, density=True)
+    hist_noshield, bins_noshield = histogram(dead_times[shields == 0], bins=bins, density=True)
+    hist_shld_hi, bins_shld_hi = histogram(dead_times[shld_hi > 0], bins=bins, density=True)
 
     bin_centers = bins[:-1] + np.diff(bins) / 2
     fig = plt.figure("Dead time distribution", figsize=(10, 10))
@@ -302,9 +294,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
     outname : str
         Output file name
     """
-    outname = _assign_value_if_none(
-        outname, hen_root(lc_file) + "_lccorr" + HEN_FILE_EXTENSION
-    )
+    outname = _assign_value_if_none(outname, hen_root(lc_file) + "_lccorr" + HEN_FILE_EXTENSION)
 
     ftype, contents = get_file_type(lc_file)
 
@@ -355,9 +345,7 @@ def main(args=None):
         default=None,
         help="Root of output file names",
     )
-    parser.add_argument(
-        "--plot", help="Plot on window", default=False, action="store_true"
-    )
+    parser.add_argument("--plot", help="Plot on window", default=False, action="store_true")
     _add_default_args(parser, ["loglevel", "debug"])
 
     args = check_negative_numbers_in_args(args)

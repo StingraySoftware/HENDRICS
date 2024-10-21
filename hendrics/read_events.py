@@ -91,9 +91,7 @@ def treat_event_file(
             good = lc.counts > 0
             new_bad = (~good) & good_gti
             if np.any(new_bad):
-                warnings.warn(
-                    f"Found zero counts in the light curve at times{lc.time[new_bad]}"
-                )
+                warnings.warn(f"Found zero counts in the light curve at times{lc.time[new_bad]}")
                 gti = create_gti_from_condition(
                     lc.time, (good_gti & good), safe_interval=bin_time_for_occultations
                 )
@@ -105,9 +103,7 @@ def treat_event_file(
     detector_id = events.detector_id
 
     if randomize_by is not None:
-        events.time += np.random.uniform(
-            -randomize_by / 2, randomize_by / 2, events.time.size
-        )
+        events.time += np.random.uniform(-randomize_by / 2, randomize_by / 2, events.time.size)
 
     if fill_small_gaps is not None:
         events = events.fill_bad_time_intervals(fill_small_gaps)
@@ -150,15 +146,12 @@ def treat_event_file(
                 label = "gti"
 
             for ig, g in enumerate(gti_chunks):
-                outfile_local = (
-                    f"{outroot_local}_{label}{ig:03d}_ev" + HEN_FILE_EXTENSION
-                )
+                outfile_local = f"{outroot_local}_{label}{ig:03d}_ev" + HEN_FILE_EXTENSION
 
                 good_gti = cross_two_gtis([g], gti)
                 if noclobber and os.path.exists(outfile_local):
                     warnings.warn(
-                        f"{outfile_local} exists, "
-                        + "and noclobber option used. Skipping"
+                        f"{outfile_local} exists, " + "and noclobber option used. Skipping"
                     )
                     return
                 good = np.logical_and(events.time >= g[0], events.time < g[1])
@@ -279,9 +272,7 @@ def join_eventlists(event_file1, event_file2, new_event_file=None, ignore_instr=
         Output event file
     """
     if new_event_file is None:
-        new_event_file = (
-            common_name(event_file1, event_file2) + "_ev" + HEN_FILE_EXTENSION
-        )
+        new_event_file = common_name(event_file1, event_file2) + "_ev" + HEN_FILE_EXTENSION
 
     events1 = load_events(event_file1)
     events2 = load_events(event_file2)
@@ -354,11 +345,7 @@ def join_many_eventlists(eventfiles, new_event_file=None, ignore_instr=False):
         if not np.isclose(events.mjdref, first_events.mjdref):
             warnings.warn(f"{event_file} has a different MJDREF")
             continue
-        if (
-            hasattr(events, "instr")
-            and not events.instr == first_events.instr
-            and not ignore_instr
-        ):
+        if hasattr(events, "instr") and not events.instr == first_events.instr and not ignore_instr:
             warnings.warn(f"{event_file} is from a different instrument")
             continue
         elif ignore_instr:
@@ -467,14 +454,11 @@ def main_join(args=None):
     import argparse
 
     description = (
-        "Read a cleaned event files and saves the relevant "
-        "information in a standard format"
+        "Read a cleaned event files and saves the relevant " "information in a standard format"
     )
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="Files to join", type=str, nargs="+")
-    parser.add_argument(
-        "-o", "--output", type=str, help="Name of output file", default=None
-    )
+    parser.add_argument("-o", "--output", type=str, help="Name of output file", default=None)
     parser.add_argument(
         "--ignore-instr",
         help="Ignore instrument names in channels",
@@ -518,8 +502,7 @@ def main_splitevents(args=None):
     parser.add_argument(
         "--overlap",
         type=float,
-        help="Overlap factor. 0 for no overlap, 0.5 for "
-        "half-interval overlap, and so on.",
+        help="Overlap factor. 0 for no overlap, 0.5 for " "half-interval overlap, and so on.",
         default=None,
     )
     parser.add_argument(
@@ -533,9 +516,7 @@ def main_splitevents(args=None):
 
     if args.split_at_mjd is not None:
         return split_eventlist_at_mjd(args.fname, mjd=args.split_at_mjd)
-    return split_eventlist(
-        args.fname, max_length=args.length_split, overlap=args.overlap
-    )
+    return split_eventlist(args.fname, max_length=args.length_split, overlap=args.overlap)
 
 
 def main(args=None):
@@ -546,8 +527,7 @@ def main(args=None):
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
-        "Read a cleaned event files and saves the relevant "
-        "information in a standard format"
+        "Read a cleaned event files and saves the relevant " "information in a standard format"
     )
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs="+")

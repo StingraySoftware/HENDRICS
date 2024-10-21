@@ -46,9 +46,7 @@ def main(args=None):
         "--outname",
         type=str,
         default=None,
-        help="Output file name for summed (C)PDS. Default:"
-        + " tot_(c)pds"
-        + HEN_FILE_EXTENSION,
+        help="Output file name for summed (C)PDS. Default:" + " tot_(c)pds" + HEN_FILE_EXTENSION,
     )
 
     args = parser.parse_args(args)

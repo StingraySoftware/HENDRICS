@@ -194,9 +194,7 @@ def normalized_template(template, tomax=False, subtract_min=True):
     """
     dph = 1 / template.size
     phase = np.arange(dph / 2, 1, dph)
-    return normalized_template_func(template, tomax=tomax, subtract_min=subtract_min)(
-        phase
-    )
+    return normalized_template_func(template, tomax=tomax, subtract_min=subtract_min)(phase)
 
 
 # def estimate_errors(best_fit_templ, ntrial=100, profile_err=None):

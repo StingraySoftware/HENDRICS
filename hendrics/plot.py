@@ -210,15 +210,9 @@ def plot_powercolors(fnames):
 
     ts = load_data(fnames)
 
-    plot_power_colors(
-        ts["pc1"], ts["pc1_err"], ts["pc2"], ts["pc2_err"], plot_spans=True
-    )
-    plot_hues(
-        ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=True, plot_spans=True
-    )
-    plot_hues(
-        ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=False, plot_spans=True
-    )
+    plot_power_colors(ts["pc1"], ts["pc1_err"], ts["pc2"], ts["pc2_err"], plot_spans=True)
+    plot_hues(ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=True, plot_spans=True)
+    plot_hues(ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=False, plot_spans=True)
     return ts
 
 
@@ -499,9 +493,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
 
             mean = np.mean(profile)
 
-            low, high = poisson_conf_interval(
-                mean, interval="frequentist-confidence", sigma=1
-            )
+            low, high = poisson_conf_interval(mean, interval="frequentist-confidence", sigma=1)
 
             ax.axhline(mean)
             ax.fill_between(
@@ -511,9 +503,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
                 label=r"1-$\sigma c.l.$",
                 alpha=0.5,
             )
-            low, high = poisson_conf_interval(
-                mean, interval="frequentist-confidence", sigma=3
-            )
+            low, high = poisson_conf_interval(mean, interval="frequentist-confidence", sigma=3)
             ax.fill_between(
                 [0, 2],
                 [low, low],
@@ -629,9 +619,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             cbar = plt.colorbar(pcol, cax=axcolor, ticks=colorticks)
 
             if len(cs.allsegs[0]) > 1:
-                warnings.warn(
-                    "More than one contour found. " "Frequency estimates might be wrong"
-                )
+                warnings.warn("More than one contour found. " "Frequency estimates might be wrong")
             else:
                 for ax in (axffdot, axf):
                     ax.axvline(cs.allsegs[0][0][:, 0].min(), label="90% conf. lim.")
@@ -689,11 +677,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             axf.set_ylabel(ef.kind + " stat")
             axf.legend(loc=4)
 
-        if (
-            hasattr(ef, "best_fits")
-            and ef.best_fits is not None
-            and not len(ef.stat.shape) > 1
-        ):
+        if hasattr(ef, "best_fits") and ef.best_fits is not None and not len(ef.stat.shape) > 1:
             for f in ef.best_fits:
                 xs = np.linspace(np.min(ef.freq), np.max(ef.freq), len(ef.freq) * 2)
                 plt.plot(xs, f(xs))
@@ -706,11 +690,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             out = [ef.freq.flatten(), fdots.flatten(), ef.stat.flatten()]
             out_err = [None, None, None]
 
-            if (
-                hasattr(ef, "best_fits")
-                and ef.best_fits is not None
-                and not len(ef.stat.shape) > 1
-            ):
+            if hasattr(ef, "best_fits") and ef.best_fits is not None and not len(ef.stat.shape) > 1:
                 for f in ef.best_fits:
                     out.append(f(ef.freq.flatten()))
                     out_err.append(None)
@@ -898,12 +878,8 @@ def main(args=None):
         default=None,
         action="store_true",
     )
-    parser.add_argument(
-        "--xlin", help="Use linear X axis", default=False, action="store_true"
-    )
-    parser.add_argument(
-        "--ylin", help="Use linear Y axis", default=False, action="store_true"
-    )
+    parser.add_argument("--xlin", help="Use linear X axis", default=False, action="store_true")
+    parser.add_argument("--ylin", help="Use linear Y axis", default=False, action="store_true")
     parser.add_argument(
         "--white-sub",
         help="Subtract Poisson noise (only applies to PDS)",

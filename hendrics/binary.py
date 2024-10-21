@@ -37,12 +37,7 @@ def get_header_info(obj):
         dec = header["DEC_PNT"]
 
     a = SkyCoord(ra, dec, unit="degree")
-    info.raj = (
-        (a.ra.to_string("hourangle"))
-        .replace("s", "")
-        .replace("h", ":")
-        .replace("m", ":")
-    )
+    info.raj = (a.ra.to_string("hourangle")).replace("s", "").replace("h", ":").replace("m", ":")
     info.decj = (a.dec.to_string()).replace("s", "").replace("d", ":").replace("m", ":")
     if hasattr(obj, "e_interval"):
         e0, e1 = obj.e_interval
@@ -94,9 +89,7 @@ def save_lc_to_binary(lc, filename):
     return lcinfo
 
 
-def save_events_to_binary(
-    events, filename, bin_time, tstart=None, emin=None, emax=None
-):
+def save_events_to_binary(events, filename, bin_time, tstart=None, emin=None, emax=None):
     """Save an event list to binary format.
 
     Parameters
@@ -129,9 +122,7 @@ def save_events_to_binary(
 
     if emin is not None and emax is not None:
         if not hasattr(events, "energy") or events.energy is None:
-            raise ValueError(
-                "Energy filtering requested for uncalibrated event " "list"
-            )
+            raise ValueError("Energy filtering requested for uncalibrated event " "list")
 
         good = (events.energy >= emin) & (events.energy < emax)
         events = events.apply_mask(good)
@@ -183,9 +174,7 @@ def save_inf(lcinfo, info, filename):
 
     with open(filename, "w") as f:
         print(
-            " Data file name without suffix         " " =  {}".format(
-                filename.replace(".inf", "")
-            ),
+            " Data file name without suffix         " " =  {}".format(filename.replace(".inf", "")),
             file=f,
         )
         print(

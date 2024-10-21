@@ -188,9 +188,7 @@ def scrunch_lightcurve_objs(lclist):
     return lc0
 
 
-def scrunch_lightcurves(
-    lcfilelist, outfile="out_scrlc" + HEN_FILE_EXTENSION, save_joint=False
-):
+def scrunch_lightcurves(lcfilelist, outfile="out_scrlc" + HEN_FILE_EXTENSION, save_joint=False):
     """Create a single light curve from input light curves.
 
     Light curves are appended when they cover different times, and summed when
@@ -234,9 +232,7 @@ def scrunch_lightcurves(
     return lc0
 
 
-def filter_lc_gtis(
-    lc, safe_interval=None, delete=False, min_length=0, return_borders=False
-):
+def filter_lc_gtis(lc, safe_interval=None, delete=False, min_length=0, return_borders=False):
     """Filter a light curve for GTIs.
 
     Parameters
@@ -388,8 +384,7 @@ def lcurve_from_events(
     elif e_interval is not None and np.all(np.array(e_interval) > 0):
         if not hasattr(evdata, "energy") or evdata.energy is None:
             raise ValueError(
-                "No energy information is present in the file."
-                + " Did you run HENcalibrate?"
+                "No energy information is present in the file." + " Did you run HENcalibrate?"
             )
         es = evdata.energy
         good = np.logical_and(es > e_interval[0], es <= e_interval[1])
@@ -405,9 +400,7 @@ def lcurve_from_events(
         )
 
     # Assign default value if None
-    outfile = assign_value_if_none(
-        outfile, hen_root(f) + tag + deorbit_tag + weight_on_tag + "_lc"
-    )
+    outfile = assign_value_if_none(outfile, hen_root(f) + tag + deorbit_tag + weight_on_tag + "_lc")
 
     # Take out extension from name, if present, then give extension. This
     # avoids multiple extensions
@@ -465,9 +458,7 @@ def lcurve_from_events(
     lc.instr = instr
     lc.e_interval = e_interval
 
-    lc = filter_lc_gtis(
-        lc, safe_interval=safe_interval, delete=False, min_length=min_length
-    )
+    lc = filter_lc_gtis(lc, safe_interval=safe_interval, delete=False, min_length=min_length)
 
     if len(lc.gti) == 0:
         warnings.warn(f"No GTIs above min_length ({min_length}s) found.")
@@ -642,8 +633,7 @@ def lcurve_from_fits(
             dt *= 86400
     except Exception:
         warnings.warn(
-            "Assuming that TIMEDEL is the median difference between the"
-            " light curve times",
+            "Assuming that TIMEDEL is the median difference between the" " light curve times",
             AstropyUserWarning,
         )
         dt = np.median(np.diff(time))
@@ -942,9 +932,7 @@ def main(args=None):
         default=False,
         action="store_true",
     )
-    parser.add_argument(
-        "-d", "--outdir", type=str, default=None, help="Output directory"
-    )
+    parser.add_argument("-d", "--outdir", type=str, default=None, help="Output directory")
     parser.add_argument(
         "--noclobber",
         help="Do not overwrite existing files",
@@ -969,9 +957,7 @@ def main(args=None):
         type=str,
         help="Use a given attribute of the event list as weights for the light curve",
     )
-    parser = _add_default_args(
-        parser, ["deorbit", "output", "loglevel", "debug", "nproc"]
-    )
+    parser = _add_default_args(parser, ["deorbit", "output", "loglevel", "debug", "nproc"])
 
     args = check_negative_numbers_in_args(args)
     args = parser.parse_args(args)
