@@ -1001,7 +1001,7 @@ else:
 
 
 def touch(fname):
-    """Mimick the same shell command.
+    """Mimic the same shell command.
 
     Examples
     --------

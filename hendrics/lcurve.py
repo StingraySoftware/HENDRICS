@@ -590,7 +590,7 @@ def lcurve_from_fits(
     except Exception:
         raise (Exception("TSTART and TSTOP need to be specified"))
 
-    # For nulccorr lcs this whould work
+    # For nulccorr lcs this would work
 
     timezero = high_precision_keyword_read(lchdulist[ratehdu].header, "TIMEZERO")
     # Sometimes timezero is "from tstart", sometimes it's an absolute time.
@@ -606,7 +606,7 @@ def lcurve_from_fits(
         timezero = Time(2440000.5 + timezero, scale="tdb", format="jd")
         tstart = Time(2440000.5 + tstart, scale="tdb", format="jd")
         tstop = Time(2440000.5 + tstop, scale="tdb", format="jd")
-        # if None, use NuSTAR defaulf MJDREF
+        # if None, use NuSTAR default MJDREF
         mjdref = assign_value_if_none(
             mjdref,
             Time(np.longdouble("55197.00076601852"), scale="tdb", format="mjd"),

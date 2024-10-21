@@ -148,7 +148,7 @@ def main(args=None):
         "--create-only",
         default=False,
         action="store_true",
-        help="If specified, creates GTIs withouth applying"
+        help="If specified, creates GTIs without applying"
         + "them to files (Default: False)",
     )
 

@@ -308,10 +308,10 @@ HENefsearch
                             Size of the event list segment to use (default None,
                             implying the whole observation)
       --step STEP           Step size of the frequency axis. Defaults to
-                            1/oversample/observ.length.
+                            1/oversample/obs_length.
       --oversample OVERSAMPLE
                             Oversampling factor - frequency resolution improvement
-                            w.r.t. the standard FFT's 1/observ.length.
+                            w.r.t. the standard FFT's 1/obs_length.
       --fast                Use a faster folding algorithm. It automatically
                             searches for the first spin derivative using an
                             optimized step.This option ignores expocorr,
@@ -1183,10 +1183,10 @@ HENzsearch
                             Size of the event list segment to use (default None,
                             implying the whole observation)
       --step STEP           Step size of the frequency axis. Defaults to
-                            1/oversample/observ.length.
+                            1/oversample/obs_length.
       --oversample OVERSAMPLE
                             Oversampling factor - frequency resolution improvement
-                            w.r.t. the standard FFT's 1/observ.length.
+                            w.r.t. the standard FFT's 1/obs_length.
       --fast                Use a faster folding algorithm. It automatically
                             searches for the first spin derivative using an
                             optimized step.This option ignores expocorr,

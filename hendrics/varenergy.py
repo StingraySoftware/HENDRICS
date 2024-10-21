@@ -136,7 +136,7 @@ def main(args=None):
         nargs=2,
         type=float,
         default=[0.0, 100],
-        help="Frequence interval",
+        help="Frequency interval",
     )
     parser.add_argument(
         "--energy-values",
