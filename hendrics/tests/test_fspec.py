@@ -4,7 +4,7 @@ import shutil
 import numpy as np
 
 try:
-    from numpy import exceptions
+    import numpy.exceptions
     from numpy.exceptions import ComplexWarning
 except ImportError:
     from numpy import ComplexWarning

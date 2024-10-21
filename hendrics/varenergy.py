@@ -5,23 +5,16 @@
 import warnings
 
 import numpy as np
+from stingray.varenergyspectrum import (
+    CountSpectrum,
+    CovarianceSpectrum,
+    LagSpectrum,
+    RmsSpectrum,
+)
+from stingray.varenergyspectrum import VarEnergySpectrum as StingrayVes
 
 from astropy import log
 from astropy.table import Table
-
-try:
-    from stingray.varenergyspectrum import (
-        CountSpectrum,
-        CovarianceSpectrum,
-        LagSpectrum,
-        RmsSpectrum,
-        _decode_energy_specification,
-    )
-    from stingray.varenergyspectrum import VarEnergySpectrum as VES
-except ImportError:
-    VES = object
-    warnings.warn("Please update stingray to the latest version.")
-
 
 from .base import hen_root, interpret_bintime
 from .io import load_events
@@ -102,7 +95,7 @@ def varenergy_from_astropy_table(fname):
     return varenergy
 
 
-class VarEnergySpectrum(VES):
+class VarEnergySpectrum(StingrayVes):
     def __init__(self):
         for attr in [
             "ref_band",

@@ -1,4 +1,5 @@
 import copy
+import importlib
 import os
 from collections.abc import Iterable
 
@@ -36,12 +37,7 @@ from hendrics.tests import _dummy_par
 
 from . import cleanup_test_dir
 
-try:
-    import pandas as pd
-
-    HAS_PD = True
-except ImportError:
-    HAS_PD = False
+HAS_PD = importlib.util.find_spec("pandas") is not None
 
 
 class TestEFsearch:
