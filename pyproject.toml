@@ -267,6 +267,84 @@ extend-ignore = "E203, W503, W605"
 max-line-length = 100
 exclude = ".git,__pycache__,docs/source/conf.py,old,build,dist,*.egg-info"
 
+[tool.ruff]
+lint.select = ["ALL"]
+exclude=[
+    "astropy/extern/*",
+    "*_parsetab.py",
+    "*_lextab.py"
+]
+lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml` instead.
+
+    # flake8-builtins (A) : shadowing a Python built-in.
+    # New ones should be avoided and is up to maintainers to enforce.
+    "A00",
+
+    # flake8-annotations (ANN)
+    "ANN101",  # No annotation for `self`.
+    "ANN102",  # No annotation for `cls`.
+
+    # flake8-bugbear (B)
+    "B008",  # FunctionCallArgumentDefault
+
+    # flake8-commas (COM)
+    "COM812",  # TrailingCommaMissing
+    "COM819",  # TrailingCommaProhibited
+
+    # pydocstyle (D)
+    # Missing Docstrings
+    "D102",  # Missing docstring in public method. Don't check b/c docstring inheritance.
+    "D105",  # Missing docstring in magic method. Don't check b/c class docstring.
+    # Whitespace Issues
+    "D200",  # FitsOnOneLine
+    # Docstring Content Issues
+    "D410",  # BlankLineAfterSection. Using D412 instead.
+    "D400",  # EndsInPeriod.  NOTE: might want to revisit this.
+
+    # pycodestyle (E, W)
+    "E711",  # NoneComparison  (see unfixable)
+    "E741",  # AmbiguousVariableName. Physics variables are often poor code variables
+
+    # flake8-fixme (FIX)
+    "FIX002",  # Line contains TODO | notes for improvements are OK iff the code works
+
+    # ISC001 shouldn't be used with ruff format
+    # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "ISC001",
+
+    # pep8-naming (N)
+    "N803",  # invalid-argument-name. Physics variables are often poor code variables
+    "N806",  # non-lowercase-variable-in-function. Physics variables are often poor code variables
+
+    # pandas-vet (PD)
+    "PD",
+
+    # pylint (PLR and PLW)
+    "PLR1730", # if-stmt-min-max (not always clearer, and sometimes slower)
+    "PLW0642", # self-or-cls-assignment (occasionally desirable, very rarely a mistake)
+
+    # flake8-use-pathlib (PTH)
+    "PTH123", # builtin-open (not worth creating a Path object, builtin open is fine)
+
+    # flake8-simplify (SIM)
+    "SIM103", # needless-bool (cannot be safely applied in all contexts (np.True_ is not True))
+
+    # flake8-self (SLF)
+    "SLF001", # private member access
+
+    # flake8-todos (TD)
+    "TD002",  # Missing author in TODO
+
+    # flake8-return (RET)
+    # RET can sometimes help find places where refactoring is very helpful,
+    # but enforcing it everywhere might create undesirable churn
+    "RET505",  # superfluous-else-return
+    "RET506",  # superfluous-else-raise
+
+    # Ruff-specific rules (RUF)
+    "RUF005",  # unpack-instead-of-concatenating-to-collection-literal -- it's not clearly faster.
+]
+
 [tool.ruff.lint.extend-per-file-ignores]
 "setup.py" = ["INP001"]  # Part of configuration, not a package.
 ".github/workflows/*.py" = ["INP001"]
