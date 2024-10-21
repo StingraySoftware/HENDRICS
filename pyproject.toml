@@ -259,9 +259,7 @@ filterwarnings = [
 [tool.ruff]
 lint.select = ["ALL"]
 exclude=[
-    "astropy/extern/*",
-    "*_parsetab.py",
-    "*_lextab.py",
+    "notebooks/*.ipynb",
     "*.svg"
 ]
 lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml` instead.
@@ -338,11 +336,6 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
 [tool.ruff.lint.extend-per-file-ignores]
 "setup.py" = ["INP001"]  # Part of configuration, not a package.
 ".github/workflows/*.py" = ["INP001"]
-"astropy/modeling/models/__init__.py" = ["F405"]
-"astropy/utils/decorators.py" = [
-    "D214", "D215",  # keep Examples section indented.
-    "D411",  # sphinx treats spaced example sections as real sections
-]
 "test_*.py" = [
     "ANN201",  # Public function without return type annotation
     "B018",  # UselessExpression
@@ -353,11 +346,6 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
 "conftest.py" = ["INP001"]  # Part of configuration, not a package.
 "docs/*.py" = [
     "INP001",  # implicit-namespace-package. The examples are not a package.
-]
-"examples/*.py" = [
-    "E402",   # Imports are done as needed.
-    "INP001", # implicit-namespace-package. The examples are not a package.
-    "T203"    # pprint found
 ]
 
 [tool.ruff.lint.flake8-annotations]
@@ -424,5 +412,11 @@ ignore-words-list = """
     wirth,
 """
 
-[tool.black]
-line-length = 100
+[tool.docformatter]
+    # The ``summaries`` are not (yet) 75 characters because the summary lines can't be
+    # automatically wrapped and must be re-written, which should be done at some point.
+    recursive = true
+    wrap-summaries = 1000
+    wrap-descriptions = 75
+    black = true
+    syntax = "numpy"
