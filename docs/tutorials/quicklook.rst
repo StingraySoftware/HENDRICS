@@ -34,7 +34,7 @@ of intermediate products until the final result. For example:
    with a given bin time.
    Only if starting from a calibrated event list, the light curve can be
    obtained by specifying an energy range, otherwise only the PI channel
-   filtering is avaiable.
+   filtering is available.
 
 4. (optional) **summed light curves** if we want to join events from
    multiple instruments, or just from different observing times
