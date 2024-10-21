@@ -1,34 +1,38 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """A miscellaneous collection of basic functions."""
 
-import os.path
-import sys
 import copy
 import os
+import os.path
+import sys
+import tempfile
 import urllib
 import warnings
 from collections.abc import Iterable
 from pathlib import Path
-import tempfile
+
+import numpy as np
+from numpy import histogram as histogram_np
+from numpy import histogram2d as histogram2d_np
+from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter
+from stingray.pulse.pulsar import _load_and_prepare_TOAs
+from stingray.stats import (
+    fold_detection_level,
+    fold_profile_probability,
+    pds_detection_level,
+    pds_probability,
+    z2_n_detection_level,
+    z2_n_probability,
+)
+
+from astropy import log
 from astropy.io.registry import identify_format
 from astropy.table import Table
 
-from scipy.interpolate import interp1d
-from scipy.ndimage import gaussian_filter
-from scipy.stats import ncx2
-import numpy as np
-from numpy import histogram2d as histogram2d_np
-from numpy import histogram as histogram_np
-from astropy.logger import AstropyUserWarning
-from astropy import log
-from stingray.stats import pds_probability, pds_detection_level
-from stingray.stats import z2_n_detection_level, z2_n_probability
-from stingray.stats import fold_detection_level, fold_profile_probability
-from stingray.pulse.pulsar import _load_and_prepare_TOAs
-
 try:
-    import pint.toa as toa
     import pint
+    import pint.toa as toa
     from pint.models import get_model
 
     HAS_PINT = True
@@ -52,15 +56,10 @@ except ImportError:
 
 
 from . import (
-    prange,
-    array_take,
     HAS_NUMBA,
+    array_take,
     njit,
-    vectorize,
-    float32,
-    float64,
-    int32,
-    int64,
+    prange,
 )
 
 __all__ = [
@@ -254,7 +253,7 @@ def _look_for_array_in_array(array1, array2):
 
 def is_string(s):
     """Portable function to answer this question."""
-    return isinstance(s, str)  # NOQA
+    return isinstance(s, str)
 
 
 def _order_list_of_arrays(data, order):
@@ -410,7 +409,7 @@ def simple_orbit_fun_from_parfile(
     parfile : str
         Any parameter file understood by PINT (Tempo or Tempo2 format)
 
-    Other parameters
+    Other Parameters
     ----------------
     ntimes : int
         Number of time intervals to use for interpolation. Default 1000
@@ -423,7 +422,6 @@ def simple_orbit_fun_from_parfile(
     correction_mjd : function
         Function that accepts times in MJDs and returns the deorbited times.
     """
-    from scipy.interpolate import interp1d
     from astropy import units
 
     if not HAS_PINT:
@@ -461,10 +459,12 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     """
     events = copy.deepcopy(events)
     if parameter_file is None:
-        warnings.warn("No parameter file specified for deorbit. Returning" " unaltered event list")
+        warnings.warn(
+            "No parameter file specified for deorbit. Returning" " unaltered event list"
+        )
         return events
     if not os.path.exists(parameter_file):
-        raise FileNotFoundError("Parameter file {} does not exist".format(parameter_file))
+        raise FileNotFoundError(f"Parameter file {parameter_file} does not exist")
 
     if events.mjdref < 33282.0:
         raise ValueError("MJDREF is very low (<01-01-1950), " "this is unsupported.")
@@ -605,7 +605,6 @@ def compute_bin(x, bin_edges):
     >>> assert compute_bin(5, bin_edges) == 1
     >>> assert compute_bin(10, bin_edges) == 1
     """
-
     # assuming uniform bins for now
     n = bin_edges.shape[0] - 1
     a_min = bin_edges[0]
@@ -660,7 +659,9 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
+        hist_arr = np.lib.format.open_memmap(
+            tmp, mode="w+", dtype=a.dtype, shape=(bins,)
+        )
     else:
         hist_arr = np.zeros((bins,), dtype=a.dtype)
 
@@ -693,7 +694,9 @@ def hist2d_numba_seq(x, y, bins, ranges):
     >>> assert np.all(H == Hn)
     """
     H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
-    return _hist2d_numba_seq(H, np.array([x, y]), np.asarray(list(bins)), np.asarray(ranges))
+    return _hist2d_numba_seq(
+        H, np.array([x, y]), np.asarray(list(bins)), np.asarray(ranges)
+    )
 
 
 @njit(nogil=True, parallel=False)
@@ -723,9 +726,10 @@ def hist3d_numba_seq(tracks, bins, ranges):
     ...                       ranges=[[0., 1.], [2., 3.], [4., 5.]])
     >>> assert np.all(H == Hn)
     """
-
     H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.uint64)
-    return _hist3d_numba_seq(H, np.asarray(tracks), np.asarray(list(bins)), np.asarray(ranges))
+    return _hist3d_numba_seq(
+        H, np.asarray(tracks), np.asarray(list(bins)), np.asarray(ranges)
+    )
 
 
 @njit(nogil=True, parallel=False)
@@ -766,7 +770,9 @@ def hist1d_numba_seq_weight(a, weights, bins, ranges, use_memmap=False, tmp=None
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
+        hist_arr = np.lib.format.open_memmap(
+            tmp, mode="w+", dtype=a.dtype, shape=(bins,)
+        )
     else:
         hist_arr = np.zeros((bins,), dtype=a.dtype)
 
@@ -841,7 +847,6 @@ def hist3d_numba_seq_weight(tracks, weights, bins, ranges):
     ...    ranges=[[0., 1.], [2., 3.], [4., 5.]])
     >>> assert np.all(H == Hn)
     """
-
     H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.double)
     return _hist3d_numba_seq_weight(
         H,
@@ -872,7 +877,10 @@ def _histnd_numba_seq(H, tracks, bins, ranges, slice_int):
 
     for t in range(tracks.shape[1]):
         slicearr = np.array(
-            [(tracks[dim, t] - ranges[dim, 0]) * delta[dim] for dim in range(tracks.shape[0])]
+            [
+                (tracks[dim, t] - ranges[dim, 0]) * delta[dim]
+                for dim in range(tracks.shape[0])
+            ]
         )
 
         good = np.all((slicearr < bins) & (slicearr >= 0))
@@ -1145,7 +1153,8 @@ def find_peaks_in_image(image, n=5, rough=False, **kwargs):
     """
     if not HAS_SKIMAGE or rough:
         best_cands = [
-            np.unravel_index(idx, image.shape) for idx in np.argpartition(image.flatten(), -n)[-n:]
+            np.unravel_index(idx, image.shape)
+            for idx in np.argpartition(image.flatten(), -n)[-n:]
         ]
         __best_stats = [image[bci] for bci in best_cands]
         best_cands = np.asarray(best_cands)[np.argsort(__best_stats)][::-1]
@@ -1271,7 +1280,6 @@ def get_file_extension(fname):
     >>> get_file_extension('bu.fits.Gz')
     '.fits.Gz'
     """
-
     raw_ext = os.path.splitext(fname)[1]
     if raw_ext.lower() in [".gz", ".bz", ".z", ".bz2"]:
         fname = fname.replace(raw_ext, "")

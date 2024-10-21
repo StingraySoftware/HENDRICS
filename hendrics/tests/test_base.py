@@ -1,10 +1,11 @@
 import os
-import pytest
+
 import numpy as np
-from hendrics.base import deorbit_events, normalize_dyn_profile
+import pytest
 from stingray.events import EventList
+
+from hendrics.base import deorbit_events, normalize_dyn_profile
 from hendrics.tests import _dummy_par
-from hendrics.fold import HAS_PINT
 
 
 class TestNormalize:
@@ -59,7 +60,9 @@ def test_deorbit_badpar():
 
 def test_deorbit_non_existing_par():
     ev = np.asarray(1)
-    with pytest.raises(FileNotFoundError, match="Parameter file warjladsfjqpeifjsdk.par"):
+    with pytest.raises(
+        FileNotFoundError, match="Parameter file warjladsfjqpeifjsdk.par"
+    ):
         deorbit_events(ev, "warjladsfjqpeifjsdk.par")
 
 

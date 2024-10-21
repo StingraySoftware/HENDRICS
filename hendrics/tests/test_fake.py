@@ -1,21 +1,19 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Test a full run of the codes from the command line."""
 
-import shutil
 import os
-import glob
-import subprocess as sp
-import pytest
+
 import numpy as np
+import pytest
+from stingray.events import EventList
+
+import hendrics as hen
 from astropy import log
 from astropy.io import fits
-import hendrics as hen
-from stingray.events import EventList
-from hendrics.tests import _dummy_par
-from hendrics import fake, calibrate, read_events, io
 from hendrics.fake import scramble
 from hendrics.io import load_events
-from hendrics.fold import HAS_PINT
+from hendrics.tests import _dummy_par
+
 from . import cleanup_test_dir
 
 try:
@@ -34,7 +32,7 @@ def test_filter_for_deadtime_nonpar():
     events = np.array([1, 1.05, 1.07, 1.08, 1.1, 2, 2.2, 3, 3.1, 3.2])
     filt_events = hen.fake.filter_for_deadtime(events, 0.11)
     expected = np.array([1, 2, 2.2, 3, 3.2])
-    assert np.all(filt_events == expected), "Wrong: {} vs {}".format(filt_events, expected)
+    assert np.all(filt_events == expected), f"Wrong: {filt_events} vs {expected}"
 
 
 def test_filter_for_deadtime_nonpar_bkg():
@@ -46,15 +44,16 @@ def test_filter_for_deadtime_nonpar_bkg():
     )
     expected_ev = np.array([2, 2.2, 3, 3.2])
     expected_bk = np.array([1])
-    assert np.all(filt_events == expected_ev), "Wrong: {} vs {}".format(filt_events, expected_ev)
-    assert np.all(info.bkg == expected_bk), "Wrong: {} vs {}".format(info.bkg, expected_bk)
+    assert np.all(filt_events == expected_ev), f"Wrong: {filt_events} vs {expected_ev}"
+    assert np.all(info.bkg == expected_bk), f"Wrong: {info.bkg} vs {expected_bk}"
 
 
 def test_filter_for_deadtime_par():
     """Test dead time filter, paralyzable case."""
     events = np.array([1, 1.1, 2, 2.2, 3, 3.1, 3.2])
     assert np.all(
-        hen.fake.filter_for_deadtime(events, 0.11, paralyzable=True) == np.array([1, 2, 2.2, 3])
+        hen.fake.filter_for_deadtime(events, 0.11, paralyzable=True)
+        == np.array([1, 2, 2.2, 3])
     )
 
 
@@ -71,8 +70,8 @@ def test_filter_for_deadtime_par_bkg():
     )
     expected_ev = np.array([2, 2.2, 3])
     expected_bk = np.array([1])
-    assert np.all(filt_events == expected_ev), "Wrong: {} vs {}".format(filt_events, expected_ev)
-    assert np.all(info.bkg == expected_bk), "Wrong: {} vs {}".format(info.bkg, expected_bk)
+    assert np.all(filt_events == expected_ev), f"Wrong: {filt_events} vs {expected_ev}"
+    assert np.all(info.bkg == expected_bk), f"Wrong: {info.bkg} vs {expected_bk}"
 
 
 def test_filter_for_deadtime_par_bkg_obj():
@@ -97,10 +96,10 @@ def test_filter_for_deadtime_par_bkg_obj():
     filt_pis = filt_events.pi
     filt_nrgs = filt_events.energy
 
-    assert np.all(filt_times == expected_ev), "Wrong: {} vs {}".format(filt_events, expected_ev)
-    assert np.all(filt_pis == expected_pi), "Wrong: {} vs {}".format(filt_events, expected_ev)
-    assert np.all(filt_nrgs == expected_nrg), "Wrong: {} vs {}".format(filt_events, expected_ev)
-    assert np.all(info.bkg == expected_bk), "Wrong: {} vs {}".format(info.bkg, expected_bk)
+    assert np.all(filt_times == expected_ev), f"Wrong: {filt_events} vs {expected_ev}"
+    assert np.all(filt_pis == expected_pi), f"Wrong: {filt_events} vs {expected_ev}"
+    assert np.all(filt_nrgs == expected_nrg), f"Wrong: {filt_events} vs {expected_ev}"
+    assert np.all(info.bkg == expected_bk), f"Wrong: {info.bkg} vs {expected_bk}"
 
 
 def test_deadtime_mask_par():
@@ -134,7 +133,7 @@ def verify_all_checksums(filename):
             assert hdu.verify_checksum() == 1, f"Bad checksum: {hdu.name}"
 
 
-class TestFake(object):
+class TestFake:
     """Test how command lines work.
 
     Usually considered bad practice, but in this
@@ -143,7 +142,7 @@ class TestFake(object):
     Inspired by https://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
 
     When command line is missing, uses some function calls
-    """  # NOQA
+    """
 
     @classmethod
     def setup_class(cls):
@@ -154,11 +153,13 @@ class TestFake(object):
         )
         cls.par = _dummy_par("bubububu.par")
         cls.fits_fileA = os.path.join(cls.datadir, "monol_testA.evt")
-        command = "{0} --discard-calibration".format(cls.fits_fileA)
+        command = f"{cls.fits_fileA} --discard-calibration"
         hen.read_events.main(command.split())
 
         cls.first_event_file_cal = "calibrated" + HEN_FILE_EXTENSION
-        hen.calibrate.calibrate(cls.first_event_file, cls.first_event_file_cal, rough=True)
+        hen.calibrate.calibrate(
+            cls.first_event_file, cls.first_event_file_cal, rough=True
+        )
 
         cls.xmm_fits_file = os.path.join(cls.datadir, "monol_test_fake_lc_xmm.evt")
         # Note that I don't specify the instrument. This is because
@@ -178,7 +179,7 @@ class TestFake(object):
                 cls.xmm_fits_file,
             ]
         )
-        command = "{0}  --discard-calibration".format(cls.xmm_fits_file)
+        command = f"{cls.xmm_fits_file}  --discard-calibration"
         hen.read_events.main(command.split())
         cls.xmm_ev_file = os.path.join(
             cls.datadir,
@@ -298,7 +299,9 @@ class TestFake(object):
         # Put exactly one photon inside a very short GTI
         times[0] = 0.5
         times = np.sort(times)
-        event_list = EventList(times, gti=np.array([[0, 0.9], [111, 123.2], [125.123, 1000]]))
+        event_list = EventList(
+            times, gti=np.array([[0, 0.9], [111, 123.2], [125.123, 1000]])
+        )
 
         new_event_list = scramble(event_list, "smooth")
         assert new_event_list.time.size == times.size
@@ -311,14 +314,16 @@ class TestFake(object):
     def test_calibrate_xmm(self):
         """Test event file calibration."""
         xmm_file = self.xmm_ev_file
-        command = "{0} -r {1} --nproc 2".format(xmm_file, os.path.join(self.datadir, "test.rmf"))
+        command = "{0} -r {1} --nproc 2".format(
+            xmm_file, os.path.join(self.datadir, "test.rmf")
+        )
         with pytest.raises(RuntimeError):
             hen.calibrate.main(command.split())
 
     def test_calibrate_xmm_normf(self):
         """Test event file calibration."""
         xmm_file = self.xmm_ev_file
-        command = "{0} --rough --nproc 2".format(xmm_file)
+        command = f"{xmm_file} --rough --nproc 2"
         hen.calibrate.main(command.split())
 
     @classmethod

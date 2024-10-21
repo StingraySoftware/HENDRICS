@@ -1,39 +1,50 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-from astropy.io.fits import Header
+import os
+
+import numpy as np
+import pytest
 from stingray import (
-    StingrayTimeseries,
+    AveragedCrossspectrum,
+    Crossspectrum,
     EventList,
     Lightcurve,
     Powerspectrum,
-    Crossspectrum,
-    AveragedCrossspectrum,
+    StingrayTimeseries,
 )
 
-
-import numpy as np
-import os
-from hendrics.base import hen_root
-from hendrics.io import load_events, save_events, save_lcurve, load_lcurve
-from hendrics.io import (
-    save_data,
-    load_data,
-    save_pds,
-    load_pds,
-    save_timeseries,
-    load_timeseries,
-)
-from hendrics.io import HEN_FILE_EXTENSION, _split_high_precision_number
-from hendrics.io import save_model, load_model, HAS_C256, HAS_NETCDF, HAS_H5PY
-from hendrics.io import find_file_in_allowed_paths, get_file_type
-from hendrics.io import save_as_ascii, save_as_qdp, read_header_key, ref_mjd
-from hendrics.io import main, main_filter_events, remove_pds
-from . import cleanup_test_dir
-import pytest
-import glob
+from astropy.io.fits import Header
 from astropy.modeling import models
 from astropy.modeling.core import Model
+from hendrics.base import hen_root
+from hendrics.io import (
+    HAS_H5PY,
+    HEN_FILE_EXTENSION,
+    _split_high_precision_number,
+    find_file_in_allowed_paths,
+    get_file_type,
+    load_data,
+    load_events,
+    load_lcurve,
+    load_model,
+    load_pds,
+    load_timeseries,
+    main,
+    main_filter_events,
+    read_header_key,
+    ref_mjd,
+    remove_pds,
+    save_as_ascii,
+    save_as_qdp,
+    save_data,
+    save_events,
+    save_lcurve,
+    save_model,
+    save_pds,
+    save_timeseries,
+)
 
+from . import cleanup_test_dir
 
 try:
     FileNotFoundError
@@ -238,7 +249,7 @@ class TestIO:
         outfile = "bubu" + fmt
         save_events(events, outfile)
         main_filter_events([outfile, "--emin", "4", "--emax", "6"])
-        outfile_filt = hen_root(outfile) + f"_4-6keV" + HEN_FILE_EXTENSION
+        outfile_filt = hen_root(outfile) + "_4-6keV" + HEN_FILE_EXTENSION
         events2 = load_events(outfile_filt)
         assert np.allclose(events.time[1:], events2.time)
         assert np.allclose(events.cal_pi[1:], events2.cal_pi)
@@ -348,7 +359,9 @@ class TestIO:
         pds.lc1 = Lightcurve(np.arange(2), [1, 2])
         pds.lc2 = [Lightcurve(np.arange(2), [1, 2]), Lightcurve(np.arange(2), [3, 4])]
 
-        with pytest.warns(UserWarning, match="Saving multiple light curves is not supported"):
+        with pytest.warns(
+            UserWarning, match="Saving multiple light curves is not supported"
+        ):
             save_pds(pds, "bubup" + fmt, save_all=True)
         pds2 = load_pds("bubup" + fmt)
         for attr in [
@@ -467,7 +480,7 @@ class TestIO:
         assert k == "double"
 
     def test_save_longcomplex(self):
-        val = np.longcomplex(1.01 + 2.3j)
+        val = np.clongdouble(1.01 + 2.3j)
         data = {"val": val}
         save_data(data, "bubu" + HEN_FILE_EXTENSION)
         data_out = load_data("bubu" + HEN_FILE_EXTENSION)
@@ -602,7 +615,9 @@ model = models.Const1D()
 
     def test_load_model_input_not_string(self):
         """Input is not a string"""
-        with pytest.raises(TypeError, match="modelstring has to be an existing file name"):
+        with pytest.raises(
+            TypeError, match="modelstring has to be an existing file name"
+        ):
             b, kind, _ = load_model(1)
 
     def test_load_model_input_file_doesnt_exist(self):

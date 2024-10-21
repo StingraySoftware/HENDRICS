@@ -1,8 +1,10 @@
 import copy
+
 import numpy as np
-from .base import vectorize, njit, int64, float32, float64
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
+
+from .base import float32, float64, int64, njit, vectorize
 
 try:
     from statsmodels.tools.numdiff import approx_hess3
@@ -132,7 +134,7 @@ def normalized_template_func(template, tomax=True, subtract_min=True):
     template : array-like
         The input template profile
 
-    Other parameters
+    Other Parameters
     ----------------
     tomax: bool, default True
         Make the maximum of the profile phase 0
@@ -177,7 +179,7 @@ def normalized_template(template, tomax=False, subtract_min=True):
     template : array-like
         The input template profile
 
-    Other parameters
+    Other Parameters
     ----------------
     tomax: bool, default True
         Make the maximum of the profile phase 0
@@ -192,7 +194,9 @@ def normalized_template(template, tomax=False, subtract_min=True):
     """
     dph = 1 / template.size
     phase = np.arange(dph / 2, 1, dph)
-    return normalized_template_func(template, tomax=tomax, subtract_min=subtract_min)(phase)
+    return normalized_template_func(template, tomax=tomax, subtract_min=subtract_min)(
+        phase
+    )
 
 
 # def estimate_errors(best_fit_templ, ntrial=100, profile_err=None):
@@ -282,7 +286,7 @@ def _guess_start_pars(profile, template, fit_base=True, mean_phase=None):
 
     dph = 1 / profile.size
     if mean_phase is None:
-        mean_phase = ((np.argmax(profile) - np.argmax(template))) * dph
+        mean_phase = (np.argmax(profile) - np.argmax(template)) * dph
 
     if fit_base:
         amp_tr = (maxp - minp) / (maxt - mint)
@@ -325,7 +329,7 @@ def ml_pulsefit(
     template : array-like
         The input template
 
-    Other parameters
+    Other Parameters
     ----------------
     profile_err : float, default None
         The error bars on each bin of the pulse profile.

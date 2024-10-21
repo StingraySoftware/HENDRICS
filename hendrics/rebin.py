@@ -1,13 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to rebin light curves and frequency spectra."""
 
-import numpy as np
 from astropy import log
 
 from .base import get_file_extension
-from .io import get_file_type
-from .io import save_lcurve, save_pds
-from .io import HEN_FILE_EXTENSION
+from .io import HEN_FILE_EXTENSION, get_file_type, save_lcurve, save_pds
 
 
 def rebin_file(filename, rebin):
@@ -39,6 +36,7 @@ def rebin_file(filename, rebin):
 def main(args=None):
     """Main function called by the `HENrebin` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = "Rebin light curves and frequency spectra. "

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Thu Aug 17 08:55:47 2017
 
 @author: marta
 """
 
-from astropy import log
 from stingray.utils import excess_variance
-from .io import load_lcurve
-from .io import save_as_qdp
+
+from astropy import log
+
 from .base import hen_root
+from .io import load_lcurve, save_as_qdp
 
 
 def fvar(lc):
@@ -27,6 +27,7 @@ def excvar_norm(lc):
 
 def main(args=None):
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = "Calculate excess variance in light curve chunks"

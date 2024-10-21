@@ -1,16 +1,17 @@
-# -*- coding: utf-8 -*-
-
 from astropy import log
-from .io import load_pds
-from .io import save_as_qdp
+
 from .base import hen_root
+from .io import load_pds, save_as_qdp
 
 
 def main(args=None):
     import argparse
+
     from .base import _add_default_args
 
-    description = "Read timelags from cross spectrum results and save them" " to a qdp file"
+    description = (
+        "Read timelags from cross spectrum results and save them" " to a qdp file"
+    )
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs="+")

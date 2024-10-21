@@ -1,9 +1,11 @@
 import os
-from astropy.io import fits
+
 import numpy as np
 import pytest
-from ..phasetag import main_phasetag
 
+from astropy.io import fits
+
+from ..phasetag import main_phasetag
 from . import cleanup_test_dir
 
 
@@ -120,7 +122,9 @@ class TestPhasetag:
             )
 
     def test_phase_tag_parfile(self):
-        with pytest.raises(NotImplementedError, match="This part is not yet implemented"):
+        with pytest.raises(
+            NotImplementedError, match="This part is not yet implemented"
+        ):
             main_phasetag([self.fits_fileA, "--parfile", "bubu.par", "--test"])
 
     @classmethod

@@ -1,51 +1,56 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Search for pulsars."""
 
-import warnings
-import os
 import argparse
 import copy
+import os
+import warnings
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from astropy import log
-from astropy.table import Table, vstack
-from astropy.logger import AstropyUserWarning
-from .io import get_file_type
+from stingray.gti import time_intervals_from_gtis
+from stingray.pulse.modeling import fit_gaussian, fit_sinc
 from stingray.pulse.search import (
     epoch_folding_search,
     z_n_search,
-    search_best_peaks,
 )
-from stingray.stats import a_from_ssig, pf_from_ssig, power_confidence_limits
-
-from stingray.gti import time_intervals_from_gtis
+from stingray.stats import (
+    a_from_ssig,
+    pf_upper_limit,
+    power_confidence_limits,
+)
 from stingray.utils import assign_value_if_none
-from stingray.pulse.modeling import fit_sinc, fit_gaussian
-from stingray.stats import pf_upper_limit
-from .io import (
-    load_events,
-    EFPeriodogram,
-    save_folding,
-    HEN_FILE_EXTENSION,
-    load_folding,
-)
+
+from astropy import log
+from astropy.logger import AstropyUserWarning
+from astropy.table import Table
 
 from .base import (
-    hen_root,
-    show_progress,
-    adjust_dt_for_power_of_two,
     HENDRICS_STAR_VALUE,
+    adjust_dt_for_power_of_two,
+    deorbit_events,
+    find_peaks_in_image,
+    fold_detection_level,
+    hen_root,
+    histogram,
+    histogram2d,
+    memmapped_arange,
+    njit,
+    prange,
+    show_progress,
+    z2_n_detection_level,
 )
-from .base import deorbit_events, njit, prange, vectorize, float64
-from .base import histogram2d, histogram, memmapped_arange
-from .base import z2_n_detection_level, fold_detection_level
-from .base import find_peaks_in_image
-from .base import z2_n_detection_level
-from .base import fold_detection_level
-from .fold import filter_energy
-from .ffa import _z_n_fast_cached, ffa_search, h_test
 from .fake import scramble
+from .ffa import _z_n_fast_cached, ffa_search, h_test
+from .fold import filter_energy
+from .io import (
+    HEN_FILE_EXTENSION,
+    EFPeriodogram,
+    get_file_type,
+    load_events,
+    load_folding,
+    save_folding,
+)
 
 try:
     import matplotlib.pyplot as plt
@@ -130,7 +135,6 @@ def find_nearest_contour(cs, x, y, indices=None, pixel=True):
     d2 : float
         The squared distance from ``(xmin, ymin)`` to ``(x, y)``.
     """
-
     from matplotlib.contour import _find_closest_point_on_path
 
     # This function uses a method that is probably quite
@@ -224,7 +228,7 @@ def decide_binary_parameters(
     ]
 
     df = 1 / length
-    log.info("Recommended frequency steps: {}".format(int(np.diff(freq_range)[0] // df + 1)))
+    log.info(f"Recommended frequency steps: {int(np.diff(freq_range)[0] // df + 1)}")
     while count < NMAX:
         # In any case, only the first loop deletes the file
         if count > 0:
@@ -244,7 +248,9 @@ def decide_binary_parameters(
             Omegas = np.random.uniform(omega_range[0], omega_range[1], nOmega)
 
             for Omega in Omegas:
-                block_of_data.append([freq, fdot, X, TWOPI / Omega, False, 0.0, 0.0, 0.0])
+                block_of_data.append(
+                    [freq, fdot, X, TWOPI / Omega, False, 0.0, 0.0, 0.0]
+                )
 
         df = pd.DataFrame(block_of_data, columns=columns)
         _save_df_to_csv(df, csv_file, reset=reset)
@@ -287,8 +293,12 @@ def folding_orbital_search(
             for T0 in T0s:
                 # one iteration
                 new_values = times - X * np.sin(2 * np.pi * (times - T0) / Porb)
-                new_values = new_values - X * np.sin(2 * np.pi * (new_values - T0) / Porb)
-                fgrid, stats = fun(new_values, np.array([freq]), fdots=fdot, **fun_kwargs)
+                new_values = new_values - X * np.sin(
+                    2 * np.pi * (new_values - T0) / Porb
+                )
+                fgrid, stats = fun(
+                    new_values, np.array([freq]), fdots=fdot, **fun_kwargs
+                )
                 if stats[0] > max_stats:
                     max_stats = stats[0]
                     best_T0 = T0
@@ -341,7 +351,9 @@ def mod(num, n2):
 
 
 @njit()
-def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift, quadbaseshift):
+def shift_and_sum(
+    repeated_profiles, lshift, qshift, splat_prof, base_shift, quadbaseshift
+):
     nprof = repeated_profiles.shape[0]
     nbin = splat_prof.size
     twonbin = nbin * 2
@@ -351,7 +363,9 @@ def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift, qua
         total_shift = mod(np.rint(total_shift), nbin)
         total_shift_int = int(total_shift)
 
-        splat_prof[:] += repeated_profiles[k, nbin - total_shift_int : twonbin - total_shift_int]
+        splat_prof[:] += repeated_profiles[
+            k, nbin - total_shift_int : twonbin - total_shift_int
+        ]
 
     return splat_prof
 
@@ -384,7 +398,6 @@ def z_n_fast(phase, norm, n=2):
     >>> assert np.isclose(z_n_fast(phase, norm, n=4), 50)
     >>> assert np.isclose(z_n_fast(phase, norm, n=2), 50)
     """
-
     total_norm = np.sum(norm)
 
     result = 0
@@ -408,6 +421,7 @@ def _average_and_z_sub_search(profiles, n=2):
         a M x N matrix containing a list of pulse profiles
     nbin : int
         The number of bins in the profiles.
+
     Returns
     -------
     z2_n : float array (MxM)
@@ -462,7 +476,6 @@ def _transient_search_step(
     times: np.double, mean_f: np.double, mean_fdot=0, nbin=16, nprof=64, n=1
 ):
     """Single step of transient search."""
-
     # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
 
@@ -479,7 +492,7 @@ def _transient_search_step(
     return n_ave, results
 
 
-class TransientResults(object):
+class TransientResults:
     oversample: int = None
     f0: float = None
     f1: float = None
@@ -513,7 +526,7 @@ def transient_search(
     f1 : float
         Maximum frequency to search
 
-    Other parameters
+    Other Parameters
     ----------------
     nbin : int
         Number of bins to divide the profile into
@@ -551,7 +564,9 @@ def transient_search(
     times -= meantime
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
-    log.info(f"Maximum error on the phase expected when casting to double: " f"{maxerr}")
+    log.info(
+        f"Maximum error on the phase expected when casting to double: " f"{maxerr}"
+    )
     if maxerr > 1 / nbin / 10:
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
@@ -611,8 +626,8 @@ def transient_search(
 
 
 def plot_transient_search(results, gif_name=None):
-    import matplotlib.pyplot as plt
     import matplotlib
+    import matplotlib.pyplot as plt
 
     matplotlib.use("Agg")
     if gif_name is None:
@@ -675,7 +690,9 @@ def plot_transient_search(results, gif_name=None):
                     f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
                 )
             elif maxline >= 5 and i_f == 0:  # pragma: no cover
-                print(f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
+                print(
+                    f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
+                )
 
             axf.plot(f, mean_line, lw=1, c="k", zorder=10, label="mean", ls="-")
 
@@ -703,7 +720,9 @@ def plot_transient_search(results, gif_name=None):
     if HAS_IMAGEIO:
         imageio.v3.imwrite(gif_name, all_images, duration=1000.0)
     else:
-        warnings.warn("imageio needed to save the transient search results " "into a gif image.")
+        warnings.warn(
+            "imageio needed to save the transient search results " "into a gif image."
+        )
 
     return all_images
 
@@ -803,7 +822,9 @@ def search_with_qffa_step(
     # dn = max(1, int(nbin / oversample))
     linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, int(oversample * npfact))
     if search_fdot:
-        quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, int(oversample * npfact))
+        quabinshifts = np.linspace(
+            -nbin * npfact, nbin * npfact, int(oversample * npfact)
+        )
     else:
         quabinshifts = np.array([0])
 
@@ -846,7 +867,7 @@ def search_with_qffa(
     f1 : float
         Maximum frequency to search
 
-    Other parameters
+    Other Parameters
     ----------------
     nbin : int
         Number of bins to divide the profile into
@@ -885,7 +906,9 @@ def search_with_qffa(
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
     if maxerr > 1 / nbin / 10:
-        warnings.warn(f"Maximum error on the phase expected when casting to " f"double: {maxerr}")
+        warnings.warn(
+            f"Maximum error on the phase expected when casting to " f"double: {maxerr}"
+        )
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
             "Please use shorter light curves.",
@@ -977,7 +1000,7 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
     f1 : float
         Maximum frequency to search
 
-    Other parameters
+    Other Parameters
     ----------------
     nbin : int
         Number of bins to divide the profile into
@@ -1048,9 +1071,11 @@ def folding_search(
     fdotepsilon = 1e-2 * fdotstep
     trial_fdots = np.arange(fdotmin, fdotmax + fdotepsilon, fdotstep)
     if len(trial_fdots) > 1:
-        log.info("Searching {} frequencies and {} fdots".format(len(trial_freqs), len(trial_fdots)))
+        log.info(
+            f"Searching {len(trial_freqs)} frequencies and {len(trial_fdots)} fdots"
+        )
     else:
-        log.info("Searching {} frequencies".format(len(trial_freqs)))
+        log.info(f"Searching {len(trial_freqs)} frequencies")
 
     results = func(
         times,
@@ -1125,15 +1150,17 @@ def print_qffa_results(best_cand_table):
     if len(newtable[good]) == 0:
         print("No pulsations found. Best candidate and upper limit:")
         good = 0
-        newtable["Pulsed amplitude (%)"] = [f"<{a:g} (90%)" for a in newtable["pulse_amp_ul_0.9"]]
+        newtable["Pulsed amplitude (%)"] = [
+            f"<{a:g} (90%)" for a in newtable["pulse_amp_ul_0.9"]
+        ]
     else:
         print("Best candidate(s):")
         newtable["Pulsed amplitude (%)"] = [
-            f"{a:g} ± {e:g}" for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
+            f"{a:g} ± {e:g}"
+            for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
         ]
 
     print(newtable["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"][good])
-    return
 
 
 def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
@@ -1221,12 +1248,14 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     input_ef_periodogram : :class:`EFPeriodogram`
         Epoch folding periodogram object
     """
-
     if not hasattr(input_ef_periodogram, "M") or input_ef_periodogram.M is None:
         input_ef_periodogram.M = 1
 
     ntrial = input_ef_periodogram.stat.size
-    if hasattr(input_ef_periodogram, "oversample") and input_ef_periodogram.oversample is not None:
+    if (
+        hasattr(input_ef_periodogram, "oversample")
+        and input_ef_periodogram.oversample is not None
+    ):
         ntrial /= input_ef_periodogram.oversample
         ntrial = int(ntrial)
     if input_ef_periodogram.kind == "Z2n":
@@ -1254,7 +1283,10 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     best_cands = find_peaks_in_image(input_ef_periodogram.stat, n=n_cands)
 
     fddot = 0
-    if hasattr(input_ef_periodogram, "fddots") and input_ef_periodogram.fddots is not None:
+    if (
+        hasattr(input_ef_periodogram, "fddots")
+        and input_ef_periodogram.fddots is not None
+    ):
         fddot = input_ef_periodogram.fddots
 
     best_cand_table = Table(
@@ -1313,7 +1345,10 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
 
     for i, idx in enumerate(best_cands):
         f_idx = fdot_idx = fddot_idx = 0
-        if len(input_ef_periodogram.stat.shape) > 1 and input_ef_periodogram.stat.shape[0] > 1:
+        if (
+            len(input_ef_periodogram.stat.shape) > 1
+            and input_ef_periodogram.stat.shape[0] > 1
+        ):
             f_idx, fdot_idx = idx
             allfreqs = input_ef_periodogram.freq[f_idx, :]
             allfdots = input_ef_periodogram.freq[:, fdot_idx]
@@ -1324,7 +1359,9 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
                 input_ef_periodogram.fdots[f_idx, fdot_idx],
             )
             max_stat = input_ef_periodogram.stat[f_idx, fdot_idx]
-            sig_e1_m, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=input_ef_periodogram.N)
+            sig_e1_m, sig_e1 = power_confidence_limits(
+                max_stat, c=0.68, n=input_ef_periodogram.N
+            )
             fmin, fmax, fdotmin, fdotmax = get_xy_boundaries_from_level(
                 input_ef_periodogram.freq,
                 input_ef_periodogram.fdots,
@@ -1339,7 +1376,9 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
             allstats_f = input_ef_periodogram.stat
             f = input_ef_periodogram.freq[f_idx]
             max_stat = input_ef_periodogram.stat[f_idx]
-            sig_e1_m, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=input_ef_periodogram.N)
+            sig_e1_m, sig_e1 = power_confidence_limits(
+                max_stat, c=0.68, n=input_ef_periodogram.N
+            )
             fmin, fmax = get_boundaries_from_level(
                 input_ef_periodogram.freq, input_ef_periodogram.stat, sig_e1_m, f
             )
@@ -1352,7 +1391,9 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
         if input_ef_periodogram.ncounts is None:
             continue
 
-        sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=input_ef_periodogram.N)
+        sig_0, sig_1 = power_confidence_limits(
+            max_stat, c=0.90, n=input_ef_periodogram.N
+        )
         amp = amp_err = amp_ul = amp_1 = amp_0 = np.nan
         if max_stat < detlev:
             amp_ul = a_from_ssig(sig_1, input_ef_periodogram.ncounts) * 100
@@ -1401,7 +1442,8 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
 
         if fname is not None:
             Table({"fdot": allfdots, "stat": allstats_fdot}).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}' f"_cand_{n_cands - i - 1}_f{f}.dat",
+                f'{fname.replace(HEN_FILE_EXTENSION, "")}'
+                f"_cand_{n_cands - i - 1}_f{f}.dat",
                 overwrite=True,
                 format="ascii",
             )
@@ -1539,7 +1581,8 @@ def _common_parser(args=None):
         "--step",
         default=None,
         type=float,
-        help="Step size of the frequency axis. Defaults to " "1/oversample/obs_length. ",
+        help="Step size of the frequency axis. Defaults to "
+        "1/oversample/obs_length. ",
     )
     parser.add_argument(
         "--oversample",
@@ -1569,7 +1612,8 @@ def _common_parser(args=None):
     )
     parser.add_argument(
         "--transient",
-        help="Look for transient emission (produces an animated" " GIF with the dynamic Z search)",
+        help="Look for transient emission (produces an animated"
+        " GIF with the dynamic Z search)",
         default=False,
         action="store_true",
     )
@@ -1664,7 +1708,7 @@ def _common_main(args, func):
             kind_label = f"Z2{n}"
         ftype, events = get_file_type(fname)
 
-        out_fname = hen_root(fname) + "_{}".format(kind_label)
+        out_fname = hen_root(fname) + f"_{kind_label}"
         if args.emin is not None or args.emax is not None:
             emin = assign_value_if_none(args.emin, HENDRICS_STAR_VALUE)
             emax = assign_value_if_none(args.emax, HENDRICS_STAR_VALUE)
@@ -1738,7 +1782,8 @@ def _common_main(args, func):
             if nbin / n < 8:
                 nbin = n * 8
                 warnings.warn(
-                    f"The number of bins is too small for Z search." f"Increasing to {nbin}"
+                    f"The number of bins is too small for Z search."
+                    f"Increasing to {nbin}"
                 )
             results = search_with_qffa(
                 events.time,
@@ -1760,7 +1805,9 @@ def _common_main(args, func):
                 "The Fast Folding Algorithm functionality is experimental. Use"
                 " with care, and feel free to report any issues."
             )
-            results = search_with_ffa(events.time, args.fmin, args.fmax, nbin=args.nbin, n=n)
+            results = search_with_ffa(
+                events.time, args.fmin, args.fmax, nbin=args.nbin, n=n
+            )
             ref_time = events.time[0]
 
         length = events.time.max() - events.time.min()
@@ -1802,7 +1849,9 @@ def _common_main(args, func):
             pepoch=mjdref + ref_time / 86400,
             oversample=args.oversample,
         )
-        efperiodogram.upperlim = pf_upper_limit(np.max(stats), events.time.size, n=args.N)
+        efperiodogram.upperlim = pf_upper_limit(
+            np.max(stats), events.time.size, n=args.N
+        )
         efperiodogram.ncounts = events.time.size
         best_peaks = None
         if args.find_candidates:
@@ -1849,14 +1898,12 @@ def _common_main(args, func):
 
 def main_efsearch(args=None):
     """Main function called by the `HENefsearch` command line script."""
-
     with log.log_to_file("HENefsearch.log"):
         return _common_main(args, epoch_folding_search)
 
 
 def main_zsearch(args=None):
     """Main function called by the `HENzsearch` command line script."""
-
     with log.log_to_file("HENzsearch.log"):
         return _common_main(args, z_n_search)
 
@@ -1911,7 +1958,9 @@ def main_z2vspf(args=None):
         type=int,
         help="Number of trial values for the pulsed fraction",
     )
-    parser.add_argument("--outfile", default=None, type=str, help="Output table file name")
+    parser.add_argument(
+        "--outfile", default=None, type=str, help="Output table file name"
+    )
     parser.add_argument(
         "--show-z-values",
         nargs="+",
@@ -1951,14 +2000,16 @@ def main_z2vspf(args=None):
     if args.emin is not None or args.emax is not None:
         events, elabel = filter_energy(events, args.emin, args.emax)
 
-    result_table = z2_vs_pf(events, deadtime=0.0, ntrials=args.ntrial, outfile=outfile, N=args.N)
+    result_table = z2_vs_pf(
+        events, deadtime=0.0, ntrials=args.ntrial, outfile=outfile, N=args.N
+    )
     if HAS_MPL:
         fig = plt.figure("Results", figsize=(10, 6))
         plt.scatter(result_table["pf"] * 100, result_table["z2"])
         plt.semilogy()
         plt.grid(True)
         plt.xlabel(r"Pulsed fraction (%)")
-        plt.ylabel(r"$Z^2_{}$".format(args.N))
+        plt.ylabel(rf"$Z^2_{args.N}$")
         # plt.show()
         if args.show_z_values is not None:
             for z in args.show_z_values:
@@ -2005,7 +2056,9 @@ def main_accelsearch(args=None):
         type=float,
         help="Maximum frequency to search, in Hz",
     )
-    parser.add_argument("--nproc", default=1, type=int, help="Number of processors to use")
+    parser.add_argument(
+        "--nproc", default=1, type=int, help="Number of processors to use"
+    )
     parser.add_argument(
         "--zmax",
         default=100,
@@ -2110,7 +2163,9 @@ def main_accelsearch(args=None):
     t0 = GTI[0, 0]
     Nbins = int(np.rint(max_length / dt))
     if Nbins > 10**8:
-        log.info(f"The number of bins is more than 100 millions: {Nbins}. " "Using memmap.")
+        log.info(
+            f"The number of bins is more than 100 millions: {Nbins}. " "Using memmap."
+        )
 
     dt = adjust_dt_for_power_of_two(dt, max_length)
 

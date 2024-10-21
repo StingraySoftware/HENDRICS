@@ -1,13 +1,20 @@
-from functools import wraps
 import warnings
+from functools import wraps
+
 import numpy as np
-from astropy import log
-from collections.abc import Iterable as iterable
 
 try:
-    from numba import jit, njit, prange, vectorize
-    from numba import float32, float64, int32, int64
-    from numba import types
+    from numba import (
+        float32,
+        float64,
+        int32,
+        int64,
+        jit,
+        njit,
+        prange,
+        types,
+        vectorize,
+    )
     from numba.extending import overload_method
 
     HAS_NUMBA = True
@@ -33,7 +40,7 @@ except ImportError:
         """Dummy decorator in case jit cannot be imported."""
         return range(*args)
 
-    class vectorize(object):
+    class vectorize:
         def __init__(self, *args, **kwargs):
             pass
 

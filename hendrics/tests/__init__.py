@@ -14,7 +14,7 @@ def _dummy_par(par, pb=1e20, a1=0.0, f0=1.0):
         print("DM       0", file=fobj)
         print(f"PB       {pb}", file=fobj)
         print(f"A1       {a1}", file=fobj)
-        print(f"OM       0.0", file=fobj)
+        print("OM       0.0", file=fobj)
         print("ECC      0.0", file=fobj)
         print("T0       56000", file=fobj)
         print("EPHEM    DE421", file=fobj)

@@ -1,34 +1,20 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-import shutil
-import os
 import glob
+import os
 
 import numpy as np
-from astropy import log
-from astropy.logger import AstropyUserWarning
 import pytest
 from stingray.lightcurve import Lightcurve
+
 import hendrics as hen
-from hendrics.tests import _dummy_par
-from hendrics.fold import HAS_PINT
-from hendrics import (
-    fake,
-    fspec,
-    base,
-    calibrate,
-    create_gti,
-    exposure,
-    exvar,
-    io,
-    lcurve,
-    plot,
-    read_events,
-    rebin,
-)
-from hendrics.read_events import treat_event_file
+from astropy import log
+from astropy.logger import AstropyUserWarning
 from hendrics.io import HEN_FILE_EXTENSION, get_file_type
 from hendrics.lcurve import lcurve_from_events
+from hendrics.read_events import treat_event_file
+from hendrics.tests import _dummy_par
+
 from . import cleanup_test_dir
 
 try:
@@ -60,7 +46,9 @@ class TestLcurve:
 
         treat_event_file(self.fits_fileA, discard_calibration=True)
         lcurve_from_events(self.new_filename)
-        newfile = os.path.join(self.datadir, "monol_testA_nustar_fpma_lc" + HEN_FILE_EXTENSION)
+        newfile = os.path.join(
+            self.datadir, "monol_testA_nustar_fpma_lc" + HEN_FILE_EXTENSION
+        )
         assert os.path.exists(newfile)
         type, data = get_file_type(newfile)
         assert type == "lc"
@@ -93,7 +81,7 @@ class TestLcurve:
         cleanup_test_dir(".")
 
 
-class TestFullRun(object):
+class TestFullRun:
     """Test how command lines work.
 
     Usually considered bad practice, but in this
@@ -102,15 +90,19 @@ class TestFullRun(object):
     Inspired by https://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
 
     When command line is missing, uses some function calls
-    """  # NOQA
+    """
 
     @classmethod
     def setup_class(cls):
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
 
-        cls.ev_fileA = os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
-        cls.ev_fileB = os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION)
+        cls.ev_fileA = os.path.join(
+            cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
+        )
+        cls.ev_fileB = os.path.join(
+            cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
+        )
         cls.ev_fileAcal = os.path.join(
             cls.datadir,
             "monol_testA_nustar_fpma_ev_calib" + HEN_FILE_EXTENSION,
@@ -126,8 +118,12 @@ class TestFullRun(object):
         )
         hen.read_events.main(command.split())
         command = "{} {} -r {}".format(
-            os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
-            os.path.join(cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION),
+            os.path.join(
+                cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
+            ),
+            os.path.join(
+                cls.datadir, "monol_testB_nustar_fpmb_ev" + HEN_FILE_EXTENSION
+            ),
             os.path.join(cls.datadir, "test.rmf"),
         )
         hen.calibrate.main(command.split())
@@ -139,8 +135,9 @@ class TestFullRun(object):
         new_filename = os.path.join(
             os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )
-        command = ("{0} -e {1} {2} --safe-interval " "{3} {4}  --nproc 2 -b 0.5 -o {5}").format(
-            self.ev_fileAcal, 3, 50, 100, 300, new_filename
+        command = (
+            f"{self.ev_fileAcal} -e {3} {50} --safe-interval "
+            f"{100} {300}  --nproc 2 -b 0.5 -o {new_filename}"
         )
         hen.lcurve.main(command.split())
 
@@ -200,12 +197,12 @@ class TestFullRun(object):
         )
 
         with pytest.warns(AstropyUserWarning, match="File exists, and noclobber"):
-            command = ("{0} -o {1} --noclobber").format(input_file, new_filename)
+            command = f"{input_file} -o {new_filename} --noclobber"
             hen.lcurve.main(command.split())
 
     def test_lcurve_split(self):
         """Test lc with gti-split option."""
-        command = "{0} {1} -g".format(self.ev_fileAcal, self.ev_fileBcal)
+        command = f"{self.ev_fileAcal} {self.ev_fileBcal} -g"
         hen.lcurve.main(command.split())
         new_filename = os.path.join(
             self.datadir,
@@ -220,15 +217,19 @@ class TestFullRun(object):
         """Test light curves from FITS."""
         lcurve_ftools_orig = os.path.join(self.datadir, "lcurveA.fits")
 
-        lcurve_ftools = os.path.join(self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION)
+        lcurve_ftools = os.path.join(
+            self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION
+        )
 
         command = "{0} --outfile {1}".format(
             self.ev_fileAcal, os.path.join(self.datadir, "lcurve_lc")
         )
         hen.lcurve.main(command.split())
-        assert os.path.exists(os.path.join(self.datadir, "lcurve_lc") + HEN_FILE_EXTENSION)
+        assert os.path.exists(
+            os.path.join(self.datadir, "lcurve_lc") + HEN_FILE_EXTENSION
+        )
 
-        command = "--fits-input {0} --outfile {1}".format(lcurve_ftools_orig, lcurve_ftools)
+        command = f"--fits-input {lcurve_ftools_orig} --outfile {lcurve_ftools}"
         hen.lcurve.main(command.split())
         with pytest.warns(AstropyUserWarning, match="File exists, and noclobber"):
             command = command + " --noclobber"
@@ -236,7 +237,9 @@ class TestFullRun(object):
 
     def test_fits_lcurve1(self):
         """Test light curves from FITS."""
-        lcurve_ftools = os.path.join(self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION)
+        lcurve_ftools = os.path.join(
+            self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION
+        )
 
         lcurve_mp = os.path.join(self.datadir, "lcurve_lc" + HEN_FILE_EXTENSION)
 
@@ -252,7 +255,9 @@ class TestFullRun(object):
 
         diff = lc_mp[:goodlen] - lc_ftools[:goodlen]
 
-        assert np.all(np.abs(diff) <= 1e-3), "Light curve data do not coincide between FITS and HEN"
+        assert np.all(
+            np.abs(diff) <= 1e-3
+        ), "Light curve data do not coincide between FITS and HEN"
 
     def test_txt_lcurve(self):
         """Test light curves from txt."""
@@ -282,7 +287,9 @@ class TestFullRun(object):
 
     def test_joinlcs(self):
         """Test produce joined light curves."""
-        new_filename = os.path.join(self.datadir, "monol_test_joinlc" + HEN_FILE_EXTENSION)
+        new_filename = os.path.join(
+            self.datadir, "monol_test_joinlc" + HEN_FILE_EXTENSION
+        )
         # because join_lightcurves separates by instrument
         new_actual_filename = os.path.join(
             self.datadir, "fpmamonol_test_joinlc" + HEN_FILE_EXTENSION
@@ -305,7 +312,7 @@ class TestFullRun(object):
         a_in = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         b_in = os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
         out = os.path.join(self.datadir, "monol_test_scrunchlc" + HEN_FILE_EXTENSION)
-        command = "{0} {1} -o {2}".format(a_in, b_in, out)
+        command = f"{a_in} {b_in} -o {out}"
 
         a_lc = hen.io.load_lcurve(a_in)
         b_lc = hen.io.load_lcurve(b_in)
@@ -322,7 +329,7 @@ class TestFullRun(object):
         """Test produce scrunched light curves."""
         a_in = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         out = os.path.join(self.datadir, "monol_test_baselc")
-        command = "{0} -o {1} -p 0.001 --lam 1e5".format(a_in, out)
+        command = f"{a_in} -o {out} -p 0.001 --lam 1e5"
 
         hen.lcurve.baseline_main(command.split())
         out_lc = hen.io.load_lcurve(out + "_0" + HEN_FILE_EXTENSION)
@@ -333,10 +340,12 @@ class TestFullRun(object):
     def testbaselinelc_nooutroot(self):
         """Test produce scrunched light curves."""
         a_in = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
-        command = "{0} -p 0.001 --lam 1e5".format(a_in)
+        command = f"{a_in} -p 0.001 --lam 1e5"
 
         hen.lcurve.baseline_main(command.split())
-        out_lc = hen.io.load_lcurve(hen.base.hen_root(a_in) + "_lc_baseline" + HEN_FILE_EXTENSION)
+        out_lc = hen.io.load_lcurve(
+            hen.base.hen_root(a_in) + "_lc_baseline" + HEN_FILE_EXTENSION
+        )
         assert hasattr(out_lc, "base")
         gti_to_test = hen.io.load_events(self.ev_fileA).gti
         assert np.allclose(gti_to_test, out_lc.gti)
@@ -401,15 +410,20 @@ class TestFullRun(object):
     def test_create_gti_lc(self):
         """Test creating a GTI file."""
         fname = os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
-        command = "{0} -f counts>0 -c --debug".format(fname)
+        command = f"{fname} -f counts>0 -c --debug"
         hen.create_gti.main(command.split())
 
     def test_apply_gti_lc(self):
         """Test applying a GTI file."""
         fname = os.path.join(self.datadir, "monol_testA_E3-50_gti") + HEN_FILE_EXTENSION
-        lcfname = os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
-        lcoutname = os.path.join(self.datadir, "monol_testA_E3-50_lc_gtifilt") + HEN_FILE_EXTENSION
-        command = "{0} -a {1} --debug".format(lcfname, fname)
+        lcfname = (
+            os.path.join(self.datadir, "monol_testA_E3-50_lc") + HEN_FILE_EXTENSION
+        )
+        lcoutname = (
+            os.path.join(self.datadir, "monol_testA_E3-50_lc_gtifilt")
+            + HEN_FILE_EXTENSION
+        )
+        command = f"{lcfname} -a {fname} --debug"
         hen.create_gti.main(command.split())
         hen.io.load_lcurve(lcoutname)
 
@@ -423,24 +437,28 @@ class TestFullRun(object):
 
     def test_pds_fits(self):
         """Test PDS production with light curves obtained from FITS files."""
-        lcurve_ftools = os.path.join(self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION)
-        command = "{0} --save-all -f 128".format(lcurve_ftools)
+        lcurve_ftools = os.path.join(
+            self.datadir, "lcurve_ftools_lc" + HEN_FILE_EXTENSION
+        )
+        command = f"{lcurve_ftools} --save-all -f 128"
         hen.fspec.main(command.split())
 
     def test_pds_txt(self):
         """Test PDS production with light curves obtained from txt files."""
         lcurve_txt = os.path.join(self.datadir, "lcurve_txt_lc" + HEN_FILE_EXTENSION)
-        command = "{0} --save-all -f 128".format(lcurve_txt)
+        command = f"{lcurve_txt} --save-all -f 128"
         hen.fspec.main(command.split())
 
     def test_exposure(self):
         """Test exposure calculations from unfiltered files."""
         lcname = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         ufname = os.path.join(self.datadir, "monol_testA_uf.evt")
-        command = "{0} {1}".format(lcname, ufname)
+        command = f"{lcname} {ufname}"
 
         hen.exposure.main(command.split())
-        fname = os.path.join(self.datadir, "monol_testA_E3-50_lccorr" + HEN_FILE_EXTENSION)
+        fname = os.path.join(
+            self.datadir, "monol_testA_E3-50_lccorr" + HEN_FILE_EXTENSION
+        )
         assert os.path.exists(fname)
         ftype, contents = hen.io.get_file_type(fname)
 

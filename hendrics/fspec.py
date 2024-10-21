@@ -1,33 +1,34 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to calculate frequency spectra."""
 
-import copy
-import warnings
 import contextlib
+import copy
 import os
-from stingray.gti import cross_gtis
+import warnings
+
+import numpy as np
 from stingray.crossspectrum import AveragedCrossspectrum
+from stingray.gti import cross_gtis, time_intervals_from_gtis
+from stingray.lombscargle import LombScargleCrossspectrum, LombScarglePowerspectrum
 from stingray.powerspectrum import AveragedPowerspectrum
 from stingray.utils import show_progress
-from stingray.utils import assign_value_if_none
 
-from stingray.gti import time_intervals_from_gtis
-from stingray.events import EventList
-import numpy as np
 from astropy import log
 from astropy.logger import AstropyUserWarning
-from .base import (
-    hen_root,
-    common_name,
-    _assign_value_if_none,
-    interpret_bintime,
-    HENDRICS_STAR_VALUE,
-)
-from stingray.lombscargle import LombScargleCrossspectrum, LombScarglePowerspectrum
 
-from .io import sort_files, save_pds, load_data
-from .io import HEN_FILE_EXTENSION, get_file_type
-from .io import filter_energy
+from .base import (
+    HENDRICS_STAR_VALUE,
+    common_name,
+    hen_root,
+    interpret_bintime,
+)
+from .io import (
+    HEN_FILE_EXTENSION,
+    filter_energy,
+    get_file_type,
+    save_pds,
+    sort_files,
+)
 
 
 def average_periodograms(fspec_iterable, total=None):
@@ -48,7 +49,6 @@ def average_periodograms(fspec_iterable, total=None):
     >>> assert np.allclose(tot_pds.power_err, pds.power_err / np.sqrt(3))
     >>> assert tot_pds.m == 3
     """
-
     all_spec = []
     for i, contents in enumerate(show_progress(fspec_iterable, total=total)):
         freq = contents.freq
@@ -176,7 +176,9 @@ def _provide_periodograms(events, fftlen, dt, norm):
     for new_ev in _distribute_events(events, fftlen):
         # Hack: epsilon slightly below zero, to allow for a GTI to be recognized as such
         new_ev.gti[:, 1] += dt / 10
-        pds = AveragedPowerspectrum(new_ev, dt=dt, segment_size=fftlen, norm=norm, silent=True)
+        pds = AveragedPowerspectrum(
+            new_ev, dt=dt, segment_size=fftlen, norm=norm, silent=True
+        )
         pds.fftlen = fftlen
         yield pds
 
@@ -411,7 +413,9 @@ def calc_cpds(
             "series (e.g. both events or both light curves)"
         )
 
-    if (emin is not None or emax is not None) and (ftype1 != "events" or ftype2 != "events"):
+    if (emin is not None or emax is not None) and (
+        ftype1 != "events" or ftype2 != "events"
+    ):
         warnings.warn("Energy selection only makes sense for event lists")
     if ftype1 == "events":
         lc1, _ = filter_energy(lc1, emin, emax)
@@ -551,7 +555,6 @@ def calc_fspec(
     [5] Miyamoto et al. 1991, ApJ, 383, 784
 
     """
-
     log.info("Using %s normalization" % normalization)
     log.info("Using %s processors" % nproc)
 
@@ -693,7 +696,9 @@ def dumpdyn_main(args=None):
         help=("List of files in any valid HENDRICS " "format for PDS or CPDS"),
         nargs="+",
     )
-    parser.add_argument("--noplot", help="plot results", default=False, action="store_true")
+    parser.add_argument(
+        "--noplot", help="plot results", default=False, action="store_true"
+    )
 
     args = parser.parse_args(args)
 
@@ -706,6 +711,7 @@ def dumpdyn_main(args=None):
 def main(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
@@ -752,7 +758,9 @@ def main(args=None):
         "--norm",
         type=str,
         default="leahy",
-        help="Normalization to use" + " (Accepted: leahy and rms;" + ' Default: "leahy")',
+        help="Normalization to use"
+        + " (Accepted: leahy and rms;"
+        + ' Default: "leahy")',
     )
     parser.add_argument(
         "--noclobber",

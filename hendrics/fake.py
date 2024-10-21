@@ -1,25 +1,24 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to simulate data and produce a fake event file."""
 
-import os
-import warnings
 import copy
+import os
+
 import numpy as np
 import numpy.random as ra
-from astropy import log
-from astropy.io.fits import Header
-from astropy.logger import AstropyUserWarning
 from stingray.events import EventList
+from stingray.filters import filter_for_deadtime
+from stingray.io import get_key_from_mission_info, read_mission_info
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
-from stingray.filters import filter_for_deadtime
-from stingray.io import read_mission_info, get_key_from_mission_info
-from .io import load_lcurve
-from .io import load_events, save_events, HEN_FILE_EXTENSION
-from .base import _empty, get_file_format, r_in
+
+from astropy import log
+from astropy.io.fits import Header
+
+from .base import deorbit_events, get_file_format, r_in
 from .fold import filter_energy
+from .io import HEN_FILE_EXTENSION, load_events, load_lcurve, save_events
 from .lcurve import lcurve_from_fits
-from .base import njit, deorbit_events
 
 
 def _clean_up_header(header):
@@ -67,7 +66,9 @@ def _fill_in_default_information(tbheader):
         False,
         "TRUE if timestamps corrected by gnd sware",
     )
-    tbheader["COMMENT"] = "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
+    tbheader["COMMENT"] = (
+        "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
+    )
     tbheader["TIMEUNIT"] = ("s", "unit for time keywords")
     return tbheader
 
@@ -119,7 +120,6 @@ def generate_fake_fits_observation(
         Total livetime. Default is tstop - tstart
     """
     from astropy.io import fits
-    import numpy.random as ra
 
     inheader = None
     if event_list is None:
@@ -133,7 +133,9 @@ def generate_fake_fits_observation(
             inheader = _clean_up_header(inheader)
 
         ev_list = event_list.time
-        gti = assign_value_if_none(event_list.gti, np.asarray([[ev_list[0], ev_list[-1]]]))
+        gti = assign_value_if_none(
+            event_list.gti, np.asarray([[ev_list[0], ev_list[-1]]])
+        )
         mission = assign_value_if_none(mission, event_list.mission)
         instr = assign_value_if_none(instr, event_list.instr)
         tstart = assign_value_if_none(tstart, gti[0, 0])
@@ -305,7 +307,9 @@ def _read_light_curve(filename):
     return lc
 
 
-def acceptance_rejection(dt, counts_per_bin, t0=0.0, poissonize_n_events=False, deadtime=0.0):
+def acceptance_rejection(
+    dt, counts_per_bin, t0=0.0, poissonize_n_events=False, deadtime=0.0
+):
     """
     Examples
     --------
@@ -393,7 +397,7 @@ def scramble(
     event_list: :class:`stingray.events.Eventlist` object
         Input event list
 
-    Other parameters
+    Other Parameters
     ----------------
     smooth_kind: str in ['flat', 'smooth', 'pulsed']
         if 'flat', count the events GTI by GTI without caring about long-term
@@ -518,10 +522,12 @@ def scramble(
 def main_scramble(args=None):
     """Main function called by the `HENscramble` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
-        "Scramble the events inside an event list, maintaining the same " "energies and GTIs"
+        "Scramble the events inside an event list, maintaining the same "
+        "energies and GTIs"
     )
     parser = argparse.ArgumentParser(description=description)
 
@@ -582,7 +588,9 @@ def main_scramble(args=None):
         emin, emax = args.energy_interval
         event_list, elabel = filter_energy(event_list, emin, emax)
         if elabel != "Energy":
-            raise ValueError("You are filtering by energy but the data are not calibrated")
+            raise ValueError(
+                "You are filtering by energy but the data are not calibrated"
+            )
 
     new_event_list = scramble(
         event_list,
@@ -608,7 +616,9 @@ def main_scramble(args=None):
         if args.energy_interval is not None:
             label += f"_{emin:g}-{emax:g}keV"
 
-        outfile = args.fname.replace(HEN_FILE_EXTENSION, f"{label}" + HEN_FILE_EXTENSION)
+        outfile = args.fname.replace(
+            HEN_FILE_EXTENSION, f"{label}" + HEN_FILE_EXTENSION
+        )
     save_events(new_event_list, outfile)
     return outfile
 
@@ -616,6 +626,7 @@ def main_scramble(args=None):
 def main(args=None):
     """Main function called by the `HENfake` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
@@ -653,7 +664,9 @@ def main(args=None):
         default="events.evt",
         help="Output file name",
     )
-    parser.add_argument("-i", "--instrument", type=str, default=None, help="Instrument name")
+    parser.add_argument(
+        "-i", "--instrument", type=str, default=None, help="Instrument name"
+    )
     parser.add_argument("-m", "--mission", type=str, default=None, help="Mission name")
     parser.add_argument(
         "--tstart",
@@ -706,12 +719,14 @@ def main(args=None):
                 tstop = assign_value_if_none(args.tstop, 1024)
                 dt = (tstop - tstart) / 1024
                 t = np.arange(tstart, tstop + 1, dt)
-                lc = Lightcurve(time=t, counts=args.ctrate * dt + np.zeros_like(t), dt=dt)
+                lc = Lightcurve(
+                    time=t, counts=args.ctrate * dt + np.zeros_like(t), dt=dt
+                )
             event_list.simulate_times(lc)
             nevents = len(event_list.time)
             event_list.pi = np.zeros(nevents, dtype=int)
             event_list.mjdref = args.mjdref
-            log.info("{} events generated".format(nevents))
+            log.info(f"{nevents} events generated")
         else:
             event_list = None
 
@@ -724,7 +739,7 @@ def main(args=None):
                 event_list, deadtime, dt_sigma=deadtime_sigma, return_all=True
             )
 
-            log.info("{} events after filter".format(len(event_list.time)))
+            log.info(f"{len(event_list.time)} events after filter")
 
             prior = np.zeros_like(event_list.time)
 
