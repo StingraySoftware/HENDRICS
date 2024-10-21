@@ -32,9 +32,7 @@ from importlib import import_module
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
 except ImportError:
-    print(
-        "ERROR: the documentation requires the sphinx-astropy package to be installed"
-    )
+    print("ERROR: the documentation requires the sphinx-astropy package to be installed")
     sys.exit(1)
 
 # Get configuration information from setup.cfg
@@ -144,9 +142,7 @@ htmlhelp_basename = project + "doc"
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [
-    ("index", project + ".tex", project + " Documentation", author, "manual")
-]
+latex_documents = [("index", project + ".tex", project + " Documentation", author, "manual")]
 
 
 # -- Options for manual page output -------------------------------------------
@@ -201,11 +197,7 @@ if not ON_RTD and not ON_TRAVIS:
     scripts = dict(conf.items("options.entry_points"))["console_scripts"]
 
     scripts = dict(
-        [
-            (l.strip() for l in line.split("="))
-            for line in scripts.split("\n")
-            if line.strip() != ""
-        ]
+        [(l.strip() for l in line.split("=")) for line in scripts.split("\n") if line.strip() != ""]
     )
     import subprocess as sp
 
