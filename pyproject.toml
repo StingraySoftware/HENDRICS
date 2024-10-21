@@ -1,7 +1,268 @@
-[build-system]
+[project]
+name = "hendrics"
+dynamic = [
+    "version"
+]
+description = "High ENergy Data Reduction Interface from the Command Shell"
+readme = "README.rst"
+authors = [
+    { name = "Matteo Bachetti", email = "matteo@matteobachetti.it" }
+]
+license = { text = "3-clause BSD" }
+requires-python = ">=3.8"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: C",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+keywords = [
+    "astronomy",
+    "astrophysics",
+    "time series",
+    "X-ray",
+    "data analysis",
+    "black holes",
+    "neutron stars",
+    "pulsars",
+    "space",
+    "science",
+]
+dependencies = [
+    "numpy>=1.17",
+    "astropy>=4.0",
+    "scipy>=1.1.0",
+    "matplotlib>=3.0,!=3.4.00,!=3.8.0",
+    "stingray>=2.0.0",
+    "tqdm",
+    "pyyaml"
+]
 
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-astropy",
+]
+test_all = [
+    "h5py",
+    "pandas",
+    "pint-pulsar",
+    "imageio",
+    "numba",
+    "netcdf4==1.7.0",
+    "scikit-image",
+    "statsmodels"
+]
+recommended = [
+    "numba",
+    "h5py",
+    "pyyaml",
+    "statsmodels",
+    "pyfftw",
+]
+all = [
+    "hendrics[recommended]",
+    "pandas",
+    "pint-pulsar",
+    "imageio",
+    "netcdf4==1.7.0",
+    "scikit-image",
+    "statsmodels"
+]
+docs = [
+    "tomli>=1.1.0; python_version < '3.11'",
+    "jinja2==3.1.3",
+    "docutils",
+    "sphinx-astropy",
+    "nbsphinx>=0.8.3,!=0.8.8",
+    "nbconvert<7.14",
+    "pandoc",
+    "ipython",
+    "towncrier<22.12.0",
+]
+
+[project.urls]
+homepage = "https://stingray.science"
+documentation = "https://hendrics.stingray.science"
+repository = "https://github.com/stingraysoftware/hendrics"
+
+[build-system]
 requires = ["setuptools",
             "setuptools_scm",
             "wheel"]
 
 build-backend = 'setuptools.build_meta'
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE.rst"]
+
+[tool.setuptools.packages.find]
+include = ["hendrics*"]
+exclude = ["hendrics._dev*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"*" = [
+    "data/*",
+    "*.fits",
+    "*.evt",
+    "*.rmf",
+]
+"hendrics.compat" = ["datasets/*"]
+"hendrics.tests" = "data/*"
+
+[tool.setuptools_scm]
+write_to = "hendrics/_version.py"
+
+[tool.pytest.ini_options]
+minversion = 7.0
+testpaths = [
+    "hendrics",
+    "docs",
+]
+norecursedirs = [
+    "docs[\\/]_build",
+    "docs[\\/]generated",
+]
+astropy_header = true
+doctest_plus = "enabled"
+text_file_format = "rst"
+remote_data_strict = true
+addopts = "--color=yes --doctest-rst"
+filterwarnings = [
+    "error::DeprecationWarning",
+    "error:.*Casting complex values:",
+    "ignore:.*ERFA function:",
+    "ignore:.*data are not sorted. :UserWarning:stingray",
+    "ignore:.*extended precision floating-point:RuntimeWarning:pint",
+    "ignore:.*pyfftw not installed:UserWarning",
+    "ignore:`product` is deprecated as of NumPy 1.25.0:DeprecationWarning",
+    "ignore:.*n_ave is below 30:UserWarning",
+    "ignore:.*Some error bars in the Averaged Crossspectrum:UserWarning",
+    "ignore:.*This platform does not support extended precision.*:RuntimeWarning:pint",
+    "ignore:.*function is deprecated. Set self.value.*:DeprecationWarning:pint",
+    "ignore:.*distutils Version classes are deprecated.*:DeprecationWarning:astropy",
+    "ignore:SIMON says. Errorbars on cross spectra are not thoroughly tested.:UserWarning",
+    "ignore:SIMON says. Stingray only uses poisson err_dist at the moment.:UserWarning",
+    "ignore:SIMON says. Looks like your lightcurve:UserWarning",
+    "ignore:Matplotlib is currently using agg, which is a:UserWarning",
+    "ignore:Using or importing the ABCs from 'collections':DeprecationWarning",
+    "ignore:elementwise == comparison failed and returning scalar instead:FutureWarning:astropy",
+    "ignore:unclosed file:ResourceWarning",
+    "ignore:numpy.ufunc size changed:RuntimeWarning",
+    "ignore:numpy.ndarray size changed:RuntimeWarning",
+    "ignore:invalid value encountered:RuntimeWarning",
+    "ignore:divide by zero encountered:RuntimeWarning",
+    "ignore:underflow encountered:RuntimeWarning",
+    "ignore:overflow encountered:RuntimeWarning",
+    "ignore:table path was not set via the path= argument; using default path:UserWarning",
+    "ignore:Beware! For cpds and derivatives, I assume that:UserWarning",
+    "ignore:SIMON says. Lightcurves have different statistics:UserWarning",
+    "ignore: SIMON says. Coherence is not ideal:UserWarning",
+    "ignore:SIMON says. The excess variance in the:UserWarning",
+    "ignore:SIMON says. Number of segments used in averaging:UserWarning",
+    "ignore:.*deprecated alias for.*:DeprecationWarning",
+    "ignore:.*namespace is deprecated.*:DeprecationWarning",
+    "ignore:.*Matplotlib 3.8",
+]
+
+[tool.towncrier]
+    package = "hendrics"
+    filename = "CHANGELOG.rst"
+    directory = "docs/changes/"
+    issue_format = "`#{issue} <https://github.com/StingraySoftware/hendrics/pull/{issue}>`__"
+    title_format = "v{version} ({project_date})"
+    underlines = "-^"
+
+    [[tool.towncrier.type]]
+        directory = "breaking"
+        name = "Breaking Changes"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "deprecation"
+      name = "Deprecations"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "removal"
+      name = "Removals"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "feature"
+      name = "New Features"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "bugfix"
+      name = "Bug Fixes"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "doc"
+      name = "Documentation"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "trivial"
+      name = "Internal Changes"
+      showcontent = true
+
+[tool.black]
+line-length = 100
+
+[tool.coverage]
+
+    [tool.coverage.run]
+        omit = [
+            "hendrics/_astropy_init*",
+            "hendrics/conftest.py",
+            "hendrics/*setup_package*",
+            "hendrics/tests/*",
+            "hendrics/compat/*",
+            "hendrics/*/tests/*",
+            "hendrics/extern/*",
+            "hendrics/version*",
+            "*/hendrics/_astropy_init*",
+            "*/hendrics/conftest.py",
+            "*/hendrics/*setup_package*",
+            "*/hendrics/tests/*",
+            "*/hendrics/*/tests/*",
+            "*/hendrics/extern/*",
+            "*/hendrics/version*",
+
+        ]
+
+    [tool.coverage.report]
+        exclude_lines = [
+            # Have to re-enable the standard pragma
+            "pragma: no cover",
+            # Don't complain about packages we have installed
+            "except ImportError",
+            # Don't complain if tests don't hit defensive assertion code:
+            "raise AssertionError",
+            "raise NotImplementedError",
+            # Don't complain about script hooks
+            "'def main(.*):'",
+            # Ignore branches that don't pertain to this version of Python
+            "pragma: py{ignore_python_version}",
+            # Don't complain about IPython completion helper
+            "def _ipython_key_completions_",
+        ]
+
+[tool.flake8]
+max-line-length = 100
+exclude = ".git,__pycache__,docs/source/conf.py,old,build,dist,*.egg-info"
+extend-ignore = "E203, W503, W605"
+
+[tool.pycodestyle]
+max-line-length = 100
+exclude = ".git,__pycache__,docs/source/conf.py,old,build,dist,*.egg-info"
