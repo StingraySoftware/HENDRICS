@@ -62,9 +62,7 @@ INFINITE = 100
 @jit(nopython=True)
 def A(k, r0, td, tb, tau):
     if k == 0:
-        return (
-            r0 * tb * (1 + 2 * sum([h(1, n, td, tb, tau) for n in range(1, INFINITE)]))
-        )
+        return r0 * tb * (1 + 2 * sum([h(1, n, td, tb, tau) for n in range(1, INFINITE)]))
 
     eq39_sums = [
         h(k + 1, n, td, tb, tau) - 2 * h(k, n, td, tb, tau) + h(k - 1, n, td, tb, tau)
@@ -132,11 +130,7 @@ def pds_model_zhang_back(N, rate, td, tb, limit_k=60):
             for k in range(1, N)
         ]
 
-        P[j] = (
-            2
-            / Nph
-            * (N * safe_A(0, r0, td, tb, tau, limit_k=limit_k) + 2 * sum(eq8_sums))
-        )
+        P[j] = 2 / Nph * (N * safe_A(0, r0, td, tb, tau, limit_k=limit_k) + 2 * sum(eq8_sums))
 
     maxf = 0.5 / tb
     df = maxf / len(P)
