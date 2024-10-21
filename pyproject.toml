@@ -404,13 +404,14 @@ ignore-words-list = """
     hel,
     lightyear,
     livetime,
+    livetimes,
     lond,
     nax,
     nd,
     ned,
     nin,
     numer,
-    observ.length,
+    observ,
     precess,
     precessed,
     precesses,
@@ -422,3 +423,6 @@ ignore-words-list = """
     te,
     wirth,
 """
+
+[tool.black]
+line-length = 100
