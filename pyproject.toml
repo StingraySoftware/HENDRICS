@@ -301,6 +301,7 @@ exclude=[
     "notebooks/*.ipynb",
     "*.svg",
     "docs/conf.py",
+    "docs/scripts/cli.rst",
     "_astropy_init.py",
     "__init__.py",
     "compatibility.py",

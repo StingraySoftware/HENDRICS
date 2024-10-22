@@ -198,6 +198,7 @@ lint.unfixable = [
 "test_*.py" = [
     "PTH", # all flake8-use-pathlib
     "RUF015",  # Prefer next({iterable}) over single element slice
+    "F401",
 ]
 # TODO: fix these, on a per-subpackage basis.
 # When a general exclusion is being fixed, but it affects many subpackages, it
