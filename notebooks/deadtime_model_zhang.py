@@ -78,7 +78,7 @@ def safe_A(k, r0, td, tb, tau, limit_k=60):
 
 
 def check_A(rate, td, tb, max_k=100):
-    """Ak ->r0**2tb**2 for k->infty"""
+    """Ak ->r0**2tb**2 for k->infty."""
     tau = 1 / rate
     r0 = r_det(td, rate)
 
@@ -107,7 +107,7 @@ def safe_B(k, r0, td, tb, tau, limit_k=60):
 
 
 def check_B(rate, td, tb, max_k=100):
-    """Ak ->r0**2tb**2 for k->infty"""
+    """Ak ->r0**2tb**2 for k->infty."""
     tau = 1 / rate
     r0 = r_det(td, rate)
 
@@ -164,7 +164,7 @@ def pds_model_zhang(N, rate, td, tb, limit_k=60):
 
 
 def check_pds_rate(td, tb, N=100):
-    """P -> 2 for rate -> 0, or tau -> infty"""
+    """P -> 2 for rate -> 0, or tau -> infty."""
     plt.figure()
     for rate in np.logspace(2, -2, 5):
         p = pds_model_zhang_back(N, rate, td, tb)[1][1:]
