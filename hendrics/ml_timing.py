@@ -4,7 +4,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import minimize
 
-from .base import float32, float64, int64, njit, vectorize
+from . import float32, float64, int64, njit, vectorize
 
 try:
     from statsmodels.tools.numdiff import approx_hess3

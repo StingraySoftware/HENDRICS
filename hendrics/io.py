@@ -1216,7 +1216,7 @@ def print_fits_info(fits_file, hdu=1):
     print(f"Date (MJD):    {start_mjd} -- {stop_mjd}\n")
     print(f"Instrument:    {info['Telescope']}/{info['Instrument']}\n")
     print(f"Target:        {info['Target']}\n")
-    print(f"N. Events:     {info["N. events"]}\n")
+    print(f"N. Events:     {info['N. events']}\n")
 
     lchdulist.close()
     return info

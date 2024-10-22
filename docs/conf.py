@@ -34,6 +34,12 @@ try:
 except ImportError:
     print("ERROR: the documentation requires the sphinx-astropy package to be installed")
     sys.exit(1)
+try:
+    import tomllib
+except ImportError:
+    # Help users on older alphas
+    import tomli as tomllib
+from pathlib import Path
 
 # Get configuration information from setup.cfg
 from configparser import ConfigParser
@@ -43,8 +49,9 @@ conf = ConfigParser()
 ON_RTD = os.environ.get("READTHEDOCS") == "True"
 ON_TRAVIS = os.environ.get("TRAVIS") == "true"
 
-conf.read([os.path.join(os.path.dirname(__file__), "..", "setup.cfg")])
-setup_cfg = dict(conf.items("metadata"))
+# Grab minversion from pyproject.toml
+with (Path(__file__).parents[1] / "pyproject.toml").open("rb") as f:
+    pyproject = tomllib.load(f)
 
 # -- General configuration ----------------------------------------------------
 
@@ -70,16 +77,16 @@ rst_epilog += """
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
-project = setup_cfg["name"]
-author = setup_cfg["author"]
-copyright = f"{datetime.datetime.now().year}, {setup_cfg['author']}"
+project = pyproject["project"]["name"]
+author = ",".join(pyproject["project"]["authors"][0]["name"])
+copyright = "{0}, {1}".format(datetime.datetime.now().year, pyproject["project"]["authors"])
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-import_module(setup_cfg["name"])
-package = sys.modules[setup_cfg["name"]]
+import_module(pyproject["project"]["name"])
+package = sys.modules[pyproject["project"]["name"]]
 
 # The short X.Y version.
 version = package.__version__.split("-", 1)[0]
@@ -155,17 +162,22 @@ man_pages = [("index", project.lower(), project + " Documentation", [author], 1)
 extensions += ["sphinx_toolbox.collapse"]
 # -- Options for the edit_on_github extension ---------------------------------
 
-if setup_cfg.get("edit_on_github").lower() == "true":
-    extensions += ["sphinx_astropy.ext.edit_on_github"]
+# Trust the links from these sites, even if they might have Client errors or other minor issues
+linkcheck_ignore = [
+    r"https://doi.org/",
+    r"https://arxiv.org/",
+    r"https://.*adsabs.harvard.edu/",
+    r"https://zenodo.org/",
+]
 
-    edit_on_github_project = setup_cfg["github_project"]
-    edit_on_github_branch = "main"
+# -- Options for the edit_on_github extension ---------------------------------
 
-    edit_on_github_source_root = ""
-    edit_on_github_doc_root = "docs"
+edit_on_github_branch = "main"
 
 # -- Resolving issue number to links in changelog -----------------------------
-github_issues_url = f"https://github.com/{setup_cfg['github_project']}/issues/"
+github_issues_url = "https://github.com/{0}/issues/".format(
+    pyproject["project"]["urls"]["repository"]
+)
 
 # -- Turn on nitpicky mode for sphinx (to warn about references not found) ----
 #
@@ -194,11 +206,14 @@ github_issues_url = f"https://github.com/{setup_cfg['github_project']}/issues/"
 #     nitpick_ignore.append((dtype, six.u(target)))
 
 if not ON_RTD and not ON_TRAVIS:
-    scripts = dict(conf.items("options.entry_points"))["console_scripts"]
+    # scripts = dict(conf.items("options.entry_points"))["console_scripts"]
+    print(pyproject)
+    scripts = pyproject["project"]["scripts"]
+    print(scripts)
 
-    scripts = dict(
-        [(l.strip() for l in line.split("=")) for line in scripts.split("\n") if line.strip() != ""]
-    )
+    # scripts = dict(
+    #     [(l.strip() for l in line.split("=")) for line in scripts.split("\n") if line.strip() != ""]
+    # )
     import subprocess as sp
 
     cli_file = os.path.join(os.getcwd(), "scripts", "cli.rst")

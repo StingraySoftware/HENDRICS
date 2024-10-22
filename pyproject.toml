@@ -80,6 +80,7 @@ docs = [
     "jinja2==3.1.3",
     "docutils",
     "sphinx-astropy",
+    "sphinx-toolbox",
     "nbsphinx>=0.8.3,!=0.8.8",
     "nbconvert<7.14",
     "pandoc",
@@ -91,6 +92,43 @@ docs = [
 homepage = "https://stingray.science"
 documentation = "https://hendrics.stingray.science"
 repository = "https://github.com/stingraysoftware/hendrics"
+
+
+[project.scripts]
+HEN2xspec = "hendrics.save_as_xspec:main"
+HENaccelsearch = "hendrics.efsearch:main_accelsearch"
+HENbaseline = "hendrics.lcurve:baseline_main"
+HENbinary = "hendrics.binary:main_presto"
+HENcalibrate = "hendrics.calibrate:main"
+HENcolors = "hendrics.colors:main"
+HENcreategti = "hendrics.create_gti:main"
+HENdeorbit = "hendrics.fold:main_deorbit"
+HENdumpdyn = "hendrics.fspec:dumpdyn_main"
+HENefsearch = "hendrics.efsearch:main_efsearch"
+HENexcvar = "hendrics.exvar:main"
+HENexposure = "hendrics.exposure:main"
+HENfake = "hendrics.fake:main"
+HENfiltevents = "hendrics.io:main_filter_events"
+HENfold = "hendrics.fold:main_fold"
+HENfspec = "hendrics.fspec:main"
+HENjoinevents = "hendrics.read_events:main_join"
+HENlags = "hendrics.timelags:main"
+HENlcurve = "hendrics.lcurve:main"
+HENmodel = "hendrics.modeling:main_model"
+HENphaseogram = "hendrics.phaseogram:main_phaseogram"
+HENphasetag = "hendrics.phasetag:main_phasetag"
+HENplot = "hendrics.plot:main"
+HENpowercolors = "hendrics.power_colors:main"
+HENreadevents = "hendrics.read_events:main"
+HENreadfile = "hendrics.io:main"
+HENrebin = "hendrics.rebin:main"
+HENscramble = "hendrics.fake:main_scramble"
+HENscrunchlc = "hendrics.lcurve:scrunch_main"
+HENsplitevents = "hendrics.read_events:main_splitevents"
+HENsumfspec = "hendrics.sum_fspec:main"
+HENvarenergy = "hendrics.varenergy:main"
+HENz2vspf = "hendrics.efsearch:main_z2vspf"
+HENzsearch = "hendrics.efsearch:main_zsearch"
 
 [build-system]
 requires = ["setuptools",
@@ -116,7 +154,7 @@ namespaces = false
     "*.rmf",
 ]
 "hendrics.compat" = ["datasets/*"]
-"hendrics.tests" = "data/*"
+"hendrics.tests" = ["data/*"]
 
 [tool.setuptools_scm]
 write_to = "hendrics/_version.py"
