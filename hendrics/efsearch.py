@@ -148,9 +148,19 @@ def find_nearest_contour(cs, x, y, indices=None, pixel=True):
 
     if cs.filled:
         raise ValueError("Method does not support filled contours.")
+    from astropy.utils.introspection import minversion
+    import matplotlib as mpl
 
-    if indices is None:
-        indices = range(len(cs.collections))
+    MATPLOTLIB_LT_3_8 = not minversion(mpl, "3.8.dev")
+    if MATPLOTLIB_LT_3_8:
+        paths_list = []
+        trans_list = []
+        for con in cs.collections:
+            trans_list.append(con.get_transform())
+            paths_list.append(con.get_paths())
+    else:
+        paths_list = [cs.get_paths()]
+        trans_list = [cs.get_transforms()]
 
     d2min = np.inf
     conmin = None
@@ -161,11 +171,7 @@ def find_nearest_contour(cs, x, y, indices=None, pixel=True):
 
     point = np.array([x, y])
 
-    for icon in indices:
-        con = cs.collections[icon]
-        trans = con.get_transform()
-        paths = con.get_paths()
-
+    for icon, (paths, trans) in enumerate(zip(paths_list, trans_list)):
         for segNum, linepath in enumerate(paths):
             lc = linepath.vertices
             # transfer all data points to screen coordinates if desired
