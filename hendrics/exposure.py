@@ -1,8 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Calculate the exposure correction for light curves.
 
-Only works for data taken in specific data modes of NuSTAR, where all events
-are telemetered.
+Only works for data taken in specific data modes of NuSTAR, where all
+events are telemetered.
 """
 
 import warnings
@@ -44,7 +44,6 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
     gti : [[g0_0, g0_1], [g1_0, g1_1], ...]
          Good time intervals. Defaults to
          [[time[0] - dt[0]/2, time[-1] + dt[-1]/2]]
-
     """
     assert len(events) == len(priors), "`events` and `priors` must be of the same length"
 
@@ -228,7 +227,6 @@ def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
     ----------------
     dt : float
         If time array is not sampled uniformly, dt can be specified here.
-
     """
     dt = _assign_value_if_none(dt, np.median(np.diff(time)))
 

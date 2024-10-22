@@ -181,7 +181,6 @@ def _get_const(models):
     >>> _get_const(1)
 
     >>> _get_const('avdsfa')
-
     """
     if isinstance(models, Const1D):
         return models.amplitude.value

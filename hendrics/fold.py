@@ -474,9 +474,7 @@ def _check_odd(n):
 
 def dbl_cos_fit_func(p, x):
     # the frequency is fixed
-    """
-    A double sinus (fundamental + 1st harmonic) used as a fit function
-    """
+    """A double sinus (fundamental + 1st harmonic) used as a fit function."""
     startidx = 0
     base = 0
     if len(p) % 2 != 0:
@@ -498,8 +496,7 @@ def std_residuals(p, x, y):
 
 
 def adjust_amp_phase(pars):
-    """Give the phases in the interval between 0 and 1.
-    The calculation is based on the amplitude and phase given as input
+    """Give the phases in the interval between 0 and 1. The calculation is based on the amplitude and phase given as input.
 
     pars[0] is the initial amplitude; pars[1] is the initial phase
     If amplitude is negative, it makes it positive and changes the phase
@@ -520,8 +517,7 @@ def adjust_amp_phase(pars):
 
 
 def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1, baseline=False):
-    """
-    Fit a folded profile with the std_fold_fit_func.
+    """Fit a folded profile with the std_fold_fit_func.
 
     Tries a number of different initial values for the fit, and returns the
     result of the best chi^2 fit

@@ -1,5 +1,4 @@
-"""
-Created on Thu Aug 17 08:55:47 2017
+"""Created on Thu Aug 17 08:55:47 2017.
 
 @author: marta
 """

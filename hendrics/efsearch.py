@@ -100,8 +100,7 @@ __all__ = [
 
 
 def find_nearest_contour(cs, x, y, indices=None, pixel=True):
-    """
-    Find the point in the contour plot that is closest to ``(x, y)``.
+    """Find the point in the contour plot that is closest to ``(x, y)``.
 
     This method does not support filled contours.
 
@@ -1178,7 +1177,7 @@ def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
 
 
 def get_boundaries_from_level(x, y, level, x0):
-    """Calculate boundaries of peak in x-y plot
+    """Calculate boundaries of peak in x-y plot.
 
     Parameters
     ----------

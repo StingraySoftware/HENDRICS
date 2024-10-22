@@ -258,7 +258,6 @@ def calc_pds(
         Maximum energy of the photons
     lombscargle : bool
         Use the Lomb-Scargle periodogram instead of AveragedPowerspectrum
-
     """
     root = hen_root(lcfile)
     label = ""
@@ -382,7 +381,6 @@ def calc_cpds(
         Maximum energy of the photons
     lombscargle : bool
         Use the Lomb-Scargle periodogram instead of AveragedPowerspectrum
-
     """
     label = ""
     if emin is not None or emax is not None:

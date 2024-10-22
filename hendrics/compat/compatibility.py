@@ -53,6 +53,6 @@ except ImportError:
 
 
 def array_take(arr, indices):  # pragma: no cover
-    """Adapt np.take to arrays"""
+    """Adapt np.take to arrays."""
     warnings.warn("array_take is deprecated. Use np.take instead, also with Numba.")
     return np.take(arr, indices)

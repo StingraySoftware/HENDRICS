@@ -16,7 +16,7 @@ except ImportError:
 
 @vectorize([(int64,), (float32,), (float64,)])
 def phases_from_zero_to_one(phase):
-    """Normalize pulse phases from 0 to 1
+    """Normalize pulse phases from 0 to 1.
 
     Examples
     --------
@@ -35,7 +35,7 @@ def phases_from_zero_to_one(phase):
 
 @vectorize([(int64,), (float32,), (float64,)])
 def phases_around_zero(phase):
-    """Normalize pulse phases from -0.5 to 0.5
+    """Normalize pulse phases from -0.5 to 0.5.
 
     Examples
     --------
@@ -54,7 +54,7 @@ def phases_around_zero(phase):
 
 @njit()
 def poisson_loglike(model, data):
-    """Loglikelihood for a Poisson distribution
+    """Loglikelihood for a Poisson distribution.
 
     Parameters
     ----------
@@ -73,7 +73,7 @@ def poisson_loglike(model, data):
 
 
 def normal_loglike(model, input_data):
-    """Loglikelihood for a Poisson distribution
+    """Loglikelihood for a Poisson distribution.
 
     Parameters
     ----------

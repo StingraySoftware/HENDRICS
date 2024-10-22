@@ -111,7 +111,6 @@ def join_lightcurves(lcfilelist, outfile="out_lc" + HEN_FILE_EXTENSION):
     --------
         scrunch_lightcurves : Create a single light curve from input light
                                  curves.
-
     """
     lcdatas = []
 
@@ -339,7 +338,6 @@ def lcurve_from_events(
         Output file
     noclobber : bool
         If True, do not overwrite existing files
-
     """
     log.info(f"Loading file {f}...")
     evdata = load_events(f)
@@ -503,8 +501,7 @@ def lcurve_from_fits(
     noclobber=False,
     outdir=None,
 ):
-    """
-    Load a lightcurve from a fits file and save it in HENDRICS format.
+    """Load a lightcurve from a fits file and save it in HENDRICS format.
 
     .. note ::
         FITS light curve handling is still under testing.
@@ -701,8 +698,7 @@ def lcurve_from_txt(
     mjdref=None,
     gti=None,
 ):
-    """
-    Load a lightcurve from a text file.
+    """Load a lightcurve from a text file.
 
     Parameters
     ----------

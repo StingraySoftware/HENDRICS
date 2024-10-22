@@ -1071,7 +1071,6 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=floa
     >>> assert np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
     >>> i0, i1, istep = 0, 10, 1e-7
     >>> assert np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
-
     """
     import tempfile
 
@@ -1092,7 +1091,7 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=floa
 
 
 def nchars_in_int_value(value):
-    """Number of characters to write an integer number
+    """Number of characters to write an integer number.
 
     Examples
     --------

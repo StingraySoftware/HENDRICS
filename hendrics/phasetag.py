@@ -73,7 +73,6 @@ def phase_tag(
         Plot diagnostics
     expocorr : bool
         Use exposure correction when calculating the profile
-
     """
     # ---- in MJD ----
     if gti is None:

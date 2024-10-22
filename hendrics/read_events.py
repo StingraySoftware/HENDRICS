@@ -183,8 +183,7 @@ def _wrap_fun(arglist):
 
 
 def multiple_event_concatenate(event_lists):
-    """
-    Join multiple :class:`EventList` objects into one.
+    """Join multiple :class:`EventList` objects into one.
 
     If both are empty, an empty :class:`EventList` is returned.
 

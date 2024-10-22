@@ -473,8 +473,8 @@ def recognize_stingray_table(obj):
 def get_file_type(fname, raw_data=False):
     """Return the file type and its contents.
 
-    Only works for hendrics-format pickle or netcdf files,
-    or stingray outputs.
+    Only works for hendrics-format pickle or netcdf files, or stingray
+    outputs.
     """
     contents_raw = load_data(fname)
     if isinstance(contents_raw, Table):
@@ -597,7 +597,7 @@ def load_timeseries(fname):
 
 # ----- functions to save and load LCURVE data
 def save_lcurve(lcurve, fname, lctype="Lightcurve"):
-    """Save Light curve to file
+    """Save Light curve to file.
 
     Parameters
     ----------
