@@ -207,13 +207,8 @@ github_issues_url = "https://github.com/{0}/issues/".format(
 
 if not ON_RTD and not ON_TRAVIS:
     # scripts = dict(conf.items("options.entry_points"))["console_scripts"]
-    print(pyproject)
     scripts = pyproject["project"]["scripts"]
-    print(scripts)
 
-    # scripts = dict(
-    #     [(l.strip() for l in line.split("=")) for line in scripts.split("\n") if line.strip() != ""]
-    # )
     import subprocess as sp
 
     cli_file = os.path.join(os.getcwd(), "scripts", "cli.rst")
