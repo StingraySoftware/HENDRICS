@@ -1,5 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """A miscellaneous collection of basic functions."""
+from __future__ import annotations
 
 import copy
 import os
