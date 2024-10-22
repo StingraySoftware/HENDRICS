@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from stingray.events import EventList
 
-from hendrics.base import deorbit_events, normalize_dyn_profile, HAS_PINT
+from hendrics.base import HAS_PINT, deorbit_events, normalize_dyn_profile
 from hendrics.tests import _dummy_par
 
 

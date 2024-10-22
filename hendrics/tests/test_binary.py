@@ -5,9 +5,9 @@ import os
 
 import pytest
 
-from hendrics.tests import _dummy_par
-from hendrics import binary, io, calibrate, lcurve, read_events
+from hendrics import binary, calibrate, io, lcurve, read_events
 from hendrics.base import HAS_PINT
+from hendrics.tests import _dummy_par
 
 from . import cleanup_test_dir
 

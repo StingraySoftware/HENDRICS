@@ -4,8 +4,9 @@
 import os
 
 from astropy import log
+from hendrics import calibrate, create_gti, io, lcurve, read_events
 from hendrics.tests import _dummy_par
-from hendrics import io, create_gti, lcurve, read_events, calibrate
+
 from . import cleanup_test_dir
 
 try:

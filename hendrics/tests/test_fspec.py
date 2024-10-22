@@ -16,8 +16,8 @@ from stingray import EventList
 from astropy import log
 from hendrics import (
     base,
-    io,
     fspec,
+    io,
     lcurve,
     modeling,
     plot,

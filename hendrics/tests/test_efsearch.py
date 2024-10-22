@@ -8,11 +8,11 @@ import pytest
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 
-from hendrics.base import hen_root, HAS_PINT
+from hendrics.base import HAS_PINT, hen_root
 from hendrics.efsearch import (
+    HAS_IMAGEIO,
     decide_binary_parameters,
     folding_orbital_search,
-    HAS_IMAGEIO,
     main_accelsearch,
     main_efsearch,
     main_z2vspf,

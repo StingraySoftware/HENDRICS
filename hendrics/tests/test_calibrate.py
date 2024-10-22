@@ -3,10 +3,10 @@ import os
 import numpy as np
 import pytest
 
+from hendrics import calibrate, fake, io, read_events
 from hendrics.calibrate import default_nustar_rmf
 from hendrics.io import load_events, save_events
 from hendrics.tests import _dummy_par
-from hendrics import calibrate, io, read_events, fake
 
 from . import cleanup_test_dir
 

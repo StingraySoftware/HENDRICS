@@ -9,10 +9,8 @@ from stingray import EventList
 
 from astropy import log
 from astropy.io import fits
-
-from hendrics import fake, io, read_events, calibrate, base
+from hendrics import base, calibrate, fake, io, read_events
 from hendrics.base import HAS_PINT
-
 from hendrics.fake import scramble
 from hendrics.io import load_events
 from hendrics.tests import _dummy_par

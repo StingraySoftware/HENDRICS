@@ -9,24 +9,24 @@ from stingray.lightcurve import Lightcurve
 
 from astropy import log
 from astropy.logger import AstropyUserWarning
+from hendrics import (
+    base,
+    calibrate,
+    create_gti,
+    exposure,
+    exvar,
+    fspec,
+    io,
+    lcurve,
+    plot,
+    read_events,
+    rebin,
+)
 from hendrics.io import HEN_FILE_EXTENSION, get_file_type
 from hendrics.lcurve import lcurve_from_events
 from hendrics.read_events import treat_event_file
 from hendrics.tests import _dummy_par
 
-from hendrics import (
-    base,
-    calibrate,
-    create_gti,
-    exvar,
-    fspec,
-    io,
-    plot,
-    rebin,
-    read_events,
-    lcurve,
-    exposure,
-)
 from . import cleanup_test_dir
 
 try:

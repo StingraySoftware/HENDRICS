@@ -6,8 +6,8 @@ import os
 import numpy as np
 import pytest
 
-from hendrics import colors, io, lcurve, plot, read_events, calibrate
 from astropy import log
+from hendrics import calibrate, colors, io, lcurve, plot, read_events
 from hendrics.tests import _dummy_par
 
 from . import cleanup_test_dir

@@ -8,7 +8,7 @@ from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 
 from astropy.io.fits import Header
-from hendrics.base import hen_root, HAS_PINT
+from hendrics.base import HAS_PINT, hen_root
 from hendrics.efsearch import main_zsearch
 from hendrics.io import HEN_FILE_EXTENSION, load_folding, save_events
 from hendrics.phaseogram import (
