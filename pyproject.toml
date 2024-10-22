@@ -9,7 +9,7 @@ authors = [
     { name = "Matteo Bachetti", email = "matteo@matteobachetti.it" }
 ]
 license = { text = "3-clause BSD" }
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: BSD License",

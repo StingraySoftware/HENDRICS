@@ -122,8 +122,8 @@ jobs:
             use_remote_data: true
             continue-on-error: true
           - os: ubuntu-latest
-            python: '3.8'
-            tox_env: 'py38-test-oldestdeps-cov'
+            python: '3.9'
+            tox_env: 'py39-test-oldestdeps-cov'
             use_remote_data: true
           - os: macos-latest
             python: '3.11'
