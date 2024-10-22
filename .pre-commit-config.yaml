@@ -36,7 +36,7 @@ repos:
         # Checks for the existence of private keys.
       - id: end-of-file-fixer
         # Makes sure files end in a newline and only a newline.
-        exclude: ".*(.*.svg|data.*|extern.*|_templates.*|licenses.*|_static.*|_parsetab.py)$"
+        exclude: ".*(.*.svg|data.*|extern.*|_templates.*|licenses.*|_static.*|_parsetab.py|cli.rst)$"
       # - id: fix-encoding-pragma  # covered by pyupgrade
       - id: trailing-whitespace
         # Trims trailing whitespace.
@@ -76,25 +76,25 @@ repos:
   #   hooks:
   #     - id: sp-repo-review
 
-  # - repo: https://github.com/PyCQA/docformatter
-  #   # using an untagged rev for forward compatibility with pre-commit 4.0
-  #   # see https://github.com/PyCQA/docformatter/issues/289
-  #   # This should be changed back to a tag when (>1.7.5) is released
-  #   rev: 06907d0267368b49b9180eed423fae5697c1e909
-  #   hooks:
-  #     - id: docformatter
-  #       additional_dependencies: [tomli]
-  #       args: [--in-place, --config, ./pyproject.toml]
-  #       exclude: |
-  #         (?x)(
-  #             test.*\.py |
-  #             hendrics/__init__\.py |
-  #             hendrics/_dev/ |
-  #             hendrics/conftest\.py |
-  #             astropy/version\.py |
-  #             docs/ |
-  #             examples/
-  #         )
+  - repo: https://github.com/PyCQA/docformatter
+    # using an untagged rev for forward compatibility with pre-commit 4.0
+    # see https://github.com/PyCQA/docformatter/issues/289
+    # This should be changed back to a tag when (>1.7.5) is released
+    rev: 06907d0267368b49b9180eed423fae5697c1e909
+    hooks:
+      - id: docformatter
+        additional_dependencies: [tomli]
+        args: [--in-place, --config, ./pyproject.toml]
+        exclude: |
+          (?x)(
+              test.*\.py |
+              hendrics/__init__\.py |
+              hendrics/_dev/ |
+              hendrics/conftest\.py |
+              astropy/version\.py |
+              docs/ |
+              examples/
+          )
 
   # - repo: local
   #   hooks:
