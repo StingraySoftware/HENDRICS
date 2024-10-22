@@ -4,7 +4,7 @@ Installation Instructions
 Prerequisites
 -------------
 
-You'll need a recent python 3.8+ installation.
+You'll need a recent python 3.9+ installation.
 The main dependency is
 
 1. `Stingray <https://github.com/stingraysoftware/stingray>`__,

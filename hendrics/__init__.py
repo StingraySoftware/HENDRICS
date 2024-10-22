@@ -22,21 +22,21 @@ if not _ASTROPY_SETUP_:
     except ImportError:
         HEN_FILE_EXTENSION = ".p"
         HAS_NETCDF = False
-        pass
+
+    import warnings
 
     import stingray
-    import warnings
 
     warnings.filterwarnings("ignore", message=".*Errorbars on cross.*")
 
     from .compat import (
-        prange,
-        array_take,
         HAS_NUMBA,
-        njit,
-        vectorize,
+        array_take,
         float32,
         float64,
         int32,
         int64,
+        njit,
+        prange,
+        vectorize,
     )

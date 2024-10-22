@@ -3,16 +3,18 @@
 
 import sys
 import warnings
+
 import numpy as np
+from stingray.gti import (
+    create_gti_from_condition,
+    cross_gtis,
+)
+
 from astropy import log
 from astropy.logger import AstropyUserWarning
-from stingray.gti import (
-    cross_gtis,
-    create_gti_from_condition,
-    create_gti_mask,
-)
-from .io import HEN_FILE_EXTENSION, save_data, load_data, get_file_type
-from .base import hen_root, _assign_value_if_none
+
+from .base import _assign_value_if_none, hen_root
+from .io import HEN_FILE_EXTENSION, get_file_type, load_data, save_data
 
 
 def filter_gti_by_length(gti, minimum_length):
@@ -29,9 +31,7 @@ def filter_gti_by_length(gti, minimum_length):
     return np.array(newgti)
 
 
-def create_gti(
-    fname, filter_expr, safe_interval=[0, 0], outfile=None, minimum_length=0
-):
+def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None, minimum_length=0):
     """Create a GTI list by using boolean operations on file data.
 
     Parameters
@@ -47,7 +47,7 @@ def create_gti(
     gti : [[gti0_0, gti0_1], [gti1_0, gti1_1], ...]
         The newly created GTIs
 
-    Other parameters
+    Other Parameters
     ----------------
     safe_interval : float or [float, float]
         A safe interval to exclude at both ends (if single float) or the start
@@ -73,9 +73,7 @@ def create_gti(
     if hasattr(data, "internal_array_attrs"):
         array_attrs = data.internal_array_attrs()
         mod_array_attrs = [attr.replace("_", "") for attr in array_attrs]
-        locals().update(
-            zip(mod_array_attrs, [getattr(data, attr) for attr in array_attrs])
-        )
+        locals().update(zip(mod_array_attrs, [getattr(data, attr) for attr in array_attrs]))
 
     good = eval(filter_expr)
 
@@ -83,9 +81,7 @@ def create_gti(
 
     gti = filter_gti_by_length(gti, minimum_length)
 
-    outfile = _assign_value_if_none(
-        outfile, hen_root(fname) + "_gti" + HEN_FILE_EXTENSION
-    )
+    outfile = _assign_value_if_none(outfile, hen_root(fname) + "_gti" + HEN_FILE_EXTENSION)
     save_data({"gti": gti, "mjdref": mjdref, "__sr__class__type__": "gti"}, outfile)
 
     return gti
@@ -112,9 +108,7 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
     data._mask = None
 
     newext = "_gtifilt" + HEN_FILE_EXTENSION
-    outname = _assign_value_if_none(
-        outname, fname.replace(HEN_FILE_EXTENSION, "") + newext
-    )
+    outname = _assign_value_if_none(outname, fname.replace(HEN_FILE_EXTENSION, "") + newext)
     save_data(data, outname)
 
     return newgti
@@ -123,11 +117,11 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
 def main(args=None):
     """Main function called by the `HENcreategti` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
-        "Create GTI files from a filter expression, or applies "
-        "previously created GTIs to a file"
+        "Create GTI files from a filter expression, or applies " "previously created GTIs to a file"
     )
     parser = argparse.ArgumentParser(description=description)
 
@@ -138,9 +132,11 @@ def main(args=None):
         "--filter",
         type=str,
         default=None,
-        help="Filter expression, that has to be a valid "
-        + "Python boolean operation on a data variable "
-        + "contained in the files",
+        help=(
+            "Filter expression, that has to be a valid "
+            "Python boolean operation on a data variable "
+            "contained in the files"
+        ),
     )
 
     parser.add_argument(
@@ -148,8 +144,7 @@ def main(args=None):
         "--create-only",
         default=False,
         action="store_true",
-        help="If specified, creates GTIs withouth applying"
-        + "them to files (Default: False)",
+        help="If specified, creates GTIs without applying" + "them to files (Default: False)",
     )
 
     parser.add_argument(
@@ -197,8 +192,7 @@ def main(args=None):
         filter_expr = args.filter
         if filter_expr is None and args.apply_gti is None:
             sys.exit(
-                "Please specify filter expression (-f option) or input "
-                "GTI file (-a option)"
+                "Please specify filter expression (-f option) or input " "GTI file (-a option)"
             )
 
         for fname in files:

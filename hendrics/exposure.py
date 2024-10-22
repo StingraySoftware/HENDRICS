@@ -1,18 +1,21 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Calculate the exposure correction for light curves.
 
-Only works for data taken in specific data modes of NuSTAR, where all events
-are telemetered.
+Only works for data taken in specific data modes of NuSTAR, where all
+events are telemetered.
 """
 
 import warnings
-from stingray.lightcurve import Lightcurve
-from stingray.gti import create_gti_mask
-from astropy import log
+
 import numpy as np
+from stingray.gti import create_gti_mask
 from stingray.io import load_events_and_gtis
-from .io import get_file_type, save_lcurve, HEN_FILE_EXTENSION, load_data
-from .base import hen_root, _assign_value_if_none
+from stingray.lightcurve import Lightcurve
+
+from astropy import log
+
+from .base import _assign_value_if_none, hen_root
+from .io import HEN_FILE_EXTENSION, get_file_type, save_lcurve
 
 
 def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
@@ -41,11 +44,8 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
     gti : [[g0_0, g0_1], [g1_0, g1_1], ...]
          Good time intervals. Defaults to
          [[time[0] - dt[0]/2, time[-1] + dt[-1]/2]]
-
     """
-    assert len(events) == len(
-        priors
-    ), "`events` and `priors` must be of the same length"
+    assert len(events) == len(priors), "`events` and `priors` must be of the same length"
 
     dt = _assign_value_if_none(dt, np.median(np.diff(times)))
 
@@ -119,14 +119,14 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
         livetime_array[ev_bin_good] += ev_good - _tbins
         assert np.all(
             ev_good - _tbins >= 0
-        ), "Invalid boundaries. Contact the developer: {}".format(ev_good - _tbins)
+        ), f"Invalid boundaries. Contact the developer: {ev_good - _tbins}"
 
         l_idx = np.searchsorted(tbin_starts, lt_good, "right")
         _tbins = tbin_starts[l_idx]
         livetime_array[lts_bin_good] += _tbins - lt_good
         assert np.all(
             _tbins - lt_good >= 0
-        ), "Invalid boundaries. Contact the developer: {}".format(_tbins - lt_good)
+        ), f"Invalid boundaries. Contact the developer: {_tbins - lt_good}"
 
         # Complete bins
         if bin_diff > 1:
@@ -174,15 +174,9 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
 
     bins = np.percentile(dead_times, np.linspace(0, 100, 1000))
     hist_all, bins_all = histogram(dead_times, bins=bins, density=True)
-    hist_shield, bins_shield = histogram(
-        dead_times[shields > 0], bins=bins, density=True
-    )
-    hist_noshield, bins_noshield = histogram(
-        dead_times[shields == 0], bins=bins, density=True
-    )
-    hist_shld_hi, bins_shld_hi = histogram(
-        dead_times[shld_hi > 0], bins=bins, density=True
-    )
+    hist_shield, bins_shield = histogram(dead_times[shields > 0], bins=bins, density=True)
+    hist_noshield, bins_noshield = histogram(dead_times[shields == 0], bins=bins, density=True)
+    hist_shld_hi, bins_shld_hi = histogram(dead_times[shld_hi > 0], bins=bins, density=True)
 
     bin_centers = bins[:-1] + np.diff(bins) / 2
     fig = plt.figure("Dead time distribution", figsize=(10, 10))
@@ -203,7 +197,7 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
             bin_centers,
             hs,
             drawstyle="steps-mid",
-            label="shield time {}".format(sht),
+            label=f"shield time {sht}",
         )
     ax2.set_xlabel("Dead time (s)")
     ax2.set_ylabel("Occurrences (arbitrary units)")
@@ -233,7 +227,6 @@ def get_exposure_from_uf(time, uf_file, dt=None, gti=None):
     ----------------
     dt : float
         If time array is not sampled uniformly, dt can be specified here.
-
     """
     dt = _assign_value_if_none(dt, np.median(np.diff(time)))
 
@@ -299,9 +292,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
     outname : str
         Output file name
     """
-    outname = _assign_value_if_none(
-        outname, hen_root(lc_file) + "_lccorr" + HEN_FILE_EXTENSION
-    )
+    outname = _assign_value_if_none(outname, hen_root(lc_file) + "_lccorr" + HEN_FILE_EXTENSION)
 
     ftype, contents = get_file_type(lc_file)
 
@@ -337,6 +328,7 @@ def correct_lightcurve(lc_file, uf_file, outname=None, expo_limit=1e-7):
 def main(args=None):
     """Main function called by the `HENexposure` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = "Create exposure light curve based on unfiltered event files."
@@ -351,9 +343,7 @@ def main(args=None):
         default=None,
         help="Root of output file names",
     )
-    parser.add_argument(
-        "--plot", help="Plot on window", default=False, action="store_true"
-    )
+    parser.add_argument("--plot", help="Plot on window", default=False, action="store_true")
     _add_default_args(parser, ["loglevel", "debug"])
 
     args = check_negative_numbers_in_args(args)
@@ -385,7 +375,6 @@ def main(args=None):
             _plot_dead_time_from_uf(uf_file, outroot)
         except Exception as e:
             warnings.warn(str(e))
-            pass
 
         if args.plot:
             import matplotlib.pyplot as plt

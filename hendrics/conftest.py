@@ -5,8 +5,6 @@
 
 import os
 
-from astropy.version import version as astropy_version
-
 try:
     from pytest_astropy_header.display import (
         PYTEST_HEADER_MODULES,
@@ -19,11 +17,11 @@ except ImportError:
 
 
 try:
-    import matplotlib
+    import matplotlib as mpl
 except ImportError:
     pass
 else:
-    matplotlib.use("Agg")
+    mpl.use("Agg")
 
 
 def pytest_configure(config):

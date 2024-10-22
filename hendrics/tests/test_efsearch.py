@@ -1,39 +1,44 @@
-import os
 import copy
-import glob
+import importlib
+import os
 from collections.abc import Iterable
 
-import pytest
-from stingray.lightcurve import Lightcurve
-from stingray.events import EventList
 import numpy as np
+import pytest
+from stingray.events import EventList
+from stingray.lightcurve import Lightcurve
+
+from hendrics.base import HAS_PINT, hen_root
+from hendrics.efsearch import (
+    HAS_IMAGEIO,
+    decide_binary_parameters,
+    folding_orbital_search,
+    main_accelsearch,
+    main_efsearch,
+    main_z2vspf,
+    main_zsearch,
+)
+from hendrics.fold import (
+    fit_profile_with_sinusoids,
+    get_TOAs_from_events,
+    main_deorbit,
+    main_fold,
+    std_fold_fit_func,
+)
 from hendrics.io import (
-    save_events,
     HEN_FILE_EXTENSION,
-    load_folding,
-    load_events,
     get_file_type,
+    load_events,
+    load_folding,
+    save_events,
     save_lcurve,
 )
-from hendrics.efsearch import main_efsearch, main_zsearch
-from hendrics.efsearch import main_accelsearch, main_z2vspf
-from hendrics.efsearch import decide_binary_parameters, folding_orbital_search
-from hendrics.fold import main_fold, main_deorbit, std_fold_fit_func
-from hendrics.fold import fit_profile_with_sinusoids, get_TOAs_from_events
 from hendrics.plot import plot_folding
 from hendrics.tests import _dummy_par
-from hendrics.base import hen_root
+
 from . import cleanup_test_dir
 
-try:
-    import pandas as pd
-
-    HAS_PD = True
-except ImportError:
-    HAS_PD = False
-
-from hendrics.fold import HAS_PINT
-from hendrics.efsearch import HAS_IMAGEIO
+HAS_PD = importlib.util.find_spec("pandas") is not None
 
 
 class TestEFsearch:
@@ -67,9 +72,7 @@ class TestEFsearch:
         cls.dum_scramble = "events_scramble" + HEN_FILE_EXTENSION
         save_events(events, cls.dum)
         events_scramble = copy.deepcopy(events)
-        events_scramble.time = np.sort(
-            np.random.uniform(cls.tstart, cls.tend, events.time.size)
-        )
+        events_scramble.time = np.sort(np.random.uniform(cls.tstart, cls.tend, events.time.size))
         save_events(events_scramble, cls.dum_scramble)
         cls.par = "bububububu.par"
         _dummy_par(cls.par)
@@ -123,9 +126,7 @@ class TestEFsearch:
     def test_fit_profile_with_sinusoids(self):
         nbin = 32
         phases = np.arange(0, 1, 1 / nbin)
-        prof_smooth = np.cos(2 * np.pi * phases) + 0.5 * np.cos(
-            4 * np.pi * (phases + 0.5)
-        )
+        prof_smooth = np.cos(2 * np.pi * phases) + 0.5 * np.cos(4 * np.pi * (phases + 0.5))
         prof_smooth = (prof_smooth + 5) * 64
         prof = np.random.poisson(prof_smooth)
         baseline = np.mean(prof)
@@ -575,9 +576,7 @@ class TestEFsearch:
     def test_fold_fast_fails(self):
         evfile = self.dum
 
-        with pytest.raises(
-            ValueError, match="The fast option is only available for z "
-        ):
+        with pytest.raises(ValueError, match="The fast option is only available for z "):
             main_efsearch([evfile, "-f", "9.85", "-F", "9.95", "-n", "64", "--fast"])
 
     def test_zsearch_fdots_fast_transient(self):
@@ -718,9 +717,7 @@ class TestEFsearch:
     def test_accelsearch_nodetections(self):
         evfile = self.dum_scramble
         with pytest.warns(UserWarning, match="The accelsearch functionality"):
-            outfile = main_accelsearch(
-                [evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1"]
-            )
+            outfile = main_accelsearch([evfile, "--fmin", "1", "--fmax", "1.1", "--zmax", "1"])
 
         assert os.path.exists(outfile)
         os.unlink(outfile)

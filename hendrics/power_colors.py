@@ -1,20 +1,18 @@
 """Functions to calculate power colors."""
 
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import os
 import warnings
 from collections.abc import Iterable
+
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
+from stingray import DynamicalCrossspectrum, DynamicalPowerspectrum, StingrayTimeseries
+from stingray.gti import cross_two_gtis
+from stingray.power_colors import hue_from_power_color
 
 from astropy import log
-from stingray import StingrayTimeseries, DynamicalPowerspectrum, DynamicalCrossspectrum
-from stingray.power_colors import hue_from_power_color
-from stingray.gti import cross_two_gtis
 
+from .base import common_name, hen_root, interpret_bintime
 from .io import HEN_FILE_EXTENSION, load_events, save_timeseries
-from .base import hen_root, interpret_bintime, common_name
 
 
 def treat_power_colors(
@@ -92,9 +90,7 @@ def treat_power_colors(
     )
     good = (scolor.pc1 > 0) & (scolor.pc2 > 0)
     if np.any(~good):
-        warnings.warn(
-            "Some (non-log) power colors are negative. Neglecting them", UserWarning
-        )
+        warnings.warn("Some (non-log) power colors are negative. Neglecting them", UserWarning)
         scolor = scolor.apply_mask(good)
 
     if outfile is None:
@@ -110,6 +106,7 @@ def treat_power_colors(
 def main(args=None):
     """Main function called by the `HENcolors` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = "Calculate color light curves"
@@ -158,10 +155,12 @@ def main(args=None):
         "--bintime",
         type=float,
         default=1 / 64,
-        help="Light curve bin time; if negative, interpreted"
-        + " as negative power of 2."
-        + " Default: 2^-10, or keep input lc bin time"
-        + " (whatever is larger)",
+        help=(
+            "Light curve bin time; if negative, interpreted"
+            " as negative power of 2."
+            " Default: 2^-10, or keep input lc bin time"
+            " (whatever is larger)"
+        ),
     )
     parser.add_argument(
         "--cross",
@@ -180,7 +179,7 @@ def main(args=None):
 
     files = args.files
     if args.cross:
-        files = [frange for frange in zip(files[::2], files[1::2])]
+        files = list(zip(files[::2], files[1::2]))
 
     outfiles = []
     with log.log_to_file("HENcolors.log"):

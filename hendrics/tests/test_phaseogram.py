@@ -1,18 +1,24 @@
-import warnings
-from astropy.io.fits import Header
-from stingray.lightcurve import Lightcurve
-from stingray.events import EventList
-import numpy as np
-from hendrics.io import save_events, HEN_FILE_EXTENSION, load_folding
-from hendrics.efsearch import main_zsearch
-from hendrics.phaseogram import main_phaseogram, run_interactive_phaseogram
-from hendrics.phaseogram import InteractivePhaseogram, BinaryPhaseogram
-from hendrics.base import hen_root
-from hendrics.fold import HAS_PINT
-from hendrics.plot import plot_folding
 import os
-import pytest
 import subprocess as sp
+import warnings
+
+import numpy as np
+import pytest
+from stingray.events import EventList
+from stingray.lightcurve import Lightcurve
+
+from astropy.io.fits import Header
+from hendrics.base import HAS_PINT, hen_root
+from hendrics.efsearch import main_zsearch
+from hendrics.io import HEN_FILE_EXTENSION, load_folding, save_events
+from hendrics.phaseogram import (
+    BinaryPhaseogram,
+    InteractivePhaseogram,
+    main_phaseogram,
+    run_interactive_phaseogram,
+)
+from hendrics.plot import plot_folding
+
 from . import cleanup_test_dir
 
 
@@ -79,7 +85,7 @@ class TestPhaseogram:
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
         fits_file = os.path.join(cls.datadir, "monol_testA.evt")
-        command = "HENreadevents {0}".format(fits_file)
+        command = f"HENreadevents {fits_file}"
         sp.check_call(command.split())
 
         cls.real_event_file = os.path.join(
@@ -122,9 +128,7 @@ class TestPhaseogram:
             ]
         )
 
-    @pytest.mark.parametrize(
-        "norm", ["to1", "mediansub", "mediannorm", "meansub", "meannorm"]
-    )
+    @pytest.mark.parametrize("norm", ["to1", "mediansub", "mediannorm", "meansub", "meannorm"])
     def test_phaseogram_input_norm(self, norm):
         evfile = self.dum
         main_phaseogram(
@@ -199,9 +203,7 @@ class TestPhaseogram:
         withbt = not withfX
         create_parfile(par, withfX=withfX, withell1=withell1, withbt=withbt)
 
-        ip = run_interactive_phaseogram(
-            evfile, 9.9, test=True, nbin=16, nt=8, deorbit_par=par
-        )
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True, nbin=16, nt=8, deorbit_par=par)
         ip.update(1)
         with warnings.catch_warnings(record=True) as ws:
             ip.recalculate(1)
@@ -274,9 +276,7 @@ class TestPhaseogram:
         evfile = self.dum
         par = "orbit.par"
         create_parfile(par, withell1=use_ell1, withbt=not use_ell1)
-        ip = run_interactive_phaseogram(
-            evfile, 9.9, test=True, binary=True, deorbit_par=par
-        )
+        ip = run_interactive_phaseogram(evfile, 9.9, test=True, binary=True, deorbit_par=par)
         ip.update(1)
         with warnings.catch_warnings(record=True) as ws:
             ip.recalculate(1)

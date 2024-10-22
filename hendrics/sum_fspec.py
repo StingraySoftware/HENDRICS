@@ -2,10 +2,10 @@
 """Function to sum frequency spectra."""
 
 from astropy import log
-from .io import save_pds, get_file_type
-from .io import HEN_FILE_EXTENSION
+
 from .base import _assign_value_if_none
 from .fspec import average_periodograms
+from .io import HEN_FILE_EXTENSION, get_file_type, save_pds
 
 
 def sum_fspec(files, outname=None):
@@ -26,7 +26,7 @@ def sum_fspec(files, outname=None):
             yield contents
 
     tot_contents = average_periodograms(check_and_distribute_files(files))
-    log.info("Saving %s to %s" % (pdstype, outname))
+    log.info(f"Saving {pdstype} to {outname}")
     save_pds(tot_contents, outname)
 
     return tot_contents
@@ -46,9 +46,7 @@ def main(args=None):
         "--outname",
         type=str,
         default=None,
-        help="Output file name for summed (C)PDS. Default:"
-        + " tot_(c)pds"
-        + HEN_FILE_EXTENSION,
+        help="Output file name for summed (C)PDS. Default:" + " tot_(c)pds" + HEN_FILE_EXTENSION,
     )
 
     args = parser.parse_args(args)

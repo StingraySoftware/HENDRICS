@@ -5,7 +5,6 @@ include README.rst
 # include pip-requirements*
 include CITATION
 
-include setup.cfg
 include hendrics/tests/coveragerc
 recursive-include hendrics *.evt *.fits *.rmf
 recursive-include hendrics/tests/data *.evt *.fits *.rmf

@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-import os
 import glob
+import os
 
 ROOT = os.path.dirname(__file__)
 

@@ -1,8 +1,10 @@
-import os
-from astropy.io import fits
+from pathlib import Path
+
 import numpy as np
 import pytest
-from ..phasetag import main_phasetag
+
+from astropy.io import fits
+from hendrics.phasetag import main_phasetag
 
 from . import cleanup_test_dir
 
@@ -12,9 +14,9 @@ class TestPhasetag:
 
     @classmethod
     def setup_class(cls):
-        curdir = os.path.abspath(os.path.dirname(__file__))
-        cls.datadir = os.path.join(curdir, "data")
-        cls.fits_fileA = os.path.join(cls.datadir, "monol_testA.evt")
+        curdir = Path(__file__).resolve().parent
+        cls.datadir = Path(curdir, "data")
+        cls.fits_fileA = Path(cls.datadir, "monol_testA.evt")
         cls.freq = 0.1235242
 
     @pytest.mark.parametrize("N", [5, 6, 11, 16, 32, 41])
@@ -31,8 +33,8 @@ class TestPhasetag:
                 "--plot",
             ]
         )
-        self.phasetagged = self.fits_fileA.replace(".evt", "_phasetag.evt")
-        assert os.path.exists(self.phasetagged)
+        self.phasetagged = Path(str(self.fits_fileA).replace(".evt", "_phasetag.evt"))
+        assert self.phasetagged.exists()
 
         # Redo to test if existing columns are preserved
         main_phasetag(
@@ -67,13 +69,13 @@ class TestPhasetag:
 
         # I used --tomax
         assert np.argmax(prof) == 0
-        os.unlink(self.phasetagged)
+        self.phasetagged.unlink()
 
     @pytest.mark.parametrize("N", [5, 6, 11, 16, 32, 41])
     def test_phase_tag_TOA(self, N):
         main_phasetag(
             [
-                self.fits_fileA,
+                str(self.fits_fileA),
                 "-f",
                 str(self.freq),
                 "--test",
@@ -84,8 +86,8 @@ class TestPhasetag:
                 "--plot",
             ]
         )
-        self.phasetagged = self.fits_fileA.replace(".evt", "_phasetag.evt")
-        assert os.path.exists(self.phasetagged)
+        self.phasetagged = Path(str(self.fits_fileA).replace(".evt", "_phasetag.evt"))
+        assert self.phasetagged.exists()
 
     def test_phase_tag_badexposure(self):
         with pytest.warns(UserWarning, match="Exposure has NaNs or zeros. "):
@@ -120,9 +122,7 @@ class TestPhasetag:
             )
 
     def test_phase_tag_parfile(self):
-        with pytest.raises(
-            NotImplementedError, match="This part is not yet implemented"
-        ):
+        with pytest.raises(NotImplementedError, match="This part is not yet implemented"):
             main_phasetag([self.fits_fileA, "--parfile", "bubu.par", "--test"])
 
     @classmethod

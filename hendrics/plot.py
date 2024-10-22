@@ -1,30 +1,37 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Quicklook plots."""
 
-import warnings
-import os
 import copy
+import os
+import warnings
 from collections.abc import Iterable
-import numpy as np
+
 import matplotlib.colors as colors
+import numpy as np
 from stingray.gti import create_gti_mask
-from astropy.modeling.models import Const1D
-from astropy.modeling import Model
-from astropy.stats import poisson_conf_interval
+from stingray.power_colors import plot_hues, plot_power_colors
+
 from astropy import log
+from astropy.modeling import Model
+from astropy.modeling.models import Const1D
+from astropy.stats import poisson_conf_interval
 from astropy.table import Table
 
-from .efsearch import analyze_qffa_results
-from .fold import fold_events, filter_energy
-from .io import load_events, load_lcurve, load_pds
-from .io import load_data, get_file_type
-from .io import is_string, save_as_qdp
-from .io import HEN_FILE_EXTENSION
-from .io import find_file_in_allowed_paths
-from .base import _assign_value_if_none
+from .base import _assign_value_if_none, deorbit_events
 from .base import pds_detection_level as detection_level
-from .base import deorbit_events
-from stingray.power_colors import plot_hues, plot_power_colors
+from .efsearch import analyze_qffa_results
+from .fold import filter_energy, fold_events
+from .io import (
+    HEN_FILE_EXTENSION,
+    find_file_in_allowed_paths,
+    get_file_type,
+    is_string,
+    load_data,
+    load_events,
+    load_lcurve,
+    load_pds,
+    save_as_qdp,
+)
 
 
 def _next_color(ax):
@@ -87,7 +94,7 @@ def rescale_plot_units(values):
     """
     span = values.max() - values.min()
 
-    oom = int(np.log10((span))) - 1
+    oom = int(np.log10(span)) - 1
     if abs(oom) <= 2:
         return 0.0, 0, values
 
@@ -109,7 +116,7 @@ def plot_generic(
 
     if is_string(fnames):
         fnames = [fnames]
-    figname = _assign_value_if_none(figname, "{0} vs {1}".format(vars[1], vars[0]))
+    figname = _assign_value_if_none(figname, f"{vars[1]} vs {vars[0]}")
     plt.figure(figname)
     ax = plt.gca()
     if xlog:
@@ -174,9 +181,7 @@ def _get_const(models):
     >>> _get_const(1)
 
     >>> _get_const('avdsfa')
-
     """
-
     if isinstance(models, Const1D):
         return models.amplitude.value
 
@@ -204,15 +209,9 @@ def plot_powercolors(fnames):
 
     ts = load_data(fnames)
 
-    plot_power_colors(
-        ts["pc1"], ts["pc1_err"], ts["pc2"], ts["pc2_err"], plot_spans=True
-    )
-    plot_hues(
-        ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=True, plot_spans=True
-    )
-    plot_hues(
-        ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=False, plot_spans=True
-    )
+    plot_power_colors(ts["pc1"], ts["pc1_err"], ts["pc2"], ts["pc2_err"], plot_spans=True)
+    plot_hues(ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=True, plot_spans=True)
+    plot_hues(ts["rms"], ts["rms_err"], ts["pc1"], ts["pc2"], polar=False, plot_spans=True)
     return ts
 
 
@@ -225,9 +224,8 @@ def plot_pds(
     white_sub=False,
 ):
     """Plot a list of PDSs, or a single one."""
-
-    from scipy.optimize import curve_fit
     import matplotlib.pyplot as plt
+    from scipy.optimize import curve_fit
 
     if is_string(fnames):
         fnames = [fnames]
@@ -281,7 +279,7 @@ def plot_pds(
 
         level = lev  # Can be modified below
         y = pds[1:]
-        yerr = yerr = None if epds is None else epds[1:]
+        yerr = None if epds is None else epds[1:]
 
         if not white_sub:
             white_sub = norm.lower() in ["rms", "frac"] and xlog and ylog
@@ -292,7 +290,7 @@ def plot_pds(
                 plt.plot(
                     freq,
                     func(freq),
-                    label="Model {}".format(i + 1),
+                    label=f"Model {i + 1}",
                     zorder=20,
                     color="k",
                 )
@@ -301,7 +299,7 @@ def plot_pds(
             const = _get_const(models)
             if const is None:
                 p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
-                log.info("White noise level is {0}".format(p[0]))
+                log.info(f"White noise level is {p[0]}")
                 const = p[0]
 
             pds -= const
@@ -316,7 +314,7 @@ def plot_pds(
                 plt.plot(
                     freq,
                     freq * (func(freq) - const),
-                    label="Model {}".format(i + 1),
+                    label=f"Model {i + 1}",
                     zorder=20,
                     color="k",
                 )
@@ -391,7 +389,7 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None, output_data_file
             y = freq[1:] * cospectrum[1:]
             plt.plot(freq[1:], y, drawstyle="steps-mid", label=fname)
             for i, func in enumerate(models):
-                plt.plot(freq, freq * func(freq), label="Model {}".format(i + 1))
+                plt.plot(freq, freq * func(freq), label=f"Model {i + 1}")
 
             plt.ylabel("Cospectrum * Frequency")
         else:
@@ -400,7 +398,7 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None, output_data_file
 
             plt.ylabel("Cospectrum")
             for i, func in enumerate(models):
-                plt.plot(freq, func(freq), label="Model {}".format(i + 1))
+                plt.plot(freq, func(freq), label=f"Model {i + 1}")
         if output_data_file is not None:
             save_as_qdp([freq[1:], y], filename=output_data_file, mode="a")
 
@@ -411,8 +409,8 @@ def plot_cospectrum(fnames, figname=None, xlog=None, ylog=None, output_data_file
 
 
 def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=None):
-    from matplotlib import gridspec
     import matplotlib.pyplot as plt
+    from matplotlib import gridspec
 
     if is_string(fnames):
         fnames = [fnames]
@@ -448,7 +446,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
                 root = os.path.split(fname)[0]
                 parfile = find_file_in_allowed_paths(ef.parfile, [".", root])
                 if not parfile:
-                    warnings.warn("{} does not exist".format(ef.parfile))
+                    warnings.warn(f"{ef.parfile} does not exist")
                 else:
                     ef.parfile = parfile
 
@@ -494,9 +492,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
 
             mean = np.mean(profile)
 
-            low, high = poisson_conf_interval(
-                mean, interval="frequentist-confidence", sigma=1
-            )
+            low, high = poisson_conf_interval(mean, interval="frequentist-confidence", sigma=1)
 
             ax.axhline(mean)
             ax.fill_between(
@@ -506,9 +502,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
                 label=r"1-$\sigma c.l.$",
                 alpha=0.5,
             )
-            low, high = poisson_conf_interval(
-                mean, interval="frequentist-confidence", sigma=3
-            )
+            low, high = poisson_conf_interval(mean, interval="frequentist-confidence", sigma=3)
             ax.fill_between(
                 [0, 2],
                 [low, low],
@@ -526,16 +520,16 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
                 f"--fdot {fdot} {ef.filename} -n {nbin} --ntimes {ntimes} --norm meansub"
             )
             if ef.parfile and os.path.exists(ef.parfile):
-                phascommand += " --deorbit-par {}".format(parfile)
+                phascommand += f" --deorbit-par {parfile}"
             if hasattr(ef, "emin") and ef.emin is not None:
-                phascommand += " --emin {}".format(ef.emin)
+                phascommand += f" --emin {ef.emin}"
             if hasattr(ef, "emin") and ef.emin is not None:
-                phascommand += " --emax {}".format(ef.emax)
+                phascommand += f" --emax {ef.emax}"
 
             if hasattr(events, "mjdref") and events.mjdref is not None:
-                phascommand += " --pepoch {}".format(pepoch)
+                phascommand += f" --pepoch {pepoch}"
 
-            log.info("To see the detailed phaseogram, " "run {}".format(phascommand))
+            log.info("To see the detailed phaseogram, " f"run {phascommand}")
 
         elif not os.path.exists(ef.filename):
             warnings.warn(ef.filename + " does not exist")
@@ -548,22 +542,22 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
         f_mean, f_oom, f_rescale = rescale_plot_units(ef.freq)
 
         if f_oom != 0:
-            flabel = f"Frequency"
+            flabel = "Frequency"
             if f_mean != 0.0:
                 flabel = "(" + flabel + f"- {f_mean})"
             flabel += rf" ($10^{{{f_oom}}}$ Hz)"
         else:
-            flabel = f"Frequency (Hz)"
+            flabel = "Frequency (Hz)"
 
         if len(ef.stat.shape) > 1 and ef.stat.shape[0] > 1:
             fd_mean, fd_oom, fd_rescale = rescale_plot_units(ef.fdots)
             if fd_oom != 0:
-                fdlabel = f"Fdot"
+                fdlabel = "Fdot"
                 if fd_mean != 0.0:
                     fdlabel = "(" + flabel + f" - {fd_mean:g})"
                 fdlabel += rf" ($10^{{{fd_oom}}}$ Hz/s)"
             else:
-                fdlabel = f"Fdot (Hz/s)"
+                fdlabel = "Fdot (Hz/s)"
 
             gs = gridspec.GridSpecFromSubplotSpec(
                 2,
@@ -624,12 +618,10 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             cbar = plt.colorbar(pcol, cax=axcolor, ticks=colorticks)
 
             if len(cs.allsegs[0]) > 1:
-                warnings.warn(
-                    "More than one contour found. " "Frequency estimates might be wrong"
-                )
+                warnings.warn("More than one contour found. " "Frequency estimates might be wrong")
             else:
                 for ax in (axffdot, axf):
-                    ax.axvline(cs.allsegs[0][0][:, 0].min(), label=f"90% conf. lim.")
+                    ax.axvline(cs.allsegs[0][0][:, 0].min(), label="90% conf. lim.")
                     ax.axvline(cs.allsegs[0][0][:, 0].max())
 
                 for ax in (axffdot, axfdot):
@@ -684,11 +676,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             axf.set_ylabel(ef.kind + " stat")
             axf.legend(loc=4)
 
-        if (
-            hasattr(ef, "best_fits")
-            and ef.best_fits is not None
-            and not len(ef.stat.shape) > 1
-        ):
+        if hasattr(ef, "best_fits") and ef.best_fits is not None and not len(ef.stat.shape) > 1:
             for f in ef.best_fits:
                 xs = np.linspace(np.min(ef.freq), np.max(ef.freq), len(ef.freq) * 2)
                 plt.plot(xs, f(xs))
@@ -701,11 +689,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             out = [ef.freq.flatten(), fdots.flatten(), ef.stat.flatten()]
             out_err = [None, None, None]
 
-            if (
-                hasattr(ef, "best_fits")
-                and ef.best_fits is not None
-                and not len(ef.stat.shape) > 1
-            ):
+            if hasattr(ef, "best_fits") and ef.best_fits is not None and not len(ef.stat.shape) > 1:
                 for f in ef.best_fits:
                     out.append(f(ef.freq.flatten()))
                     out_err.append(None)
@@ -784,7 +768,7 @@ def plot_lc(
 
     plt.figure("LC " + figlabel)
     for lcfile in lcfiles:
-        log.info("Loading %s..." % lcfile)
+        log.info(f"Loading {lcfile}...")
         lcdata = load_lcurve(lcfile)
 
         time = lcdata.time
@@ -844,6 +828,7 @@ def plot_lc(
 def main(args=None):
     """Main function called by the `HENplot` command line script."""
     import argparse
+
     from .base import check_negative_numbers_in_args
 
     description = "Plot the content of HENDRICS light curves and frequency spectra"
@@ -892,12 +877,8 @@ def main(args=None):
         default=None,
         action="store_true",
     )
-    parser.add_argument(
-        "--xlin", help="Use linear X axis", default=False, action="store_true"
-    )
-    parser.add_argument(
-        "--ylin", help="Use linear Y axis", default=False, action="store_true"
-    )
+    parser.add_argument("--xlin", help="Use linear X axis", default=False, action="store_true")
+    parser.add_argument("--ylin", help="Use linear Y axis", default=False, action="store_true")
     parser.add_argument(
         "--white-sub",
         help="Subtract Poisson noise (only applies to PDS)",
@@ -923,9 +904,9 @@ def main(args=None):
     args = parser.parse_args(args)
     if args.noplot and args.figname is None:
         args.figname = args.files[0].replace(HEN_FILE_EXTENSION, ".png")
-        import matplotlib
+        import matplotlib as mpl
 
-        matplotlib.use("Agg")
+        mpl.use("Agg")
     if args.xlin:
         args.xlog = False
     if args.ylin:

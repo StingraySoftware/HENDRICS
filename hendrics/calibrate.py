@@ -3,12 +3,13 @@
 
 import os
 import warnings
+
 import numpy as np
+
 from astropy import log
 
 from .base import get_file_extension
-from .io import load_events, save_events
-from .io import HEN_FILE_EXTENSION
+from .io import HEN_FILE_EXTENSION, load_events, save_events
 
 
 def default_nustar_rmf():
@@ -143,7 +144,7 @@ def calibrate(fname, outname, rmf_file=None, rough=False):
         the one given by default_nustar_rmf() is used.
     """
     # Read event file
-    log.info("Loading file %s..." % fname)
+    log.info(f"Loading file {fname}...")
     evdata = load_events(fname)
     log.info("Done.")
     pis = evdata.pi
@@ -163,7 +164,7 @@ def calibrate(fname, outname, rmf_file=None, rough=False):
         es = read_calibration(pis, rmf_file)
 
     evdata.energy = es
-    log.info("Saving calibrated data to %s" % outname)
+    log.info(f"Saving calibrated data to {outname}")
     save_events(evdata, outname)
 
 
@@ -176,6 +177,7 @@ def main(args=None):
     """Main function called by the `HENcalibrate` command line script."""
     import argparse
     from multiprocessing import Pool
+
     from .base import _add_default_args
 
     description = (

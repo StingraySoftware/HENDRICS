@@ -1,32 +1,37 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to perform input/output operations."""
 
-import sys
-import shutil
-import os
-import glob
+from __future__ import annotations
+
 import copy
-import re
-from typing import Tuple
-import logging
-
-from collections.abc import Iterable
+import glob
 import importlib
-import warnings
-import pickle
+import logging
+import os
 import os.path
+import pickle
+import shutil
+import sys
+import warnings
+from collections.abc import Iterable
+
 import numpy as np
-from astropy.table import Table
-
-from hendrics.base import get_file_extension, get_file_format, splitext_improved
 from stingray.base import StingrayObject, StingrayTimeseries
+from stingray.crossspectrum import AveragedCrossspectrum, Crossspectrum
+from stingray.events import EventList
+from stingray.lightcurve import Lightcurve
+from stingray.powerspectrum import AveragedPowerspectrum, Powerspectrum
+from stingray.pulse.modeling import SincSquareModel
+from stingray.pulse.search import search_best_peaks
+from stingray.utils import assign_value_if_none
 
-try:
-    import h5py
+from astropy import log
+from astropy.logger import AstropyUserWarning
+from astropy.modeling.core import Model
+from astropy.table import Table
+from hendrics.base import get_file_format, splitext_improved
 
-    HAS_H5PY = True
-except ImportError:
-    HAS_H5PY = False
+from .base import find_peaks_in_image, hen_root, is_string
 
 try:
     import netCDF4 as nc
@@ -38,21 +43,8 @@ except ImportError:
     warnings.warn(msg)
     HEN_FILE_EXTENSION = ".p"
     HAS_NETCDF = False
-    pass
-from astropy.modeling.core import Model
-from astropy import log
-from astropy.logger import AstropyUserWarning
-from astropy.io import fits
-from stingray.utils import assign_value_if_none
-from stingray.events import EventList
-from stingray.lightcurve import Lightcurve
-from stingray.powerspectrum import Powerspectrum, AveragedPowerspectrum
-from stingray.crossspectrum import Crossspectrum, AveragedCrossspectrum
-from stingray.pulse.modeling import SincSquareModel
-from stingray.pulse.search import search_best_peaks
 
-from .base import _order_list_of_arrays, _empty, is_string, force_iterable
-from .base import find_peaks_in_image, hen_root
+HAS_H5PY = importlib.util.find_spec("h5py") is not None
 
 try:
     _ = np.complex256
@@ -60,12 +52,12 @@ try:
 except Exception:
     HAS_C256 = False
 
-cpl128 = np.dtype([(str("real"), np.double), (str("imag"), np.double)])
+cpl128 = np.dtype([("real", np.double), ("imag", np.double)])
 if HAS_C256:
-    cpl256 = np.dtype([(str("real"), np.longdouble), (str("imag"), np.longdouble)])
+    cpl256 = np.dtype([("real", np.longdouble), ("imag", np.longdouble)])
 
 
-class EFPeriodogram(object):
+class EFPeriodogram:
     def __init__(
         self,
         freq=None,
@@ -113,7 +105,7 @@ class EFPeriodogram(object):
         self.ncounts = ncounts
 
     def find_peaks(self, conflevel=99.0):
-        from .base import z2_n_detection_level, fold_detection_level
+        from .base import fold_detection_level, z2_n_detection_level
 
         ntrial = self.stat.size
         if hasattr(self, "oversample") and self.oversample is not None:
@@ -129,9 +121,7 @@ class EFPeriodogram(object):
                 n_summed_spectra=int(self.M),
             )
         else:
-            threshold = fold_detection_level(
-                nbin=int(self.nbin), epsilon=epsilon, ntrial=ntrial
-            )
+            threshold = fold_detection_level(nbin=int(self.nbin), epsilon=epsilon, ntrial=ntrial)
 
         if len(self.stat.shape) == 1:
             best_peaks, best_stat = search_best_peaks(self.freq, self.stat, threshold)
@@ -168,7 +158,7 @@ def get_energy_from_events(ev):
     return elabel, energy
 
 
-def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, str]:
+def filter_energy(ev: EventList, emin: float, emax: float) -> tuple[EventList, str]:
     """Filter event list by energy (or PI)
 
     If an ``energy`` attribute is present, uses it. Otherwise, it switches
@@ -208,10 +198,7 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> Tuple[EventList, s
     # For some reason the doctest doesn't work if I don't do this instead
     # of using warnings.warn
     if elabel == "":
-        log.error(
-            "No Energy or PI information available. "
-            "No energy filter applied to events"
-        )
+        log.error("No Energy or PI information available. " "No energy filter applied to events")
         return ev, ""
 
     if emax is None and emin is None:
@@ -410,15 +397,15 @@ def read_from_netcdf(fname):
         # Handle special case of complex
         if dum.dtype == cpl128:
             arr = np.empty(values.shape, dtype=np.complex128)
-            arr.real = values[str("real")]
-            arr.imag = values[str("imag")]
+            arr.real = values["real"]
+            arr.imag = values["imag"]
             values = arr
 
         # Handle special case of complex
         if HAS_C256 and dum.dtype == cpl256:
             arr = np.empty(values.shape, dtype=np.complex256)
-            arr.real = values[str("real")]
-            arr.imag = values[str("imag")]
+            arr.real = values["real"]
+            arr.imag = values["imag"]
             values = arr
 
         if dum.dtype == str or dum.size == 1:
@@ -486,14 +473,14 @@ def recognize_stingray_table(obj):
 def get_file_type(fname, raw_data=False):
     """Return the file type and its contents.
 
-    Only works for hendrics-format pickle or netcdf files,
-    or stingray outputs.
+    Only works for hendrics-format pickle or netcdf files, or stingray
+    outputs.
     """
     contents_raw = load_data(fname)
     if isinstance(contents_raw, Table):
         ftype_raw = recognize_stingray_table(contents_raw)
         if raw_data:
-            contents = dict([(col, contents_raw[col]) for col in contents_raw.colnames])
+            contents = {col: contents_raw[col] for col in contents_raw.colnames}
             contents.update(contents_raw.meta)
     elif "__sr__class__type__" in contents_raw:
         ftype_raw = contents_raw["__sr__class__type__"]
@@ -505,9 +492,7 @@ def get_file_type(fname, raw_data=False):
     if "Lightcurve" in ftype_raw:
         ftype = "lc"
         fun = load_lcurve
-    elif ("Powercolor" in ftype_raw) or (
-        "StingrayTimeseries" in ftype_raw and "hue" in contents
-    ):
+    elif ("Powercolor" in ftype_raw) or ("StingrayTimeseries" in ftype_raw and "hue" in contents):
         ftype = "powercolor"
         fun = load_timeseries
     elif "StingrayTimeseries" in ftype_raw or "Color" in ftype_raw:
@@ -612,7 +597,7 @@ def load_timeseries(fname):
 
 # ----- functions to save and load LCURVE data
 def save_lcurve(lcurve, fname, lctype="Lightcurve"):
-    """Save Light curve to file
+    """Save Light curve to file.
 
     Parameters
     ----------
@@ -621,7 +606,6 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     fname: str
         Name of output file
     """
-
     fmt = get_file_format(fname)
 
     if hasattr(lcurve, "_mask") and lcurve._mask is not None and np.any(~lcurve._mask):
@@ -671,13 +655,12 @@ def load_lcurve(fname):
 # ---- Functions to save epoch folding results
 def save_folding(efperiodogram, fname):
     """Save PDS in a file."""
-
     outdata = copy.copy(efperiodogram.__dict__)
     outdata["__sr__class__type__"] = "EFPeriodogram"
     if "best_fits" in outdata and efperiodogram.best_fits is not None:
         model_files = []
         for i, b in enumerate(efperiodogram.best_fits):
-            mfile = fname.replace(HEN_FILE_EXTENSION, "__mod{}__.p".format(i))
+            mfile = fname.replace(HEN_FILE_EXTENSION, f"__mod{i}__.p")
             save_model(b, mfile)
             model_files.append(mfile)
         outdata.pop("best_fits")
@@ -714,9 +697,7 @@ def load_folding(fname):
 
 
 # ---- Functions to save PDSs
-def save_pds(
-    cpds, fname, save_all=False, save_dyn=False, no_auxil=False, save_lcs=False
-):
+def save_pds(cpds, fname, save_all=False, save_dyn=False, no_auxil=False, save_lcs=False):
     """Save PDS in a file."""
     from .base import mkdir_p
 
@@ -763,9 +744,7 @@ def save_pds(
             lc = getattr(cpds, lcattr)
             if isinstance(lc, Iterable):
                 if len(lc) > 1:
-                    warnings.warn(
-                        "Saving multiple light curves is not supported. Saving only one"
-                    )
+                    warnings.warn("Saving multiple light curves is not supported. Saving only one")
                 lc = lc[0]
             if isinstance(lc, Lightcurve):
                 save_lcurve(lc, lc_name)
@@ -805,7 +784,7 @@ def save_pds(
         for i, b in enumerate(cpds.best_fits):
             mfile = os.path.join(
                 outdir,
-                basename + "__mod{}__.p".format(i),
+                basename + f"__mod{i}__.p",
             )
             save_model(b, mfile)
             model_files.append(mfile)
@@ -826,9 +805,7 @@ def save_pds(
 def remove_pds(fname):
     """Remove the pds file and the directory with auxiliary information."""
     outdir, _ = splitext_improved(fname)
-    modelfiles = glob.glob(
-        os.path.join(outdir, fname.replace(HEN_FILE_EXTENSION, "__mod*__.p"))
-    )
+    modelfiles = glob.glob(os.path.join(outdir, fname.replace(HEN_FILE_EXTENSION, "__mod*__.p")))
     for mfile in modelfiles:
         os.unlink(mfile)
     if os.path.exists(outdir):
@@ -916,7 +893,7 @@ def load_pds(fname, nosub=False):
 # ---- GENERIC function to save stuff.
 def _load_data_pickle(fname, kind="data"):
     """Load generic data in pickle format."""
-    log.info("Loading %s and info from %s" % (kind, fname))
+    log.info(f"Loading {kind} and info from {fname}")
     with open(fname, "rb") as fobj:
         result = pickle.load(fobj)
     return result
@@ -924,11 +901,9 @@ def _load_data_pickle(fname, kind="data"):
 
 def _save_data_pickle(struct, fname, kind="data"):
     """Save generic data in pickle format."""
-    log.info("Saving %s and info to %s" % (kind, fname))
+    log.info(f"Saving {kind} and info to {fname}")
     with open(fname, "wb") as fobj:
         pickle.dump(struct, fobj)
-
-    return
 
 
 def _load_data_nc(fname):
@@ -941,7 +916,7 @@ def _load_data_nc(fname):
         if k in keys_to_delete:
             continue
 
-        if str(contents[k]) == str("__hen__None__type__"):
+        if str(contents[k]) == "__hen__None__type__":
             contents[k] = None
 
         if k[-2:] in ["_I", "_L", "_F", "_k"]:
@@ -1019,7 +994,7 @@ def _split_high_precision_number(varname, var, probesize):
 
 def _save_data_nc(struct, fname, kind="data"):
     """Save generic data in netcdf format."""
-    log.info("Saving %s and info to %s" % (kind, fname))
+    log.info(f"Saving {kind} and info to {fname}")
     varnames = []
     values = []
     formats = []
@@ -1046,9 +1021,7 @@ def _save_data_nc(struct, fname, kind="data"):
             # If a (long)double, split it in integer + floating part.
             # If the number is below zero, also use a logarithm of 10 before
             # that, so that we don't lose precision
-            var_I, var_F, var_log10, kind_str = _split_high_precision_number(
-                k, var, probesize
-            )
+            var_I, var_F, var_log10, kind_str = _split_high_precision_number(k, var, probesize)
             values.extend([var_I, var_log10, var_F, kind_str])
             formats.extend(["i8", "i8", "f8", str])
             varnames.extend([k + "_I", k + "_L", k + "_F", k + "_k"])
@@ -1066,7 +1039,7 @@ def _save_data_nc(struct, fname, kind="data"):
             varnames.append(k)
         else:
             values.append(var)
-            formats.append(probekind + "%d" % probesize)
+            formats.append(probekind + f"{probesize}")
             varnames.append(k)
 
     save_as_netcdf(values, varnames, formats, fname)
@@ -1130,7 +1103,7 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp", mode="w"):
         - an array of len-2 lists for non-symmetric errors (e.g.
         [[errm1, errp1], [errm2, errp2], [errm3, errp3], ...])
 
-    Other parameters
+    Other Parameters
     ----------------
     mode : str
         the file access mode, to be passed to the open() function. Can be 'w'
@@ -1165,13 +1138,13 @@ def save_as_qdp(arrays, errors=None, filename="out.qdp", mode="w"):
     if print_header:
         for lerr in list_of_errs:
             i, kind = lerr
-            print("READ %s" % kind + "ERR %d" % (i + 1), file=outfile)
+            print(f"READ {kind}" + f"ERR {i + 1}", file=outfile)
 
     length = len(data_to_write[0])
     for i in range(length):
         for idw, d in enumerate(data_to_write):
             print(d[i], file=outfile, end=" ")
-        print("", file=outfile)
+        print(file=outfile)
 
     outfile.close()
 
@@ -1190,7 +1163,7 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, append=False):
         return -1
     lcol = len(cols[0])
 
-    log.debug("%s %s" % (repr(cols), repr(np.shape(cols))))
+    log.debug(f"{repr(cols)} {repr(np.shape(cols))}")
     if append:
         txtfile = open(filename, "a")
     else:
@@ -1200,12 +1173,12 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, append=False):
         print("#", file=txtfile, end=" ")
         for i_c, c in enumerate(cols):
             print(colnames[i_c], file=txtfile, end=" ")
-        print("", file=txtfile)
+        print(file=txtfile)
     for i in range(lcol):
         for c in cols:
             print(c[i], file=txtfile, end=" ")
 
-        print("", file=txtfile)
+        print(file=txtfile)
     txtfile.close()
     return 0
 
@@ -1213,8 +1186,8 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, append=False):
 def print_fits_info(fits_file, hdu=1):
     """Print general info about an observation."""
     from astropy.io import fits as pf
-    from astropy.units import Unit
     from astropy.time import Time
+    from astropy.units import Unit
 
     lchdulist = pf.open(fits_file)
 
@@ -1238,12 +1211,12 @@ def print_fits_info(fits_file, hdu=1):
     start_mjd = Time(mjdref, format="mjd") + tstart * Unit(tunit)
     stop_mjd = Time(mjdref, format="mjd") + tstop * Unit(tunit)
 
-    print("ObsID:         {0}\n".format(info["OBS_ID"]))
-    print("Date:          {0} -- {1}\n".format(info["Start"], info["Stop"]))
-    print("Date (MJD):    {0} -- {1}\n".format(start_mjd, stop_mjd))
-    print("Instrument:    {0}/{1}\n".format(info["Telescope"], info["Instrument"]))
-    print("Target:        {0}\n".format(info["Target"]))
-    print("N. Events:     {0}\n".format(info["N. events"]))
+    print(f"ObsID:         {info['OBS_ID']}\n")
+    print(f"Date:          {info['Start']} -- {info['Stop']}\n")
+    print(f"Date (MJD):    {start_mjd} -- {stop_mjd}\n")
+    print(f"Instrument:    {info['Telescope']}/{info['Instrument']}\n")
+    print(f"Target:        {info['Target']}\n")
+    print(f"N. Events:     {info['N. events']}\n")
 
     lchdulist.close()
     return info
@@ -1251,8 +1224,6 @@ def print_fits_info(fits_file, hdu=1):
 
 def main(args=None):
     """Main function called by the `HENreadfile` command line script."""
-    from astropy.time import Time
-    import astropy.units as u
     import argparse
 
     description = "Print the content of HENDRICS files"
@@ -1270,9 +1241,9 @@ def main(args=None):
     for fname in args.files:
         print()
         print("-" * len(fname))
-        print("{0}".format(fname))
+        print(f"{fname}")
         print("-" * len(fname))
-        if fname.endswith(".fits") or fname.endswith(".evt"):
+        if fname.endswith((".fits", ".evt")):
             print("This FITS file contains:", end="\n\n")
             print_fits_info(fname)
             print("-" * len(fname))
@@ -1327,7 +1298,7 @@ def save_model(model, fname="model.p", constraints=None):
     fname : str, default 'models.p'
         The output file name
 
-    Other parameters
+    Other Parameters
     ----------------
     constraints: dict
         Additional model constraints. Ignored for astropy models.
@@ -1339,9 +1310,7 @@ def save_model(model, fname="model.p", constraints=None):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError(
-                "Accepted callable models have only one " "non-keyword argument"
-            )
+            raise TypeError("Accepted callable models have only one " "non-keyword argument")
         modeldata["kind"] = "callable"
         modeldata["constraints"] = constraints
     else:
@@ -1397,9 +1366,7 @@ def load_model(modelstring):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError(
-                "Accepted callable models have only one " "non-keyword argument"
-            )
+            raise TypeError("Accepted callable models have only one " "non-keyword argument")
         return model, "callable", constraints
 
 
@@ -1435,6 +1402,7 @@ def find_file_in_allowed_paths(fname, other_paths=None):
 
 def main_filter_events(args=None):
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = "Filter events"

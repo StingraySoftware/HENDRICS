@@ -1,25 +1,22 @@
 """Interactive phaseogram."""
 
-import warnings
-import copy
 import argparse
-import numpy as np
+import copy
 import urllib
-from scipy.signal import savgol_filter
-from scipy.interpolate import interp1d
+import warnings
+
+import numpy as np
 from scipy import optimize
-from astropy.stats import poisson_conf_interval
-from astropy import log
-from stingray.pulse.pulsar import fold_events, pulse_phase, get_TOA
-from stingray.pulse.pulsar import pulse_phase, htest
+from scipy.interpolate import interp1d
+from scipy.signal import savgol_filter
+from stingray.pulse.pulsar import fold_events, htest, pulse_phase
 from stingray.utils import assign_value_if_none, fft, fftfreq, ifft
 
-from stingray.events import EventList
-
-from hendrics.ml_timing import get_template_func
+from astropy import log
+from astropy.stats import poisson_conf_interval
 
 from .base import hen_root, normalize_dyn_profile
-from .io import load_events, filter_energy
+from .io import filter_energy, load_events
 
 try:
     from tqdm import tqdm as show_progress
@@ -35,9 +32,7 @@ try:
     # import pint
     HAS_PINT = True
 except (ImportError, urllib.error.URLError):
-    warnings.warn(
-        "PINT is not installed. " "Some pulsar functionality will not be available"
-    )
+    warnings.warn("PINT is not installed. " "Some pulsar functionality will not be available")
     HAS_PINT = False
 from .base import deorbit_events
 
@@ -111,9 +106,7 @@ def create_template_from_profile_sins(
     return template, additional_phase
 
 
-def create_template_from_profile(
-    phase, profile, profile_err, imagefile="template.png", norm=1
-):
+def create_template_from_profile(phase, profile, profile_err, imagefile="template.png", norm=1):
     """
     Parameters
     ----------
@@ -140,8 +133,8 @@ def create_template_from_profile(
     ...
     >>> assert np.allclose(template, profile, atol=0.001)
     """
-    from scipy.interpolate import splrep, splev
     import matplotlib.pyplot as plt
+    from scipy.interpolate import splev, splrep
 
     ph = np.concatenate((phase - 1, phase, phase + 1))
     prof = np.concatenate((profile, profile, profile))
@@ -310,7 +303,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
     *frequency_derivatives : floats
         pulse frequency, first derivative, second derivative, etc.
 
-    Other parameters
+    Other Parameters
     ----------------
     pepoch : float, default None
         Epoch of timing solution, in the same units as ev_times. If none, the
@@ -341,15 +334,15 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
     toa_err : array-like
         errorbars on TOAs, in the same units as TOAs.
     """
-    template = kwargs["template"] if "template" in kwargs else None
-    mjdref = kwargs["mjdref"] if "mjdref" in kwargs else None
-    nbin = kwargs["nbin"] if "nbin" in kwargs else 16
-    pepoch = kwargs["pepoch"] if "pepoch" in kwargs else None
-    timfile = kwargs["timfile"] if "timfile" in kwargs else "out.tim"
-    gti = kwargs["gti"] if "gti" in kwargs else None
-    label = kwargs["label"] if "label" in kwargs else None
-    quick = kwargs["quick"] if "quick" in kwargs else False
-    ephem = kwargs["ephem"] if "ephem" in kwargs else "DE421"
+    template = kwargs.get("template")
+    mjdref = kwargs.get("mjdref")
+    nbin = kwargs.get("nbin", 16)
+    pepoch = kwargs.get("pepoch")
+    timfile = kwargs.get("timfile", "out.tim")
+    gti = kwargs.get("gti")
+    label = kwargs.get("label")
+    quick = kwargs.get("quick", False)
+    ephem = kwargs.get("ephem", "DE421")
 
     pepoch = assign_value_if_none(pepoch, events[0])
     gti = np.asarray(assign_value_if_none(gti, [[events[0], events[-1]]]))
@@ -422,9 +415,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
 
         from .ml_timing import ml_pulsefit
 
-        pars, errs = ml_pulsefit(
-            profile, template, calculate_errors=True, fit_base=fit_base
-        )
+        pars, errs = ml_pulsefit(profile, template, calculate_errors=True, fit_base=fit_base)
 
         if np.any(np.isnan(pars)) or pars[0] == 0.0 or np.any(np.isnan(errs)):
             warnings.warn(
@@ -452,9 +443,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
     factor = np.std(phs) / np.mean(phs_errs)
 
     if phs.size > 15:
-        log.info(
-            "Correcting TOA errors for the real scatter. Don't trust them literally"
-        )
+        log.info("Correcting TOA errors for the real scatter. Don't trust them literally")
 
         # print(phs, phs_errs, factor)
         toa_errs = toa_errs * factor
@@ -485,24 +474,19 @@ def _check_odd(n):
 
 def dbl_cos_fit_func(p, x):
     # the frequency is fixed
-    """
-    A double sinus (fundamental + 1st harmonic) used as a fit function
-    """
+    """A double sinus (fundamental + 1st harmonic) used as a fit function."""
     startidx = 0
     base = 0
     if len(p) % 2 != 0:
         base = p[0]
         startidx = 1
     first_harm = p[startidx] * np.cos(2 * np.pi * x + 2 * np.pi * p[startidx + 1])
-    second_harm = p[startidx + 2] * np.cos(
-        4.0 * np.pi * x + 4 * np.pi * p[startidx + 3]
-    )
+    second_harm = p[startidx + 2] * np.cos(4.0 * np.pi * x + 4 * np.pi * p[startidx + 3])
     return base + first_harm + second_harm
 
 
 def std_fold_fit_func(p, x):
     """Chooses the fit function used in the fit."""
-
     return dbl_cos_fit_func(p, x)
 
 
@@ -512,8 +496,7 @@ def std_residuals(p, x, y):
 
 
 def adjust_amp_phase(pars):
-    """Give the phases in the interval between 0 and 1.
-    The calculation is based on the amplitude and phase given as input
+    """Give the phases in the interval between 0 and 1. The calculation is based on the amplitude and phase given as input.
 
     pars[0] is the initial amplitude; pars[1] is the initial phase
     If amplitude is negative, it makes it positive and changes the phase
@@ -533,11 +516,8 @@ def adjust_amp_phase(pars):
     return pars
 
 
-def fit_profile_with_sinusoids(
-    profile, profile_err, debug=False, nperiods=1, baseline=False
-):
-    """
-    Fit a folded profile with the std_fold_fit_func.
+def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1, baseline=False):
+    """Fit a folded profile with the std_fold_fit_func.
 
     Tries a number of different initial values for the fit, and returns the
     result of the best chi^2 fit
@@ -549,7 +529,7 @@ def fit_profile_with_sinusoids(
     profile_err : array of floats
         the error on the folded profile elements
 
-    Other parameters
+    Other Parameters
     ----------------
     debug : bool, optional
         print debug info
@@ -594,20 +574,16 @@ def fit_profile_with_sinusoids(
         if debug:
             log.debug(guess_pars)
             plt.plot(x, std_fold_fit_func(guess_pars, x), "r--")
-        fit_pars, success = optimize.leastsq(
-            std_residuals, guess_pars[:], args=(x, profile)
-        )
+        fit_pars, success = optimize.leastsq(std_residuals, guess_pars[:], args=(x, profile))
         if debug:
             plt.plot(x, std_fold_fit_func(fit_pars, x), "g--")
-        fit_pars[startidx : startidx + 2] = adjust_amp_phase(
-            fit_pars[startidx : startidx + 2]
-        )
+        fit_pars[startidx : startidx + 2] = adjust_amp_phase(fit_pars[startidx : startidx + 2])
         fit_pars[startidx + 2 : startidx + 4] = adjust_amp_phase(
             fit_pars[startidx + 2 : startidx + 4]
         )
-        chisq = np.sum(
-            (profile - std_fold_fit_func(fit_pars, x)) ** 2 / profile_err**2
-        ) / (len(profile) - (startidx + 4))
+        chisq = np.sum((profile - std_fold_fit_func(fit_pars, x)) ** 2 / profile_err**2) / (
+            len(profile) - (startidx + 4)
+        )
         if debug:
             plt.plot(x, std_fold_fit_func(fit_pars, x), "b--")
         if chisq < chisq_save:
@@ -657,8 +633,8 @@ def run_folding(
     colormap="cubehelix",
     **opts,
 ):
-    from matplotlib.gridspec import GridSpec
     import matplotlib.pyplot as plt
+    from matplotlib.gridspec import GridSpec
 
     file_label = ""
     ev = load_events(file)
@@ -696,9 +672,7 @@ def run_folding(
         smooth_window = np.min([len(profile), 10])
         smooth_window = _check_odd(smooth_window)
 
-    smoothed_profile = savgol_filter(
-        profile, window_length=smooth_window, polyorder=3, mode="wrap"
-    )
+    smoothed_profile = savgol_filter(profile, window_length=smooth_window, polyorder=3, mode="wrap")
 
     profile = np.concatenate((profile, profile))
     smooth = np.concatenate((smoothed_profile, smoothed_profile))
@@ -706,9 +680,7 @@ def run_folding(
     if plot_energy:
         histen, _ = np.histogram(energy, bins=biny)
 
-        hist2d, _, _ = np.histogram2d(
-            phases.astype(np.float64), energy, bins=(binx, biny)
-        )
+        hist2d, _, _ = np.histogram2d(phases.astype(np.float64), energy, bins=(binx, biny))
 
     binx = np.concatenate((binx[:-1], binx + 1))
     meanbins = (binx[:-1] + binx[1:]) / 2
@@ -745,13 +717,11 @@ def run_folding(
         meanbins,
         smooth,
         drawstyle="steps-mid",
-        label="Smooth profile " "(P.F. = {:.1f}%)".format(100 * (max - min) / max),
+        label="Smooth profile " f"(P.F. = {100 * (max - min) / max:.1f}%)",
         color="k",
         zorder=3,
     )
-    err_low, err_high = poisson_conf_interval(
-        smooth, interval="frequentist-confidence", sigma=3
-    )
+    err_low, err_high = poisson_conf_interval(smooth, interval="frequentist-confidence", sigma=3)
 
     try:
         ax0.fill_between(
@@ -799,9 +769,7 @@ def run_folding(
         errs = []
         meannrgs = (biny[:-1] + biny[1:]) / 2
         for i, prof in enumerate(hist2d_save.T):
-            smooth = savgol_filter(
-                prof, window_length=smooth_window, polyorder=3, mode="wrap"
-            )
+            smooth = savgol_filter(prof, window_length=smooth_window, polyorder=3, mode="wrap")
             mean = np.mean(smooth)
             shift = 3 * np.sqrt(mean)
             max = np.max(smooth)
@@ -817,7 +785,7 @@ def run_folding(
             ax2.plot(
                 meanbins,
                 smooth - mean + i * shift,
-                label="{}={:.2f}-{:.2f}".format(elabel, biny[i], biny[i + 1]),
+                label=f"{elabel}={biny[i]:.2f}-{biny[i + 1]:.2f}",
             )
             std = np.std(prof - smooth)
             pfs.append(pf)
@@ -864,12 +832,8 @@ def main_fold(args=None):
         help="Initial frequency to fold",
         default=None,
     )
-    parser.add_argument(
-        "--fdot", type=float, required=False, help="Initial fdot", default=0
-    )
-    parser.add_argument(
-        "--fddot", type=float, required=False, help="Initial fddot", default=0
-    )
+    parser.add_argument("--fdot", type=float, required=False, help="Initial fdot", default=0)
+    parser.add_argument("--fddot", type=float, required=False, help="Initial fddot", default=0)
     parser.add_argument(
         "--tref",
         type=float,
@@ -955,7 +919,8 @@ def main_fold(args=None):
 
 def main_deorbit(args=None):
     import argparse
-    from .base import hen_root, _add_default_args
+
+    from .base import _add_default_args, hen_root
     from .io import HEN_FILE_EXTENSION, load_events, save_events
 
     description = "Deorbit the event arrival times"

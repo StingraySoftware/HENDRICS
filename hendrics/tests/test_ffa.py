@@ -1,11 +1,9 @@
+import numpy as np
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
-import numpy as np
-from hendrics.base import HAS_NUMBA
-from ..ffa import ffa_search
 
-from ..efsearch import fit
-import pytest
+from hendrics.efsearch import fit
+from hendrics.ffa import ffa_search
 
 
 # @pytest.mark.skipif('not HAS_NUMBA')
@@ -59,9 +57,11 @@ def test_ffa_large_intv():
 
 def test_ffa_vs_folding_search():
     import time
-    from hendrics.efsearch import folding_search
+
     from stingray.events import EventList
     from stingray.lightcurve import Lightcurve
+
+    from hendrics.efsearch import folding_search
 
     period = 0.01
     pmin = 0.0095
@@ -81,11 +81,11 @@ def test_ffa_vs_folding_search():
     t0 = time.time()
     per, st = ffa_search(lc.counts, dt, pmin, pmax)
     t1 = time.time()
-    print("FFA completed in {:.1e} s".format(t1 - t0))
+    print(f"FFA completed in {t1 - t0:.1e} s")
     t1 = time.time()
     freqs, stats, _, _ = folding_search(ev, 1 / pmax, 1 / pmin, oversample=3, nbin=128)
     t2 = time.time()
-    print("Standard search completed in {:.1e} s".format(t2 - t1))
+    print(f"Standard search completed in {t2 - t1:.1e} s")
 
     comparable_stats = np.array([st[idx] for idx in np.searchsorted(per, 1 / freqs)])
     assert (comparable_stats - stats + 127).std() < 127

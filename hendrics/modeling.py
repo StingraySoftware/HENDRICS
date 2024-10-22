@@ -1,20 +1,21 @@
-import os
 import copy
+import os
 
 import numpy as np
-from astropy import log
 from stingray.modeling import fit_powerspectrum
-from .io import load_model, load_pds, save_model, save_pds, HEN_FILE_EXTENSION
+
+from astropy import log
+
+from .io import HEN_FILE_EXTENSION, load_model, load_pds, save_model, save_pds
 
 
 def main_model(args=None):
     """Main function called by the `HENfspec` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = (
-        "Fit frequency spectra (PDS, CPDS, cospectrum) " "with user-defined models"
-    )
+    description = "Fit frequency spectra (PDS, CPDS, cospectrum) " "with user-defined models"
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs="+")

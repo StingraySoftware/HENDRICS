@@ -172,4 +172,3 @@ Measuring frequency derivatives interactively
     <div style="max-width: 100%; height: auto;">
         <iframe width="560" height="315" src="https://www.youtube.com/embed/irm_S5rlqL8" frameborder="0" allowfullscreen></iframe>
     </div>
-
