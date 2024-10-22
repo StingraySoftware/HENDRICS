@@ -41,11 +41,6 @@ except ImportError:
     import tomli as tomllib
 from pathlib import Path
 
-# Get configuration information from setup.cfg
-from configparser import ConfigParser
-
-conf = ConfigParser()
-
 ON_RTD = os.environ.get("READTHEDOCS") == "True"
 ON_TRAVIS = os.environ.get("TRAVIS") == "true"
 
