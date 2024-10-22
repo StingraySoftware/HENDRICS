@@ -389,7 +389,7 @@ def lcurve_from_events(
         es = evdata.energy
         good = np.logical_and(es > e_interval[0], es <= e_interval[1])
         events = events[good]
-        tag = f"_E{e_interval[0]}-{e_interval[1]}"
+        tag = f"_E{e_interval[0]:g}-{e_interval[1]:g}"
     else:
         pass
 

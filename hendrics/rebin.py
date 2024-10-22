@@ -26,7 +26,9 @@ def rebin_file(filename, rebin):
         func = save_pds
         options = {"save_all": True}
 
-    outfile = filename.replace(get_file_extension(filename), f"_rebin{rebin}" + HEN_FILE_EXTENSION)
+    outfile = filename.replace(
+        get_file_extension(filename), f"_rebin{rebin:g}" + HEN_FILE_EXTENSION
+    )
     log.info(f"Saving {ftype} to {outfile}")
     func(contents, outfile, **options)
 

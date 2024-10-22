@@ -3,14 +3,14 @@ import os
 import numpy as np
 import pytest
 
-import hendrics as hen
 from hendrics.calibrate import default_nustar_rmf
 from hendrics.io import load_events, save_events
 from hendrics.tests import _dummy_par
+from hendrics import calibrate, io, read_events, fake
 
 from . import cleanup_test_dir
 
-HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
+HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
 
 def test_default_nustar_rmf(caplog):
@@ -50,7 +50,7 @@ class TestCalibrate:
             os.path.join(cls.datadir, "monol_testB.evt"),
         )
         command = f"{data_a} {data_b} ".format()
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
 
         data_a, data_b, rmf = (
             os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
@@ -58,12 +58,12 @@ class TestCalibrate:
             cls.rmf,
         )
         command = f"{data_a} {data_b} -r {rmf} --nproc 2"
-        hen.calibrate.main(command.split())
+        calibrate.main(command.split())
         cls.xmm_fits_file = os.path.join(cls.datadir, "monol_test_fake_lc_xmm.evt")
         # Note that I don't specify the instrument. This is because
         # I want the internal machinery to understand that this is
         # XMM and this has to be given EPIC-pn by default.
-        hen.fake.main(
+        fake.main(
             [
                 "--deadtime",
                 "1e-4",
@@ -78,7 +78,7 @@ class TestCalibrate:
             ]
         )
         command = f"{cls.xmm_fits_file}  --discard-calibration"
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
         cls.xmm_ev_file = os.path.join(
             cls.datadir,
             "monol_test_fake_lc_xmm_xmm_epn_det01_ev" + HEN_FILE_EXTENSION,
@@ -88,12 +88,12 @@ class TestCalibrate:
         """Test event file calibration."""
         from astropy.io.fits import Header
 
-        ev = hen.io.load_events(self.ev_fileAcal)
+        ev = io.load_events(self.ev_fileAcal)
         assert hasattr(ev, "header")
 
         Header.fromstring(ev.header)
         assert hasattr(ev, "gti")
-        gti_to_test = hen.io.load_events(self.ev_fileA).gti
+        gti_to_test = io.load_events(self.ev_fileA).gti
         assert np.allclose(gti_to_test, ev.gti)
 
     def test_calibrate_xmm_raises(self):
@@ -102,7 +102,7 @@ class TestCalibrate:
         command = f"{self.xmm_ev_file} -r {self.rmf}"
 
         with pytest.raises(RuntimeError, match="Calibration for XMM should work"):
-            hen.calibrate.main(command.split())
+            calibrate.main(command.split())
 
     def test_calibrate_raises_missing_mission(self):
         """Test event file calibration."""
@@ -115,7 +115,7 @@ class TestCalibrate:
         command = f"{bubu_fname} --rough"
 
         with pytest.raises(ValueError):
-            hen.calibrate.main(command.split())
+            calibrate.main(command.split())
         os.unlink(bubu_fname)
 
     @classmethod

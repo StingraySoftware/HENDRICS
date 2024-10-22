@@ -7,11 +7,19 @@ import subprocess as sp
 import numpy as np
 import pytest
 
-import hendrics as hen
 from astropy import log
 from astropy.io.registry import IORegistryError
 from hendrics import (
+    base,
+    calibrate,
+    colors,
+    fspec,
     io,
+    lcurve,
+    plot,
+    power_colors,
+    read_events,
+    varenergy,
 )
 from hendrics.io import HAS_H5PY
 from hendrics.tests import _dummy_par
@@ -23,7 +31,7 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
+HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
 log.setLevel("DEBUG")
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
@@ -63,7 +71,7 @@ class TestFullRun:
             os.path.join(cls.datadir, "monol_testB.evt"),
         )
         command = f"{data_a} {data_b} --discard-calibration"
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
 
         data_a, data_b, rmf = (
             os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
@@ -71,7 +79,7 @@ class TestFullRun:
             os.path.join(cls.datadir, "test.rmf"),
         )
         command = f"{data_a} {data_b} -r {rmf}"
-        hen.calibrate.main(command.split())
+        calibrate.main(command.split())
         cls.lcA = os.path.join(
             os.path.join(cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )
@@ -81,21 +89,21 @@ class TestFullRun:
         command = (
             f"{cls.ev_fileAcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " f"-o {cls.lcA}"
         )
-        hen.lcurve.main(command.split())
+        lcurve.main(command.split())
         command = (
             f"{cls.ev_fileBcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " f"-o {cls.lcB}"
         )
-        hen.lcurve.main(command.split())
+        lcurve.main(command.split())
 
         cls.pdsA = os.path.join(cls.datadir, "monol_testA_E3-50_pds" + HEN_FILE_EXTENSION)
         cls.pdsB = os.path.join(cls.datadir, "monol_testB_E3-50_pds" + HEN_FILE_EXTENSION)
         cls.cpds = os.path.join(cls.datadir, "monol_test_E3-50_cpds" + HEN_FILE_EXTENSION)
 
         command = f"{cls.lcA} {cls.lcB} -f 128 -k PDS --save-all --norm leahy"
-        hen.fspec.main(command.split())
+        fspec.main(command.split())
 
         command = f"{cls.lcA} {cls.lcB} -f 128 -k CPDS --save-all --norm leahy"
-        hen.fspec.main(command.split())
+        fspec.main(command.split())
         assert os.path.exists(cls.cpds)
         assert os.path.exists(cls.pdsA)
         assert os.path.exists(cls.pdsB)
@@ -116,7 +124,7 @@ class TestFullRun:
         }
         for realtype in file_list.keys():
             fname = os.path.join(self.datadir, file_list[realtype] + HEN_FILE_EXTENSION)
-            ftype, _ = hen.io.get_file_type(fname)
+            ftype, _ = io.get_file_type(fname)
             assert ftype == realtype, "File types do not match"
 
     @pytest.mark.parametrize("format", ["qdp", "ecsv", "csv", "hdf5"])
@@ -127,7 +135,7 @@ class TestFullRun:
             return
 
         try:
-            hen.varenergy.main(
+            varenergy.main(
                 [
                     fname,
                     "-f",
@@ -149,22 +157,22 @@ class TestFullRun:
                     "nice",
                 ]
             )
-            out = hen.base.hen_root(fname) + f"_nice_{kind}" + f".{format}"
+            out = base.hen_root(fname) + f"_nice_{kind}" + f".{format}"
             assert os.path.exists(out)
         except IORegistryError:
             pass
 
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
-        command = f"{self.ev_fileA} -b 100 -e {3} {5} {5} {10}"
+        command = f"{self.ev_fileA} -b 100 -e 3 5 5 10"
         with pytest.raises(ValueError, match="Energy information not found in file"):
-            hen.colors.main(command.split())
+            colors.main(command.split())
 
     def test_colors(self):
         """Test light curve using PI filtering."""
         # calculate colors
-        command = f"{self.ev_fileAcal} -b 100 -e {3} {5} {5} {10}"
-        hen.colors.main(command.split())
+        command = f"{self.ev_fileAcal} -b 100 -e 3 5 5 10"
+        colors.main(command.split())
 
         new_filename = os.path.join(
             self.datadir,
@@ -172,8 +180,8 @@ class TestFullRun:
         )
 
         assert os.path.exists(new_filename)
-        out_lc = hen.io.load_lcurve(new_filename)
-        gti_to_test = hen.io.load_events(self.ev_fileA).gti
+        out_lc = io.load_lcurve(new_filename)
+        gti_to_test = io.load_events(self.ev_fileA).gti
         assert np.allclose(gti_to_test, out_lc.gti)
 
     def test_power_colors(self):
@@ -184,10 +192,10 @@ class TestFullRun:
             UserWarning,
             match="(Some .non-log. power colors)|(All power spectral)|(Poisson-subtracted power)",
         ):
-            new_filenames = hen.power_colors.main(command.split())
+            new_filenames = power_colors.main(command.split())
 
         assert os.path.exists(new_filenames[0])
-        hen.plot.main(new_filenames)
+        plot.main(new_filenames)
 
     def test_power_colors_2files(self):
         """Test light curve using PI filtering."""
@@ -197,24 +205,24 @@ class TestFullRun:
             UserWarning,
             match="(Some .non-log.)|(All power spectral)|(Poisson-subtracted)|(cast to real)",
         ):
-            new_filenames = hen.power_colors.main(command.split())
+            new_filenames = power_colors.main(command.split())
 
         assert os.path.exists(new_filenames[0])
-        hen.plot.main(new_filenames)
+        plot.main(new_filenames)
 
     def test_power_colors_2files_raises_no_cross_output(self):
         """Test light curve using PI filtering."""
         # calculate colors
         with pytest.raises(ValueError, match="Specify --output only when processing"):
             command = f"{self.ev_fileAcal} {self.ev_fileBcal} -s 16 -b -6 -f 1 2 4 8 16 -o bubu.nc"
-            hen.power_colors.main(command.split())
+            power_colors.main(command.split())
 
     def test_readfile_fits(self):
         """Test reading and dumping a FITS file."""
         fitsname = os.path.join(self.datadir, "monol_testA.evt")
         command = f"{fitsname}"
 
-        hen.io.main(command.split())
+        io.main(command.split())
 
     def test_plot_color(self):
         """Test plotting with linear axes."""
@@ -226,7 +234,7 @@ class TestFullRun:
             os.path.join(self.datadir, "monol_testA_nustar_fpma_E_10-5_over_5-3")
             + HEN_FILE_EXTENSION
         )
-        hen.plot.main(
+        plot.main(
             [
                 cname,
                 lname,
@@ -248,14 +256,24 @@ class TestFullRun:
         )
         command = f"{data} -b 100 --energy-interval 3 10"
 
-        hen.lcurve.main(command.split())
+        lcurve.main(command.split())
+        import glob
+
+        print(
+            glob.glob(
+                os.path.join(
+                    self.datadir,
+                    "*" + HEN_FILE_EXTENSION,
+                )
+            )
+        )
         lname = os.path.join(self.datadir, "monol_testA_nustar_fpma_E3-10_lc") + HEN_FILE_EXTENSION
-        os.path.exists(lname)
+        assert os.path.exists(lname)
         cname = (
             os.path.join(self.datadir, "monol_testA_nustar_fpma_E_10-5_over_5-3")
             + HEN_FILE_EXTENSION
         )
-        hen.plot.main(
+        plot.main(
             [
                 cname,
                 lname,

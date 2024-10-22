@@ -25,7 +25,7 @@ def _dummy_par(par, pb=1e20, a1=0.0, f0=1.0):
 
 
 def find_file_pattern_in_dir(pattern, directory):
-    return Path(directory).glob(pattern)
+    return [str(p) for p in Path(directory).glob(pattern)]
 
 
 def cleanup_test_dir(datadir):
@@ -55,10 +55,10 @@ def cleanup_test_dir(datadir):
     for f in file_list:
         f = Path(f)
         if f.exists() and not f.is_dir():
-            print("Removing " + f)
+            print(f"Removing {f}")
             f.unlink()
         elif f.exists() and f.is_dir():
-            print("Removing directory " + f)
+            print(f"Removing directory {f}")
             shutil.rmtree(str(f))
 
     patterns = ["*_pds*/", "*_cpds*/", "*_sum/"]

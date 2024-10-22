@@ -5,11 +5,14 @@ import os
 
 import numpy as np
 import pytest
-from stingray.events import EventList
+from stingray import EventList
 
-import hendrics as hen
 from astropy import log
 from astropy.io import fits
+
+from hendrics import fake, io, read_events, calibrate, base
+from hendrics.base import HAS_PINT
+
 from hendrics.fake import scramble
 from hendrics.io import load_events
 from hendrics.tests import _dummy_par
@@ -21,7 +24,7 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
+HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
 log.setLevel("DEBUG")
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
@@ -30,7 +33,7 @@ log.setLevel("DEBUG")
 def test_filter_for_deadtime_nonpar():
     """Test dead time filter, non-paralyzable case."""
     events = np.array([1, 1.05, 1.07, 1.08, 1.1, 2, 2.2, 3, 3.1, 3.2])
-    filt_events = hen.fake.filter_for_deadtime(events, 0.11)
+    filt_events = fake.filter_for_deadtime(events, 0.11)
     expected = np.array([1, 2, 2.2, 3, 3.2])
     assert np.all(filt_events == expected), f"Wrong: {filt_events} vs {expected}"
 
@@ -39,7 +42,7 @@ def test_filter_for_deadtime_nonpar_bkg():
     """Test dead time filter, non-paralyzable case, with background."""
     events = np.array([1.1, 2, 2.2, 3, 3.2])
     bkg_events = np.array([1, 3.1])
-    filt_events, info = hen.fake.filter_for_deadtime(
+    filt_events, info = fake.filter_for_deadtime(
         events, 0.11, bkg_ev_list=bkg_events, return_all=True
     )
     expected_ev = np.array([2, 2.2, 3, 3.2])
@@ -52,7 +55,7 @@ def test_filter_for_deadtime_par():
     """Test dead time filter, paralyzable case."""
     events = np.array([1, 1.1, 2, 2.2, 3, 3.1, 3.2])
     assert np.all(
-        hen.fake.filter_for_deadtime(events, 0.11, paralyzable=True) == np.array([1, 2, 2.2, 3])
+        fake.filter_for_deadtime(events, 0.11, paralyzable=True) == np.array([1, 2, 2.2, 3])
     )
 
 
@@ -60,7 +63,7 @@ def test_filter_for_deadtime_par_bkg():
     """Test dead time filter, paralyzable case, with background."""
     events = np.array([1.1, 2, 2.2, 3, 3.2])
     bkg_events = np.array([1, 3.1])
-    filt_events, info = hen.fake.filter_for_deadtime(
+    filt_events, info = fake.filter_for_deadtime(
         events,
         0.11,
         bkg_ev_list=bkg_events,
@@ -80,7 +83,7 @@ def test_filter_for_deadtime_par_bkg_obj():
     energies = np.arange(times.size) + 10
     events = EventList(time=times, energy=energies, pi=pis)
     bkg_events = np.array([1, 3.1])
-    filt_events, info = hen.fake.filter_for_deadtime(
+    filt_events, info = fake.filter_for_deadtime(
         events,
         0.11,
         bkg_ev_list=bkg_events,
@@ -105,7 +108,7 @@ def test_deadtime_mask_par():
     """Test dead time filter, paralyzable case, with background."""
     events = np.array([1.1, 2, 2.2, 3, 3.2])
     bkg_events = np.array([1, 3.1])
-    filt_events, info = hen.fake.filter_for_deadtime(
+    filt_events, info = fake.filter_for_deadtime(
         events,
         0.11,
         bkg_ev_list=bkg_events,
@@ -120,8 +123,8 @@ def test_deadtime_conversion():
     """Test the functions for count rate conversion."""
     original_rate = np.arange(1, 1000, 10)
     deadtime = 2.5e-3
-    rdet = hen.base.r_det(deadtime, original_rate)
-    inner_radius = hen.base.r_in(deadtime, rdet)
+    rdet = base.r_det(deadtime, original_rate)
+    inner_radius = base.r_in(deadtime, rdet)
     np.testing.assert_almost_equal(inner_radius, original_rate)
 
 
@@ -153,16 +156,16 @@ class TestFake:
         cls.par = _dummy_par("bubububu.par")
         cls.fits_fileA = os.path.join(cls.datadir, "monol_testA.evt")
         command = f"{cls.fits_fileA} --discard-calibration"
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
 
         cls.first_event_file_cal = "calibrated" + HEN_FILE_EXTENSION
-        hen.calibrate.calibrate(cls.first_event_file, cls.first_event_file_cal, rough=True)
+        calibrate.calibrate(cls.first_event_file, cls.first_event_file_cal, rough=True)
 
         cls.xmm_fits_file = os.path.join(cls.datadir, "monol_test_fake_lc_xmm.evt")
         # Note that I don't specify the instrument. This is because
         # I want the internal machinery to understand that this is
         # XMM and this has to be given EPIC-pn by default.
-        hen.fake.main(
+        fake.main(
             [
                 "--deadtime",
                 "1e-4",
@@ -177,7 +180,7 @@ class TestFake:
             ]
         )
         command = f"{cls.xmm_fits_file}  --discard-calibration"
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
         cls.xmm_ev_file = os.path.join(
             cls.datadir,
             "monol_test_fake_lc_xmm_xmm_epn_det01_ev" + HEN_FILE_EXTENSION,
@@ -190,9 +193,9 @@ class TestFake:
     def test_fake_file(self):
         """Test produce a fake event file."""
         fits_file = os.path.join(self.datadir, "monol_test_fake.evt")
-        hen.fake.main(["-o", fits_file, "--instrument", "FPMB"])
+        fake.main(["-o", fits_file, "--instrument", "FPMB"])
         verify_all_checksums(fits_file)
-        info = hen.io.print_fits_info(fits_file, hdu=1)
+        info = io.print_fits_info(fits_file, hdu=1)
         assert info["Instrument"] == "FPMB"
 
     def test_fake_file_from_input_lc(self):
@@ -200,14 +203,14 @@ class TestFake:
         lcurve_in = os.path.join(self.datadir, "lcurveA.fits")
         fits_file = os.path.join(self.datadir, "monol_test_fake_lc.evt")
         with pytest.warns(UserWarning, match="FITS light curve handling is st"):
-            hen.fake.main(["--lc", lcurve_in, "-o", fits_file])
+            fake.main(["--lc", lcurve_in, "-o", fits_file])
 
         verify_all_checksums(fits_file)
 
     def test_fake_file_with_deadtime(self):
         """Test produce a fake event file and apply deadtime."""
         fits_file = os.path.join(self.datadir, "monol_test_fake_lc.evt")
-        hen.fake.main(["--deadtime", "2.5e-3", "--ctrate", "2000", "-o", fits_file])
+        fake.main(["--deadtime", "2.5e-3", "--ctrate", "2000", "-o", fits_file])
         verify_all_checksums(fits_file)
 
     def test_fake_file_xmm(self):
@@ -225,17 +228,17 @@ class TestFake:
 
     def test_load_events_randomize(self):
         """Test event file reading."""
-        newfiles = hen.read_events.treat_event_file(self.fits_fileA, randomize_by=0.073)
+        newfiles = read_events.treat_event_file(self.fits_fileA, randomize_by=0.073)
         clean_file = self.first_event_file
-        ev_clean = hen.io.load_events(clean_file)
-        ev = hen.io.load_events(newfiles[0])
+        ev_clean = io.load_events(clean_file)
+        ev = io.load_events(newfiles[0])
         diff = ev.time - ev_clean.time
         assert np.all(np.abs(diff) <= 0.073 / 2)
         assert np.all(np.abs(diff) > 0.0)
 
     def test_scramble_events_file(self):
         command = f"{self.first_event_file}"
-        newfile = hen.fake.main_scramble(command.split())
+        newfile = fake.main_scramble(command.split())
         assert os.path.exists(newfile)
         os.remove(newfile)
 
@@ -244,13 +247,13 @@ class TestFake:
         newfile = "bububuasdf.fits"
         infname = getattr(self, fname)
         command = f"-e {infname} -o {newfile}"
-        _ = hen.fake.main(command.split())
+        _ = fake.main(command.split())
         assert os.path.exists(newfile)
 
         verify_all_checksums(newfile)
 
         events0 = load_events(infname)
-        newf = hen.read_events.treat_event_file(newfile)
+        newf = read_events.treat_event_file(newfile)
 
         events1 = load_events(newf[0])
 
@@ -271,11 +274,11 @@ class TestFake:
         command = f"{self.first_event_file} -e 3 30"
         with pytest.raises(ValueError):
             with pytest.warns(UserWarning, match="No energy information"):
-                _ = hen.fake.main_scramble(command.split())
+                _ = fake.main_scramble(command.split())
 
     def test_scramble_calibrated_events_file(self):
         command = f"{self.first_event_file_cal} -e 3 30"
-        newfile = hen.fake.main_scramble(command.split())
+        newfile = fake.main_scramble(command.split())
         assert "3-30" in newfile
         assert os.path.exists(newfile)
         os.remove(newfile)
@@ -285,7 +288,7 @@ class TestFake:
     def test_scramble_events_file_deorbit(self):
         _ = _dummy_par("bububububu.par", pb=1.0, a1=30)
         command = f"{self.first_event_file} --deorbit-par bububububu.par"
-        newfile = hen.fake.main_scramble(command.split())
+        newfile = fake.main_scramble(command.split())
         assert os.path.exists(newfile)
         os.remove(newfile)
 
@@ -312,13 +315,13 @@ class TestFake:
         rmf = os.path.join(self.datadir, "test.rmf")
         command = f"{xmm_file} -r {rmf} --nproc 2"
         with pytest.raises(RuntimeError):
-            hen.calibrate.main(command.split())
+            calibrate.main(command.split())
 
     def test_calibrate_xmm_normf(self):
         """Test event file calibration."""
         xmm_file = self.xmm_ev_file
         command = f"{xmm_file} --rough --nproc 2"
-        hen.calibrate.main(command.split())
+        calibrate.main(command.split())
 
     @classmethod
     def teardown_class(cls):

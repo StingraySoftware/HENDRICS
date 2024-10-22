@@ -19,6 +19,7 @@ from astropy.modeling.core import Model
 from hendrics.base import hen_root
 from hendrics.io import (
     HAS_H5PY,
+    HAS_C256,
     HEN_FILE_EXTENSION,
     _split_high_precision_number,
     find_file_in_allowed_paths,

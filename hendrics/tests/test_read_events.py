@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 from stingray.events import EventList
 
-import hendrics as hen
 from astropy.utils import minversion
+from hendrics import io, lcurve, read_events
 from hendrics.fake import main
 from hendrics.io import (
     HEN_FILE_EXTENSION,
@@ -78,7 +78,7 @@ class TestMergeEvents:
 
     def test_merge_events(self):
         with pytest.warns(UserWarning, match="changing MJDREF"):
-            hen.read_events.main_join(
+            read_events.main_join(
                 [
                     self.f0,
                     self.f1,
@@ -93,7 +93,7 @@ class TestMergeEvents:
 
     def test_merge_events_different_instr(self):
         with pytest.warns(UserWarning):
-            hen.read_events.main_join(
+            read_events.main_join(
                 [
                     self.f0,
                     self.f3,
@@ -107,7 +107,7 @@ class TestMergeEvents:
         os.unlink(out)
 
     def test_merge_events_different_instr_ignore(self):
-        hen.read_events.main_join(
+        read_events.main_join(
             [
                 self.f0,
                 self.f2,
@@ -125,7 +125,7 @@ class TestMergeEvents:
         os.unlink(out)
 
     def test_merge_two_events_different_instr_ignore(self):
-        hen.read_events.main_join(
+        read_events.main_join(
             [
                 self.f0,
                 self.f3,
@@ -143,7 +143,7 @@ class TestMergeEvents:
 
     def test_merge_events_no_out_fname(self):
         with pytest.warns(UserWarning, match="changing MJDREF"):
-            hen.read_events.main_join([self.f0, self.f1])
+            read_events.main_join([self.f0, self.f1])
         out = os.path.join(self.datadir, "ev_ev" + HEN_FILE_EXTENSION)
         assert os.path.exists(out)
         os.unlink(out)
@@ -154,14 +154,14 @@ class TestMergeEvents:
             UserWarning,
             match=f"{os.path.split(self.f1)[1]}.* has a different MJDREF",
         ):
-            hen.read_events.main_join([self.f0, self.f1, self.f2, "-o", out])
+            read_events.main_join([self.f0, self.f1, self.f2, "-o", out])
         assert os.path.exists(out)
         os.unlink(out)
         with pytest.warns(
             UserWarning,
             match=f"{os.path.split(self.f3)[1]}.* is from a different",
         ):
-            hen.read_events.main_join([self.f0, self.f2, self.f3, "-o", out])
+            read_events.main_join([self.f0, self.f2, self.f3, "-o", out])
         assert os.path.exists(out)
         os.unlink(out)
 
@@ -169,7 +169,7 @@ class TestMergeEvents:
             UserWarning,
             match=f"{os.path.split(self.f4)[1]}.* has no good events",
         ):
-            hen.read_events.main_join([self.f0, self.f2, self.f4, "-o", out])
+            read_events.main_join([self.f0, self.f2, self.f4, "-o", out])
         assert os.path.exists(out)
         os.unlink(out)
 
@@ -177,7 +177,7 @@ class TestMergeEvents:
         outfile = "joint_ev" + HEN_FILE_EXTENSION
         # Note that only 0 and 2 are valid
         with pytest.warns(UserWarning):
-            hen.read_events.main_join([self.f0, self.f2, self.f3])
+            read_events.main_join([self.f0, self.f2, self.f3])
 
         assert os.path.exists(outfile)
 
@@ -315,7 +315,7 @@ class TestReadEvents:
 
         filea = os.path.join(self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
 
-        files = hen.read_events.main_splitevents([filea, "-l", "50"])
+        files = read_events.main_splitevents([filea, "-l", "50"])
         for f in files:
             assert os.path.exists(f)
 
@@ -327,7 +327,7 @@ class TestReadEvents:
         mean_met = np.mean(data.time)
         mean_mjd = mean_met / 86400 + data.mjdref
 
-        files = hen.read_events.main_splitevents([filea, "--split-at-mjd", f"{mean_mjd}"])
+        files = read_events.main_splitevents([filea, "--split-at-mjd", f"{mean_mjd}"])
         assert "before" in files[0]
         assert "after" in files[1]
 
@@ -342,13 +342,13 @@ class TestReadEvents:
         filea = os.path.join(self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
 
         with pytest.raises(ValueError, match="Overlap cannot be >=1. Exiting."):
-            hen.read_events.split_eventlist(filea, 10, overlap=1.5)
+            read_events.split_eventlist(filea, 10, overlap=1.5)
 
     def test_load_events(self):
         """Test event file reading."""
         command = f"{self.fits_fileA}"
-        hen.read_events.main(command.split())
-        ev = hen.io.load_events(self.ev_fileA)
+        read_events.main(command.split())
+        ev = io.load_events(self.ev_fileA)
         assert hasattr(ev, "header")
         assert hasattr(ev, "gti")
 
@@ -360,38 +360,38 @@ class TestReadEvents:
             os.path.join(self.datadir, "monol_testB.evt"),
             os.path.join(self.datadir, "monol_testA_timezero.evt"),
         )
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
 
     def test_load_events_split(self):
         """Test event file splitting."""
         command = f"{self.fits_fileB} -g --min-length 0"
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
         new_filename = os.path.join(
             self.datadir,
             "monol_testB_nustar_fpmb_gti000_ev" + HEN_FILE_EXTENSION,
         )
         assert os.path.exists(new_filename)
         command = f"{new_filename}"
-        hen.lcurve.main(command.split())
+        lcurve.main(command.split())
         new_filename = os.path.join(
             self.datadir,
             "monol_testB_nustar_fpmb_gti000_lc" + HEN_FILE_EXTENSION,
         )
         assert os.path.exists(new_filename)
-        lc = hen.io.load_lcurve(new_filename)
-        gti_to_test = hen.io.load_events(self.ev_fileB).gti[0]
+        lc = io.load_lcurve(new_filename)
+        gti_to_test = io.load_events(self.ev_fileB).gti[0]
         assert np.allclose(gti_to_test, lc.gti)
 
     def test_load_events_noclobber(self):
         """Test event file reading w. noclobber option."""
         with pytest.warns(UserWarning, match="exists and using noclobber. Skipping"):
             command = f"{self.fits_fileB} --noclobber"
-            hen.read_events.main(command.split())
+            read_events.main(command.split())
 
     def test_fix_gaps_events(self):
         """Test event file reading w. noclobber option."""
         command = f"{self.fits_fileB} --fill-small-gaps 4"
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
 
     @classmethod
     def teardown_class(cls):

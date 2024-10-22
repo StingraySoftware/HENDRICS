@@ -5,12 +5,13 @@ import os
 
 import pytest
 
-import hendrics as hen
 from hendrics.tests import _dummy_par
+from hendrics import binary, io, calibrate, lcurve, read_events
+from hendrics.base import HAS_PINT
 
 from . import cleanup_test_dir
 
-HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
+HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
 try:
     FileNotFoundError
@@ -45,14 +46,14 @@ class TestBinary:
         cls.par = _dummy_par("bubububu.par")
         data = os.path.join(cls.datadir, "monol_testA.evt")
         command = f"{data} --discard-calibration"
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
 
         data, rmf = (
             os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
             os.path.join(cls.datadir, "test.rmf"),
         )
         command = f"{data} -r {rmf}"
-        hen.calibrate.main(command.split())
+        calibrate.main(command.split())
 
         cls.lcA = os.path.join(
             os.path.join(cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
@@ -60,24 +61,24 @@ class TestBinary:
         command = (
             f"{cls.ev_fileAcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " f"-o {cls.lcA}"
         )
-        hen.lcurve.main(command.split())
+        lcurve.main(command.split())
 
     def test_save_binary_events(self):
         f = self.ev_fileA
         with pytest.raises(ValueError, match="Energy filtering requested"):
-            hen.binary.main_presto(f"{f} -b 0.1 -e 3 59 --debug".split())
+            binary.main_presto(f"{f} -b 0.1 -e 3 59 --debug".split())
 
     @pytest.mark.remote_data
     @pytest.mark.skipif("not HAS_PINT")
     def test_save_binary_calibrated_events(self):
         f = self.ev_fileAcal
-        hen.binary.main_presto(f"{f} -b 0.1 -e 3 59 --debug --deorbit-par {self.par}".split())
+        binary.main_presto(f"{f} -b 0.1 -e 3 59 --debug --deorbit-par {self.par}".split())
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, ".dat"))
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, ".inf"))
 
     def test_save_binary_lc(self):
         f = self.lcA
-        hen.binary.main_presto(f"{f}".split())
+        binary.main_presto(f"{f}".split())
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, ".dat"))
         assert os.path.exists(f.replace(HEN_FILE_EXTENSION, ".inf"))
 

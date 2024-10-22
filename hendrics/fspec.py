@@ -151,6 +151,7 @@ def _distribute_events(events, chunk_length):
 
     Examples
     --------
+    >>> from stingray import EventList
     >>> ev = EventList([1, 2, 3, 4, 5, 6], gti=[[0.5, 6.5]])
     >>> ev.pi = np.ones_like(ev.time)
     >>> ev.mjdref = 56780.

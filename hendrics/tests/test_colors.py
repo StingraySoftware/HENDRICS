@@ -6,7 +6,7 @@ import os
 import numpy as np
 import pytest
 
-import hendrics as hen
+from hendrics import colors, io, lcurve, plot, read_events, calibrate
 from astropy import log
 from hendrics.tests import _dummy_par
 
@@ -17,7 +17,7 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-HEN_FILE_EXTENSION = hen.io.HEN_FILE_EXTENSION
+HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
 log.setLevel("DEBUG")
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
@@ -57,7 +57,7 @@ class TestFullRun:
             os.path.join(cls.datadir, "monol_testB.evt"),
         )
         command = f"{data_a} {data_b} --discard-calibration"
-        hen.read_events.main(command.split())
+        read_events.main(command.split())
 
         data_a, data_b, rmf = (
             os.path.join(cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION),
@@ -65,17 +65,17 @@ class TestFullRun:
             os.path.join(cls.datadir, "test.rmf"),
         )
         command = f"{data_a} {data_b} -r {rmf}"
-        hen.calibrate.main(command.split())
+        calibrate.main(command.split())
 
         cls.lc3_10 = os.path.join(
             os.path.join(cls.datadir, "monol_testA_E3-10_lc" + HEN_FILE_EXTENSION)
         )
 
         command = f"{cls.ev_fileAcal} -e 3 10 -b 100 " f"-o {cls.lc3_10}"
-        hen.lcurve.main(command.split())
+        lcurve.main(command.split())
 
         command = f"{cls.ev_fileAcal} -b 100 -e {3} {5} {5} {10}"
-        hen.colors.main(command.split())
+        colors.main(command.split())
 
         cls.colorfile = os.path.join(
             cls.datadir,
@@ -87,21 +87,21 @@ class TestFullRun:
         # calculate colors
 
         assert os.path.exists(self.colorfile)
-        out_lc = hen.io.load_lcurve(self.colorfile)
-        gti_to_test = hen.io.load_events(self.ev_fileA).gti
+        out_lc = io.load_lcurve(self.colorfile)
+        gti_to_test = io.load_events(self.ev_fileA).gti
         assert np.allclose(gti_to_test, out_lc.gti)
 
     def test_colors_fail_uncalibrated(self):
         """Test light curve using PI filtering."""
         command = f"{self.ev_fileA} -b 100 -e {3} {5} {5} {10}"
         with pytest.raises(ValueError, match="Energy information not found in file"):
-            hen.colors.main(command.split())
+            colors.main(command.split())
 
     def test_plot_color(self):
         """Test plotting with linear axes."""
         lname = self.colorfile
         cname = self.colorfile
-        hen.plot.main(
+        plot.main(
             [
                 cname,
                 lname,
@@ -118,11 +118,11 @@ class TestFullRun:
         """Test plotting with linear axes."""
         # also produce a light curve with the same binning
         command = f"{self.ev_fileAcal} -b 100 --energy-interval {3} {10}"
-        hen.lcurve.main(command.split())
+        lcurve.main(command.split())
 
         lname = self.lc3_10
         cname = self.colorfile
-        hen.plot.main(
+        plot.main(
             [
                 cname,
                 lname,
