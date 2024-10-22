@@ -26,6 +26,7 @@ from stingray.utils import assign_value_if_none
 from astropy import log
 from astropy.logger import AstropyUserWarning
 from astropy.table import Table
+from astropy.utils.introspection import minversion
 
 from .base import (
     HENDRICS_STAR_VALUE,
@@ -55,6 +56,7 @@ from .io import (
 )
 
 try:
+    import matplotlib as mpl
     import matplotlib.pyplot as plt
 
     HAS_MPL = True
@@ -113,9 +115,12 @@ def find_nearest_contour(cs, x, y, indices=None, pixel=True):
     ----------
     x, y : float
         The reference point.
+
+    Other Parameters
+    ----------------
     indices : list of int or None, default: None
         Indices of contour levels to consider.  If None (the default), all
-        levels are considered.
+        levels are considered. **This parameter is ignored since MPL 3.8**
     pixel : bool, default: True
         If *True*, measure distance in pixel (screen) space, which is
         useful for manual contour labeling; else, measure distance in axes
@@ -148,8 +153,9 @@ def find_nearest_contour(cs, x, y, indices=None, pixel=True):
 
     if cs.filled:
         raise ValueError("Method does not support filled contours.")
-    from astropy.utils.introspection import minversion
-    import matplotlib as mpl
+
+    if indices is not None:  # pragma: no cover
+        warnings.warn("Since Matplotlib 3.8, indices are not usable anymore. Ignoring.")
 
     MATPLOTLIB_LT_3_8 = not minversion(mpl, "3.8.dev")
     if MATPLOTLIB_LT_3_8:
