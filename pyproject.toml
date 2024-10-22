@@ -267,6 +267,7 @@ filterwarnings = [
             "hendrics/*/tests/*",
             "hendrics/extern/*",
             "hendrics/version*",
+            "hendrics/_version*",
             "*/hendrics/_astropy_init*",
             "*/hendrics/conftest.py",
             "*/hendrics/*setup_package*",

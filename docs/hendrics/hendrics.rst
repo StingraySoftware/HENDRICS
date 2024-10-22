@@ -156,15 +156,6 @@ hendrics.timelags module
     :undoc-members:
     :show-inheritance:
 
-hendrics.version module
------------------------
-
-.. automodule:: hendrics.version
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 Module contents
 ---------------
 
