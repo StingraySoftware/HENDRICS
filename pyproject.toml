@@ -1,7 +1,483 @@
-[build-system]
+[project]
+name = "hendrics"
+dynamic = [
+    "version"
+]
+description = "High ENergy Data Reduction Interface from the Command Shell"
+readme = "README.rst"
+authors = [
+    { name = "Matteo Bachetti", email = "matteo@matteobachetti.it" }
+]
+license = { text = "3-clause BSD" }
+requires-python = ">=3.9"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: C",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+keywords = [
+    "astronomy",
+    "astrophysics",
+    "time series",
+    "X-ray",
+    "data analysis",
+    "black holes",
+    "neutron stars",
+    "pulsars",
+    "space",
+    "science",
+]
+dependencies = [
+    "numpy>=1.17",
+    "astropy>=4.0",
+    "scipy>=1.1.0",
+    "matplotlib>=3.0,!=3.4.00,!=3.8.0",
+    "stingray>=2.2.3",
+    "tqdm",
+    "pyyaml"
+]
 
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-astropy",
+]
+test_all = [
+    "h5py",
+    "pandas",
+    "pint-pulsar",
+    "imageio",
+    "numba",
+    "netcdf4==1.7.0",
+    "scikit-image",
+    "statsmodels"
+]
+recommended = [
+    "numba",
+    "h5py",
+    "pyyaml",
+    "statsmodels",
+    "pyfftw",
+]
+all = [
+    "hendrics[recommended]",
+    "pandas",
+    "pint-pulsar",
+    "imageio",
+    "netcdf4==1.7.0",
+    "scikit-image",
+    "statsmodels"
+]
+docs = [
+    "tomli>=1.1.0; python_version < '3.11'",
+    "jinja2==3.1.3",
+    "docutils",
+    "sphinx-astropy",
+    "sphinx-toolbox",
+    "nbsphinx>=0.8.3,!=0.8.8",
+    "nbconvert<7.14",
+    "pandoc",
+    "ipython",
+    "towncrier<22.12.0",
+]
+
+[project.urls]
+homepage = "https://stingray.science"
+documentation = "https://hendrics.stingray.science"
+repository = "https://github.com/stingraysoftware/hendrics"
+
+
+[project.scripts]
+HEN2xspec = "hendrics.save_as_xspec:main"
+HENaccelsearch = "hendrics.efsearch:main_accelsearch"
+HENbaseline = "hendrics.lcurve:baseline_main"
+HENbinary = "hendrics.binary:main_presto"
+HENcalibrate = "hendrics.calibrate:main"
+HENcolors = "hendrics.colors:main"
+HENcreategti = "hendrics.create_gti:main"
+HENdeorbit = "hendrics.fold:main_deorbit"
+HENdumpdyn = "hendrics.fspec:dumpdyn_main"
+HENefsearch = "hendrics.efsearch:main_efsearch"
+HENexcvar = "hendrics.exvar:main"
+HENexposure = "hendrics.exposure:main"
+HENfake = "hendrics.fake:main"
+HENfiltevents = "hendrics.io:main_filter_events"
+HENfold = "hendrics.fold:main_fold"
+HENfspec = "hendrics.fspec:main"
+HENjoinevents = "hendrics.read_events:main_join"
+HENlags = "hendrics.timelags:main"
+HENlcurve = "hendrics.lcurve:main"
+HENmodel = "hendrics.modeling:main_model"
+HENphaseogram = "hendrics.phaseogram:main_phaseogram"
+HENphasetag = "hendrics.phasetag:main_phasetag"
+HENplot = "hendrics.plot:main"
+HENpowercolors = "hendrics.power_colors:main"
+HENreadevents = "hendrics.read_events:main"
+HENreadfile = "hendrics.io:main"
+HENrebin = "hendrics.rebin:main"
+HENscramble = "hendrics.fake:main_scramble"
+HENscrunchlc = "hendrics.lcurve:scrunch_main"
+HENsplitevents = "hendrics.read_events:main_splitevents"
+HENsumfspec = "hendrics.sum_fspec:main"
+HENvarenergy = "hendrics.varenergy:main"
+HENz2vspf = "hendrics.efsearch:main_z2vspf"
+HENzsearch = "hendrics.efsearch:main_zsearch"
+
+[build-system]
 requires = ["setuptools",
             "setuptools_scm",
             "wheel"]
 
 build-backend = 'setuptools.build_meta'
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE.rst"]
+
+[tool.setuptools.packages.find]
+include = ["hendrics*"]
+exclude = ["hendrics._dev*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"*" = [
+    "data/*",
+    "*.fits",
+    "*.evt",
+    "*.rmf",
+]
+"hendrics.compat" = ["datasets/*"]
+"hendrics.tests" = ["data/*"]
+
+[tool.setuptools_scm]
+write_to = "hendrics/_version.py"
+
+[tool.pytest.ini_options]
+minversion = 7.0
+testpaths = [
+    "hendrics",
+    "docs",
+]
+norecursedirs = [
+    "docs[\\/]_build",
+    "docs[\\/]generated",
+]
+astropy_header = true
+doctest_plus = "enabled"
+text_file_format = "rst"
+remote_data_strict = true
+addopts = "--color=yes --doctest-rst"
+filterwarnings = [
+    "error::DeprecationWarning",
+    "error:.*Casting complex values:",
+    "ignore:.*ERFA function:",
+    "ignore:.*data are not sorted. :UserWarning:stingray",
+    "ignore:.*extended precision floating-point:RuntimeWarning:pint",
+    "ignore:.*pyfftw not installed:UserWarning",
+    "ignore:`product` is deprecated as of NumPy 1.25.0:DeprecationWarning",
+    "ignore:.*n_ave is below 30:UserWarning",
+    "ignore:.*Some error bars in the Averaged Crossspectrum:UserWarning",
+    "ignore:.*This platform does not support extended precision.*:RuntimeWarning:pint",
+    "ignore:.*function is deprecated. Set self.value.*:DeprecationWarning:pint",
+    "ignore:.*distutils Version classes are deprecated.*:DeprecationWarning:astropy",
+    "ignore:SIMON says. Errorbars on cross spectra are not thoroughly tested.:UserWarning",
+    "ignore:SIMON says. Stingray only uses poisson err_dist at the moment.:UserWarning",
+    "ignore:SIMON says. Looks like your lightcurve:UserWarning",
+    "ignore:Matplotlib is currently using agg, which is a:UserWarning",
+    "ignore:Using or importing the ABCs from 'collections':DeprecationWarning",
+    "ignore:elementwise == comparison failed and returning scalar instead:FutureWarning:astropy",
+    "ignore:unclosed file:ResourceWarning",
+    "ignore:numpy.ufunc size changed:RuntimeWarning",
+    "ignore:numpy.ndarray size changed:RuntimeWarning",
+    "ignore:invalid value encountered:RuntimeWarning",
+    "ignore:divide by zero encountered:RuntimeWarning",
+    "ignore:underflow encountered:RuntimeWarning",
+    "ignore:overflow encountered:RuntimeWarning",
+    "ignore:table path was not set via the path= argument; using default path:UserWarning",
+    "ignore:Beware! For cpds and derivatives, I assume that:UserWarning",
+    "ignore:SIMON says. Lightcurves have different statistics:UserWarning",
+    "ignore: SIMON says. Coherence is not ideal:UserWarning",
+    "ignore:SIMON says. The excess variance in the:UserWarning",
+    "ignore:SIMON says. Number of segments used in averaging:UserWarning",
+    "ignore:.*deprecated alias for.*:DeprecationWarning",
+    "ignore:.*namespace is deprecated.*:DeprecationWarning",
+    "ignore:.*Matplotlib 3.8",
+]
+
+[tool.towncrier]
+    package = "hendrics"
+    filename = "CHANGELOG.rst"
+    directory = "docs/changes/"
+    issue_format = "`#{issue} <https://github.com/StingraySoftware/hendrics/pull/{issue}>`__"
+    title_format = "v{version} ({project_date})"
+    underlines = "-^"
+
+    [[tool.towncrier.type]]
+        directory = "breaking"
+        name = "Breaking Changes"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "deprecation"
+      name = "Deprecations"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "removal"
+      name = "Removals"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "feature"
+      name = "New Features"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "bugfix"
+      name = "Bug Fixes"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "doc"
+      name = "Documentation"
+      showcontent = true
+
+    [[tool.towncrier.type]]
+      directory = "trivial"
+      name = "Internal Changes"
+      showcontent = true
+
+
+[tool.coverage]
+
+    [tool.coverage.run]
+        omit = [
+            "hendrics/_astropy_init*",
+            "hendrics/conftest.py",
+            "hendrics/*setup_package*",
+            "hendrics/tests/*",
+            "hendrics/compat/*",
+            "hendrics/*/tests/*",
+            "hendrics/extern/*",
+            "hendrics/version*",
+            "hendrics/_version*",
+            "*/hendrics/_astropy_init*",
+            "*/hendrics/conftest.py",
+            "*/hendrics/*setup_package*",
+            "*/hendrics/tests/*",
+            "*/hendrics/*/tests/*",
+            "*/hendrics/extern/*",
+            "*/hendrics/version*",
+
+        ]
+
+    [tool.coverage.report]
+        exclude_lines = [
+            # Have to re-enable the standard pragma
+            "pragma: no cover",
+            # Don't complain about packages we have installed
+            "except ImportError",
+            # Don't complain if tests don't hit defensive assertion code:
+            "raise AssertionError",
+            "raise NotImplementedError",
+            # Don't complain about script hooks
+            "'def main(.*):'",
+            # Ignore branches that don't pertain to this version of Python
+            "pragma: py{ignore_python_version}",
+            # Don't complain about IPython completion helper
+            "def _ipython_key_completions_",
+        ]
+
+[tool.ruff]
+lint.select = ["ALL"]
+line-length = 100
+exclude=[
+    "notebooks/*.ipynb",
+    "*.svg",
+    "docs/conf.py",
+    "docs/scripts/cli.rst",
+    "_astropy_init.py",
+    "__init__.py",
+    "compatibility.py",
+]
+lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml` instead.
+
+    # flake8-builtins (A) : shadowing a Python built-in.
+    # New ones should be avoided and is up to maintainers to enforce.
+    "A00",
+
+    # flake8-annotations (ANN)
+    "ANN101",  # No annotation for `self`.
+    "ANN102",  # No annotation for `cls`.
+
+    # flake8-bugbear (B)
+    "B008",  # FunctionCallArgumentDefault
+
+    # flake8-commas (COM)
+    "COM812",  # TrailingCommaMissing
+    "COM819",  # TrailingCommaProhibited
+
+    # pydocstyle (D)
+    # Missing Docstrings
+    "D102",  # Missing docstring in public method. Don't check b/c docstring inheritance.
+    "D105",  # Missing docstring in magic method. Don't check b/c class docstring.
+    # Whitespace Issues
+    "D200",  # FitsOnOneLine
+    # Docstring Content Issues
+    "D410",  # BlankLineAfterSection. Using D412 instead.
+    "D400",  # EndsInPeriod.  NOTE: might want to revisit this.
+
+    # pycodestyle (E, W)
+    "E711",  # NoneComparison  (see unfixable)
+    "E741",  # AmbiguousVariableName. Physics variables are often poor code variables
+
+    # flake8-fixme (FIX)
+    "FIX002",  # Line contains TODO | notes for improvements are OK iff the code works
+
+    # ISC001 shouldn't be used with ruff format
+    # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "ISC001",
+
+    # pep8-naming (N)
+    "N803",  # invalid-argument-name. Physics variables are often poor code variables
+    "N806",  # non-lowercase-variable-in-function. Physics variables are often poor code variables
+
+    # pandas-vet (PD)
+    "PD",
+
+    "PGH004", # noqa
+
+    # pylint (PLR and PLW)
+    "PLR1730", # if-stmt-min-max (not always clearer, and sometimes slower)
+    "PLW0642", # self-or-cls-assignment (occasionally desirable, very rarely a mistake)
+
+    # flake8-use-pathlib (PTH)
+    "PTH123", # builtin-open (not worth creating a Path object, builtin open is fine)
+    "PTH118", # os.path.join is fine
+    "PTH207", # standard glob is fine
+    "PTH120", # os.path.dirname is fine
+    "PTH110", # os.path.exists is fine
+    "PTH100", # os.path.abspath is fine
+    "PTH122", # os.path.splitext is fine
+    "PTH119", # os.path.basename is fine
+    "PTH109", # os.getcwd is fine
+    "PTH108", # os.unlink is fine
+    "PTH103", # os.makedirs is fine
+
+    # flake8-simplify (SIM)
+    "SIM103", # needless-bool (cannot be safely applied in all contexts (np.True_ is not True))
+
+    # flake8-self (SLF)
+    "SLF001", # private member access
+
+    # flake8-todos (TD)
+    "TD002",  # Missing author in TODO
+
+    # flake8-return (RET)
+    # RET can sometimes help find places where refactoring is very helpful,
+    # but enforcing it everywhere might create undesirable churn
+    "RET505",  # superfluous-else-return
+    "RET506",  # superfluous-else-raise
+
+    # Ruff-specific rules (RUF)
+    "RUF005",  # unpack-instead-of-concatenating-to-collection-literal -- it's not clearly faster.
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"setup.py" = ["INP001"]  # Part of configuration, not a package.
+".github/workflows/*.py" = ["INP001"]
+"notebooks/*.py" = ["INP001"]
+
+"test_*.py" = [
+    "ANN201",  # Public function without return type annotation
+    "B018",  # UselessExpression
+    "D",  # pydocstyle
+    "S101",  # Use of assert detected
+]
+".pyinstaller/*.py" = ["INP001"]  # Not a package.
+"conftest.py" = ["INP001"]  # Part of configuration, not a package.
+"docs/*.py" = [
+    "INP001",  # implicit-namespace-package. The examples are not a package.
+]
+
+[tool.ruff.lint.flake8-annotations]
+ignore-fully-untyped = true
+mypy-init-return = true
+
+[tool.ruff.lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
+
+[tool.ruff.lint.flake8-type-checking]
+exempt-modules = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["astropy", "extension_helpers"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.codespell]
+skip = """
+    *.cff,
+    */data/*,
+    *extern/*,
+    hendrics/CITATION,
+    docs/credits.rst,
+    *_lextab.py,
+    *_parsetab.py,
+    *.svg,
+    docs/scripts/cli.rst,
+    *.ipynb,
+    pyproject.toml,
+"""
+# The following list of words for codespell to ignore may contain some
+# misspellings that should be revisited and fixed in the future.
+ignore-words-list = """
+    aas,
+    ans,
+    bu,
+    bubu,
+    clen,
+    coo,
+    datas,
+    ded,
+    dum,
+    fo,
+    hel,
+    lightyear,
+    livetime,
+    livetimes,
+    lond,
+    nax,
+    nd,
+    ned,
+    nin,
+    numer,
+    observ,
+    precess,
+    precessed,
+    precesses,
+    precessing,
+    pres,
+    som,
+    splitted,
+    stil,
+    te,
+    wirth,
+"""
+
+[tool.docformatter]
+    # The ``summaries`` are not (yet) 75 characters because the summary lines can't be
+    # automatically wrapped and must be re-written, which should be done at some point.
+    recursive = true
+    wrap-summaries = 1000
+    wrap-descriptions = 75
+    black = true
+    syntax = "numpy"

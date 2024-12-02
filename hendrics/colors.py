@@ -1,12 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to calculate colors and hardness."""
 
-import os
-from astropy import log
-from stingray.lightcurve import Lightcurve
 import numpy as np
-from .io import HEN_FILE_EXTENSION, load_events, save_lcurve
+from stingray.lightcurve import Lightcurve
+
+from astropy import log
+
 from .base import hen_root
+from .io import HEN_FILE_EXTENSION, load_events, save_lcurve
 
 
 def colors():
@@ -16,6 +17,7 @@ def colors():
 def main(args=None):
     """Main function called by the `HENcolors` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = "Calculate color light curves"
@@ -54,9 +56,9 @@ def main(args=None):
             events = load_events(f)
             if not args.use_pi and events.energy is None:
                 raise ValueError(
-                    "Energy information not found in file {0}. "
+                    f"Energy information not found in file {f}. "
                     "Use --use-pi if you want to use PI channels "
-                    "instead.".format(f)
+                    "instead."
                 )
             h_starts, h_stops, colors, color_errs = events.get_color_evolution(
                 energy_ranges=energies, segment_size=args.bintime, use_pi=args.use_pi

@@ -43,23 +43,34 @@ satellite (for sure XMM-Newton and RXTE).
 What's new
 ----------
 
-HENDRICS 8.0.0rc1
-~~~~~~~~~~~~~~~~~
+HENDRICS 8.1
+~~~~~~~~~~~~
 
-+ Compatible with `Stingray 2.0.0rc1 <https://github.com/StingraySoftware/stingray/releases/tag/v2.0.0rc1>`__, which introduced:
-
-    + Lomb-Scargle periodograms and cross spectra are now available
-    + Power colors
-    + Easy filling of small gaps in light curves with random data
-    + Generic timeseries (complex data, multi-dimensional data)
-
-+ ``HENaccelsearch`` now has additional options for detrending, denoising and deorbiting
-+ An improved Maximum likelihood algorithm as FFTFIT substitute for TOA calculation
-+ NASA's IXPE added to supported missions
-+ Better support of Stingray's native file formats
++ Brings all bugfixes coming with `Stingray 2.2 <https://github.com/StingraySoftware/stingray/releases/tag/v2.2>`__
++ New infrastructure, based on `pyproject.toml` as recommended by PEP 621
++ More bug fixes:
+    + Fix issue with invalid coordinates
+    + Solved an issue with recent Numba versions
+    + Solved an issue with the initial values of TOA fitting
+    + Make analyze_qffa_results more flexible
+    + Fix bug when simulating by count rate in HENfake
 
 Older releases
 ~~~~~~~~~~~~~~
+
+.. collapse:: HENDRICS 8.0.0
+
+    + Compatible with `Stingray 2.0.0 <https://github.com/StingraySoftware/stingray/releases/tag/v2.0.0>`__, which introduced:
+
+        + Lomb-Scargle periodograms and cross spectra
+        + Power colors
+        + Easy filling of small gaps in light curves with random data
+        + Generic timeseries (complex data, multi-dimensional data)
+
+    + ``HENaccelsearch`` now has additional options for detrending, denoising and deorbiting
+    + An improved Maximum likelihood algorithm as FFTFIT substitute for TOA calculation
+    + NASA's IXPE added to supported missions
+    + Better support of Stingray's native file formats
 
 .. collapse:: HENDRICS 7.0
 

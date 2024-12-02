@@ -2,10 +2,13 @@
 """Functions to save data in a Xspec-readable format."""
 
 import subprocess as sp
+
 import numpy as np
+
 from astropy import log
-from .io import get_file_type
+
 from .base import get_file_extension
+from .io import get_file_type
 
 
 def save_as_xspec(fname, direct_save=False, save_lags=True):
@@ -21,8 +24,8 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
 
     Notes
     -----
-    Uses method described here:
-    https://asd.gsfc.nasa.gov/XSPECwiki/fitting_timing_power_spectra_in_XSPEC
+    Uses method described by Ingram and Done in Appendix A of
+    `this paper<https://arxiv.org/pdf/1108.0789>__`
     """
     ftype, contents = get_file_type(fname)
 
@@ -41,7 +44,7 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
 
     np.savetxt(outname, np.transpose([flo, fhi, power, power_err]))
     if direct_save:
-        sp.check_call("flx2xsp {0} {1}.pha {1}.rsp".format(outname, outroot).split())
+        sp.check_call(f"flx2xsp {outname} {outroot}.pha {outroot}.rsp".split())
 
     if save_lags and ftype == "cpds":
         lags, lags_err = contents.time_lag()
@@ -50,14 +53,13 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
             np.transpose([flo, fhi, lags * contents.df, lags_err * contents.df]),
         )
         if direct_save:
-            sp.check_call(
-                "flx2xsp {0} {1}.pha {1}.rsp".format(outname_lags, outroot_lags).split()
-            )
+            sp.check_call(f"flx2xsp {outname_lags} {outroot_lags}.pha {outroot_lags}.rsp".split())
 
 
 def main(args=None):
     """Main function called by the `HEN2xspec` command line script."""
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (

@@ -1,10 +1,12 @@
 """Save different input files in PRESTO-readable format."""
 
+import numpy as np
+
 from astropy import log
 from astropy.coordinates import SkyCoord
-import numpy as np
-from .io import high_precision_keyword_read, get_file_type, HEN_FILE_EXTENSION
+
 from .base import deorbit_events, interpret_bintime
+from .io import HEN_FILE_EXTENSION, get_file_type, high_precision_keyword_read
 
 MAXBIN = 100000000
 
@@ -35,12 +37,7 @@ def get_header_info(obj):
         dec = header["DEC_PNT"]
 
     a = SkyCoord(ra, dec, unit="degree")
-    info.raj = (
-        (a.ra.to_string("hourangle"))
-        .replace("s", "")
-        .replace("h", ":")
-        .replace("m", ":")
-    )
+    info.raj = (a.ra.to_string("hourangle")).replace("s", "").replace("h", ":").replace("m", ":")
     info.decj = (a.dec.to_string()).replace("s", "").replace("d", ":").replace("m", ":")
     if hasattr(obj, "e_interval"):
         e0, e1 = obj.e_interval
@@ -58,7 +55,6 @@ def _save_to_binary(lc, filename):
     """Save a light curve to binary format."""
     nc = len(lc.counts)
     lc.counts[: nc // 2 * 2].astype("float32").tofile(filename)
-    return
 
 
 def save_lc_to_binary(lc, filename):
@@ -70,6 +66,7 @@ def save_lc_to_binary(lc, filename):
         Input light curve
     filename : str
         Output file name
+
     Returns
     -------
     lcinfo : object
@@ -92,9 +89,7 @@ def save_lc_to_binary(lc, filename):
     return lcinfo
 
 
-def save_events_to_binary(
-    events, filename, bin_time, tstart=None, emin=None, emax=None
-):
+def save_events_to_binary(events, filename, bin_time, tstart=None, emin=None, emax=None):
     """Save an event list to binary format.
 
     Parameters
@@ -106,7 +101,7 @@ def save_events_to_binary(
     bin_time : float
         Bin time of the output light curve
 
-    Other parameters
+    Other Parameters
     ----------------
     tstart : float
         Starting time
@@ -127,9 +122,7 @@ def save_events_to_binary(
 
     if emin is not None and emax is not None:
         if not hasattr(events, "energy") or events.energy is None:
-            raise ValueError(
-                "Energy filtering requested for uncalibrated event " "list"
-            )
+            raise ValueError("Energy filtering requested for uncalibrated event " "list")
 
         good = (events.energy >= emin) & (events.energy < emax)
         events = events.apply_mask(good)
@@ -171,7 +164,6 @@ def save_events_to_binary(
 
 def save_inf(lcinfo, info, filename):
     """Save information file."""
-
     lclen = lcinfo.lclen
     bin_intervals_start, bin_intervals_stop = (
         lcinfo.bin_intervals_start,
@@ -182,85 +174,78 @@ def save_inf(lcinfo, info, filename):
 
     with open(filename, "w") as f:
         print(
-            " Data file name without suffix         "
-            " =  {}".format(filename.replace(".inf", "")),
+            " Data file name without suffix         " " =  {}".format(filename.replace(".inf", "")),
             file=f,
         )
         print(
-            " Telescope used                        " " =  {}".format(info.telescope),
+            " Telescope used                        " f" =  {info.telescope}",
             file=f,
         )
         print(
-            " Instrument used                       " " =  {}".format(info.instrument),
+            " Instrument used                       " f" =  {info.instrument}",
             file=f,
         )
         print(
-            " Object being observed                 " " =  {}".format(info.source),
+            " Object being observed                 " f" =  {info.source}",
             file=f,
         )
         print(
-            " J2000 Right Ascension (hh:mm:ss.ssss) " " =  {}".format(info.raj),
+            " J2000 Right Ascension (hh:mm:ss.ssss) " f" =  {info.raj}",
             file=f,
         )
         print(
-            " J2000 Declination     (dd:mm:ss.ssss) " " =  {}".format(info.decj),
+            " J2000 Declination     (dd:mm:ss.ssss) " f" =  {info.decj}",
             file=f,
         )
         print(
-            " Data observed by                      " " =  {}".format(info.observer),
+            " Data observed by                      " f" =  {info.observer}",
             file=f,
         )
         print(
-            " Epoch of observation (MJD)            " " =  {:05.15f}".format(epoch),
+            " Epoch of observation (MJD)            " f" =  {epoch:05.15f}",
             file=f,
         )
         print(" Barycentered?           (1=yes, 0=no) " " =  1", file=f)
         print(
-            " Number of bins in the time series     " " =  {lclen}".format(lclen=lclen),
+            " Number of bins in the time series     " f" =  {lclen}",
             file=f,
         )
         print(
-            " Width of each time series bin (sec)   "
-            " =  {bintime}".format(bintime=lcinfo.dt),
+            " Width of each time series bin (sec)   " f" =  {lcinfo.dt}",
             file=f,
         )
         print(" Any breaks in the data? (1 yes, 0 no) " " =  1", file=f)
         for i, st in enumerate(bin_intervals_start):
             print(
-                " On/Off bin pair # {ngti:>2}                  "
-                " =  {binstart:<11}, "
-                "{binstop:<11}".format(
-                    ngti=i + 1, binstart=st, binstop=bin_intervals_stop[i]
-                ),
+                f" On/Off bin pair # {i + 1:>2}                  "
+                f" =  {st:<11}, "
+                f"{bin_intervals_stop[i]:<11}",
                 file=f,
             )
         print(" Type of observation (EM band)         " " =  X-ray", file=f)
         print(" Field-of-view diameter (arcsec)       " " =  400", file=f)
         print(
-            " Central energy (kev)                  " " =  {}".format(info.centralE),
+            " Central energy (kev)                  " f" =  {info.centralE}",
             file=f,
         )
         print(
-            " Energy bandpass (kev)                 " " =  {}".format(info.bandpass),
+            " Energy bandpass (kev)                 " f" =  {info.bandpass}",
             file=f,
         )
         print(
-            " Data analyzed by                      " " =  {}".format(info.user),
+            " Data analyzed by                      " f" =  {info.user}",
             file=f,
         )
         print(" Any additional notes:", file=f)
         print(
-            "       T = {length}, Nphot={nphot}".format(
-                length=lcinfo.tseg, nphot=lcinfo.nphot
-            ),
+            f"       T = {lcinfo.tseg}, Nphot={lcinfo.nphot}",
             file=f,
         )
-
-    return
 
 
 def main_presto(args=None):
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = "Save light curves in a format readable to PRESTO"

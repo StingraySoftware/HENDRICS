@@ -1,31 +1,23 @@
-# -*- coding: utf-8 -*-
 """
 @author: marta
 """
 
 import warnings
+
+import numpy as np
+from stingray.varenergyspectrum import (
+    CountSpectrum,
+    CovarianceSpectrum,
+    LagSpectrum,
+    RmsSpectrum,
+)
+from stingray.varenergyspectrum import VarEnergySpectrum as StingrayVes
+
 from astropy import log
 from astropy.table import Table
-from astropy.logger import AstropyUserWarning
-import numpy as np
-
-try:
-    from stingray.varenergyspectrum import VarEnergySpectrum as VES
-    from stingray.varenergyspectrum import (
-        LagSpectrum,
-        RmsSpectrum,
-        CovarianceSpectrum,
-        CountSpectrum,
-        _decode_energy_specification,
-    )
-except ImportError:
-    VES = object
-    warnings.warn("Please update stingray to the latest version.")
-
 
 from .base import hen_root, interpret_bintime
 from .io import load_events
-from .io import save_as_qdp
 
 
 def varenergy_to_astropy_table(spectrum):
@@ -103,7 +95,7 @@ def varenergy_from_astropy_table(fname):
     return varenergy
 
 
-class VarEnergySpectrum(VES):
+class VarEnergySpectrum(StingrayVes):
     def __init__(self):
         for attr in [
             "ref_band",
@@ -125,6 +117,7 @@ class VarEnergySpectrum(VES):
 
 def main(args=None):
     import argparse
+
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = "Calculates variability-energy spectra"
@@ -136,7 +129,7 @@ def main(args=None):
         nargs=2,
         type=float,
         default=[0.0, 100],
-        help="Frequence interval",
+        help="Frequency interval",
     )
     parser.add_argument(
         "--energy-values",
@@ -158,9 +151,7 @@ def main(args=None):
         default=None,
         help="Reference band when relevant",
     )
-    parser.add_argument(
-        "--rms", default=False, action="store_true", help="Calculate rms"
-    )
+    parser.add_argument("--rms", default=False, action="store_true", help="Calculate rms")
     parser.add_argument(
         "--covariance",
         default=False,
@@ -266,8 +257,7 @@ def main(args=None):
             if fname2 is not None:
                 events2 = load_events(fname2)
             if not args.use_pi and (
-                events.energy is None
-                or (events2 is not None and events2.energy is None)
+                events.energy is None or (events2 is not None and events2.energy is None)
             ):
                 raise ValueError(
                     "If --use-pi is not specified, event lists must "

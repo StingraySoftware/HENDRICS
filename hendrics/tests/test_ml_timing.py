@@ -1,10 +1,15 @@
-import pytest
 import numpy as np
-from hendrics.ml_timing import normalized_template, normalized_template_func
-from hendrics.ml_timing import ml_pulsefit, minimum_phase_diff
+import pytest
+
+from hendrics.ml_timing import (
+    minimum_phase_diff,
+    ml_pulsefit,
+    normalized_template,
+    normalized_template_func,
+)
 
 
-class TestTiming(object):
+class TestTiming:
     @classmethod
     def setup_class(cls):
         cls.phases = np.arange(0.5 / 64, 1, 1 / 64)

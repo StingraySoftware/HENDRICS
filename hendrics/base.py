@@ -1,34 +1,37 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """A miscellaneous collection of basic functions."""
 
-import os.path
-import sys
+from __future__ import annotations
+
 import copy
 import os
+import sys
+import tempfile
 import urllib
 import warnings
 from collections.abc import Iterable
 from pathlib import Path
-import tempfile
+
+import numpy as np
+from numpy import histogram as histogram_np
+from numpy import histogram2d as histogram2d_np
+from scipy.interpolate import interp1d
+from scipy.ndimage import gaussian_filter
+from stingray.pulse.pulsar import _load_and_prepare_TOAs
+from stingray.stats import (
+    fold_detection_level,
+    fold_profile_probability,
+    pds_detection_level,
+    pds_probability,
+    z2_n_detection_level,
+    z2_n_probability,
+)
+
+from astropy import log
 from astropy.io.registry import identify_format
 from astropy.table import Table
 
-from scipy.interpolate import interp1d
-from scipy.ndimage import gaussian_filter
-from scipy.stats import ncx2
-import numpy as np
-from numpy import histogram2d as histogram2d_np
-from numpy import histogram as histogram_np
-from astropy.logger import AstropyUserWarning
-from astropy import log
-from stingray.stats import pds_probability, pds_detection_level
-from stingray.stats import z2_n_detection_level, z2_n_probability
-from stingray.stats import fold_detection_level, fold_profile_probability
-from stingray.pulse.pulsar import _load_and_prepare_TOAs
-
 try:
-    import pint.toa as toa
-    import pint
     from pint.models import get_model
 
     HAS_PINT = True
@@ -52,62 +55,57 @@ except ImportError:
 
 
 from . import (
-    prange,
-    array_take,
     HAS_NUMBA,
+    array_take,
     njit,
-    vectorize,
-    float32,
-    float64,
-    int32,
-    int64,
+    prange,
 )
 
 __all__ = [
-    "array_take",
-    "njit",
-    "prange",
-    "show_progress",
-    "z2_n_detection_level",
-    "z2_n_probability",
-    "pds_detection_level",
-    "pds_probability",
-    "fold_detection_level",
-    "fold_profile_probability",
-    "r_in",
-    "r_det",
+    "_add_default_args",
     "_assign_value_if_none",
     "_look_for_array_in_array",
-    "is_string",
     "_order_list_of_arrays",
-    "mkdir_p",
-    "common_name",
-    "hen_root",
-    "optimal_bin_time",
-    "gti_len",
-    "deorbit_events",
-    "_add_default_args",
-    "check_negative_numbers_in_args",
-    "interpret_bintime",
-    "get_bin_edges",
-    "compute_bin",
-    "hist1d_numba_seq",
-    "hist2d_numba_seq",
-    "hist3d_numba_seq",
-    "hist2d_numba_seq_weight",
-    "hist3d_numba_seq_weight",
-    "index_arr",
-    "index_set_arr",
-    "histnd_numba_seq",
-    "histogram2d",
-    "histogram",
-    "touch",
-    "log_x",
-    "get_list_of_small_powers",
     "adjust_dt_for_power_of_two",
     "adjust_dt_for_small_power",
+    "array_take",
+    "check_negative_numbers_in_args",
+    "common_name",
+    "compute_bin",
+    "deorbit_events",
+    "fold_detection_level",
+    "fold_profile_probability",
+    "get_bin_edges",
+    "get_list_of_small_powers",
+    "gti_len",
+    "hen_root",
+    "hist1d_numba_seq",
+    "hist2d_numba_seq",
+    "hist2d_numba_seq_weight",
+    "hist3d_numba_seq",
+    "hist3d_numba_seq_weight",
+    "histnd_numba_seq",
+    "histogram",
+    "histogram2d",
+    "index_arr",
+    "index_set_arr",
+    "interpret_bintime",
+    "is_string",
+    "log_x",
     "memmapped_arange",
+    "mkdir_p",
     "nchars_in_int_value",
+    "njit",
+    "optimal_bin_time",
+    "pds_detection_level",
+    "pds_probability",
+    "prange",
+    "r_det",
+    "r_in",
+    "show_progress",
+    "touch",
+    "z2_n_detection_level",
+    "z2_n_probability",
 ]
 
 
@@ -254,7 +252,7 @@ def _look_for_array_in_array(array1, array2):
 
 def is_string(s):
     """Portable function to answer this question."""
-    return isinstance(s, str)  # NOQA
+    return isinstance(s, str)
 
 
 def _order_list_of_arrays(data, order):
@@ -271,7 +269,7 @@ def _order_list_of_arrays(data, order):
     >>> assert _order_list_of_arrays(2, order) is None
     """
     if hasattr(data, "items"):
-        data = dict((i[0], np.asarray(i[1])[order]) for i in data.items())
+        data = {i[0]: np.asarray(i[1])[order] for i in data.items()}
     elif hasattr(data, "index"):
         data = [np.asarray(i)[order] for i in data]
     else:
@@ -410,7 +408,7 @@ def simple_orbit_fun_from_parfile(
     parfile : str
         Any parameter file understood by PINT (Tempo or Tempo2 format)
 
-    Other parameters
+    Other Parameters
     ----------------
     ntimes : int
         Number of time intervals to use for interpolation. Default 1000
@@ -423,7 +421,6 @@ def simple_orbit_fun_from_parfile(
     correction_mjd : function
         Function that accepts times in MJDs and returns the deorbited times.
     """
-    from scipy.interpolate import interp1d
     from astropy import units
 
     if not HAS_PINT:
@@ -461,14 +458,10 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     """
     events = copy.deepcopy(events)
     if parameter_file is None:
-        warnings.warn(
-            "No parameter file specified for deorbit. Returning" " unaltered event list"
-        )
+        warnings.warn("No parameter file specified for deorbit. Returning" " unaltered event list")
         return events
     if not os.path.exists(parameter_file):
-        raise FileNotFoundError(
-            "Parameter file {} does not exist".format(parameter_file)
-        )
+        raise FileNotFoundError(f"Parameter file {parameter_file} does not exist")
 
     if events.mjdref < 33282.0:
         raise ValueError("MJDREF is very low (<01-01-1950), " "this is unsupported.")
@@ -541,6 +534,7 @@ def check_negative_numbers_in_args(args):
         args = sys.argv[1:]
     newargs = []
     for arg in args:
+        arg = str(arg)
         try:
             # Has to be a number, has to be negative
             assert -float(arg) > 0
@@ -609,7 +603,6 @@ def compute_bin(x, bin_edges):
     >>> assert compute_bin(5, bin_edges) == 1
     >>> assert compute_bin(10, bin_edges) == 1
     """
-
     # assuming uniform bins for now
     n = bin_edges.shape[0] - 1
     a_min = bin_edges[0]
@@ -664,9 +657,7 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(
-            tmp, mode="w+", dtype=a.dtype, shape=(bins,)
-        )
+        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
     else:
         hist_arr = np.zeros((bins,), dtype=a.dtype)
 
@@ -699,9 +690,7 @@ def hist2d_numba_seq(x, y, bins, ranges):
     >>> assert np.all(H == Hn)
     """
     H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
-    return _hist2d_numba_seq(
-        H, np.array([x, y]), np.asarray(list(bins)), np.asarray(ranges)
-    )
+    return _hist2d_numba_seq(H, np.array([x, y]), np.asarray(list(bins)), np.asarray(ranges))
 
 
 @njit(nogil=True, parallel=False)
@@ -731,11 +720,8 @@ def hist3d_numba_seq(tracks, bins, ranges):
     ...                       ranges=[[0., 1.], [2., 3.], [4., 5.]])
     >>> assert np.all(H == Hn)
     """
-
     H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.uint64)
-    return _hist3d_numba_seq(
-        H, np.asarray(tracks), np.asarray(list(bins)), np.asarray(ranges)
-    )
+    return _hist3d_numba_seq(H, np.asarray(tracks), np.asarray(list(bins)), np.asarray(ranges))
 
 
 @njit(nogil=True, parallel=False)
@@ -776,9 +762,7 @@ def hist1d_numba_seq_weight(a, weights, bins, ranges, use_memmap=False, tmp=None
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(
-            tmp, mode="w+", dtype=a.dtype, shape=(bins,)
-        )
+        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
     else:
         hist_arr = np.zeros((bins,), dtype=a.dtype)
 
@@ -853,7 +837,6 @@ def hist3d_numba_seq_weight(tracks, weights, bins, ranges):
     ...    ranges=[[0., 1.], [2., 3.], [4., 5.]])
     >>> assert np.all(H == Hn)
     """
-
     H = np.zeros((bins[0], bins[1], bins[2]), dtype=np.double)
     return _hist3d_numba_seq_weight(
         H,
@@ -884,10 +867,7 @@ def _histnd_numba_seq(H, tracks, bins, ranges, slice_int):
 
     for t in range(tracks.shape[1]):
         slicearr = np.array(
-            [
-                (tracks[dim, t] - ranges[dim, 0]) * delta[dim]
-                for dim in range(tracks.shape[0])
-            ]
+            [(tracks[dim, t] - ranges[dim, 0]) * delta[dim] for dim in range(tracks.shape[0])]
         )
 
         good = np.all((slicearr < bins) & (slicearr >= 0))
@@ -1001,7 +981,7 @@ else:
 
 
 def touch(fname):
-    """Mimick the same shell command.
+    """Mimic the same shell command.
 
     Examples
     --------
@@ -1093,7 +1073,6 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=floa
     >>> assert np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
     >>> i0, i1, istep = 0, 10, 1e-7
     >>> assert np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
-
     """
     import tempfile
 
@@ -1114,7 +1093,7 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=floa
 
 
 def nchars_in_int_value(value):
-    """Number of characters to write an integer number
+    """Number of characters to write an integer number.
 
     Examples
     --------
@@ -1160,8 +1139,7 @@ def find_peaks_in_image(image, n=5, rough=False, **kwargs):
     """
     if not HAS_SKIMAGE or rough:
         best_cands = [
-            np.unravel_index(idx, image.shape)
-            for idx in np.argpartition(image.flatten(), -n)[-n:]
+            np.unravel_index(idx, image.shape) for idx in np.argpartition(image.flatten(), -n)[-n:]
         ]
         __best_stats = [image[bci] for bci in best_cands]
         best_cands = np.asarray(best_cands)[np.argsort(__best_stats)][::-1]
@@ -1287,13 +1265,12 @@ def get_file_extension(fname):
     >>> get_file_extension('bu.fits.Gz')
     '.fits.Gz'
     """
-
-    raw_ext = os.path.splitext(fname)[1]
-    if raw_ext.lower() in [".gz", ".bz", ".z", ".bz2"]:
-        fname = fname.replace(raw_ext, "")
-        return os.path.splitext(fname)[1] + raw_ext
-
-    return raw_ext
+    if not isinstance(fname, Path):
+        fname = Path(fname)
+    ext = fname.suffix
+    if ext.lower() in [".gz", ".bz", ".z", ".bz2"]:
+        ext = "".join(fname.suffixes[-2:])
+    return ext
 
 
 def splitext_improved(fname):
@@ -1311,9 +1288,15 @@ def splitext_improved(fname):
     ('bu', '.ecsv')
     >>> splitext_improved('bu.fits.Gz')
     ('bu', '.fits.Gz')
+    >>> path = splitext_improved(Path('bu.fits.Gz'))
+    >>> assert str(path[0]) == 'bu'
+    >>> assert path[1] == '.fits.Gz'
     """
+    is_path = isinstance(fname, Path)
     ext = get_file_extension(fname)
-    root = fname.replace(ext, "")
+    root = str(fname).removesuffix(ext)
+    if is_path:
+        root = Path(root)
     return root, ext
 
 

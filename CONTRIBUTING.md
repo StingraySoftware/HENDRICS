@@ -4,5 +4,5 @@ and/or get involved in our [Slack channel ](https://join.slack.com/t/stingraysof
 
 Please follow the [Astropy contribution guidelines](https://docs.astropy.org/en/stable/development/workflow/development_workflow.html),
 and the [Astropy coding guidelines](https://docs.astropy.org/en/stable/development/codeguide.html#coding-style-conventions).
-This code is written in Python 3.8+
+This code is written in Python 3.9+
 Tests run at each commit during Pull Requests, so it is easy to single out points in the code that break this compatibility.
