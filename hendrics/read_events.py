@@ -167,8 +167,7 @@ def treat_event_file(
                 good_gti = cross_two_gtis([g], gti)
                 if noclobber and os.path.exists(outfile_local):
                     warnings.warn(
-                        f"{outfile_local} exists, "
-                        + "and noclobber option used. Skipping"
+                        f"{outfile_local} exists, and noclobber option used. Skipping"
                     )
                     return
                 good = np.logical_and(events.time >= g[0], events.time < g[1])
