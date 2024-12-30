@@ -48,6 +48,9 @@ ON_TRAVIS = os.environ.get("TRAVIS") == "true"
 with (Path(__file__).parents[1] / "pyproject.toml").open("rb") as f:
     pyproject = tomllib.load(f)
 
+cols = os.getenv("COLUMNS")
+
+os.environ["COLUMNS"] = "80"
 # -- General configuration ----------------------------------------------------
 
 # By default, highlight as Python 3.
@@ -227,3 +230,5 @@ if not ON_RTD and not ON_TRAVIS:
                     else:
                         print("    " + l, file=fobj)
                 print(file=fobj)
+
+os.environ["COLUMNS"] = cols
