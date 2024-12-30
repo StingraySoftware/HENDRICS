@@ -165,3 +165,5 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
