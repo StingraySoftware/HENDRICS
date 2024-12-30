@@ -28,6 +28,7 @@ import datetime
 import os
 import sys
 from importlib import import_module
+import warnings
 
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
@@ -40,6 +41,8 @@ except ImportError:
     # Help users on older alphas
     import tomli as tomllib
 from pathlib import Path
+
+os.environ["PYTHONWARNINGS"] = "ignore"
 
 ON_RTD = os.environ.get("READTHEDOCS") == "True"
 ON_TRAVIS = os.environ.get("TRAVIS") == "true"
