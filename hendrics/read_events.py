@@ -3,6 +3,7 @@
 
 import os
 import warnings
+from collections.abc import Iterable
 
 import numpy as np
 from stingray.events import EventList
@@ -33,6 +34,7 @@ def treat_event_file(
     additional_columns=None,
     fill_small_gaps=None,
     bin_time_for_occultations=None,
+    safe_interval=None,
 ):
     """Read data from an event file, with no external GTI information.
 
@@ -63,6 +65,9 @@ def treat_event_file(
         Create a light curve with this bin time and infer occultations not
         recorded in GTIs. The rule is that the flux drops to zero and the average
         counts per bin are significantly above 25 ct/s.
+    safe_interval : float or [float, float]
+        A safe interval to exclude at both ends (if single float) or the start
+        and the end (if pair of values) of GTIs.
     """
     # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
     log.info(f"Opening {filename}")
@@ -85,9 +90,9 @@ def treat_event_file(
     if bin_time_for_occultations is not None and bin_time_for_occultations > 0:
         lc = events.to_lc(bin_time_for_occultations)
         meanrate = np.median(lc.counts)
-
         if meanrate > 25:
-            good_gti = create_gti_mask(lc.time, lc.gti)
+            log.info("Filtering out occultations")
+            good_gti = create_gti_mask(lc.time, lc.gti, safe_interval=safe_interval)
             good = lc.counts > 0
             new_bad = (~good) & good_gti
             if np.any(new_bad):
@@ -96,8 +101,13 @@ def treat_event_file(
                     lc.time, (good_gti & good), safe_interval=bin_time_for_occultations
                 )
                 events.gti = gti
+    elif safe_interval is not None:
+        if not isinstance(safe_interval, Iterable):
+            safe_interval = [safe_interval, safe_interval]
+        gti[:, 0] += safe_interval[0]
+        gti[:, 1] -= safe_interval[1]
 
-    lengths = np.array([g1 - g0 for (g0, g1) in gti])
+    lengths = gti[:, 1] - gti[:, 0]
     gti = gti[lengths >= min_length]
     events.gti = gti
     detector_id = events.detector_id
@@ -150,9 +160,7 @@ def treat_event_file(
 
                 good_gti = cross_two_gtis([g], gti)
                 if noclobber and os.path.exists(outfile_local):
-                    warnings.warn(
-                        f"{outfile_local} exists, " + "and noclobber option used. Skipping"
-                    )
+                    warnings.warn(f"{outfile_local} exists, and noclobber option used. Skipping")
                     return
                 good = np.logical_and(events.time >= g[0], events.time < g[1])
                 all_good = good_det & good
@@ -453,7 +461,7 @@ def main_join(args=None):
     import argparse
 
     description = (
-        "Read a cleaned event files and saves the relevant " "information in a standard format"
+        "Read a cleaned event files and saves the relevant information in a standard format"
     )
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="Files to join", type=str, nargs="+")
@@ -526,7 +534,7 @@ def main(args=None):
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
-        "Read a cleaned event files and saves the relevant " "information in a standard format"
+        "Read a cleaned event files and saves the relevant information in a standard format"
     )
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs="+")
@@ -587,6 +595,13 @@ def main(args=None):
         default=None,
     )
     parser.add_argument(
+        "--safe-interval",
+        nargs=2,
+        type=float,
+        default=0,
+        help="Interval at start and stop of GTIs used" + " for filtering",
+    )
+    parser.add_argument(
         "--fill-small-gaps",
         type=float,
         help="Fill gaps between GTIs with random data, if shorter than this amount",
@@ -623,6 +638,7 @@ def main(args=None):
             "fill_small_gaps": args.fill_small_gaps,
             "split_by_detector": not args.ignore_detectors,
             "bin_time_for_occultations": args.bin_time_for_occultations,
+            "safe_interval": args.safe_interval,
         }
 
         arglist = [[f, argdict] for f in files]

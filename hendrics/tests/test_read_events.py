@@ -371,6 +371,9 @@ class TestReadEvents:
             "monol_testB_nustar_fpmb_gti000_ev" + HEN_FILE_EXTENSION,
         )
         assert os.path.exists(new_filename)
+        with pytest.warns(UserWarning, match=".*exists, and noclobber option"):
+            read_events.main(command.split() + ["--noclobber"])
+
         command = f"{new_filename}"
         lcurve.main(command.split())
         new_filename = os.path.join(

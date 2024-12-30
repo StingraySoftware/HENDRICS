@@ -481,3 +481,7 @@ ignore-words-list = """
     wrap-descriptions = 75
     black = true
     syntax = "numpy"
+
+
+[tool.black]
+line-length = 100
