@@ -598,7 +598,7 @@ def main(args=None):
         "--safe-interval",
         nargs=2,
         type=float,
-        default=[0, 0],
+        default=0,
         help="Interval at start and stop of GTIs used" + " for filtering",
     )
     parser.add_argument(
