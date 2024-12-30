@@ -43,6 +43,16 @@ satellite (for sure XMM-Newton and RXTE).
 What's new
 ----------
 
+HENDRICS 8.2 (under development)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
++ Brings all bugfixes coming with `Stingray 2.2.4 <https://github.com/StingraySoftware/stingray/releases/tag/v2.2.4>`__
++ New option for ``HENreadevents``: ``--safe-interval``, allowing to decrease GTI length by fixed amounts at the start and the end (useful, e.g., when observations show artifacts entering and exiting from occultation or SAA)
+
+Internal changes:
+
++ Improvements with docs creation, in particular to the creation of the cli.rst file.
+
 HENDRICS 8.1
 ~~~~~~~~~~~~
 
