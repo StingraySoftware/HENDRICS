@@ -29,6 +29,7 @@ import os
 import sys
 from importlib import import_module
 import warnings
+import subprocess as sp
 
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
@@ -42,7 +43,9 @@ except ImportError:
     import tomli as tomllib
 from pathlib import Path
 
-os.environ["PYTHONWARNINGS"] = "ignore"
+warnings.filterwarnings("ignore", message=".*recommended numba.*")
+warnings.filterwarnings("ignore", message=".*Using pickle.*")
+warnings.filterwarnings("ignore", message=".*PINT is not installed.*")
 
 ON_RTD = os.environ.get("READTHEDOCS") == "True"
 ON_TRAVIS = os.environ.get("TRAVIS") == "true"
@@ -51,9 +54,7 @@ ON_TRAVIS = os.environ.get("TRAVIS") == "true"
 with (Path(__file__).parents[1] / "pyproject.toml").open("rb") as f:
     pyproject = tomllib.load(f)
 
-cols = os.getenv("COLUMNS")
 
-os.environ["COLUMNS"] = "80"
 # -- General configuration ----------------------------------------------------
 
 # By default, highlight as Python 3.
@@ -209,8 +210,11 @@ github_issues_url = "https://github.com/{0}/issues/".format(
 if not ON_RTD and not ON_TRAVIS:
     # scripts = dict(conf.items("options.entry_points"))["console_scripts"]
     scripts = pyproject["project"]["scripts"]
+    pwarn = os.getenv("PYTHONWARNINGS")
 
-    import subprocess as sp
+    os.environ["PYTHONWARNINGS"] = "ignore"
+    cols = os.getenv("COLUMNS")
+    os.environ["COLUMNS"] = "80"
 
     cli_file = os.path.join(os.getcwd(), "scripts", "cli.rst")
     if os.path.exists(cli_file):
@@ -219,6 +223,7 @@ if not ON_RTD and not ON_TRAVIS:
             print("""======================\n""", file=fobj)
 
             for cl in sorted(scripts.keys()):
+                print(f"Writing help for {cl}")
                 if cl.startswith("MP"):
                     continue
                 print(cl, file=fobj)
@@ -234,4 +239,12 @@ if not ON_RTD and not ON_TRAVIS:
                         print("    " + l, file=fobj)
                 print(file=fobj)
 
-os.environ["COLUMNS"] = cols
+    if cols is not None:
+        os.environ["COLUMNS"] = cols
+    else:
+        del os.environ["COLUMNS"]
+
+    if pwarn is not None:
+        os.environ["PYTHONWARNINGS"] = pwarn
+    else:
+        del os.environ["PYTHONWARNINGS"]
