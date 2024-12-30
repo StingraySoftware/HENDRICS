@@ -795,8 +795,8 @@ HENreadevents
 
     usage: HENreadevents [-h] [--noclobber] [-g] [--discard-calibration] [--ignore-detectors]
                          [-l LENGTH_SPLIT] [--min-length MIN_LENGTH]
-                         [--bin-time-for-occultations BIN_TIME_FOR_OCCULTATIONS]
-                         [--gti-string GTI_STRING] [--randomize-by RANDOMIZE_BY]
+                         [--bin-time-for-occultations BIN_TIME_FOR_OCCULTATIONS] [--gti-string GTI_STRING]
+                         [--randomize-by RANDOMIZE_BY] [--safe-interval SAFE_INTERVAL SAFE_INTERVAL]
                          [--fill-small-gaps FILL_SMALL_GAPS] [--additional ADDITIONAL [ADDITIONAL ...]]
                          [-o OUTFILE] [--loglevel LOGLEVEL] [--debug] [--nproc NPROC]
                          files [files ...]
@@ -818,14 +818,16 @@ HENreadevents
       --min-length MIN_LENGTH
                             Minimum length of GTIs to consider
       --bin-time-for-occultations BIN_TIME_FOR_OCCULTATIONS
-                            Create a light curve with this bin time and infer occultations not recorded
-                            in GTIs. (The flux drops to zero and the average count rate is significantly
-                            above 25 ct/s)
+                            Create a light curve with this bin time and infer occultations not recorded in
+                            GTIs. (The flux drops to zero and the average count rate is significantly above
+                            25 ct/s)
       --gti-string GTI_STRING
                             GTI string
       --randomize-by RANDOMIZE_BY
-                            Randomize event arrival times by this amount (e.g. it might be the 0.073-s
-                            frame time in XMM)
+                            Randomize event arrival times by this amount (e.g. it might be the 0.073-s frame
+                            time in XMM)
+      --safe-interval SAFE_INTERVAL SAFE_INTERVAL
+                            Interval at start and stop of GTIs used for filtering
       --fill-small-gaps FILL_SMALL_GAPS
                             Fill gaps between GTIs with random data, if shorter than this amount
       --additional ADDITIONAL [ADDITIONAL ...]
