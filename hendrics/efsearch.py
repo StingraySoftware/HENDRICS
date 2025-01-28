@@ -2199,6 +2199,19 @@ def main_accelsearch(args=None):
         candidate_file=outfile.replace(".csv", ""),
     )
 
+    bad_pos = (results["frequency"] + results["fdot"] * results["length"]) < results[
+        "frequency"
+    ] * 0.1
+    bad_neg = (results["frequency"] - results["fdot"] * results["length"]) < results[
+        "frequency"
+    ] * 0.1
+    bad = bad_pos | bad_neg
+    if np.any(bad):
+        warnings.warn(
+            "Some candidates would have negative frequency over the length of the observations"
+        )
+        results = results[~bad]
+
     if len(results) > 0:
         results["emin"] = emin if emin else -1.0
         results["emax"] = emax if emax else -1.0
