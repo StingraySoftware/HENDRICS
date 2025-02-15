@@ -29,11 +29,13 @@ from astropy.table import Table
 from astropy.utils.introspection import minversion
 
 from .base import (
+    HAS_PINT,
     HENDRICS_STAR_VALUE,
     adjust_dt_for_power_of_two,
     deorbit_events,
     find_peaks_in_image,
     fold_detection_level,
+    get_model,
     hen_root,
     histogram,
     histogram2d,
@@ -42,22 +44,19 @@ from .base import (
     prange,
     show_progress,
     z2_n_detection_level,
-    HAS_PINT,
-    get_model,
 )
 from .fake import scramble
 from .ffa import _z_n_fast_cached, ffa_search, h_test
-from .fold import filter_energy
+from .fold import filter_energy, fold_events
 from .io import (
     HEN_FILE_EXTENSION,
     EFPeriodogram,
+    find_file_in_allowed_paths,
     get_file_type,
     load_events,
     load_folding,
     save_folding,
-    find_file_in_allowed_paths,
 )
-from .fold import filter_energy, fold_events
 
 try:
     import matplotlib as mpl
@@ -1241,7 +1240,6 @@ def get_boundaries_from_level(x, y, level, x0):
 
 
 def get_best_solution_from_qffa(ef, best_cand_table, out_model_file=None, fold=False):
-
     # Get these from the first row of the table
     f, fdot, fddot, ul, max_stat = (
         best_cand_table["f"][0],

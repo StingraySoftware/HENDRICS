@@ -1,8 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Quicklook plots."""
 
-import copy
-import os
 import warnings
 from collections.abc import Iterable
 
@@ -12,21 +10,18 @@ from stingray.gti import create_gti_mask
 from stingray.power_colors import plot_hues, plot_power_colors
 
 from astropy import log
-from astropy import units as u
 from astropy.modeling import Model
 from astropy.modeling.models import Const1D
 from astropy.stats import poisson_conf_interval
-from astropy.table import Table
 
-from .base import _assign_value_if_none, deorbit_events, HAS_PINT
-from .base import pds_detection_level as detection_level, create_empty_timing_model
+from .base import _assign_value_if_none
+from .base import pds_detection_level as detection_level
 from .efsearch import analyze_qffa_results, get_best_solution_from_qffa
 from .io import (
     HEN_FILE_EXTENSION,
     get_file_type,
     is_string,
     load_data,
-    load_events,
     load_lcurve,
     load_pds,
     save_as_qdp,

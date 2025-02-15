@@ -5,13 +5,13 @@ from __future__ import annotations
 
 import copy
 import os
+import re
 import sys
 import tempfile
 import urllib
 import warnings
 from collections.abc import Iterable
 from pathlib import Path
-import re
 
 import numpy as np
 from numpy import histogram as histogram_np
@@ -34,13 +34,13 @@ from astropy.io.registry import identify_format
 from astropy.table import Table
 
 try:
-    from pint.models import get_model
-    from pint.models.timing_model import (
-        TimingModel,
-        Component,
-    )  # Interface for timing model
-    from pint.models.parameter import prefixParameter
     import pint
+    from pint.models import get_model
+    from pint.models.parameter import prefixParameter
+    from pint.models.timing_model import (
+        Component,
+        TimingModel,
+    )  # Interface for timing model
 
     HAS_PINT = True
 except (ImportError, urllib.error.URLError):
@@ -459,7 +459,6 @@ def simple_orbit_fun_from_parfile(
     correction_mjd : function
         Function that accepts times in MJDs and returns the deorbited times.
     """
-
     if not HAS_PINT:
         raise ImportError(
             "You need the optional dependency PINT to use this "

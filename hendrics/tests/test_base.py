@@ -4,8 +4,7 @@ import numpy as np
 import pytest
 from stingray.events import EventList
 
-from hendrics.base import HAS_PINT, deorbit_events, normalize_dyn_profile
-from hendrics.base import create_empty_timing_model
+from hendrics.base import HAS_PINT, create_empty_timing_model, deorbit_events, normalize_dyn_profile
 from hendrics.tests import _dummy_par
 
 
@@ -113,7 +112,6 @@ def test_deorbit_run():
 @pytest.mark.skipif("HAS_PINT")
 def test_create_empty_timing_model_raises():
     with pytest.raises(ImportError):
-
         create_empty_timing_model()
 
 
