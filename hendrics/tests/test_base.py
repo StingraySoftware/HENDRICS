@@ -110,7 +110,7 @@ def test_deorbit_run():
 
 
 @pytest.mark.skipif("HAS_PINT")
-def test_create_empty_timing_model_raises():
+def test_create_empty_timing_model():
     with pytest.raises(ImportError):
         create_empty_timing_model()
 

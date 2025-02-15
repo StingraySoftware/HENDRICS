@@ -34,7 +34,6 @@ from astropy.io.registry import identify_format
 from astropy.table import Table
 
 try:
-    import pint
     from pint.models import get_model
     from pint.models.parameter import prefixParameter
     from pint.models.timing_model import (

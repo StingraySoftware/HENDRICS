@@ -32,6 +32,7 @@ from .base import (
     HAS_PINT,
     HENDRICS_STAR_VALUE,
     adjust_dt_for_power_of_two,
+    create_empty_timing_model,
     deorbit_events,
     find_peaks_in_image,
     fold_detection_level,
