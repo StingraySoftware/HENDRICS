@@ -11,6 +11,7 @@ import urllib
 import warnings
 from collections.abc import Iterable
 from pathlib import Path
+import re
 
 import numpy as np
 from numpy import histogram as histogram_np
@@ -28,11 +29,18 @@ from stingray.stats import (
 )
 
 from astropy import log
+from astropy import units as u
 from astropy.io.registry import identify_format
 from astropy.table import Table
 
 try:
     from pint.models import get_model
+    from pint.models.timing_model import (
+        TimingModel,
+        Component,
+    )  # Interface for timing model
+    from pint.models.parameter import prefixParameter
+    import pint
 
     HAS_PINT = True
 except (ImportError, urllib.error.URLError):
@@ -217,6 +225,36 @@ DEFAULT_PARSER_ARGS["pepoch"] = dict(
         default=None,
     ),
 )
+
+
+def create_empty_timing_model(source_name="source"):
+    if not HAS_PINT:
+        raise ImportError(
+            "You need the optional dependency PINT to use this "
+            "functionality: github.com/nanograv/pint"
+        )
+    all_components = Component.component_types
+    selected_components = ["AbsPhase", "AstrometryEquatorial", "Spindown"]
+    component_instances = []
+
+    # Initiate the component instances
+    for cp_name in selected_components:
+        component_class = all_components[cp_name]  # Get the component class
+        component_instance = component_class()  # Instantiate a component object
+        component_instances.append(component_instance)
+    tm = TimingModel(source_name, component_instances)
+
+    # Add, at the very least, a F2 to the parameter
+    f2 = prefixParameter(
+        parameter_type="float",
+        name="F2",
+        value=0.0,
+        units=u.Hz / (u.s) ** 2,
+        longdouble=True,
+        tcb2tdb_scale_factor=u.Quantity(1),
+    )
+    tm.components["Spindown"].add_param(f2, setup=True)
+    return tm
 
 
 def r_in(td, r_0):
@@ -421,7 +459,6 @@ def simple_orbit_fun_from_parfile(
     correction_mjd : function
         Function that accepts times in MJDs and returns the deorbited times.
     """
-    from astropy import units
 
     if not HAS_PINT:
         raise ImportError(
@@ -438,7 +475,7 @@ def simple_orbit_fun_from_parfile(
 
     correction = interp1d(
         mjds,
-        (toalist.table["tdbld"] * units.d - delays).to(units.d).value,
+        (toalist.table["tdbld"] * u.d - delays).to(u.d).value,
         fill_value="extrapolate",
     )
 
@@ -489,6 +526,10 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
 
     elif ephem is None:
         ephem = "DE421"
+
+    allnum_re = re.compile(r"\d{3}")
+    if allnum_re.match(ephem):
+        ephem = f"DE{ephem}"
 
     orbital_correction_fun = simple_orbit_fun_from_parfile(
         pepoch_mjd - 1,
