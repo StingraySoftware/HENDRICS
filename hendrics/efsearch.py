@@ -42,6 +42,8 @@ from .base import (
     prange,
     show_progress,
     z2_n_detection_level,
+    HAS_PINT,
+    get_model,
 )
 from .fake import scramble
 from .ffa import _z_n_fast_cached, ffa_search, h_test
@@ -53,7 +55,9 @@ from .io import (
     load_events,
     load_folding,
     save_folding,
+    find_file_in_allowed_paths,
 )
+from .fold import filter_energy, fold_events
 
 try:
     import matplotlib as mpl
@@ -1138,17 +1142,29 @@ def dyn_folding_search(
 def print_qffa_results(best_cand_table):
     newtable = copy.deepcopy(best_cand_table)
     good = ~np.isnan(newtable["pulse_amp"])
+    factor = newtable["ncounts"] / newtable["exposure"] / 100
     if len(newtable[good]) == 0:
         print("No pulsations found. Best candidate and upper limit:")
         good = 0
         newtable["Pulsed amplitude (%)"] = [f"<{a:g} (90%)" for a in newtable["pulse_amp_ul_0.9"]]
+        newtable["Pulsed amplitude (ct/s)"] = [
+            f"<{a * f:g} (90%)" for (a, f) in zip(newtable["pulse_amp_ul_0.9"], factor)
+        ]
     else:
         print("Best candidate(s):")
         newtable["Pulsed amplitude (%)"] = [
             f"{a:g} ± {e:g}" for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
         ]
+        newtable["Pulsed amplitude (ct/s)"] = [
+            f"{a * f:g} ± {e * f:g}"
+            for (a, e, f) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"], factor)
+        ]
 
-    print(newtable["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"][good])
+    print(
+        newtable[
+            "mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)", "Pulsed amplitude (ct/s)"
+        ][good]
+    )
 
 
 def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
@@ -1224,6 +1240,110 @@ def get_boundaries_from_level(x, y, level, x0):
     return min_x, max_x
 
 
+def get_best_solution_from_qffa(ef, best_cand_table, out_model_file=None, fold=False):
+
+    # Get these from the first row of the table
+    f, fdot, fddot, ul, max_stat = (
+        best_cand_table["f"][0],
+        best_cand_table["fdot"][0],
+        best_cand_table["fddot"][0],
+        best_cand_table["pulse_amp_ul_0.9"][0],
+        best_cand_table["power"][0],
+    )
+    nbin = best_cand_table.meta["nbin"]
+
+    if (filename := best_cand_table.meta["filename"]) is not None:
+        root = os.path.split(filename)[0]
+        filename = find_file_in_allowed_paths(filename, [".", root])
+        events = load_events(filename)
+        if ef.emin is not None or ef.emax is not None:
+            events, elabel = filter_energy(events, ef.emin, ef.emax)
+
+        if hasattr(ef, "parfile") and ef.parfile is not None:
+            root = os.path.split(filename)[0]
+            parfile = find_file_in_allowed_paths(ef.parfile, [".", root])
+            if not parfile:
+                warnings.warn(f"{ef.parfile} does not exist")
+            else:
+                ef.parfile = parfile
+
+            if parfile and os.path.exists(parfile):
+                events = deorbit_events(events, parfile)
+                base_model = get_model(parfile)
+        else:
+            if HAS_PINT:
+                base_model = create_empty_timing_model()
+
+        if hasattr(ef, "ref_time") and ef.ref_time is not None:
+            ref_time = ef.ref_time
+        elif hasattr(ef, "pepoch") and ef.pepoch is not None:
+            ref_time = (ef.pepoch - events.mjdref) * 86400
+        else:
+            ref_time = (events.time[0] + events.time[-1]) / 2
+
+        pepoch = ref_time / 86400 + events.mjdref
+        solution_dict = {
+            "F0": f,
+            "F1": fdot,
+            "F2": fddot,
+            "PEPOCH": pepoch,
+            "START": events.gti[0, 0] / 86400 + events.mjdref,
+            "FINISH": events.gti[-1, 1] / 86400 + events.mjdref,
+        }
+
+        if HAS_PINT and np.isnan(ul):
+            for k, v in solution_dict.items():
+                getattr(base_model, k).value = v
+            if out_model_file is None:
+                out_model_file = "best_model.par"
+            log.info(f"Writing par file to {out_model_file}")
+            base_model.write_parfile(out_model_file)
+
+        if fold:
+            phase, profile, profile_err = fold_events(
+                copy.deepcopy(events.time),
+                f,
+                fdot,
+                ref_time=ref_time,
+                # gti=copy.deepcopy(events.gti),
+                expocorr=False,
+                nbin=nbin,
+            )
+            table = Table(
+                {
+                    "phase": np.concatenate((phase, phase + 1)),
+                    "profile": np.concatenate((profile, profile)),
+                    "err": np.concatenate((profile_err, profile_err)),
+                }
+            )
+        else:
+            table = None
+        ntimes = max(8, np.rint(max_stat / 20).astype(int))
+        phascommand = (
+            f"HENphaseogram -f {solution_dict['F0']} "
+            f"--fdot {solution_dict['F1']} {ef.filename} -n {nbin} --ntimes {ntimes} --norm meansub"
+        )
+        if ef.parfile and os.path.exists(ef.parfile):
+            phascommand += f" --deorbit-par {parfile}"
+        if hasattr(ef, "emin") and ef.emin is not None:
+            phascommand += f" --emin {ef.emin}"
+        if hasattr(ef, "emin") and ef.emin is not None:
+            phascommand += f" --emax {ef.emax}"
+
+        if hasattr(events, "mjdref") and events.mjdref is not None:
+            phascommand += f" --pepoch {pepoch}"
+
+        log.info("To see the detailed phaseogram, " f"run {phascommand}")
+
+    elif not os.path.exists(ef.filename):
+        warnings.warn(ef.filename + " does not exist")
+        events = None
+        solution_dict = None
+        table = None
+
+    return events, solution_dict, table
+
+
 def _analyze_qffa_results(input_ef_periodogram, fname=None):
     """Search best candidates in a quasi-fast-folding search.
 
@@ -1276,6 +1396,8 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
             "fname",
             "mjd",
             "power",
+            "exposure",
+            "ncounts",
             "f",
             "f_err_n",
             "f_err_p",
@@ -1298,6 +1420,8 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
             float,
             float,
             float,
+            int,
+            float,
             float,
             float,
             float,
@@ -1316,9 +1440,10 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
         ],
     )
     best_cand_table["power"].info.format = ".2f"
+    best_cand_table["exposure"].info.format = ".2f"
     best_cand_table["power_cl_0.9"].info.format = ".2f"
     best_cand_table["fdot"].info.format = ".2e"
-    best_cand_table["fddot"].info.format = "g"
+    best_cand_table["fddot"].info.format = ".2e"
     best_cand_table["pulse_amp_cl_0.1"].info.format = ".2f"
     best_cand_table["pulse_amp_cl_0.9"].info.format = ".2f"
     best_cand_table["pulse_amp"].info.format = ".2f"
@@ -1381,6 +1506,8 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
                 input_ef_periodogram.filename,
                 input_ef_periodogram.pepoch,
                 max_stat,
+                input_ef_periodogram.exposure,
+                input_ef_periodogram.ncounts,
                 f,
                 fmin - f,
                 fmax - f,
@@ -1430,6 +1557,7 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
         and os.path.exists(input_ef_periodogram.filename)
     ):
         best_cand_table.meta["filename"] = input_ef_periodogram.filename
+
     return best_cand_table
 
 
@@ -1450,6 +1578,7 @@ def analyze_qffa_results(fname):
     best_cand_table = _analyze_qffa_results(ef, fname=fname)
 
     best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
+
     return ef, best_cand_table
 
 
@@ -1815,6 +1944,7 @@ def _common_main(args, func):
             mjdref=mjdref,
             pepoch=mjdref + ref_time / 86400,
             oversample=args.oversample,
+            exposure=events.exposure,
         )
         efperiodogram.upperlim = pf_upper_limit(np.max(stats), events.time.size, n=args.N)
         efperiodogram.ncounts = events.time.size
@@ -2124,7 +2254,10 @@ def main_accelsearch(args=None):
     if Nbins > 10**8:
         log.info(f"The number of bins is more than 100 millions: {Nbins}. " "Using memmap.")
 
-    dt = adjust_dt_for_power_of_two(dt, max_length)
+    if hasattr(events, "dt") and events.dt is not None:
+        dt = events.suggest_compatible_dt(dt)
+    else:
+        dt = adjust_dt_for_power_of_two(dt, max_length)
 
     if args.pad_to_double:
         times = memmapped_arange(-0.5 * max_length, 1.5 * max_length, dt)
