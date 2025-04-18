@@ -16,9 +16,10 @@ from stingray.gti import (
 )
 
 from astropy import log
+from astropy.io import fits
 
 from .base import common_name, hen_root
-from .io import HEN_FILE_EXTENSION, load_events, save_events
+from .io import HEN_FILE_EXTENSION, load_events, save_events, is_lightcurve
 
 
 def treat_event_file(
