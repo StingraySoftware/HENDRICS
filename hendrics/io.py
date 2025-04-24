@@ -25,7 +25,8 @@ from stingray.pulse.modeling import SincSquareModel
 from stingray.pulse.search import search_best_peaks
 from stingray.utils import assign_value_if_none
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.logger import AstropyUserWarning
 from astropy.modeling.core import Model
 from astropy.table import Table

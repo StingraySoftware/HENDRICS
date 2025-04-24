@@ -3,7 +3,8 @@
 
 import os
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from hendrics import calibrate, create_gti, io, lcurve, read_events
 from hendrics.tests import _dummy_par
 

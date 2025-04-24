@@ -13,7 +13,8 @@ from stingray.lombscargle import LombScargleCrossspectrum, LombScarglePowerspect
 from stingray.powerspectrum import AveragedPowerspectrum
 from stingray.utils import show_progress
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.logger import AstropyUserWarning
 
 from .base import (

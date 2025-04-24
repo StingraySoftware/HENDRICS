@@ -5,7 +5,8 @@
 
 from stingray.utils import excess_variance
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 
 from .base import hen_root
 from .io import load_lcurve, save_as_qdp

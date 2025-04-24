@@ -4,7 +4,8 @@ import os
 import numpy as np
 from stingray.modeling import fit_powerspectrum
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 
 from .io import HEN_FILE_EXTENSION, load_model, load_pds, save_model, save_pds
 

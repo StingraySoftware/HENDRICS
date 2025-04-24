@@ -6,7 +6,8 @@ import os
 import numpy as np
 import pytest
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from hendrics import calibrate, colors, io, lcurve, plot, read_events
 from hendrics.tests import _dummy_par
 

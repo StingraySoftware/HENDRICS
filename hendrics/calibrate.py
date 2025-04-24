@@ -6,7 +6,8 @@ import warnings
 
 import numpy as np
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 
 from .base import get_file_extension
 from .io import HEN_FILE_EXTENSION, load_events, save_events

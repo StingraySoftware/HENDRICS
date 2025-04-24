@@ -5,7 +5,8 @@ import subprocess as sp
 
 import numpy as np
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 
 from .base import get_file_extension
 from .io import get_file_type

@@ -23,7 +23,8 @@ from stingray.stats import (
 )
 from stingray.utils import assign_value_if_none
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.logger import AstropyUserWarning
 from astropy.table import Table
 from astropy.utils.introspection import minversion

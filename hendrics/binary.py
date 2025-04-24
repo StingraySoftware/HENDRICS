@@ -2,7 +2,8 @@
 
 import numpy as np
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.coordinates import SkyCoord
 
 from .base import deorbit_events, interpret_bintime

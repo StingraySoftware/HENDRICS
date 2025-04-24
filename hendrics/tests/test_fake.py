@@ -7,7 +7,8 @@ import numpy as np
 import pytest
 from stingray import EventList
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.io import fits
 from hendrics import base, calibrate, fake, io, read_events
 from hendrics.base import HAS_PINT

@@ -4,7 +4,8 @@
 import numpy as np
 from stingray.lightcurve import Lightcurve
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 
 from .base import hen_root
 from .io import HEN_FILE_EXTENSION, load_events, save_lcurve

@@ -13,7 +13,8 @@ from scipy.interpolate import interp1d
 from stingray.pulse.search import phaseogram
 from stingray.utils import assign_value_if_none
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.logger import AstropyUserWarning
 from astropy.stats import poisson_conf_interval
 

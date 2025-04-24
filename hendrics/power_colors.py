@@ -9,7 +9,8 @@ from stingray import DynamicalCrossspectrum, DynamicalPowerspectrum, StingrayTim
 from stingray.gti import cross_two_gtis
 from stingray.power_colors import hue_from_power_color
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 
 from .base import common_name, hen_root, interpret_bintime
 from .io import HEN_FILE_EXTENSION, load_events, save_timeseries

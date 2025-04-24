@@ -27,7 +27,8 @@ from stingray.stats import (
     z2_n_probability,
 )
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.io.registry import identify_format
 from astropy.table import Table
 

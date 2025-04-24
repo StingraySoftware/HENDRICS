@@ -15,7 +15,8 @@ from stingray.gti import (
     cross_two_gtis,
 )
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 
 from .base import common_name, hen_root
 from .io import HEN_FILE_EXTENSION, load_events, save_events

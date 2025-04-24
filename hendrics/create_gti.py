@@ -10,7 +10,8 @@ from stingray.gti import (
     cross_gtis,
 )
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.logger import AstropyUserWarning
 
 from .base import _assign_value_if_none, hen_root

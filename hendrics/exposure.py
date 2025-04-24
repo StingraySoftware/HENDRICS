@@ -12,7 +12,8 @@ from stingray.gti import create_gti_mask
 from stingray.io import load_events_and_gtis
 from stingray.lightcurve import Lightcurve
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 
 from .base import _assign_value_if_none, hen_root
 from .io import HEN_FILE_EXTENSION, get_file_type, save_lcurve

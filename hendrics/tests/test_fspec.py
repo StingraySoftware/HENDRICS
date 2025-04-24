@@ -13,7 +13,8 @@ import pytest
 import stingray
 from stingray import EventList
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from hendrics import (
     base,
     fspec,

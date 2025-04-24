@@ -7,7 +7,8 @@ import subprocess as sp
 import numpy as np
 import pytest
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.io.registry import IORegistryError
 from hendrics import (
     base,

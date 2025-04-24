@@ -1,7 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Function to sum frequency spectra."""
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 
 from .base import _assign_value_if_none
 from .fspec import average_periodograms

@@ -12,7 +12,8 @@ from stingray.io import get_key_from_mission_info, read_mission_info
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.io.fits import Header
 
 from .base import deorbit_events, get_file_format, r_in

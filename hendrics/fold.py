@@ -12,7 +12,8 @@ from scipy.signal import savgol_filter
 from stingray.pulse.pulsar import fold_events, htest, pulse_phase
 from stingray.utils import assign_value_if_none, fft, fftfreq, ifft
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.stats import poisson_conf_interval
 
 from .base import hen_root, normalize_dyn_profile

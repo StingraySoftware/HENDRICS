@@ -10,7 +10,8 @@ from stingray.gti import contiguous_regions, create_gti_mask, cross_gtis
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 
-from astropy import log
+import logging
+logger = logging.getLogger(__name__)
 from astropy.logger import AstropyUserWarning
 
 from .base import (
