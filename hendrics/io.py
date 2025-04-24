@@ -199,7 +199,7 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> tuple[EventList, s
     # For some reason the doctest doesn't work if I don't do this instead
     # of using warnings.warn
     if elabel == "":
-        log.error("No Energy or PI information available. " "No energy filter applied to events")
+        logger.error("No Energy or PI information available. " "No energy filter applied to events")
         return ev, ""
 
     if emax is None and emin is None:
@@ -326,7 +326,7 @@ def ref_mjd(fits_file, hdu=1):
 
     if isinstance(fits_file, Iterable) and not is_string(fits_file):
         fits_file = fits_file[0]
-        log.info("opening %s", fits_file)
+        logger.info("opening %s", fits_file)
     with pf.open(fits_file) as hdul:
         return high_precision_keyword_read(hdul[hdu].header, "MJDREF")
 
@@ -383,7 +383,7 @@ def save_as_netcdf(vars, varnames, formats, fname):
             else:
                 vnc[:] = v
         except Exception:
-            log.error("Bad variable:", varnames[iv], formats[iv], dimspec, v)
+            logger.error("Bad variable:", varnames[iv], formats[iv], dimspec, v)
             raise
     rootgrp.close()
 
@@ -894,7 +894,7 @@ def load_pds(fname, nosub=False):
 # ---- GENERIC function to save stuff.
 def _load_data_pickle(fname, kind="data"):
     """Load generic data in pickle format."""
-    log.info(f"Loading {kind} and info from {fname}")
+    logger.info(f"Loading {kind} and info from {fname}")
     with open(fname, "rb") as fobj:
         result = pickle.load(fobj)
     return result
@@ -902,7 +902,7 @@ def _load_data_pickle(fname, kind="data"):
 
 def _save_data_pickle(struct, fname, kind="data"):
     """Save generic data in pickle format."""
-    log.info(f"Saving {kind} and info to {fname}")
+    logger.info(f"Saving {kind} and info to {fname}")
     with open(fname, "wb") as fobj:
         pickle.dump(struct, fobj)
 
@@ -995,7 +995,7 @@ def _split_high_precision_number(varname, var, probesize):
 
 def _save_data_nc(struct, fname, kind="data"):
     """Save generic data in netcdf format."""
-    log.info(f"Saving {kind} and info to {fname}")
+    logger.info(f"Saving {kind} and info to {fname}")
     varnames = []
     values = []
     formats = []
@@ -1160,11 +1160,11 @@ def save_as_ascii(cols, filename="out.txt", colnames=None, append=False):
     if ndim == 1:
         cols = [cols]
     elif ndim >= 3 or ndim == 0:
-        log.error("Only one- or two-dim arrays accepted")
+        logger.error("Only one- or two-dim arrays accepted")
         return -1
     lcol = len(cols[0])
 
-    log.debug(f"{repr(cols)} {repr(np.shape(cols))}")
+    logger.debug(f"{repr(cols)} {repr(np.shape(cols))}")
     if append:
         txtfile = open(filename, "a")
     else:
@@ -1261,7 +1261,7 @@ def sort_files(files):
     ftypes = []
 
     for f in files:
-        log.info("Loading file " + f)
+        logger.info("Loading file " + f)
         ftype, contents = get_file_type(f)
         instr = contents.instr
         ftypes.append(ftype)
@@ -1332,13 +1332,13 @@ def load_model(modelstring):
 
     # modelstring is a pickle file
     if modelstring.endswith(".p"):
-        log.debug("Loading model from pickle file")
+        logger.debug("Loading model from pickle file")
         with open(modelstring, "rb") as fobj:
             modeldata = pickle.load(fobj)
         return modeldata["model"], modeldata["kind"], modeldata["constraints"]
     # modelstring is a python file
     elif modelstring.endswith(".py"):
-        log.debug("Loading model from Python source")
+        logger.debug("Loading model from Python source")
         modulename = modelstring.replace(".py", "")
         sys.path.append(os.getcwd())
         # If a module with the same name was already imported, unload it!
@@ -1395,7 +1395,7 @@ def find_file_in_allowed_paths(fname, other_paths=None):
         for p in other_paths:
             fullpath = os.path.join(p, bname)
             if os.path.exists(fullpath):
-                log.info(f"Parfile found at different path: {fullpath}")
+                logger.info(f"Parfile found at different path: {fullpath}")
                 return fullpath
 
     return False

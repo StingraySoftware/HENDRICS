@@ -220,8 +220,8 @@ def main(args=None):
     label = ""
     if args.label is not None:
         label = "_" + args.label.lstrip("_")
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENvarenergy.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENvarenergy.log"):
         filelist = []
         energy_spec = (
             float(args.energy_values[0]),
@@ -232,7 +232,7 @@ def main(args=None):
         from .io import sort_files
 
         if args.cross_instr:
-            log.info("Sorting file list")
+            logger.info("Sorting file list")
             sorted_files = sort_files(args.files)
 
             warnings.warn(

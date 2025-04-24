@@ -242,7 +242,7 @@ def decide_binary_parameters(
     ]
 
     df = 1 / length
-    log.info(f"Recommended frequency steps: {int(np.diff(freq_range)[0] // df + 1)}")
+    logger.info(f"Recommended frequency steps: {int(np.diff(freq_range)[0] // df + 1)}")
     while count < NMAX:
         # In any case, only the first loop deletes the file
         if count > 0:
@@ -568,7 +568,7 @@ def transient_search(
     times -= meantime
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
-    log.info(f"Maximum error on the phase expected when casting to double: " f"{maxerr}")
+    logger.info(f"Maximum error on the phase expected when casting to double: " f"{maxerr}")
     if maxerr > 1 / nbin / 10:
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
@@ -1065,9 +1065,9 @@ def folding_search(
     fdotepsilon = 1e-2 * fdotstep
     trial_fdots = np.arange(fdotmin, fdotmax + fdotepsilon, fdotstep)
     if len(trial_fdots) > 1:
-        log.info(f"Searching {len(trial_freqs)} frequencies and {len(trial_fdots)} fdots")
+        logger.info(f"Searching {len(trial_freqs)} frequencies and {len(trial_fdots)} fdots")
     else:
-        log.info(f"Searching {len(trial_freqs)} frequencies")
+        logger.info(f"Searching {len(trial_freqs)} frequencies")
 
     results = func(
         times,
@@ -1647,7 +1647,7 @@ def _common_parser(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
     return args
 
 
@@ -1664,7 +1664,7 @@ def _common_main(args, func):
 
     outfiles = []
     for i_f, fname in enumerate(files):
-        log.info(f"Treating {fname}")
+        logger.info(f"Treating {fname}")
         mjdref = 0
         kwargs = {}
         baseline = args.nbin
@@ -1710,7 +1710,7 @@ def _common_main(args, func):
             oversample = assign_value_if_none(args.oversample, 2)
 
         if args.transient and ftype == "lc":
-            log.error("Transient search not yet available for light curves")
+            logger.error("Transient search not yet available for light curves")
         if args.transient and ftype == "events":
             results = transient_search(
                 events.time,
@@ -1864,13 +1864,13 @@ def _common_main(args, func):
 
 def main_efsearch(args=None):
     """Main function called by the `HENefsearch` command line script."""
-    with log.log_to_file("HENefsearch.log"):
+    with logger.log_to_file("HENefsearch.log"):
         return _common_main(args, epoch_folding_search)
 
 
 def main_zsearch(args=None):
     """Main function called by the `HENzsearch` command line script."""
-    with log.log_to_file("HENzsearch.log"):
+    with logger.log_to_file("HENzsearch.log"):
         return _common_main(args, z_n_search)
 
 
@@ -1954,7 +1954,7 @@ def main_z2vspf(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
     outfile = args.outfile
     if outfile is None:
@@ -2070,7 +2070,7 @@ def main_accelsearch(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
     outfile = args.outfile
     if outfile is None:
@@ -2102,7 +2102,7 @@ def main_accelsearch(args=None):
     delta_z = args.delta_z
     nproc = args.nproc
 
-    log.info(f"Opening file {args.fname}")
+    logger.info(f"Opening file {args.fname}")
     events = load_events(args.fname)
 
     if args.deorbit_par is not None:
@@ -2110,7 +2110,7 @@ def main_accelsearch(args=None):
 
     nyq = fmax * 5
     dt = 0.5 / nyq
-    log.info(f"Searching using dt={dt}")
+    logger.info(f"Searching using dt={dt}")
 
     if emin is not None or emax is not None:
         events, elabel = filter_energy(events, emin, emax)
@@ -2123,7 +2123,7 @@ def main_accelsearch(args=None):
     t0 = GTI[0, 0]
     Nbins = int(np.rint(max_length / dt))
     if Nbins > 10**8:
-        log.info(f"The number of bins is more than 100 millions: {Nbins}. " "Using memmap.")
+        logger.info(f"The number of bins is more than 100 millions: {Nbins}. " "Using memmap.")
 
     dt = adjust_dt_for_power_of_two(dt, max_length)
 
@@ -2146,7 +2146,7 @@ def main_accelsearch(args=None):
         )
 
     if args.detrend is not None:
-        log.info("Detrending light curve")
+        logger.info("Detrending light curve")
         Nsmooth = args.detrend / dt / 3
         plt.figure("Bu")
         plt.plot(times, counts)
@@ -2161,7 +2161,7 @@ def main_accelsearch(args=None):
         plt.plot(times, counts)
         plt.show()
 
-    log.info(f"Times and counts have {times.size} bins")
+    logger.info(f"Times and counts have {times.size} bins")
     # Note: det_p_value was calculated as
     # pds_probability(pds_detection_level(0.015) * 0.64) => 0.068
     # where 0.64 indicates the 36% detection level drop at the bin edges.
@@ -2233,7 +2233,7 @@ def main_accelsearch(args=None):
     else:
         print("No candidates found")
 
-    log.info("Writing results to file")
+    logger.info("Writing results to file")
     results.write(outfile, overwrite=True)
 
     return outfile

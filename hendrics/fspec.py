@@ -97,7 +97,7 @@ def _wrap_fun_cpds(arglist):
     try:
         return calc_cpds(f1, f2, outname=outname, **kwargs)
     except Exception as e:
-        log.error(f"Error in {f1}/{f2}: {e}")
+        logger.error(f"Error in {f1}/{f2}: {e}")
         return None
 
 
@@ -107,7 +107,7 @@ def _wrap_fun_pds(argdict):
     try:
         return calc_pds(fname, **argdict)
     except Exception as e:
-        log.error(f"Error in {fname}: {e}")
+        logger.error(f"Error in {fname}: {e}")
         return None
 
 
@@ -315,7 +315,7 @@ def calc_pds(
     pds.back_phots = back_ctrate * fftlen
     pds.mjdref = mjdref
 
-    log.info(f"Saving PDS to {outname}")
+    logger.info(f"Saving PDS to {outname}")
     save_pds(
         pds,
         outname,
@@ -398,9 +398,9 @@ def calc_cpds(
         warnings.warn("File exists, and noclobber option used. Skipping")
         return
 
-    log.info(f"Loading file {lcfile1}...")
+    logger.info(f"Loading file {lcfile1}...")
     ftype1, lc1 = get_file_type(lcfile1)
-    log.info(f"Loading file {lcfile2}...")
+    logger.info(f"Loading file {lcfile2}...")
     ftype2, lc2 = get_file_type(lcfile2)
     instr1 = lc1.instr
     instr2 = lc2.instr
@@ -467,7 +467,7 @@ def calc_cpds(
     cpds.lag = lags
     cpds.lag_err = lags_err
 
-    log.info(f"Saving CPDS to {outname}")
+    logger.info(f"Saving CPDS to {outname}")
     save_pds(
         cpds,
         outname,
@@ -551,8 +551,8 @@ def calc_fspec(
     [5] Miyamoto et al. 1991, ApJ, 383, 784
 
     """
-    log.info(f"Using {normalization} normalization")
-    log.info(f"Using {nproc} processors")
+    logger.info(f"Using {normalization} normalization")
+    logger.info(f"Using {nproc} processors")
 
     if do_calc_pds:
         wrapped_file_dicts = []
@@ -586,7 +586,7 @@ def calc_fspec(
         files1 = files[0::2]
         files2 = files[1::2]
     else:
-        log.info("Sorting file list")
+        logger.info("Sorting file list")
         sorted_files = sort_files(files)
 
         warnings.warn(
@@ -848,9 +848,9 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
-    with log.log_to_file("HENfspec.log"):
+    with logger.log_to_file("HENfspec.log"):
         bintime = interpret_bintime(args.bintime)
 
         fftlen = args.fftlen

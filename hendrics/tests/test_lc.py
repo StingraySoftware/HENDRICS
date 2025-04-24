@@ -35,7 +35,7 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
-log.setLevel("DEBUG")
+logger.setLevel("DEBUG")
 
 
 class TestLcurve:

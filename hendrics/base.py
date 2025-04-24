@@ -333,7 +333,7 @@ def common_name(str1, str2, default="common"):
     common_str = common_str.lstrip("_").lstrip("-")
     if common_str == "":
         common_str = default
-    # log.debug('common_name: %s %s -> %s', str1, str2, common_str)
+    # logger.debug('common_name: %s %s -> %s', str1, str2, common_str)
     return common_str
 
 
@@ -482,11 +482,11 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
 
     length_d = length / 86400
     ntimes = max(100, int(length // 60), int(length_d / porb * 100))
-    log.info(f"Interpolating orbital solution with {ntimes} points")
+    logger.info(f"Interpolating orbital solution with {ntimes} points")
 
     if ephem is None and hasattr(events, "ephem") and events.ephem is not None:
         ephem = events.ephem
-        log.info(f"Using default ephemeris: {ephem}")
+        logger.info(f"Using default ephemeris: {ephem}")
 
     elif ephem is None:
         ephem = "DE421"
@@ -1032,14 +1032,14 @@ def adjust_dt_for_power_of_two(dt, length, strict=False):
     INFO: ...
     >>> assert length / new_dt == 72
     """
-    log.info("Adjusting bin time to closest power of 2 of bins.")
+    logger.info("Adjusting bin time to closest power of 2 of bins.")
     nbin = length / dt
     closest_to_pow2 = 2 ** np.ceil(np.log2(nbin))
     if closest_to_pow2 > 1.5 * nbin and not strict:
-        log.info("Too many bins: using powers of 2, 3, and 5.")
+        logger.info("Too many bins: using powers of 2, 3, and 5.")
         return adjust_dt_for_small_power(dt, length)
     new_dt = length / closest_to_pow2
-    log.info(f"New bin time: {new_dt} (nbin {nbin} -> {closest_to_pow2})")
+    logger.info(f"New bin time: {new_dt} (nbin {nbin} -> {closest_to_pow2})")
     return new_dt
 
 
@@ -1061,7 +1061,7 @@ def adjust_dt_for_small_power(dt, length):
         nbin_new += 1
 
     new_dt = length / losp[nbin_new]
-    log.info(f"New bin time: {new_dt} (nbin {nbin} -> {losp[nbin_new]})")
+    logger.info(f"New bin time: {new_dt} (nbin {nbin} -> {losp[nbin_new]})")
     return new_dt
 
 

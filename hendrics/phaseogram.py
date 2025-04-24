@@ -885,7 +885,7 @@ def run_interactive_phaseogram(
 
     if binary:
         if binary_parameters[0] is None and model is not None:
-            log.info("Reading binary parameters from parameter file")
+            logger.info("Reading binary parameters from parameter file")
             pb = model.PB.value * 86400
             a1 = model.A1.value
             key = "T0" if hasattr(model, "T0") else "TASC"
@@ -1038,9 +1038,9 @@ def main_phaseogram(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
-    with log.log_to_file("HENphaseogram.log"):
+    with logger.log_to_file("HENphaseogram.log"):
         if args.periodogram is None and args.freq is None:
             raise ValueError("One of -f or --periodogram arguments MUST be " "specified")
         elif args.periodogram is not None:

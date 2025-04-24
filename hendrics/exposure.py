@@ -353,8 +353,8 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENexposure.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENexposure.log"):
         lc_file = args.lcfile
         uf_file = args.uffile
 

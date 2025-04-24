@@ -41,7 +41,7 @@ except NameError:
 
 HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
-log.setLevel("DEBUG")
+logger.setLevel("DEBUG")
 # log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 

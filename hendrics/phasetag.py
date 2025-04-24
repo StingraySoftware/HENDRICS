@@ -103,7 +103,7 @@ def phase_tag(
 
     # ------- now apply period derivatives ------
 
-    log.info("Calculating phases...")
+    logger.info("Calculating phases...")
     ref_phase = 0
     ref_time = 0
 

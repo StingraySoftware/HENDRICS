@@ -273,13 +273,13 @@ def main_presto(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
     bintime = np.longdouble(interpret_bintime(args.bintime))
 
     if args.energy_interval is None:
         args.energy_interval = [None, None]
-    with log.log_to_file("HENbinary.log"):
+    with logger.log_to_file("HENbinary.log"):
         for f in args.files:
             print(f)
             outfile = f.replace(HEN_FILE_EXTENSION, ".dat")

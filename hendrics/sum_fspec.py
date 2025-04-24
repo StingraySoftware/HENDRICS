@@ -27,7 +27,7 @@ def sum_fspec(files, outname=None):
             yield contents
 
     tot_contents = average_periodograms(check_and_distribute_files(files))
-    log.info(f"Saving {pdstype} to {outname}")
+    logger.info(f"Saving {pdstype} to {outname}")
     save_pds(tot_contents, outname)
 
     return tot_contents

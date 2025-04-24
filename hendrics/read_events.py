@@ -71,7 +71,7 @@ def treat_event_file(
         and the end (if pair of values) of GTIs.
     """
     # gtistring = assign_value_if_none(gtistring, "GTI,GTI0,STDGTI")
-    log.info(f"Opening {filename}")
+    logger.info(f"Opening {filename}")
 
     events = EventList.read(
         filename,
@@ -92,7 +92,7 @@ def treat_event_file(
         lc = events.to_lc(bin_time_for_occultations)
         meanrate = np.median(lc.counts)
         if meanrate > 25:
-            log.info("Filtering out occultations")
+            logger.info("Filtering out occultations")
             good_gti = create_gti_mask(lc.time, lc.gti, safe_interval=safe_interval)
             good = lc.counts > 0
             new_bad = (~good) & good_gti
@@ -185,10 +185,10 @@ def _wrap_fun(arglist):
     try:
         return treat_event_file(f, **kwargs)
     except IndexError:
-        log.error(f"Empty or corrupt event file: {f}")
+        logger.error(f"Empty or corrupt event file: {f}")
     except Exception as e:
-        log.error(f"Unknown error: {f}")
-        log.error(f"{str(e)}")
+        logger.error(f"Unknown error: {f}")
+        logger.error(f"{str(e)}")
 
 
 def multiple_event_concatenate(event_lists):
@@ -343,12 +343,12 @@ def join_many_eventlists(eventfiles, new_event_file=None, ignore_instr=False):
         new_event_file = "joint_ev" + HEN_FILE_EXTENSION
 
     N = len(eventfiles)
-    log.info(f"Reading {eventfiles[0]} ({1}/{N})")
+    logger.info(f"Reading {eventfiles[0]} ({1}/{N})")
     first_events = load_events(eventfiles[0])
     all_events = [first_events]
     instr = first_events.instr
     for i, event_file in enumerate(eventfiles[1:]):
-        log.info(f"Reading {event_file} ({i + 1}/{N})")
+        logger.info(f"Reading {event_file} ({i + 1}/{N})")
         events = load_events(event_file)
         if not np.isclose(events.mjdref, first_events.mjdref):
             warnings.warn(f"{event_file} has a different MJDREF")
@@ -624,9 +624,9 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
-    with log.log_to_file("HENreadevents.log"):
+    with logger.log_to_file("HENreadevents.log"):
         argdict = {
             "noclobber": args.noclobber,
             "gti_split": args.gti_split,

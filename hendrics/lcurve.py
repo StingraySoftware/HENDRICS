@@ -116,9 +116,9 @@ def join_lightcurves(lcfilelist, outfile="out_lc" + HEN_FILE_EXTENSION):
     lcdatas = []
 
     for lfc in lcfilelist:
-        log.info(f"Loading file {lfc}...")
+        logger.info(f"Loading file {lfc}...")
         lcdata = load_lcurve(lfc)
-        log.info("Done.")
+        logger.info("Done.")
         lcdatas.append(lcdata)
         del lcdata
 
@@ -131,7 +131,7 @@ def join_lightcurves(lcfilelist, outfile="out_lc" + HEN_FILE_EXTENSION):
                 tag = ""
             else:
                 tag = instr
-            log.info(f"Saving joined light curve to {outfile}")
+            logger.info(f"Saving joined light curve to {outfile}")
 
             dname, fname = os.path.split(outfile)
             save_lcurve(outlcs[instr], os.path.join(dname, tag + fname))
@@ -226,7 +226,7 @@ def scrunch_lightcurves(lcfilelist, outfile="out_scrlc" + HEN_FILE_EXTENSION, sa
         lcdata = join_lightcurves(lcfilelist, outfile=None)
 
     lc0 = scrunch_lightcurve_objs(list(lcdata.values()))
-    log.info(f"Saving scrunched light curve to {outfile}")
+    logger.info(f"Saving scrunched light curve to {outfile}")
     save_lcurve(lc0, outfile)
 
     return lc0
@@ -340,9 +340,9 @@ def lcurve_from_events(
     noclobber : bool
         If True, do not overwrite existing files
     """
-    log.info(f"Loading file {f}...")
+    logger.info(f"Loading file {f}...")
     evdata = load_events(f)
-    log.info("Done.")
+    logger.info("Done.")
     weight_on_tag = ""
     weights = None
     if weight_on is not None:
@@ -483,7 +483,7 @@ def lcurve_from_events(
             save_lcurve(l0, outf)
             outfiles.append(outf)
     else:
-        log.info(f"Saving light curve to {outfile}")
+        logger.info(f"Saving light curve to {outfile}")
         save_lcurve(lc, outfile)
         outfiles = [outfile]
 
@@ -686,7 +686,7 @@ def lcurve_from_fits(
     lc.instr = instr
     lc.header = lchdulist[ratehdu].header.tostring()
 
-    log.info(f"Saving light curve to {outfile}")
+    logger.info(f"Saving light curve to {outfile}")
     save_lcurve(lc, outfile)
     return [outfile]
 
@@ -754,7 +754,7 @@ def lcurve_from_txt(
 
     lc.instr = "EXTERN"
 
-    log.info(f"Saving light curve to {outfile}")
+    logger.info(f"Saving light curve to {outfile}")
     save_lcurve(lc, outfile)
     return [outfile]
 
@@ -855,7 +855,7 @@ def _execute_lcurve(args):
         outfiles = list(pool.imap_unordered(wrap_fun, arglist))
         pool.close()
 
-    log.debug(f"{outfiles}")
+    logger.debug(f"{outfiles}")
 
     if args.scrunch:
         scrunch_lightcurves(outfiles)
@@ -957,9 +957,9 @@ def main(args=None):
     args = parser.parse_args(args)
     if args.debug:
         args.loglevel = "DEBUG"
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
-    with log.log_to_file("HENlcurve.log"):
+    with logger.log_to_file("HENlcurve.log"):
         _execute_lcurve(args)
 
 
@@ -1000,8 +1000,8 @@ def scrunch_main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENscrunchlc.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENscrunchlc.log"):
         scrunch_lightcurves(files, args.out)
 
 
@@ -1058,6 +1058,6 @@ def baseline_main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENbaseline.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENbaseline.log"):
         _baseline_lightcurves(files, args.out, args.asymmetry, args.lam)
