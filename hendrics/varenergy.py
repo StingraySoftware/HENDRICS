@@ -13,8 +13,7 @@ from stingray.varenergyspectrum import (
 )
 from stingray.varenergyspectrum import VarEnergySpectrum as StingrayVes
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 from astropy.table import Table
 
 from .base import hen_root, interpret_bintime

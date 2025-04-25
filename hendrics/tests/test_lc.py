@@ -7,8 +7,7 @@ import numpy as np
 import pytest
 from stingray.lightcurve import Lightcurve
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 from astropy.logger import AstropyUserWarning
 from hendrics import (
     base,

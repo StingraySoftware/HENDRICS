@@ -15,8 +15,7 @@ from stingray.gti import (
     cross_two_gtis,
 )
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 
 from .base import common_name, hen_root
 from .io import HEN_FILE_EXTENSION, load_events, save_events

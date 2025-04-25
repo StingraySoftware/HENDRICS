@@ -12,8 +12,7 @@ from stingray.gti import create_gti_mask
 from stingray.io import load_events_and_gtis
 from stingray.lightcurve import Lightcurve
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 
 from .base import _assign_value_if_none, hen_root
 from .io import HEN_FILE_EXTENSION, get_file_type, save_lcurve

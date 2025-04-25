@@ -6,8 +6,7 @@ import warnings
 
 import numpy as np
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 
 from .base import get_file_extension
 from .io import HEN_FILE_EXTENSION, load_events, save_events

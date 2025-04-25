@@ -1,5 +1,4 @@
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 
 from .base import hen_root
 from .io import load_pds, save_as_qdp

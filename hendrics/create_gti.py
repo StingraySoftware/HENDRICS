@@ -10,8 +10,7 @@ from stingray.gti import (
     cross_gtis,
 )
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 from astropy.logger import AstropyUserWarning
 
 from .base import _assign_value_if_none, hen_root

@@ -5,8 +5,7 @@ import subprocess as sp
 
 import numpy as np
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 
 from .base import get_file_extension
 from .io import get_file_type

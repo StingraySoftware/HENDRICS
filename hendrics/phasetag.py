@@ -7,8 +7,7 @@ from stingray.io import load_events_and_gtis, ref_mjd
 from stingray.pulse.pulsar import phase_exposure, pulse_phase
 
 import astropy.io.fits as pf
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 from astropy.logger import AstropyUserWarning
 
 from .base import _assign_value_if_none, hen_root, splitext_improved

@@ -11,8 +11,7 @@ import numpy as np
 from stingray.gti import create_gti_mask
 from stingray.power_colors import plot_hues, plot_power_colors
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 from astropy.modeling import Model
 from astropy.modeling.models import Const1D
 from astropy.stats import poisson_conf_interval

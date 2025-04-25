@@ -1,8 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to rebin light curves and frequency spectra."""
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 
 from .base import get_file_extension
 from .io import HEN_FILE_EXTENSION, get_file_type, save_lcurve, save_pds

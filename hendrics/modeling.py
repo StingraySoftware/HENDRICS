@@ -4,8 +4,7 @@ import os
 import numpy as np
 from stingray.modeling import fit_powerspectrum
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 
 from .io import HEN_FILE_EXTENSION, load_model, load_pds, save_model, save_pds
 

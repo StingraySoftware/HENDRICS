@@ -2,8 +2,7 @@
 
 import numpy as np
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 from astropy.coordinates import SkyCoord
 
 from .base import deorbit_events, interpret_bintime

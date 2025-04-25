@@ -5,8 +5,7 @@
 
 from stingray.utils import excess_variance
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 
 from .base import hen_root
 from .io import load_lcurve, save_as_qdp

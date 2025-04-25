@@ -3,8 +3,7 @@
 
 import os
 
-import logging
-logger = logging.getLogger(__name__)
+from hendrics.logging_setup import logger
 from hendrics import calibrate, create_gti, io, lcurve, read_events
 from hendrics.tests import _dummy_par
 
