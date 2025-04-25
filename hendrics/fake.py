@@ -12,7 +12,7 @@ from stingray.io import get_key_from_mission_info, read_mission_info
 from stingray.lightcurve import Lightcurve
 from stingray.utils import assign_value_if_none
 
-from astropy import log
+from hendrics.logging_setup import logger
 from astropy.io.fits import Header
 
 from .base import deorbit_events, get_file_format, r_in
@@ -573,7 +573,7 @@ def main_scramble(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
     event_list = load_events(args.fname)
     emin = emax = None
@@ -691,8 +691,8 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENfake.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENfake.log"):
         additional_columns = {}
         livetime = None
         if args.lc is None and args.ctrate is None and args.event_list is not None:
@@ -711,7 +711,7 @@ def main(args=None):
             nevents = len(event_list.time)
             event_list.pi = np.zeros(nevents, dtype=int)
             event_list.mjdref = args.mjdref
-            log.info(f"{nevents} events generated")
+            logger.info(f"{nevents} events generated")
         else:
             event_list = None
 
@@ -724,7 +724,7 @@ def main(args=None):
                 event_list, deadtime, dt_sigma=deadtime_sigma, return_all=True
             )
 
-            log.info(f"{len(event_list.time)} events after filter")
+            logger.info(f"{len(event_list.time)} events after filter")
 
             prior = np.zeros_like(event_list.time)
 

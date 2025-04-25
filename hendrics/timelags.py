@@ -1,4 +1,4 @@
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .base import hen_root
 from .io import load_pds, save_as_qdp
@@ -21,8 +21,8 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENlags.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENlags.log"):
         filelist = []
         for fname in args.files:
             cross = load_pds(fname)

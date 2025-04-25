@@ -4,7 +4,7 @@
 import numpy as np
 from stingray.lightcurve import Lightcurve
 
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .base import hen_root
 from .io import HEN_FILE_EXTENSION, load_events, save_lcurve
@@ -43,9 +43,9 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
-    with log.log_to_file("HENcolors.log"):
+    with logger.log_to_file("HENcolors.log"):
         energies = [
             [args.energies[0], args.energies[1]],
             [args.energies[2], args.energies[3]],

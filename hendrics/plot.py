@@ -11,7 +11,7 @@ import numpy as np
 from stingray.gti import create_gti_mask
 from stingray.power_colors import plot_hues, plot_power_colors
 
-from astropy import log
+from hendrics.logging_setup import logger
 from astropy.modeling import Model
 from astropy.modeling.models import Const1D
 from astropy.stats import poisson_conf_interval
@@ -299,7 +299,7 @@ def plot_pds(
             const = _get_const(models)
             if const is None:
                 p, pcov = curve_fit(_baseline_fun, freq, pds, p0=[2], sigma=epds)
-                log.info(f"White noise level is {p[0]}")
+                logger.info(f"White noise level is {p[0]}")
                 const = p[0]
 
             pds -= const
@@ -529,7 +529,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             if hasattr(events, "mjdref") and events.mjdref is not None:
                 phascommand += f" --pepoch {pepoch}"
 
-            log.info("To see the detailed phaseogram, " f"run {phascommand}")
+            logger.info("To see the detailed phaseogram, " f"run {phascommand}")
 
         elif not os.path.exists(ef.filename):
             warnings.warn(ef.filename + " does not exist")
@@ -768,7 +768,7 @@ def plot_lc(
 
     plt.figure("LC " + figlabel)
     for lcfile in lcfiles:
-        log.info(f"Loading {lcfile}...")
+        logger.info(f"Loading {lcfile}...")
         lcdata = load_lcurve(lcfile)
 
         time = lcdata.time

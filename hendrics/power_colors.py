@@ -9,7 +9,7 @@ from stingray import DynamicalCrossspectrum, DynamicalPowerspectrum, StingrayTim
 from stingray.gti import cross_two_gtis
 from stingray.power_colors import hue_from_power_color
 
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .base import common_name, hen_root, interpret_bintime
 from .io import HEN_FILE_EXTENSION, load_events, save_timeseries
@@ -175,14 +175,14 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
     files = args.files
     if args.cross:
         files = list(zip(files[::2], files[1::2]))
 
     outfiles = []
-    with log.log_to_file("HENcolors.log"):
+    with logger.log_to_file("HENcolors.log"):
         if args.outfile is not None and len(files) > 1:
             raise ValueError("Specify --output only when processing " "a single file")
         bintime = np.longdouble(interpret_bintime(args.bintime))

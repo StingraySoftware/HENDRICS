@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Functions to rebin light curves and frequency spectra."""
 
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .base import get_file_extension
 from .io import HEN_FILE_EXTENSION, get_file_type, save_lcurve, save_pds
@@ -29,7 +29,7 @@ def rebin_file(filename, rebin):
     outfile = filename.replace(
         get_file_extension(filename), f"_rebin{rebin:g}" + HEN_FILE_EXTENSION
     )
-    log.info(f"Saving {ftype} to {outfile}")
+    logger.info(f"Saving {ftype} to {outfile}")
     func(contents, outfile, **options)
 
 
@@ -65,8 +65,8 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENrebin.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENrebin.log"):
         rebin = args.rebin
         for f in files:
             rebin_file(f, rebin)

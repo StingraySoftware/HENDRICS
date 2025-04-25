@@ -5,7 +5,7 @@
 
 from stingray.utils import excess_variance
 
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .base import hen_root
 from .io import load_lcurve, save_as_qdp
@@ -65,8 +65,8 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENexcvar.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENexcvar.log"):
         filelist = []
         for fname in args.files:
             lcurve = load_lcurve(fname)

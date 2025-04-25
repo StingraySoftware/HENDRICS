@@ -12,7 +12,7 @@ from scipy.signal import savgol_filter
 from stingray.pulse.pulsar import fold_events, htest, pulse_phase
 from stingray.utils import assign_value_if_none, fft, fftfreq, ifft
 
-from astropy import log
+from hendrics.logging_setup import logger
 from astropy.stats import poisson_conf_interval
 
 from .base import hen_root, normalize_dyn_profile
@@ -443,7 +443,7 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
     factor = np.std(phs) / np.mean(phs_errs)
 
     if phs.size > 15:
-        log.info("Correcting TOA errors for the real scatter. Don't trust them literally")
+        logger.info("Correcting TOA errors for the real scatter. Don't trust them literally")
 
         # print(phs, phs_errs, factor)
         toa_errs = toa_errs * factor
@@ -458,12 +458,12 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
             toa_list.table["clkcorr"] = 0
             toa_list.write_TOA_file(timfile, name=label, format="Tempo2")
 
-        log.info("TOA(MJD)  TOAerr(us)")
+        logger.info("TOA(MJD)  TOAerr(us)")
     else:
-        log.info("TOA(MET)  TOAerr(us)")
+        logger.info("TOA(MET)  TOAerr(us)")
 
     for t, e in zip(toas, toa_errs):
-        log.info(f"{t}, {e}")
+        logger.info(f"{t}, {e}")
 
     return toas, toa_errs
 
@@ -556,7 +556,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1, ba
     if baseline:
         guess_pars = [np.mean(profile)] + guess_pars
         if debug:
-            log.debug(guess_pars)
+            logger.debug(guess_pars)
         startidx = 1
     chisq_save = 1e32
     fit_pars_save = guess_pars
@@ -572,7 +572,7 @@ def fit_profile_with_sinusoids(profile, profile_err, debug=False, nperiods=1, ba
     for phase in np.arange(0.0, 1.0, 0.1):
         guess_pars[3 + startidx] = phase
         if debug:
-            log.debug(guess_pars)
+            logger.debug(guess_pars)
             plt.plot(x, std_fold_fit_func(guess_pars, x), "r--")
         fit_pars, success = optimize.leastsq(std_residuals, guess_pars[:], args=(x, profile))
         if debug:
@@ -891,9 +891,9 @@ def main_fold(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
+    logger.setLevel(args.loglevel)
 
-    with log.log_to_file("HENfold.log"):
+    with logger.log_to_file("HENfold.log"):
         frequency = args.freq
         fdot = args.fdot
         fddot = args.fddot
@@ -934,13 +934,13 @@ def main_deorbit(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENdeorbit.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENdeorbit.log"):
         for fname in args.files:
-            log.info(f"Deorbiting events from {fname}")
+            logger.info(f"Deorbiting events from {fname}")
             events = load_events(fname)
             events = deorbit_events(events, parameter_file=args.deorbit_par)
             outfile = hen_root(fname) + "_deorb" + HEN_FILE_EXTENSION
 
             save_events(events, outfile)
-            log.info(f"Saved to {outfile}")
+            logger.info(f"Saved to {outfile}")

@@ -4,7 +4,7 @@ import os
 import numpy as np
 from stingray.modeling import fit_powerspectrum
 
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .io import HEN_FILE_EXTENSION, load_model, load_pds, save_model, save_pds
 
@@ -56,8 +56,8 @@ def main_model(args=None):
     if freqs is not None and len(freqs) % 2 != 0:
         raise ValueError("Invalid number of frequencies specified")
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENmodel.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENmodel.log"):
         model, kind, constraints = load_model(args.modelfile)
         if kind != "Astropy":
             raise TypeError("At the moment, only Astropy models are accepted")
@@ -95,6 +95,6 @@ def main_model(args=None):
 
             save_model(res.model, root + "_bestfit.p")
             spectrum.best_fits = [res.model]
-            log.info("Best-fit model:")
-            log.info(res.model)
+            logger.info("Best-fit model:")
+            logger.info(res.model)
             save_pds(spectrum, root + "_fit" + HEN_FILE_EXTENSION)

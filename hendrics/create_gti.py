@@ -10,7 +10,7 @@ from stingray.gti import (
     cross_gtis,
 )
 
-from astropy import log
+from hendrics.logging_setup import logger
 from astropy.logger import AstropyUserWarning
 
 from .base import _assign_value_if_none, hen_root
@@ -187,8 +187,8 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENcreategti.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENcreategti.log"):
         filter_expr = args.filter
         if filter_expr is None and args.apply_gti is None:
             sys.exit(

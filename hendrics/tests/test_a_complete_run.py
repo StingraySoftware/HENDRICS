@@ -7,7 +7,7 @@ import subprocess as sp
 import numpy as np
 import pytest
 
-from astropy import log
+from hendrics.logging_setup import logger
 from astropy.io.registry import IORegistryError
 from hendrics import (
     base,
@@ -33,8 +33,8 @@ except NameError:
 
 HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
-log.setLevel("DEBUG")
-# log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
+logger.setLevel("DEBUG")
+# logger.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
 class TestFullRun:

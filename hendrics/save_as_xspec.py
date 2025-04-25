@@ -5,7 +5,7 @@ import subprocess as sp
 
 import numpy as np
 
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .base import get_file_extension
 from .io import get_file_type
@@ -84,7 +84,7 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HEN2Xspec.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HEN2Xspec.log"):
         for f in files:
             save_as_xspec(f, direct_save=args.flx2xsp)

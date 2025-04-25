@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from stingray import EventList
 
-from astropy import log
+from hendrics.logging_setup import logger
 from astropy.io import fits
 from hendrics import base, calibrate, fake, io, read_events
 from hendrics.base import HAS_PINT
@@ -24,8 +24,8 @@ except NameError:
 
 HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
-log.setLevel("DEBUG")
-# log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
+logger.setLevel("DEBUG")
+# logger.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
 def test_filter_for_deadtime_nonpar():

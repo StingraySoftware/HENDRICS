@@ -12,7 +12,7 @@ from stingray.gti import create_gti_mask
 from stingray.io import load_events_and_gtis
 from stingray.lightcurve import Lightcurve
 
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .base import _assign_value_if_none, hen_root
 from .io import HEN_FILE_EXTENSION, get_file_type, save_lcurve
@@ -352,8 +352,8 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENexposure.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENexposure.log"):
         lc_file = args.lcfile
         uf_file = args.uffile
 

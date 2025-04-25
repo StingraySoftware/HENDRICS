@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .base import get_file_extension
 from .io import HEN_FILE_EXTENSION, load_events, save_events
@@ -144,9 +144,9 @@ def calibrate(fname, outname, rmf_file=None, rough=False):
         the one given by default_nustar_rmf() is used.
     """
     # Read event file
-    log.info(f"Loading file {fname}...")
+    logger.info(f"Loading file {fname}...")
     evdata = load_events(fname)
-    log.info("Done.")
+    logger.info("Done.")
     pis = evdata.pi
 
     if rough:
@@ -164,7 +164,7 @@ def calibrate(fname, outname, rmf_file=None, rough=False):
         es = read_calibration(pis, rmf_file)
 
     evdata.energy = es
-    log.info(f"Saving calibrated data to {outname}")
+    logger.info(f"Saving calibrated data to {outname}")
     save_events(evdata, outname)
 
 
@@ -218,8 +218,8 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    log.setLevel(args.loglevel)
-    with log.log_to_file("HENcalibrate.log"):
+    logger.setLevel(args.loglevel)
+    with logger.log_to_file("HENcalibrate.log"):
         funcargs = []
         for i_f, f in enumerate(files):
             outname = f

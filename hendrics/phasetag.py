@@ -7,7 +7,7 @@ from stingray.io import load_events_and_gtis, ref_mjd
 from stingray.pulse.pulsar import phase_exposure, pulse_phase
 
 import astropy.io.fits as pf
-from astropy import log
+from hendrics.logging_setup import logger
 from astropy.logger import AstropyUserWarning
 
 from .base import _assign_value_if_none, hen_root, splitext_improved
@@ -102,7 +102,7 @@ def phase_tag(
 
     # ------- now apply period derivatives ------
 
-    log.info("Calculating phases...")
+    logger.info("Calculating phases...")
     ref_phase = 0
     ref_time = 0
 

@@ -3,7 +3,7 @@
 
 import os
 
-from astropy import log
+from hendrics.logging_setup import logger
 from hendrics import calibrate, create_gti, io, lcurve, read_events
 from hendrics.tests import _dummy_par
 
@@ -16,8 +16,8 @@ except NameError:
 
 HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
-log.setLevel("DEBUG")
-# log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
+logger.setLevel("DEBUG")
+# logger.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
 class TestFullRun:

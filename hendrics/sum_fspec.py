@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Function to sum frequency spectra."""
 
-from astropy import log
+from hendrics.logging_setup import logger
 
 from .base import _assign_value_if_none
 from .fspec import average_periodograms
@@ -26,7 +26,7 @@ def sum_fspec(files, outname=None):
             yield contents
 
     tot_contents = average_periodograms(check_and_distribute_files(files))
-    log.info(f"Saving {pdstype} to {outname}")
+    logger.info(f"Saving {pdstype} to {outname}")
     save_pds(tot_contents, outname)
 
     return tot_contents

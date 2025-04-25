@@ -13,7 +13,7 @@ import pytest
 import stingray
 from stingray import EventList
 
-from astropy import log
+from hendrics.logging_setup import logger
 from hendrics import (
     base,
     fspec,
@@ -40,8 +40,8 @@ except NameError:
 
 HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
-log.setLevel("DEBUG")
-# log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
+logger.setLevel("DEBUG")
+# logger.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
 def test_pds_fails_noclobber_exists():
