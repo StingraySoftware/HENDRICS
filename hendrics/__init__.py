@@ -29,6 +29,10 @@ if not _ASTROPY_SETUP_:
 
     warnings.filterwarnings("ignore", message=".*Errorbars on cross.*")
 
+    from .logging_setup import setup_logging
+
+    setup_logging()
+
     from .compat import (
         HAS_NUMBA,
         array_take,
