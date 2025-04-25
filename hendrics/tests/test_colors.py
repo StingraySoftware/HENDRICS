@@ -20,7 +20,7 @@ except NameError:
 HEN_FILE_EXTENSION = io.HEN_FILE_EXTENSION
 
 logger.setLevel("DEBUG")
-# log.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
+# logger.basicConfig(filename='HEN.log', level=log.DEBUG, filemode='w')
 
 
 class TestFullRun:
