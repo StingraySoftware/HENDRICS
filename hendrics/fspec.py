@@ -223,6 +223,7 @@ def calc_pds(
     emax=None,
     ignore_gti=False,
     lombscargle=False,
+    fill_short_btis=None,
 ):
     """Calculate the PDS from an input light curve file.
 
@@ -260,13 +261,15 @@ def calc_pds(
         Use the Lomb-Scargle periodogram instead of AveragedPowerspectrum
     """
     root = hen_root(lcfile)
-    label = ""
+    label = f"_{bintime:g}_{fftlen:g}_{normalization}".replace(".", "d")
     if emin is not None or emax is not None:
         emin_label = f"{emin:g}" if emin is not None else HENDRICS_STAR_VALUE
         emax_label = f"{emax:g}" if emax is not None else HENDRICS_STAR_VALUE
         label += f"_{emin_label}-{emax_label}keV"
     if lombscargle:
         label += "_LS"
+    if fill_short_btis:
+        label += f"_fill{fill_short_btis:g}"
     if outname is None:
         outname = root + label + "_pds" + HEN_FILE_EXTENSION
     if noclobber and os.path.exists(outname):
@@ -274,6 +277,17 @@ def calc_pds(
         return
 
     ftype, data = get_file_type(lcfile)
+    if fill_short_btis is not None:
+        if ftype == "events":
+            buffer = 5 / (data.time.size / data.exposure)
+        else:
+            buffer = 1 / data.meancounts / data.dt
+        buffer = max(int(np.rint(buffer) + 1), 200)
+
+        print("Buffer:", buffer)
+
+        data = data.fill_bad_time_intervals(max_length=fill_short_btis, buffer_size=buffer)
+
     if ignore_gti:
         data.gti = np.asarray([[data.gti[0, 0], data.gti[-1, 1]]])
 
@@ -345,6 +359,7 @@ def calc_cpds(
     emax=None,
     ignore_gti=False,
     lombscargle=False,
+    fill_short_btis=None,
 ):
     """Calculate the CPDS from a pair of input light curve files.
 
@@ -419,6 +434,10 @@ def calc_cpds(
 
     if hasattr(lc1, "dt"):
         assert lc1.dt == lc2.dt, "Light curves are sampled differently"
+
+    if fill_short_btis is not None:
+        lc1 = lc1.fill_bad_time_intervals(max_length=fill_short_btis)
+        lc2 = lc2.fill_bad_time_intervals(max_length=fill_short_btis)
 
     lc1, lc2 = sync_gtis(lc1, lc2)
     if ignore_gti:
@@ -502,6 +521,7 @@ def calc_fspec(
     emax=None,
     ignore_gti=False,
     lombscargle=False,
+    fill_short_btis=None,
 ):
     r"""Calculate the frequency spectra: the PDS, the cospectrum, ...
 
@@ -572,6 +592,7 @@ def calc_fspec(
                 emax=emax,
                 ignore_gti=ignore_gti,
                 lombscargle=lombscargle,
+                fill_short_btis=fill_short_btis,
             )
             wfd["fname"] = f
             wrapped_file_dicts.append(wfd)
@@ -617,6 +638,7 @@ def calc_fspec(
         emax=emax,
         ignore_gti=ignore_gti,
         lombscargle=lombscargle,
+        fill_short_btis=fill_short_btis,
     )
 
     funcargs = []
@@ -740,6 +762,7 @@ def main(args=None):
         default=512,
         help="Length of FFTs. Default: 512 s",
     )
+    parser.add_argument("--fill-short-btis", default=None, type=float)
     parser.add_argument(
         "-k",
         "--kind",
@@ -904,5 +927,6 @@ def main(args=None):
             emin=args.emin,
             emax=args.emax,
             ignore_gti=args.ignore_gtis,
+            fill_short_btis=args.fill_short_btis,
             lombscargle=args.lombscargle,
         )
