@@ -237,6 +237,27 @@ class TestFullRun:
 
         assert np.allclose(evpds.power, lcpds.power)
 
+    def test_pds_leahy_fillgtis(self):
+        """Test PDS production."""
+        evdata = self.ev_fileA
+        lcdata = self.lcA
+
+        command = f"{evdata} -k PDS --norm leahy --fill-short-btis 1 -b -1"
+        fspec.main(command.split())
+        evout = evdata.replace("_ev", "_0d5_512_leahy_fill1_pds")
+        assert os.path.exists(evout)
+        evpds = io.load_pds(evout)
+        io.remove_pds(evout)
+
+        command = f"{lcdata} -k PDS --norm leahy --fill-short-btis 1"
+        fspec.main(command.split())
+        lcout = lcdata.replace("_lc", "_0d000244141_512_leahy_fill1_pds")
+        assert os.path.exists(lcout)
+        lcpds = io.load_pds(lcout)
+        io.remove_pds(lcout)
+
+        assert np.allclose(evpds.power, lcpds.power)
+
     def test_cpds_leahy_lombscargle(self):
         """Test PDS production."""
         evdata1 = self.ev_fileA
@@ -248,6 +269,22 @@ class TestFullRun:
             evdata1.replace("fpma", "fpm")
             .replace("testA", "test")
             .replace("_ev", "_0d5_512_leahy_LS_cpds")
+        )
+        assert os.path.exists(evout)
+        evpds = io.load_pds(evout)
+        io.remove_pds(evout)
+
+    def test_cpds_leahy_fillgti(self):
+        """Test PDS production."""
+        evdata1 = self.ev_fileA
+        evdata2 = self.ev_fileB
+
+        command = f"{evdata1} {evdata2} -k CPDS --norm leahy --fill-short-btis 1 -b -1"
+        fspec.main(command.split())
+        evout = (
+            evdata1.replace("fpma", "fpm")
+            .replace("testA", "test")
+            .replace("_ev", "_0d5_512_leahy_fill1_cpds")
         )
         assert os.path.exists(evout)
         evpds = io.load_pds(evout)

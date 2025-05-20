@@ -404,6 +404,9 @@ def calc_cpds(
         label += f"_{emin_label}-{emax_label}keV"
     if lombscargle:
         label += "_LS"
+    if fill_short_btis:
+        label += f"_fill{fill_short_btis:g}"
+
     if outname is None:
         root = cn if (cn := common_name(lcfile1, lcfile2)) != "" else "cpds"
         outname = root + label + "_cpds" + HEN_FILE_EXTENSION
