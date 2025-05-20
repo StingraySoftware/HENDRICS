@@ -397,7 +397,7 @@ def calc_cpds(
     lombscargle : bool
         Use the Lomb-Scargle periodogram instead of AveragedPowerspectrum
     """
-    label = ""
+    label = f"_{bintime:g}_{fftlen:g}_{normalization}".replace(".", "d")
     if emin is not None or emax is not None:
         emin_label = f"{emin:g}" if emin is not None else HENDRICS_STAR_VALUE
         emax_label = f"{emax:g}" if emax is not None else HENDRICS_STAR_VALUE
