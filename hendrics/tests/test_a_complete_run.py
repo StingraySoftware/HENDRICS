@@ -95,15 +95,24 @@ class TestFullRun:
         )
         lcurve.main(command.split())
 
-        cls.pdsA = os.path.join(cls.datadir, "monol_testA_E3-50_pds" + HEN_FILE_EXTENSION)
-        cls.pdsB = os.path.join(cls.datadir, "monol_testB_E3-50_pds" + HEN_FILE_EXTENSION)
-        cls.cpds = os.path.join(cls.datadir, "monol_test_E3-50_cpds" + HEN_FILE_EXTENSION)
+        cls.pdsA = os.path.join(
+            cls.datadir, "monol_testA_E3-50_0d000244141_128_leahy_pds" + HEN_FILE_EXTENSION
+        )
+        cls.pdsB = os.path.join(
+            cls.datadir, "monol_testB_E3-50_0d000244141_128_leahy_pds" + HEN_FILE_EXTENSION
+        )
+        cls.cpds = os.path.join(
+            cls.datadir, "monol_test_E3-50_0d000244141_128_leahy_cpds" + HEN_FILE_EXTENSION
+        )
 
         command = f"{cls.lcA} {cls.lcB} -f 128 -k PDS --save-all --norm leahy"
         fspec.main(command.split())
 
         command = f"{cls.lcA} {cls.lcB} -f 128 -k CPDS --save-all --norm leahy"
         fspec.main(command.split())
+        import glob
+
+        print(glob.glob(os.path.join(cls.datadir, "monol_test*_E3-50_*pds*")))
         assert os.path.exists(cls.cpds)
         assert os.path.exists(cls.pdsA)
         assert os.path.exists(cls.pdsB)
@@ -119,8 +128,8 @@ class TestFullRun:
         file_list = {
             "events": "monol_testA_nustar_fpma_ev",
             "lc": "monol_testA_E3-50_lc",
-            "pds": "monol_testA_E3-50_pds",
-            "cpds": "monol_test_E3-50_cpds",
+            "pds": "monol_testA_E3-50_0d000244141_128_leahy_pds",
+            "cpds": "monol_test_E3-50_0d000244141_128_leahy_cpds",
         }
         for realtype in file_list.keys():
             fname = os.path.join(self.datadir, file_list[realtype] + HEN_FILE_EXTENSION)

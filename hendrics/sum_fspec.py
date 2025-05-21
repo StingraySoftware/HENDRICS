@@ -25,7 +25,7 @@ def sum_fspec(files, outname=None):
             contents.fftlen = contents.segment_size
             yield contents
 
-    tot_contents = average_periodograms(check_and_distribute_files(files))
+    tot_contents = average_periodograms(check_and_distribute_files(files), total=len(files))
     log.info(f"Saving {pdstype} to {outname}")
     save_pds(tot_contents, outname)
 

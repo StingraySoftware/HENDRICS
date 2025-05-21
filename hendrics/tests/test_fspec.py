@@ -145,15 +145,15 @@ class TestFullRun:
 
         pdsA = os.path.join(
             cls.datadir,
-            "monol_testA_nustar_fpma_3-50keV_pds" + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
         pdsB = os.path.join(
             cls.datadir,
-            "monol_testB_nustar_fpmb_3-50keV_pds" + HEN_FILE_EXTENSION,
+            "monol_testB_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
         cpds = os.path.join(
             cls.datadir,
-            "monol_test_nustar_fpm_3-50keV_cpds" + HEN_FILE_EXTENSION,
+            "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds" + HEN_FILE_EXTENSION,
         )
 
         command = f"{cls.ev_fileA} {cls.ev_fileB} -f 128 -k PDS --save-all --norm leahy --emin 3 --emax 50"
@@ -174,7 +174,8 @@ class TestFullRun:
 
         out = os.path.join(
             self.datadir,
-            f"monol_testA_nustar_fpma_{HENDRICS_STAR_VALUE}-50keV_pds" + HEN_FILE_EXTENSION,
+            f"monol_testA_nustar_fpma_1_128_leahy_{HENDRICS_STAR_VALUE}-50keV_pds"
+            + HEN_FILE_EXTENSION,
         )
         assert os.path.exists(out)
         io.remove_pds(out)
@@ -188,7 +189,8 @@ class TestFullRun:
 
         out = os.path.join(
             self.datadir,
-            f"monol_testA_nustar_fpma_3-{HENDRICS_STAR_VALUE}keV_pds" + HEN_FILE_EXTENSION,
+            f"monol_testA_nustar_fpma_1_128_leahy_3-{HENDRICS_STAR_VALUE}keV_pds"
+            + HEN_FILE_EXTENSION,
         )
         assert os.path.exists(out)
         io.remove_pds(out)
@@ -200,14 +202,14 @@ class TestFullRun:
 
         command = f"{evdata} -f 128. -k PDS --norm leahy -b -1"
         fspec.main(command.split())
-        evout = evdata.replace("_ev", "_pds")
+        evout = evdata.replace("_ev", "_0d5_128_leahy_pds")
         assert os.path.exists(evout)
         evpds = io.load_pds(evout)
         io.remove_pds(evout)
 
         command = f"{lcdata} -f 128. -k PDS --save-all --norm leahy"
         fspec.main(command.split())
-        lcout = lcdata.replace("_lc", "_pds")
+        lcout = lcdata.replace("_lc", "_0d000244141_128_leahy_pds")
         assert os.path.exists(lcout)
         lcpds = io.load_pds(lcout)
         io.remove_pds(lcout)
@@ -221,14 +223,35 @@ class TestFullRun:
 
         command = f"{evdata} -k PDS --norm leahy --lombscargle -b -1"
         fspec.main(command.split())
-        evout = evdata.replace("_ev", "_LS_pds")
+        evout = evdata.replace("_ev", "_0d5_512_leahy_LS_pds")
         assert os.path.exists(evout)
         evpds = io.load_pds(evout)
         io.remove_pds(evout)
 
         command = f"{lcdata} -k PDS --norm leahy --lombscargle"
         fspec.main(command.split())
-        lcout = lcdata.replace("_lc", "_LS_pds")
+        lcout = lcdata.replace("_lc", "_0d000244141_512_leahy_LS_pds")
+        assert os.path.exists(lcout)
+        lcpds = io.load_pds(lcout)
+        io.remove_pds(lcout)
+
+        assert np.allclose(evpds.power, lcpds.power)
+
+    def test_pds_leahy_fillgtis(self):
+        """Test PDS production."""
+        evdata = self.ev_fileA
+        lcdata = self.lcA
+
+        command = f"{evdata} -k PDS --norm leahy --fill-short-btis 1 -b -1"
+        fspec.main(command.split())
+        evout = evdata.replace("_ev", "_0d5_512_leahy_fill1_pds")
+        assert os.path.exists(evout)
+        evpds = io.load_pds(evout)
+        io.remove_pds(evout)
+
+        command = f"{lcdata} -k PDS --norm leahy --fill-short-btis 1"
+        fspec.main(command.split())
+        lcout = lcdata.replace("_lc", "_0d000244141_512_leahy_fill1_pds")
         assert os.path.exists(lcout)
         lcpds = io.load_pds(lcout)
         io.remove_pds(lcout)
@@ -242,7 +265,27 @@ class TestFullRun:
 
         command = f"{evdata1} {evdata2} -k CPDS --norm leahy --lombscargle -b -1"
         fspec.main(command.split())
-        evout = evdata1.replace("fpma", "fpm").replace("testA", "test").replace("_ev", "_LS_cpds")
+        evout = (
+            evdata1.replace("fpma", "fpm")
+            .replace("testA", "test")
+            .replace("_ev", "_0d5_512_leahy_LS_cpds")
+        )
+        assert os.path.exists(evout)
+        evpds = io.load_pds(evout)
+        io.remove_pds(evout)
+
+    def test_cpds_leahy_fillgti(self):
+        """Test PDS production."""
+        evdata1 = self.ev_fileA
+        evdata2 = self.ev_fileB
+
+        command = f"{evdata1} {evdata2} -k CPDS --norm leahy --fill-short-btis 1 -b -1"
+        fspec.main(command.split())
+        evout = (
+            evdata1.replace("fpma", "fpm")
+            .replace("testA", "test")
+            .replace("_ev", "_0d5_512_leahy_fill1_cpds")
+        )
         assert os.path.exists(evout)
         evpds = io.load_pds(evout)
         io.remove_pds(evout)
@@ -250,8 +293,8 @@ class TestFullRun:
     def test_pds_save_nothing(self):
         evdata = self.ev_fileA
         lcdata = self.lcA
-        evout = evdata.replace("_ev", "_pds")
-        lcout = lcdata.replace("_lc", "_pds")
+        evout = evdata.replace("_ev", "_0d5_128_leahy_pds")
+        lcout = lcdata.replace("_lc", "_1_128_leahy_pds")
 
         command = f"{evdata} -f 128 -k PDS --norm leahy --no-auxil -b 0.5"
         fspec.main(command.split())
@@ -260,7 +303,7 @@ class TestFullRun:
         assert not os.path.exists(evout.replace(HEN_FILE_EXTENSION, ""))
         io.remove_pds(evout)
 
-        command = f"{lcdata} -f 128 -k PDS --norm leahy --no-auxil "
+        command = f"{lcdata} -f 128 -k PDS --norm leahy --no-auxil -b 1"
         fspec.main(command.split())
         assert os.path.exists(lcout)
         lcpds = io.load_pds(lcout)
@@ -279,8 +322,12 @@ class TestFullRun:
         else:
             label = "_lc"
 
-        outA = os.path.join(self.datadir, "monol_testA_nustar_fpma_pds" + HEN_FILE_EXTENSION)
-        outB = os.path.join(self.datadir, "monol_testB_nustar_fpmb_pds" + HEN_FILE_EXTENSION)
+        outA = os.path.join(
+            self.datadir, "monol_testA_nustar_fpma_0d5_16_frac_pds" + HEN_FILE_EXTENSION
+        )
+        outB = os.path.join(
+            self.datadir, "monol_testB_nustar_fpmb_0d5_16_frac_pds" + HEN_FILE_EXTENSION
+        )
         if lombscargle:
             outA = outA.replace("pds", "LS_pds")
             outB = outB.replace("pds", "LS_pds")
@@ -330,8 +377,12 @@ class TestFullRun:
         command = f"{data_a} {data_b} -f 128 --ignore-gtis"
         fspec.main(command.split())
 
-        outA = os.path.join(self.datadir, "monol_testA_nustar_fpma_pds" + HEN_FILE_EXTENSION)
-        outB = os.path.join(self.datadir, "monol_testB_nustar_fpmb_pds" + HEN_FILE_EXTENSION)
+        outA = os.path.join(
+            self.datadir, "monol_testA_nustar_fpma_0d000244141_128_leahy_pds" + HEN_FILE_EXTENSION
+        )
+        outB = os.path.join(
+            self.datadir, "monol_testB_nustar_fpmb_0d000244141_128_leahy_pds" + HEN_FILE_EXTENSION
+        )
         assert os.path.exists(outA)
         assert os.path.exists(outB)
         os.unlink(outA)
@@ -375,7 +426,7 @@ class TestFullRun:
 
     def test_cpds_dtbig(self):
         """Test CPDS production."""
-        out = os.path.join(self.datadir, "monol_test_3-50keV_dtb")
+        out = os.path.join(self.datadir, "monol_test_1_128_leahy_3-50keV_dtb")
         command = f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS --save-all --norm frac -o {out}"
         command += " -b 1"
         fspec.main(command.split())
@@ -394,9 +445,13 @@ class TestFullRun:
         """Test the sum of pdss."""
         sum_fspec.main(
             [
-                os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds")
+                os.path.join(
+                    self.datadir, "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds"
+                )
                 + HEN_FILE_EXTENSION,
-                os.path.join(self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds")
+                os.path.join(
+                    self.datadir, "monol_testB_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds"
+                )
                 + HEN_FILE_EXTENSION,
                 "-o",
                 os.path.join(self.datadir, "monol_test_sum" + HEN_FILE_EXTENSION),
@@ -414,66 +469,80 @@ class TestFullRun:
     def test_rebinpds(self):
         """Test PDS rebinning 1."""
         data = (
-            os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds") + HEN_FILE_EXTENSION
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds")
+            + HEN_FILE_EXTENSION
         )
         command = f"{data} -r 2"
         rebin.main(command.split())
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testA_nustar_fpma_3-50keV_pds_rebin2" + HEN_FILE_EXTENSION,
+                "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds_rebin2"
+                + HEN_FILE_EXTENSION,
             )
         )
 
     def test_rebinpds_geom(self):
         """Test geometrical PDS rebinning."""
         data_a, data_b = (
-            os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds") + HEN_FILE_EXTENSION,
-            os.path.join(self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds") + HEN_FILE_EXTENSION,
+            os.path.join(self.datadir, "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds")
+            + HEN_FILE_EXTENSION,
+            os.path.join(self.datadir, "monol_testB_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds")
+            + HEN_FILE_EXTENSION,
         )
         command = f"{data_a} {data_b} -r 1.03"
         rebin.main(command.split())
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03" + HEN_FILE_EXTENSION,
+                "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds_rebin1.03"
+                + HEN_FILE_EXTENSION,
             )
         )
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_testB_nustar_fpmb_3-50keV_pds_rebin1.03" + HEN_FILE_EXTENSION,
+                "monol_testB_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds_rebin1.03"
+                + HEN_FILE_EXTENSION,
             )
         )
 
     def test_rebincpds(self):
         """Test CPDS rebinning."""
-        data = os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds") + HEN_FILE_EXTENSION
+        data = (
+            os.path.join(self.datadir, "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds")
+            + HEN_FILE_EXTENSION
+        )
         command = f"{data} -r 2"
         rebin.main(command.split())
         assert os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_test_nustar_fpm_3-50keV_cpds_rebin2" + HEN_FILE_EXTENSION,
+                "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_rebin2"
+                + HEN_FILE_EXTENSION,
             )
         )
 
     def test_rebincpds_geom(self):
         """Test CPDS geometrical rebinning."""
-        data = os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds") + HEN_FILE_EXTENSION
+        data = (
+            os.path.join(self.datadir, "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds")
+            + HEN_FILE_EXTENSION
+        )
         command = f"{data} -r 1.03"
         rebin.main(command.split())
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03" + HEN_FILE_EXTENSION,
+                "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_rebin1.03"
+                + HEN_FILE_EXTENSION,
             )
         )
 
     def test_save_lags(self):
         fname = os.path.join(
             self.datadir,
-            "monol_test_nustar_fpm_3-50keV_cpds_rebin2" + HEN_FILE_EXTENSION,
+            "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_rebin2" + HEN_FILE_EXTENSION,
         )
         timelags.main([fname])
         out = base.hen_root(fname) + "_lags.qdp"
@@ -489,22 +558,28 @@ model = models.Const1D()
             print(modelstring, file=fobj)
         pdsfile1 = os.path.join(
             self.datadir,
-            "monol_testA_nustar_fpma_3-50keV_pds" + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
         pdsfile2 = os.path.join(
             self.datadir,
-            "monol_testB_nustar_fpmb_3-50keV_pds" + HEN_FILE_EXTENSION,
+            "monol_testB_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
 
         command = f"{pdsfile1} {pdsfile2} -m {modelfile} --frequency-interval 0 10"
         modeling.main_model(command.split())
 
-        out0 = os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_bestfit.p")
-        out1 = os.path.join(self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds_bestfit.p")
+        out0 = os.path.join(
+            self.datadir, "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds_bestfit.p"
+        )
+        out1 = os.path.join(
+            self.datadir, "monol_testB_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds_bestfit.p"
+        )
         assert os.path.exists(out0)
         assert os.path.exists(out1)
         m, k, c = io.load_model(
-            os.path.join(self.datadir, "monol_testB_nustar_fpmb_3-50keV_pds_bestfit.p")
+            os.path.join(
+                self.datadir, "monol_testB_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds_bestfit.p"
+            )
         )
         assert hasattr(m, "amplitude")
         os.unlink(out0)
@@ -512,11 +587,11 @@ model = models.Const1D()
 
         out0 = os.path.join(
             self.datadir,
-            "monol_testA_nustar_fpma_3-50keV_pds_fit" + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds_fit" + HEN_FILE_EXTENSION,
         )
         out1 = os.path.join(
             self.datadir,
-            "monol_testB_nustar_fpmb_3-50keV_pds_fit" + HEN_FILE_EXTENSION,
+            "monol_testB_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds_fit" + HEN_FILE_EXTENSION,
         )
         assert os.path.exists(out0)
         assert os.path.exists(out1)
@@ -533,7 +608,7 @@ model = models.Const1D()
             print(modelstring, file=fobj)
         pdsfile1 = os.path.join(
             self.datadir,
-            "monol_test_nustar_fpm_3-50keV_cpds" + HEN_FILE_EXTENSION,
+            "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds" + HEN_FILE_EXTENSION,
         )
 
         command = f"{pdsfile1} -m {modelfile} --frequency-interval 0 10"
@@ -541,7 +616,9 @@ model = models.Const1D()
         with pytest.warns(ComplexWarning):
             modeling.main_model(command.split())
 
-        out0 = os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_bestfit.p")
+        out0 = os.path.join(
+            self.datadir, "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_bestfit.p"
+        )
         assert os.path.exists(out0)
         m, k, c = io.load_model(out0)
         assert hasattr(m, "amplitude")
@@ -549,7 +626,7 @@ model = models.Const1D()
 
         out0 = os.path.join(
             self.datadir,
-            "monol_test_nustar_fpm_3-50keV_cpds_fit" + HEN_FILE_EXTENSION,
+            "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_fit" + HEN_FILE_EXTENSION,
         )
         assert os.path.exists(out0)
         spec = io.load_pds(out0)
@@ -565,11 +642,11 @@ model = models.Const1D()
             print(modelstring, file=fobj)
         pdsfile1 = os.path.join(
             self.datadir,
-            "monol_testA_nustar_fpma_3-50keV_pds" + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
         pdsfile2 = os.path.join(
             self.datadir,
-            "monol_testB_nustar_fpmb_3-50keV_pds" + HEN_FILE_EXTENSION,
+            "monol_testB_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds" + HEN_FILE_EXTENSION,
         )
 
         command = f"{pdsfile1} {pdsfile2} -m {modelfile} --frequency-interval 0 1 9"
@@ -579,17 +656,25 @@ model = models.Const1D()
     def test_savexspec(self):
         """Test save as Xspec 1."""
         data = (
-            os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_rebin2")
+            os.path.join(
+                self.datadir, "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds_rebin2"
+            )
             + HEN_FILE_EXTENSION
         )
         command = f"{data}"
         save_as_xspec.main(command.split())
-        os.path.exists(os.path.join(self.datadir, "monol_testA_nustar_fpmb_3-50keV_pds_rebin2.pha"))
+        os.path.exists(
+            os.path.join(
+                self.datadir, "monol_testA_nustar_fpmb_0d000244141_128_leahy_3-50keV_pds_rebin2.pha"
+            )
+        )
 
     def test_savexspec_geom(self):
         """Test save as Xspec 2."""
         data = (
-            os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03")
+            os.path.join(
+                self.datadir, "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_rebin1.03"
+            )
             + HEN_FILE_EXTENSION
         )
 
@@ -599,24 +684,28 @@ model = models.Const1D()
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03.pha",
+                "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_rebin1.03.pha",
             )
         )
         os.path.exists(
             os.path.join(
                 self.datadir,
-                "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03_lags.pha",
+                "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_rebin1.03_lags.pha",
             )
         )
 
     def test_plot_lin(self):
         """Test plotting with linear axes."""
         pname = (
-            os.path.join(self.datadir, "monol_testA_nustar_fpma_3-50keV_pds_fit")
+            os.path.join(
+                self.datadir, "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds_fit"
+            )
             + HEN_FILE_EXTENSION
         )
         cname = (
-            os.path.join(self.datadir, "monol_test_nustar_fpm_3-50keV_cpds_fit")
+            os.path.join(
+                self.datadir, "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_fit"
+            )
             + HEN_FILE_EXTENSION
         )
         lname = os.path.join(self.datadir, "monol_testA_nustar_fpma_lc") + HEN_FILE_EXTENSION
@@ -652,11 +741,13 @@ model = models.Const1D()
         """Test plotting with log axes."""
         pname = os.path.join(
             self.datadir,
-            "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03" + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds_rebin1.03"
+            + HEN_FILE_EXTENSION,
         )
         cname = os.path.join(
             self.datadir,
-            "monol_test_nustar_fpm_3-50keV_cpds_rebin1.03" + HEN_FILE_EXTENSION,
+            "monol_test_nustar_fpm_0d000244141_128_leahy_3-50keV_cpds_rebin1.03"
+            + HEN_FILE_EXTENSION,
         )
 
         plot.main(
@@ -689,7 +780,8 @@ model = models.Const1D()
         """Test plotting and saving figure."""
         pname = os.path.join(
             self.datadir,
-            "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03" + HEN_FILE_EXTENSION,
+            "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds_rebin1.03"
+            + HEN_FILE_EXTENSION,
         )
         plot.main(
             [
@@ -698,7 +790,7 @@ model = models.Const1D()
                 "--figname",
                 os.path.join(
                     self.datadir,
-                    "monol_testA_nustar_fpma_3-50keV_pds_rebin1.03.png",
+                    "monol_testA_nustar_fpma_0d000244141_128_leahy_3-50keV_pds_rebin1.03.png",
                 ),
                 "-o",
                 "dummy.qdp",
