@@ -16,9 +16,10 @@ from stingray.gti import (
 )
 
 from astropy import log
+from astropy.io import fits
 
 from .base import common_name, hen_root
-from .io import HEN_FILE_EXTENSION, load_events, save_events
+from .io import HEN_FILE_EXTENSION, load_events, save_events, is_lightcurve
 
 
 def treat_event_file(
@@ -642,6 +643,17 @@ def main(args=None):
         }
 
         arglist = [[f, argdict] for f in files]
+
+        for fname in files:
+            if fname.endswith(".fits") or fname.endswith(".fit"):
+                with fits.open(fname) as hdulist:
+                    hdu_names = [h.name.upper() for h in hdulist]
+                    if "EVENTS" not in hdu_names and is_lightcurve(hdulist):
+                        print(f"\n  The file '{fname}' appears to be a light curve.")
+                        ans = input("Do you want to proceed with reading the file? [y/N]: ").strip().lower()
+                        if ans != 'y':
+                           raise ValueError("Aborted reading.")
+
 
         if os.name == "nt" or args.nproc == 1:
             [_wrap_fun(a) for a in arglist]

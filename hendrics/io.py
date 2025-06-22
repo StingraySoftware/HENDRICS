@@ -522,6 +522,27 @@ def get_file_type(fname, raw_data=False):
     return ftype, contents
 
 
+def is_lightcurve(hdulist):
+    """Determine whether the file is a lightcurve
+    
+    Returns:
+    bool: True if the HDU list represents a light curve, False otherwise.
+    """
+    if len(hdulist) < 2:
+        return False
+
+    data_hdu = hdulist[1]
+    if not hasattr(data_hdu, "columns"):
+        return False
+
+    colnames = [col.name.upper() for col in data_hdu.columns]
+
+    time_col = "TIME" in colnames
+    lc_like_col = any(x in colnames for x in ["FLUX", "RATE", "COUNTS", "SAP_FLUX", "PDCSAP_FLUX"])
+
+    return time_col and lc_like_col
+
+
 # ----- functions to save and load EVENT data
 def save_events(eventlist, fname):
     """Save events in a file.
