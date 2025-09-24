@@ -464,7 +464,7 @@ def recognize_stingray_table(obj):
         return "AveragedPowerspectrum"
     if "counts" in obj.colnames:
         return "Lightcurve"
-    if "time" in obj.colnames:
+    if any(c.lower() == "time" for c in obj.colnames):
         return "EventList"
     raise ValueError(f"Object not recognized:\n{obj}")
 
@@ -1075,11 +1075,14 @@ def load_data(fname):
     elif fmt == "nc":
         return _load_data_nc(fname)
 
+    if fmt == "ogip":
+        fmt = "fits"
+
     try:
         return Table.read(fname, format=fmt)
     except Exception as e:
         raise TypeError(
-            "The file type is not recognized. Did you convert the"
+            f"The file type is not recognized fmt={fmt}. Did you convert the"
             " original files into HENDRICS format (e.g. with "
             "HENreadevents or HENlcurve)?"
         )
