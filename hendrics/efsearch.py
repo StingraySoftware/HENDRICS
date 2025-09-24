@@ -1729,9 +1729,8 @@ def _common_main(args, func):
                 oversample=oversample,
             )
             plot_transient_search(results, out_fname + "_transient.gif")
-            continue
 
-        if not args.fast and not args.ffa:
+        if not args.fast and not args.ffa and not args.transient:
             fdotmin = args.fdotmin if args.fdotmin is not None else 0
             fdotmax = args.fdotmax if args.fdotmax is not None else 0
             results = folding_search(
