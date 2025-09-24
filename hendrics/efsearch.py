@@ -27,6 +27,7 @@ from astropy import log
 from astropy.logger import AstropyUserWarning
 from astropy.table import Table
 from astropy.utils.introspection import minversion
+from astropy.table import vstack
 
 from .base import (
     HENDRICS_STAR_VALUE,
@@ -630,10 +631,16 @@ def plot_transient_search(results, gif_name=None):
     import matplotlib as mpl
     import matplotlib.pyplot as plt
 
+    if not HAS_IMAGEIO:
+        warnings.warn("imageio needed to save the transient search results into a gif image.")
+        return None
+
     mpl.use("Agg")
     if gif_name is None:
         gif_name = "transients.gif"
 
+    result_name = gif_name.replace(".gif", ".csv")
+    max_stats_rows = []
     all_images = []
     for i, (ima, nave) in enumerate(zip(results.stats, results.nave)):
         f = results.freqs
@@ -692,7 +699,6 @@ def plot_transient_search(results, gif_name=None):
                 )
             elif maxline >= 5 and i_f == 0:  # pragma: no cover
                 print(f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
-
             axf.plot(f, mean_line, lw=1, c="k", zorder=10, label="mean", ls="-")
 
             axima.set_xlabel("Frequency")
@@ -703,6 +709,9 @@ def plot_transient_search(results, gif_name=None):
             xmin = max(best_f - df, results.f0)
             xmax = min(best_f + df, results.f1)
             if i_f == 0:
+                max_stats_rows.append(
+                    {"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline}
+                )
                 axf.set_xlim([results.f0, results.f1])
                 axf.axvline(xmin, ls="--", c="b", lw=2)
                 axf.axvline(xmax, ls="--", c="b", lw=2)
@@ -715,11 +724,9 @@ def plot_transient_search(results, gif_name=None):
 
         plt.close(fig)
         all_images.append(image)
+    vstack(max_stats_rows).write(result_name, overwrite=True)
 
-    if HAS_IMAGEIO:
-        imageio.v3.imwrite(gif_name, all_images, duration=1000.0)
-    else:
-        warnings.warn("imageio needed to save the transient search results " "into a gif image.")
+    imageio.v3.imwrite(gif_name, all_images, duration=1000.0)
 
     return all_images
 
