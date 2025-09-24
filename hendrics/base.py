@@ -1327,7 +1327,7 @@ def get_file_format(fname):
     if ext == ".nc":
         return "nc"
 
-    if ext in [".evt", ".fits", ".fits.gz"]:
+    if ext in [".evt", ".evt.gz", ".fits", ".fits.gz"]:
         return "ogip"
 
     # For the rest of formats, use Astropy
