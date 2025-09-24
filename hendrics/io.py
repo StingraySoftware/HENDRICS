@@ -464,7 +464,7 @@ def recognize_stingray_table(obj):
         return "AveragedPowerspectrum"
     if "counts" in obj.colnames:
         return "Lightcurve"
-    if "time" in [c.lower() for c in obj.colnames]:
+    if any(c.lower() == "time" for c in obj.colnames):
         return "EventList"
     raise ValueError(f"Object not recognized:\n{obj}")
 
