@@ -632,7 +632,7 @@ def plot_transient_search(results, gif_name=None):
 
     if not HAS_IMAGEIO:
         warnings.warn("imageio needed to save the transient search results into a gif image.")
-        return None
+        return []
 
     mpl.use("Agg")
     if gif_name is None:
@@ -1728,8 +1728,10 @@ def _common_main(args, func):
                 oversample=oversample,
             )
             plot_transient_search(results, out_fname + "_transient.gif")
+            if not args.fast and not args.ffa:
+                continue
 
-        if not args.fast and not args.ffa and not args.transient:
+        if not args.fast and not args.ffa:
             fdotmin = args.fdotmin if args.fdotmin is not None else 0
             fdotmax = args.fdotmax if args.fdotmax is not None else 0
             results = folding_search(
@@ -1787,6 +1789,7 @@ def _common_main(args, func):
         M = length // segment_size
 
         fdots = 0
+
         if len(results) == 4:
             frequencies, stats, step, length = results
         elif len(results) == 6:
