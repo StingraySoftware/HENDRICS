@@ -800,8 +800,9 @@ def search_with_qffa_step(
     oversample=8,
     n=1,
     search_fdot=True,
+    weights=None,
 ) -> tuple[np.array, np.array, np.array]:
-    """Single step of quasi-fast folding algorithm."""
+    """Single step of quasi-fast folding algorithm with weights."""
     # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
 
@@ -812,11 +813,16 @@ def search_with_qffa_step(
     else:
         phases = _fast_phase(times, mean_f)
 
+    # If weights are not provided, assume uniform weights of 1
+    if weights is None:
+        weights = np.ones_like(times)
+
     profiles = histogram2d(
         phases,
         times,
         range=[[0, 1], [times[0], times[-1]]],
         bins=(nbin, nprof),
+        weights=weights,  # Add weights to histogram2d
     ).T
 
     # Assume times are sorted
@@ -840,7 +846,6 @@ def search_with_qffa_step(
 
     return L * bin_to_frequency + mean_f, Q * bin_to_fdot + mean_fdot, stats
 
-
 def search_with_qffa(
     times,
     f0,
@@ -856,6 +861,7 @@ def search_with_qffa(
     t0=None,
     t1=None,
     silent=False,
+    weights=None,  # New parameter for weights
 ):
     """'Quite fast folding' algorithm.
 
@@ -885,6 +891,8 @@ def search_with_qffa(
         starting time
     t1 : float, default max(times)
         stop time
+    weights : array of floats, optional
+        Weights corresponding to the arrival times, e.g., photon counts or countrates.
     """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
@@ -958,6 +966,7 @@ def search_with_qffa(
             oversample=oversample,
             n=n,
             search_fdot=search_fdot,
+            weights=weights,  # Pass weights to the step function
         )
 
         if all_fgrid is None:
@@ -985,7 +994,6 @@ def search_with_qffa(
         )
     else:
         return all_fgrid.T[0], all_stats.T[0], step, length
-
 
 def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
     """'Quite fast folding' algorithm.
