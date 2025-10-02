@@ -1345,14 +1345,18 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
             )
             max_stat = input_ef_periodogram.stat[f_idx, fdot_idx]
             sig_e1_m, sig_e1 = power_confidence_limits(max_stat, c=0.68, n=input_ef_periodogram.N)
-            fmin, fmax, fdotmin, fdotmax = get_xy_boundaries_from_level(
-                input_ef_periodogram.freq,
-                input_ef_periodogram.fdots,
-                input_ef_periodogram.stat,
-                sig_e1_m,
-                f,
-                fdot,
-            )
+            if max_stat < sig_e1_m:
+                # Only add one candidate
+                fmin = fmax = fdotmin = fdotmax = np.nan
+            else:
+                fmin, fmax, fdotmin, fdotmax = get_xy_boundaries_from_level(
+                    input_ef_periodogram.freq,
+                    input_ef_periodogram.fdots,
+                    input_ef_periodogram.stat,
+                    sig_e1_m,
+                    f,
+                    fdot,
+                )
         elif len(input_ef_periodogram.stat.shape) == 1:
             f_idx = idx
             allfreqs = input_ef_periodogram.freq
