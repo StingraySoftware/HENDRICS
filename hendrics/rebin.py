@@ -66,7 +66,6 @@ def main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENrebin.log"):
-        rebin = args.rebin
-        for f in files:
-            rebin_file(f, rebin)
+    rebin = args.rebin
+    for f in files:
+        rebin_file(f, rebin)

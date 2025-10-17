@@ -219,21 +219,20 @@ def main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENcalibrate.log"):
-        funcargs = []
-        for i_f, f in enumerate(files):
-            outname = f
-            if args.overwrite is False:
-                label = "_calib"
-                if args.rough:
-                    label = "_rough_calib"
-                outname = f.replace(get_file_extension(f), label + HEN_FILE_EXTENSION)
-            funcargs.append([f, outname, args.rmf, args.rough])
+    funcargs = []
+    for i_f, f in enumerate(files):
+        outname = f
+        if args.overwrite is False:
+            label = "_calib"
+            if args.rough:
+                label = "_rough_calib"
+            outname = f.replace(get_file_extension(f), label + HEN_FILE_EXTENSION)
+        funcargs.append([f, outname, args.rmf, args.rough])
 
-        if os.name == "nt" or args.nproc == 1:
-            [_calib_wrap(fa) for fa in funcargs]
-        else:
-            pool = Pool(processes=args.nproc)
-            for i in pool.imap_unordered(_calib_wrap, funcargs):
-                pass
-            pool.close()
+    if os.name == "nt" or args.nproc == 1:
+        [_calib_wrap(fa) for fa in funcargs]
+    else:
+        pool = Pool(processes=args.nproc)
+        for i in pool.imap_unordered(_calib_wrap, funcargs):
+            pass
+        pool.close()

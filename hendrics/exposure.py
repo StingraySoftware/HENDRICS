@@ -353,30 +353,29 @@ def main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENexposure.log"):
-        lc_file = args.lcfile
-        uf_file = args.uffile
+    lc_file = args.lcfile
+    uf_file = args.uffile
 
-        outroot = _assign_value_if_none(args.outroot, hen_root(lc_file))
+    outroot = _assign_value_if_none(args.outroot, hen_root(lc_file))
 
-        outname = outroot + "_lccorr" + HEN_FILE_EXTENSION
+    outname = outroot + "_lccorr" + HEN_FILE_EXTENSION
 
-        outfile = correct_lightcurve(lc_file, uf_file, outname)
+    outfile = correct_lightcurve(lc_file, uf_file, outname)
 
-        # outdata = load_data(outfile)
-        _, outdata = get_file_type(outfile, raw_data=False)
-        time = outdata.time
-        lc = outdata.counts
-        expo = outdata.expo
-        gti = outdata.gti
+    # outdata = load_data(outfile)
+    _, outdata = get_file_type(outfile, raw_data=False)
+    time = outdata.time
+    lc = outdata.counts
+    expo = outdata.expo
+    gti = outdata.gti
 
-        try:
-            _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
-            _plot_dead_time_from_uf(uf_file, outroot)
-        except Exception as e:
-            warnings.warn(str(e))
+    try:
+        _plot_corrected_light_curve(time, lc * expo, expo, gti, outroot)
+        _plot_dead_time_from_uf(uf_file, outroot)
+    except Exception as e:
+        warnings.warn(str(e))
 
-        if args.plot:
-            import matplotlib.pyplot as plt
+    if args.plot:
+        import matplotlib.pyplot as plt
 
-            plt.show()
+        plt.show()

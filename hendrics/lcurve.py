@@ -958,8 +958,7 @@ def main(args=None):
         args.loglevel = "DEBUG"
     log.setLevel(args.loglevel)
 
-    with log.log_to_file("HENlcurve.log"):
-        _execute_lcurve(args)
+    _execute_lcurve(args)
 
 
 def scrunch_main(args=None):
@@ -1000,8 +999,7 @@ def scrunch_main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENscrunchlc.log"):
-        scrunch_lightcurves(files, args.out)
+    scrunch_lightcurves(files, args.out)
 
 
 def baseline_main(args=None):
@@ -1058,5 +1056,4 @@ def baseline_main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENbaseline.log"):
-        _baseline_lightcurves(files, args.out, args.asymmetry, args.lam)
+    _baseline_lightcurves(files, args.out, args.asymmetry, args.lam)

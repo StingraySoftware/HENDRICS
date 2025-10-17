@@ -85,6 +85,5 @@ def main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HEN2Xspec.log"):
-        for f in files:
-            save_as_xspec(f, direct_save=args.flx2xsp)
+    for f in files:
+        save_as_xspec(f, direct_save=args.flx2xsp)

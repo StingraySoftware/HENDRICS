@@ -22,14 +22,13 @@ def main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENlags.log"):
-        filelist = []
-        for fname in args.files:
-            cross = load_pds(fname)
+    filelist = []
+    for fname in args.files:
+        cross = load_pds(fname)
 
-            lag, lag_err = cross.time_lag()
-            out = hen_root(fname) + "_lags.qdp"
-            save_as_qdp([cross.freq, lag], [None, lag_err], filename=out)
-            filelist.append(out)
+        lag, lag_err = cross.time_lag()
+        out = hen_root(fname) + "_lags.qdp"
+        save_as_qdp([cross.freq, lag], [None, lag_err], filename=out)
+        filelist.append(out)
 
     return filelist

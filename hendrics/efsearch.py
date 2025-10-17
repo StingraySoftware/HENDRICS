@@ -1875,14 +1875,12 @@ def _common_main(args, func):
 
 def main_efsearch(args=None):
     """Main function called by the `HENefsearch` command line script."""
-    with log.log_to_file("HENefsearch.log"):
-        return _common_main(args, epoch_folding_search)
+    return _common_main(args, epoch_folding_search)
 
 
 def main_zsearch(args=None):
     """Main function called by the `HENzsearch` command line script."""
-    with log.log_to_file("HENzsearch.log"):
-        return _common_main(args, z_n_search)
+    return _common_main(args, z_n_search)
 
 
 def z2_vs_pf(event_list, deadtime=0.0, ntrials=100, outfile=None, N=2):
