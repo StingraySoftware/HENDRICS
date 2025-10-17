@@ -66,31 +66,28 @@ def main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENexcvar.log"):
-        filelist = []
-        for fname in args.files:
-            lcurve = load_lcurve(fname)
-            if args.norm == "fvar":
-                start, stop, res = lcurve.analyze_segments(
-                    fvar, args.chunk_length, args.fraction_step
-                )
-            elif args.norm == "excvar":
-                start, stop, res = lcurve.analyze_segments(
-                    excvar_none, args.chunk_length, args.fraction_step
-                )
-            elif args.norm == "norm_excvar":
-                start, stop, res = lcurve.analyze_segments(
-                    excvar_norm, args.chunk_length, args.fraction_step
-                )
-            else:
-                raise ValueError("Normalization must be fvar, norm_excvar " "or excvar")
-            var, var_err = res
-            out = hen_root(fname) + "_" + args.norm + ".qdp"
-            save_as_qdp(
-                [(start + stop) / 2, var],
-                [(stop - start) / 2, var_err],
-                filename=out,
+    filelist = []
+    for fname in args.files:
+        lcurve = load_lcurve(fname)
+        if args.norm == "fvar":
+            start, stop, res = lcurve.analyze_segments(fvar, args.chunk_length, args.fraction_step)
+        elif args.norm == "excvar":
+            start, stop, res = lcurve.analyze_segments(
+                excvar_none, args.chunk_length, args.fraction_step
             )
-            filelist.append(out)
+        elif args.norm == "norm_excvar":
+            start, stop, res = lcurve.analyze_segments(
+                excvar_norm, args.chunk_length, args.fraction_step
+            )
+        else:
+            raise ValueError("Normalization must be fvar, norm_excvar " "or excvar")
+        var, var_err = res
+        out = hen_root(fname) + "_" + args.norm + ".qdp"
+        save_as_qdp(
+            [(start + stop) / 2, var],
+            [(stop - start) / 2, var_err],
+            filename=out,
+        )
+        filelist.append(out)
 
     return filelist

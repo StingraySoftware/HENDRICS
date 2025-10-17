@@ -188,34 +188,31 @@ def main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENcreategti.log"):
-        filter_expr = args.filter
-        if filter_expr is None and args.apply_gti is None:
-            sys.exit(
-                "Please specify filter expression (-f option) or input " "GTI file (-a option)"
-            )
+    filter_expr = args.filter
+    if filter_expr is None and args.apply_gti is None:
+        sys.exit("Please specify filter expression (-f option) or input " "GTI file (-a option)")
 
-        for fname in files:
-            if args.apply_gti is not None:
-                data = load_data(args.apply_gti)
-                gti = data["gti"]
-            else:
-                gti = create_gti(
-                    fname,
-                    filter_expr,
-                    safe_interval=args.safe_interval,
-                    minimum_length=args.minimum_length,
-                )
-            if args.create_only:
-                continue
-            if args.overwrite:
-                outname = fname
-            else:
-                # Use default
-                outname = None
-            apply_gti(
+    for fname in files:
+        if args.apply_gti is not None:
+            data = load_data(args.apply_gti)
+            gti = data["gti"]
+        else:
+            gti = create_gti(
                 fname,
-                gti,
-                outname=outname,
+                filter_expr,
+                safe_interval=args.safe_interval,
                 minimum_length=args.minimum_length,
             )
+        if args.create_only:
+            continue
+        if args.overwrite:
+            outname = fname
+        else:
+            # Use default
+            outname = None
+        apply_gti(
+            fname,
+            gti,
+            outname=outname,
+            minimum_length=args.minimum_length,
+        )

@@ -875,61 +875,60 @@ def main(args=None):
 
     log.setLevel(args.loglevel)
 
-    with log.log_to_file("HENfspec.log"):
-        bintime = interpret_bintime(args.bintime)
+    bintime = interpret_bintime(args.bintime)
 
-        fftlen = args.fftlen
-        pdsrebin = args.rebin
-        normalization = args.norm
-        if normalization.lower() not in [
-            "frac",
-            "abs",
-            "leahy",
-            "none",
-            "rms",
-        ]:
-            warnings.warn("Beware! Unknown normalization!", AstropyUserWarning)
-            normalization = "leahy"
-        if normalization == "rms":
-            normalization = "frac"
+    fftlen = args.fftlen
+    pdsrebin = args.rebin
+    normalization = args.norm
+    if normalization.lower() not in [
+        "frac",
+        "abs",
+        "leahy",
+        "none",
+        "rms",
+    ]:
+        warnings.warn("Beware! Unknown normalization!", AstropyUserWarning)
+        normalization = "leahy"
+    if normalization == "rms":
+        normalization = "frac"
 
-        do_cpds = do_pds = do_cos = do_lag = False
-        kinds = args.kind.split(",")
-        for k in kinds:
-            if k == "PDS":
-                do_pds = True
-            elif k == "CPDS":
-                do_cpds = True
-            elif k == "cos" or k == "cospectrum":
-                do_cos = True
-                do_cpds = True
-            elif k == "lag":
-                do_lag = True
-                do_cpds = True
+    do_cpds = do_pds = do_cos = do_lag = False
+    kinds = args.kind.split(",")
+    for k in kinds:
+        if k == "PDS":
+            do_pds = True
+        elif k == "CPDS":
+            do_cpds = True
+        elif k == "cos" or k == "cospectrum":
+            do_cos = True
+            do_cpds = True
+        elif k == "lag":
+            do_lag = True
+            do_cpds = True
 
-        calc_fspec(
-            args.files,
-            fftlen,
-            do_calc_pds=do_pds,
-            do_calc_cpds=do_cpds,
-            do_calc_cospectrum=do_cos,
-            do_calc_lags=do_lag,
-            bintime=bintime,
-            pdsrebin=pdsrebin,
-            outroot=args.outroot,
-            normalization=normalization,
-            nproc=1,
-            back_ctrate=args.back,
-            noclobber=args.noclobber,
-            ignore_instr=args.ignore_instr,
-            save_all=args.save_all,
-            save_dyn=args.save_dyn,
-            save_lcs=args.save_lcs,
-            no_auxil=args.no_auxil,
-            test=args.test,
-            emin=args.emin,
-            emax=args.emax,
-            ignore_gti=args.ignore_gtis,
-            fill_short_btis=args.fill_short_btis,
-            lombscargle=args.lombscargle,
-        )
+    calc_fspec(
+        args.files,
+        fftlen,
+        do_calc_pds=do_pds,
+        do_calc_cpds=do_cpds,
+        do_calc_cospectrum=do_cos,
+        do_calc_lags=do_lag,
+        bintime=bintime,
+        pdsrebin=pdsrebin,
+        outroot=args.outroot,
+        normalization=normalization,
+        nproc=1,
+        back_ctrate=args.back,
+        noclobber=args.noclobber,
+        ignore_instr=args.ignore_instr,
+        save_all=args.save_all,
+        save_dyn=args.save_dyn,
+        save_lcs=args.save_lcs,
+        no_auxil=args.no_auxil,
+        test=args.test,
+        emin=args.emin,
+        emax=args.emax,
+        ignore_gti=args.ignore_gtis,
+        fill_short_btis=args.fill_short_btis,
+        lombscargle=args.lombscargle,
+    )

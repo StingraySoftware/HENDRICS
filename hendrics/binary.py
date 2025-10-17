@@ -278,25 +278,25 @@ def main_presto(args=None):
 
     if args.energy_interval is None:
         args.energy_interval = [None, None]
-    with log.log_to_file("HENbinary.log"):
-        for f in args.files:
-            print(f)
-            outfile = f.replace(HEN_FILE_EXTENSION, ".dat")
-            ftype, contents = get_file_type(f)
-            if ftype == "lc":
-                lcinfo = save_lc_to_binary(contents, outfile)
-            elif ftype == "events":
-                if args.deorbit_par is not None:
-                    contents = deorbit_events(contents, args.deorbit_par)
-                lcinfo = save_events_to_binary(
-                    contents,
-                    outfile,
-                    bin_time=bintime,
-                    emin=args.energy_interval[0],
-                    emax=args.energy_interval[1],
-                )
-            else:
-                raise ValueError("File type not recognized")
 
-            info = get_header_info(contents)
-            save_inf(lcinfo, info, f.replace(HEN_FILE_EXTENSION, ".inf"))
+    for f in args.files:
+        print(f)
+        outfile = f.replace(HEN_FILE_EXTENSION, ".dat")
+        ftype, contents = get_file_type(f)
+        if ftype == "lc":
+            lcinfo = save_lc_to_binary(contents, outfile)
+        elif ftype == "events":
+            if args.deorbit_par is not None:
+                contents = deorbit_events(contents, args.deorbit_par)
+            lcinfo = save_events_to_binary(
+                contents,
+                outfile,
+                bin_time=bintime,
+                emin=args.energy_interval[0],
+                emax=args.energy_interval[1],
+            )
+        else:
+            raise ValueError("File type not recognized")
+
+        info = get_header_info(contents)
+        save_inf(lcinfo, info, f.replace(HEN_FILE_EXTENSION, ".inf"))

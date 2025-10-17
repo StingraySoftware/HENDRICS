@@ -692,59 +692,58 @@ def main(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENfake.log"):
-        additional_columns = {}
-        livetime = None
-        if args.lc is None and args.ctrate is None and args.event_list is not None:
-            event_list = _read_event_list(args.event_list)
-        elif args.lc is not None or args.ctrate is not None:
-            event_list = EventList()
-            if args.lc is not None:
-                lc = _read_light_curve(args.lc)
-            elif args.ctrate is not None:
-                tstart = assign_value_if_none(args.tstart, 0)
-                tstop = assign_value_if_none(args.tstop, 1024)
-                dt = (tstop - tstart) / 1024
-                t = np.arange(tstart, tstop + 1, dt)
-                lc = Lightcurve(time=t, counts=args.ctrate * dt + np.zeros_like(t), dt=dt)
-            event_list.simulate_times(lc)
-            nevents = len(event_list.time)
-            event_list.pi = np.zeros(nevents, dtype=int)
-            event_list.mjdref = args.mjdref
-            log.info(f"{nevents} events generated")
-        else:
-            event_list = None
+    additional_columns = {}
+    livetime = None
+    if args.lc is None and args.ctrate is None and args.event_list is not None:
+        event_list = _read_event_list(args.event_list)
+    elif args.lc is not None or args.ctrate is not None:
+        event_list = EventList()
+        if args.lc is not None:
+            lc = _read_light_curve(args.lc)
+        elif args.ctrate is not None:
+            tstart = assign_value_if_none(args.tstart, 0)
+            tstop = assign_value_if_none(args.tstop, 1024)
+            dt = (tstop - tstart) / 1024
+            t = np.arange(tstart, tstop + 1, dt)
+            lc = Lightcurve(time=t, counts=args.ctrate * dt + np.zeros_like(t), dt=dt)
+        event_list.simulate_times(lc)
+        nevents = len(event_list.time)
+        event_list.pi = np.zeros(nevents, dtype=int)
+        event_list.mjdref = args.mjdref
+        log.info(f"{nevents} events generated")
+    else:
+        event_list = None
 
-        if args.deadtime is not None and event_list is not None:
-            deadtime = args.deadtime[0]
-            deadtime_sigma = None
-            if len(args.deadtime) > 1:
-                deadtime_sigma = args.deadtime[1]
-            event_list, info = filter_for_deadtime(
-                event_list, deadtime, dt_sigma=deadtime_sigma, return_all=True
-            )
-
-            log.info(f"{len(event_list.time)} events after filter")
-
-            prior = np.zeros_like(event_list.time)
-
-            prior[1:] = np.diff(event_list.time) - info.deadtime[:-1]
-
-            additional_columns["PRIOR"] = {"data": prior, "format": "D"}
-            additional_columns["KIND"] = {
-                "data": info.is_event,
-                "format": "L",
-            }
-            livetime = np.sum(prior)
-
-        generate_fake_fits_observation(
-            event_list=event_list,
-            filename=args.outname,
-            instr=args.instrument,
-            mission=args.mission,
-            tstart=args.tstart,
-            tstop=args.tstop,
-            mjdref=args.mjdref,
-            livetime=livetime,
-            additional_columns=additional_columns,
+    if args.deadtime is not None and event_list is not None:
+        deadtime = args.deadtime[0]
+        deadtime_sigma = None
+        if len(args.deadtime) > 1:
+            deadtime_sigma = args.deadtime[1]
+        event_list, info = filter_for_deadtime(
+            event_list, deadtime, dt_sigma=deadtime_sigma, return_all=True
         )
+
+        log.info(f"{len(event_list.time)} events after filter")
+
+        prior = np.zeros_like(event_list.time)
+
+        prior[1:] = np.diff(event_list.time) - info.deadtime[:-1]
+
+        additional_columns["PRIOR"] = {"data": prior, "format": "D"}
+        additional_columns["KIND"] = {
+            "data": info.is_event,
+            "format": "L",
+        }
+        livetime = np.sum(prior)
+
+    generate_fake_fits_observation(
+        event_list=event_list,
+        filename=args.outname,
+        instr=args.instrument,
+        mission=args.mission,
+        tstart=args.tstart,
+        tstop=args.tstop,
+        mjdref=args.mjdref,
+        livetime=livetime,
+        additional_columns=additional_columns,
+    )
