@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import copy
 import os
-import tempfile
 import warnings
 
 import numpy as np
@@ -973,16 +972,22 @@ def search_with_qffa(
                 tmp_f = tempfile.NamedTemporaryFile("w+").name
                 tmp_fdot = tempfile.NamedTemporaryFile("w+").name
                 tmp_stat = tempfile.NamedTemporaryFile("w+").name
-                all_fgrid = np.lib.format.open_memmap(tmp_f, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape)
-                all_fdotgrid = np.lib.format.open_memmap(tmp_fdot, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape)
-                all_stats = np.lib.format.open_memmap(tmp_stat, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape)
+                all_fgrid = np.lib.format.open_memmap(
+                    tmp_f, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape
+                )
+                all_fdotgrid = np.lib.format.open_memmap(
+                    tmp_fdot, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape
+                )
+                all_stats = np.lib.format.open_memmap(
+                    tmp_stat, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape
+                )
             else:
                 all_fgrid = np.zeros(all_fgrid_shape)
                 all_fdotgrid = np.zeros(all_fgrid_shape)
                 all_stats = np.zeros(all_fgrid_shape)
-        all_fgrid[ii*fgrid_shape[0]:(ii+1)*fgrid_shape[0], :] = fgrid
-        all_fdotgrid[ii*fdotgrid.shape[0]:(ii+1)*fdotgrid.shape[0], :] = fdotgrid
-        all_stats[ii*stats.shape[0]:(ii+1)*stats.shape[0], :] =  stats
+        all_fgrid[ii * fgrid_shape[0] : (ii + 1) * fgrid_shape[0], :] = fgrid
+        all_fdotgrid[ii * fdotgrid.shape[0] : (ii + 1) * fdotgrid.shape[0], :] = fdotgrid
+        all_stats[ii * stats.shape[0] : (ii + 1) * stats.shape[0], :] = stats
 
     step = np.median(np.diff(all_fgrid[:, 0]))
     fdotstep = np.median(np.diff(all_fdotgrid[0]))
