@@ -610,8 +610,8 @@ def transient_search(
                     f"Using memmapped arrays (shape {results_shape}) to reduce memory usage.",
                 )
                 import tempfile
-                tmp_results = tempfile.NamedTemporaryFile(delete=True).name
-                tmp_f = tempfile.NamedTemporaryFile(delete=True).name
+                tmp_results = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+                tmp_f = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
                 all_results = np.lib.format.open_memmap(
                     tmp_results, mode="w+", dtype=results.dtype, shape=results_shape
                 )
@@ -986,9 +986,9 @@ def search_with_qffa(
                     "Large result arrays detected, using memory-mapped files to reduce "
                     "memory usage."
                 )
-                tmp_f = tempfile.NamedTemporaryFile("w+").name
-                tmp_fdot = tempfile.NamedTemporaryFile("w+").name
-                tmp_stat = tempfile.NamedTemporaryFile("w+").name
+                tmp_f = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
+                tmp_fdot = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
+                tmp_stat = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
                 all_fgrid = np.lib.format.open_memmap(
                     tmp_f, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape
                 )
