@@ -607,6 +607,7 @@ def transient_search(
             use_memmap = False
             if np.prod(results_shape) > 1e7:
                 import tempfile
+
                 tmp_results = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
                 tmp_f = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
                 log.info(
@@ -631,7 +632,6 @@ def transient_search(
     times = dt * np.arange(all_results.shape[2])
     final_results_shape = (nave.size, all_results.shape[2], all_results.shape[0])
     if use_memmap:
-
         tmp_results_stats = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
         all_results_stats = np.lib.format.open_memmap(
             tmp_results_stats, mode="w+", dtype=results.dtype, shape=final_results_shape
@@ -675,8 +675,11 @@ def plot_transient_search(results, gif_name=None):
     max_stats_rows = []
     all_images = []
     import tqdm
+
     log.info("Generating plots for transient search...")
-    for i, (ima, nave) in tqdm.tqdm(enumerate(zip(results.stats, results.nave)), total=len(results.nave)):
+    for i, (ima, nave) in tqdm.tqdm(
+        enumerate(zip(results.stats, results.nave)), total=len(results.nave)
+    ):
         f = results.freqs
         t = results.times
         nprof = ima.shape[0]
@@ -707,7 +710,9 @@ def plot_transient_search(results, gif_name=None):
             axf = plt.subplot(gs[0, i_f])
             axima = plt.subplot(gs[1, i_f], sharex=axf)
 
-            axima.pcolormesh(f, t, ima, vmax=detl, vmin=detl / 10, shading="nearest", rasterized=True)
+            axima.pcolormesh(
+                f, t, ima, vmax=detl, vmin=detl / 10, shading="nearest", rasterized=True
+            )
 
             mean_line = np.mean(ima, axis=0) / sum_detl * 3
             maxidx = np.argmax(mean_line)
