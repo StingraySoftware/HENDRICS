@@ -700,20 +700,21 @@ def plot_transient_search(results, gif_name=None):
             ntrial=ntrial_sum,
             n_summed_spectra=nprof / nave,
         )
-        fig = plt.figure(figsize=(10, 10))
+        fig = plt.figure(figsize=(10, 10), dpi=100)
         plt.clf()
         gs = plt.GridSpec(2, 2, height_ratios=(1, 3))
         for i_f in [0, 1]:
             axf = plt.subplot(gs[0, i_f])
             axima = plt.subplot(gs[1, i_f], sharex=axf)
 
-            axima.pcolormesh(f, t, ima / detl * 3, vmax=3, vmin=0.3, shading="nearest")
+            axima.pcolormesh(f, t, ima, vmax=detl, vmin=detl / 10, shading="nearest", rasterized=True)
 
             mean_line = np.mean(ima, axis=0) / sum_detl * 3
             maxidx = np.argmax(mean_line)
             maxline = mean_line[maxidx]
             best_f = f[maxidx]
-            for il, line in enumerate(ima / detl * 3):
+            for il, line in enumerate(ima):
+                line = line / detl * 3
                 axf.plot(
                     f,
                     line,
@@ -722,11 +723,13 @@ def plot_transient_search(results, gif_name=None):
                     c="grey",
                     alpha=0.5,
                     label=f"{il}",
+                    rasterized=True,
                 )
                 maxidx = np.argmax(mean_line)
                 if line[maxidx] > maxline:
                     best_f = f[maxidx]
                     maxline = line[maxidx]
+
             if 3.5 < maxline < 5 and i_f == 0:  # pragma: no cover
                 print(
                     f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
