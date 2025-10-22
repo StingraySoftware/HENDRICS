@@ -371,7 +371,8 @@ class TestEFsearch:
         os.unlink(outfile)
 
     @pytest.mark.skipif("not HAS_IMAGEIO")
-    def test_transient(self):
+    @pytest.mark.parametrize("options", [["--force-memmap"], []])
+    def test_transient(self, options):
         evfile = self.dum
         main_zsearch(
             [
@@ -390,6 +391,7 @@ class TestEFsearch:
                 "--n-transient-intervals",
                 "16",
             ]
+            + options
         )
         outfile = "events_Z22_9.85-9.95Hz_transient.gif"
         assert os.path.exists(outfile)
@@ -425,7 +427,8 @@ class TestEFsearch:
         # assert "Upper limit for sinusoids:" in caplog.text
         os.unlink(outfile)
 
-    def test_zsearch_fast(self):
+    @pytest.mark.parametrize("options", [["--force-memmap"], []])
+    def test_zsearch_fast(self, options):
         evfile = self.dum
         main_zsearch(
             [
@@ -441,6 +444,7 @@ class TestEFsearch:
                 "--oversample",
                 "4",
             ]
+            + options
         )
         outfile = "events_Z22_9.85-9.95Hz_fast" + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)

@@ -517,6 +517,7 @@ def transient_search(
     t0=None,
     t1=None,
     oversample=4,
+    force_memmap=False,
 ):
     """Search for transient pulsations.
 
@@ -604,8 +605,8 @@ def transient_search(
         )
         if all_results is None:
             results_shape = (len(allvalues), nave.size, results.shape[1])
-            use_memmap = False
-            if np.prod(results_shape) > 1e7:
+            use_memmap = force_memmap
+            if np.prod(results_shape) > 1e7 or force_memmap:
                 import tempfile
 
                 tmp_results = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
@@ -902,6 +903,7 @@ def search_with_qffa(
     t0=None,
     t1=None,
     silent=False,
+    force_memmap=False,
 ):
     """'Quite fast folding' algorithm.
 
@@ -1008,7 +1010,7 @@ def search_with_qffa(
             fgrid_shape = fgrid.shape
             all_fgrid_shape = (fgrid_shape[0] * len(allvalues), fgrid_shape[1])
             log.info(f"Initializing result arrays of shape {all_fgrid_shape}")
-            if all_fgrid_shape[0] * all_fgrid_shape[1] > 1e7:
+            if all_fgrid_shape[0] * all_fgrid_shape[1] > 1e7 or force_memmap:
                 import tempfile
 
                 log.info(
@@ -1710,6 +1712,12 @@ def _common_parser(args=None):
         help="The number of harmonics to use in the search "
         "(the 'N' in Z^2_N; only relevant to Z search!)",
     )
+    parser.add_argument(
+        "--force-memmap",
+        help="Force the use of memory-mapped files",
+        default=False,
+        action="store_true",
+    )
 
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ["deorbit", "loglevel", "debug"])
@@ -1793,6 +1801,7 @@ def _common_main(args, func):
                 n=n,
                 nprof=args.n_transient_intervals,
                 oversample=oversample,
+                force_memmap=args.force_memmap,
             )
             plot_transient_search(results, out_fname + "_transient.gif")
             if not args.fast and not args.ffa:
@@ -1840,6 +1849,7 @@ def _common_main(args, func):
                 npfact=args.npfact,
                 oversample=oversample,
                 search_fdot=search_fdot,
+                force_memmap=args.force_memmap,
             )
 
             ref_time = (events.time[-1] + events.time[0]) / 2
