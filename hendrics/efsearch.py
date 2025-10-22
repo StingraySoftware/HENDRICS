@@ -604,20 +604,23 @@ def transient_search(
         )
         if all_results is None:
             results_shape = (len(allvalues), nave.size, results.shape[1])
+            use_memmap = False
             if np.prod(results_shape) > 1e7:
-                log.info(
-                    "Transient search results are very large. "
-                    f"Using memmapped arrays (shape {results_shape}) to reduce memory usage.",
-                )
                 import tempfile
                 tmp_results = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
                 tmp_f = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+                log.info(
+                    "Transient search results are very large. "
+                    f"Using memmapped arrays ({tmp_results}; "
+                    f"shape {results_shape}) to reduce memory usage.",
+                )
                 all_results = np.lib.format.open_memmap(
                     tmp_results, mode="w+", dtype=results.dtype, shape=results_shape
                 )
                 all_freqs = np.lib.format.open_memmap(
                     tmp_f, mode="w+", dtype=mean_f.dtype, shape=(len(allvalues),)
                 )
+                use_memmap = True
             else:
                 all_results = np.empty(results_shape, dtype=results.dtype)
                 all_freqs = np.empty((len(allvalues),), dtype=mean_f.dtype)
@@ -625,10 +628,18 @@ def transient_search(
         all_results[ii] = results
         all_freqs[ii] = mean_f
 
-    all_results = np.array(all_results)
-    all_freqs = np.array(all_freqs)
-
     times = dt * np.arange(all_results.shape[2])
+    final_results_shape = (nave.size, all_results.shape[2], all_results.shape[0])
+    if use_memmap:
+
+        tmp_results_stats = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+        all_results_stats = np.lib.format.open_memmap(
+            tmp_results_stats, mode="w+", dtype=results.dtype, shape=final_results_shape
+        )
+    else:
+        all_results_stats = np.empty(final_results_shape, dtype=results.dtype)
+    for i in range(nave.size):
+        all_results_stats[i] = all_results[:, i, :].T
 
     results = TransientResults()
     results.oversample = oversample
@@ -638,7 +649,12 @@ def transient_search(
     results.nave = nave
     results.freqs = all_freqs
     results.times = times
-    results.stats = np.array([all_results[:, i, :].T for i in range(nave.size)])
+    results.stats = all_results_stats
+
+    if use_memmap:
+        os.remove(all_results.filename)
+        os.remove(all_freqs.filename)
+        del all_results, all_freqs
 
     return results
 
@@ -658,7 +674,9 @@ def plot_transient_search(results, gif_name=None):
     result_name = gif_name.replace(".gif", ".csv")
     max_stats_rows = []
     all_images = []
-    for i, (ima, nave) in enumerate(zip(results.stats, results.nave)):
+    import tqdm
+    log.info("Generating plots for transient search...")
+    for i, (ima, nave) in tqdm.tqdm(enumerate(zip(results.stats, results.nave)), total=len(results.nave)):
         f = results.freqs
         t = results.times
         nprof = ima.shape[0]
