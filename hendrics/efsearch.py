@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import copy
 import os
+import tempfile
 import warnings
 
 import numpy as np
@@ -930,9 +931,7 @@ def search_with_qffa(
     if allvalues == []:
         allvalues = [0]
 
-    all_fgrid = []
-    all_fdotgrid = []
-    all_stats = []
+    all_fgrid = None
 
     local_show_progress = show_progress
     if silent:
@@ -961,16 +960,29 @@ def search_with_qffa(
         )
 
         if all_fgrid is None:
-            all_fgrid = fgrid
-            all_fdotgrid = fdotgrid
-            all_stats = stats
-        else:
-            all_fgrid.append(fgrid)
-            all_fdotgrid.append(fdotgrid)
-            all_stats.append(stats)
-    all_fgrid = np.vstack(all_fgrid)
-    all_fdotgrid = np.vstack(all_fdotgrid)
-    all_stats = np.vstack(all_stats)
+            fgrid_shape = fgrid.shape
+            all_fgrid_shape = (fgrid_shape[0] * len(allvalues), fgrid_shape[1])
+            log.info(f"Initializing result arrays of shape {all_fgrid_shape}")
+            if all_fgrid_shape[0] * all_fgrid_shape[1] > 1e7:
+                import tempfile
+
+                log.info(
+                    "Large result arrays detected, using memory-mapped files to reduce "
+                    "memory usage."
+                )
+                tmp_f = tempfile.NamedTemporaryFile("w+").name
+                tmp_fdot = tempfile.NamedTemporaryFile("w+").name
+                tmp_stat = tempfile.NamedTemporaryFile("w+").name
+                all_fgrid = np.lib.format.open_memmap(tmp_f, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape)
+                all_fdotgrid = np.lib.format.open_memmap(tmp_fdot, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape)
+                all_stats = np.lib.format.open_memmap(tmp_stat, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape)
+            else:
+                all_fgrid = np.zeros(all_fgrid_shape)
+                all_fdotgrid = np.zeros(all_fgrid_shape)
+                all_stats = np.zeros(all_fgrid_shape)
+        all_fgrid[ii*fgrid_shape[0]:(ii+1)*fgrid_shape[0], :] = fgrid
+        all_fdotgrid[ii*fdotgrid.shape[0]:(ii+1)*fdotgrid.shape[0], :] = fdotgrid
+        all_stats[ii*stats.shape[0]:(ii+1)*stats.shape[0], :] =  stats
 
     step = np.median(np.diff(all_fgrid[:, 0]))
     fdotstep = np.median(np.diff(all_fdotgrid[0]))
