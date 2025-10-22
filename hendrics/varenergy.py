@@ -220,115 +220,114 @@ def main(args=None):
     if args.label is not None:
         label = "_" + args.label.lstrip("_")
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENvarenergy.log"):
-        filelist = []
-        energy_spec = (
-            float(args.energy_values[0]),
-            float(args.energy_values[1]),
-            int(args.energy_values[2]),
-            args.energy_values[3],
+    filelist = []
+    energy_spec = (
+        float(args.energy_values[0]),
+        float(args.energy_values[1]),
+        int(args.energy_values[2]),
+        args.energy_values[3],
+    )
+    from .io import sort_files
+
+    if args.cross_instr:
+        log.info("Sorting file list")
+        sorted_files = sort_files(args.files)
+
+        warnings.warn(
+            "Beware! For cpds and derivatives, I assume that the "
+            "files are from only two instruments and in pairs "
+            "(even in random order)"
         )
-        from .io import sort_files
 
-        if args.cross_instr:
-            log.info("Sorting file list")
-            sorted_files = sort_files(args.files)
+        instrs = list(sorted_files.keys())
 
-            warnings.warn(
-                "Beware! For cpds and derivatives, I assume that the "
-                "files are from only two instruments and in pairs "
-                "(even in random order)"
+        files1 = sorted_files[instrs[0]]
+        files2 = sorted_files[instrs[1]]
+    else:
+        files1 = args.files
+        files2 = [None] * len(args.files)
+
+    for fnames in zip(files1, files2):
+        fname = fnames[0]
+        fname2 = fnames[1]
+
+        events = load_events(fname)
+        events2 = None
+        if fname2 is not None:
+            events2 = load_events(fname2)
+        if not args.use_pi and (
+            events.energy is None or (events2 is not None and events2.energy is None)
+        ):
+            raise ValueError(
+                "If --use-pi is not specified, event lists must "
+                "be calibrated! Please use HENcalibrate."
             )
 
-            instrs = list(sorted_files.keys())
+        additional_output_args = {}
+        if args.format == "qdp":
+            additional_output_args["err_specs"] = {"serr": [3]}
+        if args.format in ["hdf5"]:
+            additional_output_args["serialize_meta"] = True
 
-            files1 = sorted_files[instrs[0]]
-            files2 = sorted_files[instrs[1]]
-        else:
-            files1 = args.files
-            files2 = [None] * len(args.files)
+        if args.rms:
+            rms = RmsSpectrum(
+                events,
+                freq_interval=args.freq_interval,
+                energy_spec=energy_spec,
+                segment_size=args.segment_size,
+                bin_time=args.bintime,
+                events2=events2,
+                use_pi=args.use_pi,
+                norm=args.norm,
+            )
+            outfile = hen_root(fname) + label + "_rms." + args.format
+            out_table = varenergy_to_astropy_table(rms)
+            out_table.write(outfile, overwrite=True, **additional_output_args)
+            filelist.append(outfile)
 
-        for fnames in zip(files1, files2):
-            fname = fnames[0]
-            fname2 = fnames[1]
+        if args.lag:
+            lag = LagSpectrum(
+                events,
+                freq_interval=args.freq_interval,
+                energy_spec=energy_spec,
+                ref_band=args.ref_band,
+                segment_size=args.segment_size,
+                bin_time=args.bintime,
+                events2=events2,
+                use_pi=args.use_pi,
+            )
+            outfile = hen_root(fname) + label + "_lag." + args.format
+            out_table = varenergy_to_astropy_table(lag)
+            out_table.write(outfile, overwrite=True, **additional_output_args)
+            filelist.append(outfile)
 
-            events = load_events(fname)
-            events2 = None
-            if fname2 is not None:
-                events2 = load_events(fname2)
-            if not args.use_pi and (
-                events.energy is None or (events2 is not None and events2.energy is None)
-            ):
-                raise ValueError(
-                    "If --use-pi is not specified, event lists must "
-                    "be calibrated! Please use HENcalibrate."
-                )
+        if args.count:
+            cts = CountSpectrum(
+                events,
+                energy_spec=energy_spec,
+                use_pi=args.use_pi,
+            )
+            outfile = hen_root(fname) + label + "_count." + args.format
+            out_table = varenergy_to_astropy_table(cts)
+            out_table.write(outfile, overwrite=True, **additional_output_args)
+            filelist.append(outfile)
 
-            additional_output_args = {}
-            if args.format == "qdp":
-                additional_output_args["err_specs"] = {"serr": [3]}
-            if args.format in ["hdf5"]:
-                additional_output_args["serialize_meta"] = True
+        if args.covariance:
+            cov = CovarianceSpectrum(
+                events,
+                freq_interval=args.freq_interval,
+                energy_spec=energy_spec,
+                ref_band=args.ref_band,
+                segment_size=args.segment_size,
+                bin_time=args.bintime,
+                events2=events2,
+                use_pi=args.use_pi,
+                norm=args.norm,
+            )
+            outfile = hen_root(fname) + label + "_cov." + args.format
+            out_table = varenergy_to_astropy_table(cov)
+            out_table.write(outfile, overwrite=True, **additional_output_args)
 
-            if args.rms:
-                rms = RmsSpectrum(
-                    events,
-                    freq_interval=args.freq_interval,
-                    energy_spec=energy_spec,
-                    segment_size=args.segment_size,
-                    bin_time=args.bintime,
-                    events2=events2,
-                    use_pi=args.use_pi,
-                    norm=args.norm,
-                )
-                outfile = hen_root(fname) + label + "_rms." + args.format
-                out_table = varenergy_to_astropy_table(rms)
-                out_table.write(outfile, overwrite=True, **additional_output_args)
-                filelist.append(outfile)
-
-            if args.lag:
-                lag = LagSpectrum(
-                    events,
-                    freq_interval=args.freq_interval,
-                    energy_spec=energy_spec,
-                    ref_band=args.ref_band,
-                    segment_size=args.segment_size,
-                    bin_time=args.bintime,
-                    events2=events2,
-                    use_pi=args.use_pi,
-                )
-                outfile = hen_root(fname) + label + "_lag." + args.format
-                out_table = varenergy_to_astropy_table(lag)
-                out_table.write(outfile, overwrite=True, **additional_output_args)
-                filelist.append(outfile)
-
-            if args.count:
-                cts = CountSpectrum(
-                    events,
-                    energy_spec=energy_spec,
-                    use_pi=args.use_pi,
-                )
-                outfile = hen_root(fname) + label + "_count." + args.format
-                out_table = varenergy_to_astropy_table(cts)
-                out_table.write(outfile, overwrite=True, **additional_output_args)
-                filelist.append(outfile)
-
-            if args.covariance:
-                cov = CovarianceSpectrum(
-                    events,
-                    freq_interval=args.freq_interval,
-                    energy_spec=energy_spec,
-                    ref_band=args.ref_band,
-                    segment_size=args.segment_size,
-                    bin_time=args.bintime,
-                    events2=events2,
-                    use_pi=args.use_pi,
-                    norm=args.norm,
-                )
-                outfile = hen_root(fname) + label + "_cov." + args.format
-                out_table = varenergy_to_astropy_table(cov)
-                out_table.write(outfile, overwrite=True, **additional_output_args)
-
-                filelist.append(outfile)
+            filelist.append(outfile)
 
     return filelist

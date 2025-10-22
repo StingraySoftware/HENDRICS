@@ -625,28 +625,27 @@ def main(args=None):
 
     log.setLevel(args.loglevel)
 
-    with log.log_to_file("HENreadevents.log"):
-        argdict = {
-            "noclobber": args.noclobber,
-            "gti_split": args.gti_split,
-            "min_length": args.min_length,
-            "gtistring": args.gti_string,
-            "length_split": args.length_split,
-            "randomize_by": args.randomize_by,
-            "discard_calibration": args.discard_calibration,
-            "additional_columns": args.additional,
-            "fill_small_gaps": args.fill_small_gaps,
-            "split_by_detector": not args.ignore_detectors,
-            "bin_time_for_occultations": args.bin_time_for_occultations,
-            "safe_interval": args.safe_interval,
-        }
+    argdict = {
+        "noclobber": args.noclobber,
+        "gti_split": args.gti_split,
+        "min_length": args.min_length,
+        "gtistring": args.gti_string,
+        "length_split": args.length_split,
+        "randomize_by": args.randomize_by,
+        "discard_calibration": args.discard_calibration,
+        "additional_columns": args.additional,
+        "fill_small_gaps": args.fill_small_gaps,
+        "split_by_detector": not args.ignore_detectors,
+        "bin_time_for_occultations": args.bin_time_for_occultations,
+        "safe_interval": args.safe_interval,
+    }
 
-        arglist = [[f, argdict] for f in files]
+    arglist = [[f, argdict] for f in files]
 
-        if os.name == "nt" or args.nproc == 1:
-            [_wrap_fun(a) for a in arglist]
-        else:
-            pool = Pool(processes=args.nproc)
-            for i in pool.imap_unordered(_wrap_fun, arglist):
-                pass
-            pool.close()
+    if os.name == "nt" or args.nproc == 1:
+        [_wrap_fun(a) for a in arglist]
+    else:
+        pool = Pool(processes=args.nproc)
+        for i in pool.imap_unordered(_wrap_fun, arglist):
+            pass
+        pool.close()

@@ -57,44 +57,43 @@ def main_model(args=None):
         raise ValueError("Invalid number of frequencies specified")
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENmodel.log"):
-        model, kind, constraints = load_model(args.modelfile)
-        if kind != "Astropy":
-            raise TypeError("At the moment, only Astropy models are accepted")
+    model, kind, constraints = load_model(args.modelfile)
+    if kind != "Astropy":
+        raise TypeError("At the moment, only Astropy models are accepted")
 
-        for f in args.files:
-            root = os.path.splitext(f)[0]
-            spectrum = load_pds(f)
+    for f in args.files:
+        root = os.path.splitext(f)[0]
+        spectrum = load_pds(f)
 
-            if freqs is not None:
-                good = np.zeros(len(spectrum.freq), dtype=bool)
-                for f0, f1 in zip(freqs[::2], freqs[1::2]):
-                    local_good = (spectrum.freq >= f0) & (spectrum.freq < f1)
-                    good[local_good] = True
+        if freqs is not None:
+            good = np.zeros(len(spectrum.freq), dtype=bool)
+            for f0, f1 in zip(freqs[::2], freqs[1::2]):
+                local_good = (spectrum.freq >= f0) & (spectrum.freq < f1)
+                good[local_good] = True
 
-                spectrum_filt = copy.copy(spectrum)
-                spectrum_filt.power = spectrum.power[good]
-                spectrum_filt.freq = spectrum.freq[good]
-                spectrum_filt.power_err = spectrum.power_err[good]
+            spectrum_filt = copy.copy(spectrum)
+            spectrum_filt.power = spectrum.power[good]
+            spectrum_filt.freq = spectrum.freq[good]
+            spectrum_filt.power_err = spectrum.power_err[good]
 
-            priors = None
-            max_post = False
+        priors = None
+        max_post = False
 
-            if constraints is not None and "priors" in constraints:
-                priors = constraints["priors"]
-                max_post = True
+        if constraints is not None and "priors" in constraints:
+            priors = constraints["priors"]
+            max_post = True
 
-            parest, res = fit_powerspectrum(
-                spectrum,
-                model,
-                model.parameters,
-                max_post=max_post,
-                priors=priors,
-                fitmethod=args.fitmethod,
-            )
+        parest, res = fit_powerspectrum(
+            spectrum,
+            model,
+            model.parameters,
+            max_post=max_post,
+            priors=priors,
+            fitmethod=args.fitmethod,
+        )
 
-            save_model(res.model, root + "_bestfit.p")
-            spectrum.best_fits = [res.model]
-            log.info("Best-fit model:")
-            log.info(res.model)
-            save_pds(spectrum, root + "_fit" + HEN_FILE_EXTENSION)
+        save_model(res.model, root + "_bestfit.p")
+        spectrum.best_fits = [res.model]
+        log.info("Best-fit model:")
+        log.info(res.model)
+        save_pds(spectrum, root + "_fit" + HEN_FILE_EXTENSION)

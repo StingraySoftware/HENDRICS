@@ -893,28 +893,27 @@ def main_fold(args=None):
 
     log.setLevel(args.loglevel)
 
-    with log.log_to_file("HENfold.log"):
-        frequency = args.freq
-        fdot = args.fdot
-        fddot = args.fddot
+    frequency = args.freq
+    fdot = args.fdot
+    fddot = args.fddot
 
-        run_folding(
-            args.file,
-            freq=frequency,
-            fdot=fdot,
-            fddot=fddot,
-            nbin=args.nbin,
-            nebin=args.nebin,
-            tref=args.tref,
-            test=args.test,
-            emin=args.emin,
-            emax=args.emax,
-            norm=args.norm,
-            deorbit_par=args.deorbit_par,
-            pepoch=args.pepoch,
-            out_file_root=args.out_file_root,
-            colormap=args.colormap,
-        )
+    run_folding(
+        args.file,
+        freq=frequency,
+        fdot=fdot,
+        fddot=fddot,
+        nbin=args.nbin,
+        nebin=args.nebin,
+        tref=args.tref,
+        test=args.test,
+        emin=args.emin,
+        emax=args.emax,
+        norm=args.norm,
+        deorbit_par=args.deorbit_par,
+        pepoch=args.pepoch,
+        out_file_root=args.out_file_root,
+        colormap=args.colormap,
+    )
 
 
 def main_deorbit(args=None):
@@ -935,12 +934,11 @@ def main_deorbit(args=None):
         args.loglevel = "DEBUG"
 
     log.setLevel(args.loglevel)
-    with log.log_to_file("HENdeorbit.log"):
-        for fname in args.files:
-            log.info(f"Deorbiting events from {fname}")
-            events = load_events(fname)
-            events = deorbit_events(events, parameter_file=args.deorbit_par)
-            outfile = hen_root(fname) + "_deorb" + HEN_FILE_EXTENSION
+    for fname in args.files:
+        log.info(f"Deorbiting events from {fname}")
+        events = load_events(fname)
+        events = deorbit_events(events, parameter_file=args.deorbit_par)
+        outfile = hen_root(fname) + "_deorb" + HEN_FILE_EXTENSION
 
-            save_events(events, outfile)
-            log.info(f"Saved to {outfile}")
+        save_events(events, outfile)
+        log.info(f"Saved to {outfile}")

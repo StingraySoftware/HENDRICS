@@ -182,21 +182,20 @@ def main(args=None):
         files = list(zip(files[::2], files[1::2]))
 
     outfiles = []
-    with log.log_to_file("HENcolors.log"):
-        if args.outfile is not None and len(files) > 1:
-            raise ValueError("Specify --output only when processing " "a single file")
-        bintime = np.longdouble(interpret_bintime(args.bintime))
+    if args.outfile is not None and len(files) > 1:
+        raise ValueError("Specify --output only when processing " "a single file")
+    bintime = np.longdouble(interpret_bintime(args.bintime))
 
-        for f in files:
-            outfile = treat_power_colors(
-                f,
-                args.frequency_edges,
-                args.segment_size,
-                bintime,
-                args.rebin,
-                args.outfile,
-                args.poisson_noise,
-            )
-            outfiles.append(outfile)
+    for f in files:
+        outfile = treat_power_colors(
+            f,
+            args.frequency_edges,
+            args.segment_size,
+            bintime,
+            args.rebin,
+            args.outfile,
+            args.poisson_noise,
+        )
+        outfiles.append(outfile)
 
     return outfiles
