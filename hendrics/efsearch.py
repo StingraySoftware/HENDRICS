@@ -591,11 +591,8 @@ def transient_search(
     if allvalues == []:
         allvalues = [0]
 
-    all_results = []
-    all_freqs = []
-
     dt = (times[-1] - times[0]) / nprof
-
+    all_results = None
     for ii, i in enumerate(show_progress(allvalues)):
         offset = step * i
         fdot_offset = 0
@@ -605,8 +602,28 @@ def transient_search(
         nave, results = _transient_search_step(
             times, mean_f, mean_fdot=mean_fdot, nbin=nbin, nprof=nprof, n=n
         )
-        all_results.append(results)
-        all_freqs.append(mean_f)
+        if all_results is None:
+            results_shape = (len(allvalues), nave.size, results.shape[1])
+            if np.prod(results_shape) > 1e7:
+                log.info(
+                    "Transient search results are very large. "
+                    f"Using memmapped arrays (shape {results_shape}) to reduce memory usage.",
+                )
+                import tempfile
+                tmp_results = tempfile.NamedTemporaryFile(delete=True).name
+                tmp_f = tempfile.NamedTemporaryFile(delete=True).name
+                all_results = np.lib.format.open_memmap(
+                    tmp_results, mode="w+", dtype=results.dtype, shape=results_shape
+                )
+                all_freqs = np.lib.format.open_memmap(
+                    tmp_f, mode="w+", dtype=mean_f.dtype, shape=(len(allvalues),)
+                )
+            else:
+                all_results = np.empty(results_shape, dtype=results.dtype)
+                all_freqs = np.empty((len(allvalues),), dtype=mean_f.dtype)
+
+        all_results[ii] = results
+        all_freqs[ii] = mean_f
 
     all_results = np.array(all_results)
     all_freqs = np.array(all_freqs)
