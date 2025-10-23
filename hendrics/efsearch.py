@@ -677,7 +677,12 @@ def plot_transient_search(results, gif_name=None):
     all_images = []
     import tqdm
 
-    log.info("Generating plots for transient search...")
+    plot_results = results.stats.size < 1e7
+    if not plot_results:
+        log.info("Transient search results are too large to plot. Skipping plots.")
+    else:
+        log.info("Generating plots for transient search...")
+
     for i, (ima, nave) in tqdm.tqdm(
         enumerate(zip(results.stats, results.nave)), total=len(results.nave)
     ):
@@ -704,6 +709,33 @@ def plot_transient_search(results, gif_name=None):
             ntrial=ntrial_sum,
             n_summed_spectra=nprof / nave,
         )
+
+        mean_line = np.mean(ima, axis=0) / sum_detl * 3
+        maxidx = np.argmax(mean_line)
+        maxline = mean_line[maxidx]
+
+        for il, line in enumerate(ima):
+            line = line / detl * 3
+
+            maxidx = np.argmax(mean_line)
+            if line[maxidx] > maxline:
+                best_f = f[maxidx]
+                maxline = line[maxidx]
+
+        max_stats_rows.append(
+            {"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline}
+        )
+
+        if 3.5 < maxline < 5:  # pragma: no cover
+            print(
+                f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
+            )
+        elif maxline >= 5:  # pragma: no cover
+            print(f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
+
+        if not plot_results:
+            continue
+
         fig = plt.figure(figsize=(10, 10), dpi=100)
         plt.clf()
         gs = plt.GridSpec(2, 2, height_ratios=(1, 3))
@@ -736,12 +768,6 @@ def plot_transient_search(results, gif_name=None):
                     best_f = f[maxidx]
                     maxline = line[maxidx]
 
-            if 3.5 < maxline < 5 and i_f == 0:  # pragma: no cover
-                print(
-                    f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
-                )
-            elif maxline >= 5 and i_f == 0:  # pragma: no cover
-                print(f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
             axf.plot(f, mean_line, lw=1, c="k", zorder=10, label="mean", ls="-")
 
             axima.set_xlabel("Frequency")
@@ -752,9 +778,6 @@ def plot_transient_search(results, gif_name=None):
             xmin = max(best_f - df, results.f0)
             xmax = min(best_f + df, results.f1)
             if i_f == 0:
-                max_stats_rows.append(
-                    {"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline}
-                )
                 axf.set_xlim([results.f0, results.f1])
                 axf.axvline(xmin, ls="--", c="b", lw=2)
                 axf.axvline(xmax, ls="--", c="b", lw=2)
@@ -770,9 +793,11 @@ def plot_transient_search(results, gif_name=None):
 
     if hasattr(results.stats, "filename"):
         os.remove(results.stats.filename)
+
     vstack(max_stats_rows).write(result_name, overwrite=True)
 
-    imageio.v3.imwrite(gif_name, all_images, duration=1000.0)
+    if plot_results:
+        imageio.v3.imwrite(gif_name, all_images, duration=1000.0)
 
     return all_images
 
