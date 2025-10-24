@@ -370,6 +370,7 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
     "PTH109", # os.getcwd is fine
     "PTH108", # os.unlink is fine
     "PTH103", # os.makedirs is fine
+    "PTH107", # os.remove is fine
 
     # flake8-simplify (SIM)
     "SIM103", # needless-bool (cannot be safely applied in all contexts (np.True_ is not True))
