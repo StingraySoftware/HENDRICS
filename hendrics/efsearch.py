@@ -722,14 +722,10 @@ def plot_transient_search(results, gif_name=None):
                 best_f = f[maxidx]
                 maxline = line[maxidx]
 
-        max_stats_rows.append(
-            {"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline}
-        )
+        max_stats_rows.append({"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline})
 
         if 3.5 < maxline < 5:  # pragma: no cover
-            print(
-                f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
-            )
+            print(f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
         elif maxline >= 5:  # pragma: no cover
             print(f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
 
