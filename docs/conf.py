@@ -171,7 +171,7 @@ linkcheck_ignore = [
     r"https://.*adsabs.harvard.edu/",
     r"https://zenodo.org/",
     r"http.*://stackoverflow.com/questions/.*",
-    r"https://*.nasa.gov/*",
+    r"https://.*.nasa.gov/.*",
 ]
 
 # -- Options for the edit_on_github extension ---------------------------------

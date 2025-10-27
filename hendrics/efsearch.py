@@ -517,6 +517,7 @@ def transient_search(
     t0=None,
     t1=None,
     oversample=4,
+    force_memmap=False,
 ):
     """Search for transient pulsations.
 
@@ -591,11 +592,8 @@ def transient_search(
     if allvalues == []:
         allvalues = [0]
 
-    all_results = []
-    all_freqs = []
-
     dt = (times[-1] - times[0]) / nprof
-
+    all_results = None
     for ii, i in enumerate(show_progress(allvalues)):
         offset = step * i
         fdot_offset = 0
@@ -605,13 +603,44 @@ def transient_search(
         nave, results = _transient_search_step(
             times, mean_f, mean_fdot=mean_fdot, nbin=nbin, nprof=nprof, n=n
         )
-        all_results.append(results)
-        all_freqs.append(mean_f)
+        if all_results is None:
+            results_shape = (len(allvalues), nave.size, results.shape[1])
+            use_memmap = force_memmap
+            if np.prod(results_shape) > 1e7 or force_memmap:
+                import tempfile
 
-    all_results = np.array(all_results)
-    all_freqs = np.array(all_freqs)
+                tmp_results = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+                tmp_f = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+                log.info(
+                    "Transient search results are very large. "
+                    f"Using memmapped arrays ({tmp_results}; "
+                    f"shape {results_shape}) to reduce memory usage.",
+                )
+                all_results = np.lib.format.open_memmap(
+                    tmp_results, mode="w+", dtype=results.dtype, shape=results_shape
+                )
+                all_freqs = np.lib.format.open_memmap(
+                    tmp_f, mode="w+", dtype=mean_f.dtype, shape=(len(allvalues),)
+                )
+                use_memmap = True
+            else:
+                all_results = np.empty(results_shape, dtype=results.dtype)
+                all_freqs = np.empty((len(allvalues),), dtype=mean_f.dtype)
+
+        all_results[ii] = results
+        all_freqs[ii] = mean_f
 
     times = dt * np.arange(all_results.shape[2])
+    final_results_shape = (nave.size, all_results.shape[2], all_results.shape[0])
+    if use_memmap:
+        tmp_results_stats = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+        all_results_stats = np.lib.format.open_memmap(
+            tmp_results_stats, mode="w+", dtype=results.dtype, shape=final_results_shape
+        )
+    else:
+        all_results_stats = np.empty(final_results_shape, dtype=results.dtype)
+    for i in range(nave.size):
+        all_results_stats[i] = all_results[:, i, :].T
 
     results = TransientResults()
     results.oversample = oversample
@@ -621,12 +650,43 @@ def transient_search(
     results.nave = nave
     results.freqs = all_freqs
     results.times = times
-    results.stats = np.array([all_results[:, i, :].T for i in range(nave.size)])
+    results.stats = all_results_stats
+
+    if use_memmap:
+        os.remove(all_results.filename)
+        os.remove(all_freqs.filename)
+        del all_results, all_freqs
 
     return results
 
 
 def plot_transient_search(results, gif_name=None):
+    """Analyze and plot the results of a transient search.
+
+    Parameters
+    ----------
+    results : TransientResults
+        The results of the transient search.
+    gif_name : str or None, default None
+        The name of the gif file to save the plots to. If None, no gif is saved.
+    """
+    return _analyze_and_plot_transient_search(results, gif_name=gif_name, force_plotting=True)
+
+
+def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=False):
+    """Analyze and plot the results of a transient search.
+
+    By default, it will only plot if the results are smaller than 1e7 elements.
+
+    Parameters
+    ----------
+    results : TransientResults
+        The results of the transient search.
+    gif_name : str or None, default None
+        The name of the gif file to save the plots to. If None, no gif is saved.
+    force_plotting : bool, default False
+        Whether to force plotting even if the results are too large.
+    """
     import matplotlib as mpl
     import matplotlib.pyplot as plt
 
@@ -641,7 +701,17 @@ def plot_transient_search(results, gif_name=None):
     result_name = gif_name.replace(".gif", ".csv")
     max_stats_rows = []
     all_images = []
-    for i, (ima, nave) in enumerate(zip(results.stats, results.nave)):
+    import tqdm
+
+    plot_results = (results.stats.size < 1e7) or force_plotting
+    if not plot_results:
+        log.info("Transient search results are too large to plot. Skipping plots.")
+    else:
+        log.info("Generating plots for transient search...")
+
+    for i, (ima, nave) in tqdm.tqdm(
+        enumerate(zip(results.stats, results.nave)), total=len(results.nave)
+    ):
         f = results.freqs
         t = results.times
         nprof = ima.shape[0]
@@ -665,20 +735,46 @@ def plot_transient_search(results, gif_name=None):
             ntrial=ntrial_sum,
             n_summed_spectra=nprof / nave,
         )
-        fig = plt.figure(figsize=(10, 10))
+
+        mean_line = np.mean(ima, axis=0) / sum_detl * 3
+        maxidx = np.argmax(mean_line)
+        maxline = mean_line[maxidx]
+
+        for il, line in enumerate(ima):
+            line = line / detl * 3
+
+            maxidx = np.argmax(mean_line)
+            # if line[maxidx] > maxline:
+            best_f = f[maxidx]
+            maxline = line[maxidx]
+
+        max_stats_rows.append({"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline})
+
+        if 3.5 < maxline < 5:  # pragma: no cover
+            print(f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
+        elif maxline >= 5:  # pragma: no cover
+            print(f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
+
+        if not plot_results:
+            continue
+
+        fig = plt.figure(figsize=(10, 10), dpi=100)
         plt.clf()
         gs = plt.GridSpec(2, 2, height_ratios=(1, 3))
         for i_f in [0, 1]:
             axf = plt.subplot(gs[0, i_f])
             axima = plt.subplot(gs[1, i_f], sharex=axf)
 
-            axima.pcolormesh(f, t, ima / detl * 3, vmax=3, vmin=0.3, shading="nearest")
+            axima.pcolormesh(
+                f, t, ima, vmax=detl, vmin=detl / 10, shading="nearest", rasterized=True
+            )
 
             mean_line = np.mean(ima, axis=0) / sum_detl * 3
             maxidx = np.argmax(mean_line)
             maxline = mean_line[maxidx]
             best_f = f[maxidx]
-            for il, line in enumerate(ima / detl * 3):
+            for il, line in enumerate(ima):
+                line = line / detl * 3
                 axf.plot(
                     f,
                     line,
@@ -687,17 +783,13 @@ def plot_transient_search(results, gif_name=None):
                     c="grey",
                     alpha=0.5,
                     label=f"{il}",
+                    rasterized=True,
                 )
                 maxidx = np.argmax(mean_line)
                 if line[maxidx] > maxline:
                     best_f = f[maxidx]
                     maxline = line[maxidx]
-            if 3.5 < maxline < 5 and i_f == 0:  # pragma: no cover
-                print(
-                    f"{gif_name}: Possible candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)"
-                )
-            elif maxline >= 5 and i_f == 0:  # pragma: no cover
-                print(f"{gif_name}: Candidate at step {i}: {best_f} Hz (~{maxline:.1f} sigma)")
+
             axf.plot(f, mean_line, lw=1, c="k", zorder=10, label="mean", ls="-")
 
             axima.set_xlabel("Frequency")
@@ -708,24 +800,26 @@ def plot_transient_search(results, gif_name=None):
             xmin = max(best_f - df, results.f0)
             xmax = min(best_f + df, results.f1)
             if i_f == 0:
-                max_stats_rows.append(
-                    {"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline}
-                )
                 axf.set_xlim([results.f0, results.f1])
                 axf.axvline(xmin, ls="--", c="b", lw=2)
                 axf.axvline(xmax, ls="--", c="b", lw=2)
             else:
                 axf.set_xlim([xmin, xmax])
 
-            fig.canvas.draw()
-            image = np.frombuffer(fig.canvas.buffer_rgba().cast("B"), dtype="uint8")
-            image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
+        fig.canvas.draw()
+        image = np.frombuffer(fig.canvas.buffer_rgba().cast("B"), dtype="uint8")
+        image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
 
         plt.close(fig)
         all_images.append(image)
+
+    if hasattr(results.stats, "filename"):
+        os.remove(results.stats.filename)
+
     vstack(max_stats_rows).write(result_name, overwrite=True)
 
-    imageio.v3.imwrite(gif_name, all_images, duration=1000.0)
+    if plot_results:
+        imageio.v3.imwrite(gif_name, all_images, duration=1000.0)
 
     return all_images
 
@@ -856,6 +950,7 @@ def search_with_qffa(
     t0=None,
     t1=None,
     silent=False,
+    force_memmap=False,
 ):
     """'Quite fast folding' algorithm.
 
@@ -930,9 +1025,7 @@ def search_with_qffa(
     if allvalues == []:
         allvalues = [0]
 
-    all_fgrid = []
-    all_fdotgrid = []
-    all_stats = []
+    all_fgrid = None
 
     local_show_progress = show_progress
     if silent:
@@ -961,16 +1054,35 @@ def search_with_qffa(
         )
 
         if all_fgrid is None:
-            all_fgrid = fgrid
-            all_fdotgrid = fdotgrid
-            all_stats = stats
-        else:
-            all_fgrid.append(fgrid)
-            all_fdotgrid.append(fdotgrid)
-            all_stats.append(stats)
-    all_fgrid = np.vstack(all_fgrid)
-    all_fdotgrid = np.vstack(all_fdotgrid)
-    all_stats = np.vstack(all_stats)
+            fgrid_shape = fgrid.shape
+            all_fgrid_shape = (fgrid_shape[0] * len(allvalues), fgrid_shape[1])
+            log.info(f"Initializing result arrays of shape {all_fgrid_shape}")
+            if all_fgrid_shape[0] * all_fgrid_shape[1] > 1e7 or force_memmap:
+                import tempfile
+
+                log.info(
+                    "Large result arrays detected, using memory-mapped files to reduce "
+                    "memory usage."
+                )
+                tmp_f = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
+                tmp_fdot = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
+                tmp_stat = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
+                all_fgrid = np.lib.format.open_memmap(
+                    tmp_f, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape
+                )
+                all_fdotgrid = np.lib.format.open_memmap(
+                    tmp_fdot, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape
+                )
+                all_stats = np.lib.format.open_memmap(
+                    tmp_stat, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape
+                )
+            else:
+                all_fgrid = np.zeros(all_fgrid_shape)
+                all_fdotgrid = np.zeros(all_fgrid_shape)
+                all_stats = np.zeros(all_fgrid_shape)
+        all_fgrid[ii * fgrid_shape[0] : (ii + 1) * fgrid_shape[0], :] = fgrid
+        all_fdotgrid[ii * fdotgrid.shape[0] : (ii + 1) * fdotgrid.shape[0], :] = fdotgrid
+        all_stats[ii * stats.shape[0] : (ii + 1) * stats.shape[0], :] = stats
 
     step = np.median(np.diff(all_fgrid[:, 0]))
     fdotstep = np.median(np.diff(all_fdotgrid[0]))
@@ -1647,6 +1759,12 @@ def _common_parser(args=None):
         help="The number of harmonics to use in the search "
         "(the 'N' in Z^2_N; only relevant to Z search!)",
     )
+    parser.add_argument(
+        "--force-memmap",
+        help="Force the use of memory-mapped files",
+        default=False,
+        action="store_true",
+    )
 
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ["deorbit", "loglevel", "debug"])
@@ -1730,8 +1848,9 @@ def _common_main(args, func):
                 n=n,
                 nprof=args.n_transient_intervals,
                 oversample=oversample,
+                force_memmap=args.force_memmap,
             )
-            plot_transient_search(results, out_fname + "_transient.gif")
+            _analyze_and_plot_transient_search(results, out_fname + "_transient.gif")
             if not args.fast and not args.ffa:
                 continue
 
@@ -1777,6 +1896,7 @@ def _common_main(args, func):
                 npfact=args.npfact,
                 oversample=oversample,
                 search_fdot=search_fdot,
+                force_memmap=args.force_memmap,
             )
 
             ref_time = (events.time[-1] + events.time[0]) / 2

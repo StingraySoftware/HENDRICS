@@ -1039,37 +1039,36 @@ def main_phaseogram(args=None):
 
     log.setLevel(args.loglevel)
 
-    with log.log_to_file("HENphaseogram.log"):
-        if args.periodogram is None and args.freq is None:
-            raise ValueError("One of -f or --periodogram arguments MUST be " "specified")
-        elif args.periodogram is not None:
-            periodogram = load_folding(args.periodogram)
-            frequency = float(periodogram.peaks[0])
-            fdot = 0
-            fddot = 0
-        else:
-            frequency = args.freq
-            fdot = args.fdot
-            fddot = args.fddot
+    if args.periodogram is None and args.freq is None:
+        raise ValueError("One of -f or --periodogram arguments MUST be " "specified")
+    elif args.periodogram is not None:
+        periodogram = load_folding(args.periodogram)
+        frequency = float(periodogram.peaks[0])
+        fdot = 0
+        fddot = 0
+    else:
+        frequency = args.freq
+        fdot = args.fdot
+        fddot = args.fddot
 
-        ip = run_interactive_phaseogram(
-            args.file,
-            freq=frequency,
-            fdot=fdot,
-            fddot=fddot,
-            nbin=args.nbin,
-            nt=args.ntimes,
-            test=args.test or args.get_toa,
-            binary=args.binary,
-            binary_parameters=args.binary_parameters,
-            pepoch=args.pepoch,
-            norm=args.norm,
-            plot_only=args.plot_only,
-            deorbit_par=args.deorbit_par,
-            emin=args.emin,
-            emax=args.emax,
-            colormap=args.colormap,
-        )
+    ip = run_interactive_phaseogram(
+        args.file,
+        freq=frequency,
+        fdot=fdot,
+        fddot=fddot,
+        nbin=args.nbin,
+        nt=args.ntimes,
+        test=args.test or args.get_toa,
+        binary=args.binary,
+        binary_parameters=args.binary_parameters,
+        pepoch=args.pepoch,
+        norm=args.norm,
+        plot_only=args.plot_only,
+        deorbit_par=args.deorbit_par,
+        emin=args.emin,
+        emax=args.emax,
+        colormap=args.colormap,
+    )
     if args.get_toa:
         ip.toa(1)
 
