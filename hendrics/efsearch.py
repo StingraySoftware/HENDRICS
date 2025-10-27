@@ -670,7 +670,6 @@ def plot_transient_search(results, gif_name=None):
     gif_name : str or None, default None
         The name of the gif file to save the plots to. If None, no gif is saved.
     """
-
     return _analyze_and_plot_transient_search(results, gif_name=gif_name, force_plotting=True)
 
 
