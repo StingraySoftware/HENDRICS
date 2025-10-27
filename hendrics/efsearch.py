@@ -661,6 +661,33 @@ def transient_search(
 
 
 def plot_transient_search(results, gif_name=None):
+    """Analyze and plot the results of a transient search.
+
+    Parameters
+    ----------
+    results : TransientResults
+        The results of the transient search.
+    gif_name : str or None, default None
+        The name of the gif file to save the plots to. If None, no gif is saved.
+    """
+
+    return _analyze_and_plot_transient_search(results, gif_name=gif_name, force_plotting=True)
+
+
+def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=False):
+    """Analyze and plot the results of a transient search.
+
+    By default, it will only plot if the results are smaller than 1e7 elements.
+
+    Parameters
+    ----------
+    results : TransientResults
+        The results of the transient search.
+    gif_name : str or None, default None
+        The name of the gif file to save the plots to. If None, no gif is saved.
+    force_plotting : bool, default False
+        Whether to force plotting even if the results are too large.
+    """
     import matplotlib as mpl
     import matplotlib.pyplot as plt
 
@@ -677,7 +704,7 @@ def plot_transient_search(results, gif_name=None):
     all_images = []
     import tqdm
 
-    plot_results = results.stats.size < 1e7
+    plot_results = (results.stats.size < 1e7) or force_plotting
     if not plot_results:
         log.info("Transient search results are too large to plot. Skipping plots.")
     else:
@@ -718,9 +745,9 @@ def plot_transient_search(results, gif_name=None):
             line = line / detl * 3
 
             maxidx = np.argmax(mean_line)
-            if line[maxidx] > maxline:
-                best_f = f[maxidx]
-                maxline = line[maxidx]
+            # if line[maxidx] > maxline:
+            best_f = f[maxidx]
+            maxline = line[maxidx]
 
         max_stats_rows.append({"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline})
 
@@ -1824,7 +1851,7 @@ def _common_main(args, func):
                 oversample=oversample,
                 force_memmap=args.force_memmap,
             )
-            plot_transient_search(results, out_fname + "_transient.gif")
+            _analyze_and_plot_transient_search(results, out_fname + "_transient.gif")
             if not args.fast and not args.ffa:
                 continue
 
