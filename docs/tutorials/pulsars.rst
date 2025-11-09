@@ -69,7 +69,7 @@ Select this algorithm with the ``--fast`` option on the command line of `HENzsea
 
 ::
 
-    $ HENefsearch -f 9.85 -F 9.95 -n 64 --fast -N 3 mistery_psrA_nustar_fpma_ev.nc
+    $ HENzsearch -f 9.85 -F 9.95 -n 64 --fast -N 3 mistery_psrA_nustar_fpma_ev.nc
 
 Here, we are searching from 9.85 to 9.95 Hz, using 3 harmonics (so, ..math:`Z^2_3`
 stats), pre-binning the pulse profile with 64 bins.
