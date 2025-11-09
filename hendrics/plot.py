@@ -1,8 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Quicklook plots."""
 
-import copy
-import os
 import warnings
 from collections.abc import Iterable
 
@@ -15,19 +13,15 @@ from astropy import log
 from astropy.modeling import Model
 from astropy.modeling.models import Const1D
 from astropy.stats import poisson_conf_interval
-from astropy.table import Table
 
-from .base import _assign_value_if_none, deorbit_events
+from .base import _assign_value_if_none
 from .base import pds_detection_level as detection_level
-from .efsearch import analyze_qffa_results
-from .fold import filter_energy, fold_events
+from .efsearch import analyze_qffa_results, get_best_solution_from_qffa
 from .io import (
     HEN_FILE_EXTENSION,
-    find_file_in_allowed_paths,
     get_file_type,
     is_string,
     load_data,
-    load_events,
     load_lcurve,
     load_pds,
     save_as_qdp,
@@ -434,63 +428,26 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             best_cand_table["fdot_idx"][0],
         )
 
-        if (filename := best_cand_table.meta["filename"]) is not None:
+        events, solution_dict, table = get_best_solution_from_qffa(
+            ef,
+            best_cand_table,
+            out_model_file=f"{fname.replace(HEN_FILE_EXTENSION, '')}.par",
+            fold=True,
+        )
+
+        if events is not None:
             external_gs = gridspec.GridSpec(2, 1)
             search_gs_no = 1
-
-            events = load_events(filename)
-            if ef.emin is not None or ef.emax is not None:
-                events, elabel = filter_energy(events, ef.emin, ef.emax)
-
-            if hasattr(ef, "parfile") and ef.parfile is not None:
-                root = os.path.split(fname)[0]
-                parfile = find_file_in_allowed_paths(ef.parfile, [".", root])
-                if not parfile:
-                    warnings.warn(f"{ef.parfile} does not exist")
-                else:
-                    ef.parfile = parfile
-
-                if parfile and os.path.exists(parfile):
-                    events = deorbit_events(events, parfile)
-
-            if hasattr(ef, "ref_time") and ef.ref_time is not None:
-                ref_time = ef.ref_time
-            elif hasattr(ef, "pepoch") and ef.pepoch is not None:
-                ref_time = (ef.pepoch - events.mjdref) * 86400
-            else:
-                ref_time = (events.time[0] + events.time[-1]) / 2
-
-            pepoch = ref_time / 86400 + events.mjdref
-
-            phase, profile, profile_err = fold_events(
-                copy.deepcopy(events.time),
-                f,
-                fdot,
-                ref_time=ref_time,
-                # gti=copy.deepcopy(events.gti),
-                expocorr=False,
-                nbin=nbin,
-            )
             ax = plt.subplot(external_gs[0])
-            Table(
-                {
-                    "phase": np.concatenate((phase, phase + 1)),
-                    "profile": np.concatenate((profile, profile)),
-                    "err": np.concatenate((profile_err, profile_err)),
-                }
-            ).write(
+            table.write(
                 f'{fname.replace(HEN_FILE_EXTENSION, "")}_folded.csv',
                 overwrite=True,
                 format="ascii",
             )
 
-            ax.plot(
-                np.concatenate((phase, phase + 1)),
-                np.concatenate((profile, profile)),
-                drawstyle="steps-mid",
-            )
+            ax.plot(table["phase"], table["profile"], drawstyle="steps-mid")
 
-            mean = np.mean(profile)
+            mean = np.mean(table["profile"])
 
             low, high = poisson_conf_interval(mean, interval="frequentist-confidence", sigma=1)
 
@@ -514,27 +471,6 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             ax.set_ylabel("Counts")
             ax.set_xlim([0, 2])
             ax.legend(loc=4)
-            ntimes = max(8, np.rint(max_stat / 20).astype(int))
-            phascommand = (
-                f"HENphaseogram -f {f} "
-                f"--fdot {fdot} {ef.filename} -n {nbin} --ntimes {ntimes} --norm meansub"
-            )
-            if ef.parfile and os.path.exists(ef.parfile):
-                phascommand += f" --deorbit-par {parfile}"
-            if hasattr(ef, "emin") and ef.emin is not None:
-                phascommand += f" --emin {ef.emin}"
-            if hasattr(ef, "emin") and ef.emin is not None:
-                phascommand += f" --emax {ef.emax}"
-
-            if hasattr(events, "mjdref") and events.mjdref is not None:
-                phascommand += f" --pepoch {pepoch}"
-
-            log.info("To see the detailed phaseogram, " f"run {phascommand}")
-
-        elif not os.path.exists(ef.filename):
-            warnings.warn(ef.filename + " does not exist")
-            external_gs = gridspec.GridSpec(1, 1)
-            search_gs_no = 0
         else:
             external_gs = gridspec.GridSpec(1, 1)
             search_gs_no = 0

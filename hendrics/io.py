@@ -57,7 +57,9 @@ if HAS_C256:
     cpl256 = np.dtype([("real", np.longdouble), ("imag", np.longdouble)])
 
 
-class EFPeriodogram:
+class EFPeriodogram(StingrayObject):
+    main_array_attr = "freq"
+
     def __init__(
         self,
         freq=None,
@@ -81,6 +83,7 @@ class EFPeriodogram:
         emax=None,
         ncounts=None,
         upperlim=None,
+        exposure=None,
     ):
         self.freq = freq
         self.stat = stat
@@ -103,6 +106,7 @@ class EFPeriodogram:
         self.mjdref = mjdref
         self.upperlim = upperlim
         self.ncounts = ncounts
+        self.exposure = exposure
 
     def find_peaks(self, conflevel=99.0):
         from .base import fold_detection_level, z2_n_detection_level
