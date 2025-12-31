@@ -133,7 +133,7 @@ def z_n_fast_cached(norm, n=2):
     cached_sin = cached_sin_harmonics(norm.size, n)
     cached_cos = cached_cos_harmonics(norm.size, n)
 
-    return _z_n_fast_cached(norm, cached_sin, cached_cos, n=2)
+    return _z_n_fast_cached(norm, cached_sin, cached_cos, n=n)
 
 
 @njit()
