@@ -347,7 +347,7 @@ def join_many_eventlists(eventfiles, new_event_file=None, ignore_instr=False):
     all_events = [first_events]
     instr = first_events.instr
     for i, event_file in enumerate(eventfiles[1:]):
-        log.info(f"Reading {event_file} ({i + 1}/{N})")
+        log.info(f"Reading {event_file} ({i + 2}/{N})")
         events = load_events(event_file)
         if not np.isclose(events.mjdref, first_events.mjdref):
             warnings.warn(f"{event_file} has a different MJDREF")
@@ -474,19 +474,11 @@ def main_join(args=None):
     )
     args = parser.parse_args(args)
 
-    if len(args.files) == 2:
-        return join_eventlists(
-            args.files[0],
-            args.files[1],
-            new_event_file=args.output,
-            ignore_instr=args.ignore_instr,
-        )
-    else:
-        return join_many_eventlists(
-            args.files,
-            new_event_file=args.output,
-            ignore_instr=args.ignore_instr,
-        )
+    return join_many_eventlists(
+        args.files,
+        new_event_file=args.output,
+        ignore_instr=args.ignore_instr,
+    )
 
 
 def main_splitevents(args=None):
