@@ -26,7 +26,6 @@ from stingray.utils import assign_value_if_none
 from astropy import log
 from astropy.logger import AstropyUserWarning
 from astropy.table import Table, vstack
-from astropy.utils.introspection import minversion
 
 from .base import (
     HENDRICS_STAR_VALUE,
@@ -56,7 +55,6 @@ from .io import (
 )
 
 try:
-    import matplotlib as mpl
     import matplotlib.pyplot as plt
 
     HAS_MPL = True
