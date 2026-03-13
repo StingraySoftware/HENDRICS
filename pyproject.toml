@@ -37,7 +37,7 @@ dependencies = [
     "numpy>=1.17",
     "astropy>=4.0",
     "scipy>=1.1.0",
-    "matplotlib>=3.10.0",
+    "matplotlib>=3.8.0",
     "stingray>=2.3.2",
     "tqdm",
     "pyyaml",
@@ -209,7 +209,6 @@ filterwarnings = [
     "ignore:SIMON says. Number of segments used in averaging:UserWarning",
     "ignore:.*deprecated alias for.*:DeprecationWarning",
     "ignore:.*namespace is deprecated.*:DeprecationWarning",
-    "ignore:.*Matplotlib 3.8",
 ]
 
 [tool.towncrier]
