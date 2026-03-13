@@ -157,16 +157,8 @@ def find_nearest_contour(cs, x, y, indices=None, pixel=True):
     if indices is not None:  # pragma: no cover
         warnings.warn("Since Matplotlib 3.8, indices are not usable anymore. Ignoring.")
 
-    MATPLOTLIB_LT_3_8 = not minversion(mpl, "3.8.dev")
-    if MATPLOTLIB_LT_3_8:
-        paths_list = []
-        trans_list = []
-        for con in cs.collections:
-            trans_list.append(con.get_transform())
-            paths_list.append(con.get_paths())
-    else:
-        paths_list = [cs.get_paths()]
-        trans_list = [cs.get_transforms()]
+    paths_list = [cs.get_paths()]
+    trans_list = [cs.get_transforms()]
 
     d2min = np.inf
     conmin = None

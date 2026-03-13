@@ -37,7 +37,7 @@ dependencies = [
     "numpy>=1.17",
     "astropy>=4.0",
     "scipy>=1.1.0",
-    "matplotlib>=3.0,!=3.4.00,!=3.8.0",
+    "matplotlib>=3.10.0",
     "stingray>=2.3.2",
     "tqdm",
     "pyyaml",
