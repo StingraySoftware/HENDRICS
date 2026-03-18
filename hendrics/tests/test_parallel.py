@@ -1,3 +1,4 @@
+import importlib
 import subprocess as sp
 import tempfile
 
@@ -7,6 +8,12 @@ from stingray import AveragedPowerspectrum, EventList
 
 from hendrics.fake import main as main_fake
 from hendrics.parallel import main as main_parallel
+
+HAS_MPI = importlib.util.find_spec("mpi4py") is not None
+
+test_cases = ["none", "multiprocessing"]
+if HAS_MPI:
+    test_cases.append("mpi")
 
 
 class TestParallel:
@@ -21,7 +28,7 @@ class TestParallel:
             cls.events, dt=0.1, segment_size=10.0, use_common_mean=False, norm="leahy"
         )
 
-    @pytest.mark.parametrize("method", ["none", "multiprocessing", "mpi"])
+    @pytest.mark.parametrize("method", test_cases)
     @pytest.mark.parametrize("norm", ["leahy", "frac", "abs"])
     def test_parallel_versions(self, method, norm):
         out_file = tempfile.NamedTemporaryFile(suffix=".hdf5", delete=False)

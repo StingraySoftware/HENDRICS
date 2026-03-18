@@ -58,6 +58,7 @@ test_all = [
     "numba",
     "netcdf4==1.7.0",
     "scikit-image",
+    "mpi4py",
 ]
 recommended = [
     "numba",
@@ -72,6 +73,7 @@ all = [
     "imageio",
     "netcdf4==1.7.0",
     "scikit-image",
+    "mpi4py",
 ]
 docs = [
     "tomli>=1.1.0; python_version < '3.11'",

@@ -2,7 +2,6 @@ from functools import partial
 from multiprocessing import Pool
 
 import numpy as np
-from mpi4py import MPI
 from stingray import AveragedPowerspectrum, EventList
 from stingray.fourier import positive_fft_bins
 from stingray.gti import time_intervals_from_gtis
@@ -169,6 +168,8 @@ def main_mpi(fname, sample_time, segment_size):
       and dependencies are available.
     - Only the rank responsible for the final reduction returns the results; other ranks return None.
     """
+    from mpi4py import MPI
+
     tsreader = FITSTimeseriesReader(fname, output_class=EventList)
 
     def data_lookup():
