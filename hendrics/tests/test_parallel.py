@@ -10,12 +10,14 @@ from hendrics.fake import main as main_fake
 from hendrics.parallel import main as main_parallel
 
 HAS_MPI = importlib.util.find_spec("mpi4py") is not None
+HAS_HDF5 = importlib.util.find_spec("h5py") is not None
 
 test_cases = ["none", "multiprocessing"]
 if HAS_MPI:
     test_cases.append("mpi")
 
 
+@pytest.mark.skipif(not HAS_HDF5, reason="h5py is required for this test")
 class TestParallel:
     def setup_class(cls):
         cls.tempfile = tempfile.NamedTemporaryFile(suffix=".fits", delete=False)
