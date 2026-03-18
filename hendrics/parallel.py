@@ -1,10 +1,6 @@
-import os
-import subprocess as sp
-import time
 from functools import partial
 from multiprocessing import Pool
 
-import matplotlib.pyplot as plt
 import numpy as np
 from mpi4py import MPI
 from stingray import AveragedPowerspectrum, EventList
@@ -16,8 +12,8 @@ from stingray.utils import histogram
 
 
 def get_data_intervals(interval_idxs, info=None, fname=None, sample_time=None):
-    """
-    Generate light curves for specified time intervals from event data.
+    """Generate light curves for specified time intervals from event data.
+
     Parameters
     ----------
     interval_idxs : array-like
@@ -28,17 +24,18 @@ def get_data_intervals(interval_idxs, info=None, fname=None, sample_time=None):
         Path to the FITS file containing event data.
     sample_time : float, optional
         The time resolution (bin width) for the light curve histogram.
+
     Yields
     ------
     lc : array-like
         Histogrammed light curve for each specified interval.
+
     Notes
     -----
     - Uses FITSTimeseriesReader to read event data from the FITS file.
     - Each yielded light curve corresponds to one interval in `interval_idxs`.
     - The number of bins is determined by the interval duration and `sample_time`.
     """
-
     tsreader = FITSTimeseriesReader(fname, output_class=EventList)
     time_intervals = info["interval_times"][interval_idxs]
     if np.shape(time_intervals) == (2,):
@@ -54,8 +51,8 @@ def get_data_intervals(interval_idxs, info=None, fname=None, sample_time=None):
 
 
 def single_rank_intervals(this_ranks_intervals, sample_time=None, info=None, fname=None):
-    """
-    Generate an averaged powerspectrum from light curve intervals for a single rank.
+    """Generate an averaged powerspectrum from light curve intervals for a single rank.
+
     Parameters
     ----------
     this_ranks_intervals : list or array-like
@@ -66,18 +63,19 @@ def single_rank_intervals(this_ranks_intervals, sample_time=None, info=None, fna
         Dictionary containing metadata about the intervals, including "interval_times".
     fname : str or None, optional
         Filename or path to the data source, if required by `get_data_intervals`.
+
     Returns
     -------
     pds : AveragedPowerspectrum
         The averaged powerspectrum computed from the light curve intervals.
     nbin : int
         Number of bins in each interval, calculated from the interval duration and sample time.
+
     Notes
     -----
     This function extracts light curve data for the specified intervals, computes the number of bins,
     and returns the averaged powerspectrum using the "leahy" normalization.
     """
-
     # print(kwargs)
     t_int = info["interval_times"][0]
     nbin = int(np.rint((t_int[1] - t_int[0]) / sample_time))
@@ -98,10 +96,7 @@ def single_rank_intervals(this_ranks_intervals, sample_time=None, info=None, fna
 
 
 def main_none(fname, sample_time, segment_size):
-    """
-    Process a FITS timeseries file and compute an averaged powerspectrum.
-    This function reads event data from a FITS file, processes it using the Stingray
-    library, and computes an averaged powerspectrum with Leahy normalization.
+    """Process a FITS timeseries file and compute an averaged powerspectrum. This function reads event data from a FITS file, processes it using the Stingray library, and computes an averaged powerspectrum with Leahy normalization.
 
     Parameters
     ----------
@@ -111,6 +106,7 @@ def main_none(fname, sample_time, segment_size):
         The time resolution (bin size) to use when processing the data.
     segment_size : float
         The size of each segment (in seconds) for averaging the powerspectrum.
+
     Returns
     -------
     freq : numpy.ndarray
@@ -123,7 +119,6 @@ def main_none(fname, sample_time, segment_size):
     This function uses the standard Stingray processing pipeline and does not
     parallelize the computation.
     """
-
     logger.info("Using standard Stingray processing")
     tsreader = FITSTimeseriesReader(fname, output_class=EventList)
 
@@ -153,6 +148,7 @@ def main_mpi(fname, sample_time, segment_size):
         5. Partial results are combined using a binary tree reduction, where ranks pair up and
            send/receive data until only one rank holds the final result.
         6. The final result is normalized and frequency bins are computed.
+
     Parameters
     ----------
     fname : str
@@ -161,6 +157,7 @@ def main_mpi(fname, sample_time, segment_size):
         The sampling time for the time series analysis.
     segment_size : float
         The size of each segment (interval) to be processed.
+
     Returns
     -------
     output : AveragedPowerspectrum
@@ -172,7 +169,6 @@ def main_mpi(fname, sample_time, segment_size):
       and dependencies are available.
     - Only the rank responsible for the final reduction returns the results; other ranks return None.
     """
-
     tsreader = FITSTimeseriesReader(fname, output_class=EventList)
 
     def data_lookup():
@@ -184,6 +180,7 @@ def main_mpi(fname, sample_time, segment_size):
             "gtis": tsreader.gti,
             "interval_times": interval_times,
             "n_intervals": len(interval_times),
+            "nphots": tsreader.nphot / tsreader.exposure * segment_size,
         }
 
     world_comm = MPI.COMM_WORLD
@@ -280,6 +277,12 @@ def main_mpi(fname, sample_time, segment_size):
         output.m = total_n_intervals
         output.gti = info["gtis"]
         output.dt = sample_time
+        output.power_err = totals / np.sqrt(total_n_intervals)
+        output.unnorm_power = totals / 2 * info["nphots"]
+        output.unnorm_power_err = output.unnorm_power / np.sqrt(total_n_intervals)
+        output.norm = "leahy"
+        output.nphots = info["nphots"]
+        output.n = np.rint(segment_size / sample_time).astype(int)
 
         return output
 
@@ -315,7 +318,6 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
     -------
     output : AveragedPowerspectrum
         The averaged power spectrum computed across all intervals and processes.
-
     """
 
     def data_lookup():
@@ -354,6 +356,7 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
     p = Pool(world_size)
 
     totals = 0
+    nphots = 0
     for results, data_size in p.imap_unordered(
         partial(
             single_rank_intervals,
@@ -364,8 +367,10 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
         this_ranks_intervals,
     ):
         totals += results.power * results.m
+        nphots += results.nphots * results.m
     logger.debug("Results")
     totals /= total_n_intervals
+    nphots /= total_n_intervals
 
     freq = np.fft.fftfreq(data_size, d=sample_time)[positive_fft_bins(data_size)]
 
@@ -375,6 +380,12 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
     output.m = total_n_intervals
     output.gti = info["gtis"]
     output.dt = sample_time
+    output.power_err = totals / np.sqrt(total_n_intervals)
+    output.unnorm_power = totals / 2 * nphots
+    output.unnorm_power_err = output.unnorm_power / np.sqrt(total_n_intervals)
+    output.norm = "leahy"
+    output.nphots = nphots
+    output.n = np.rint(segment_size / sample_time).astype(int)
 
     return output
 
@@ -401,10 +412,12 @@ def main(args=None):
         "--sample_time",
         type=float,
         default=1 / 8129 / 2,
-        help="Light curve bin time; if negative, interpreted"
-        + " as negative power of 2."
-        + " Default: 2^-13, or keep input lc bin time"
-        + " (whatever is larger)",
+        help=(
+            "Light curve bin time; if negative, interpreted"
+            " as negative power of 2."
+            " Default: 2^-13, or keep input lc bin time"
+            " (whatever is larger)"
+        ),
     )
 
     parser.add_argument(
@@ -455,7 +468,10 @@ def main(args=None):
         pds = main_multiprocessing(fname, sample_time, segment_size, world_size=args.nproc)
     else:
         pds = main_none(fname, sample_time, segment_size)
+
     if pds is None:
         return
+    if args.norm != "leahy":
+        pds = pds.to_norm(args.norm)
 
     pds.write(args.outfname)
