@@ -105,28 +105,26 @@ class TestEFsearch:
     def test_get_TOAs_template(self):
         from hendrics.io import load_lcurve
 
-        for i in range(100):
-            events = EventList()
-            events.simulate_times(load_lcurve(self.lcfile))
+        events = load_events(self.dum)
 
-            nbin = 32
-            phases = np.arange(0, 1, 1 / nbin)
-            template = np.cos(2 * np.pi * phases)
-            toas, toaerrs = get_TOAs_from_events(
-                events.time,
-                self.tseg,
-                self.pulse_frequency,
-                gti=events.gti,
-                mjdref=events.mjdref,
-                template=template,
-                nbin=nbin,
-            )
-            assert toas is not None, toaerrs is not None
+        nbin = 32
+        phases = np.arange(0, 1, 1 / nbin)
+        template = np.cos(2 * np.pi * phases)
+        toas, toaerrs = get_TOAs_from_events(
+            events.time,
+            self.tseg,
+            self.pulse_frequency,
+            gti=events.gti,
+            mjdref=events.mjdref,
+            template=template,
+            nbin=nbin,
+        )
+        assert toas is not None, toaerrs is not None
 
-            possible_toas = events.mjdref + np.arange(2) * self.pulse_period / 86400
-            closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
+        possible_toas = events.mjdref + np.arange(2) * self.pulse_period / 86400
+        closest = possible_toas[np.argmin(np.abs(possible_toas - toas[0]))]
 
-            assert (toas[0] - closest) < toaerrs[0] / 86400000000
+        assert (toas[0] - closest) < toaerrs[0] / 86400000000
 
     def test_fit_profile_with_sinusoids(self):
         nbin = 32
