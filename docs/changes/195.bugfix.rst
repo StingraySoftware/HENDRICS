@@ -1,0 +1,1 @@
+Fix use of locals() which has changed behavior in Python 3.13
