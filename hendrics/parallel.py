@@ -462,13 +462,27 @@ def main(args=None):
     sample_time = args.sample_time
     segment_size = args.segment_size
 
-    if args.method == "mpi":
-        # This method needs to be run with mpiexec -n <nproc> python script.py
-        pds = main_mpi(fname, sample_time, segment_size)
-    elif args.method == "multiprocessing":
-        pds = main_multiprocessing(fname, sample_time, segment_size, world_size=args.nproc)
-    else:
-        pds = main_none(fname, sample_time, segment_size)
+    unsorted_error = False
+    try:
+        if args.method == "mpi":
+            # This method needs to be run with mpiexec -n <nproc> python script.py
+            pds = main_mpi(fname, sample_time, segment_size)
+        elif args.method == "multiprocessing":
+            pds = main_multiprocessing(fname, sample_time, segment_size, world_size=args.nproc)
+        else:
+            pds = main_none(fname, sample_time, segment_size)
+    except AssertionError as e:
+        if "Start:" in str(e):
+            unsorted_error = True
+    except TypeError as e:
+        if "'>=' not supported between instances" in str(e):
+            unsorted_error = True
+
+    if unsorted_error:
+        logger.error(
+            "The input file is probably not sorted. Please sort it (e.g. with ftsort) and try again."
+        )
+        return
 
     if pds is None:
         return

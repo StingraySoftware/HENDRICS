@@ -20,6 +20,13 @@ if HAS_MPI:
 @pytest.mark.skipif(not HAS_HDF5, reason="h5py is required for this test")
 class TestParallel:
     def setup_class(cls):
+        import os
+
+        curdir = os.path.abspath(os.path.dirname(__file__))
+        cls.datadir = os.path.join(curdir, "data")
+        cls.fname_unsorted = os.path.join(cls.datadir, "monol_testA.evt")
+        cls.fname_sorted = os.path.join(cls.datadir, "monol_testA_sort.evt")
+
         cls.tempfile = tempfile.NamedTemporaryFile(suffix=".fits", delete=False)
         cls.fname = cls.tempfile.name
         print(cls.fname)
@@ -31,6 +38,24 @@ class TestParallel:
         cls.pds = AveragedPowerspectrum.from_events(
             cls.events, dt=0.1, segment_size=10.0, use_common_mean=False, norm="leahy"
         )
+
+    @pytest.mark.parametrize("method", test_cases)
+    def test_parallel_versions_on_small_file(self, method):
+        out_file = tempfile.NamedTemporaryFile(suffix=".hdf5", delete=False)
+        command = [
+            self.fname_sorted,
+            "-o",
+            out_file.name,
+            "-b",
+            "0.1",
+            "-f",
+            "10.0",
+            "--method",
+            method,
+            "--norm",
+            "leahy",
+        ]
+        main_parallel(command)
 
     @pytest.mark.parametrize("method", test_cases)
     @pytest.mark.parametrize("norm", ["leahy", "frac", "abs"])
@@ -65,3 +90,26 @@ class TestParallel:
         assert pds.norm == compare_pds.norm
         assert np.allclose(pds.unnorm_power, compare_pds.unnorm_power, rtol=1e-2)
         assert np.isclose(pds.nphots, compare_pds.nphots, rtol=1e-2)
+
+    @pytest.mark.parametrize("method", ["mpi", "multiprocessing"])
+    def test_parallel_versions_fail_unsorted(self, method, caplog):
+        command = [
+            self.fname_unsorted,
+            "-b",
+            "0.1",
+            "-f",
+            "10.0",
+            "--method",
+            method,
+            "--norm",
+            "leahy",
+        ]
+        main_parallel(command)
+        for record in caplog.records:
+            if (
+                record.levelname == "ERROR"
+                and "The input file is probably not sorted." in record.message
+            ):
+                break
+        else:
+            raise AssertionError("Expected error message not found in logs")
