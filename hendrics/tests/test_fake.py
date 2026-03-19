@@ -235,7 +235,7 @@ class TestFake:
         assert np.all(np.abs(diff) > 0.0)
 
     def test_scramble_events_file(self):
-        command = f"{self.first_event_file}"
+        command = f"{self.first_event_file} --seed 42"
         newfile = fake.main_scramble(command.split())
         assert os.path.exists(newfile)
         os.remove(newfile)
@@ -244,7 +244,7 @@ class TestFake:
     def test_fake_fits_input_events_file(self, fname):
         newfile = "bububuasdf.fits"
         infname = getattr(self, fname)
-        command = f"-e {infname} -o {newfile}"
+        command = f"-e {infname} -o {newfile} --seed 42"
         _ = fake.main(command.split())
         assert os.path.exists(newfile)
 
