@@ -69,15 +69,16 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None, minimum_l
     mjdref = data.mjdref
     # Map all entries of data to local variables
     array_attrs = data.array_attrs() + ["time"]
-    locals().update(zip(array_attrs, [getattr(data, attr) for attr in array_attrs]))
     if hasattr(data, "internal_array_attrs"):
-        array_attrs = data.internal_array_attrs()
-        mod_array_attrs = [attr.replace("_", "") for attr in array_attrs]
-        locals().update(zip(mod_array_attrs, [getattr(data, attr) for attr in array_attrs]))
+        new_array_attrs = data.internal_array_attrs()
+        mod_array_attrs = [attr.replace("_", "") for attr in new_array_attrs]
+        array_attrs += mod_array_attrs
 
-    good = eval(filter_expr)
+    new_locals = {attr: getattr(data, attr) for attr in array_attrs}
 
-    gti = create_gti_from_condition(locals()["time"], good, safe_interval=safe_interval)
+    good = eval(filter_expr, None, new_locals)
+
+    gti = create_gti_from_condition(new_locals["time"], good, safe_interval=safe_interval)
 
     gti = filter_gti_by_length(gti, minimum_length)
 
