@@ -24,7 +24,9 @@ class TestParallel:
         cls.fname = cls.tempfile.name
         print(cls.fname)
 
-        main_fake(["-o", cls.fname, "-c", "10", "--tstart", "0", "--tstop", "10000"])
+        main_fake(
+            ["-o", cls.fname, "-c", "10", "--tstart", "0", "--tstop", "10000", "--seed", "42"]
+        )
         cls.events = EventList.read(cls.fname, fmt="ogip")
         cls.pds = AveragedPowerspectrum.from_events(
             cls.events, dt=0.1, segment_size=10.0, use_common_mean=False, norm="leahy"
