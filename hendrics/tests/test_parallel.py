@@ -49,11 +49,7 @@ class TestParallel:
             "--norm",
             norm,
         ]
-        if method == "mpi":
-            command = ["mpirun", "-n", "4", "HENparfspec"] + command
-            sp.check_call(command)
-        else:
-            main_parallel(command)
+        main_parallel(command)
 
         pds = AveragedPowerspectrum.read(out_file.name)
         compare_pds = self.pds.to_norm(norm) if norm != "leahy" else self.pds

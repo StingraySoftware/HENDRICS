@@ -95,30 +95,33 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            python: '3.10'
+            python: '3.13'
             tox_env: 'codestyle'
           - os: ubuntu-latest
-            python: '3.12'
-            tox_env: 'py312-test-cov'
+            python: '3.13'
+            tox_env: 'py313-test-cov'
+          - os: ubuntu-latest
+            python: '3.13'
+            tox_env: 'py313-test-mpi-cov'
           - os: ubuntu-latest
             python: '3.9'
             tox_env: 'py39-test-cov'
           - os: ubuntu-latest
-            python: '3.11'
-            tox_env: 'py311-test-alldeps-cov'
+            python: '3.13'
+            tox_env: 'py313-test-alldeps-cov'
             use_remote_data: true
           - os: macos-14
-            python: '3.11'
-            tox_env: 'py311-test-alldeps-cov'
+            python: '3.13'
+            tox_env: 'py313-test-alldeps-cov'
             use_remote_data: true
           - os: ubuntu-latest
-            python: '3.12'
-            tox_env: 'py312-test-devdeps'
+            python: '3.14'
+            tox_env: 'py314-test-devdeps'
             use_remote_data: true
             continue-on-error: true
           - os: ubuntu-latest
-            python: '3.12'
-            tox_env: 'py312-test-devpint'
+            python: '3.13'
+            tox_env: 'py313-test-devpint'
             use_remote_data: true
             continue-on-error: true
           - os: ubuntu-latest
@@ -126,11 +129,11 @@ jobs:
             tox_env: 'py39-test-oldestdeps-cov'
             use_remote_data: true
           - os: macos-latest
-            python: '3.11'
-            tox_env: 'py311-test'
+            python: '3.13'
+            tox_env: 'py313-test'
           - os: windows-latest
-            python: '3.11'
-            tox_env: 'py311-test'
+            python: '3.13'
+            tox_env: 'py313-test'
 
     steps:
     - name: Check out repository
