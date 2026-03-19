@@ -58,13 +58,11 @@ test_all = [
     "numba",
     "netcdf4==1.7.0",
     "scikit-image",
-    "statsmodels"
 ]
 recommended = [
     "numba",
     "h5py",
     "pyyaml",
-    "statsmodels",
     "pyfftw",
 ]
 all = [
@@ -74,7 +72,6 @@ all = [
     "imageio",
     "netcdf4==1.7.0",
     "scikit-image",
-    "statsmodels"
 ]
 docs = [
     "tomli>=1.1.0; python_version < '3.11'",

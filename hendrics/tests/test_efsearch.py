@@ -103,10 +103,13 @@ class TestEFsearch:
         assert np.abs(delta_toa_s) < toa_err_s * 4
 
     def test_get_TOAs_template(self):
+        from hendrics.io import load_lcurve
+
+        events = load_events(self.dum)
+
         nbin = 32
         phases = np.arange(0, 1, 1 / nbin)
         template = np.cos(2 * np.pi * phases)
-        events = load_events(self.dum)
         toas, toaerrs = get_TOAs_from_events(
             events.time,
             self.tseg,
