@@ -76,7 +76,7 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None, minimum_l
 
     new_locals = {attr: getattr(data, attr) for attr in array_attrs}
 
-    good = eval(filter_expr, locals=new_locals)
+    good = eval(filter_expr, None, new_locals)
 
     gti = create_gti_from_condition(new_locals["time"], good, safe_interval=safe_interval)
 
