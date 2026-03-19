@@ -51,7 +51,7 @@ Since HENDRICS 8.0
 - Improvements to OGIP format handling, imageio warnings, and log file management
 - Performance enhancements with memmap in zsearch and new safe intervals in event reading
 - Bad candidate filtering and support for filling short bad time intervals with random data
-- Multiple bugfixes and features from Stingray versions up to `2.3 <https://github.com/StingraySoftware/stingray/releases/tag/v2.3>`__
+- Multiple bugfixes and features from Stingray versions up to `2.3.X <https://github.com/StingraySoftware/stingray/releases>`__
 - New build infrastructure using `pyproject.toml` (PEP 621 compliant)
 
 See full CHANGELOG for details.
