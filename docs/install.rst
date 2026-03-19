@@ -26,11 +26,9 @@ which in turn depends on
 
 7. `Numba <https://numba.pydata.org>`__;
 
-8. `statsmodels <https://www.statsmodels.org/stable/index.html>`__
+8. `emcee <https://emcee.readthedocs.io/en/stable/>`__
 
-9. `emcee <https://emcee.readthedocs.io/en/stable/>`__
-
-10. `pint <https://github.com/nanograv/pint/>`__
+9.  `pint <https://github.com/nanograv/pint/>`__
 
 You should also
 have a working `HEASoft <https://heasarc.gsfc.nasa.gov/lheasoft/>`__
@@ -41,7 +39,7 @@ Installing releases
 -------------------
 ::
 
-    $ pip install hendrics numba emcee statsmodels netcdf4 matplotlib stingray>=1.1
+    $ pip install hendrics numba emcee netcdf4 matplotlib stingray>=2.3
 
 
 Installing the Development version

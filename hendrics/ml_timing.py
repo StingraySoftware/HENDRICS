@@ -6,13 +6,6 @@ from scipy.optimize import minimize
 
 from . import float32, float64, int64, njit, vectorize
 
-try:
-    from statsmodels.tools.numdiff import approx_hess3
-
-    HAS_STATSM = True
-except ImportError:
-    HAS_STATSM = False
-
 
 @vectorize([(int64,), (float32,), (float64,)])
 def phases_from_zero_to_one(phase):
@@ -387,10 +380,7 @@ def ml_pulsefit(
     if calculate_errors:
         # final = res.x[0] + res.x[1] * template_fun(phases - res.x[2])
         # errs = estimate_errors(final, profile_err=profile_err, ntrial=ntrial)
-        if HAS_STATSM:
-            hessian_ndt = np.linalg.inv(approx_hess3(res.x, func, epsilon=dph / 10))
-        else:
-            hessian_ndt = res.hess_inv.todense()
+        hessian_ndt = res.hess_inv.todense()
         errs = np.sqrt(np.diag(hessian_ndt))
 
     if fit_base:
