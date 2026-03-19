@@ -674,6 +674,12 @@ def main(args=None):
         help="Reference MJD",
     )
     parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducibility.",
+    )
+    parser.add_argument(
         "--deadtime",
         type=float,
         default=None,
@@ -690,6 +696,8 @@ def main(args=None):
 
     if args.debug:
         args.loglevel = "DEBUG"
+    if args.seed is not None:
+        np.random.seed(args.seed)
 
     log.setLevel(args.loglevel)
     additional_columns = {}
