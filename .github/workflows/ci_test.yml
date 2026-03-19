@@ -156,7 +156,7 @@ jobs:
         python -c "import setuptools; print(f'setuptools {setuptools.__version__}')"
         python -c "import tox; print(f'tox {tox.__version__}')"
     - name: Setup MPI
-      if: "contains(matrix.tox_env, 'alldeps')"
+      if: "contains(matrix.tox_env, 'mpi')"
       uses: mpi4py/setup-mpi@v1
       with:
           mpi: "openmpi"
