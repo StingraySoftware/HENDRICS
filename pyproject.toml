@@ -56,7 +56,7 @@ test_all = [
     "pint-pulsar",
     "imageio",
     "numba",
-    "netcdf4==1.7.0",
+    "netcdf4",
     "scikit-image",
 ]
 recommended = [
@@ -70,7 +70,7 @@ all = [
     "pandas",
     "pint-pulsar",
     "imageio",
-    "netcdf4==1.7.0",
+    "netcdf4",
     "scikit-image",
 ]
 docs = [
@@ -115,6 +115,7 @@ HENlcurve = "hendrics.lcurve:main"
 HENmodel = "hendrics.modeling:main_model"
 HENphaseogram = "hendrics.phaseogram:main_phaseogram"
 HENphasetag = "hendrics.phasetag:main_phasetag"
+HENparfspec = "hendrics.parallel:main"
 HENplot = "hendrics.plot:main"
 HENpowercolors = "hendrics.power_colors:main"
 HENreadevents = "hendrics.read_events:main"
@@ -255,6 +256,7 @@ filterwarnings = [
 [tool.coverage]
 
     [tool.coverage.run]
+        source = ["hendrics"]
         omit = [
             "hendrics/_astropy_init*",
             "hendrics/conftest.py",
@@ -274,6 +276,7 @@ filterwarnings = [
             "*/hendrics/version*",
 
         ]
+        parallel="true"
 
     [tool.coverage.report]
         exclude_lines = [
