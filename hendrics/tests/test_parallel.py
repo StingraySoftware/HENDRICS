@@ -1,4 +1,5 @@
 import importlib
+import os
 import subprocess as sp
 import tempfile
 
@@ -20,8 +21,6 @@ if HAS_MPI:
 @pytest.mark.skipif(not HAS_HDF5, reason="h5py is required for this test")
 class TestParallel:
     def setup_class(cls):
-        import os
-
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
         cls.fname_unsorted = os.path.join(cls.datadir, "monol_testA.evt")
@@ -75,6 +74,13 @@ class TestParallel:
             norm,
         ]
         main_parallel(command)
+        if method == "mpi":
+            from mpi4py import MPI
+
+            world_comm = MPI.COMM_WORLD
+            my_rank = world_comm.Get_rank()
+            if my_rank != 0:
+                return
 
         pds = AveragedPowerspectrum.read(out_file.name)
         compare_pds = self.pds.to_norm(norm) if norm != "leahy" else self.pds
@@ -84,7 +90,6 @@ class TestParallel:
             power_rtol = 1e-6
         else:
             power_rtol = 1e-2
-
         assert np.allclose(pds.power, compare_pds.power, rtol=power_rtol)
         assert np.allclose(pds.power_err, compare_pds.power_err, rtol=1e-2)
         assert pds.norm == compare_pds.norm
@@ -105,6 +110,14 @@ class TestParallel:
             "leahy",
         ]
         main_parallel(command)
+        if method == "mpi":
+            from mpi4py import MPI
+
+            world_comm = MPI.COMM_WORLD
+            my_rank = world_comm.Get_rank()
+            if my_rank != 0:
+                return
+
         for record in caplog.records:
             if (
                 record.levelname == "ERROR"
