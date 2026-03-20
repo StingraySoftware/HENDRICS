@@ -477,6 +477,9 @@ def main(args=None):
     except TypeError as e:  # pragma: no cover
         if "'>=' not supported between instances" in str(e):
             unsorted_error = True
+    except AttributeError as e:  # pragma: no cover
+        if "AttributeError: 'NoneType' object has no attribute 'dtype'" in str(e):
+            unsorted_error = True
 
     if unsorted_error:
         logger.error(
