@@ -1,8 +1,51 @@
+v8.5 (2026-03-20)
+-----------------
+
+New Features
+^^^^^^^^^^^^
+
+- HENfspec can now use a new parallel implementation using MPI or multiprocessing for the power spectrum (`#180 <https://github.com/StingraySoftware/hendrics/pull/180>`__)
+- Add --seed argument to HENfake (`#192 <https://github.com/StingraySoftware/hendrics/pull/192>`__)
+
+
+Bug Fixes
+^^^^^^^^^
+
+- Fix use of locals() which has changed behavior in Python 3.13 (`#195 <https://github.com/StingraySoftware/hendrics/pull/195>`__)
+
+
+Internal Changes
+^^^^^^^^^^^^^^^^
+
+- Use towncrier for changelog (`#193 <https://github.com/StingraySoftware/hendrics/pull/193>`__)
+- Eliminate the only direct use of statsmodels, which could be easily avoided (`#194 <https://github.com/StingraySoftware/hendrics/pull/194>`__)
+
+HENDRICS 8.4
+~~~~~~~~~~~~
++ Fix fast Z2n tutorial command typo
++ Fix parameter passing in _z_n_fast_cached call
++ Update stingray requirements to 2.3.2
+
+
+HENDRICS 8.3
+~~~~~~~~~~~~
+
++ Fix input ogip files
++ Warn about missing imageio; save best detection info
++ Eliminate empty log files by
++ Fix a bug coming up in Z with large n
++ Eliminate empty log files forever
++ Use memmap in zsearch
+
+
 HENDRICS 8.2
 ~~~~~~~~~~~~
 
 + Brings all bugfixes coming with `Stingray 2.2.4 <https://github.com/StingraySoftware/stingray/releases/tag/v2.2.4>`__
 + New option for ``HENreadevents``: ``--safe-interval``, allowing to decrease GTI length by fixed amounts at the start and the end (useful, e.g., when observations show artifacts entering and exiting from occultation or SAA)
++ Introduce safe intervals in ``HENreadevents``
++ Filter clearly bad candidates (the ones compatible with 0)
++ Allow to fill short bad time intervals with random data
 
 Internal changes:
 
