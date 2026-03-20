@@ -15,6 +15,8 @@ HAS_HDF5 = importlib.util.find_spec("h5py") is not None
 
 test_cases = ["none", "multiprocessing"]
 if HAS_MPI:
+    from mpi4py import MPI
+
     test_cases.append("mpi")
 
 
@@ -75,8 +77,6 @@ class TestParallel:
         ]
         main_parallel(command)
         if method == "mpi":
-            from mpi4py import MPI
-
             world_comm = MPI.COMM_WORLD
             my_rank = world_comm.Get_rank()
             if my_rank != 0:
@@ -111,8 +111,6 @@ class TestParallel:
         ]
         main_parallel(command)
         if method == "mpi":
-            from mpi4py import MPI
-
             world_comm = MPI.COMM_WORLD
             my_rank = world_comm.Get_rank()
 

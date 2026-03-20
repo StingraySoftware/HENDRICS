@@ -256,6 +256,7 @@ filterwarnings = [
 [tool.coverage]
 
     [tool.coverage.run]
+        source = ["hendrics"]
         omit = [
             "hendrics/_astropy_init*",
             "hendrics/conftest.py",
@@ -275,6 +276,7 @@ filterwarnings = [
             "*/hendrics/version*",
 
         ]
+        parallel="true"
 
     [tool.coverage.report]
         exclude_lines = [
