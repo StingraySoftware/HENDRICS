@@ -115,6 +115,7 @@ class TestParallel:
 
             world_comm = MPI.COMM_WORLD
             my_rank = world_comm.Get_rank()
+
             if my_rank != 0:
                 return
 
