@@ -91,7 +91,7 @@ class TestParallel:
         assert np.allclose(pds.unnorm_power, compare_pds.unnorm_power, rtol=1e-2)
         assert np.isclose(pds.nphots, compare_pds.nphots, rtol=1e-2)
 
-    @pytest.mark.parametrize("method", ["mpi", "multiprocessing"])
+    @pytest.mark.parametrize("method", test_cases[1:])  # Skip "none" method for this test
     def test_parallel_versions_fail_unsorted(self, method, caplog):
         command = [
             self.fname_unsorted,

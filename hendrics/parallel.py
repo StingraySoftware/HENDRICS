@@ -471,10 +471,10 @@ def main(args=None):
             pds = main_multiprocessing(fname, sample_time, segment_size, world_size=args.nproc)
         else:
             pds = main_none(fname, sample_time, segment_size)
-    except AssertionError as e:
+    except AssertionError as e:  # pragma: no cover
         if "Start:" in str(e):
             unsorted_error = True
-    except TypeError as e:
+    except TypeError as e:  # pragma: no cover
         if "'>=' not supported between instances" in str(e):
             unsorted_error = True
 
