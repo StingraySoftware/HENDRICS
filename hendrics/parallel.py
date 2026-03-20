@@ -474,12 +474,18 @@ def main(args=None):
     except AssertionError as e:  # pragma: no cover
         if "Start:" in str(e):
             unsorted_error = True
+        else:
+            raise
     except TypeError as e:  # pragma: no cover
         if "'>=' not supported between instances" in str(e):
             unsorted_error = True
+        else:
+            raise
     except AttributeError as e:  # pragma: no cover
         if "AttributeError: 'NoneType' object has no attribute 'dtype'" in str(e):
             unsorted_error = True
+        else:
+            raise
 
     if unsorted_error:
         logger.error(
