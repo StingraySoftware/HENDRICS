@@ -482,7 +482,7 @@ def main(args=None):
         else:
             raise
     except AttributeError as e:  # pragma: no cover
-        if "AttributeError: 'NoneType' object has no attribute 'dtype'" in str(e):
+        if "'NoneType' object has no attribute 'dtype'" in str(e):
             unsorted_error = True
         else:
             raise
