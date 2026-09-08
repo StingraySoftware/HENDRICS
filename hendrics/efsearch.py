@@ -434,7 +434,7 @@ def _average_and_z_sub_search(profiles, n=2):
     """
     nprof = len(profiles)
     # Only use powers of two
-    nprof = int(2 ** np.log2(nprof))
+    nprof = 2 ** int(np.log2(nprof))
     profiles = profiles[:nprof]
 
     nbin = len(profiles[0])
@@ -680,10 +680,6 @@ def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=Fa
     import matplotlib as mpl
     import matplotlib.pyplot as plt
 
-    if not HAS_IMAGEIO:
-        warnings.warn("imageio needed to save the transient search results into a gif image.")
-        return []
-
     mpl.use("Agg")
     if gif_name is None:
         gif_name = "transients.gif"
@@ -694,6 +690,10 @@ def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=Fa
     import tqdm
 
     plot_results = (results.stats.size < 1e7) or force_plotting
+    if plot_results and not HAS_IMAGEIO:
+        warnings.warn("imageio needed to save the transient search results into a gif image.")
+        plot_results = False
+
     if not plot_results:
         log.info("Transient search results are too large to plot. Skipping plots.")
     else:
@@ -729,14 +729,14 @@ def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=Fa
         mean_line = np.mean(ima, axis=0) / sum_detl * 3
         maxidx = np.argmax(mean_line)
         maxline = mean_line[maxidx]
+        best_f = f[maxidx]
 
-        for il, line in enumerate(ima):
+        for line in ima:
             line = line / detl * 3
 
-            maxidx = np.argmax(mean_line)
-            # if line[maxidx] > maxline:
-            best_f = f[maxidx]
-            maxline = line[maxidx]
+            if line[maxidx] > maxline:
+                best_f = f[maxidx]
+                maxline = line[maxidx]
 
         max_stats_rows.append({"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline})
 
@@ -1436,9 +1436,14 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     for i, idx in enumerate(best_cands):
         f_idx = fdot_idx = fddot_idx = 0
         if len(input_ef_periodogram.stat.shape) > 1 and input_ef_periodogram.stat.shape[0] > 1:
+            # ``search_with_qffa`` returns transposed grids: axis 0 runs over
+            # fdot, axis 1 over frequency. ``f_idx`` is therefore the row to
+            # cut along to get the stat-vs-frequency curve, and ``fdot_idx``
+            # the column giving the stat-vs-fdot curve. ``plot.py`` reads the
+            # ``f_idx``/``fdot_idx`` table columns with the same convention.
             f_idx, fdot_idx = idx
             allfreqs = input_ef_periodogram.freq[f_idx, :]
-            allfdots = input_ef_periodogram.freq[:, fdot_idx]
+            allfdots = input_ef_periodogram.fdots[:, fdot_idx]
             allstats_f = input_ef_periodogram.stat[f_idx, :]
             allstats_fdot = input_ef_periodogram.stat[:, fdot_idx]
             f, fdot = (
@@ -1785,6 +1790,7 @@ def _common_main(args, func):
         mjdref = 0
         kwargs = {}
         baseline = args.nbin
+        nbin = args.nbin
         kind = "EF"
         kind_label = kind
         n = 1
@@ -1868,12 +1874,9 @@ def _common_main(args, func):
             search_fdot = True
             if args.fdotmax is not None and fdotmax <= fdotmin:
                 search_fdot = False
-            nbin = args.nbin
             if nbin / n < 8:
                 nbin = n * 8
-                warnings.warn(
-                    f"The number of bins is too small for Z search." f"Increasing to {nbin}"
-                )
+                warnings.warn(f"The number of bins is too small for Z search. Increasing to {nbin}")
             results = search_with_qffa(
                 events.time,
                 args.fmin,
@@ -1925,7 +1928,7 @@ def _common_main(args, func):
             frequencies,
             stats,
             kind,
-            args.nbin,
+            nbin,
             args.N,
             fdots=fdots,
             M=M,

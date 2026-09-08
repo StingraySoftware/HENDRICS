@@ -11,6 +11,7 @@ from stingray.lightcurve import Lightcurve
 from hendrics.base import HAS_PINT, hen_root
 from hendrics.efsearch import (
     HAS_IMAGEIO,
+    _average_and_z_sub_search,
     decide_binary_parameters,
     folding_orbital_search,
     main_accelsearch,
@@ -39,6 +40,20 @@ from hendrics.tests import _dummy_par
 from . import cleanup_test_dir
 
 HAS_PD = importlib.util.find_spec("pandas") is not None
+
+
+@pytest.mark.parametrize("nprof,expected", [(64, 64), (100, 64), (127, 64), (63, 32)])
+def test_average_and_z_sub_search_uses_powers_of_two(nprof, expected):
+    """The sub-profile search must truncate to the power of two below nprof.
+
+    ``2 ** int(np.log2(nprof))`` is not the same as ``int(2 ** np.log2(nprof))``:
+    the latter is a no-op up to floating point noise, and left the trailing,
+    never-filled columns of the result array to be interpreted as statistics.
+    """
+    profiles = np.ones((nprof, 16))
+    n_ave, results = _average_and_z_sub_search(profiles, n=2)
+    assert results.shape == (int(np.log2(expected)), expected)
+    assert n_ave.size == results.shape[0]
 
 
 class TestEFsearch:
