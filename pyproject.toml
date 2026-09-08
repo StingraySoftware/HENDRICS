@@ -258,23 +258,17 @@ filterwarnings = [
     [tool.coverage.run]
         source = ["hendrics"]
         omit = [
-            "hendrics/_astropy_init*",
             "hendrics/conftest.py",
-            "hendrics/*setup_package*",
             "hendrics/tests/*",
             "hendrics/compat/*",
             "hendrics/*/tests/*",
             "hendrics/extern/*",
-            "hendrics/version*",
             "hendrics/_version*",
-            "*/hendrics/_astropy_init*",
             "*/hendrics/conftest.py",
-            "*/hendrics/*setup_package*",
             "*/hendrics/tests/*",
             "*/hendrics/*/tests/*",
             "*/hendrics/extern/*",
-            "*/hendrics/version*",
-
+            "*/hendrics/_version*",
         ]
         parallel="true"
 
@@ -303,7 +297,6 @@ exclude=[
     "*.svg",
     "docs/conf.py",
     "docs/scripts/cli.rst",
-    "_astropy_init.py",
     "__init__.py",
     "compatibility.py",
 ]

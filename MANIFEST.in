@@ -1,22 +1,12 @@
 include pyproject.toml
 include LICENSE.rst
 include README.rst
-# include CHANGES.rst
-# include pip-requirements*
 include CITATION
 
-include hendrics/tests/coveragerc
-recursive-include hendrics *.evt *.fits *.rmf
-recursive-include hendrics/tests/data *.evt *.fits *.rmf
-
-include astropy/astropy.cfg
+recursive-include hendrics *.evt *.evt.gz *.fits *.rmf
+recursive-include hendrics/tests/data *.evt *.evt.gz *.fits *.rmf
 
 recursive-include docs *
-recursive-include examples *
-recursive-include licenses *
-recursive-include cextern *
-recursive-include scripts *
-recursive-include static *
 
 prune docs/_build
 prune build
