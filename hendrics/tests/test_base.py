@@ -4,7 +4,14 @@ import numpy as np
 import pytest
 from stingray.events import EventList
 
-from hendrics.base import HAS_PINT, deorbit_events, normalize_dyn_profile
+from hendrics.base import (
+    HAS_PINT,
+    deorbit_events,
+    hist3d_numba_seq,
+    hist3d_numba_seq_weight,
+    histnd_numba_seq,
+    normalize_dyn_profile,
+)
 from hendrics.tests import _dummy_par
 
 
@@ -107,3 +114,53 @@ def test_deorbit_run():
     _ = deorbit_events(ev, par)
 
     os.remove("bububu.par")
+
+
+class TestHistograms:
+    """Regression tests for the numba histogram kernels.
+
+    Because the kernels are compiled in ``nopython`` mode there is no bounds
+    checking at runtime, so a missing guard on one of the axes writes to
+    arbitrary memory instead of raising.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        rng = np.random.default_rng(20260908)
+        # Deliberately generate data that spill out of ``ranges`` on every axis
+        cls.x = rng.uniform(-1.0, 2.0, 1000)
+        cls.y = rng.uniform(1.0, 4.0, 1000)
+        cls.z = rng.uniform(3.0, 6.0, 1000)
+        cls.weights = rng.uniform(0.0, 1.0, 1000)
+        cls.bins = (5, 6, 7)
+        cls.ranges = [[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]]
+
+    def test_hist3d_out_of_range(self):
+        H, _ = np.histogramdd(
+            (self.x, self.y, self.z), bins=self.bins, range=[tuple(r) for r in self.ranges]
+        )
+        Hn = hist3d_numba_seq((self.x, self.y, self.z), bins=self.bins, ranges=self.ranges)
+        assert np.all(H == Hn)
+
+    def test_hist3d_weight_out_of_range(self):
+        H, _ = np.histogramdd(
+            (self.x, self.y, self.z),
+            bins=self.bins,
+            range=[tuple(r) for r in self.ranges],
+            weights=self.weights,
+        )
+        Hn = hist3d_numba_seq_weight(
+            (self.x, self.y, self.z), self.weights, bins=self.bins, ranges=self.ranges
+        )
+        assert np.allclose(H, Hn)
+
+    def test_histnd_out_of_range(self):
+        H, _ = np.histogramdd(
+            (self.x, self.y, self.z), bins=self.bins, range=[tuple(r) for r in self.ranges]
+        )
+        Hn = histnd_numba_seq(
+            np.array([self.x, self.y, self.z]),
+            bins=np.array(self.bins),
+            ranges=np.array(self.ranges),
+        )
+        assert np.all(H == Hn)

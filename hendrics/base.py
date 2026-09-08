@@ -636,30 +636,34 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     """
     Examples
     --------
-    >>> if os.path.exists('out.npy'): os.unlink('out.npy')
+    >>> import shutil
+    >>> tmpdir = tempfile.mkdtemp()
+    >>> tmpfile = os.path.join(tmpdir, 'out.npy')
     >>> x = np.random.uniform(0., 1., 100)
     >>> H, xedges = np.histogram(x, bins=5, range=[0., 1.])
-    >>> Hn = hist1d_numba_seq(x, bins=5, ranges=[0., 1.], tmp='out.npy',
+    >>> Hn = hist1d_numba_seq(x, bins=5, ranges=[0., 1.], tmp=tmpfile,
     ...                       use_memmap=True)
     >>> assert np.all(H == Hn)
     >>> # The number of bins is small, memory map was not used!
-    >>> assert not os.path.exists('out.npy')
-    >>> H, xedges = np.histogram(x, bins=10**8, range=[0., 1.])
-    >>> Hn = hist1d_numba_seq(x, bins=10**8, ranges=[0., 1.], tmp='out.npy',
+    >>> assert not os.path.exists(tmpfile)
+    >>> nbin = 10**7 + 1  # just above the threshold for using a memory map
+    >>> H, xedges = np.histogram(x, bins=nbin, range=[0., 1.])
+    >>> Hn = hist1d_numba_seq(x, bins=nbin, ranges=[0., 1.], tmp=tmpfile,
     ...                       use_memmap=True)
     >>> assert np.all(H == Hn)
-    >>> assert os.path.exists('out.npy')
+    >>> assert os.path.exists(tmpfile)
     >>> # Now use memmap but do not specify a tmp file
-    >>> Hn = hist1d_numba_seq(x, bins=10**8, ranges=[0., 1.],
+    >>> Hn = hist1d_numba_seq(x, bins=nbin, ranges=[0., 1.],
     ...                       use_memmap=True)
     >>> assert np.all(H == Hn)
+    >>> shutil.rmtree(tmpdir)
     """
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
+        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=np.double, shape=(bins,))
     else:
-        hist_arr = np.zeros((bins,), dtype=a.dtype)
+        hist_arr = np.zeros((bins,), dtype=np.double)
 
     return _hist1d_numba_seq(hist_arr, a, bins, np.asarray(ranges))
 
@@ -701,7 +705,7 @@ def _hist3d_numba_seq(H, tracks, bins, ranges):
         i = (tracks[0, t] - ranges[0, 0]) * delta[0]
         j = (tracks[1, t] - ranges[1, 0]) * delta[1]
         k = (tracks[2, t] - ranges[2, 0]) * delta[2]
-        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+        if 0 <= i < bins[0] and 0 <= j < bins[1] and 0 <= k < bins[2]:
             H[int(i), int(j), int(k)] += 1
 
     return H
@@ -740,31 +744,35 @@ def hist1d_numba_seq_weight(a, weights, bins, ranges, use_memmap=False, tmp=None
     """
     Examples
     --------
-    >>> if os.path.exists('out.npy'): os.unlink('out.npy')
+    >>> import shutil
+    >>> tmpdir = tempfile.mkdtemp()
+    >>> tmpfile = os.path.join(tmpdir, 'out.npy')
     >>> x = np.random.uniform(0., 1., 100)
     >>> weights = np.random.uniform(0, 1, 100)
     >>> H, xedges = np.histogram(x, bins=5, range=[0., 1.], weights=weights)
-    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=5, ranges=[0., 1.], tmp='out.npy',
+    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=5, ranges=[0., 1.], tmp=tmpfile,
     ...                              use_memmap=True)
     >>> assert np.all(H == Hn)
     >>> # The number of bins is small, memory map was not used!
-    >>> assert not os.path.exists('out.npy')
-    >>> H, xedges = np.histogram(x, bins=10**8, range=[0., 1.], weights=weights)
-    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=10**8, ranges=[0., 1.], tmp='out.npy',
+    >>> assert not os.path.exists(tmpfile)
+    >>> nbin = 10**7 + 1  # just above the threshold for using a memory map
+    >>> H, xedges = np.histogram(x, bins=nbin, range=[0., 1.], weights=weights)
+    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=nbin, ranges=[0., 1.], tmp=tmpfile,
     ...                              use_memmap=True)
     >>> assert np.all(H == Hn)
-    >>> assert os.path.exists('out.npy')
+    >>> assert os.path.exists(tmpfile)
     >>> # Now use memmap but do not specify a tmp file
-    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=10**8, ranges=[0., 1.],
+    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=nbin, ranges=[0., 1.],
     ...                              use_memmap=True)
     >>> assert np.all(H == Hn)
+    >>> shutil.rmtree(tmpdir)
     """
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
+        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=np.double, shape=(bins,))
     else:
-        hist_arr = np.zeros((bins,), dtype=a.dtype)
+        hist_arr = np.zeros((bins,), dtype=np.double)
 
     return _hist1d_numba_seq_weight(hist_arr, a, weights, bins, np.asarray(ranges))
 
@@ -815,7 +823,7 @@ def _hist3d_numba_seq_weight(H, tracks, weights, bins, ranges):
         i = (tracks[0, t] - ranges[0, 0]) * delta[0]
         j = (tracks[1, t] - ranges[1, 0]) * delta[1]
         k = (tracks[2, t] - ranges[2, 0]) * delta[2]
-        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+        if 0 <= i < bins[0] and 0 <= j < bins[1] and 0 <= k < bins[2]:
             H[int(i), int(j), int(k)] += weights[t]
 
     return H
@@ -898,7 +906,7 @@ def histnd_numba_seq(tracks, bins, ranges):
     >>> H, _ = np.histogramdd((x, y, z), bins=np.array((5, 6, 7)),
     ...                       range=[(0., 1.), (2., 3.), (4., 5)])
     >>> alldata = np.array([x, y, z])
-    >>> Hn = hist3d_numba_seq(alldata, bins=np.array((5, 6, 7)),
+    >>> Hn = histnd_numba_seq(alldata, bins=np.array((5, 6, 7)),
     ...                       ranges=np.array([[0., 1.], [2., 3.], [4., 5.]]))
     >>> assert np.all(H == Hn)
     """
@@ -974,9 +982,15 @@ if HAS_NUMBA:
 else:
 
     def histogram2d(*args, **kwargs):
+        """Fall back to numpy, translating the ``ranges`` keyword to ``range``."""
+        if "ranges" in kwargs:
+            kwargs["range"] = kwargs.pop("ranges")
         return histogram2d_np(*args, **kwargs)[0]
 
     def histogram(*args, **kwargs):
+        """Fall back to numpy, translating the ``ranges`` keyword to ``range``."""
+        if "ranges" in kwargs:
+            kwargs["range"] = kwargs.pop("ranges")
         return histogram_np(*args, **kwargs)[0]
 
 
