@@ -55,9 +55,6 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None, minimum_l
     outfile : str
         The output file name. If None, use a default root + '_gti' combination
     """
-    # Necessary as nc variables are sometimes defined as array
-    from numpy import array  # NOQA
-
     ftype, data = get_file_type(fname, raw_data=False)
 
     instr = data.instr
@@ -76,7 +73,12 @@ def create_gti(fname, filter_expr, safe_interval=[0, 0], outfile=None, minimum_l
 
     new_locals = {attr: getattr(data, attr) for attr in array_attrs}
 
-    good = eval(filter_expr, None, new_locals)
+    # ``eval`` with ``globals=None`` falls back to *this* module's globals, so
+    # the names the filter expression is allowed to use have to be passed in
+    # explicitly. ``array`` is needed because nc variables are sometimes
+    # defined as array.
+    eval_globals = {"array": np.array, "np": np}
+    good = eval(filter_expr, eval_globals, new_locals)
 
     gti = create_gti_from_condition(new_locals["time"], good, safe_interval=safe_interval)
 
@@ -109,7 +111,7 @@ def apply_gti(fname, gti, outname=None, minimum_length=0):
     data._mask = None
 
     newext = "_gtifilt" + HEN_FILE_EXTENSION
-    outname = _assign_value_if_none(outname, fname.replace(HEN_FILE_EXTENSION, "") + newext)
+    outname = _assign_value_if_none(outname, fname.removesuffix(HEN_FILE_EXTENSION) + newext)
     save_data(data, outname)
 
     return newgti

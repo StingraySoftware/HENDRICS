@@ -363,7 +363,6 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
             nbin=nbin,
         )
         template, additional_phase = create_default_template(profile)
-    print(template.size)
 
     min_phase_err = 1 / template.size
     fit_base = False

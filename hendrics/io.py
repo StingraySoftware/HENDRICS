@@ -230,7 +230,7 @@ def _get_key(dict_like, key):
     >>> a = dict(b=1)
     >>> assert _get_key(a, 'b') == 1
     >>> _get_key(a, 'c') == ""
-     True
+    True
     """
     try:
         return dict_like[key]
@@ -417,7 +417,7 @@ def read_from_netcdf(fname):
             to_save = values[0]
         else:
             to_save = values
-        if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool_"):
+        if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool__"):
             # Boolean single value
             to_save = eval(to_save.replace("__bool__", ""))
         # Boolean array

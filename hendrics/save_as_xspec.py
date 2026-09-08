@@ -7,7 +7,7 @@ import numpy as np
 
 from astropy import log
 
-from .base import get_file_extension
+from .base import splitext_improved
 from .io import get_file_type
 
 
@@ -29,7 +29,7 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
     """
     ftype, contents = get_file_type(fname)
 
-    outroot = fname.replace(get_file_extension(fname), "")
+    outroot = splitext_improved(fname)[0]
     outname = outroot + "_xsp.dat"
     outroot_lags = outroot + "_lags"
     outname_lags = outroot_lags + "_xsp.dat"
