@@ -69,3 +69,6 @@ pip-wheel-metadata/
 .tmp/*
 .eggs/*
 notebooks/*
+
+# Referee report (local, untracked)
+CODE_REVIEW.md
