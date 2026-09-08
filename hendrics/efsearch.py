@@ -558,7 +558,7 @@ def transient_search(
     times -= meantime
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
-    log.info(f"Maximum error on the phase expected when casting to double: " f"{maxerr}")
+    log.info(f"Maximum error on the phase expected when casting to double: {maxerr}")
     if maxerr > 1 / nbin / 10:
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
@@ -992,7 +992,7 @@ def search_with_qffa(
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
     if maxerr > 1 / nbin / 10:
-        warnings.warn(f"Maximum error on the phase expected when casting to " f"double: {maxerr}")
+        warnings.warn(f"Maximum error on the phase expected when casting to double: {maxerr}")
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
             "Please use shorter light curves.",
@@ -1522,8 +1522,7 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
 
         if fname is not None:
             Table({"freq": allfreqs, "stat": allstats_f}).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}'
-                f"_cand_{n_cands - i - 1}_fdot{fdot}.csv",
+                f"{fname.replace(HEN_FILE_EXTENSION, '')}_cand_{n_cands - i - 1}_fdot{fdot}.csv",
                 overwrite=True,
                 format="ascii",
             )
@@ -1532,7 +1531,7 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
 
         if fname is not None:
             Table({"fdot": allfdots, "stat": allstats_fdot}).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}' f"_cand_{n_cands - i - 1}_f{f}.dat",
+                f"{fname.replace(HEN_FILE_EXTENSION, '')}_cand_{n_cands - i - 1}_f{f}.dat",
                 overwrite=True,
                 format="ascii",
             )
@@ -1573,7 +1572,7 @@ def analyze_qffa_results(fname):
 def _common_parser(args=None):
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = "Search for pulsars using the epoch folding or the Z_n^2 " "algorithm"
+    description = "Search for pulsars using the epoch folding or the Z_n^2 algorithm"
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs="+")
@@ -1607,14 +1606,14 @@ def _common_parser(args=None):
         "--mean-fdot",
         type=float,
         required=False,
-        help="Mean fdot to fold " "(only useful when using --fast)",
+        help="Mean fdot to fold (only useful when using --fast)",
         default=0,
     )
     parser.add_argument(
         "--mean-fddot",
         type=float,
         required=False,
-        help="Mean fddot to fold " "(only useful when using --fast)",
+        help="Mean fddot to fold (only useful when using --fast)",
         default=0,
     )
     parser.add_argument(
@@ -1663,14 +1662,13 @@ def _common_parser(args=None):
         "--segment-size",
         default=1e32,
         type=float,
-        help="Size of the event list segment to use (default "
-        "None, implying the whole observation)",
+        help="Size of the event list segment to use (default None, implying the whole observation)",
     )
     parser.add_argument(
         "--step",
         default=None,
         type=float,
-        help="Step size of the frequency axis. Defaults to " "1/oversample/obs_length. ",
+        help="Step size of the frequency axis. Defaults to 1/oversample/obs_length. ",
     )
     parser.add_argument(
         "--oversample",
@@ -1700,7 +1698,7 @@ def _common_parser(args=None):
     )
     parser.add_argument(
         "--transient",
-        help="Look for transient emission (produces an animated" " GIF with the dynamic Z search)",
+        help="Look for transient emission (produces an animated GIF with the dynamic Z search)",
         default=False,
         action="store_true",
     )
@@ -1725,7 +1723,7 @@ def _common_parser(args=None):
         "--conflevel",
         default=99,
         type=float,
-        help="percent confidence level for thresholding " "[0-100).",
+        help="percent confidence level for thresholding [0-100).",
     )
 
     parser.add_argument(
@@ -2163,7 +2161,7 @@ def main_accelsearch(args=None):
         "--pad-to-double",
         default=False,
         action="store_true",
-        help="Pad to the double of bins " "(sort-of interbinning)",
+        help="Pad to the double of bins (sort-of interbinning)",
     )
     parser.add_argument(
         "--detrend",
@@ -2245,7 +2243,7 @@ def main_accelsearch(args=None):
     t0 = GTI[0, 0]
     Nbins = int(np.rint(max_length / dt))
     if Nbins > 10**8:
-        log.info(f"The number of bins is more than 100 millions: {Nbins}. " "Using memmap.")
+        log.info(f"The number of bins is more than 100 millions: {Nbins}. Using memmap.")
 
     dt = adjust_dt_for_power_of_two(dt, max_length)
 

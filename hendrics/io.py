@@ -197,7 +197,7 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> tuple[EventList, s
     # For some reason the doctest doesn't work if I don't do this instead
     # of using warnings.warn
     if elabel == "":
-        log.error("No Energy or PI information available. " "No energy filter applied to events")
+        log.error("No Energy or PI information available. No energy filter applied to events")
         return ev, ""
 
     if emax is None and emin is None:
@@ -1238,7 +1238,7 @@ def main(args=None):
     parser.add_argument("files", help="List of files", nargs="+")
     parser.add_argument(
         "--print-header",
-        help="Print the full FITS header if present in the " "meta data.",
+        help="Print the full FITS header if present in the meta data.",
         default=False,
         action="store_true",
     )
@@ -1317,13 +1317,12 @@ def save_model(model, fname="model.p", constraints=None):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError("Accepted callable models have only one " "non-keyword argument")
+            raise TypeError("Accepted callable models have only one non-keyword argument")
         modeldata["kind"] = "callable"
         modeldata["constraints"] = constraints
     else:
         raise TypeError(
-            "The model has to be an Astropy model or a callable"
-            " with only one non-keyword argument"
+            "The model has to be an Astropy model or a callable with only one non-keyword argument"
         )
 
     with open(fname, "wb") as fobj:
@@ -1373,7 +1372,7 @@ def load_model(modelstring):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError("Accepted callable models have only one " "non-keyword argument")
+            raise TypeError("Accepted callable models have only one non-keyword argument")
         return model, "callable", constraints
 
 

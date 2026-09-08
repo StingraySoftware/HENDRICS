@@ -32,7 +32,7 @@ try:
     # import pint
     HAS_PINT = True
 except (ImportError, urllib.error.URLError):
-    warnings.warn("PINT is not installed. " "Some pulsar functionality will not be available")
+    warnings.warn("PINT is not installed. Some pulsar functionality will not be available")
     HAS_PINT = False
 from .base import deorbit_events
 
@@ -716,7 +716,7 @@ def run_folding(
         meanbins,
         smooth,
         drawstyle="steps-mid",
-        label="Smooth profile " f"(P.F. = {100 * (max - min) / max:.1f}%)",
+        label=f"Smooth profile (P.F. = {100 * (max - min) / max:.1f}%)",
         color="k",
         zorder=3,
     )

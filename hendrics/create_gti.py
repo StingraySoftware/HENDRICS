@@ -124,7 +124,7 @@ def main(args=None):
     from .base import _add_default_args, check_negative_numbers_in_args
 
     description = (
-        "Create GTI files from a filter expression, or applies " "previously created GTIs to a file"
+        "Create GTI files from a filter expression, or applies previously created GTIs to a file"
     )
     parser = argparse.ArgumentParser(description=description)
 
@@ -170,7 +170,7 @@ def main(args=None):
         "--minimum-length",
         type=float,
         default=0,
-        help=("Minimum length of GTIs (below this length, they" " will be discarded)"),
+        help=("Minimum length of GTIs (below this length, they will be discarded)"),
     )
 
     parser.add_argument(
@@ -193,7 +193,7 @@ def main(args=None):
     log.setLevel(args.loglevel)
     filter_expr = args.filter
     if filter_expr is None and args.apply_gti is None:
-        sys.exit("Please specify filter expression (-f option) or input " "GTI file (-a option)")
+        sys.exit("Please specify filter expression (-f option) or input GTI file (-a option)")
 
     for fname in files:
         if args.apply_gti is not None:

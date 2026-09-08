@@ -187,7 +187,7 @@ def main(args=None):
 
     outfiles = []
     if args.outfile is not None and len(files) > 1:
-        raise ValueError("Specify --output only when processing " "a single file")
+        raise ValueError("Specify --output only when processing a single file")
     bintime = np.longdouble(interpret_bintime(args.bintime))
 
     for f in files:

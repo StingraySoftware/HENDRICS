@@ -369,7 +369,7 @@ def main_phasetag(args=None):
         "--refTOA",
         default=None,
         type=np.longdouble,
-        help="Reference TOA in MJD (overrides --tomax) for " "reference pulse phase",
+        help="Reference TOA in MJD (overrides --tomax) for reference pulse phase",
         dest="pulse_ref_time",
     )
     parser.add_argument(

@@ -208,7 +208,7 @@ def main_mpi(fname, sample_time, segment_size):
         & (all_intervals < (my_rank + 1) * intervals_per_rank)
     ]
     logger.debug(
-        f"{my_rank}: Intervals {this_ranks_intervals[0] + 1} " f"to {this_ranks_intervals[-1] + 1}"
+        f"{my_rank}: Intervals {this_ranks_intervals[0] + 1} to {this_ranks_intervals[-1] + 1}"
     )
 
     # data = get_data_intervals(this_ranks_intervals)

@@ -292,7 +292,7 @@ class BasePhaseogram:
 
     def toa(self, event):  # pragma: no cover
         warnings.warn(
-            "This function was not implemented for this Phaseogram. " "Try the basic one.",
+            "This function was not implemented for this Phaseogram. Try the basic one.",
             AstropyUserWarning,
         )
 
@@ -983,7 +983,7 @@ def main_phaseogram(args=None):
     )
     parser.add_argument(
         "--binary",
-        help="Interact on binary parameters " "instead of frequency derivatives",
+        help="Interact on binary parameters instead of frequency derivatives",
         default=False,
         action="store_true",
     )
@@ -1040,7 +1040,7 @@ def main_phaseogram(args=None):
     log.setLevel(args.loglevel)
 
     if args.periodogram is None and args.freq is None:
-        raise ValueError("One of -f or --periodogram arguments MUST be " "specified")
+        raise ValueError("One of -f or --periodogram arguments MUST be specified")
     elif args.periodogram is not None:
         periodogram = load_folding(args.periodogram)
         frequency = float(periodogram.peaks[0])

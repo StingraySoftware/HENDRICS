@@ -515,7 +515,7 @@ def main_splitevents(args=None):
     parser.add_argument(
         "--overlap",
         type=float,
-        help="Overlap factor. 0 for no overlap, 0.5 for " "half-interval overlap, and so on.",
+        help="Overlap factor. 0 for no overlap, 0.5 for half-interval overlap, and so on.",
         default=None,
     )
     parser.add_argument(

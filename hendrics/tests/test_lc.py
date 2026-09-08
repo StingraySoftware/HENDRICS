@@ -267,9 +267,9 @@ class TestFullRun:
 
         lc_txt = lcdata_txt.counts
 
-        assert np.all(
-            np.abs(lc_mp - lc_txt) <= 1e-3
-        ), "Light curve data do not coincide between txt and HEN"
+        assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), (
+            "Light curve data do not coincide between txt and HEN"
+        )
 
         with pytest.warns(AstropyUserWarning, match="File exists, and noclobber"):
             command = command + " --noclobber"

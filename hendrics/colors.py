@@ -50,7 +50,7 @@ def main(args=None):
         [args.energies[2], args.energies[3]],
     ]
     if args.outfile is not None and len(files) > 1:
-        raise ValueError("Specify --output only when processing " "a single file")
+        raise ValueError("Specify --output only when processing a single file")
     for f in files:
         events = load_events(f)
         if not args.use_pi and events.energy is None:

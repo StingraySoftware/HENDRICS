@@ -136,13 +136,13 @@ def main(args=None):
         nargs=4,
         type=str,
         default=["0.3", "12", "5", "lin"],
-        help="Choose Emin, Emax, number of intervals," "interval spacing, lin or log",
+        help="Choose Emin, Emax, number of intervals,interval spacing, lin or log",
     )
     parser.add_argument(
         "--segment-size",
         type=float,
         default=512,
-        help="Length of the light curve intervals to be " "averaged",
+        help="Length of the light curve intervals to be averaged",
     )
     parser.add_argument(
         "--ref-band",
@@ -202,8 +202,7 @@ def main(args=None):
         "--format",
         default="ecsv",
         help=(
-            "Output format for the table. Can be ECSV, QDP, or any other "
-            "format accepted by astropy"
+            "Output format for the table. Can be ECSV, QDP, or any other format accepted by astropy"
         ),
     )
 

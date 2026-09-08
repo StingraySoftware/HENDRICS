@@ -713,7 +713,7 @@ def dumpdyn_main(args=None):
 
     parser.add_argument(
         "files",
-        help=("List of files in any valid HENDRICS " "format for PDS or CPDS"),
+        help=("List of files in any valid HENDRICS format for PDS or CPDS"),
         nargs="+",
     )
     parser.add_argument("--noplot", help="plot results", default=False, action="store_true")

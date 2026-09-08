@@ -628,7 +628,7 @@ def lcurve_from_fits(
             dt *= 86400
     except Exception:
         warnings.warn(
-            "Assuming that TIMEDEL is the median difference between the" " light curve times",
+            "Assuming that TIMEDEL is the median difference between the light curve times",
             AstropyUserWarning,
         )
         dt = np.median(np.diff(time))

@@ -59,9 +59,9 @@ class TestFullRun:
         calibrate.main(command.split())
         cls.lcA = os.path.join(os.path.join(cls.datadir, "monol_testA_lc" + HEN_FILE_EXTENSION))
         cls.lcB = os.path.join(os.path.join(cls.datadir, "monol_testB_lc" + HEN_FILE_EXTENSION))
-        command = f"{cls.ev_fileAcal}  --nproc 2 -b 2 " f"-o {cls.lcA}"
+        command = f"{cls.ev_fileAcal}  --nproc 2 -b 2 -o {cls.lcA}"
         lcurve.main(command.split())
-        command = f"{cls.ev_fileBcal}  --nproc 2 -b 2 " f"-o {cls.lcB}"
+        command = f"{cls.ev_fileBcal}  --nproc 2 -b 2 -o {cls.lcB}"
         lcurve.main(command.split())
 
         command = f"{cls.ev_fileA} -f time>0 -c --debug"

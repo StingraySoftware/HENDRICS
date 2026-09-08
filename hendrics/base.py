@@ -463,13 +463,13 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     """
     events = copy.deepcopy(events)
     if parameter_file is None:
-        warnings.warn("No parameter file specified for deorbit. Returning" " unaltered event list")
+        warnings.warn("No parameter file specified for deorbit. Returning unaltered event list")
         return events
     if not os.path.exists(parameter_file):
         raise FileNotFoundError(f"Parameter file {parameter_file} does not exist")
 
     if events.mjdref < 33282.0:
-        raise ValueError("MJDREF is very low (<01-01-1950), " "this is unsupported.")
+        raise ValueError("MJDREF is very low (<01-01-1950), this is unsupported.")
 
     if not HAS_PINT:
         raise ImportError(
@@ -1371,4 +1371,4 @@ def get_file_format(fname):
     if len(fmts) > 0:
         return fmts[0]
 
-    raise RuntimeError(f"File format {ext[1:]} " f"not recognized")
+    raise RuntimeError(f"File format {ext[1:]} not recognized")
