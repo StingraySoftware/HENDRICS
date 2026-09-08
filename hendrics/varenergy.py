@@ -136,7 +136,7 @@ def main(args=None):
         nargs=4,
         type=str,
         default=["0.3", "12", "5", "lin"],
-        help="Choose Emin, Emax, number of intervals,interval spacing, lin or log",
+        help="Choose Emin, Emax, number of intervals, interval spacing, lin or log",
     )
     parser.add_argument(
         "--segment-size",
@@ -168,9 +168,9 @@ def main(args=None):
         "--cross-instr",
         default=False,
         action="store_true",
-        help="Use data files in pairs, for example with the"
+        help="Use data files in pairs, for example with the "
         "reference band from one and the subbands from "
-        "the  other (useful in NuSTAR and "
+        "the other (useful in NuSTAR and "
         "multiple-detector missions)",
     )
     parser.add_argument(

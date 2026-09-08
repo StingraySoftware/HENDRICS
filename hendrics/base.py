@@ -155,8 +155,8 @@ DEFAULT_PARSER_ARGS["dynprofnorm"] = dict(
             "in place of the mean. Appending '_smooth' smooths the 2d "
             "array with a Gaussian filter.\n"
             "E.g. mediansub_smooth subtracts the median and smooths the "
-            "image"
-            "default None"
+            "image. "
+            "Default None"
         ),
         default=None,
         type=str,

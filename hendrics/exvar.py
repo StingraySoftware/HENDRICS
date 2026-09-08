@@ -43,8 +43,8 @@ def main(args=None):
         "--fraction-step",
         type=float,
         default=0.5,
-        help="If the step is not a full chunk_length but less,"
-        "this indicates the ratio between step step and"
+        help="If the step is not a full chunk_length but less, "
+        "this indicates the ratio between step and"
         " `chunk_length`",
     )
     parser.add_argument(

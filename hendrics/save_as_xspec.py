@@ -64,7 +64,7 @@ def main(args=None):
 
     description = (
         "Save a frequency spectrum in a qdp file that can be "
-        "read by flx2xsp and produce a XSpec-compatible spectrum"
+        "read by flx2xsp and produce a XSpec-compatible spectrum "
         "file"
     )
     parser = argparse.ArgumentParser(description=description)

@@ -1682,7 +1682,7 @@ def _common_parser(args=None):
         "--fast",
         help="Use a faster folding algorithm. "
         "It automatically searches for the first spin "
-        "derivative using an optimized step."
+        "derivative using an optimized step. "
         "This option ignores expocorr, fdotmin/max, "
         "segment-size, and step",
         default=False,

@@ -402,7 +402,7 @@ def main(args=None):
         "mpiexec -n 10 python HENparfspec filename.fits --method mpi\n"
         "To run the algorithm in parallel using multiprocessing, use:\n"
         "python HENparfspec filename.fits --method multiprocessing --nproc 10\n"
-        "To run the algorithm sequentially, for testing purposes, just execute"
+        "To run the algorithm sequentially, for testing purposes, just execute "
         "HENparfspec filename.fits\n"
     )
     parser = argparse.ArgumentParser(description=description)
