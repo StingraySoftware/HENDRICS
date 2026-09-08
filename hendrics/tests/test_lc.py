@@ -335,6 +335,21 @@ class TestFullRun:
         gti_to_test = io.load_events(self.ev_fileA).gti
         assert np.allclose(gti_to_test, out_lc.gti)
 
+    def testbaselinelc_multiple_nooutroot(self):
+        """Two inputs and no ``-o`` must give two outputs, not a TypeError.
+
+        ``_baseline_lightcurves`` used to overwrite its ``outroot`` argument on
+        the first iteration, so the second file hit ``None + "_1"``.
+        """
+        a_in = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
+        b_in = os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
+        command = f"{a_in} {b_in} -p 0.001 --lam 1e5"
+
+        lcurve.baseline_main(command.split())
+        for fname in (a_in, b_in):
+            out_lc = io.load_lcurve(base.hen_root(fname) + "_lc_baseline" + HEN_FILE_EXTENSION)
+            assert hasattr(out_lc, "base")
+
     def test_lcurve_error_uncalibrated(self):
         """Test light curve error from uncalibrated file."""
         data = os.path.join(

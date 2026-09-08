@@ -179,6 +179,10 @@ def main(args=None):
 
     files = args.files
     if args.cross:
+        if len(files) % 2 != 0:
+            warnings.warn(
+                f"--cross needs an even number of files; ignoring the last one ({files[-1]})"
+            )
         files = list(zip(files[::2], files[1::2]))
 
     outfiles = []

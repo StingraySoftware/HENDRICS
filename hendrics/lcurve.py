@@ -759,16 +759,15 @@ def lcurve_from_txt(
 
 
 def _baseline_lightcurves(lcurves, outroot, p, lam):
-    outroot_save = outroot
     for i, f in enumerate(lcurves):
         if outroot is None:
-            outroot = hen_root(f) + "_lc_baseline"
+            outroot_f = hen_root(f) + "_lc_baseline"
         else:
-            outroot = outroot_save + f"_{i}"
+            outroot_f = outroot + f"_{i}"
         ftype, lc = get_file_type(f)
         baseline = lc.baseline(p, lam)
         lc.base = baseline
-        save_lcurve(lc, outroot + HEN_FILE_EXTENSION)
+        save_lcurve(lc, outroot_f + HEN_FILE_EXTENSION)
 
 
 def _wrap_lc(args):
