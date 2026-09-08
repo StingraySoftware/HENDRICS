@@ -34,10 +34,12 @@ keywords = [
     "space",
     "science",
 ]
+# Floors match the `oldestdeps` pins in tox.ini, which are the oldest versions
+# actually tested in CI. Anything lower is not installable on Python 3.11 anyway.
 dependencies = [
-    "numpy>=1.17",
-    "astropy>=4.0",
-    "scipy>=1.1.0",
+    "numpy>=1.23",
+    "astropy>=5.2",
+    "scipy>=1.9",
     "matplotlib>=3.8.0",
     "stingray>=2.3.2",
     "tqdm",
