@@ -317,13 +317,18 @@ def common_name(str1, str2, default="common"):
     'common'
     >>> common_name('A_3-50_A.nc', 'B_3-50_B.nc')
     '3-50'
+    >>> # Stripping the HENDRICS suffixes can change the relative lengths
+    >>> common_name('bbbbbb.nc', 'aaa_ev.nc')
+    'common'
     """
+    # Extract the HEN root of the name (in case they're event files) *before*
+    # comparing the lengths: stripping the suffixes can make two equally long
+    # names differ in length, and vice versa.
+    str1 = hen_root(str1)
+    str2 = hen_root(str2)
     if not len(str1) == len(str2):
         return default
     common_str = ""
-    # Extract the HEN root of the name (in case they're event files)
-    str1 = hen_root(str1)
-    str2 = hen_root(str2)
     for i, letter in enumerate(str1):
         if str2[i] == letter:
             common_str += letter
@@ -1329,23 +1334,40 @@ def get_file_format(fname):
     'ascii.ecsv'
     >>> get_file_format('bu.fits.gz')
     'ogip'
+    >>> # The extension is matched case-insensitively...
+    >>> get_file_format('bu.FITS')
+    'ogip'
+    >>> # ...and a compression suffix does not change the format underneath
+    >>> get_file_format('bu.evt.Z')
+    'ogip'
+    >>> get_file_format('bu.fits.bz2')
+    'ogip'
     >>> get_file_format('bu.pdfghj')
     Traceback (most recent call last):
         ...
     RuntimeError: File format pdfghj not recognized
     """
-    ext = get_file_extension(fname)
+    ext = get_file_extension(fname).lower()
+
+    # The compression format does not change the format underneath it: strip it
+    # so that, e.g., bu.evt.Z is treated exactly like bu.evt
+    for compression in (".gz", ".bz2", ".bz", ".z"):
+        if ext.endswith(compression):
+            ext = ext.removesuffix(compression)
+            break
+
     if ext in [".p", ".pickle"]:
         return "pickle"
 
     if ext == ".nc":
         return "nc"
 
-    if ext in [".evt", ".evt.gz", ".fits", ".fits.gz"]:
+    if ext in [".evt", ".fits"]:
         return "ogip"
 
-    # For the rest of formats, use Astropy
-    fmts = identify_format("write", Table, fname, None, [], {})
+    # For the rest of formats, use Astropy. Astropy's identifiers match the
+    # extension case-sensitively, so hand them a lower-cased name.
+    fmts = identify_format("write", Table, str(fname).lower(), None, [], {})
     if len(fmts) > 0:
         return fmts[0]
 
