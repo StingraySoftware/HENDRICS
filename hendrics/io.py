@@ -390,10 +390,15 @@ def save_as_netcdf(vars, varnames, formats, fname):
 def read_from_netcdf(fname):
     """Read from a netCDF4 file."""
     rootgrp = nc.Dataset(fname)
+    # By default, netCDF4 applies `_FillValue`/`valid_range` masking to integer
+    # variables, returning `np.ma.MaskedArray` instead of plain `np.ndarray`.
+    # We never write fill values, and masked arrays are not drop-in
+    # replacements for ndarrays (e.g. `MaskedArray.tofile` is not implemented).
+    rootgrp.set_auto_mask(False)
     out = {}
     for k in rootgrp.variables.keys():
         dum = rootgrp.variables[k]
-        values = dum.__array__()
+        values = np.asarray(dum.__array__())
         # Handle special case of complex
         if dum.dtype == cpl128:
             arr = np.empty(values.shape, dtype=np.complex128)

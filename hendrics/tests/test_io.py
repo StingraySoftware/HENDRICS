@@ -289,6 +289,36 @@ class TestIO:
         assert lcurve2.mission == "bububu"
         assert lcurve.instr == lcurve2.instr
 
+    @pytest.mark.parametrize("dtype", ["int32", "int64", "uint32", "uint64"])
+    def test_load_and_save_lcurve_integer_counts(self, dtype):
+        """Integer arrays must round-trip as plain ndarrays.
+
+        Regression test: netCDF4 applies automatic ``_FillValue``/``valid_range``
+        masking to integer variables, which used to make ``load_lcurve`` return
+        ``numpy.ma.MaskedArray`` instead of ``numpy.ndarray``. That breaks e.g.
+        ``hendrics.binary``, since ``MaskedArray.tofile`` is not implemented.
+        """
+        counts = np.arange(15, dtype=dtype)
+        lcurve = Lightcurve(
+            np.linspace(0, 10, 15),
+            counts,
+            dt=10 / 14,
+            mjdref=54385.3254923845,
+            gti=[[-0.5, 10.5]],
+            skip_checks=True,
+        )
+        fname = "bubu_int" + HEN_FILE_EXTENSION
+        save_lcurve(lcurve, fname)
+        lcurve2 = load_lcurve(fname)
+
+        for attr in ["time", "counts", "gti"]:
+            value = getattr(lcurve2, attr)
+            assert isinstance(value, np.ndarray)
+            assert not isinstance(value, np.ma.MaskedArray), f"{attr} is masked"
+        assert np.allclose(lcurve.counts, lcurve2.counts)
+        # Must be usable where a plain ndarray is expected
+        lcurve2.counts.astype("float32").tofile(os.devnull)
+
     @pytest.mark.parametrize("fmt", [HEN_FILE_EXTENSION, ".ecsv", ".hdf5"])
     def test_load_and_save_pds(self, fmt):
         if fmt == ".hdf5" and not HAS_H5PY:
