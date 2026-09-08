@@ -6,7 +6,6 @@ from __future__ import annotations
 import copy
 import glob
 import importlib
-import logging
 import os
 import os.path
 import pickle
@@ -373,8 +372,8 @@ def save_as_netcdf(vars, varnames, formats, fname):
         else:
             dims[dimname] = 1
 
-        for dimname in dims.keys():
-            rootgrp.createDimension(dimname, dims[dimname])
+        for dimname, dimlen in dims.items():
+            rootgrp.createDimension(dimname, dimlen)
         vnc = rootgrp.createVariable(varnames[iv], formats[iv], dimspec)
         try:
             if formats[iv] == str:
@@ -614,7 +613,7 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     fmt = get_file_format(fname)
 
     if hasattr(lcurve, "_mask") and lcurve._mask is not None and np.any(~lcurve._mask):
-        logging.info("The light curve has a mask. Applying it before saving.")
+        log.info("The light curve has a mask. Applying it before saving.")
         lcurve = lcurve.apply_mask(lcurve._mask, inplace=False)
         lcurve._mask = None
 

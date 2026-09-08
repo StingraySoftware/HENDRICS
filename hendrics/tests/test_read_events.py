@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 import os
+import re
 
 import numpy as np
 import pytest
@@ -341,7 +342,7 @@ class TestReadEvents:
 
         filea = os.path.join(self.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION)
 
-        with pytest.raises(ValueError, match="Overlap cannot be >=1. Exiting."):
+        with pytest.raises(ValueError, match=re.escape("Overlap cannot be >=1. Exiting.")):
             read_events.split_eventlist(filea, 10, overlap=1.5)
 
     def test_load_events(self):

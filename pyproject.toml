@@ -302,16 +302,15 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
     # New ones should be avoided and is up to maintainers to enforce.
     "A00",
 
-    # flake8-annotations (ANN)
-    "ANN101",  # No annotation for `self`.
-    "ANN102",  # No annotation for `cls`.
-
     # flake8-bugbear (B)
     "B008",  # FunctionCallArgumentDefault
 
     # flake8-commas (COM)
     "COM812",  # TrailingCommaMissing
     "COM819",  # TrailingCommaProhibited
+
+    # flake8-copyright (CPY)
+    "CPY001",  # missing-copyright-notice. This project does not use per-file copyright headers.
 
     # pydocstyle (D)
     # Missing Docstrings
@@ -342,6 +341,9 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
     "PD",
 
     "PGH004", # noqa
+
+    # pylint (PLC)
+    "PLC0415", # import-outside-top-level. Optional dependencies are imported lazily on purpose.
 
     # pylint (PLR and PLW)
     "PLR1730", # if-stmt-min-max (not always clearer, and sometimes slower)

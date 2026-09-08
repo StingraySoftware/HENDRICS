@@ -135,7 +135,7 @@ def main(args=None):
         "--energy-values",
         nargs=4,
         type=str,
-        default="0.3 12 5 lin".split(" "),
+        default=["0.3", "12", "5", "lin"],
         help="Choose Emin, Emax, number of intervals," "interval spacing, lin or log",
     )
     parser.add_argument(
@@ -266,7 +266,7 @@ def main(args=None):
         additional_output_args = {}
         if args.format == "qdp":
             additional_output_args["err_specs"] = {"serr": [3]}
-        if args.format in ["hdf5"]:
+        if args.format == "hdf5":
             additional_output_args["serialize_meta"] = True
 
         if args.rms:

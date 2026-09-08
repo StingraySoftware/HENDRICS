@@ -17,7 +17,7 @@ def test_default_nustar_rmf(caplog):
     caldb_path = "fake_caldb"
     os.environ["CALDB"] = caldb_path
     path_to_rmf = os.path.join(
-        caldb_path, *"data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf".split("/")
+        caldb_path, "data", "nustar", "fpm", "cpf", "rmf", "nuAdet3_20100101v002.rmf"
     )
     with pytest.warns(UserWarning, match="Using default NuSTAR rmf."):
         newpath = default_nustar_rmf()

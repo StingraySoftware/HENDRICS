@@ -131,8 +131,8 @@ class TestFullRun:
             "pds": "monol_testA_E3-50_0d000244141_128_leahy_pds",
             "cpds": "monol_test_E3-50_0d000244141_128_leahy_cpds",
         }
-        for realtype in file_list.keys():
-            fname = os.path.join(self.datadir, file_list[realtype] + HEN_FILE_EXTENSION)
+        for realtype, basename in file_list.items():
+            fname = os.path.join(self.datadir, basename + HEN_FILE_EXTENSION)
             ftype, _ = io.get_file_type(fname)
             assert ftype == realtype, "File types do not match"
 

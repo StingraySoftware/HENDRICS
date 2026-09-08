@@ -2336,8 +2336,8 @@ def main_accelsearch(args=None):
         results = results[~bad]
 
     if len(results) > 0:
-        results["emin"] = emin if emin else -1.0
-        results["emax"] = emax if emax else -1.0
+        results["emin"] = emin or -1.0
+        results["emax"] = emax or -1.0
         results["fmin"] = fmin
         results["fmax"] = fmax
         results["zmax"] = zmax

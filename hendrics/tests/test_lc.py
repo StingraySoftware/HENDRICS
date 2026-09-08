@@ -2,6 +2,7 @@
 
 import glob
 import os
+import re
 
 import numpy as np
 import pytest
@@ -358,7 +359,7 @@ class TestFullRun:
         )
         command = f"{data} -e 3 50"
 
-        with pytest.raises(ValueError, match="Did you run HENcalibrate?"):
+        with pytest.raises(ValueError, match=re.escape("Did you run HENcalibrate?")):
             lcurve.main(command.split())
 
     def test_lcurve_pi_filtering(self):

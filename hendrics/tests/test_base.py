@@ -1,4 +1,5 @@
 import os
+import re
 
 import numpy as np
 import pytest
@@ -67,7 +68,7 @@ def test_deorbit_badpar():
 
 def test_deorbit_non_existing_par():
     ev = np.asarray(1)
-    with pytest.raises(FileNotFoundError, match="Parameter file warjladsfjqpeifjsdk.par"):
+    with pytest.raises(FileNotFoundError, match=re.escape("Parameter file warjladsfjqpeifjsdk.par")):
         deorbit_events(ev, "warjladsfjqpeifjsdk.par")
 
 
@@ -79,7 +80,7 @@ def test_deorbit_bad_mjdref():
     ev = EventList(np.arange(100), gti=np.asarray([[0, 2]]))
     ev.mjdref = 2
     par = _dummy_par("bububu.par")
-    with pytest.raises(ValueError, match="MJDREF is very low .<01-01-1950., "):
+    with pytest.raises(ValueError, match=re.escape("MJDREF is very low (<01-01-1950), ")):
         deorbit_events(ev, par)
     os.remove("bububu.par")
 
