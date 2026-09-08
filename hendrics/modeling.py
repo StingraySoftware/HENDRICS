@@ -65,6 +65,9 @@ def main_model(args=None):
         root = os.path.splitext(f)[0]
         spectrum = load_pds(f)
 
+        # The fit is done on the (possibly frequency-filtered) spectrum, but the
+        # full spectrum is what gets saved, with the best-fit model attached.
+        spectrum_filt = spectrum
         if freqs is not None:
             good = np.zeros(len(spectrum.freq), dtype=bool)
             for f0, f1 in zip(freqs[::2], freqs[1::2]):
@@ -84,7 +87,7 @@ def main_model(args=None):
             max_post = True
 
         parest, res = fit_powerspectrum(
-            spectrum,
+            spectrum_filt,
             model,
             model.parameters,
             max_post=max_post,

@@ -781,7 +781,11 @@ def main(args=None):
         "--norm",
         type=str,
         default="leahy",
-        help="Normalization to use" + " (Accepted: leahy and rms;" + ' Default: "leahy")',
+        help=(
+            "Normalization to use"
+            " (Accepted: leahy, frac, abs, none, rms, where rms is an alias"
+            ' for frac; Default: "leahy")'
+        ),
     )
     parser.add_argument(
         "--noclobber",
@@ -879,8 +883,8 @@ def main(args=None):
 
     fftlen = args.fftlen
     pdsrebin = args.rebin
-    normalization = args.norm
-    if normalization.lower() not in [
+    normalization = args.norm.lower()
+    if normalization not in [
         "frac",
         "abs",
         "leahy",

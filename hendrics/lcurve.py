@@ -807,7 +807,7 @@ def _execute_lcurve(args):
     if args.pi_interval is not None:
         pi_interval = np.array(args.pi_interval)
     if e_interval is not None:
-        args.e_interval = np.array(args.energy_interval)
+        e_interval = np.array(e_interval)
 
     # ------ Use functools.partial to wrap lcurve* with relevant keywords---
     if args.fits_input:
@@ -836,10 +836,9 @@ def _execute_lcurve(args):
     na = len(arglist)
     outfile = args.outfile
     if outfile is not None:
-        outname, ext = splitext_improved(outfile)
+        outroot, _ = splitext_improved(outfile)
         for i in range(na):
-            if na > 1:
-                outname = outfile + f"_{i}"
+            outname = outroot if na == 1 else f"{outroot}_{i}"
             arglist[i][1]["outfile"] = outname
 
     # -------------------------------------------------------------------------
