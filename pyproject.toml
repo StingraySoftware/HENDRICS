@@ -204,6 +204,10 @@ filterwarnings = [
     "ignore:SIMON says. Number of segments used in averaging:UserWarning",
     "ignore:.*deprecated alias for.*:DeprecationWarning",
     "ignore:.*namespace is deprecated.*:DeprecationWarning",
+    # scipy sparse matrix -> array migration, triggered from stingray.utils._als
+    # (baseline_als), not from HENDRICS code. Remove once stingray follows scipy's
+    # sparse array API. https://github.com/StingraySoftware/stingray/issues
+    "ignore:.*is being replaced by.*_array\\..*:DeprecationWarning:stingray",
 ]
 
 [tool.towncrier]
