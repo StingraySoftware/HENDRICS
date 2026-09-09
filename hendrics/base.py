@@ -865,14 +865,18 @@ def hist3d_numba_seq_weight(tracks, weights, bins, ranges):
 def index_arr(a, ix_arr):
     strides = np.array(a.strides) / a.itemsize
     ix = int((ix_arr * strides).sum())
-    return a.ravel()[ix]
+    # ``reshape``, not ``ravel``: the flat index above is only meaningful for a
+    # contiguous array, and ``ravel`` would silently hand back a copy of a
+    # non-contiguous one -- in ``index_set_arr`` the write would then go to
+    # that copy and be thrown away. ``reshape(-1)`` raises instead.
+    return a.reshape(-1)[ix]
 
 
 @njit(nogil=True, parallel=False)
 def index_set_arr(a, ix_arr, val):
     strides = np.array(a.strides) / a.itemsize
     ix = int((ix_arr * strides).sum())
-    a.ravel()[ix] = val
+    a.reshape(-1)[ix] = val
 
 
 @njit(nogil=True, parallel=False)

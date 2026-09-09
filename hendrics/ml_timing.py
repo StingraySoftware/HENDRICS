@@ -18,12 +18,10 @@ def phases_from_zero_to_one(phase):
     >>> assert np.isclose(phases_from_zero_to_one(0.9), 0.9)
     >>> assert np.isclose(phases_from_zero_to_one(3.1), 0.1)
     >>> assert np.allclose(phases_from_zero_to_one([0.1, 3.1, -0.9]), 0.1)
+    >>> assert phases_from_zero_to_one(0) == 0
+    >>> assert phases_from_zero_to_one(1) == 0
     """
-    while phase > 1:
-        phase -= 1.0
-    while phase <= 0:
-        phase += 1
-    return phase
+    return phase - np.floor(phase)
 
 
 @vectorize([(int64,), (float32,), (float64,)])
@@ -36,12 +34,12 @@ def phases_around_zero(phase):
     >>> assert np.isclose(phases_around_zero(-0.9), 0.1)
     >>> assert np.isclose(phases_around_zero(3.9), -0.1)
     >>> assert np.allclose(phases_around_zero([0.6, -0.4]), -0.4)
+    >>> assert phases_around_zero(0.5) == -0.5
+    >>> assert phases_around_zero(-0.5) == -0.5
     """
-    ph = phase
-    while ph >= 0.5:
+    ph = phase - np.floor(phase)
+    if ph >= 0.5:
         ph -= 1.0
-    while ph < -0.5:
-        ph += 1.0
     return ph
 
 
