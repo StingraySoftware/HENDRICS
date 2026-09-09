@@ -25,7 +25,7 @@ from hendrics import (
 from hendrics.io import HAS_H5PY
 from hendrics.tests import _dummy_par
 
-from . import cleanup_test_dir, find_file_pattern_in_dir
+from . import cleanup_test_dir, find_file_pattern_in_dir, hen_script
 
 try:
     FileNotFoundError
@@ -121,8 +121,7 @@ class TestFullRun:
     def test_scripts_are_installed(self):
         """Test only once that command line scripts are installed correctly."""
         fits_file = os.path.join(self.datadir, "monol_testA.evt")
-        command = f"HENreadfile {fits_file}"
-        sp.check_call(command.split())
+        sp.check_call([hen_script("HENreadfile"), fits_file])
 
     def test_get_file_type(self):
         """Test getting file type."""

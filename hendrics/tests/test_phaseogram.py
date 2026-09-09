@@ -19,7 +19,7 @@ from hendrics.phaseogram import (
 )
 from hendrics.plot import plot_folding
 
-from . import cleanup_test_dir
+from . import cleanup_test_dir, hen_script
 
 
 def create_parfile(parfile, withfX=False, withbt=False, withell1=False):
@@ -65,9 +65,11 @@ class TestPhaseogram:
         events.simulate_times(lc)
         events.mjdref = 57000.0
         cls.event_times = events.time
-        cls.dum = "events" + HEN_FILE_EXTENSION
-        cls.dum_nohead = "events_nohead" + HEN_FILE_EXTENSION
-        cls.dum_info = "events_info" + HEN_FILE_EXTENSION
+        # Prefixed: test_efsearch.py also writes an "events" file into the
+        # working directory, and the two would overwrite each other.
+        cls.dum = "phaseog_events" + HEN_FILE_EXTENSION
+        cls.dum_nohead = "phaseog_events_nohead" + HEN_FILE_EXTENSION
+        cls.dum_info = "phaseog_events_info" + HEN_FILE_EXTENSION
         save_events(events, cls.dum_nohead)
 
         header = Header()
@@ -85,8 +87,7 @@ class TestPhaseogram:
         curdir = os.path.abspath(os.path.dirname(__file__))
         cls.datadir = os.path.join(curdir, "data")
         fits_file = os.path.join(cls.datadir, "monol_testA.evt")
-        command = f"HENreadevents {fits_file}"
-        sp.check_call(command.split())
+        sp.check_call([hen_script("HENreadevents"), fits_file])
 
         cls.real_event_file = os.path.join(
             cls.datadir, "monol_testA_nustar_fpma_ev" + HEN_FILE_EXTENSION
@@ -108,7 +109,7 @@ class TestPhaseogram:
                 str(self.pulse_frequency),
             ]
         )
-        outfile = "events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION
+        outfile = "phaseog_events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION
         assert os.path.exists(outfile)
         plot_folding([outfile], ylog=True)
         efperiod = load_folding(outfile)
@@ -123,7 +124,7 @@ class TestPhaseogram:
             [
                 evfile,
                 "--periodogram",
-                "events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION,
+                "phaseog_events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION,
                 "--test",
             ]
         )
@@ -135,7 +136,7 @@ class TestPhaseogram:
             [
                 evfile,
                 "--periodogram",
-                "events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION,
+                "phaseog_events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION,
                 "--test",
                 "--norm",
                 norm,
@@ -160,7 +161,7 @@ class TestPhaseogram:
                 [
                     evfile,
                     "--periodogram",
-                    "events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION,
+                    "phaseog_events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION,
                     "--test",
                     "--norm",
                     "arsdfajl",
@@ -231,7 +232,7 @@ class TestPhaseogram:
                 evfile,
                 "--binary",
                 "--periodogram",
-                "events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION,
+                "phaseog_events_Z22_9.85-9.95Hz" + HEN_FILE_EXTENSION,
                 "--test",
                 "--pepoch",
                 "57000",

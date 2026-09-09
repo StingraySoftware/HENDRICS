@@ -966,10 +966,11 @@ if HAS_NUMBA:
         """
         Examples
         --------
+        >>> tmpfile = os.path.join(tempfile.mkdtemp(), 'out.npy')
         >>> x = np.random.uniform(0., 1., 100)
         >>> weights = np.random.uniform(0, 1, 100)
         >>> H, xedges = np.histogram(x, bins=5, range=[0., 1.], weights=weights)
-        >>> Hn = histogram(x, weights=weights, bins=5, ranges=[0., 1.], tmp='out.npy',
+        >>> Hn = histogram(x, weights=weights, bins=5, ranges=[0., 1.], tmp=tmpfile,
         ...                use_memmap=True)
         >>> assert np.all(H == Hn)
         >>> Hn1 = histogram(x, weights=None, bins=5, ranges=[0., 1.])
