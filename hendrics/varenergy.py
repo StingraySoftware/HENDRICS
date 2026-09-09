@@ -1,5 +1,9 @@
-"""
-@author: marta
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Variability-energy spectra: count, rms, covariance and lag spectra.
+
+Thin wrappers around the :mod:`stingray.varenergyspectrum` classes, adding
+HENDRICS input/output and conversion of the results to Astropy tables.
+Called by the ``HENvarenergy`` command line script.
 """
 
 import warnings

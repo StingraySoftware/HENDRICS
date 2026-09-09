@@ -25,7 +25,7 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
     Notes
     -----
     Uses method described by Ingram and Done in Appendix A of
-    `this paper<https://arxiv.org/pdf/1108.0789>__`
+    `this paper <https://arxiv.org/pdf/1108.0789>`__
     """
     ftype, contents = get_file_type(fname)
 

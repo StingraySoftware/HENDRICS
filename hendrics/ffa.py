@@ -1,3 +1,43 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Fast Folding Algorithm (FFA) period search, and the Z^2_n and H statistics.
+
+:func:`ffa_search` scans a range of trial periods by repeatedly folding a binned
+light curve, reusing partial sums between neighbouring trial periods instead of
+refolding from scratch, and scores each trial with the Z^2_n statistic. The
+supporting Z^2_n and H-test routines (:func:`z_n_fast_cached`,
+:func:`z_n_fast_cached_all`, :func:`h_test`) cache the sine and cosine tables
+they need, so they are cheap to call once per trial period.
+
+Notes
+-----
+The bookkeeping of the FFA sums, for a light curve split into ``prof_n``
+profiles, goes as follows::
+
+    prof_n  step0  step1  step2
+    0        0+1    0+2    0+4
+    1        0+1'   0+2'   0+4'
+    2        2+3    1+3'   1+5'
+    3        2+3'   1+3''  1+5''
+    4        4+5    4+6    2+6''
+    5        4+5'   4+6'   2+6'''
+    6        6+7    5+7'   3+7'''
+    7        6+7'   5+7''  3+7''''
+    8        8+9    8+10   8+12
+    9        8+9'   8+10'  8+12'
+    10     10+11    9+11'  9+13'
+    11     10+11'   9+11'' 9+13''
+    ...
+
+Each element is a full profile. Each profile number in the sums refers to the
+profile created in the *previous* step, and primes indicate the amount of shift.
+Calling ``step_pow`` the quantity ``2 ** (step + 1)``, in each sum:
+
++ the *jump* between the summed profiles is ``step_pow / 2``;
++ the *shift* of each element is ``(prof_n % step_pow(step) + 1) // 2``;
++ the starting number is
+  ``prof_n // step_pow * step_pow + (prof_n - prof_n // step_pow) // 2``.
+"""
+
 import functools
 
 import numpy as np
@@ -6,33 +46,6 @@ from . import float32, float64, int32, int64, njit, vectorize
 from .base import show_progress
 
 __all__ = ["ffa_search", "h_test", "z_n_fast_cached", "z_n_fast_cached_all"]
-"""
-prof_n  step0  step1  step2
-0        0+1    0+2    0+4
-1        0+1'   0+2'   0+4'
-2        2+3    1+3'   1+5'
-3        2+3'   1+3''  1+5''
-4        4+5    4+6    2+6''
-5        4+5'   4+6'   2+6'''
-6        6+7    5+7'   3+7'''
-7        6+7'   5+7''  3+7''''
-8        8+9    8+10   8+12
-9        8+9'   8+10'  8+12'
-10     10+11    9+11'  9+13'
-11     10+11'   9+11'' 9+13''
-...
-
-Each element is a full profile.
-Each profile number in the sums refers to the profile created in the _previous_
-step. Primes indicate the amount of shift.
-
-Let's call step_pow the quantity (2**(step+1)) So, in each sum:
-
-+ The _jump_ between the summed profiles is equal to step_pow / 2
-+ The _shift_ in each element is equal to (prof_n % step_pow(step) + 1) // 2
-+ The starting number is obtained as
-    prof_n // step_pow * step_pow + (prof_n - prof_n // step_pow) // 2
-"""
 
 
 @functools.lru_cache(maxsize=128)

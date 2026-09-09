@@ -1,3 +1,12 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Maximum-likelihood fit of a pulse profile against a template.
+
+:func:`ml_pulsefit` fits the phase, amplitude and background level of a
+pulse profile by maximizing a Poisson likelihood against a normalized
+template, and returns the best-fit values with their uncertainties. Used by
+the time-of-arrival machinery in :mod:`hendrics.fold`.
+"""
+
 import copy
 
 import numpy as np
