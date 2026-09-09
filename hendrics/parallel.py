@@ -140,12 +140,14 @@ def main_none(fname, sample_time, segment_size):
 
 
 def main_mpi(fname, sample_time, segment_size):
-    """
-    Perform parallel processing of time series data using MPI.
+    """Perform parallel processing of time series data using MPI.
+
     This function distributes the processing of time series intervals across multiple MPI ranks.
     Each rank processes a subset of intervals, computes partial results, and then combines them
     using a binary tree reduction algorithm to obtain the final result.
+
     Algorithm:
+
         1. The root rank (rank 0) loads time series data and computes interval boundaries.
         2. The interval information is broadcasted to all ranks.
         3. Each rank determines its assigned intervals and processes them using `single_rank_intervals`.
@@ -302,7 +304,9 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
     This function divides the input time series data into segments and distributes the analysis
     across multiple processes. Each process computes results for a subset of intervals, and the
     results are aggregated to produce the final output.
+
     Algorithm:
+
         1. Load time series data and determine Good Time Intervals (GTIs).
         2. Split the data into segments of specified size.
         3. Assign segments to worker processes based on the number of available processes (`world_size`).

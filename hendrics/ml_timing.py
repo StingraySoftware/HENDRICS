@@ -314,6 +314,7 @@ def ml_pulsefit(
 
     This method makes a maximum-likelihood fit of a pulse profile
     to the following function of a pulse template:
+
     .. math::
         f(\phi) = B + A \mathcal{T}(\phi-\phi_0)
 
