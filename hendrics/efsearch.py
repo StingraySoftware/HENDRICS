@@ -215,6 +215,11 @@ def decide_binary_parameters(
     csv_file="db.csv",
     reset=False,
 ):
+    """Sample a grid of binary parameters into a csv file.
+
+    Experimental, and only reachable from the Python API -- there is no
+    command line script for it. Needs ``pandas``.
+    """
     import pandas as pd
 
     count = 0
@@ -230,8 +235,8 @@ def decide_binary_parameters(
         "best_T0",
     ]
 
-    df = 1 / length
-    log.info(f"Recommended frequency steps: {int(np.diff(freq_range)[0] // df + 1)}")
+    freq_step = 1 / length
+    log.info(f"Recommended frequency steps: {int(np.diff(freq_range)[0] // freq_step + 1)}")
     while count < NMAX:
         # In any case, only the first loop deletes the file
         if count > 0:
@@ -268,16 +273,21 @@ def folding_orbital_search(
     fun=epoch_folding_search,
     **fun_kwargs,
 ):
+    """Refine the binary parameters sampled by ``decide_binary_parameters``.
+
+    Experimental, and only reachable from the Python API -- there is no
+    command line script for it. Needs ``pandas``.
+    """
     import pandas as pd
 
     times = (events.time - events.gti[0, 0]).astype(np.float64)
     for chunk in pd.read_csv(parameter_csv_file, chunksize=chunksize):
-        try:
-            chunk["done"][0]
-        except Exception:
+        if "done" not in chunk.columns or len(chunk) == 0:
             continue
+        # ``chunk`` keeps the labels it had in the full table, so every lookup
+        # inside it has to be positional.
         for i in range(len(chunk)):
-            if chunk["done"][i]:
+            if chunk["done"].iloc[i]:
                 continue
 
             row = chunk.iloc[i]
@@ -301,12 +311,11 @@ def folding_orbital_search(
                     best_T0 = T0
                 if stats[0] < min_stats:
                     min_stats = stats[0]
-            idx = chunk.index[i]
-            chunk.iloc[idx, chunk.columns.get_loc("max_stat")] = max_stats
-            chunk.iloc[idx, chunk.columns.get_loc("min_stat")] = min_stats
-            chunk.iloc[idx, chunk.columns.get_loc("best_T0")] = best_T0
+            chunk.iloc[i, chunk.columns.get_loc("max_stat")] = max_stats
+            chunk.iloc[i, chunk.columns.get_loc("min_stat")] = min_stats
+            chunk.iloc[i, chunk.columns.get_loc("best_T0")] = best_T0
 
-            chunk.iloc[idx, chunk.columns.get_loc("done")] = True
+            chunk.iloc[i, chunk.columns.get_loc("done")] = True
         _save_df_to_csv(chunk, outfile)
 
 
@@ -1908,7 +1917,7 @@ def _common_main(args, func):
         if len(results) == 4:
             frequencies, stats, step, length = results
         elif len(results) == 6:
-            frequencies, fdots, stats, step, fdotsteps, length = results
+            frequencies, fdots, stats, step, _, length = results
 
         if length > args.dynstep and not (args.fast or args.ffa):
             _ = dyn_folding_search(

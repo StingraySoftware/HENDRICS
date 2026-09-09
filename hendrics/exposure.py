@@ -145,24 +145,9 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
 
     evtdata = load_events_and_gtis(uf_file, additional_columns=additional_columns)
 
-    from stingray import EventList
-
-    events_obj = EventList(
-        time=evtdata.ev_list,
-        gti=evtdata.gti_list,
-        pi=evtdata.pi_list,
-        energy=evtdata.energy_list,
-        mjdref=evtdata.mjdref,
-        instr=evtdata.instr,
-        mission=evtdata.mission,
-        header=evtdata.header,
-        detector_id=evtdata.detector_id,
-        ephem=evtdata.ephem,
-        timeref=evtdata.timeref,
-        timesys=evtdata.timesys,
-    )
-
-    events = events_obj.time
+    # Use the raw arrays: the times and the additional columns are differenced
+    # against each other below, so they have to stay in the same order.
+    events = evtdata.ev_list
     additional = evtdata.additional_data
 
     priors = additional["PRIOR"]

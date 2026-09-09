@@ -28,7 +28,6 @@ warnings.filterwarnings("ignore", message=".*Errorbars on cross.*")
 
 from .compat import (
     HAS_NUMBA,
-    array_take,
     float32,
     float64,
     int32,

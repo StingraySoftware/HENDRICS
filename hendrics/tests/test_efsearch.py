@@ -635,7 +635,9 @@ class TestEFsearch:
         )
         table = pd.read_csv(csv_file)
         assert len(table) == 10
-        folding_orbital_search(events, csv_file, chunksize=10, outfile="out.csv")
+        # A chunk size smaller than the table exercises more than one chunk.
+        # Every chunk but the first used to be dropped silently.
+        folding_orbital_search(events, csv_file, chunksize=4, outfile="out.csv")
         table = pd.read_csv("out.csv")
         assert len(table) == 10
         assert np.all(table["done"])

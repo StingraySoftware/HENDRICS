@@ -10,10 +10,6 @@ from .base import hen_root
 from .io import HEN_FILE_EXTENSION, load_events, save_lcurve
 
 
-def colors():
-    pass
-
-
 def main(args=None):
     """Main function called by the `HENcolors` command line script."""
     import argparse

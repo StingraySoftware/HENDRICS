@@ -662,11 +662,8 @@ def save_folding(efperiodogram, fname):
     outdata = copy.copy(efperiodogram.__dict__)
     outdata["__sr__class__type__"] = "EFPeriodogram"
     if "best_fits" in outdata and efperiodogram.best_fits is not None:
-        model_files = []
         for i, b in enumerate(efperiodogram.best_fits):
-            mfile = fname.replace(HEN_FILE_EXTENSION, f"__mod{i}__.p")
-            save_model(b, mfile)
-            model_files.append(mfile)
+            save_model(b, fname.replace(HEN_FILE_EXTENSION, f"__mod{i}__.p"))
         outdata.pop("best_fits")
 
     if get_file_format(fname) == "pickle":
@@ -784,14 +781,9 @@ def save_pds(cpds, fname, save_all=False, save_dyn=False, no_auxil=False, save_l
         cpds.instr = "unknown"
 
     if hasattr(cpds, "best_fits") and cpds.best_fits is not None:
-        model_files = []
         for i, b in enumerate(cpds.best_fits):
-            mfile = os.path.join(
-                outdir,
-                basename + f"__mod{i}__.p",
-            )
-            save_model(b, mfile)
-            model_files.append(mfile)
+            # Mirrors the glob in ``load_pds``; keep the two in step.
+            save_model(b, os.path.join(outdir, basename + f"__mod{i}__.p"))
         del cpds.best_fits
 
     if fmt not in ["nc", "pickle"]:

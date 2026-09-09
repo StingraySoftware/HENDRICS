@@ -1,4 +1,3 @@
-import warnings
 from functools import wraps
 
 import numpy as np
@@ -50,9 +49,3 @@ except ImportError:
             return wrapped_f
 
     float32 = float64 = int32 = int64 = lambda x, y: None
-
-
-def array_take(arr, indices):  # pragma: no cover
-    """Adapt np.take to arrays."""
-    warnings.warn("array_take is deprecated. Use np.take instead, also with Numba.")
-    return np.take(arr, indices)

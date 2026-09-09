@@ -10,17 +10,18 @@ from .io import HEN_FILE_EXTENSION, get_file_type, save_pds
 
 def sum_fspec(files, outname=None):
     """Take a bunch of (C)PDSs and sums them."""
-    # Read first file
-    ftype0, contents = get_file_type(files[0])
+    # Read the first file, and hold on to it: the generator below would
+    # otherwise read it a second time.
+    ftype0, contents0 = get_file_type(files[0])
     pdstype = ftype0.replace("reb", "")
     outname = _assign_value_if_none(outname, "tot_" + ftype0 + HEN_FILE_EXTENSION)
 
     def check_and_distribute_files(files):
         for i, f in enumerate(files):
-            ftype, contents = get_file_type(f)
             if i == 0:
-                contents0, ftype0 = contents, ftype
+                contents = contents0
             else:
+                ftype, contents = get_file_type(f)
                 assert ftype == ftype0, "Files must all be of the same kind"
             contents.fftlen = contents.segment_size
             yield contents

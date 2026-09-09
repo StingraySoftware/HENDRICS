@@ -56,7 +56,6 @@ except ImportError:
 
 from . import (
     HAS_NUMBA,
-    array_take,
     njit,
     prange,
 )
@@ -68,7 +67,6 @@ __all__ = [
     "_order_list_of_arrays",
     "adjust_dt_for_power_of_two",
     "adjust_dt_for_small_power",
-    "array_take",
     "check_negative_numbers_in_args",
     "common_name",
     "compute_bin",
