@@ -46,6 +46,10 @@ What's new
 Since HENDRICS 8.0
 ~~~~~~~~~~~~~~~~~~
 
+- ``HENfspec`` can calculate power spectra in parallel, over MPI or Python
+  multiprocessing (see :mod:`hendrics.parallel`), which makes long observations
+  tractable on a cluster or on all the cores of a laptop
+- ``HENfake`` accepts a ``--seed``, so simulated data sets are reproducible
 - Many bug fixes in HENDRICS, including parameter passing in Z_n statistics, invalid coordinate handling,
   Numba compatibility, TOA fitting initialization
 - Improvements to OGIP format handling, imageio warnings, and log file management
@@ -86,7 +90,7 @@ Astrophysics Source Code Library identifier:
 
 1. Bachetti, M. 2018, HENDRICS: High ENergy Data Reduction Interface from the Command Shell, record `ascl:1805.019 <https://ascl.net/1805.019>`__.
 
-and please also cite `stingray <https://stingray.science/stingray/citing.html>`
+and please also cite `stingray <https://stingray.science/stingray/citing.html>`__
 
 In particular, **if you use the cospectrum**, please also refer to:
 

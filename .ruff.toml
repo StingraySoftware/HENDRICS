@@ -195,6 +195,9 @@ lint.unfixable = [
 
 [lint.extend-per-file-ignores]
 "__init__.py" = ["E402", "F401", "F403"]
+# The Sphinx configuration is built on top of `from sphinx_astropy.conf.v1
+# import *`, so every setting it appends to comes from that star import.
+"docs/conf.py" = ["F405"]
 "test_*.py" = [
     "PTH", # all flake8-use-pathlib
     "RUF015",  # Prefer next({iterable}) over single element slice

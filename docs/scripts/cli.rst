@@ -10,7 +10,7 @@ HEN2xspec
                      files [files ...]
 
     Save a frequency spectrum in a qdp file that can be read by flx2xsp and
-    produce a XSpec-compatible spectrumfile
+    produce a XSpec-compatible spectrum file
 
     positional arguments:
       files                List of files
@@ -67,8 +67,8 @@ HENbaseline
 
 ::
 
-    usage: HENbaseline [-h] [-o OUT] [--loglevel LOGLEVEL] [--debug]
-                       [-p ASYMMETRY] [-l LAM]
+    usage: HENbaseline [-h] [-o OUT] [-p ASYMMETRY] [-l LAM] [--loglevel LOGLEVEL]
+                       [--debug]
                        files [files ...]
 
     Subtract a baseline from the lightcurve using the Asymmetric Least Squares
@@ -80,16 +80,16 @@ HENbaseline
 
     options:
       -h, --help            show this help message and exit
-      -o OUT, --out OUT     Output file
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               use DEBUG logging level
-      -p ASYMMETRY, --asymmetry ASYMMETRY
+      -o, --out OUT         Output file
+      -p, --asymmetry ASYMMETRY
                             "asymmetry" parameter. Smaller values make the
                             baseline more "horizontal". Typically 0.001 < p < 0.1,
                             but not necessarily.
-      -l LAM, --lam LAM     lambda, or "smoothness", parameter. Larger values make
+      -l, --lam LAM         lambda, or "smoothness", parameter. Larger values make
                             the baseline stiffer. Typically 1e2 < lam < 1e9
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               set DEBUG logging level
 
 
 HENbinary
@@ -109,13 +109,13 @@ HENbinary
 
     options:
       -h, --help            show this help message and exit
-      -l MAX_LENGTH, --max-length MAX_LENGTH
+      -l, --max-length MAX_LENGTH
                             Maximum length of light curves (split otherwise)
-      -b BINTIME, --bintime BINTIME
+      -b, --bintime BINTIME
                             Bin time
-      -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
+      -e, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
                             Energy interval used for filtering
-      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+      -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --nproc NPROC         Number of processors to use
@@ -142,7 +142,7 @@ HENcalibrate
 
     options:
       -h, --help           show this help message and exit
-      -r RMF, --rmf RMF    rmf file used for calibration. Not working with XMM
+      -r, --rmf RMF        rmf file used for calibration. Not working with XMM
                            data
       --rough              Rough calibration, without rmf file (only for NuSTAR,
                            XMM, and NICER). Only for compatibility purposes. This
@@ -170,15 +170,15 @@ HENcolors
 
     options:
       -h, --help            show this help message and exit
-      -e ENERGIES ENERGIES ENERGIES ENERGIES, --energies ENERGIES ENERGIES ENERGIES ENERGIES
+      -e, --energies ENERGIES ENERGIES ENERGIES ENERGIES
                             The energy boundaries in keV used to calculate the
                             color. E.g. -e 2 3 4 6 means that the color will be
                             calculated as 4.-6./2.-3. keV. If --use-pi is
                             specified, these are interpreted as PI channels
-      -b BINTIME, --bintime BINTIME
+      -b, --bintime BINTIME
                             Bin time
       --use-pi              Use the PI channel instead of energies
-      -o OUTFILE, --outfile OUTFILE
+      -o, --outfile OUTFILE
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
@@ -204,16 +204,15 @@ HENcreategti
 
     options:
       -h, --help            show this help message and exit
-      -f FILTER, --filter FILTER
-                            Filter expression, that has to be a valid Python
+      -f, --filter FILTER   Filter expression, that has to be a valid Python
                             boolean operation on a data variable contained in the
                             files
       -c, --create-only     If specified, creates GTIs without applyingthem to
                             files (Default: False)
       --overwrite           Overwrite original file (Default: False)
-      -a APPLY_GTI, --apply-gti APPLY_GTI
+      -a, --apply-gti APPLY_GTI
                             Apply a GTI from this file to input files
-      -l MINIMUM_LENGTH, --minimum-length MINIMUM_LENGTH
+      -l, --minimum-length MINIMUM_LENGTH
                             Minimum length of GTIs (below this length, they will
                             be discarded)
       --safe-interval SAFE_INTERVAL SAFE_INTERVAL
@@ -238,30 +237,12 @@ HENdeorbit
 
     options:
       -h, --help            show this help message and exit
-      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+      -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
-
-
-HENdumpdyn
-----------
-
-::
-
-    usage: HENdumpdyn [-h] [--noplot] files [files ...]
-
-    Dump dynamical (cross) power spectra. This script is being reimplemented.
-    Please be patient :)
-
-    positional arguments:
-      files       List of files in any valid HENDRICS format for PDS or CPDS
-
-    options:
-      -h, --help  show this help message and exit
-      --noplot    plot results
 
 
 HENefsearch
@@ -278,8 +259,8 @@ HENefsearch
                        [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
                        [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
                        [--fit-candidates] [--curve CURVE]
-                       [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
-                       [--loglevel LOGLEVEL] [--debug]
+                       [--fit-frequency FIT_FREQUENCY] [-N N] [--force-memmap]
+                       [-p DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -289,8 +270,8 @@ HENefsearch
 
     options:
       -h, --help            show this help message and exit
-      -f FMIN, --fmin FMIN  Minimum frequency to fold
-      -F FMAX, --fmax FMAX  Maximum frequency to fold
+      -f, --fmin FMIN       Minimum frequency to fold
+      -F, --fmax FMAX       Maximum frequency to fold
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --mean-fdot MEAN_FDOT
@@ -303,7 +284,7 @@ HENefsearch
       --npfact NPFACT       Size of search parameter space
       --n-transient-intervals N_TRANSIENT_INTERVALS
                             Number of transient intervals to investigate
-      -n NBIN, --nbin NBIN  Number of phase bins of the profile
+      -n, --nbin NBIN       Number of phase bins of the profile
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
                             implying the whole observation)
@@ -314,7 +295,7 @@ HENefsearch
                             w.r.t. the standard FFT's 1/obs_length.
       --fast                Use a faster folding algorithm. It automatically
                             searches for the first spin derivative using an
-                            optimized step.This option ignores expocorr,
+                            optimized step. This option ignores expocorr,
                             fdotmin/max, segment-size, and step
       --ffa                 Use *the* Fast Folding Algorithm by Staelin+69. No
                             accelerated search allowed at the moment. Only
@@ -335,7 +316,8 @@ HENefsearch
                             Force the candidate frequency to FIT_FREQUENCY
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
-      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+      --force-memmap        Force the use of memory-mapped files
+      -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -359,12 +341,11 @@ HENexcvar
 
     options:
       -h, --help            show this help message and exit
-      -c CHUNK_LENGTH, --chunk-length CHUNK_LENGTH
+      -c, --chunk-length CHUNK_LENGTH
                             Length in seconds of the light curve chunks
       --fraction-step FRACTION_STEP
-                            If the step is not a full chunk_length but less,this
-                            indicates the ratio between step step and
-                            `chunk_length`
+                            If the step is not a full chunk_length but less, this
+                            indicates the ratio between step and `chunk_length`
       --norm NORM           Choose between fvar, excvar and norm_excvar
                             normalization, referring to Fvar, excess variance, and
                             normalized excess variance respectively (see Vaughan
@@ -390,7 +371,7 @@ HENexposure
 
     options:
       -h, --help            show this help message and exit
-      -o OUTROOT, --outroot OUTROOT
+      -o, --outroot OUTROOT
                             Root of output file names
       --plot                Plot on window
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -405,28 +386,29 @@ HENfake
 
     usage: HENfake [-h] [-e EVENT_LIST] [-l LC] [-c CTRATE] [-o OUTNAME]
                    [-i INSTRUMENT] [-m MISSION] [--tstart TSTART] [--tstop TSTOP]
-                   [--mjdref MJDREF] [--deadtime DEADTIME [DEADTIME ...]]
-                   [--loglevel LOGLEVEL] [--debug]
+                   [--mjdref MJDREF] [--seed SEED]
+                   [--deadtime DEADTIME [DEADTIME ...]] [--loglevel LOGLEVEL]
+                   [--debug]
 
     Create an event file in FITS format from an event list, or simulating it. If
     input event list is not specified, generates the events randomly
 
     options:
       -h, --help            show this help message and exit
-      -e EVENT_LIST, --event-list EVENT_LIST
+      -e, --event-list EVENT_LIST
                             File containing event list
-      -l LC, --lc LC        File containing light curve
-      -c CTRATE, --ctrate CTRATE
-                            Count rate for simulated events
-      -o OUTNAME, --outname OUTNAME
+      -l, --lc LC           File containing light curve
+      -c, --ctrate CTRATE   Count rate for simulated events
+      -o, --outname OUTNAME
                             Output file name
-      -i INSTRUMENT, --instrument INSTRUMENT
+      -i, --instrument INSTRUMENT
                             Instrument name
-      -m MISSION, --mission MISSION
+      -m, --mission MISSION
                             Mission name
       --tstart TSTART       Start time of the observation (s from MJDREF)
       --tstop TSTOP         End time of the observation (s from MJDREF)
       --mjdref MJDREF       Reference MJD
+      --seed SEED           Random seed for reproducibility.
       --deadtime DEADTIME [DEADTIME ...]
                             Dead time magnitude. Can be specified as a single
                             number, or two. In this last case, the second value is
@@ -479,11 +461,11 @@ HENfold
 
     options:
       -h, --help            show this help message and exit
-      -f FREQ, --freq FREQ  Initial frequency to fold
+      -f, --freq FREQ       Initial frequency to fold
       --fdot FDOT           Initial fdot
       --fddot FDDOT         Initial fddot
       --tref TREF           Reference time (same unit as time array)
-      -n NBIN, --nbin NBIN  Number of phase bins (X axis) of the profile
+      -n, --nbin NBIN       Number of phase bins (X axis) of the profile
       --nebin NEBIN         Number of energy bins (Y axis) of the profile
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
@@ -499,10 +481,10 @@ HENfold
                             those options uses the median in place of the mean.
                             Appending '_smooth' smooths the 2d array with a
                             Gaussian filter. E.g. mediansub_smooth subtracts the
-                            median and smooths the imagedefault None
+                            median and smooths the image. Default None
       --colormap COLORMAP   Change the color map of the image. Any matplotlib
                             colormap is valid
-      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+      -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
@@ -516,35 +498,42 @@ HENfspec
 
 ::
 
-    usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN] [-k KIND]
-                    [--norm NORM] [--noclobber] [-o OUTROOT] [--back BACK]
-                    [--save-dyn] [--ignore-instr] [--ignore-gtis] [--save-all]
-                    [--save-lcs] [--no-auxil] [--test] [--emin EMIN] [--emax EMAX]
-                    [--lombscargle] [--loglevel LOGLEVEL] [--debug]
+    usage: HENfspec [-h] [-b BINTIME] [-r REBIN] [-f FFTLEN]
+                    [--fill-short-btis FILL_SHORT_BTIS] [-k KIND] [--norm NORM]
+                    [--noclobber] [-o OUTROOT] [--back BACK] [--save-dyn]
+                    [--ignore-instr] [--ignore-gtis] [--save-all] [--save-lcs]
+                    [--no-auxil] [--emin EMIN] [--emax EMAX] [--lombscargle]
+                    [--loglevel LOGLEVEL] [--debug]
                     files [files ...]
 
     Create frequency spectra (PDS, CPDS, cospectrum) starting from well-defined
-    input ligthcurves
+    input ligthcurves. Files are processed one after the other; use HENparfspec to
+    split a single long observation over several processors
 
     positional arguments:
       files                 List of light curve files
 
     options:
       -h, --help            show this help message and exit
-      -b BINTIME, --bintime BINTIME
+      -b, --bintime BINTIME
                             Light curve bin time; if negative, interpreted as
-                            negative power of 2. Default: 2^-10, or keep input lc
+                            negative power of 2. Default: 2^-12, or keep input lc
                             bin time (whatever is larger)
-      -r REBIN, --rebin REBIN
-                            (C)PDS rebinning to apply. Default: none
-      -f FFTLEN, --fftlen FFTLEN
-                            Length of FFTs. Default: 512 s
-      -k KIND, --kind KIND  Spectra to calculate, as comma-separated list
-                            (Accepted: PDS and CPDS; Default: "PDS,CPDS")
-      --norm NORM           Normalization to use (Accepted: leahy and rms;
-                            Default: "leahy")
+      -r, --rebin REBIN     (C)PDS rebinning to apply. Default: none
+      -f, --fftlen FFTLEN   Length of FFTs. Default: 512 s
+      --fill-short-btis FILL_SHORT_BTIS
+                            Fill bad time intervals shorter than this number of
+                            seconds with simulated data. Default: do not fill
+      -k, --kind KIND       Spectra to calculate, as comma-separated list
+                            (Accepted: PDS and CPDS; Default: "PDS,CPDS"). The
+                            cospectrum and the time lags are both properties of
+                            the CPDS, and are obtained from it with HENplot and
+                            HENlags
+      --norm NORM           Normalization to use (Accepted: leahy, frac, abs,
+                            none, rms, where rms is an alias for frac; Default:
+                            "leahy")
       --noclobber           Do not overwrite existing files
-      -o OUTROOT, --outroot OUTROOT
+      -o, --outroot OUTROOT
                             Root of output file names for CPDS only
       --back BACK           Estimated background (non-source) count rate
       --save-dyn            save dynamical power spectrum
@@ -556,7 +545,6 @@ HENfspec
                             light curves.
       --no-auxil            Do not save auxiliary spectra (e.g. pds1 and pds2 of
                             cross spectrum)
-      --test                Only to be used in testing
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --lombscargle         Use Lomb-Scargle periodogram or cross spectrum (will
@@ -577,13 +565,12 @@ HENjoinevents
     format
 
     positional arguments:
-      files                 Files to join
+      files                Files to join
 
     options:
-      -h, --help            show this help message and exit
-      -o OUTPUT, --output OUTPUT
-                            Name of output file
-      --ignore-instr        Ignore instrument names in channels
+      -h, --help           show this help message and exit
+      -o, --output OUTPUT  Name of output file
+      --ignore-instr       Ignore instrument names in channels
 
 
 HENlags
@@ -628,11 +615,11 @@ HENlcurve
 
     options:
       -h, --help            show this help message and exit
-      -b BINTIME, --bintime BINTIME
+      -b, --bintime BINTIME
                             Bin time; if negative, negative power of 2
       --safe-interval SAFE_INTERVAL SAFE_INTERVAL
                             Interval at start and stop of GTIs used for filtering
-      -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
+      -e, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
                             Energy interval used for filtering
       --pi-interval PI_INTERVAL PI_INTERVAL
                             PI interval used for filtering
@@ -641,18 +628,17 @@ HENlcurve
       -g, --gti-split       Split light curve by GTI
       --minlen MINLEN       Minimum length of acceptable GTIs (default:4)
       --ignore-gtis         Ignore GTIs
-      -d OUTDIR, --outdir OUTDIR
-                            Output directory
+      -d, --outdir OUTDIR   Output directory
       --noclobber           Do not overwrite existing files
       --fits-input          Input files are light curves in FITS format
       --txt-input           Input files are light curves in txt format
       --weight-on WEIGHT_ON
                             Use a given attribute of the event list as weights for
                             the light curve
-      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+      -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
-      -o OUTFILE, --outfile OUTFILE
+      -o, --outfile OUTFILE
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
@@ -677,7 +663,7 @@ HENmodel
 
     options:
       -h, --help            show this help message and exit
-      -m MODELFILE, --modelfile MODELFILE
+      -m, --modelfile MODELFILE
                             File containing an Astropy model with or without
                             constraints
       --fitmethod FITMETHOD
@@ -688,6 +674,47 @@ HENmodel
                             interval 0 2" or "--frequency-interval 0 2 5 10",
                             meaning that the spectrum will be fitted between 0 and
                             2 Hz, or using the intervals 0-2 Hz and 5-10 Hz.
+      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
+                            ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug               set DEBUG logging level
+
+
+HENparfspec
+-----------
+
+::
+
+    usage: HENparfspec [-h] [-o OUTFNAME] [-b SAMPLE_TIME] [-f SEGMENT_SIZE]
+                       [--norm NORM] [--method {mpi,multiprocessing,none}]
+                       [--nproc NPROC] [--loglevel LOGLEVEL] [--debug]
+                       fname
+
+    Compute the Leahy-normalized power spectrum of an event list in parallel. The
+    MPI version needs to be run with mpiexec, as follows: mpiexec -n 10 python
+    HENparfspec filename.fits --method mpi To run the algorithm in parallel using
+    multiprocessing, use: python HENparfspec filename.fits --method
+    multiprocessing --nproc 10 To run the algorithm sequentially, for testing
+    purposes, just execute HENparfspec filename.fits
+
+    positional arguments:
+      fname                 Input FITS file name
+
+    options:
+      -h, --help            show this help message and exit
+      -o, --outfname OUTFNAME
+                            Output FITS file name. Default: <input root>_pds.fits,
+                            next to the input file
+      -b, --sample-time SAMPLE_TIME
+                            Light curve bin time; if negative, interpreted as
+                            negative power of 2. Default: 2^-14 s
+      -f, --segment-size SEGMENT_SIZE
+                            Length of FFTs. Default: 128 s
+      --norm NORM           Normalization to use (Accepted: leahy, frac, abs,
+                            none, rms, where rms is an alias for frac; Default:
+                            "leahy")
+      --method {mpi,multiprocessing,none}
+                            Computation distribution method
+      --nproc NPROC         Number of processors to use
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
@@ -714,12 +741,12 @@ HENphaseogram
 
     options:
       -h, --help            show this help message and exit
-      -f FREQ, --freq FREQ  Initial frequency to fold
+      -f, --freq FREQ       Initial frequency to fold
       --fdot FDOT           Initial fdot
       --fddot FDDOT         Initial fddot
       --periodogram PERIODOGRAM
                             Periodogram file
-      -n NBIN, --nbin NBIN  Number of phase bins (X axis) of the profile
+      -n, --nbin NBIN       Number of phase bins (X axis) of the profile
       --ntimes NTIMES       Number of time bins (Y axis) of the phaseogram
       --binary              Interact on binary parameters instead of frequency
                             derivatives
@@ -739,10 +766,10 @@ HENphaseogram
                             those options uses the median in place of the mean.
                             Appending '_smooth' smooths the 2d array with a
                             Gaussian filter. E.g. mediansub_smooth subtracts the
-                            median and smooths the imagedefault None
+                            median and smooths the image. Default None
       --colormap COLORMAP   Change the color map of the image. Any matplotlib
                             colormap is valid
-      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+      -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --test                Only used for tests
@@ -767,9 +794,9 @@ HENphasetag
     options:
       -h, --help            show this help message and exit
       --parfile PARFILE     Parameter file
-      -f FREQS [FREQS ...], --freqs FREQS [FREQS ...]
+      -f, --freqs FREQS [FREQS ...]
                             Frequency derivatives
-      -n NBIN, --nbin NBIN  Nbin
+      -n, --nbin NBIN       Nbin
       --plot                Plot profile
       --tomax               Refer phase to pulse max
       --test                Only for unit tests! Do not use
@@ -805,7 +832,7 @@ HENplot
                             color0.nc, intensity0.nc, color1.nc, intensity1.nc,
                             ...
       --figname FIGNAME     Figure name
-      -o OUTFILE, --outfile OUTFILE
+      -o, --outfile OUTFILE
                             Output data file in QDP format
       --xlog                Use logarithmic X axis
       --ylog                Use logarithmic Y axis
@@ -829,31 +856,29 @@ HENpowercolors
                           [-o OUTFILE] [--loglevel LOGLEVEL] [--debug]
                           files [files ...]
 
-    Calculate color light curves
+    Calculate power colors of a light curve or event list
 
     positional arguments:
       files                 List of files
 
     options:
       -h, --help            show this help message and exit
-      -f FREQUENCY_EDGES FREQUENCY_EDGES FREQUENCY_EDGES FREQUENCY_EDGES FREQUENCY_EDGES, --frequency-edges FREQUENCY_EDGES FREQUENCY_EDGES FREQUENCY_EDGES FREQUENCY_EDGES FREQUENCY_EDGES
+      -f, --frequency-edges FREQUENCY_EDGES FREQUENCY_EDGES FREQUENCY_EDGES FREQUENCY_EDGES FREQUENCY_EDGES
                             Five frequency edges in Hz, delimiting four frequency
                             ranges used to calculate the power colors
-      -r REBIN, --rebin REBIN
-                            Dynamical power spectrum rebinning (how many nearby
+      -r, --rebin REBIN     Dynamical power spectrum rebinning (how many nearby
                             segments to average before calculating the colors) to
                             apply. Default: 5
-      -s SEGMENT_SIZE, --segment-size SEGMENT_SIZE
+      -s, --segment-size SEGMENT_SIZE
                             Length of FFTs. Default: 512 s
       --poisson-noise POISSON_NOISE
                             Poisson noise level of the periodograms. Default: 2
                             for powerspectrum, 0 for crossspectrum
-      -b BINTIME, --bintime BINTIME
+      -b, --bintime BINTIME
                             Light curve bin time; if negative, interpreted as
-                            negative power of 2. Default: 2^-10, or keep input lc
-                            bin time (whatever is larger)
+                            negative power of 2. Default: 2^-6
       --cross               Use cross spectrum from pairs of files
-      -o OUTFILE, --outfile OUTFILE
+      -o, --outfile OUTFILE
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
@@ -889,7 +914,7 @@ HENreadevents
       --discard-calibration
                             Discard automatic calibration (if any)
       --ignore-detectors    Do not split by detector
-      -l LENGTH_SPLIT, --length-split LENGTH_SPLIT
+      -l, --length-split LENGTH_SPLIT
                             Split event list by length
       --min-length MIN_LENGTH
                             Minimum length of GTIs to consider
@@ -910,7 +935,7 @@ HENreadevents
                             than this amount
       --additional ADDITIONAL [ADDITIONAL ...]
                             Additional columns to be read from the FITS file
-      -o OUTFILE, --outfile OUTFILE
+      -o, --outfile OUTFILE
                             Output file
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
@@ -946,18 +971,17 @@ HENrebin
     Rebin light curves and frequency spectra.
 
     positional arguments:
-      files                 List of light curve files
+      files                List of light curve files
 
     options:
-      -h, --help            show this help message and exit
-      -r REBIN, --rebin REBIN
-                            Rebinning to apply. Only if the quantity to rebin is a
-                            (C)PDS, it is possible to specify a non-integer rebin
-                            factor, in which case it is interpreted as a
-                            geometrical binning factor
-      --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
-                            ERROR, CRITICAL, DEBUG; default:WARNING)
-      --debug               set DEBUG logging level
+      -h, --help           show this help message and exit
+      -r, --rebin REBIN    Rebinning to apply. Only if the quantity to rebin is a
+                           (C)PDS, it is possible to specify a non-integer rebin
+                           factor, in which case it is interpreted as a
+                           geometrical binning factor
+      --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
+                           ERROR, CRITICAL, DEBUG; default:WARNING)
+      --debug              set DEBUG logging level
 
 
 HENscramble
@@ -968,7 +992,7 @@ HENscramble
     usage: HENscramble [-h] [--smooth-kind {smooth,flat,pulsed}]
                        [--deadtime DEADTIME] [--dt DT]
                        [--pulsed-fraction PULSED_FRACTION] [-f FREQUENCY]
-                       [--outfile OUTFILE] [-p DEORBIT_PAR]
+                       [--seed SEED] [--outfile OUTFILE] [-p DEORBIT_PAR]
                        [-e ENERGY_INTERVAL ENERGY_INTERVAL] [--loglevel LOGLEVEL]
                        [--debug]
                        fname
@@ -989,13 +1013,14 @@ HENscramble
       --dt DT               Time resolution of smoothed light curve
       --pulsed-fraction PULSED_FRACTION
                             Pulsed fraction of simulated pulsations
-      -f FREQUENCY, --frequency FREQUENCY
+      -f, --frequency FREQUENCY
                             Pulsed fraction of simulated pulsations
+      --seed SEED           Random seed for reproducibility.
       --outfile OUTFILE     Output file name
-      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+      -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
-      -e ENERGY_INTERVAL ENERGY_INTERVAL, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
+      -e, --energy-interval ENERGY_INTERVAL ENERGY_INTERVAL
                             Energy interval used for filtering
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
@@ -1017,7 +1042,7 @@ HENscrunchlc
 
     options:
       -h, --help           show this help message and exit
-      -o OUT, --out OUT    Output file
+      -o, --out OUT        Output file
       --loglevel LOGLEVEL  use given logging level (one between INFO, WARNING,
                            ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug              use DEBUG logging level
@@ -1040,7 +1065,7 @@ HENsplitevents
 
     options:
       -h, --help            show this help message and exit
-      -l LENGTH_SPLIT, --length-split LENGTH_SPLIT
+      -l, --length-split LENGTH_SPLIT
                             Split event list by GTI
       --overlap OVERLAP     Overlap factor. 0 for no overlap, 0.5 for half-
                             interval overlap, and so on.
@@ -1062,9 +1087,9 @@ HENsumfspec
 
     options:
       -h, --help            show this help message and exit
-      -o OUTNAME, --outname OUTNAME
+      -o, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_(c)pds.p
+                            tot_(c)pds.nc
 
 
 HENvarenergy
@@ -1088,10 +1113,10 @@ HENvarenergy
 
     options:
       -h, --help            show this help message and exit
-      -f FREQ_INTERVAL FREQ_INTERVAL, --freq-interval FREQ_INTERVAL FREQ_INTERVAL
+      -f, --freq-interval FREQ_INTERVAL FREQ_INTERVAL
                             Frequency interval
       --energy-values ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES ENERGY_VALUES
-                            Choose Emin, Emax, number of intervals,interval
+                            Choose Emin, Emax, number of intervals, interval
                             spacing, lin or log
       --segment-size SEGMENT_SIZE
                             Length of the light curve intervals to be averaged
@@ -1100,9 +1125,10 @@ HENvarenergy
       --rms                 Calculate rms
       --covariance          Calculate covariance spectrum
       --use-pi              Energy intervals are specified as PI channels
-      --cross-instr         Use data files in pairs, for example with thereference
-                            band from one and the subbands from the other (useful
-                            in NuSTAR and multiple-detector missions)
+      --cross-instr         Use data files in pairs, for example with the
+                            reference band from one and the subbands from the
+                            other (useful in NuSTAR and multiple-detector
+                            missions)
       --lag                 Calculate lag-energy
       --count               Calculate lag-energy
       --label LABEL         Additional label to be added to file names
@@ -1110,7 +1136,7 @@ HENvarenergy
                             of ['abs', 'frac', 'rms', 'leahy', 'none']
       --format FORMAT       Output format for the table. Can be ECSV, QDP, or any
                             other format accepted by astropy
-      -b BINTIME, --bintime BINTIME
+      -b, --bintime BINTIME
                             Bin time
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
@@ -1164,8 +1190,8 @@ HENzsearch
                       [--oversample OVERSAMPLE] [--fast] [--ffa] [--transient]
                       [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
                       [--fit-candidates] [--curve CURVE]
-                      [--fit-frequency FIT_FREQUENCY] [-N N] [-p DEORBIT_PAR]
-                      [--loglevel LOGLEVEL] [--debug]
+                      [--fit-frequency FIT_FREQUENCY] [-N N] [--force-memmap]
+                      [-p DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -1175,8 +1201,8 @@ HENzsearch
 
     options:
       -h, --help            show this help message and exit
-      -f FMIN, --fmin FMIN  Minimum frequency to fold
-      -F FMAX, --fmax FMAX  Maximum frequency to fold
+      -f, --fmin FMIN       Minimum frequency to fold
+      -F, --fmax FMAX       Maximum frequency to fold
       --emin EMIN           Minimum energy (or PI if uncalibrated) to plot
       --emax EMAX           Maximum energy (or PI if uncalibrated) to plot
       --mean-fdot MEAN_FDOT
@@ -1189,7 +1215,7 @@ HENzsearch
       --npfact NPFACT       Size of search parameter space
       --n-transient-intervals N_TRANSIENT_INTERVALS
                             Number of transient intervals to investigate
-      -n NBIN, --nbin NBIN  Number of phase bins of the profile
+      -n, --nbin NBIN       Number of phase bins of the profile
       --segment-size SEGMENT_SIZE
                             Size of the event list segment to use (default None,
                             implying the whole observation)
@@ -1200,7 +1226,7 @@ HENzsearch
                             w.r.t. the standard FFT's 1/obs_length.
       --fast                Use a faster folding algorithm. It automatically
                             searches for the first spin derivative using an
-                            optimized step.This option ignores expocorr,
+                            optimized step. This option ignores expocorr,
                             fdotmin/max, segment-size, and step
       --ffa                 Use *the* Fast Folding Algorithm by Staelin+69. No
                             accelerated search allowed at the moment. Only
@@ -1221,7 +1247,8 @@ HENzsearch
                             Force the candidate frequency to FIT_FREQUENCY
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
-      -p DEORBIT_PAR, --deorbit-par DEORBIT_PAR
+      --force-memmap        Force the use of memory-mapped files
+      -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,

@@ -4,7 +4,7 @@ Installation Instructions
 Prerequisites
 -------------
 
-You'll need a recent python 3.9+ installation.
+You'll need a recent python 3.11+ installation.
 The main dependency is
 
 1. `Stingray <https://github.com/stingraysoftware/stingray>`__,
@@ -26,9 +26,7 @@ which in turn depends on
 
 7. `Numba <https://numba.pydata.org>`__;
 
-8. `emcee <https://emcee.readthedocs.io/en/stable/>`__
-
-9.  `pint <https://github.com/nanograv/pint/>`__
+8. `pint <https://github.com/nanograv/pint/>`__
 
 You should also
 have a working `HEASoft <https://heasarc.gsfc.nasa.gov/lheasoft/>`__
@@ -39,7 +37,24 @@ Installing releases
 -------------------
 ::
 
-    $ pip install hendrics numba emcee netcdf4 matplotlib stingray>=2.3
+    $ pip install hendrics
+
+The optional dependencies above are grouped into two extras, so that they do
+not have to be listed by hand:
+
+::
+
+    $ pip install "hendrics[recommended]"
+
+for ``numba`` and ``h5py``, or
+
+::
+
+    $ pip install "hendrics[all]"
+
+which adds ``netcdf4``, ``pint-pulsar``, ``pandas``, ``imageio`` and
+``scikit-image``. Note the quotes: without them the shell reads the square
+brackets itself.
 
 
 Installing the Development version
@@ -52,7 +67,7 @@ Download the distribution directory:
 
 ::
 
-    $ git clone git@github.com/StingraySoftware/HENDRICS
+    $ git clone git@github.com:StingraySoftware/HENDRICS
 
 Or
 
