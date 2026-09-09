@@ -1127,6 +1127,8 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
     ----------------
     nbin : int
         Number of bins to divide the profile into
+    n : int, default 1
+        The ``n`` in the Z^2_n statistics used to score each trial period
     t0 : float, default min(times)
         starting time
     t1 : float, default max(times)
@@ -1147,7 +1149,7 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
         range=[0, length],
         bins=int(np.rint(length / dt)),
     )
-    bin_periods, stats = ffa_search(counts, dt, p0, p1)
+    bin_periods, stats = ffa_search(counts, dt, p0, p1, z_n_n=n)
     return 1 / bin_periods, stats, None, length
 
 

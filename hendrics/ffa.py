@@ -371,7 +371,32 @@ def _quick_rebin(counts, current_rebin):
     return rebinned_counts
 
 
-def ffa_search(counts, dt, period_min, period_max):
+def ffa_search(counts, dt, period_min, period_max, z_n_n=2):
+    """Search for periodicities with the Fast Folding Algorithm.
+
+    Parameters
+    ----------
+    counts : array of floats
+        Binned light curve, with bins of duration ``dt``
+    dt : float
+        Duration of each bin of ``counts``, in seconds
+    period_min : float
+        Minimum period to search, in seconds
+    period_max : float
+        Maximum period to search, in seconds
+
+    Other Parameters
+    ----------------
+    z_n_n : int, default 2
+        The ``n`` in the Z^2_n statistics used to score each trial period
+
+    Returns
+    -------
+    periods : array of floats
+        The trial periods, in seconds
+    stats : array of floats
+        The Z^2_n statistics of each trial period
+    """
     counts = np.array(counts)
     pmin = np.floor(period_min / dt)
     pmax = np.ceil(period_max / dt)
@@ -392,7 +417,7 @@ def ffa_search(counts, dt, period_min, period_max):
         if bin_period % current_rebin != 0:
             continue
 
-        per, st = ffa(rebinned_counts, bin_period // current_rebin)
+        per, st = ffa(rebinned_counts, bin_period // current_rebin, z_n_n=z_n_n)
 
         per *= current_rebin
 
