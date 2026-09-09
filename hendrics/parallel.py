@@ -513,7 +513,10 @@ def main(args=None):
         else:
             pds = main_none(fname, sample_time, segment_size)
     except AssertionError as e:  # pragma: no cover
-        if "Start:" in str(e):
+        # stingray's reader trips one of two assertions on an unsorted file,
+        # depending on whether it is the start or the stop edge that ends up
+        # on the wrong side. Both mean the same thing.
+        if str(e).startswith(("Start:", "Stop:")):
             unsorted_error = True
         else:
             raise

@@ -1,0 +1,5 @@
+``HENparfspec`` reports an unsorted input file reliably. Stingray trips one of
+two assertions on such a file, depending on whether it is the start or the stop
+edge of a time range that lands on the wrong side, and HENDRICS recognised only
+the first of the two. The other one escaped as a bare ``AssertionError`` from
+inside a worker process, with no indication of what to do about it.

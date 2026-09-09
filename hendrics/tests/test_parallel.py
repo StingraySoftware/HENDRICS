@@ -151,3 +151,29 @@ class TestParallel:
                 break
         else:
             raise AssertionError("Expected error message not found in logs")
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        # stingray's FITSTimeseriesReader trips one of two assertions on an
+        # unsorted file, depending on the data. Both mean the same thing.
+        "Start: 80000000.0; -5.117239788174629 > 0",
+        "Stop: 80000650.0; -5.117239788174629 < 0",
+    ],
+)
+def test_unsorted_error_is_reported_for_either_assertion(message, monkeypatch, caplog, tmp_path):
+    def raise_assertion(*args, **kwargs):
+        raise AssertionError(message)
+
+    monkeypatch.setattr("hendrics.parallel.main_none", raise_assertion)
+
+    fname = str(tmp_path / "fake.evt")
+    main_fake(["-o", fname, "-c", "10", "--tstart", "0", "--tstop", "100", "--seed", "42"])
+
+    main_parallel([fname, "-b", "0.1", "-f", "10.0", "--method", "none"])
+
+    assert any(
+        record.levelname == "ERROR" and "probably not sorted" in record.message
+        for record in caplog.records
+    )
