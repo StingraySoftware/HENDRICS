@@ -1,0 +1,5 @@
+The test suite no longer leaves untracked files in the source tree, and it
+resolves the ``HEN*`` console scripts inside the running interpreter's own
+script directory. Invoking them by bare name went through ``PATH``, where a
+different HENDRICS installation could shadow them — which had been silently
+skipping the whole interactive-phaseogram test class.

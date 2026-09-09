@@ -21,14 +21,14 @@ Internal Changes
 - Eliminate the only direct use of statsmodels, which could be easily avoided (`#194 <https://github.com/StingraySoftware/hendrics/pull/194>`__)
 
 HENDRICS 8.4
-~~~~~~~~~~~~
+------------
 + Fix fast Z2n tutorial command typo
 + Fix parameter passing in _z_n_fast_cached call
 + Update stingray requirements to 2.3.2
 
 
 HENDRICS 8.3
-~~~~~~~~~~~~
+------------
 
 + Fix input ogip files
 + Warn about missing imageio; save best detection info
@@ -39,7 +39,7 @@ HENDRICS 8.3
 
 
 HENDRICS 8.2
-~~~~~~~~~~~~
+------------
 
 + Brings all bugfixes coming with `Stingray 2.2.4 <https://github.com/StingraySoftware/stingray/releases/tag/v2.2.4>`__
 + New option for ``HENreadevents``: ``--safe-interval``, allowing to decrease GTI length by fixed amounts at the start and the end (useful, e.g., when observations show artifacts entering and exiting from occultation or SAA)
@@ -52,7 +52,7 @@ Internal changes:
 + Improvements with docs creation, in particular to the creation of the cli.rst file.
 
 HENDRICS 8.1
-~~~~~~~~~~~~
+------------
 
 + Brings all bugfixes coming with `Stingray 2.2 <https://github.com/StingraySoftware/stingray/releases/tag/v2.2>`__
 + New infrastructure, based on `pyproject.toml` as recommended by PEP 621
@@ -64,7 +64,7 @@ HENDRICS 8.1
     + Fix bug when simulating by count rate in HENfake
 
 HENDRICS 8.0.0
-~~~~~~~~~~~~~~
+--------------
 + Compatible with `Stingray 2.0.0 <https://github.com/StingraySoftware/stingray/releases/tag/v2.0.0>`__, which introduced:
 
     + Lomb-Scargle periodograms and cross spectra
@@ -78,7 +78,7 @@ HENDRICS 8.0.0
 + Better support of Stingray's native file formats
 
 HENDRICS 7.0
-~~~~~~~~~~~~
+------------
 
 + Based on `Stingray 1.0 <https://github.com/StingraySoftware/stingray/releases/tag/v1.0>`__, bringing a huge bump in performance
 + Following Astropy, Numpy and Scipy, HENDRICS 7.0 is only compatible with Python >3.8
@@ -93,7 +93,7 @@ HENDRICS 7.0
 
 
 HENDRICS 6.0
-~~~~~~~~~~~~
+------------
 
 + Much Improved mission support
 + Lots of performance improvements with large datasets
@@ -102,7 +102,7 @@ HENDRICS 6.0
 + Lots of documentation fixes
 
 HENDRICS 5.0
-~~~~~~~~~~~~
+------------
 
 More improvements to pulsar functionalities:
 
@@ -114,7 +114,7 @@ Developed as part of CICLOPS -- Citizen Computing Pulsar Search, a project suppo
 
 
 HENDRICS 4.0
-~~~~~~~~~~~~
+------------
 
 Lots of improvements to pulsar functionalities;
 
@@ -125,7 +125,7 @@ Lots of improvements to pulsar functionalities;
     to drop the obsolescent versions of Python from testing on that architecture.
 
 HENDRICS 3.0
-~~~~~~~~~~~~
+------------
 
 The API is now rewritten to use
 `Stingray <https://github.com/StingraySoftware/stingray>`__ where possible.
@@ -139,7 +139,7 @@ Functionality additions:
 + Power spectral fitting
 
 (MaLTPyNT) 2.0
-~~~~~~~~~~~~~~
+--------------
 .. Note ::
 
     MaLTPyNT provisionally accepted as an

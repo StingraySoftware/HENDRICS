@@ -1,0 +1,3 @@
+HENDRICS now requires Python 3.11 or later, which is what the test suite has
+actually been covering. ``pyyaml`` and ``pyfftw`` were dropped from the
+dependencies: neither is imported anywhere in the package.

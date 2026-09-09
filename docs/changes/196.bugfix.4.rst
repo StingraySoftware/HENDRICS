@@ -1,0 +1,5 @@
+Fixed three crashes on documented usage: ``HENbaseline`` with more than one
+input file and no ``-o``; ``HENparfspec --norm rms``, a value its own help text
+advertises but which was passed straight through to stingray, which does not
+know it; and ``HENlags`` on a Lomb-Scargle cross spectrum, which returns the
+lags alone rather than a ``(lag, lag_err)`` pair.

@@ -1,0 +1,7 @@
+Removed three things that never did anything: the ``HENdumpdyn`` command, which
+only ever raised ``NotImplementedError`` while being installed on every user's
+``PATH``; ``HENfspec --nproc``, which was accepted, logged and then ignored
+because the process pool it was meant to size is never created; and
+``HENfspec``'s ``-k cos``, ``-k cospectrum`` and ``-k lag`` choices, which were
+read into variables nothing looked at. The default for ``-k`` is now
+``PDS,CPDS`` instead of ``PDS,CPDS,cos``.

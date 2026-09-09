@@ -1,0 +1,5 @@
+Fixed out-of-bounds writes in the three-dimensional histogram helpers in
+``hendrics.base``. Both ``hist3d_numba_seq`` and ``hist3d_numba_seq_weight``
+clamped only two of the three axes, so a point beyond the range of the third
+one wrote past the end of the array. Under numba that is silent memory
+corruption, not an error.

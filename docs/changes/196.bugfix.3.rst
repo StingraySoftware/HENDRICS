@@ -1,0 +1,8 @@
+Six command-line options were accepted and then silently ignored. ``HENmodel``
+now fits the frequency-filtered spectrum it was asked for; ``HENlcurve``
+applies ``--energy-interval`` and, with several input files, names its outputs
+``out_0``/``out_1`` rather than ``out.nc_0``; ``HENreadevents`` applies
+``--safe-interval`` even when ``--bin-time-for-occultations`` is given (the two
+were mutually exclusive branches); ``HENrebin`` raises a clear error for a
+non-integer rebin factor on a light curve instead of ignoring it; and
+``HENfspec --norm`` accepts ``RMS`` in any case, as its help text promised.
