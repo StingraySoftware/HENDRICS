@@ -208,6 +208,7 @@ filterwarnings = [
     # (baseline_als), not from HENDRICS code. Remove once stingray follows scipy's
     # sparse array API. https://github.com/StingraySoftware/stingray/issues
     "ignore:.*is being replaced by.*\\..*:DeprecationWarning:stingray",
+    "ignore:Setting the shape on a NumPy array has been deprecated.*:DeprecationWarning",
 ]
 
 [tool.towncrier]
