@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from stingray.events import EventList
 
+import hendrics
 from hendrics.base import (
     HAS_PINT,
     deorbit_events,
@@ -167,3 +168,41 @@ class TestHistograms:
             ranges=np.array(self.ranges),
         )
         assert np.all(H == Hn)
+
+
+def test_njit_fallback_works_bare_and_called():
+    """The no-numba ``njit`` has to accept ``@njit`` as well as ``@njit(...)``.
+
+    The bare form used to raise ``TypeError`` at import time on a machine
+    without numba.
+    """
+    import importlib.util
+    import sys
+
+    path = os.path.join(os.path.dirname(hendrics.__file__), "compat", "compatibility.py")
+    spec = importlib.util.spec_from_file_location("hendrics_compat_no_numba", path)
+    module = importlib.util.module_from_spec(spec)
+
+    real_numba = sys.modules.get("numba")
+    # A ``None`` entry in ``sys.modules`` makes the import machinery raise
+    sys.modules["numba"] = None
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        if real_numba is None:
+            sys.modules.pop("numba", None)
+        else:
+            sys.modules["numba"] = real_numba
+
+    assert not module.HAS_NUMBA
+
+    @module.njit
+    def bare(x):
+        return x + 1
+
+    @module.njit(cache=True)
+    def called(x):
+        return x + 2
+
+    assert bare(1) == 2
+    assert called(1) == 3

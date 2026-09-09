@@ -20,8 +20,12 @@ try:
 except ImportError:
     HAS_NUMBA = False
 
-    def njit(**kwargs):
-        """Dummy decorator in case jit cannot be imported."""
+    def njit(*args, **kwargs):
+        """Dummy decorator in case jit cannot be imported.
+
+        Works both bare (``@njit``) and called (``@njit(cache=True)``); the
+        bare form used to raise ``TypeError`` here.
+        """
 
         def true_decorator(func):
             @wraps(func)
@@ -30,6 +34,9 @@ except ImportError:
                 return r
 
             return wrapped
+
+        if len(args) == 1 and not kwargs and callable(args[0]):
+            return true_decorator(args[0])
 
         return true_decorator
 

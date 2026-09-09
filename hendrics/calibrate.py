@@ -23,6 +23,12 @@ def default_nustar_rmf():
               on observing time
     """
     warnings.warn("Rmf not specified. Using default NuSTAR rmf.")
+    if "CALDB" not in os.environ:
+        raise ValueError(
+            "The CALDB environment variable is not set, so the default NuSTAR "
+            "rmf cannot be found. Point CALDB at the local CALDB installation, "
+            "or pass an rmf file explicitly."
+        )
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split("/")
     newpath = os.path.join(os.environ["CALDB"], *path)

@@ -713,14 +713,14 @@ def run_folding(
         ax0 = plt.subplot()
 
     # Plot pulse profile
-    max = np.max(smooth)
-    min = np.min(smooth)
+    smooth_max = np.max(smooth)
+    smooth_min = np.min(smooth)
     ax0.plot(meanbins, profile, drawstyle="steps-mid", color="white", zorder=2)
     ax0.plot(
         meanbins,
         smooth,
         drawstyle="steps-mid",
-        label=f"Smooth profile (P.F. = {100 * (max - min) / max:.1f}%)",
+        label=f"Smooth profile (P.F. = {100 * (smooth_max - smooth_min) / smooth_max:.1f}%)",
         color="k",
         zorder=3,
     )
@@ -749,8 +749,8 @@ def run_folding(
             label="3-sigma confidence",
         )
 
-    ax0.axhline(max, lw=1, color="k")
-    ax0.axhline(min, lw=1, color="k")
+    ax0.axhline(smooth_max, lw=1, color="k")
+    ax0.axhline(smooth_min, lw=1, color="k")
 
     mean = np.mean(profile)
     ax0.fill_between(meanbins, mean - np.sqrt(mean), mean + np.sqrt(mean), alpha=0.5)
@@ -775,9 +775,9 @@ def run_folding(
             smooth = savgol_filter(prof, window_length=smooth_window, polyorder=3, mode="wrap")
             mean = np.mean(smooth)
             shift = 3 * np.sqrt(mean)
-            max = np.max(smooth)
-            min = np.min(smooth)
-            pf = 100 * (max - min) / max
+            smooth_max = np.max(smooth)
+            smooth_min = np.min(smooth)
+            pf = 100 * (smooth_max - smooth_min) / smooth_max
             ax2.plot(
                 meanbins,
                 prof - mean + i * shift,
@@ -792,7 +792,7 @@ def run_folding(
             )
             std = np.std(prof - smooth)
             pfs.append(pf)
-            errs.append(100 * std / max)
+            errs.append(100 * std / smooth_max)
         ax2.set_xlabel("Phase")
         ax2.set_ylabel("Counts (shifted arbitrarily)")
 

@@ -360,21 +360,20 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
             ]
         )
 
-    p = Pool(world_size)
-
     totals = 0
     nphots = 0
-    for results, data_size in p.imap_unordered(
-        partial(
-            single_rank_intervals,
-            info=info,
-            fname=fname,
-            sample_time=sample_time,
-        ),
-        this_ranks_intervals,
-    ):
-        totals += results.power * results.m
-        nphots += results.nphots * results.m
+    with Pool(world_size) as p:
+        for results, data_size in p.imap_unordered(
+            partial(
+                single_rank_intervals,
+                info=info,
+                fname=fname,
+                sample_time=sample_time,
+            ),
+            this_ranks_intervals,
+        ):
+            totals += results.power * results.m
+            nphots += results.nphots * results.m
     log.debug("Results")
     totals /= total_n_intervals
     nphots /= total_n_intervals

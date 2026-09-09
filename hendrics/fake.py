@@ -426,7 +426,10 @@ def scramble(
     >>> assert np.all(new_event_list.gti == event_list.gti)
     """
     new_event_list = copy.deepcopy(event_list)
-    assert np.all(np.diff(new_event_list.time) > 0)
+    # ``np.searchsorted`` below needs the times sorted, and only sorted:
+    # simultaneous events are legitimate, and the check used to reject them.
+    if np.any(np.diff(new_event_list.time) < 0):
+        raise ValueError("The input event list must be sorted in time.")
 
     idxs = np.searchsorted(new_event_list.time, new_event_list.gti)
 

@@ -1081,7 +1081,7 @@ def load_data(fname):
             f"The file type is not recognized fmt={fmt}. Did you convert the"
             " original files into HENDRICS format (e.g. with "
             "HENreadevents or HENlcurve)?"
-        )
+        ) from e
 
 
 # QDP format is often used in FTOOLS
@@ -1263,26 +1263,19 @@ def sort_files(files):
         ftype, contents = get_file_type(f)
         instr = contents.instr
         ftypes.append(ftype)
-        if instr not in list(allfiles.keys()):
-            allfiles[instr] = []
-        # Add file name to the dictionary
-        contents.__sort__filename__ = f
-        allfiles[instr].append(contents)
+        # Keep the start time and the file name together in a local tuple. The
+        # file name used to be stored as a ``__sort__filename__`` attribute on
+        # the stingray object itself, which could collide with anything
+        # stingray decides to add later.
+        allfiles.setdefault(instr, []).append((np.min(contents.gti), f))
 
     # Check if files are all of the same kind (lcs, PDSs, ...)
     ftypes = list(set(ftypes))
     assert len(ftypes) == 1, "Files are not all of the same kind."
 
-    instrs = list(allfiles.keys())
-    for instr in instrs:
-        contents = list(allfiles[instr])
-        tstarts = [np.min(c.gti) for c in contents]
-        fnames = [c.__sort__filename__ for c in contents]
-
-        fnames = [x for (y, x) in sorted(zip(tstarts, fnames))]
-
+    for instr in list(allfiles.keys()):
         # Substitute dictionaries with the sorted list of files
-        allfiles[instr] = fnames
+        allfiles[instr] = [f for _, f in sorted(allfiles[instr])]
 
     return allfiles
 
