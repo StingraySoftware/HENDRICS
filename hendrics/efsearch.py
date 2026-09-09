@@ -687,9 +687,26 @@ def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=Fa
         Whether to force plotting even if the results are too large.
     """
     import matplotlib as mpl
+
+    # The frames are grabbed straight from the canvas buffer, which needs a
+    # non-interactive backend. Put it back afterwards: this runs inside the
+    # user's process, and a notebook user would otherwise silently lose
+    # interactive plotting for everything they do next.
+    old_backend = mpl.get_backend()
+    mpl.use("Agg")
+    try:
+        return _plot_transient_search_frames(results, gif_name, force_plotting)
+    finally:
+        mpl.use(old_backend)
+
+
+def _plot_transient_search_frames(results, gif_name, force_plotting):
+    """Render the transient-search frames.
+
+    Assumes a non-interactive backend.
+    """
     import matplotlib.pyplot as plt
 
-    mpl.use("Agg")
     if gif_name is None:
         gif_name = "transients.gif"
 
@@ -1210,8 +1227,17 @@ def dyn_folding_search(
     func=epoch_folding_search,
     oversample=2,
     time_step=128,
+    outfile="Dyn.png",
     **kwargs,
 ):
+    """Run a folding search in consecutive chunks of an observation.
+
+    Other Parameters
+    ----------------
+    outfile : str
+        Where to save the dynamical search image. Defaults to ``Dyn.png`` in
+        the current directory.
+    """
     import matplotlib.pyplot as plt
 
     if step is None:
@@ -1227,10 +1253,14 @@ def dyn_folding_search(
 
     stats = []
 
+    # The trial grid is the same for every chunk. Naming it here also means
+    # ``frequencies`` is bound even if every single chunk fails below.
+    trial_freqs = np.arange(fmin, fmax, step)
+    frequencies = trial_freqs
+
     for st, sp in zip(start, stop):
         times_filt = events.time[(events.time >= st) & (events.time < sp)]
 
-        trial_freqs = np.arange(fmin, fmax, step)
         try:
             results = func(times_filt, trial_freqs, **kwargs)
             frequencies, stat = results
@@ -1247,7 +1277,7 @@ def dyn_folding_search(
     )
     plt.xlabel("Frequency")
     plt.ylabel("Time")
-    plt.savefig("Dyn.png")
+    plt.savefig(outfile)
     plt.close(fig)
     return times, frequencies, np.array(stats)
 
@@ -1291,8 +1321,12 @@ def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
     >>> vals = get_xy_boundaries_from_level(X, Y, Z, 0.5, 0, 0)
     >>> assert np.allclose(np.abs(vals), 0.44, atol=0.1)
     """
-    fig = plt.figure(np.random.random())
-    cs = fig.gca().contour(x, y, image, [level])
+    from matplotlib.figure import Figure
+
+    # A standalone Figure, not a pyplot one: it needs no figure number (the
+    # random one used here drew from, and advanced, the global random state)
+    # and never enters pyplot's registry, so there is nothing to close.
+    cs = Figure().subplots().contour(x, y, image, [level])
 
     cont, seg, idx, xm, ym, d2 = find_nearest_contour(cs, x0, y0, pixel=False)
 
@@ -1300,7 +1334,6 @@ def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
     max_x = cs.allsegs[cont][seg][:, 0].max()
     min_y = cs.allsegs[cont][seg][:, 1].min()
     max_y = cs.allsegs[cont][seg][:, 1].max()
-    plt.close(fig)
 
     return min_x, max_x, min_y, max_y
 
@@ -1928,6 +1961,7 @@ def _common_main(args, func):
                 func=func,
                 oversample=oversample,
                 time_step=args.dynstep,
+                outfile=hen_root(fname) + "_dyn.png",
                 **kwargs,
             )
 

@@ -57,9 +57,7 @@ def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE421"):
     return toalist
 
 
-def create_template_from_profile_sins(
-    phase, profile, profile_err, imagefile="template.png", norm=1
-):
+def create_template_from_profile_sins(phase, profile, profile_err, imagefile=None, norm=1):
     """
     Parameters
     ----------
@@ -67,7 +65,8 @@ def create_template_from_profile_sins(
     profile: :class:`np.array`
     profile_err: :class:`np.array`
         Phase, pulse profile, and error bars
-    imagefile: str
+    imagefile: str or None
+        Where to save a diagnostic plot. No plot is made if None (the default).
     norm: float or :class:`np.array`
 
     Returns
@@ -94,11 +93,12 @@ def create_template_from_profile_sins(
         prof, proferr, nperiods=3, baseline=True, debug=False
     )
     template = std_fold_fit_func(fit_pars_save, phase)
-    fig = plt.figure()
-    plt.plot(phase, profile, drawstyle="steps-mid")
-    plt.plot(phase, template, drawstyle="steps-mid")
-    plt.savefig(imagefile)
-    plt.close(fig)
+    if imagefile is not None:
+        fig = plt.figure()
+        plt.plot(phase, profile, drawstyle="steps-mid")
+        plt.plot(phase, template, drawstyle="steps-mid")
+        plt.savefig(imagefile)
+        plt.close(fig)
     # start template from highest bin!
     template *= norm
     template_fine = std_fold_fit_func(fit_pars_save, np.arange(0, 1, 0.001))
@@ -106,7 +106,7 @@ def create_template_from_profile_sins(
     return template, additional_phase
 
 
-def create_template_from_profile(phase, profile, profile_err, imagefile="template.png", norm=1):
+def create_template_from_profile(phase, profile, profile_err, imagefile=None, norm=1):
     """
     Parameters
     ----------
@@ -114,7 +114,8 @@ def create_template_from_profile(phase, profile, profile_err, imagefile="templat
     profile: :class:`np.array`
     profile_err: :class:`np.array`
         Phase, pulse profile, and error bars
-    imagefile: str
+    imagefile: str or None
+        Where to save a diagnostic plot. No plot is made if None (the default).
     norm: float or :class:`np.array`
 
     Returns
@@ -147,11 +148,12 @@ def create_template_from_profile(phase, profile, profile_err, imagefile="templat
     template_fine = splev(phases_fine, spl)
     template = splev(phase, spl)
 
-    fig = plt.figure()
-    plt.plot(phase, profile, drawstyle="steps-mid")
-    plt.plot(phase, template, drawstyle="steps-mid")
-    plt.savefig(imagefile)
-    plt.close(fig)
+    if imagefile is not None:
+        fig = plt.figure()
+        plt.plot(phase, profile, drawstyle="steps-mid")
+        plt.plot(phase, template, drawstyle="steps-mid")
+        plt.savefig(imagefile)
+        plt.close(fig)
 
     additional_phase = np.argmax(template_fine) / len(template_fine)
     return template, additional_phase
@@ -161,7 +163,7 @@ def create_template_from_profile_harm(
     phase,
     profile,
     profile_err=0,
-    imagefile="template.png",
+    imagefile=None,
     norm=1,
     nharm=None,
     final_nbin=None,
@@ -173,7 +175,8 @@ def create_template_from_profile_harm(
     profile: :class:`np.array`
     profile_err: :class:`np.array`
         Phase, pulse profile, and error bars
-    imagefile: str
+    imagefile: str or None
+        Where to save a diagnostic plot. No plot is made if None (the default).
     norm: float or :class:`np.array`
     final_nbin: int
 
@@ -223,11 +226,12 @@ def create_template_from_profile_harm(
 
     additional_phase = np.argmax(template_fine) / len(template_fine) + dph_fine / 2
     template = template[:final_nbin].real
-    fig = plt.figure()
-    plt.plot(phase, profile, drawstyle="steps-mid")
-    plt.plot(phas[:final_nbin], template, drawstyle="steps-mid")
-    plt.savefig(imagefile)
-    plt.close(fig)
+    if imagefile is not None:
+        fig = plt.figure()
+        plt.plot(phase, profile, drawstyle="steps-mid")
+        plt.plot(phas[:final_nbin], template, drawstyle="steps-mid")
+        plt.savefig(imagefile)
+        plt.close(fig)
     return template * final_nbin / nbin, additional_phase
 
 
