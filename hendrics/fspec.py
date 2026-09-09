@@ -673,7 +673,7 @@ def main(args=None):
         help=(
             "Light curve bin time; if negative, interpreted"
             " as negative power of 2."
-            " Default: 2^-10, or keep input lc bin time"
+            " Default: 2^-12, or keep input lc bin time"
             " (whatever is larger)"
         ),
     )

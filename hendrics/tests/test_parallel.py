@@ -96,6 +96,32 @@ class TestParallel:
         assert np.allclose(pds.unnorm_power, compare_pds.unnorm_power, rtol=1e-2)
         assert np.isclose(pds.nphots, compare_pds.nphots, rtol=1e-2)
 
+    def test_parallel_norm_rms_is_an_alias_for_frac(self):
+        """``rms`` is advertised in the --norm help text.
+
+        It used to be handed straight to stingray, which does not know it and
+        raised ``ValueError: Unknown value for the norm``.
+        """
+        out_file = tempfile.NamedTemporaryFile(suffix=".hdf5", delete=False)
+        command = [
+            self.fname,
+            "-o",
+            out_file.name,
+            "-b",
+            "0.1",
+            "-f",
+            "10.0",
+            "--method",
+            "none",
+            "--norm",
+            "rms",
+        ]
+        main_parallel(command)
+
+        pds = AveragedPowerspectrum.read(out_file.name)
+        assert pds.norm == "frac"
+        assert np.allclose(pds.power, self.pds.to_norm("frac").power, rtol=1e-2)
+
     @pytest.mark.parametrize("method", test_cases[1:])  # Skip "none" method for this test
     def test_parallel_versions_fail_unsorted(self, method, caplog):
         command = [

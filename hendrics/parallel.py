@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Parallel calculation of power spectra, over MPI or Python multiprocessing."""
 
+import warnings
 from functools import partial
 from multiprocessing import Pool
 
@@ -12,6 +13,7 @@ from stingray.io import FITSTimeseriesReader
 from stingray.utils import histogram
 
 from astropy import log
+from astropy.logger import AstropyUserWarning
 
 
 def get_data_intervals(interval_idxs, info=None, fname=None, sample_time=None):
@@ -461,7 +463,11 @@ def main(args=None):
         "--norm",
         type=str,
         default="leahy",
-        help="Normalization to use" + " (Accepted: leahy and rms;" + ' Default: "leahy")',
+        help=(
+            "Normalization to use"
+            " (Accepted: leahy, frac, abs, none, rms, where rms is an alias"
+            ' for frac; Default: "leahy")'
+        ),
     )
     parser.add_argument(
         "--method",
@@ -527,7 +533,15 @@ def main(args=None):
 
     if pds is None:
         return
-    if args.norm != "leahy":
-        pds = pds.to_norm(args.norm)
+
+    normalization = args.norm.lower()
+    if normalization not in ["frac", "abs", "leahy", "none", "rms"]:
+        warnings.warn("Beware! Unknown normalization!", AstropyUserWarning)
+        normalization = "leahy"
+    if normalization == "rms":
+        normalization = "frac"
+
+    if normalization != "leahy":
+        pds = pds.to_norm(normalization)
 
     pds.write(outfname)

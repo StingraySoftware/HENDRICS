@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Test a full run of the codes from the command line."""
 
+import inspect
 import os
 import subprocess as sp
 
@@ -218,6 +219,40 @@ class TestFullRun:
 
         assert os.path.exists(new_filenames[0])
         plot.main(new_filenames)
+
+    def test_power_colors_cli_and_api_defaults_agree(self):
+        """The CLI and the Python API must default to the same values.
+
+        They used to differ, and the Python API's own defaults could not
+        produce a result at all: ``bintime=1/32`` puts the Nyquist frequency at
+        exactly 16 Hz, the topmost default frequency edge, which is not in the
+        returned frequency range.
+        """
+        recorded = {}
+
+        def spy(fname, *args, **kwargs):
+            recorded["positional"] = args
+            return "dummy.nc"
+
+        real = power_colors.treat_power_colors
+        power_colors.treat_power_colors = spy
+        try:
+            power_colors.main(["dummy_ev.nc"])
+        finally:
+            power_colors.treat_power_colors = real
+
+        frequency_edges, segment_size, bintime, rebin, outfile, poisson_noise = recorded[
+            "positional"
+        ]
+        defaults = inspect.signature(real).parameters
+        assert frequency_edges == power_colors.DEFAULT_FREQUENCY_EDGES
+        assert segment_size == defaults["segment_size"].default
+        assert np.isclose(bintime, defaults["bintime"].default)
+        assert rebin == defaults["rebin"].default
+
+        # ...and those defaults have to bracket the default frequency edges.
+        assert 1 / segment_size <= power_colors.DEFAULT_FREQUENCY_EDGES[0]
+        assert 1 / (2 * bintime) > power_colors.DEFAULT_FREQUENCY_EDGES[-1]
 
     def test_power_colors_2files_raises_no_cross_output(self):
         """Test light curve using PI filtering."""
