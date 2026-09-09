@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import atexit
 import copy
 import os
+import shutil
 import sys
 import tempfile
 import urllib
@@ -100,6 +102,7 @@ __all__ = [
     "prange",
     "r_det",
     "r_in",
+    "scratch_file_name",
     "show_progress",
     "touch",
     "z2_n_detection_level",
@@ -1081,6 +1084,30 @@ def adjust_dt_for_small_power(dt, length):
     return new_dt
 
 
+_SCRATCH_DIR = None
+
+
+def scratch_file_name(suffix=".npy"):
+    """Get the name of a new, empty scratch file.
+
+    The file goes into a single directory, created the first time this
+    function is called and deleted when the interpreter exits. Scratch
+    files here back memory-mapped arrays that get handed out to the caller,
+    sometimes as views; there is no point in the code at which an
+    individual one is provably safe to delete, so they all go away together
+    at the end of the process.
+    """
+    global _SCRATCH_DIR
+
+    if _SCRATCH_DIR is None:
+        _SCRATCH_DIR = tempfile.mkdtemp(prefix="hendrics_")
+        atexit.register(shutil.rmtree, _SCRATCH_DIR, True)
+
+    file_descriptor, fname = tempfile.mkstemp(suffix=suffix, dir=_SCRATCH_DIR)
+    os.close(file_descriptor)
+    return fname
+
+
 def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=float):
     """Arange plus memory mapping.
 
@@ -1091,14 +1118,12 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=floa
     >>> i0, i1, istep = 0, 10, 1e-7
     >>> assert np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
     """
-    import tempfile
-
     chunklen = 10**6
     Nbins = int((i1 - i0) / istep)
     if Nbins < nbin_threshold:
         return np.arange(i0, i1, istep)
     if fname is None:
-        _, fname = tempfile.mkstemp(suffix=".npy")
+        fname = scratch_file_name()
 
     hist_arr = np.lib.format.open_memmap(fname, mode="w+", dtype=dtype, shape=(Nbins,))
 

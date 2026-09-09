@@ -39,6 +39,7 @@ from .base import (
     memmapped_arange,
     njit,
     prange,
+    scratch_file_name,
     show_progress,
     z2_n_detection_level,
 )
@@ -606,10 +607,8 @@ def transient_search(
             results_shape = (len(allvalues), nave.size, results.shape[1])
             use_memmap = force_memmap
             if np.prod(results_shape) > 1e7 or force_memmap:
-                import tempfile
-
-                tmp_results = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
-                tmp_f = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+                tmp_results = scratch_file_name()
+                tmp_f = scratch_file_name()
                 log.info(
                     "Transient search results are very large. "
                     f"Using memmapped arrays ({tmp_results}; "
@@ -632,7 +631,7 @@ def transient_search(
     times = dt * np.arange(all_results.shape[2])
     final_results_shape = (nave.size, all_results.shape[2], all_results.shape[0])
     if use_memmap:
-        tmp_results_stats = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+        tmp_results_stats = scratch_file_name()
         all_results_stats = np.lib.format.open_memmap(
             tmp_results_stats, mode="w+", dtype=results.dtype, shape=final_results_shape
         )
@@ -828,9 +827,6 @@ def _plot_transient_search_frames(results, gif_name, force_plotting):
 
         plt.close(fig)
         all_images.append(image)
-
-    if hasattr(results.stats, "filename"):
-        os.remove(results.stats.filename)
 
     vstack(max_stats_rows).write(result_name, overwrite=True)
 
@@ -1074,15 +1070,13 @@ def search_with_qffa(
             all_fgrid_shape = (fgrid_shape[0] * len(allvalues), fgrid_shape[1])
             log.info(f"Initializing result arrays of shape {all_fgrid_shape}")
             if all_fgrid_shape[0] * all_fgrid_shape[1] > 1e7 or force_memmap:
-                import tempfile
-
                 log.info(
                     "Large result arrays detected, using memory-mapped files to reduce "
                     "memory usage."
                 )
-                tmp_f = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
-                tmp_fdot = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
-                tmp_stat = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
+                tmp_f = scratch_file_name()
+                tmp_fdot = scratch_file_name()
+                tmp_stat = scratch_file_name()
                 all_fgrid = np.lib.format.open_memmap(
                     tmp_f, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape
                 )
