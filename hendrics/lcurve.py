@@ -1005,7 +1005,7 @@ def scrunch_main(args=None):
 
 
 def baseline_main(args=None):
-    """Main function called by the `HENbaselinesub` command line script."""
+    """Main function called by the `HENbaseline` command line script."""
     import argparse
 
     from .base import _add_default_args

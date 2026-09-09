@@ -119,7 +119,7 @@ def main(args=None):
 
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = "Calculate color light curves"
+    description = "Calculate power colors of a light curve or event list"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs="+")
     parser.add_argument(

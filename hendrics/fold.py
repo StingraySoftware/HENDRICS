@@ -1,4 +1,12 @@
-"""Interactive phaseogram."""
+"""Fold event lists into pulse profiles, and extract times of arrival.
+
+:func:`run_folding` produces the folded profile plotted by ``HENfold``,
+:func:`get_TOAs_from_events` fits each folded profile against a template to
+produce a ``.tim`` file of pulse times of arrival, and the
+``create_template_from_profile*`` helpers build those templates. ``HENdeorbit``
+also lives here, correcting event arrival times for binary motion. The
+interactive phaseogram is in :mod:`hendrics.phaseogram`.
+"""
 
 import argparse
 import copy

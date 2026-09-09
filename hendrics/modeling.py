@@ -10,7 +10,7 @@ from .io import HEN_FILE_EXTENSION, load_model, load_pds, save_model, save_pds
 
 
 def main_model(args=None):
-    """Main function called by the `HENfspec` command line script."""
+    """Main function called by the `HENmodel` command line script."""
     import argparse
 
     from .base import _add_default_args, check_negative_numbers_in_args

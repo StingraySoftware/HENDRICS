@@ -532,21 +532,23 @@ def transient_search(
 
     Other Parameters
     ----------------
+    fdot : float, default 0
+        Frequency derivative to fold the data with
     nbin : int
         Number of bins to divide the profile into
     nprof : int, default None
         number of slices of the dataset to use. If None, we use 8 times nbin.
         Motivation in the comments.
-    npfact : int, default 2
-        maximum "sliding" of the dataset, in phase.
-    oversample : int, default 8
+    n : int, default 1
+        Number of harmonics of the Z^2_n statistics
+    oversample : int, default 4
         Oversampling wrt the standard FFT delta f = 1/T
-    search_fdot : bool, default False
-        Switch fdot search on or off
     t0 : float, default min(times)
         starting time
     t1 : float, default max(times)
         stop time
+    force_memmap : bool, default False
+        Force the use of memory-mapped profiles, however small the dataset
     """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
@@ -980,13 +982,13 @@ def search_with_qffa(
     nbin : int
         Number of bins to divide the profile into
     nprof : int, default None
-        number of slices of the dataset to use. If None, we use 8 times nbin.
-        Motivation in the comments.
+        number of slices of the dataset to use. If None, we use
+        ``8 * nbin * npfact``. Motivation in the comments.
     npfact : int, default 2
         maximum "sliding" of the dataset, in phase.
     oversample : int, default 8
         Oversampling wrt the standard FFT delta f = 1/T
-    search_fdot : bool, default False
+    search_fdot : bool, default True
         Switch fdot search on or off
     t0 : float, default min(times)
         starting time
@@ -1110,7 +1112,7 @@ def search_with_qffa(
 
 
 def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
-    """'Quite fast folding' algorithm.
+    """Fast Folding Algorithm search over a range of trial periods.
 
     Parameters
     ----------
@@ -1125,15 +1127,6 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
     ----------------
     nbin : int
         Number of bins to divide the profile into
-    nprof : int, default None
-        number of slices of the dataset to use. If None, we use 8 times nbin.
-        Motivation in the comments.
-    npfact : int, default 2
-        maximum "sliding" of the dataset, in phase.
-    oversample : int, default 8
-        Oversampling wrt the standard FFT delta f = 1/T
-    search_fdot : bool, default False
-        Switch fdot search on or off
     t0 : float, default min(times)
         starting time
     t1 : float, default max(times)
