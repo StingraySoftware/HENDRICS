@@ -50,6 +50,7 @@ def average_periodograms(fspec_iterable, total=None):
     >>> assert tot_pds.m == 3
     """
     all_spec = []
+    tot_contents = None
     for i, contents in enumerate(show_progress(fspec_iterable, total=total)):
         freq = contents.freq
         pds = contents.power
@@ -57,18 +58,18 @@ def average_periodograms(fspec_iterable, total=None):
         nchunks = contents.m
         if hasattr(contents, "cs_all") and contents.cs_all is not None:
             all_spec.extend(contents.cs_all)
-        rebin = 1
         norm = contents.norm
         fftlen = contents.fftlen
         if i == 0:
-            rebin0, norm0, freq0 = rebin, norm, freq
+            norm0, freq0 = norm, freq
             tot_pds = pds * nchunks
 
             tot_epds = epds**2 * nchunks
             tot_npds = nchunks
             tot_contents = copy.deepcopy(contents)
         else:
-            assert np.all(rebin == rebin0), "Files must be rebinned in the same way"
+            # Any difference in the rebinning shows up as a different frequency
+            # grid, so this check covers that too.
             np.testing.assert_array_almost_equal(
                 freq,
                 freq0,
@@ -81,6 +82,9 @@ def average_periodograms(fspec_iterable, total=None):
             tot_epds += epds**2 * nchunks
             tot_npds += nchunks
 
+    if tot_contents is None:
+        raise ValueError("No periodograms to average")
+
     if len(all_spec) > 0:
         tot_contents.cs_all = all_spec
 
@@ -89,25 +93,6 @@ def average_periodograms(fspec_iterable, total=None):
     tot_contents.m = tot_npds
 
     return tot_contents
-
-
-def _wrap_fun_cpds(arglist):
-    f1, f2, outname, kwargs = arglist
-    try:
-        return calc_cpds(f1, f2, outname=outname, **kwargs)
-    except Exception as e:
-        log.error(f"Error in {f1}/{f2}: {e}")
-        return None
-
-
-def _wrap_fun_pds(argdict):
-    fname = argdict["fname"]
-    argdict.pop("fname")
-    try:
-        return calc_pds(fname, **argdict)
-    except Exception as e:
-        log.error(f"Error in {fname}: {e}")
-        return None
 
 
 def sync_gtis(lc1, lc2):
@@ -175,7 +160,10 @@ def _distribute_events(events, chunk_length):
 
 def _provide_periodograms(events, fftlen, dt, norm):
     for new_ev in _distribute_events(events, fftlen):
-        # Hack: epsilon slightly below zero, to allow for a GTI to be recognized as such
+        # Each chunk's GTI is exactly ``fftlen`` long, and rounding can leave it a
+        # hair shorter, in which case stingray discards the segment. Push the stop
+        # time out by a tenth of a bin: enough to survive the comparison, too little
+        # to let another bin in.
         new_ev.gti[:, 1] += dt / 10
         pds = AveragedPowerspectrum(new_ev, dt=dt, segment_size=fftlen, norm=norm, silent=True)
         pds.fftlen = fftlen
@@ -189,6 +177,7 @@ def _provide_cross_periodograms(events1, events2, fftlen, dt, norm):
     ev2_iter = _distribute_events(events2, fftlen)
     for new_ev in zip(ev1_iter, ev2_iter):
         new_ev1, new_ev2 = new_ev
+        # See the comment in _provide_periodograms.
         new_ev1.gti[:, 1] += dt / 10
         new_ev2.gti[:, 1] += dt / 10
 
@@ -218,7 +207,6 @@ def calc_pds(
     save_dyn=False,
     save_lcs=False,
     no_auxil=False,
-    test=False,
     emin=None,
     emax=None,
     ignore_gti=False,
@@ -354,7 +342,6 @@ def calc_cpds(
     save_dyn=False,
     save_lcs=False,
     no_auxil=False,
-    test=False,
     emin=None,
     emax=None,
     ignore_gti=False,
@@ -505,8 +492,6 @@ def calc_fspec(
     fftlen,
     do_calc_pds=True,
     do_calc_cpds=True,
-    do_calc_cospectrum=True,
-    do_calc_lags=True,
     save_dyn=False,
     no_auxil=False,
     save_lcs=False,
@@ -514,12 +499,10 @@ def calc_fspec(
     pdsrebin=1,
     outroot=None,
     normalization="leahy",
-    nproc=1,
     back_ctrate=0.0,
     noclobber=False,
     ignore_instr=False,
     save_all=False,
-    test=False,
     emin=None,
     emax=None,
     ignore_gti=False,
@@ -552,9 +535,6 @@ def calc_fspec(
         If True, do not overwrite existing files
     outroot : str
         Output file name root
-    nproc : int
-        Number of processors to use to parallelize the processing of multiple
-        files
     ignore_instr : bool
         Ignore instruments; files are alternated in the two channels
     emin : float, default None
@@ -574,33 +554,30 @@ def calc_fspec(
 
     """
     log.info(f"Using {normalization} normalization")
-    log.info(f"Using {nproc} processors")
 
     if do_calc_pds:
-        wrapped_file_dicts = []
         for f in files:
-            wfd = dict(
-                fftlen=fftlen,
-                save_dyn=save_dyn,
-                no_auxil=no_auxil,
-                save_lcs=save_lcs,
-                bintime=bintime,
-                pdsrebin=pdsrebin,
-                normalization=normalization.lower(),
-                back_ctrate=back_ctrate,
-                noclobber=noclobber,
-                save_all=save_all,
-                test=test,
-                emin=emin,
-                emax=emax,
-                ignore_gti=ignore_gti,
-                lombscargle=lombscargle,
-                fill_short_btis=fill_short_btis,
-            )
-            wfd["fname"] = f
-            wrapped_file_dicts.append(wfd)
-
-        [_wrap_fun_pds(w) for w in wrapped_file_dicts]
+            try:
+                calc_pds(
+                    f,
+                    fftlen=fftlen,
+                    save_dyn=save_dyn,
+                    no_auxil=no_auxil,
+                    save_lcs=save_lcs,
+                    bintime=bintime,
+                    pdsrebin=pdsrebin,
+                    normalization=normalization.lower(),
+                    back_ctrate=back_ctrate,
+                    noclobber=noclobber,
+                    save_all=save_all,
+                    emin=emin,
+                    emax=emax,
+                    ignore_gti=ignore_gti,
+                    lombscargle=lombscargle,
+                    fill_short_btis=fill_short_btis,
+                )
+            except Exception as e:
+                log.error(f"Error in {f}: {e}")
 
     if not do_calc_cpds or len(files) < 2:
         return
@@ -636,7 +613,6 @@ def calc_fspec(
         back_ctrate=back_ctrate,
         noclobber=noclobber,
         save_all=save_all,
-        test=test,
         emin=emin,
         emax=emax,
         ignore_gti=ignore_gti,
@@ -667,63 +643,11 @@ def calc_fspec(
 
         funcargs.append([f1, f2, outname, argdict])
 
-    [_wrap_fun_cpds(fa) for fa in funcargs]
-
-
-def _normalize(array, ref=0):
-    """Normalize array in terms of standard deviation.
-
-    Examples
-    --------
-    >>> n = 10000
-    >>> array1 = np.random.normal(0, 1, n)
-    >>> array2 = np.random.normal(0, 1, n)
-    >>> array = array1 ** 2 + array2 ** 2
-    >>> newarr = _normalize(array)
-    >>> assert np.isclose(np.std(newarr), 1, atol=0.0001)
-    """
-    m = ref
-    std = np.std(array)
-    newarr = np.zeros_like(array)
-    good = array > m
-    newarr[good] = (array[good] - ref) / std
-    return newarr
-
-
-def dumpdyn(fname, plot=False):
-    raise NotImplementedError(
-        "Dynamical power spectrum is being refactored. "
-        "Sorry for the inconvenience. In the meantime, "
-        "you can load the data into Stingray using "
-        "`cs = hendrics.io.load_pds(fname)` and find "
-        "the dynamical PDS/CPDS in cs.cs_all"
-    )
-
-
-def dumpdyn_main(args=None):
-    """Main function called by the `HENdumpdyn` command line script."""
-    import argparse
-
-    description = (
-        "Dump dynamical (cross) power spectra. "
-        "This script is being reimplemented. Please be "
-        "patient :)"
-    )
-    parser = argparse.ArgumentParser(description=description)
-
-    parser.add_argument(
-        "files",
-        help=("List of files in any valid HENDRICS format for PDS or CPDS"),
-        nargs="+",
-    )
-    parser.add_argument("--noplot", help="plot results", default=False, action="store_true")
-
-    args = parser.parse_args(args)
-
-    fnames = args.files
-
-    for f in fnames:
-        dumpdyn(f, plot=not args.noplot)
+    for f1, f2, outname, kwargs in funcargs:
+        try:
+            calc_cpds(f1, f2, outname=outname, **kwargs)
+        except Exception as e:
+            log.error(f"Error in {f1}/{f2}: {e}")
 
 
 def main(args=None):
@@ -734,7 +658,9 @@ def main(args=None):
 
     description = (
         "Create frequency spectra (PDS, CPDS, cospectrum) "
-        "starting from well-defined input ligthcurves"
+        "starting from well-defined input ligthcurves. "
+        "Files are processed one after the other; use HENparfspec to split a "
+        "single long observation over several processors"
     )
     parser = argparse.ArgumentParser(description=description)
 
@@ -765,16 +691,26 @@ def main(args=None):
         default=512,
         help="Length of FFTs. Default: 512 s",
     )
-    parser.add_argument("--fill-short-btis", default=None, type=float)
+    parser.add_argument(
+        "--fill-short-btis",
+        default=None,
+        type=float,
+        help=(
+            "Fill bad time intervals shorter than this number of seconds "
+            "with simulated data. Default: do not fill"
+        ),
+    )
     parser.add_argument(
         "-k",
         "--kind",
         type=str,
-        default="PDS,CPDS,cos",
+        default="PDS,CPDS",
         help=(
             "Spectra to calculate, as comma-separated list"
             " (Accepted: PDS and CPDS;"
-            ' Default: "PDS,CPDS")'
+            ' Default: "PDS,CPDS").'
+            " The cospectrum and the time lags are both properties of the CPDS,"
+            " and are obtained from it with HENplot and HENlags"
         ),
     )
     parser.add_argument(
@@ -846,12 +782,6 @@ def main(args=None):
         action="store_true",
     )
     parser.add_argument(
-        "--test",
-        help="Only to be used in testing",
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
         "--emin",
         default=None,
         type=float,
@@ -896,32 +826,24 @@ def main(args=None):
     if normalization == "rms":
         normalization = "frac"
 
-    do_cpds = do_pds = do_cos = do_lag = False
-    kinds = args.kind.split(",")
-    for k in kinds:
+    do_cpds = do_pds = False
+    for k in args.kind.split(","):
         if k == "PDS":
             do_pds = True
         elif k == "CPDS":
             do_cpds = True
-        elif k == "cos" or k == "cospectrum":
-            do_cos = True
-            do_cpds = True
-        elif k == "lag":
-            do_lag = True
-            do_cpds = True
+        else:
+            parser.error(f"Unknown spectrum kind: {k}. Accepted values: PDS, CPDS")
 
     calc_fspec(
         args.files,
         fftlen,
         do_calc_pds=do_pds,
         do_calc_cpds=do_cpds,
-        do_calc_cospectrum=do_cos,
-        do_calc_lags=do_lag,
         bintime=bintime,
         pdsrebin=pdsrebin,
         outroot=args.outroot,
         normalization=normalization,
-        nproc=1,
         back_ctrate=args.back,
         noclobber=args.noclobber,
         ignore_instr=args.ignore_instr,
@@ -929,7 +851,6 @@ def main(args=None):
         save_dyn=args.save_dyn,
         save_lcs=args.save_lcs,
         no_auxil=args.no_auxil,
-        test=args.test,
         emin=args.emin,
         emax=args.emax,
         ignore_gti=args.ignore_gtis,

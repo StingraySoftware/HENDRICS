@@ -397,14 +397,14 @@ class TestFullRun:
             os.path.join(self.datadir, f"monol_testA_{labelA}") + HEN_FILE_EXTENSION,
             os.path.join(self.datadir, f"monol_testB_{labelB}") + HEN_FILE_EXTENSION,
         )
-        command = f"{data_a} {data_b} -f 16 -k {kind} --norm frac --test"
+        command = f"{data_a} {data_b} -f 16 -k {kind} --norm frac"
         fspec.main(command.split())
 
     def test_cpds_ignore_instr(self):
         """Test CPDS production."""
         out = os.path.join(self.datadir, "ignore_instr") + HEN_FILE_EXTENSION
         command = (
-            f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS,lag --save-all --ignore-instr"
+            f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS --save-all --ignore-instr"
             f" -o {out} --debug"
         )
 
@@ -424,22 +424,18 @@ class TestFullRun:
         with pytest.warns(UserWarning, match="Beware! Unknown normalization"):
             fspec.main(command.split())
 
+    def test_wrong_kind(self):
+        """An unknown -k value must be refused, not silently ignored."""
+        command = f"{self.lcA} {self.lcB} -f 128 -k cos"
+        with pytest.raises(SystemExit):
+            fspec.main(command.split())
+
     def test_cpds_dtbig(self):
         """Test CPDS production."""
         out = os.path.join(self.datadir, "monol_test_1_128_leahy_3-50keV_dtb")
         command = f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS --save-all --norm frac -o {out}"
         command += " -b 1"
         fspec.main(command.split())
-
-    def test_dumpdynpds(self):
-        """Test dump dynamical PDSs."""
-        command = (
-            "--noplot "
-            + os.path.join(self.datadir, "monol_testA_3-50keV_pds_bad")
-            + HEN_FILE_EXTENSION
-        )
-        with pytest.raises(NotImplementedError):
-            fspec.dumpdyn_main(command.split())
 
     def test_sumpds(self):
         """Test the sum of pdss."""
@@ -457,14 +453,6 @@ class TestFullRun:
                 os.path.join(self.datadir, "monol_test_sum" + HEN_FILE_EXTENSION),
             ]
         )
-
-    def test_dumpdyncpds(self):
-        """Test dump dynamical PDSs."""
-        command = (
-            "--noplot " + os.path.join(self.datadir, "monol_test_3-50keV_cpds") + HEN_FILE_EXTENSION
-        )
-        with pytest.raises(NotImplementedError):
-            fspec.dumpdyn_main(command.split())
 
     def test_rebinpds(self):
         """Test PDS rebinning 1."""
