@@ -28,9 +28,10 @@ def main(args=None):
 
         lag = cross.time_lag()
         lag_err = None
-        # ``time_lag`` returns either the lags alone, or a (lag, lag_err) pair,
-        # depending on how much information the cross spectrum carries.
-        if len(lag) == 2:
+        # ``AveragedCrossspectrum`` returns a (lag, lag_err) pair; a single or
+        # Lomb-Scargle cross spectrum has no ensemble to take errors from and
+        # returns the lags alone, as a bare array.
+        if isinstance(lag, tuple):
             lag, lag_err = lag
         out = hen_root(fname) + "_lags.qdp"
         save_as_qdp([cross.freq, lag], [None, lag_err], filename=out)
