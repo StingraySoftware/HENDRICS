@@ -332,101 +332,105 @@ def ref_mjd(fits_file, hdu=1):
 # ---- Base function to save NetCDF4 files
 def save_as_netcdf(vars, varnames, formats, fname):
     """Save variables in a NetCDF4 file."""
-    rootgrp = nc.Dataset(fname, "w", format="NETCDF4")
+    # Use as a context manager: if writing a variable raises partway through
+    # (see the `except Exception: raise` below), the file must still be closed.
+    # Otherwise the open, half-written HDF5 handle can be left dangling, and if
+    # this path is deleted and recreated by a later call (as HENDRICS test and
+    # analysis code routinely do), HDF5's file-open cache can key the new file
+    # to the stale handle and corrupt reads of it, up to segfaulting.
+    with nc.Dataset(fname, "w", format="NETCDF4") as rootgrp:
+        for iv, v in enumerate(vars):
+            dims = {}
+            dimname = varnames[iv] + "dim"
+            dimspec = (varnames[iv] + "dim",)
 
-    for iv, v in enumerate(vars):
-        dims = {}
-        dimname = varnames[iv] + "dim"
-        dimspec = (varnames[iv] + "dim",)
+            if formats[iv] == "c32":
+                # Too complicated. Let's decrease precision
+                warnings.warn("complex256 yet unsupported", AstropyUserWarning)
+                formats[iv] = "c16"
 
-        if formats[iv] == "c32":
-            # Too complicated. Let's decrease precision
-            warnings.warn("complex256 yet unsupported", AstropyUserWarning)
-            formats[iv] = "c16"
+            if formats[iv] == "c16":
+                v = np.asarray(v)
+                # unicode_literals breaks something, I need to specify str.
+                if "cpl128" not in rootgrp.cmptypes.keys():
+                    complex128_t = rootgrp.createCompoundType(cpl128, "cpl128")
+                vcomp = np.empty(v.shape, dtype=cpl128)
+                vcomp["real"] = v.real.astype(np.float64)
+                vcomp["imag"] = v.imag.astype(np.float64)
+                v = vcomp
+                formats[iv] = complex128_t
 
-        if formats[iv] == "c16":
-            v = np.asarray(v)
-            # unicode_literals breaks something, I need to specify str.
-            if "cpl128" not in rootgrp.cmptypes.keys():
-                complex128_t = rootgrp.createCompoundType(cpl128, "cpl128")
-            vcomp = np.empty(v.shape, dtype=cpl128)
-            vcomp["real"] = v.real.astype(np.float64)
-            vcomp["imag"] = v.imag.astype(np.float64)
-            v = vcomp
-            formats[iv] = complex128_t
+            unsized = False
+            try:
+                len(v)
+            except TypeError:
+                unsized = True
 
-        unsized = False
-        try:
-            len(v)
-        except TypeError:
-            unsized = True
+            if isinstance(v, Iterable) and formats[iv] != str and not unsized:
+                dim = len(v)
+                dims[dimname] = dim
 
-        if isinstance(v, Iterable) and formats[iv] != str and not unsized:
-            dim = len(v)
-            dims[dimname] = dim
-
-            if isinstance(v[0], Iterable):
-                dim = len(v[0])
-                dims[dimname + "_2"] = dim
-                dimspec = (dimname, dimname + "_2")
-        else:
-            dims[dimname] = 1
-
-        for dimname, dimlen in dims.items():
-            rootgrp.createDimension(dimname, dimlen)
-        vnc = rootgrp.createVariable(varnames[iv], formats[iv], dimspec)
-        try:
-            if formats[iv] == str:
-                vnc[0] = v
+                if isinstance(v[0], Iterable):
+                    dim = len(v[0])
+                    dims[dimname + "_2"] = dim
+                    dimspec = (dimname, dimname + "_2")
             else:
-                vnc[:] = v
-        except Exception:
-            log.error(f"Bad variable: {varnames[iv]}, {formats[iv]}, {dimspec}, {v}")
-            raise
-    rootgrp.close()
+                dims[dimname] = 1
+
+            for dimname, dimlen in dims.items():
+                rootgrp.createDimension(dimname, dimlen)
+            vnc = rootgrp.createVariable(varnames[iv], formats[iv], dimspec)
+            try:
+                if formats[iv] == str:
+                    vnc[0] = v
+                else:
+                    vnc[:] = v
+            except Exception:
+                log.error(f"Bad variable: {varnames[iv]}, {formats[iv]}, {dimspec}, {v}")
+                raise
 
 
 def read_from_netcdf(fname):
     """Read from a netCDF4 file."""
-    rootgrp = nc.Dataset(fname)
-    # By default, netCDF4 applies `_FillValue`/`valid_range` masking to integer
-    # variables, returning `np.ma.MaskedArray` instead of plain `np.ndarray`.
-    # We never write fill values, and masked arrays are not drop-in
-    # replacements for ndarrays (e.g. `MaskedArray.tofile` is not implemented).
-    rootgrp.set_auto_mask(False)
-    out = {}
-    for k in rootgrp.variables.keys():
-        dum = rootgrp.variables[k]
-        values = np.asarray(dum.__array__())
-        # Handle special case of complex
-        if dum.dtype == cpl128:
-            arr = np.empty(values.shape, dtype=np.complex128)
-            arr.real = values["real"]
-            arr.imag = values["imag"]
-            values = arr
+    # See the comment in save_as_netcdf: always close the file, even if an
+    # unexpected variable/dtype below raises partway through.
+    with nc.Dataset(fname) as rootgrp:
+        # By default, netCDF4 applies `_FillValue`/`valid_range` masking to integer
+        # variables, returning `np.ma.MaskedArray` instead of plain `np.ndarray`.
+        # We never write fill values, and masked arrays are not drop-in
+        # replacements for ndarrays (e.g. `MaskedArray.tofile` is not implemented).
+        rootgrp.set_auto_mask(False)
+        out = {}
+        for k in rootgrp.variables.keys():
+            dum = rootgrp.variables[k]
+            values = np.asarray(dum.__array__())
+            # Handle special case of complex
+            if dum.dtype == cpl128:
+                arr = np.empty(values.shape, dtype=np.complex128)
+                arr.real = values["real"]
+                arr.imag = values["imag"]
+                values = arr
 
-        # Handle special case of complex
-        if HAS_C256 and dum.dtype == cpl256:
-            arr = np.empty(values.shape, dtype=np.complex256)
-            arr.real = values["real"]
-            arr.imag = values["imag"]
-            values = arr
+            # Handle special case of complex
+            if HAS_C256 and dum.dtype == cpl256:
+                arr = np.empty(values.shape, dtype=np.complex256)
+                arr.real = values["real"]
+                arr.imag = values["imag"]
+                values = arr
 
-        if dum.dtype == str or dum.size == 1:
-            to_save = values[0]
-        else:
-            to_save = values
-        if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool__"):
-            # Boolean single value
-            to_save = eval(to_save.replace("__bool__", ""))
-        # Boolean array
-        elif k.startswith("__bool__"):
-            to_save = to_save.astype(bool)
-            k = k.replace("__bool__", "")
+            if dum.dtype == str or dum.size == 1:
+                to_save = values[0]
+            else:
+                to_save = values
+            if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool__"):
+                # Boolean single value
+                to_save = eval(to_save.replace("__bool__", ""))
+            # Boolean array
+            elif k.startswith("__bool__"):
+                to_save = to_save.astype(bool)
+                k = k.replace("__bool__", "")
 
-        out[k] = to_save
-
-    rootgrp.close()
+            out[k] = to_save
 
     return out
 
