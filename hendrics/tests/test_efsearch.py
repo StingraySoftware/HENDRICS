@@ -18,6 +18,8 @@ from hendrics.efsearch import (
     main_efsearch,
     main_z2vspf,
     main_zsearch,
+    search_with_qffa,
+    transient_search,
 )
 from hendrics.fold import (
     fit_profile_with_sinusoids,
@@ -870,3 +872,33 @@ class TestEFsearch:
     @classmethod
     def teardown_class(cls):
         cleanup_test_dir(".")
+
+
+def test_searches_with_forced_memmap(tmp_path, monkeypatch):
+    """The scratch files backing the memory-mapped results are cleaned up.
+
+    They used to be built from ``NamedTemporaryFile(delete=True).name``, which
+    left a ``*_hen.npy`` file behind in the system temp directory for every
+    call. They now come from ``scratch_file_name``, which puts them all in a
+    single directory removed when the interpreter exits.
+    """
+    from hendrics.base import scratch_file_name
+
+    monkeypatch.chdir(tmp_path)
+    rng = np.random.default_rng(20250910)
+    times = np.sort(rng.uniform(0, 200, 5000))
+
+    frequencies, fdots, stats = search_with_qffa(
+        times, 0.9, 1.1, nbin=8, oversample=2, force_memmap=True
+    )[:3]
+    assert np.all(np.isfinite(stats))
+    assert frequencies.size == fdots.size == stats.size
+
+    results = transient_search(times, 0.9, 1.1, nbin=8, oversample=2, force_memmap=True)
+    assert results.stats.size > 0
+
+    # The results really are memory-mapped, and the file backing them lives in
+    # the one scratch directory that gets cleaned up at exit
+    assert isinstance(results.stats, np.memmap)
+    scratch_dir = os.path.dirname(scratch_file_name())
+    assert os.path.dirname(results.stats.filename) == scratch_dir
