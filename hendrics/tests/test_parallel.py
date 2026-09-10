@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 from stingray import AveragedPowerspectrum, EventList
 
+from astropy.logger import AstropyUserWarning
 from hendrics.fake import main as main_fake
 from hendrics.parallel import main as main_parallel
 
@@ -121,6 +122,26 @@ class TestParallel:
         pds = AveragedPowerspectrum.read(out_file.name)
         assert pds.norm == "frac"
         assert np.allclose(pds.power, self.pds.to_norm("frac").power, rtol=1e-2)
+
+    def test_parallel_default_outfile_and_unknown_norm(self):
+        """Without ``-o`` the output goes next to the input, not to ``out_pds.fits``.
+
+        And an unrecognized ``--norm`` falls back to leahy with a warning,
+        instead of reaching stingray and raising ``Unknown value for the norm``.
+        """
+        from hendrics.base import hen_root
+
+        expected = hen_root(self.fname) + "_pds.fits"
+        if os.path.exists(expected):
+            os.unlink(expected)
+
+        command = [self.fname, "-b", "0.1", "-f", "10.0", "--method", "none", "--norm", "bubu"]
+        with pytest.warns(AstropyUserWarning, match="Beware! Unknown normalization!"):
+            main_parallel(command)
+
+        assert os.path.exists(expected)
+        assert AveragedPowerspectrum.read(expected).norm == "leahy"
+        os.unlink(expected)
 
     @pytest.mark.parametrize("method", test_cases[1:])  # Skip "none" method for this test
     def test_parallel_versions_fail_unsorted(self, method, caplog):

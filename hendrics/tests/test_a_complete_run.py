@@ -219,6 +219,38 @@ class TestFullRun:
         assert os.path.exists(new_filenames[0])
         plot.main(new_filenames)
 
+    def test_power_colors_cross_odd_files_and_unrelated_names(self):
+        """``--cross`` with an odd number of files, and names with nothing in common.
+
+        The odd file used to be silently swallowed. And when the two names of a
+        pair have nothing in common, the output used to be named after a random
+        number, so two runs of the same command produced two different files.
+        """
+        import shutil
+
+        # Deliberately different lengths, so ``common_name`` falls back
+        names = ["zebra", "quokka", "aardvark"]
+        paths = []
+        for name in names:
+            path = os.path.join(self.datadir, f"{name}_ev" + HEN_FILE_EXTENSION)
+            shutil.copyfile(self.ev_fileAcal, path)
+            paths.append(path)
+
+        command = ["--cross", *paths, "-s", "16", "-b", "-6", "-f", "1", "2", "4", "8", "16"]
+        with pytest.warns(UserWarning, match="--cross needs an even number of files"):
+            new_filenames = power_colors.main(command)
+
+        # Three files make one pair; the third is dropped
+        assert len(new_filenames) == 1
+        assert os.path.exists(new_filenames[0])
+
+        # Named after both inputs, deterministically -- not after a random number
+        assert "zebra" in os.path.basename(new_filenames[0])
+        assert "quokka" in os.path.basename(new_filenames[0])
+
+        for path in paths:
+            os.unlink(path)
+
     def test_power_colors_cli_and_api_defaults_agree(self):
         """The CLI and the Python API must default to the same values.
 
