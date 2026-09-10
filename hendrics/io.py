@@ -957,11 +957,12 @@ def _load_data_nc(fname):
     # The loop above has rebuilt the real and the imaginary parts of any
     # complex256 as separate longdoubles (see ``_save_data_nc``). Pair them
     # back up into complex numbers.
+    # The two halves are always written together by the same call, so a
+    # ``__creal__`` without its ``__cimag__`` means a corrupt file; let the
+    # resulting KeyError say so rather than returning half a number.
     for real_key in [key for key in contents if key.startswith("__creal__")]:
         name = real_key[len("__creal__") :]
         imag_key = "__cimag__" + name
-        if imag_key not in contents:
-            continue
         real_part = np.asarray(contents.pop(real_key), dtype=np.longdouble)
         imag_part = np.asarray(contents.pop(imag_key), dtype=np.longdouble)
         combined = real_part + 1j * imag_part
