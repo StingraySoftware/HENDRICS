@@ -82,6 +82,12 @@ def test_distributed_pds():
     assert pds_distr.m == single_periodogram.m
 
 
+def test_average_periodograms_empty_raises():
+    """An empty iterable used to raise ``UnboundLocalError`` on ``tot_contents``."""
+    with pytest.raises(ValueError, match="No periodograms to average"):
+        fspec.average_periodograms([])
+
+
 def test_distributed_cpds():
     events1 = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]]))
     events2 = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]]))
