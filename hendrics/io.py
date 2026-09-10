@@ -51,9 +51,10 @@ try:
 except Exception:
     HAS_C256 = False
 
+# netCDF has no 128-bit float (its primitive types stop at ``f8``), so there is
+# no ``cpl256`` counterpart to this: a complex256 gets split into its real and
+# imaginary parts by ``_save_data_nc`` instead.
 cpl128 = np.dtype([("real", np.double), ("imag", np.double)])
-if HAS_C256:
-    cpl256 = np.dtype([("real", np.longdouble), ("imag", np.longdouble)])
 
 
 class EFPeriodogram:
@@ -345,7 +346,10 @@ def save_as_netcdf(vars, varnames, formats, fname):
             dimspec = (varnames[iv] + "dim",)
 
             if formats[iv] == "c32":
-                # Too complicated. Let's decrease precision
+                # netCDF cannot store a 128-bit float, so this low-level writer
+                # can only decrease the precision. ``_save_data_nc`` splits
+                # complex256 into real and imaginary parts instead, and never
+                # gets here.
                 warnings.warn("complex256 yet unsupported", AstropyUserWarning)
                 formats[iv] = "c16"
 
@@ -407,13 +411,6 @@ def read_from_netcdf(fname):
             # Handle special case of complex
             if dum.dtype == cpl128:
                 arr = np.empty(values.shape, dtype=np.complex128)
-                arr.real = values["real"]
-                arr.imag = values["imag"]
-                values = arr
-
-            # Handle special case of complex
-            if HAS_C256 and dum.dtype == cpl256:
-                arr = np.empty(values.shape, dtype=np.complex256)
                 arr.real = values["real"]
                 arr.imag = values["imag"]
                 values = arr
@@ -957,6 +954,19 @@ def _load_data_nc(fname):
     for k in keys_to_delete:
         del contents[k]
 
+    # The loop above has rebuilt the real and the imaginary parts of any
+    # complex256 as separate longdoubles (see ``_save_data_nc``). Pair them
+    # back up into complex numbers.
+    for real_key in [key for key in contents if key.startswith("__creal__")]:
+        name = real_key[len("__creal__") :]
+        imag_key = "__cimag__" + name
+        if imag_key not in contents:
+            continue
+        real_part = np.asarray(contents.pop(real_key), dtype=np.longdouble)
+        imag_part = np.asarray(contents.pop(imag_key), dtype=np.longdouble)
+        combined = real_part + 1j * imag_part
+        contents[name] = combined if combined.ndim > 0 else combined[()]
+
     return contents
 
 
@@ -1025,6 +1035,21 @@ def _save_data_nc(struct, fname, kind="data"):
             values.extend([var_I, var_log10, var_F, kind_str])
             formats.extend(["i8", "i8", "f8", str])
             varnames.extend([k + "_I", k + "_L", k + "_F", k + "_k"])
+        elif probekind == "c" and probesize > 16:
+            # A complex256. netCDF cannot store a 128-bit float in any shape or
+            # form, so split the real and the imaginary parts separately, each
+            # the same way a longdouble is split above. ``_load_data_nc`` puts
+            # the two back together. complex128 has itemsize 16 and does not
+            # come here: it is stored as a `cpl128` compound type.
+            for prefix, part in (
+                ("__creal__", np.real(var)),
+                ("__cimag__", np.imag(var)),
+            ):
+                part_size = np.result_type(part).itemsize
+                var_I, var_F, var_log10, kind_str = _split_high_precision_number(k, part, part_size)
+                values.extend([var_I, var_log10, var_F, kind_str])
+                formats.extend(["i8", "i8", "f8", str])
+                varnames.extend([prefix + k + suffix for suffix in ("_I", "_L", "_F", "_k")])
         elif probekind == str:
             values.append(var)
             formats.append(probekind)

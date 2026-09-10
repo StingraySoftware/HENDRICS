@@ -14,6 +14,7 @@ from stingray import (
 )
 
 from astropy.io.fits import Header
+from astropy.logger import AstropyUserWarning
 from astropy.modeling import models
 from astropy.modeling.core import Model
 from hendrics.base import hen_root
@@ -33,10 +34,12 @@ from hendrics.io import (
     load_timeseries,
     main,
     main_filter_events,
+    read_from_netcdf,
     read_header_key,
     ref_mjd,
     remove_pds,
     save_as_ascii,
+    save_as_netcdf,
     save_as_qdp,
     save_data,
     save_events,
@@ -518,14 +521,72 @@ class TestIO:
         assert np.allclose(data["val"], data_out["val"])
 
     @pytest.mark.skipif("not HAS_C256 or not HAS_NETCDF")
-    def test_save_longcomplex_warns(self):
-        val = np.complex256(1.01 + 2.3j)
-        data = {"val": val}
-        with pytest.warns(UserWarning, match="complex256 yet"):
-            save_data(data, "bubu" + HEN_FILE_EXTENSION)
-        data_out = load_data("bubu" + HEN_FILE_EXTENSION)
+    @pytest.mark.parametrize("shape", ["scalar", "array"])
+    def test_save_complex256_keeps_longdouble_precision(self, shape):
+        """complex256 survives a round trip at longdouble precision.
 
-        assert np.allclose(data["val"], data_out["val"])
+        netCDF has no 128-bit float, so the real and the imaginary parts are
+        stored separately with the same integer + fraction + exponent split
+        used for longdouble floats. The test is that this beats what simply
+        casting to complex128 would give -- otherwise the split buys nothing.
+        """
+        ld = np.longdouble
+        if shape == "scalar":
+            val = np.clongdouble(ld("123.4567890123456789") + 1j * ld("0.9876543210987654321"))
+        else:
+            val = np.array(
+                [
+                    ld("123.4567890123456789") + 1j * ld("0.9876543210987654321"),
+                    ld("-98.7654321098765432") + 1j * ld("12.34567890123456789"),
+                    ld("1.000000000000000001") + 1j * ld("2.500000000000000003"),
+                ],
+                dtype=np.clongdouble,
+            )
+
+        save_data({"val": val}, "bubu" + HEN_FILE_EXTENSION)
+        out = np.asarray(load_data("bubu" + HEN_FILE_EXTENSION)["val"], dtype=np.clongdouble)
+
+        assert out.dtype == np.dtype(np.clongdouble)
+        assert np.shape(out) == np.shape(val)
+
+        error = np.max(np.abs(out - val) / np.abs(val))
+        downgraded = np.asarray(np.complex128(val), dtype=np.clongdouble)
+        downgrade_error = np.max(np.abs(downgraded - val) / np.abs(val))
+
+        # Better than a complex128 cast, and at longdouble precision
+        assert error < downgrade_error
+        assert error < 1e-18
+
+    @pytest.mark.skipif("not HAS_NETCDF")
+    def test_save_as_netcdf_c32_downgrades_to_complex128(self):
+        """The low-level writer can only decrease the precision of a c32.
+
+        The format label is what drives the branch, so this runs everywhere,
+        including on the platforms where ``np.complex256`` does not exist.
+        """
+        fname = "bubu" + HEN_FILE_EXTENSION
+        with pytest.warns(AstropyUserWarning, match="complex256 yet unsupported"):
+            save_as_netcdf([np.array([1.01 + 2.3j])], ["val"], ["c32"], fname)
+
+        out = read_from_netcdf(fname)["val"]
+        assert np.iscomplexobj(out)
+        assert np.allclose(out, 1.01 + 2.3j)
+
+    @pytest.mark.skipif("not HAS_NETCDF")
+    def test_save_as_netcdf_closes_the_file_on_a_bad_variable(self):
+        """A failed write must not leave the netCDF file open.
+
+        A dangling HDF5 handle on a path that is then deleted and recreated
+        makes HDF5's file-open cache hand back the stale file, which corrupts
+        later reads of it.
+        """
+        fname = "bubu" + HEN_FILE_EXTENSION
+        with pytest.raises(ValueError, match="could not convert string to float"):
+            save_as_netcdf([["a", "b"]], ["val"], ["f8"], fname)
+
+        # The real test: the same path can be written and read again
+        save_as_netcdf([np.array([1.0, 2.0])], ["val"], ["f8"], fname)
+        assert np.allclose(read_from_netcdf(fname)["val"], [1.0, 2.0])
 
     def test_save_as_qdp(self):
         """Test saving arrays in a qdp file."""
