@@ -540,7 +540,31 @@ class TestFullRun:
         )
         timelags.main([fname])
         out = base.hen_root(fname) + "_lags.qdp"
-        os.path.exists(out)
+        assert os.path.exists(out)
+
+    def test_save_lags_lombscargle(self):
+        """A Lomb-Scargle cross spectrum returns the lags without error bars.
+
+        ``time_lag`` gives an ``(lag, lag_err)`` tuple for an averaged cross
+        spectrum but a bare array here, since there is no ensemble to take the
+        errors from. The old check was ``len(lag) == 2``, which happens to work
+        only as long as the lag array is not two elements long.
+        """
+        command = f"{self.ev_fileA} {self.ev_fileB} -k CPDS --norm leahy --lombscargle -b -1"
+        fspec.main(command.split())
+        fname = (
+            self.ev_fileA.replace("fpma", "fpm")
+            .replace("testA", "test")
+            .replace("_ev", "_0d5_512_leahy_LS_cpds")
+        )
+        assert os.path.exists(fname)
+
+        timelags.main([fname])
+        out = base.hen_root(fname) + "_lags.qdp"
+        assert os.path.exists(out)
+
+        # Two columns (freq, lag), not three: there are no error bars
+        assert np.genfromtxt(out).shape[1] == 2
 
     def test_fit_pds(self):
         modelstring = """
