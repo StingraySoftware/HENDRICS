@@ -534,11 +534,14 @@ class TestIO:
         if shape == "scalar":
             val = np.clongdouble(ld("123.4567890123456789") + 1j * ld("0.9876543210987654321"))
         else:
+            # One power of ten for the whole array, so keep the magnitudes
+            # close: the fractional parts are stored as doubles, and their
+            # resolution is fixed in absolute terms.
             val = np.array(
                 [
-                    ld("123.4567890123456789") + 1j * ld("0.9876543210987654321"),
-                    ld("-98.7654321098765432") + 1j * ld("12.34567890123456789"),
-                    ld("1.000000000000000001") + 1j * ld("2.500000000000000003"),
+                    ld("1234.567890123456789") + 1j * ld("987.6543210987654321"),
+                    ld("-2345.678901234567891") + 1j * ld("123.4567890123456789"),
+                    ld("1000.000000000000001") + 1j * ld("2500.000000000000003"),
                 ],
                 dtype=np.clongdouble,
             )

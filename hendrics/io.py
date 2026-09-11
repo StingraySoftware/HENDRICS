@@ -949,7 +949,12 @@ def _load_data_nc(fname):
                 integer_part = dtype(contents[integer_key])
                 float_part = dtype(contents[float_key])
 
-            contents[kcorr] = (integer_part + float_part) * 10.0**log10_part
+            # The power of ten has to be the *same number* the writer divided
+            # by in ``_split_high_precision_number``, which computes it in the
+            # precision of the data. ``10.0 ** np.int64(-1)`` is a double, and
+            # a double 0.1 is not a longdouble 0.1: the mismatch comes back as
+            # a ~5e-18 relative error on the reconstructed value.
+            contents[kcorr] = (integer_part + float_part) * 10.0 ** dtype(log10_part)
 
     for k in keys_to_delete:
         del contents[k]

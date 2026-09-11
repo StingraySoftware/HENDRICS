@@ -1,0 +1,5 @@
+Fixed a loss of precision when reading back high-precision (``longdouble``)
+numbers smaller than one from netCDF files. The power of ten used to rescale
+them was divided out in long double precision and multiplied back in double
+precision, and the two are not the same number: the values came back with a
+relative error of about 5e-18 instead of the 1e-19 the format allows.
