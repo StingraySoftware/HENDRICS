@@ -1,0 +1,5 @@
+Fixed a crash on Windows in ``transient_search`` with memory-mapped results.
+The scratch file holding the intermediate results was deleted while it was
+still mapped, which Windows refuses; the file backing the frequency array
+handed back to the caller was deleted too, and is now kept until the scratch
+directory is cleaned up at exit.

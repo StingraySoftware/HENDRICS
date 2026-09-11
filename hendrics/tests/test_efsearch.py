@@ -902,3 +902,10 @@ def test_searches_with_forced_memmap(tmp_path, monkeypatch):
     assert isinstance(results.stats, np.memmap)
     scratch_dir = os.path.dirname(scratch_file_name())
     assert os.path.dirname(results.stats.filename) == scratch_dir
+
+    # Arrays handed back to the caller keep their scratch files: deleting one
+    # while it is still mapped is an error on Windows, and elsewhere it leaves
+    # the caller holding an array with no file behind it
+    assert os.path.exists(results.stats.filename)
+    assert os.path.exists(results.freqs.filename)
+    assert np.all(np.isfinite(results.freqs))

@@ -653,9 +653,15 @@ def transient_search(
     results.stats = all_results_stats
 
     if use_memmap:
-        os.remove(all_results.filename)
-        os.remove(all_freqs.filename)
-        del all_results, all_freqs
+        # ``all_results`` is the large scratch file and nothing else refers to
+        # it any more, so free the disk right away. Close the mapping *before*
+        # deleting the file: Windows refuses to remove a file that is still
+        # memory-mapped. ``all_freqs`` is handed to the caller inside
+        # ``results``, so its file has to stay until the scratch directory
+        # goes away at exit.
+        results_fname = all_results.filename
+        del all_results
+        os.remove(results_fname)
 
     return results
 
