@@ -1,6 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Tests for the targeted-search trials correction."""
 
+import os
+import shutil
+import tempfile
+
 import numpy as np
 import pytest
 
@@ -253,3 +257,242 @@ class TestCalibration:
         blind = prior_corrected_p_value(self.p_window, ntrial_blind)
         targeted = prior_corrected_p_value(self.p_window, n_eff)
         assert np.all(targeted <= blind)
+
+
+class TestTargetedZSearch:
+    """End-to-end: HENzsearch given a previously known spin solution."""
+
+    T = 1000.0
+    MJDREF = 56000
+    FTRUE = 9.37
+    # A solution measured 1000 days earlier, spinning down steadily
+    KNOWN_PEPOCH = 55000
+    KNOWN_FDOT = -1e-9
+
+    @classmethod
+    def setup_class(cls):
+        from stingray.events import EventList
+
+        from hendrics.io import HEN_FILE_EXTENSION, save_events
+
+        cls.datadir = tempfile.mkdtemp()
+        cls.cwd = os.getcwd()
+        os.chdir(cls.datadir)
+
+        rng = np.random.default_rng(5)
+        n = 40000
+        times = np.sort(rng.uniform(0, cls.T, n))
+        # A weak sinusoidal pulsation on a bright constant background: too
+        # weak to stand out in a blind search over the whole band
+        keep = rng.uniform(0, 1, n) < 0.5 * (1 + 0.045 * np.cos(2 * np.pi * cls.FTRUE * times))
+        events = EventList(time=times[keep], gti=np.array([[0, cls.T]]), mjdref=cls.MJDREF)
+        events.instr = "test"
+        cls.fname = "ev" + HEN_FILE_EXTENSION
+        save_events(events, cls.fname)
+
+        # The search refers everything to the middle of the observation
+        pepoch_search = cls.MJDREF + (cls.T / 2) / 86400
+        dt = (pepoch_search - cls.KNOWN_PEPOCH) * 86400
+        cls.known_freq = cls.FTRUE - cls.KNOWN_FDOT * dt
+
+        cls.common = [
+            cls.fname,
+            "-f",
+            "9.0",
+            "-F",
+            "10.0",
+            "-n",
+            "16",
+            "--fast",
+            "--oversample",
+            "16",
+            "-N",
+            "2",
+        ]
+
+    @classmethod
+    def teardown_class(cls):
+        os.chdir(cls.cwd)
+        shutil.rmtree(cls.datadir, ignore_errors=True)
+
+    @staticmethod
+    def _candidates(outfiles):
+        from hendrics.efsearch import analyze_qffa_results
+
+        _, table = analyze_qffa_results(outfiles[0])
+        return table
+
+    def test_blind_search_misses_the_signal(self):
+        """The reference point: without a prior this pulsation is not found."""
+        from hendrics.efsearch import main_zsearch
+
+        table = self._candidates(main_zsearch(self.common))
+        # Every candidate is an upper limit, i.e. nothing was detected
+        assert np.all(np.isnan(table["pulse_amp"]))
+        # ...and the tallest peak is a noise peak, far from the true frequency
+        best = table[np.argmax(table["power"])]
+        assert np.abs(best["f"] - self.FTRUE) > 0.01
+
+    def test_targeted_search_finds_it(self):
+        """The same data, with the ephemeris extrapolated from 1000 days back."""
+        from hendrics.efsearch import main_zsearch
+
+        table = self._candidates(
+            main_zsearch(
+                self.common
+                + [
+                    "--known-freq",
+                    str(self.known_freq),
+                    "--known-fdot",
+                    str(self.KNOWN_FDOT),
+                    "--known-pepoch",
+                    str(self.KNOWN_PEPOCH),
+                ]
+            )
+        )
+        assert "p_value" in table.colnames
+
+        detected = table[~np.isnan(table["pulse_amp"])]
+        assert len(detected) > 0, "the targeted search should detect the pulsation"
+
+        best = detected[np.argmin(detected["p_value"])]
+        # It is the real signal, sitting essentially on the prediction
+        assert np.isclose(best["f"], self.FTRUE, atol=1e-3)
+        assert np.abs(best["f_offset"]) < 1e-3
+        # Right on the prediction, so it costs almost nothing in trials
+        assert best["ntrial_eff"] < 10
+        assert best["p_value"] < 1e-3
+
+    def test_a_wrong_prior_does_not_invent_a_detection(self):
+        """A prior far from the truth must not manufacture significance."""
+        from hendrics.efsearch import main_zsearch
+
+        table = self._candidates(
+            main_zsearch(self.common + ["--known-freq", "9.8", "--known-pepoch", str(self.MJDREF)])
+        )
+        # Whatever it picks, the offset is paid for in trials
+        assert np.all(table["ntrial_eff"] >= 1)
+        for row in table:
+            if np.abs(row["f_offset"]) > 0.1:
+                assert row["ntrial_eff"] > 100
+
+    def test_pepoch_is_required(self):
+        from hendrics.efsearch import main_zsearch
+
+        with pytest.raises(ValueError, match="known-pepoch"):
+            main_zsearch(self.common + ["--known-freq", str(self.known_freq)])
+
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_par_file_gives_the_same_answer(self):
+        from hendrics.efsearch import main_zsearch
+
+        parfile = "known.par"
+        with open(parfile, "w") as fobj:
+            print("PSR              TEST", file=fobj)
+            print(f"F0               {self.known_freq}", file=fobj)
+            print(f"F1               {self.KNOWN_FDOT}", file=fobj)
+            print(f"PEPOCH           {self.KNOWN_PEPOCH}", file=fobj)
+            print("EPHEM            DE421", file=fobj)
+            print("UNITS            TDB", file=fobj)
+
+        table = self._candidates(main_zsearch(self.common + ["--known-par", parfile]))
+        detected = table[~np.isnan(table["pulse_amp"])]
+        assert len(detected) > 0
+        best = detected[np.argmin(detected["p_value"])]
+        assert np.isclose(best["f"], self.FTRUE, atol=1e-3)
+
+
+class TestTargetedAccelSearch:
+    """End-to-end: HENaccelsearch given a previously known spin solution."""
+
+    T = 1000.0
+    MJDREF = 56000
+    FTRUE = 9.37
+    KNOWN_PEPOCH = 55000
+    KNOWN_FDOT = -1e-9
+
+    @classmethod
+    def setup_class(cls):
+        from stingray.events import EventList
+
+        from hendrics.io import HEN_FILE_EXTENSION, save_events
+
+        cls.datadir = tempfile.mkdtemp()
+        cls.cwd = os.getcwd()
+        os.chdir(cls.datadir)
+
+        rng = np.random.default_rng(7)
+        n = 60000
+        times = np.sort(rng.uniform(0, cls.T, n))
+        keep = rng.uniform(0, 1, n) < 0.5 * (1 + 0.06 * np.cos(2 * np.pi * cls.FTRUE * times))
+        events = EventList(time=times[keep], gti=np.array([[0, cls.T]]), mjdref=cls.MJDREF)
+        events.instr = "test"
+        cls.fname = "ev" + HEN_FILE_EXTENSION
+        save_events(events, cls.fname)
+
+        # ``accelsearch`` refers its candidates to the start of the observation
+        dt = (cls.MJDREF - cls.KNOWN_PEPOCH) * 86400
+        cls.known_freq = cls.FTRUE - cls.KNOWN_FDOT * dt
+        cls.prior_args = [
+            "--known-freq",
+            str(cls.known_freq),
+            "--known-fdot",
+            str(cls.KNOWN_FDOT),
+            "--known-pepoch",
+            str(cls.KNOWN_PEPOCH),
+        ]
+
+    @classmethod
+    def teardown_class(cls):
+        os.chdir(cls.cwd)
+        shutil.rmtree(cls.datadir, ignore_errors=True)
+
+    def _run(self, outfile, band=("9.3", "9.45"), extra=()):
+        from astropy.table import Table
+        from hendrics.efsearch import main_accelsearch
+
+        out = main_accelsearch(
+            [
+                self.fname,
+                "--fmin",
+                band[0],
+                "--fmax",
+                band[1],
+                "--zmax",
+                "10",
+                "--outfile",
+                outfile,
+            ]
+            + list(extra)
+        )
+        return Table.read(out, format="ascii")
+
+    def test_targeted_search_reports_the_correction(self):
+        table = self._run("targeted.csv", extra=self.prior_args)
+        for name in ("f_offset", "fdot_offset", "ntrial_eff", "p_value"):
+            assert name in table.colnames
+
+        best = table[np.argmin(table["p_value"])]
+        assert np.isclose(best["frequency"], self.FTRUE, atol=2e-3)
+        # It lands on the prediction, so it costs a single trial
+        assert np.isclose(best["ntrial_eff"], 1.0)
+        assert best["p_value"] < 1e-6
+
+    def test_only_surviving_candidates_are_written(self):
+        """The corrected p-value is applied before the file is written."""
+        table = self._run("filtered.csv", extra=self.prior_args)
+        assert len(table) > 0
+        assert np.all(table["p_value"] < 0.068)
+        # Everything far from the prior has been charged for the distance
+        far = table[np.abs(table["f_offset"]) > 0.02]
+        assert np.all(far["ntrial_eff"] > 1)
+
+    def test_blind_search_is_untouched(self):
+        """Without a prior, the output keeps its original columns."""
+        table = self._run("blind.csv")
+        assert "p_value" not in table.colnames
+        assert "ntrial_eff" not in table.colnames
+
+    def test_wide_band_warns_that_it_buys_little(self):
+        with pytest.warns(UserWarning, match="too wide for the known ephemeris"):
+            self._run("wide.csv", band=("1.0", "50.0"), extra=self.prior_args)

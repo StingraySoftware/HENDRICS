@@ -18,6 +18,7 @@ from stingray.pulse.search import (
 )
 from stingray.stats import (
     a_from_ssig,
+    pds_probability,
     pf_upper_limit,
     power_confidence_limits,
 )
@@ -33,6 +34,7 @@ from .base import (
     deorbit_events,
     find_peaks_in_image,
     fold_detection_level,
+    fold_profile_probability,
     hen_root,
     histogram,
     histogram2d,
@@ -42,6 +44,7 @@ from .base import (
     scratch_file_name,
     show_progress,
     z2_n_detection_level,
+    z2_n_probability,
 )
 from .fake import scramble
 from .ffa import _z_n_fast_cached, ffa_search, h_test
@@ -53,6 +56,12 @@ from .io import (
     load_events,
     load_folding,
     save_folding,
+)
+from .known_ephemeris import (
+    effective_ntrial,
+    ephemeris_from_parfile,
+    extrapolate_ephemeris,
+    prior_corrected_p_value,
 )
 
 try:
@@ -1290,7 +1299,25 @@ def print_qffa_results(best_cand_table):
             f"{a:g} ± {e:g}" for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
         ]
 
-    print(newtable["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"][good])
+    columns = ["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"]
+    if "p_value" in newtable.colnames:
+        # A targeted search: what matters is the distance from the expected
+        # solution and the significance once that is paid for
+        columns = [
+            "mjd",
+            "f",
+            "f_offset",
+            "fdot",
+            "power",
+            "ntrial_eff",
+            "p_value",
+            "Pulsed amplitude (%)",
+        ]
+    # ``good`` is a mask when there are detections and the index of the best
+    # candidate otherwise; wrap the latter so we always print a Table
+    selected = newtable[columns]
+    selected = selected[[good]] if np.isscalar(good) else selected[good]
+    selected.pprint_all()
 
 
 def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
@@ -1388,10 +1415,11 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     if hasattr(input_ef_periodogram, "oversample") and input_ef_periodogram.oversample is not None:
         ntrial /= input_ef_periodogram.oversample
         ntrial = int(ntrial)
+    epsilon_det = 0.001
     if input_ef_periodogram.kind == "Z2n":
         ndof = input_ef_periodogram.N - 1
         detlev = z2_n_detection_level(
-            epsilon=0.001,
+            epsilon=epsilon_det,
             n=int(input_ef_periodogram.N),
             ntrial=ntrial,
             n_summed_spectra=int(input_ef_periodogram.M),
@@ -1405,61 +1433,52 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     else:
         ndof = input_ef_periodogram.nbin
         detlev = fold_detection_level(
-            nbin=int(input_ef_periodogram.nbin), epsilon=0.001, ntrial=ntrial
+            nbin=int(input_ef_periodogram.nbin), epsilon=epsilon_det, ntrial=ntrial
         )
         nbin = max(16, input_ef_periodogram.nbin)
         label = rf"$\chi^2_{ndof}$ Stat"
     n_cands = 5
-    best_cands = find_peaks_in_image(input_ef_periodogram.stat, n=n_cands)
+    p_corr, n_eff = _prior_corrected_p_values(input_ef_periodogram, ntrial)
+    if p_corr is None:
+        best_cands = find_peaks_in_image(input_ef_periodogram.stat, n=n_cands)
+    else:
+        # With a known ephemeris the most interesting candidate is the most
+        # significant one *after* the trials correction, which need not be the
+        # tallest peak: a modest peak sitting on the expected solution beats a
+        # taller one at the other end of the band.
+        best_cands = find_peaks_in_image(-np.log10(np.clip(p_corr, 1e-300, 1.0)), n=n_cands)
 
     fddot = 0
     if hasattr(input_ef_periodogram, "fddots") and input_ef_periodogram.fddots is not None:
         fddot = input_ef_periodogram.fddots
 
-    best_cand_table = Table(
-        names=[
-            "fname",
-            "mjd",
-            "power",
-            "f",
-            "f_err_n",
-            "f_err_p",
-            "fdot",
-            "fdot_err_n",
-            "fdot_err_p",
-            "fddot",
-            "power_cl_0.9",
-            "pulse_amp",
-            "pulse_amp_err",
-            "pulse_amp_cl_0.1",
-            "pulse_amp_cl_0.9",
-            "pulse_amp_ul_0.9",
-            "f_idx",
-            "fdot_idx",
-            "fddot_idx",
-        ],
-        dtype=[
-            str,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            int,
-            int,
-            int,
-        ],
-    )
+    names = [
+        "fname",
+        "mjd",
+        "power",
+        "f",
+        "f_err_n",
+        "f_err_p",
+        "fdot",
+        "fdot_err_n",
+        "fdot_err_p",
+        "fddot",
+        "power_cl_0.9",
+        "pulse_amp",
+        "pulse_amp_err",
+        "pulse_amp_cl_0.1",
+        "pulse_amp_cl_0.9",
+        "pulse_amp_ul_0.9",
+        "f_idx",
+        "fdot_idx",
+        "fddot_idx",
+    ]
+    dtype = [str] + [float] * 15 + [int] * 3
+    if p_corr is not None:
+        names += ["f_offset", "fdot_offset", "ntrial_eff", "p_value"]
+        dtype += [float] * 4
+
+    best_cand_table = Table(names=names, dtype=dtype)
     best_cand_table["power"].info.format = ".2f"
     best_cand_table["power_cl_0.9"].info.format = ".2f"
     best_cand_table["fdot"].info.format = ".2e"
@@ -1469,6 +1488,11 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     best_cand_table["pulse_amp"].info.format = ".2f"
     best_cand_table["pulse_amp_err"].info.format = ".2f"
     best_cand_table["pulse_amp_ul_0.9"].info.format = ".2f"
+    if p_corr is not None:
+        best_cand_table["f_offset"].info.format = ".3e"
+        best_cand_table["fdot_offset"].info.format = ".2e"
+        best_cand_table["ntrial_eff"].info.format = ".1f"
+        best_cand_table["p_value"].info.format = ".2e"
 
     for i, idx in enumerate(best_cands):
         f_idx = fdot_idx = fddot_idx = 0
@@ -1520,9 +1544,18 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
         if input_ef_periodogram.ncounts is None:
             continue
 
+        # A targeted search pays fewer trials, so it uses its own, lower
+        # threshold: what counts is the corrected p-value, not the blind
+        # detection level.
+        idx_tuple = None
+        detected = max_stat >= detlev
+        if p_corr is not None:
+            idx_tuple = (f_idx, fdot_idx) if p_corr.ndim > 1 else f_idx
+            detected = p_corr[idx_tuple] < epsilon_det
+
         sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=input_ef_periodogram.N)
         amp = amp_err = amp_ul = amp_1 = amp_0 = np.nan
-        if max_stat < detlev:
+        if not detected:
             amp_ul = a_from_ssig(sig_1, input_ef_periodogram.ncounts) * 100
         else:
             amp = a_from_ssig(max_stat, input_ef_periodogram.ncounts) * 100
@@ -1530,30 +1563,37 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
             amp_0 = a_from_ssig(sig_0, input_ef_periodogram.ncounts) * 100
             amp_1 = a_from_ssig(sig_1, input_ef_periodogram.ncounts) * 100
 
-        best_cand_table.add_row(
-            [
-                input_ef_periodogram.filename,
-                input_ef_periodogram.pepoch,
-                max_stat,
-                f,
-                fmin - f,
-                fmax - f,
-                fdot,
-                fdotmin - fdot,
-                fdotmax - fdot,
-                fddot,
-                sig_0,
-                amp,
-                amp_err,
-                amp_0,
-                amp_1,
-                amp_ul,
-                f_idx,
-                fdot_idx,
-                fddot_idx,
+        row = [
+            input_ef_periodogram.filename,
+            input_ef_periodogram.pepoch,
+            max_stat,
+            f,
+            fmin - f,
+            fmax - f,
+            fdot,
+            fdotmin - fdot,
+            fdotmax - fdot,
+            fddot,
+            sig_0,
+            amp,
+            amp_err,
+            amp_0,
+            amp_1,
+            amp_ul,
+            f_idx,
+            fdot_idx,
+            fddot_idx,
+        ]
+        if p_corr is not None:
+            row += [
+                f - input_ef_periodogram.known_freq,
+                fdot - input_ef_periodogram.known_fdot,
+                float(n_eff[idx_tuple]),
+                float(p_corr[idx_tuple]),
             ]
-        )
-        if max_stat < detlev:
+        best_cand_table.add_row(row)
+
+        if not detected:
             # Only add one candidate
             continue
 
@@ -1604,6 +1644,137 @@ def analyze_qffa_results(fname):
 
     best_cand_table.write(fname + "_best_cands.csv", overwrite=True)
     return ef, best_cand_table
+
+
+def _add_known_ephemeris_args(parser):
+    """Add the options describing a previously known spin solution."""
+    parser.add_argument(
+        "--known-freq",
+        type=float,
+        default=None,
+        help="Spin frequency (Hz) of a previously known solution. When given, "
+        "the search becomes targeted: candidates close to the solution, "
+        "extrapolated to the epoch of this observation, are charged far fewer "
+        "trials than in a blind search. The solution must be known "
+        "*beforehand*: picking it after looking at the periodogram "
+        "invalidates the correction",
+    )
+    parser.add_argument(
+        "--known-fdot",
+        type=float,
+        default=0.0,
+        help="First frequency derivative (Hz/s) of the known solution",
+    )
+    parser.add_argument(
+        "--known-fddot",
+        type=float,
+        default=0.0,
+        help="Second frequency derivative (Hz/s^2) of the known solution",
+    )
+    parser.add_argument(
+        "--known-pepoch",
+        type=float,
+        default=None,
+        help="Reference epoch (MJD) of the known solution",
+    )
+    parser.add_argument(
+        "--known-par",
+        type=str,
+        default=None,
+        help="Parameter file in TEMPO2/PINT format containing the known "
+        "solution, as an alternative to --known-freq and friends",
+    )
+    return parser
+
+
+def _known_ephemeris_at(args, target_epoch):
+    """Extrapolate the known solution, if any, to ``target_epoch``.
+
+    Returns a pair of NaNs when no known solution was given on the command
+    line, which is how the rest of the code recognizes a blind search.
+    """
+    if getattr(args, "known_par", None) is not None:
+        freq, fdot, fddot, pepoch = ephemeris_from_parfile(args.known_par)
+    elif getattr(args, "known_freq", None) is not None:
+        freq = args.known_freq
+        fdot = args.known_fdot
+        fddot = args.known_fddot
+        pepoch = args.known_pepoch
+    else:
+        return np.nan, np.nan
+
+    if pepoch is None:
+        raise ValueError("--known-pepoch is needed together with --known-freq")
+    if target_epoch is None or not np.isfinite(target_epoch):
+        raise ValueError("The search has no valid reference epoch (is MJDREF set?)")
+
+    freq, fdot, _ = extrapolate_ephemeris(
+        freq, fdot=fdot, fddot=fddot, pepoch=pepoch, target_epoch=target_epoch
+    )
+    log.info(
+        f"Known ephemeris extrapolated to MJD {target_epoch}: f={freq!r} Hz, fdot={fdot!r} Hz/s"
+    )
+    return freq, fdot
+
+
+def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
+    """Corrected p-value of every cell of the search plane.
+
+    Each cell is charged a number of trials proportional to how much of the
+    search plane lies closer to the known ephemeris than the cell does, so a
+    candidate landing on the expected solution costs a single trial and one at
+    the far edge of the band costs the full blind-search count.
+
+    Returns ``(None, None)`` when no known ephemeris was given.
+    """
+    known_freq = getattr(input_ef_periodogram, "known_freq", np.nan)
+    known_fdot = getattr(input_ef_periodogram, "known_fdot", np.nan)
+    if known_freq is None or not np.isfinite(known_freq):
+        return None, None
+
+    freq = np.asarray(input_ef_periodogram.freq)
+    stat = np.asarray(input_ef_periodogram.stat)
+    fdots = np.asarray(input_ef_periodogram.fdots)
+    search_fdot = fdots.shape == stat.shape and stat.ndim > 1 and stat.shape[0] > 1
+
+    if stat.ndim > 1:
+        # ``search_with_qffa`` grids vary in frequency along the last axis and
+        # in fdot along the first one
+        f_step = np.median(np.diff(freq[0, :]))
+        fdot_step = np.median(np.diff(fdots[:, 0])) if search_fdot else None
+        delta_fdot = fdots - known_fdot if search_fdot else 0.0
+    else:
+        f_step = np.median(np.diff(freq))
+        fdot_step = None
+        delta_fdot = 0.0
+
+    if search_fdot and not np.isfinite(known_fdot):
+        warnings.warn(
+            "A known frequency was given for an fdot search, but no known fdot. "
+            "Assuming the known solution has fdot=0."
+        )
+        delta_fdot = fdots
+
+    n_eff = effective_ntrial(
+        freq - known_freq,
+        delta_fdot,
+        f_step=f_step,
+        fdot_step=fdot_step,
+        n_grid=stat.size,
+        ntrial_blind=ntrial_blind,
+        search_fdot=search_fdot,
+    )
+
+    if input_ef_periodogram.kind == "Z2n":
+        p_single = z2_n_probability(
+            stat,
+            n=int(input_ef_periodogram.N),
+            n_summed_spectra=int(input_ef_periodogram.M),
+        )
+    else:
+        p_single = fold_profile_probability(stat, int(input_ef_periodogram.nbin))
+
+    return prior_corrected_p_value(p_single, n_eff), n_eff
 
 
 def _common_parser(args=None):
@@ -1796,6 +1967,8 @@ def _common_parser(args=None):
         action="store_true",
     )
 
+    _add_known_ephemeris_args(parser)
+
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ["deorbit", "loglevel", "debug"])
 
@@ -1960,6 +2133,8 @@ def _common_main(args, func):
                 **kwargs,
             )
 
+        known_freq, known_fdot = _known_ephemeris_at(args, mjdref + ref_time / 86400)
+
         efperiodogram = EFPeriodogram(
             frequencies,
             stats,
@@ -1976,6 +2151,8 @@ def _common_main(args, func):
             mjdref=mjdref,
             pepoch=mjdref + ref_time / 86400,
             oversample=args.oversample,
+            known_freq=known_freq,
+            known_fdot=known_fdot,
         )
         efperiodogram.upperlim = pf_upper_limit(np.max(stats), events.time.size, n=args.N)
         efperiodogram.ncounts = events.time.size
@@ -2220,6 +2397,8 @@ def main_accelsearch(args=None):
         help="Correct FFT for red noise (use with caution)",
     )
 
+    _add_known_ephemeris_args(parser)
+
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ["loglevel", "debug"])
 
@@ -2332,6 +2511,36 @@ def main_accelsearch(args=None):
         # Half of the bins are zeros.
         det_p_value = 0.068 * 2
 
+    known_freq, known_fdot = _known_ephemeris_at(args, events.mjdref + t0 / 86400)
+    targeted = bool(np.isfinite(known_freq))
+    single_trial_p_value = det_p_value
+    if targeted:
+        # ``accelsearch`` interprets det_p_value as the false alarm probability
+        # of the *whole* blind search, so its internal threshold rises with the
+        # width of the band. A targeted search needs to see candidates that a
+        # blind one would discard, so ask for the loosest threshold that can
+        # still be expressed, and tell the user what it bought them.
+        fft_length = max_length * 2 if args.pad_to_double else max_length
+        n_freq = max((fmax - fmin) * fft_length, 1)
+        # stingray refuses to invert a multi-trial probability closer than
+        # 1e-12 to 1, so stop an order of magnitude short of that
+        det_p_value = min(-np.expm1(n_freq * np.log1p(-single_trial_p_value)), 1 - 1e-9)
+        reachable = -np.expm1(np.log1p(-det_p_value) / n_freq)
+        log.info(
+            f"Targeted search: single-trial threshold {reachable:.2g} "
+            f"over {n_freq:.0f} frequency bins"
+        )
+        if reachable < single_trial_p_value / 10:
+            warnings.warn(
+                f"The {fmin}-{fmax} Hz band is too wide for the known ephemeris "
+                f"to buy much sensitivity: the search can only reach a "
+                f"single-trial probability of {reachable:.2g}, against the "
+                f"{single_trial_p_value:.2g} a targeted search would want. "
+                "Candidates will be ranked by their corrected significance, but "
+                "weak peaks on the expected solution may never be reported. "
+                "Narrow --fmin/--fmax around the expected frequency to fix this."
+            )
+
     fft_rescale = None
     if args.red_noise_filter:
 
@@ -2371,6 +2580,38 @@ def main_accelsearch(args=None):
         )
         results = results[~bad]
 
+    if targeted and len(results) > 0:
+        # stingray searches a grid of 1/T in frequency and delta_z/T^2 in fdot,
+        # and reports the number of frequency bins it covered as ``ntrial``
+        length = results["length"][0]
+        n_freq = int(results["ntrial"][0])
+        n_z = max(np.arange(-zmax, zmax, delta_z).size, 1)
+
+        n_eff = effective_ntrial(
+            results["frequency"] - known_freq,
+            results["fdot"] - known_fdot,
+            f_step=1 / length,
+            fdot_step=delta_z / length**2,
+            n_grid=n_freq * n_z,
+            ntrial_blind=n_freq,
+            search_fdot=True,
+        )
+        p_value = prior_corrected_p_value(pds_probability(results["power"], ntrial=1), n_eff)
+
+        results["f_offset"] = results["frequency"] - known_freq
+        results["fdot_offset"] = results["fdot"] - known_fdot
+        results["ntrial_eff"] = n_eff
+        results["p_value"] = p_value
+
+        # Filter on the corrected significance, not on raw power: this is what
+        # keeps the candidate file small despite the loosened threshold
+        n_before = len(results)
+        results = results[p_value < single_trial_p_value]
+        log.info(
+            f"{len(results)} of {n_before} candidates survive the trials "
+            "correction around the known ephemeris"
+        )
+
     if len(results) > 0:
         results["emin"] = emin or -1.0
         results["emax"] = emax or -1.0
@@ -2383,10 +2624,15 @@ def main_accelsearch(args=None):
         results["mjdref"] = np.double(events.mjdref)
         results["pepoch"] = events.mjdref + results["time"] / 86400.0
 
-        results.sort("power")
-
         print("Best candidates:")
-        results["time", "frequency", "fdot", "power", "pepoch"][-10:][::-1].pprint()
+        if targeted:
+            results.sort("p_value")
+            results["frequency", "f_offset", "fdot", "power", "ntrial_eff", "p_value"][
+                :10
+            ].pprint_all()
+        else:
+            results.sort("power")
+            results["time", "frequency", "fdot", "power", "pepoch"][-10:][::-1].pprint()
         print(f"See all {len(results)} candidates in {outfile}")
     else:
         print("No candidates found")

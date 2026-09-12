@@ -81,6 +81,8 @@ class EFPeriodogram:
         emax=None,
         ncounts=None,
         upperlim=None,
+        known_freq=np.nan,
+        known_fdot=np.nan,
     ):
         self.freq = freq
         self.stat = stat
@@ -103,6 +105,11 @@ class EFPeriodogram:
         self.mjdref = mjdref
         self.upperlim = upperlim
         self.ncounts = ncounts
+        # Spin solution expected at ``pepoch`` from a previously known
+        # ephemeris, used to charge a targeted search fewer trials than a
+        # blind one. NaN when no prior was given.
+        self.known_freq = known_freq
+        self.known_fdot = known_fdot
 
     def find_peaks(self, conflevel=99.0):
         from .base import fold_detection_level, z2_n_detection_level
