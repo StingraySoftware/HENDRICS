@@ -1,0 +1,9 @@
+``HENzsearch`` and ``HENaccelsearch`` accept a previously known spin solution
+(``--known-freq``, ``--known-fdot``, ``--known-fddot``, ``--known-pepoch``, or
+``--known-par`` for a TEMPO2/PINT parameter file). The solution is extrapolated
+to the epoch of the observation, and each candidate is charged a number of
+trials that grows with its distance from it: a peak on the expected solution
+costs a single trial, one at the edge of the band costs exactly what a blind
+search would have. Weak pulsations at a known frequency, invisible to a blind
+search over the same band, become detectable. See
+:ref:`targeted-searches-tutorial`.

@@ -25,6 +25,12 @@ mission-specific event file, we have a HENDRICS-format event file (ending with
     $ ls
     002A.evt 002A_ev.nc
 
+.. Note ::
+
+    If the source already has a measured spin solution, a blind search is not
+    the right tool: see :ref:`targeted-searches-tutorial` for how to search
+    around a known ephemeris and pay far fewer trials for it.
+
 Accelerated searches
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 HENDRICS now implements the accelerated search à la Ransom+2002: starting from a single
