@@ -11,7 +11,7 @@ The main dependency is
 
 which in turn depends on
 
-2. `Numpy <https://www.numpy.org/>`__;
+2. `Numpy <https://numpy.org/>`__;
 
 3. `Matplotlib <https://matplotlib.org/>`__;
 

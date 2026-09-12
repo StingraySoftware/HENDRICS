@@ -185,6 +185,10 @@ linkcheck_ignore = [
     r"https://zenodo.org/",
     r"http.*://stackoverflow.com/questions/.*",
     r"https://.*.nasa.gov/.*",
+    # The server omits its intermediate certificate, so Python cannot verify it
+    r"https://ascl.net/",
+    # Bot protection redirects automated requests to a challenge page
+    r"https://iopscience.iop.org/",
 ]
 
 # -- Options for the edit_on_github extension ---------------------------------

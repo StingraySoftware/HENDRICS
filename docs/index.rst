@@ -90,7 +90,7 @@ Astrophysics Source Code Library identifier:
 
 1. Bachetti, M. 2018, HENDRICS: High ENergy Data Reduction Interface from the Command Shell, record `ascl:1805.019 <https://ascl.net/1805.019>`__.
 
-and please also cite `stingray <https://stingray.science/stingray/citing.html>`__
+and please also cite `stingray <https://docs.stingray.science/en/stable/citing.html>`__
 
 In particular, **if you use the cospectrum**, please also refer to:
 
