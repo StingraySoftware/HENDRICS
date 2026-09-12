@@ -1,6 +1,0 @@
-numpy
-scipy
-astropy
-matplotlib
-stingray >= 2.3.2
-sphinx-astropy

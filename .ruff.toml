@@ -1,7 +1,7 @@
 extend = "pyproject.toml"
 lint.ignore = [
     # NOTE: to find a good code to fix, run:
-    # ruff --select="ALL" --statistics astropy/<subpackage>
+    # ruff check --select="ALL" --statistics hendrics/
 
     # flake8-annotations (ANN) : static typing
     "ANN001",  # Function argument without type annotation
@@ -109,6 +109,7 @@ lint.ignore = [
     "PLR0912",  # too-many-branches
     "PLR0913",  # too-many-args
     "PLR0915",  # too-many-statements
+    "PLR0917",  # too-many-positional-args. Same reason as PLR0913 above.
     "PLR1714",  # Consider merging multiple comparisons
     "PLR2004",  # MagicValueComparison
     "PLR5501",  # collapsible-else-if
@@ -117,7 +118,6 @@ lint.ignore = [
 
     # flake8-pytest-style (PT)
     "PT003",   # pytest-extraneous-scope-function
-    "PT004",   # pytest-missing-fixture-name-underscore # deprecated in ruff 0.6.0
     "PT006",   # pytest-parametrize-names-wrong-type
     "PT007",   # pytest-parametrize-values-wrong-type
     "PT011",   # pytest-raises-too-broad
@@ -125,6 +125,8 @@ lint.ignore = [
     "PT017",   # pytest-assert-in-exceptinstead
     "PT018",   # pytest-composite-assertion
     "PT022",   # pytest-useless-yield-fixture
+    "PT030",   # pytest-warns-too-broad. Same reason as PT011 above.
+    "PT031",   # pytest-warns-with-multiple-statements. Same reason as PT012 above.
 
     # flake8-return (RET)
     "RET501",  # unnecessary-return-none
@@ -141,6 +143,7 @@ lint.ignore = [
     "RUF002",  # ambiguous-unicode-character-docstring
     "RUF010",  # use conversion in f-string
     "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
+    "RUF059",  # unused-unpacked-variable. Tuple-unpacking sibling of F841, ignored above.
 
     # flake8-bandit (S)
     "S101",  # Use of `assert` detected
@@ -183,9 +186,6 @@ lint.ignore = [
     "TRY201",  # verbose-raise
     "TRY301",  # raise-within-try
 
-    # pyupgrade (UP)
-    "UP038",  # isinstance using union separators. The code is slower as of Python 3.11-3.12
-
     # flake8-quotes (Q)
     "Q000",  # use double quotes
 ]
@@ -195,17 +195,15 @@ lint.unfixable = [
 
 [lint.extend-per-file-ignores]
 "__init__.py" = ["E402", "F401", "F403"]
+# The Sphinx configuration is built on top of `from sphinx_astropy.conf.v1
+# import *`, so every setting it appends to comes from that star import.
+"docs/conf.py" = ["F405"]
 "test_*.py" = [
     "PTH", # all flake8-use-pathlib
     "RUF015",  # Prefer next({iterable}) over single element slice
     "F401",
 ]
-# TODO: fix these, on a per-subpackage basis.
-# When a general exclusion is being fixed, but it affects many subpackages, it
-# is better to fix for subpackages individually. The general exclusion should be
-# copied to these subpackage sections and fixed there.
-# "astropy/config/*" = []
-# "astropy/constants/*" = [
-#     "N817",    # camelcase-imported-as-acronym
-#     "RET505",  # superfluous-else-return
-# ]
+# TODO: fix the general exclusions above on a per-module basis. When a general
+# exclusion is being fixed but it affects many modules, it is better to fix them
+# one at a time: copy the general exclusion into a per-module section here and
+# fix it there.

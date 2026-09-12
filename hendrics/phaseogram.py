@@ -167,7 +167,7 @@ class BasePhaseogram:
             self.unnorm_phaseogr,
             phases,
             times,
-            additional_info,
+            _,
         ) = normalized_phaseogram(
             None,
             corrected_times,
@@ -181,18 +181,10 @@ class BasePhaseogram:
             pepoch=self.pepoch,
         )
 
-        self.phaseogr, phases, times, additional_info = normalized_phaseogram(
-            self.norm,
-            corrected_times,
-            freq,
-            return_plot=True,
-            nph=nph,
-            nt=nt,
-            fdot=fdot,
-            fddot=fddot,
-            plot=False,
-            pepoch=self.pepoch,
-        )
+        # The fold is the expensive part, and ``self.norm`` only changes the
+        # post-processing: normalize the phaseogram we already have instead of
+        # folding the whole event list a second time.
+        self.phaseogr = normalize_dyn_profile(self.unnorm_phaseogr.T, self.norm).T
 
         self.phases, self.times = phases, times
         vmin = None
@@ -292,7 +284,7 @@ class BasePhaseogram:
 
     def toa(self, event):  # pragma: no cover
         warnings.warn(
-            "This function was not implemented for this Phaseogram. " "Try the basic one.",
+            "This function was not implemented for this Phaseogram. Try the basic one.",
             AstropyUserWarning,
         )
 
@@ -571,17 +563,7 @@ class InteractivePhaseogram(BasePhaseogram):
             pepoch=pepoch,
             fddot=self.fddot,
         )
-        self.phaseogr, _, _, _ = normalized_phaseogram(
-            self.norm,
-            self.ev_times,
-            self.freq,
-            fdot=self.fdot,
-            plot=False,
-            nph=self.nph,
-            nt=self.nt,
-            pepoch=pepoch,
-            fddot=self.fddot,
-        )
+        self.phaseogr = normalize_dyn_profile(self.unnorm_phaseogr.T, self.norm).T
 
         self.reset(1)
 
@@ -794,17 +776,7 @@ class BinaryPhaseogram(BasePhaseogram):
             fddot=self.fddot,
         )
 
-        self.phaseogr, _, _, _ = normalized_phaseogram(
-            self.norm,
-            corrected_times,
-            self.freq,
-            fdot=self.fdot,
-            plot=False,
-            nph=self.nph,
-            nt=self.nt,
-            pepoch=self.pepoch,
-            fddot=self.fddot,
-        )
+        self.phaseogr = normalize_dyn_profile(self.unnorm_phaseogr.T, self.norm).T
 
         self.reset(event)
         self._set_lines(False)
@@ -983,7 +955,7 @@ def main_phaseogram(args=None):
     )
     parser.add_argument(
         "--binary",
-        help="Interact on binary parameters " "instead of frequency derivatives",
+        help="Interact on binary parameters instead of frequency derivatives",
         default=False,
         action="store_true",
     )
@@ -1040,7 +1012,7 @@ def main_phaseogram(args=None):
     log.setLevel(args.loglevel)
 
     if args.periodogram is None and args.freq is None:
-        raise ValueError("One of -f or --periodogram arguments MUST be " "specified")
+        raise ValueError("One of -f or --periodogram arguments MUST be specified")
     elif args.periodogram is not None:
         periodogram = load_folding(args.periodogram)
         frequency = float(periodogram.peaks[0])

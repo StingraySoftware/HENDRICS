@@ -59,9 +59,9 @@ For development versions:
 
 ::
 
-    $ git clone git@github.com/StingraySoftware/HENDRICS
+    $ git clone git@github.com:StingraySoftware/HENDRICS
     $ cd HENDRICS
-    $ python setup.py install
+    $ pip install .
 
 
 License and notes for the users
@@ -75,11 +75,11 @@ Astrophysics Source Code Library identifier:
 
 1. Bachetti, M. 2018, HENDRICS: High ENergy Data Reduction Interface from the Command Shell, record `ascl:1805.019 <https://ascl.net/1805.019>`__.
 
-and please also cite `stingray <https://stingray.science/stingray/citing.html>`
+and please also cite `stingray <https://docs.stingray.science/en/stable/citing.html>`__
 
 In particular, **if you use the cospectrum**, please also refer to:
 
-2. Bachetti et al. 2015, `ApJ <https://iopscience.iop.org/0004-637X/800/2/109/>`__ , **800**, 109.
+2. Bachetti et al. 2015, `ApJ <https://iopscience.iop.org/article/10.1088/0004-637X/800/2/109>`__ , **800**, 109.
 
 If you have found a bug please report it by creating a
 new issue on the `HENDRICS GitHub issue tracker. <https://github.com/StingraySoftware/HENDRICS/issues>`_

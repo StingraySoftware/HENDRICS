@@ -1,0 +1,5 @@
+``HENphaseogram`` starts up and redraws about twice as fast: it folded the
+event list twice per update, once for the plot and once for its unnormalized
+copy, although the two differ only in post-processing. ``HENcalibrate`` is up
+to ten times faster on large event lists, having replaced a loop over every
+RMF channel with a single sorted lookup.

@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -53,20 +53,20 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            python: '3.10'
+            python: '3.11'
             tox_env: 'build_docs'
           - os: ubuntu-latest
-            python: '3.10'
+            python: '3.11'
             tox_env: 'linkcheck'
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           submodules: true
       - name: Check out that no sensitive environment variable is shared
         run: env
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: Install base dependencies
@@ -104,8 +104,8 @@ jobs:
             python: '3.13'
             tox_env: 'py313-test-mpi-cov'
           - os: ubuntu-latest
-            python: '3.9'
-            tox_env: 'py39-test-cov'
+            python: '3.11'
+            tox_env: 'py311-test-cov'
           - os: ubuntu-latest
             python: '3.13'
             tox_env: 'py313-test-alldeps-cov'
@@ -125,8 +125,8 @@ jobs:
             use_remote_data: true
             continue-on-error: true
           - os: ubuntu-latest
-            python: '3.9'
-            tox_env: 'py39-test-oldestdeps-cov'
+            python: '3.11'
+            tox_env: 'py311-test-oldestdeps-cov'
             use_remote_data: true
           - os: macos-latest
             python: '3.13'
@@ -137,9 +137,9 @@ jobs:
 
     steps:
     - name: Check out repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v5
     - name: Set up Python ${{ matrix.python }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
     - name: Install base dependencies
@@ -170,8 +170,8 @@ jobs:
         tox -e ${{ matrix.tox_env }} -- --remote-data=any
     - name: Upload coverage to codecov
       if: "endsWith(matrix.tox_env, '-cov')"
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

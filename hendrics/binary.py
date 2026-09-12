@@ -122,7 +122,7 @@ def save_events_to_binary(events, filename, bin_time, tstart=None, emin=None, em
 
     if emin is not None and emax is not None:
         if not hasattr(events, "energy") or events.energy is None:
-            raise ValueError("Energy filtering requested for uncalibrated event " "list")
+            raise ValueError("Energy filtering requested for uncalibrated event list")
 
         good = (events.energy >= emin) & (events.energy < emax)
         events = events.apply_mask(good)
@@ -174,47 +174,47 @@ def save_inf(lcinfo, info, filename):
 
     with open(filename, "w") as f:
         print(
-            " Data file name without suffix         " " =  {}".format(filename.replace(".inf", "")),
+            " Data file name without suffix          =  {}".format(filename.replace(".inf", "")),
             file=f,
         )
         print(
-            " Telescope used                        " f" =  {info.telescope}",
+            f" Telescope used                         =  {info.telescope}",
             file=f,
         )
         print(
-            " Instrument used                       " f" =  {info.instrument}",
+            f" Instrument used                        =  {info.instrument}",
             file=f,
         )
         print(
-            " Object being observed                 " f" =  {info.source}",
+            f" Object being observed                  =  {info.source}",
             file=f,
         )
         print(
-            " J2000 Right Ascension (hh:mm:ss.ssss) " f" =  {info.raj}",
+            f" J2000 Right Ascension (hh:mm:ss.ssss)  =  {info.raj}",
             file=f,
         )
         print(
-            " J2000 Declination     (dd:mm:ss.ssss) " f" =  {info.decj}",
+            f" J2000 Declination     (dd:mm:ss.ssss)  =  {info.decj}",
             file=f,
         )
         print(
-            " Data observed by                      " f" =  {info.observer}",
+            f" Data observed by                       =  {info.observer}",
             file=f,
         )
         print(
-            " Epoch of observation (MJD)            " f" =  {epoch:05.15f}",
+            f" Epoch of observation (MJD)             =  {epoch:05.15f}",
             file=f,
         )
-        print(" Barycentered?           (1=yes, 0=no) " " =  1", file=f)
+        print(" Barycentered?           (1=yes, 0=no)  =  1", file=f)
         print(
-            " Number of bins in the time series     " f" =  {lclen}",
+            f" Number of bins in the time series      =  {lclen}",
             file=f,
         )
         print(
-            " Width of each time series bin (sec)   " f" =  {lcinfo.dt}",
+            f" Width of each time series bin (sec)    =  {lcinfo.dt}",
             file=f,
         )
-        print(" Any breaks in the data? (1 yes, 0 no) " " =  1", file=f)
+        print(" Any breaks in the data? (1 yes, 0 no)  =  1", file=f)
         for i, st in enumerate(bin_intervals_start):
             print(
                 f" On/Off bin pair # {i + 1:>2}                  "
@@ -222,18 +222,18 @@ def save_inf(lcinfo, info, filename):
                 f"{bin_intervals_stop[i]:<11}",
                 file=f,
             )
-        print(" Type of observation (EM band)         " " =  X-ray", file=f)
-        print(" Field-of-view diameter (arcsec)       " " =  400", file=f)
+        print(" Type of observation (EM band)          =  X-ray", file=f)
+        print(" Field-of-view diameter (arcsec)        =  400", file=f)
         print(
-            " Central energy (kev)                  " f" =  {info.centralE}",
+            f" Central energy (kev)                   =  {info.centralE}",
             file=f,
         )
         print(
-            " Energy bandpass (kev)                 " f" =  {info.bandpass}",
+            f" Energy bandpass (kev)                  =  {info.bandpass}",
             file=f,
         )
         print(
-            " Data analyzed by                      " f" =  {info.user}",
+            f" Data analyzed by                       =  {info.user}",
             file=f,
         )
         print(" Any additional notes:", file=f)
@@ -256,7 +256,7 @@ def main_presto(args=None):
     parser.add_argument(
         "-l",
         "--max-length",
-        help="Maximum length of light " "curves (split otherwise)",
+        help="Maximum length of light curves (split otherwise)",
         type=np.longdouble,
         default=1e32,
     )

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from hendrics import calibrate, fake, io, read_events
-from hendrics.calibrate import default_nustar_rmf
+from hendrics.calibrate import default_nustar_rmf, read_calibration
 from hendrics.io import load_events, save_events
 from hendrics.tests import _dummy_par
 
@@ -17,12 +17,47 @@ def test_default_nustar_rmf(caplog):
     caldb_path = "fake_caldb"
     os.environ["CALDB"] = caldb_path
     path_to_rmf = os.path.join(
-        caldb_path, *"data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf".split("/")
+        caldb_path, "data", "nustar", "fpm", "cpf", "rmf", "nuAdet3_20100101v002.rmf"
     )
     with pytest.warns(UserWarning, match="Using default NuSTAR rmf."):
         newpath = default_nustar_rmf()
 
     assert newpath == path_to_rmf
+
+
+def test_default_nustar_rmf_without_caldb_raises(monkeypatch):
+    """Without CALDB there is nowhere to look, so say so instead of KeyError."""
+    monkeypatch.delenv("CALDB", raising=False)
+    with pytest.warns(UserWarning, match="Using default NuSTAR rmf."):
+        with pytest.raises(ValueError, match="CALDB environment variable is not set"):
+            default_nustar_rmf()
+
+
+def test_read_calibration_channels_missing_from_rmf(monkeypatch):
+    """Channels absent from the RMF get no energy, not a neighbour's energy.
+
+    ``read_calibration`` looks the channels up with ``searchsorted``, which
+    returns the position a value *would* take; unmatched channels have to be
+    dropped again afterwards.
+    """
+    curdir = os.path.abspath(os.path.dirname(__file__))
+    rmf = os.path.join(curdir, "data", "test.rmf")
+
+    # test.rmf covers channels 0-4095
+    pis = np.array([0, 10, 4095, 4096, 100000, -3])
+    es = read_calibration(pis, rmf)
+
+    assert np.all(es[:3] > 0)
+    assert np.all(es[3:] == 0)
+
+    # An RMF with no EBOUNDS at all: everything stays at zero
+    monkeypatch.setattr(
+        "hendrics.calibrate.read_rmf",
+        lambda _: (np.array([]), np.array([]), np.array([])),
+    )
+    es = read_calibration(pis, rmf)
+    assert es.shape == pis.shape
+    assert np.all(es == 0)
 
 
 class TestCalibrate:

@@ -1,0 +1,8 @@
+HENDRICS no longer changes global state behind the caller's back. Plotting a
+transient search switched the whole process to the ``Agg`` matplotlib backend
+and left it there, which cost a notebook user interactive plotting for
+everything they did next; a contour helper drew from — and advanced — numpy's
+global random state; and the dynamical folding search and the profile-template
+builders wrote ``Dyn.png`` and ``template.png`` into the working directory on
+every call. The plot file names are now arguments, and no plot is written
+unless one is asked for.

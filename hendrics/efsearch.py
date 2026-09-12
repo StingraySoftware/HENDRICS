@@ -18,6 +18,7 @@ from stingray.pulse.search import (
 )
 from stingray.stats import (
     a_from_ssig,
+    pds_probability,
     pf_upper_limit,
     power_confidence_limits,
 )
@@ -33,14 +34,17 @@ from .base import (
     deorbit_events,
     find_peaks_in_image,
     fold_detection_level,
+    fold_profile_probability,
     hen_root,
     histogram,
     histogram2d,
     memmapped_arange,
     njit,
     prange,
+    scratch_file_name,
     show_progress,
     z2_n_detection_level,
+    z2_n_probability,
 )
 from .fake import scramble
 from .ffa import _z_n_fast_cached, ffa_search, h_test
@@ -52,6 +56,12 @@ from .io import (
     load_events,
     load_folding,
     save_folding,
+)
+from .known_ephemeris import (
+    effective_ntrial,
+    ephemeris_from_parfile,
+    extrapolate_ephemeris,
+    prior_corrected_p_value,
 )
 
 try:
@@ -215,6 +225,11 @@ def decide_binary_parameters(
     csv_file="db.csv",
     reset=False,
 ):
+    """Sample a grid of binary parameters into a csv file.
+
+    Experimental, and only reachable from the Python API -- there is no
+    command line script for it. Needs ``pandas``.
+    """
     import pandas as pd
 
     count = 0
@@ -230,8 +245,8 @@ def decide_binary_parameters(
         "best_T0",
     ]
 
-    df = 1 / length
-    log.info(f"Recommended frequency steps: {int(np.diff(freq_range)[0] // df + 1)}")
+    freq_step = 1 / length
+    log.info(f"Recommended frequency steps: {int(np.diff(freq_range)[0] // freq_step + 1)}")
     while count < NMAX:
         # In any case, only the first loop deletes the file
         if count > 0:
@@ -268,16 +283,21 @@ def folding_orbital_search(
     fun=epoch_folding_search,
     **fun_kwargs,
 ):
+    """Refine the binary parameters sampled by ``decide_binary_parameters``.
+
+    Experimental, and only reachable from the Python API -- there is no
+    command line script for it. Needs ``pandas``.
+    """
     import pandas as pd
 
     times = (events.time - events.gti[0, 0]).astype(np.float64)
     for chunk in pd.read_csv(parameter_csv_file, chunksize=chunksize):
-        try:
-            chunk["done"][0]
-        except Exception:
+        if "done" not in chunk.columns or len(chunk) == 0:
             continue
+        # ``chunk`` keeps the labels it had in the full table, so every lookup
+        # inside it has to be positional.
         for i in range(len(chunk)):
-            if chunk["done"][i]:
+            if chunk["done"].iloc[i]:
                 continue
 
             row = chunk.iloc[i]
@@ -301,12 +321,11 @@ def folding_orbital_search(
                     best_T0 = T0
                 if stats[0] < min_stats:
                     min_stats = stats[0]
-            idx = chunk.index[i]
-            chunk.iloc[idx, chunk.columns.get_loc("max_stat")] = max_stats
-            chunk.iloc[idx, chunk.columns.get_loc("min_stat")] = min_stats
-            chunk.iloc[idx, chunk.columns.get_loc("best_T0")] = best_T0
+            chunk.iloc[i, chunk.columns.get_loc("max_stat")] = max_stats
+            chunk.iloc[i, chunk.columns.get_loc("min_stat")] = min_stats
+            chunk.iloc[i, chunk.columns.get_loc("best_T0")] = best_T0
 
-            chunk.iloc[idx, chunk.columns.get_loc("done")] = True
+            chunk.iloc[i, chunk.columns.get_loc("done")] = True
         _save_df_to_csv(chunk, outfile)
 
 
@@ -434,7 +453,7 @@ def _average_and_z_sub_search(profiles, n=2):
     """
     nprof = len(profiles)
     # Only use powers of two
-    nprof = int(2 ** np.log2(nprof))
+    nprof = 2 ** int(np.log2(nprof))
     profiles = profiles[:nprof]
 
     nbin = len(profiles[0])
@@ -522,21 +541,23 @@ def transient_search(
 
     Other Parameters
     ----------------
+    fdot : float, default 0
+        Frequency derivative to fold the data with
     nbin : int
         Number of bins to divide the profile into
     nprof : int, default None
         number of slices of the dataset to use. If None, we use 8 times nbin.
         Motivation in the comments.
-    npfact : int, default 2
-        maximum "sliding" of the dataset, in phase.
-    oversample : int, default 8
+    n : int, default 1
+        Number of harmonics of the Z^2_n statistics
+    oversample : int, default 4
         Oversampling wrt the standard FFT delta f = 1/T
-    search_fdot : bool, default False
-        Switch fdot search on or off
     t0 : float, default min(times)
         starting time
     t1 : float, default max(times)
         stop time
+    force_memmap : bool, default False
+        Force the use of memory-mapped profiles, however small the dataset
     """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
@@ -558,7 +579,7 @@ def transient_search(
     times -= meantime
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
-    log.info(f"Maximum error on the phase expected when casting to double: " f"{maxerr}")
+    log.info(f"Maximum error on the phase expected when casting to double: {maxerr}")
     if maxerr > 1 / nbin / 10:
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
@@ -597,10 +618,8 @@ def transient_search(
             results_shape = (len(allvalues), nave.size, results.shape[1])
             use_memmap = force_memmap
             if np.prod(results_shape) > 1e7 or force_memmap:
-                import tempfile
-
-                tmp_results = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
-                tmp_f = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+                tmp_results = scratch_file_name()
+                tmp_f = scratch_file_name()
                 log.info(
                     "Transient search results are very large. "
                     f"Using memmapped arrays ({tmp_results}; "
@@ -623,7 +642,7 @@ def transient_search(
     times = dt * np.arange(all_results.shape[2])
     final_results_shape = (nave.size, all_results.shape[2], all_results.shape[0])
     if use_memmap:
-        tmp_results_stats = tempfile.NamedTemporaryFile(delete=True).name + "_hen.npy"
+        tmp_results_stats = scratch_file_name()
         all_results_stats = np.lib.format.open_memmap(
             tmp_results_stats, mode="w+", dtype=results.dtype, shape=final_results_shape
         )
@@ -643,9 +662,15 @@ def transient_search(
     results.stats = all_results_stats
 
     if use_memmap:
-        os.remove(all_results.filename)
-        os.remove(all_freqs.filename)
-        del all_results, all_freqs
+        # ``all_results`` is the large scratch file and nothing else refers to
+        # it any more, so free the disk right away. Close the mapping *before*
+        # deleting the file: Windows refuses to remove a file that is still
+        # memory-mapped. ``all_freqs`` is handed to the caller inside
+        # ``results``, so its file has to stay until the scratch directory
+        # goes away at exit.
+        results_fname = all_results.filename
+        del all_results
+        os.remove(results_fname)
 
     return results
 
@@ -678,13 +703,26 @@ def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=Fa
         Whether to force plotting even if the results are too large.
     """
     import matplotlib as mpl
+
+    # The frames are grabbed straight from the canvas buffer, which needs a
+    # non-interactive backend. Put it back afterwards: this runs inside the
+    # user's process, and a notebook user would otherwise silently lose
+    # interactive plotting for everything they do next.
+    old_backend = mpl.get_backend()
+    mpl.use("Agg")
+    try:
+        return _plot_transient_search_frames(results, gif_name, force_plotting)
+    finally:
+        mpl.use(old_backend)
+
+
+def _plot_transient_search_frames(results, gif_name, force_plotting):
+    """Render the transient-search frames.
+
+    Assumes a non-interactive backend.
+    """
     import matplotlib.pyplot as plt
 
-    if not HAS_IMAGEIO:
-        warnings.warn("imageio needed to save the transient search results into a gif image.")
-        return []
-
-    mpl.use("Agg")
     if gif_name is None:
         gif_name = "transients.gif"
 
@@ -694,6 +732,10 @@ def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=Fa
     import tqdm
 
     plot_results = (results.stats.size < 1e7) or force_plotting
+    if plot_results and not HAS_IMAGEIO:
+        warnings.warn("imageio needed to save the transient search results into a gif image.")
+        plot_results = False
+
     if not plot_results:
         log.info("Transient search results are too large to plot. Skipping plots.")
     else:
@@ -729,14 +771,14 @@ def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=Fa
         mean_line = np.mean(ima, axis=0) / sum_detl * 3
         maxidx = np.argmax(mean_line)
         maxline = mean_line[maxidx]
+        best_f = f[maxidx]
 
-        for il, line in enumerate(ima):
+        for line in ima:
             line = line / detl * 3
 
-            maxidx = np.argmax(mean_line)
-            # if line[maxidx] > maxline:
-            best_f = f[maxidx]
-            maxline = line[maxidx]
+            if line[maxidx] > maxline:
+                best_f = f[maxidx]
+                maxline = line[maxidx]
 
         max_stats_rows.append({"step": i + 1, "nave": nave, "best_f": best_f, "max_stat": maxline})
 
@@ -802,9 +844,6 @@ def _analyze_and_plot_transient_search(results, gif_name=None, force_plotting=Fa
 
         plt.close(fig)
         all_images.append(image)
-
-    if hasattr(results.stats, "filename"):
-        os.remove(results.stats.filename)
 
     vstack(max_stats_rows).write(result_name, overwrite=True)
 
@@ -958,13 +997,13 @@ def search_with_qffa(
     nbin : int
         Number of bins to divide the profile into
     nprof : int, default None
-        number of slices of the dataset to use. If None, we use 8 times nbin.
-        Motivation in the comments.
+        number of slices of the dataset to use. If None, we use
+        ``8 * nbin * npfact``. Motivation in the comments.
     npfact : int, default 2
         maximum "sliding" of the dataset, in phase.
     oversample : int, default 8
         Oversampling wrt the standard FFT delta f = 1/T
-    search_fdot : bool, default False
+    search_fdot : bool, default True
         Switch fdot search on or off
     t0 : float, default min(times)
         starting time
@@ -992,7 +1031,7 @@ def search_with_qffa(
 
     maxerr = check_phase_error_after_casting_to_double(np.max(times), f1, fdot)
     if maxerr > 1 / nbin / 10:
-        warnings.warn(f"Maximum error on the phase expected when casting to " f"double: {maxerr}")
+        warnings.warn(f"Maximum error on the phase expected when casting to double: {maxerr}")
         warnings.warn(
             "Casting to double produces non-negligible phase errors. "
             "Please use shorter light curves.",
@@ -1048,15 +1087,13 @@ def search_with_qffa(
             all_fgrid_shape = (fgrid_shape[0] * len(allvalues), fgrid_shape[1])
             log.info(f"Initializing result arrays of shape {all_fgrid_shape}")
             if all_fgrid_shape[0] * all_fgrid_shape[1] > 1e7 or force_memmap:
-                import tempfile
-
                 log.info(
                     "Large result arrays detected, using memory-mapped files to reduce "
                     "memory usage."
                 )
-                tmp_f = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
-                tmp_fdot = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
-                tmp_stat = tempfile.NamedTemporaryFile("w+").name + "_hen.npy"
+                tmp_f = scratch_file_name()
+                tmp_fdot = scratch_file_name()
+                tmp_stat = scratch_file_name()
                 all_fgrid = np.lib.format.open_memmap(
                     tmp_f, mode="w+", dtype=fgrid.dtype, shape=all_fgrid_shape
                 )
@@ -1090,7 +1127,7 @@ def search_with_qffa(
 
 
 def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
-    """'Quite fast folding' algorithm.
+    """Fast Folding Algorithm search over a range of trial periods.
 
     Parameters
     ----------
@@ -1105,15 +1142,8 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
     ----------------
     nbin : int
         Number of bins to divide the profile into
-    nprof : int, default None
-        number of slices of the dataset to use. If None, we use 8 times nbin.
-        Motivation in the comments.
-    npfact : int, default 2
-        maximum "sliding" of the dataset, in phase.
-    oversample : int, default 8
-        Oversampling wrt the standard FFT delta f = 1/T
-    search_fdot : bool, default False
-        Switch fdot search on or off
+    n : int, default 1
+        The ``n`` in the Z^2_n statistics used to score each trial period
     t0 : float, default min(times)
         starting time
     t1 : float, default max(times)
@@ -1134,7 +1164,7 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
         range=[0, length],
         bins=int(np.rint(length / dt)),
     )
-    bin_periods, stats = ffa_search(counts, dt, p0, p1)
+    bin_periods, stats = ffa_search(counts, dt, p0, p1, z_n_n=n)
     return 1 / bin_periods, stats, None, length
 
 
@@ -1201,8 +1231,17 @@ def dyn_folding_search(
     func=epoch_folding_search,
     oversample=2,
     time_step=128,
+    outfile="Dyn.png",
     **kwargs,
 ):
+    """Run a folding search in consecutive chunks of an observation.
+
+    Other Parameters
+    ----------------
+    outfile : str
+        Where to save the dynamical search image. Defaults to ``Dyn.png`` in
+        the current directory.
+    """
     import matplotlib.pyplot as plt
 
     if step is None:
@@ -1218,10 +1257,14 @@ def dyn_folding_search(
 
     stats = []
 
+    # The trial grid is the same for every chunk. Naming it here also means
+    # ``frequencies`` is bound even if every single chunk fails below.
+    trial_freqs = np.arange(fmin, fmax, step)
+    frequencies = trial_freqs
+
     for st, sp in zip(start, stop):
         times_filt = events.time[(events.time >= st) & (events.time < sp)]
 
-        trial_freqs = np.arange(fmin, fmax, step)
         try:
             results = func(times_filt, trial_freqs, **kwargs)
             frequencies, stat = results
@@ -1238,7 +1281,7 @@ def dyn_folding_search(
     )
     plt.xlabel("Frequency")
     plt.ylabel("Time")
-    plt.savefig("Dyn.png")
+    plt.savefig(outfile)
     plt.close(fig)
     return times, frequencies, np.array(stats)
 
@@ -1256,7 +1299,25 @@ def print_qffa_results(best_cand_table):
             f"{a:g} ± {e:g}" for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
         ]
 
-    print(newtable["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"][good])
+    columns = ["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"]
+    if "p_value" in newtable.colnames:
+        # A targeted search: what matters is the distance from the expected
+        # solution and the significance once that is paid for
+        columns = [
+            "mjd",
+            "f",
+            "f_offset",
+            "fdot",
+            "power",
+            "ntrial_eff",
+            "p_value",
+            "Pulsed amplitude (%)",
+        ]
+    # ``good`` is a mask when there are detections and the index of the best
+    # candidate otherwise; wrap the latter so we always print a Table
+    selected = newtable[columns]
+    selected = selected[[good]] if np.isscalar(good) else selected[good]
+    selected.pprint_all()
 
 
 def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
@@ -1282,8 +1343,12 @@ def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
     >>> vals = get_xy_boundaries_from_level(X, Y, Z, 0.5, 0, 0)
     >>> assert np.allclose(np.abs(vals), 0.44, atol=0.1)
     """
-    fig = plt.figure(np.random.random())
-    cs = fig.gca().contour(x, y, image, [level])
+    from matplotlib.figure import Figure
+
+    # A standalone Figure, not a pyplot one: it needs no figure number (the
+    # random one used here drew from, and advanced, the global random state)
+    # and never enters pyplot's registry, so there is nothing to close.
+    cs = Figure().subplots().contour(x, y, image, [level])
 
     cont, seg, idx, xm, ym, d2 = find_nearest_contour(cs, x0, y0, pixel=False)
 
@@ -1291,7 +1356,6 @@ def get_xy_boundaries_from_level(x, y, image, level, x0, y0):
     max_x = cs.allsegs[cont][seg][:, 0].max()
     min_y = cs.allsegs[cont][seg][:, 1].min()
     max_y = cs.allsegs[cont][seg][:, 1].max()
-    plt.close(fig)
 
     return min_x, max_x, min_y, max_y
 
@@ -1351,10 +1415,11 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     if hasattr(input_ef_periodogram, "oversample") and input_ef_periodogram.oversample is not None:
         ntrial /= input_ef_periodogram.oversample
         ntrial = int(ntrial)
+    epsilon_det = 0.001
     if input_ef_periodogram.kind == "Z2n":
         ndof = input_ef_periodogram.N - 1
         detlev = z2_n_detection_level(
-            epsilon=0.001,
+            epsilon=epsilon_det,
             n=int(input_ef_periodogram.N),
             ntrial=ntrial,
             n_summed_spectra=int(input_ef_periodogram.M),
@@ -1368,61 +1433,52 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     else:
         ndof = input_ef_periodogram.nbin
         detlev = fold_detection_level(
-            nbin=int(input_ef_periodogram.nbin), epsilon=0.001, ntrial=ntrial
+            nbin=int(input_ef_periodogram.nbin), epsilon=epsilon_det, ntrial=ntrial
         )
         nbin = max(16, input_ef_periodogram.nbin)
         label = rf"$\chi^2_{ndof}$ Stat"
     n_cands = 5
-    best_cands = find_peaks_in_image(input_ef_periodogram.stat, n=n_cands)
+    p_corr, n_eff = _prior_corrected_p_values(input_ef_periodogram, ntrial)
+    if p_corr is None:
+        best_cands = find_peaks_in_image(input_ef_periodogram.stat, n=n_cands)
+    else:
+        # With a known ephemeris the most interesting candidate is the most
+        # significant one *after* the trials correction, which need not be the
+        # tallest peak: a modest peak sitting on the expected solution beats a
+        # taller one at the other end of the band.
+        best_cands = find_peaks_in_image(-np.log10(np.clip(p_corr, 1e-300, 1.0)), n=n_cands)
 
     fddot = 0
     if hasattr(input_ef_periodogram, "fddots") and input_ef_periodogram.fddots is not None:
         fddot = input_ef_periodogram.fddots
 
-    best_cand_table = Table(
-        names=[
-            "fname",
-            "mjd",
-            "power",
-            "f",
-            "f_err_n",
-            "f_err_p",
-            "fdot",
-            "fdot_err_n",
-            "fdot_err_p",
-            "fddot",
-            "power_cl_0.9",
-            "pulse_amp",
-            "pulse_amp_err",
-            "pulse_amp_cl_0.1",
-            "pulse_amp_cl_0.9",
-            "pulse_amp_ul_0.9",
-            "f_idx",
-            "fdot_idx",
-            "fddot_idx",
-        ],
-        dtype=[
-            str,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            int,
-            int,
-            int,
-        ],
-    )
+    names = [
+        "fname",
+        "mjd",
+        "power",
+        "f",
+        "f_err_n",
+        "f_err_p",
+        "fdot",
+        "fdot_err_n",
+        "fdot_err_p",
+        "fddot",
+        "power_cl_0.9",
+        "pulse_amp",
+        "pulse_amp_err",
+        "pulse_amp_cl_0.1",
+        "pulse_amp_cl_0.9",
+        "pulse_amp_ul_0.9",
+        "f_idx",
+        "fdot_idx",
+        "fddot_idx",
+    ]
+    dtype = [str] + [float] * 15 + [int] * 3
+    if p_corr is not None:
+        names += ["f_offset", "fdot_offset", "ntrial_eff", "p_value"]
+        dtype += [float] * 4
+
+    best_cand_table = Table(names=names, dtype=dtype)
     best_cand_table["power"].info.format = ".2f"
     best_cand_table["power_cl_0.9"].info.format = ".2f"
     best_cand_table["fdot"].info.format = ".2e"
@@ -1432,13 +1488,23 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     best_cand_table["pulse_amp"].info.format = ".2f"
     best_cand_table["pulse_amp_err"].info.format = ".2f"
     best_cand_table["pulse_amp_ul_0.9"].info.format = ".2f"
+    if p_corr is not None:
+        best_cand_table["f_offset"].info.format = ".3e"
+        best_cand_table["fdot_offset"].info.format = ".2e"
+        best_cand_table["ntrial_eff"].info.format = ".1f"
+        best_cand_table["p_value"].info.format = ".2e"
 
     for i, idx in enumerate(best_cands):
         f_idx = fdot_idx = fddot_idx = 0
         if len(input_ef_periodogram.stat.shape) > 1 and input_ef_periodogram.stat.shape[0] > 1:
+            # ``search_with_qffa`` returns transposed grids: axis 0 runs over
+            # fdot, axis 1 over frequency. ``f_idx`` is therefore the row to
+            # cut along to get the stat-vs-frequency curve, and ``fdot_idx``
+            # the column giving the stat-vs-fdot curve. ``plot.py`` reads the
+            # ``f_idx``/``fdot_idx`` table columns with the same convention.
             f_idx, fdot_idx = idx
             allfreqs = input_ef_periodogram.freq[f_idx, :]
-            allfdots = input_ef_periodogram.freq[:, fdot_idx]
+            allfdots = input_ef_periodogram.fdots[:, fdot_idx]
             allstats_f = input_ef_periodogram.stat[f_idx, :]
             allstats_fdot = input_ef_periodogram.stat[:, fdot_idx]
             f, fdot = (
@@ -1478,9 +1544,18 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
         if input_ef_periodogram.ncounts is None:
             continue
 
+        # A targeted search pays fewer trials, so it uses its own, lower
+        # threshold: what counts is the corrected p-value, not the blind
+        # detection level.
+        idx_tuple = None
+        detected = max_stat >= detlev
+        if p_corr is not None:
+            idx_tuple = (f_idx, fdot_idx) if p_corr.ndim > 1 else f_idx
+            detected = p_corr[idx_tuple] < epsilon_det
+
         sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=input_ef_periodogram.N)
         amp = amp_err = amp_ul = amp_1 = amp_0 = np.nan
-        if max_stat < detlev:
+        if not detected:
             amp_ul = a_from_ssig(sig_1, input_ef_periodogram.ncounts) * 100
         else:
             amp = a_from_ssig(max_stat, input_ef_periodogram.ncounts) * 100
@@ -1488,37 +1563,43 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
             amp_0 = a_from_ssig(sig_0, input_ef_periodogram.ncounts) * 100
             amp_1 = a_from_ssig(sig_1, input_ef_periodogram.ncounts) * 100
 
-        best_cand_table.add_row(
-            [
-                input_ef_periodogram.filename,
-                input_ef_periodogram.pepoch,
-                max_stat,
-                f,
-                fmin - f,
-                fmax - f,
-                fdot,
-                fdotmin - fdot,
-                fdotmax - fdot,
-                fddot,
-                sig_0,
-                amp,
-                amp_err,
-                amp_0,
-                amp_1,
-                amp_ul,
-                f_idx,
-                fdot_idx,
-                fddot_idx,
+        row = [
+            input_ef_periodogram.filename,
+            input_ef_periodogram.pepoch,
+            max_stat,
+            f,
+            fmin - f,
+            fmax - f,
+            fdot,
+            fdotmin - fdot,
+            fdotmax - fdot,
+            fddot,
+            sig_0,
+            amp,
+            amp_err,
+            amp_0,
+            amp_1,
+            amp_ul,
+            f_idx,
+            fdot_idx,
+            fddot_idx,
+        ]
+        if p_corr is not None:
+            row += [
+                f - input_ef_periodogram.known_freq,
+                fdot - input_ef_periodogram.known_fdot,
+                float(n_eff[idx_tuple]),
+                float(p_corr[idx_tuple]),
             ]
-        )
-        if max_stat < detlev:
+        best_cand_table.add_row(row)
+
+        if not detected:
             # Only add one candidate
             continue
 
         if fname is not None:
             Table({"freq": allfreqs, "stat": allstats_f}).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}'
-                f"_cand_{n_cands - i - 1}_fdot{fdot}.csv",
+                f"{fname.replace(HEN_FILE_EXTENSION, '')}_cand_{n_cands - i - 1}_fdot{fdot}.csv",
                 overwrite=True,
                 format="ascii",
             )
@@ -1527,7 +1608,7 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
 
         if fname is not None:
             Table({"fdot": allfdots, "stat": allstats_fdot}).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}' f"_cand_{n_cands - i - 1}_f{f}.dat",
+                f"{fname.replace(HEN_FILE_EXTENSION, '')}_cand_{n_cands - i - 1}_f{f}.dat",
                 overwrite=True,
                 format="ascii",
             )
@@ -1565,10 +1646,141 @@ def analyze_qffa_results(fname):
     return ef, best_cand_table
 
 
+def _add_known_ephemeris_args(parser):
+    """Add the options describing a previously known spin solution."""
+    parser.add_argument(
+        "--known-freq",
+        type=float,
+        default=None,
+        help="Spin frequency (Hz) of a previously known solution. When given, "
+        "the search becomes targeted: candidates close to the solution, "
+        "extrapolated to the epoch of this observation, are charged far fewer "
+        "trials than in a blind search. The solution must be known "
+        "*beforehand*: picking it after looking at the periodogram "
+        "invalidates the correction",
+    )
+    parser.add_argument(
+        "--known-fdot",
+        type=float,
+        default=0.0,
+        help="First frequency derivative (Hz/s) of the known solution",
+    )
+    parser.add_argument(
+        "--known-fddot",
+        type=float,
+        default=0.0,
+        help="Second frequency derivative (Hz/s^2) of the known solution",
+    )
+    parser.add_argument(
+        "--known-pepoch",
+        type=float,
+        default=None,
+        help="Reference epoch (MJD) of the known solution",
+    )
+    parser.add_argument(
+        "--known-par",
+        type=str,
+        default=None,
+        help="Parameter file in TEMPO2/PINT format containing the known "
+        "solution, as an alternative to --known-freq and friends",
+    )
+    return parser
+
+
+def _known_ephemeris_at(args, target_epoch):
+    """Extrapolate the known solution, if any, to ``target_epoch``.
+
+    Returns a pair of NaNs when no known solution was given on the command
+    line, which is how the rest of the code recognizes a blind search.
+    """
+    if getattr(args, "known_par", None) is not None:
+        freq, fdot, fddot, pepoch = ephemeris_from_parfile(args.known_par)
+    elif getattr(args, "known_freq", None) is not None:
+        freq = args.known_freq
+        fdot = args.known_fdot
+        fddot = args.known_fddot
+        pepoch = args.known_pepoch
+    else:
+        return np.nan, np.nan
+
+    if pepoch is None:
+        raise ValueError("--known-pepoch is needed together with --known-freq")
+    if target_epoch is None or not np.isfinite(target_epoch):
+        raise ValueError("The search has no valid reference epoch (is MJDREF set?)")
+
+    freq, fdot, _ = extrapolate_ephemeris(
+        freq, fdot=fdot, fddot=fddot, pepoch=pepoch, target_epoch=target_epoch
+    )
+    log.info(
+        f"Known ephemeris extrapolated to MJD {target_epoch}: f={freq!r} Hz, fdot={fdot!r} Hz/s"
+    )
+    return freq, fdot
+
+
+def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
+    """Corrected p-value of every cell of the search plane.
+
+    Each cell is charged a number of trials proportional to how much of the
+    search plane lies closer to the known ephemeris than the cell does, so a
+    candidate landing on the expected solution costs a single trial and one at
+    the far edge of the band costs the full blind-search count.
+
+    Returns ``(None, None)`` when no known ephemeris was given.
+    """
+    known_freq = getattr(input_ef_periodogram, "known_freq", np.nan)
+    known_fdot = getattr(input_ef_periodogram, "known_fdot", np.nan)
+    if known_freq is None or not np.isfinite(known_freq):
+        return None, None
+
+    freq = np.asarray(input_ef_periodogram.freq)
+    stat = np.asarray(input_ef_periodogram.stat)
+    fdots = np.asarray(input_ef_periodogram.fdots)
+    search_fdot = fdots.shape == stat.shape and stat.ndim > 1 and stat.shape[0] > 1
+
+    if stat.ndim > 1:
+        # ``search_with_qffa`` grids vary in frequency along the last axis and
+        # in fdot along the first one
+        f_step = np.median(np.diff(freq[0, :]))
+        fdot_step = np.median(np.diff(fdots[:, 0])) if search_fdot else None
+        delta_fdot = fdots - known_fdot if search_fdot else 0.0
+    else:
+        f_step = np.median(np.diff(freq))
+        fdot_step = None
+        delta_fdot = 0.0
+
+    if search_fdot and not np.isfinite(known_fdot):
+        warnings.warn(
+            "A known frequency was given for an fdot search, but no known fdot. "
+            "Assuming the known solution has fdot=0."
+        )
+        delta_fdot = fdots
+
+    n_eff = effective_ntrial(
+        freq - known_freq,
+        delta_fdot,
+        f_step=f_step,
+        fdot_step=fdot_step,
+        n_grid=stat.size,
+        ntrial_blind=ntrial_blind,
+        search_fdot=search_fdot,
+    )
+
+    if input_ef_periodogram.kind == "Z2n":
+        p_single = z2_n_probability(
+            stat,
+            n=int(input_ef_periodogram.N),
+            n_summed_spectra=int(input_ef_periodogram.M),
+        )
+    else:
+        p_single = fold_profile_probability(stat, int(input_ef_periodogram.nbin))
+
+    return prior_corrected_p_value(p_single, n_eff), n_eff
+
+
 def _common_parser(args=None):
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = "Search for pulsars using the epoch folding or the Z_n^2 " "algorithm"
+    description = "Search for pulsars using the epoch folding or the Z_n^2 algorithm"
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs="+")
@@ -1602,14 +1814,14 @@ def _common_parser(args=None):
         "--mean-fdot",
         type=float,
         required=False,
-        help="Mean fdot to fold " "(only useful when using --fast)",
+        help="Mean fdot to fold (only useful when using --fast)",
         default=0,
     )
     parser.add_argument(
         "--mean-fddot",
         type=float,
         required=False,
-        help="Mean fddot to fold " "(only useful when using --fast)",
+        help="Mean fddot to fold (only useful when using --fast)",
         default=0,
     )
     parser.add_argument(
@@ -1658,14 +1870,13 @@ def _common_parser(args=None):
         "--segment-size",
         default=1e32,
         type=float,
-        help="Size of the event list segment to use (default "
-        "None, implying the whole observation)",
+        help="Size of the event list segment to use (default None, implying the whole observation)",
     )
     parser.add_argument(
         "--step",
         default=None,
         type=float,
-        help="Step size of the frequency axis. Defaults to " "1/oversample/obs_length. ",
+        help="Step size of the frequency axis. Defaults to 1/oversample/obs_length. ",
     )
     parser.add_argument(
         "--oversample",
@@ -1679,7 +1890,7 @@ def _common_parser(args=None):
         "--fast",
         help="Use a faster folding algorithm. "
         "It automatically searches for the first spin "
-        "derivative using an optimized step."
+        "derivative using an optimized step. "
         "This option ignores expocorr, fdotmin/max, "
         "segment-size, and step",
         default=False,
@@ -1695,7 +1906,7 @@ def _common_parser(args=None):
     )
     parser.add_argument(
         "--transient",
-        help="Look for transient emission (produces an animated" " GIF with the dynamic Z search)",
+        help="Look for transient emission (produces an animated GIF with the dynamic Z search)",
         default=False,
         action="store_true",
     )
@@ -1720,7 +1931,7 @@ def _common_parser(args=None):
         "--conflevel",
         default=99,
         type=float,
-        help="percent confidence level for thresholding " "[0-100).",
+        help="percent confidence level for thresholding [0-100).",
     )
 
     parser.add_argument(
@@ -1756,6 +1967,8 @@ def _common_parser(args=None):
         action="store_true",
     )
 
+    _add_known_ephemeris_args(parser)
+
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ["deorbit", "loglevel", "debug"])
 
@@ -1785,6 +1998,7 @@ def _common_main(args, func):
         mjdref = 0
         kwargs = {}
         baseline = args.nbin
+        nbin = args.nbin
         kind = "EF"
         kind_label = kind
         n = 1
@@ -1868,12 +2082,9 @@ def _common_main(args, func):
             search_fdot = True
             if args.fdotmax is not None and fdotmax <= fdotmin:
                 search_fdot = False
-            nbin = args.nbin
             if nbin / n < 8:
                 nbin = n * 8
-                warnings.warn(
-                    f"The number of bins is too small for Z search." f"Increasing to {nbin}"
-                )
+                warnings.warn(f"The number of bins is too small for Z search. Increasing to {nbin}")
             results = search_with_qffa(
                 events.time,
                 args.fmin,
@@ -1907,7 +2118,7 @@ def _common_main(args, func):
         if len(results) == 4:
             frequencies, stats, step, length = results
         elif len(results) == 6:
-            frequencies, fdots, stats, step, fdotsteps, length = results
+            frequencies, fdots, stats, step, _, length = results
 
         if length > args.dynstep and not (args.fast or args.ffa):
             _ = dyn_folding_search(
@@ -1918,14 +2129,17 @@ def _common_main(args, func):
                 func=func,
                 oversample=oversample,
                 time_step=args.dynstep,
+                outfile=hen_root(fname) + "_dyn.png",
                 **kwargs,
             )
+
+        known_freq, known_fdot = _known_ephemeris_at(args, mjdref + ref_time / 86400)
 
         efperiodogram = EFPeriodogram(
             frequencies,
             stats,
             kind,
-            args.nbin,
+            nbin,
             args.N,
             fdots=fdots,
             M=M,
@@ -1937,6 +2151,8 @@ def _common_main(args, func):
             mjdref=mjdref,
             pepoch=mjdref + ref_time / 86400,
             oversample=args.oversample,
+            known_freq=known_freq,
+            known_fdot=known_fdot,
         )
         efperiodogram.upperlim = pf_upper_limit(np.max(stats), events.time.size, n=args.N)
         efperiodogram.ncounts = events.time.size
@@ -2160,7 +2376,7 @@ def main_accelsearch(args=None):
         "--pad-to-double",
         default=False,
         action="store_true",
-        help="Pad to the double of bins " "(sort-of interbinning)",
+        help="Pad to the double of bins (sort-of interbinning)",
     )
     parser.add_argument(
         "--detrend",
@@ -2180,6 +2396,8 @@ def main_accelsearch(args=None):
         action="store_true",
         help="Correct FFT for red noise (use with caution)",
     )
+
+    _add_known_ephemeris_args(parser)
 
     args = check_negative_numbers_in_args(args)
     _add_default_args(parser, ["loglevel", "debug"])
@@ -2242,7 +2460,7 @@ def main_accelsearch(args=None):
     t0 = GTI[0, 0]
     Nbins = int(np.rint(max_length / dt))
     if Nbins > 10**8:
-        log.info(f"The number of bins is more than 100 millions: {Nbins}. " "Using memmap.")
+        log.info(f"The number of bins is more than 100 millions: {Nbins}. Using memmap.")
 
     dt = adjust_dt_for_power_of_two(dt, max_length)
 
@@ -2293,6 +2511,36 @@ def main_accelsearch(args=None):
         # Half of the bins are zeros.
         det_p_value = 0.068 * 2
 
+    known_freq, known_fdot = _known_ephemeris_at(args, events.mjdref + t0 / 86400)
+    targeted = bool(np.isfinite(known_freq))
+    single_trial_p_value = det_p_value
+    if targeted:
+        # ``accelsearch`` interprets det_p_value as the false alarm probability
+        # of the *whole* blind search, so its internal threshold rises with the
+        # width of the band. A targeted search needs to see candidates that a
+        # blind one would discard, so ask for the loosest threshold that can
+        # still be expressed, and tell the user what it bought them.
+        fft_length = max_length * 2 if args.pad_to_double else max_length
+        n_freq = max((fmax - fmin) * fft_length, 1)
+        # stingray refuses to invert a multi-trial probability closer than
+        # 1e-12 to 1, so stop an order of magnitude short of that
+        det_p_value = min(-np.expm1(n_freq * np.log1p(-single_trial_p_value)), 1 - 1e-9)
+        reachable = -np.expm1(np.log1p(-det_p_value) / n_freq)
+        log.info(
+            f"Targeted search: single-trial threshold {reachable:.2g} "
+            f"over {n_freq:.0f} frequency bins"
+        )
+        if reachable < single_trial_p_value / 10:
+            warnings.warn(
+                f"The {fmin}-{fmax} Hz band is too wide for the known ephemeris "
+                f"to buy much sensitivity: the search can only reach a "
+                f"single-trial probability of {reachable:.2g}, against the "
+                f"{single_trial_p_value:.2g} a targeted search would want. "
+                "Candidates will be ranked by their corrected significance, but "
+                "weak peaks on the expected solution may never be reported. "
+                "Narrow --fmin/--fmax around the expected frequency to fix this."
+            )
+
     fft_rescale = None
     if args.red_noise_filter:
 
@@ -2332,9 +2580,41 @@ def main_accelsearch(args=None):
         )
         results = results[~bad]
 
+    if targeted and len(results) > 0:
+        # stingray searches a grid of 1/T in frequency and delta_z/T^2 in fdot,
+        # and reports the number of frequency bins it covered as ``ntrial``
+        length = results["length"][0]
+        n_freq = int(results["ntrial"][0])
+        n_z = max(np.arange(-zmax, zmax, delta_z).size, 1)
+
+        n_eff = effective_ntrial(
+            results["frequency"] - known_freq,
+            results["fdot"] - known_fdot,
+            f_step=1 / length,
+            fdot_step=delta_z / length**2,
+            n_grid=n_freq * n_z,
+            ntrial_blind=n_freq,
+            search_fdot=True,
+        )
+        p_value = prior_corrected_p_value(pds_probability(results["power"], ntrial=1), n_eff)
+
+        results["f_offset"] = results["frequency"] - known_freq
+        results["fdot_offset"] = results["fdot"] - known_fdot
+        results["ntrial_eff"] = n_eff
+        results["p_value"] = p_value
+
+        # Filter on the corrected significance, not on raw power: this is what
+        # keeps the candidate file small despite the loosened threshold
+        n_before = len(results)
+        results = results[p_value < single_trial_p_value]
+        log.info(
+            f"{len(results)} of {n_before} candidates survive the trials "
+            "correction around the known ephemeris"
+        )
+
     if len(results) > 0:
-        results["emin"] = emin if emin else -1.0
-        results["emax"] = emax if emax else -1.0
+        results["emin"] = emin or -1.0
+        results["emax"] = emax or -1.0
         results["fmin"] = fmin
         results["fmax"] = fmax
         results["zmax"] = zmax
@@ -2344,10 +2624,15 @@ def main_accelsearch(args=None):
         results["mjdref"] = np.double(events.mjdref)
         results["pepoch"] = events.mjdref + results["time"] / 86400.0
 
-        results.sort("power")
-
         print("Best candidates:")
-        results["time", "frequency", "fdot", "power", "pepoch"][-10:][::-1].pprint()
+        if targeted:
+            results.sort("p_value")
+            results["frequency", "f_offset", "fdot", "power", "ntrial_eff", "p_value"][
+                :10
+            ].pprint_all()
+        else:
+            results.sort("power")
+            results["time", "frequency", "fdot", "power", "pepoch"][-10:][::-1].pprint()
         print(f"See all {len(results)} candidates in {outfile}")
     else:
         print("No candidates found")

@@ -1,0 +1,8 @@
+Eight modules were missing from the API reference — ``ffa``, ``fold``,
+``ml_timing``, ``parallel``, ``phaseogram``, ``phasetag``, ``power_colors`` and
+``varenergy``, which between them cover folding, phaseograms, time-of-arrival
+fitting, power colours and variability-energy spectra. They are documented now,
+and the modules that had no module docstring, or a leftover editor template
+instead of one, have a real one. Building those new pages
+turned up three docstrings whose reStructuredText did not parse, in
+``ml_pulsefit``, ``main_mpi`` and ``main_multiprocessing``; they render now.

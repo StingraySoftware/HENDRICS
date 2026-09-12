@@ -117,16 +117,16 @@ def get_livetime_per_bin(times, events, priors, dt=None, gti=None):
         e_idx = np.searchsorted(tbin_starts, ev_good, "right") - 1
         _tbins = tbin_starts[e_idx]
         livetime_array[ev_bin_good] += ev_good - _tbins
-        assert np.all(
-            ev_good - _tbins >= 0
-        ), f"Invalid boundaries. Contact the developer: {ev_good - _tbins}"
+        assert np.all(ev_good - _tbins >= 0), (
+            f"Invalid boundaries. Contact the developer: {ev_good - _tbins}"
+        )
 
         l_idx = np.searchsorted(tbin_starts, lt_good, "right")
         _tbins = tbin_starts[l_idx]
         livetime_array[lts_bin_good] += _tbins - lt_good
-        assert np.all(
-            _tbins - lt_good >= 0
-        ), f"Invalid boundaries. Contact the developer: {_tbins - lt_good}"
+        assert np.all(_tbins - lt_good >= 0), (
+            f"Invalid boundaries. Contact the developer: {_tbins - lt_good}"
+        )
 
         # Complete bins
         if bin_diff > 1:
@@ -145,24 +145,9 @@ def _plot_dead_time_from_uf(uf_file, outroot="expo"):
 
     evtdata = load_events_and_gtis(uf_file, additional_columns=additional_columns)
 
-    from stingray import EventList
-
-    events_obj = EventList(
-        time=evtdata.ev_list,
-        gti=evtdata.gti_list,
-        pi=evtdata.pi_list,
-        energy=evtdata.energy_list,
-        mjdref=evtdata.mjdref,
-        instr=evtdata.instr,
-        mission=evtdata.mission,
-        header=evtdata.header,
-        detector_id=evtdata.detector_id,
-        ephem=evtdata.ephem,
-        timeref=evtdata.timeref,
-        timesys=evtdata.timesys,
-    )
-
-    events = events_obj.time
+    # Use the raw arrays: the times and the additional columns are differenced
+    # against each other below, so they have to stay in the same order.
+    events = evtdata.ev_list
     additional = evtdata.additional_data
 
     priors = additional["PRIOR"]

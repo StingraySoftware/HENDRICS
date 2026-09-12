@@ -479,7 +479,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
                     "err": np.concatenate((profile_err, profile_err)),
                 }
             ).write(
-                f'{fname.replace(HEN_FILE_EXTENSION, "")}_folded.csv',
+                f"{fname.replace(HEN_FILE_EXTENSION, '')}_folded.csv",
                 overwrite=True,
                 format="ascii",
             )
@@ -529,7 +529,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             if hasattr(events, "mjdref") and events.mjdref is not None:
                 phascommand += f" --pepoch {pepoch}"
 
-            log.info("To see the detailed phaseogram, " f"run {phascommand}")
+            log.info(f"To see the detailed phaseogram, run {phascommand}")
 
         elif not os.path.exists(ef.filename):
             warnings.warn(ef.filename + " does not exist")
@@ -618,7 +618,7 @@ def plot_folding(fnames, figname=None, xlog=None, ylog=None, output_data_file=No
             cbar = plt.colorbar(pcol, cax=axcolor, ticks=colorticks)
 
             if len(cs.allsegs[0]) > 1:
-                warnings.warn("More than one contour found. " "Frequency estimates might be wrong")
+                warnings.warn("More than one contour found. Frequency estimates might be wrong")
             else:
                 for ax in (axffdot, axf):
                     ax.axvline(cs.allsegs[0][0][:, 0].min(), label="90% conf. lim.")

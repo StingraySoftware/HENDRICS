@@ -1,4 +1,3 @@
-import warnings
 from functools import wraps
 
 import numpy as np
@@ -21,8 +20,12 @@ try:
 except ImportError:
     HAS_NUMBA = False
 
-    def njit(**kwargs):
-        """Dummy decorator in case jit cannot be imported."""
+    def njit(*args, **kwargs):
+        """Dummy decorator in case jit cannot be imported.
+
+        Works both bare (``@njit``) and called (``@njit(cache=True)``); the
+        bare form used to raise ``TypeError`` here.
+        """
 
         def true_decorator(func):
             @wraps(func)
@@ -31,6 +34,9 @@ except ImportError:
                 return r
 
             return wrapped
+
+        if len(args) == 1 and not kwargs and callable(args[0]):
+            return true_decorator(args[0])
 
         return true_decorator
 
@@ -50,9 +56,3 @@ except ImportError:
             return wrapped_f
 
     float32 = float64 = int32 = int64 = lambda x, y: None
-
-
-def array_take(arr, indices):  # pragma: no cover
-    """Adapt np.take to arrays."""
-    warnings.warn("array_take is deprecated. Use np.take instead, also with Numba.")
-    return np.take(arr, indices)

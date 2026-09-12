@@ -6,7 +6,6 @@ from __future__ import annotations
 import copy
 import glob
 import importlib
-import logging
 import os
 import os.path
 import pickle
@@ -52,9 +51,10 @@ try:
 except Exception:
     HAS_C256 = False
 
+# netCDF has no 128-bit float (its primitive types stop at ``f8``), so there is
+# no ``cpl256`` counterpart to this: a complex256 gets split into its real and
+# imaginary parts by ``_save_data_nc`` instead.
 cpl128 = np.dtype([("real", np.double), ("imag", np.double)])
-if HAS_C256:
-    cpl256 = np.dtype([("real", np.longdouble), ("imag", np.longdouble)])
 
 
 class EFPeriodogram:
@@ -81,6 +81,8 @@ class EFPeriodogram:
         emax=None,
         ncounts=None,
         upperlim=None,
+        known_freq=np.nan,
+        known_fdot=np.nan,
     ):
         self.freq = freq
         self.stat = stat
@@ -103,6 +105,11 @@ class EFPeriodogram:
         self.mjdref = mjdref
         self.upperlim = upperlim
         self.ncounts = ncounts
+        # Spin solution expected at ``pepoch`` from a previously known
+        # ephemeris, used to charge a targeted search fewer trials than a
+        # blind one. NaN when no prior was given.
+        self.known_freq = known_freq
+        self.known_fdot = known_fdot
 
     def find_peaks(self, conflevel=99.0):
         from .base import fold_detection_level, z2_n_detection_level
@@ -198,7 +205,7 @@ def filter_energy(ev: EventList, emin: float, emax: float) -> tuple[EventList, s
     # For some reason the doctest doesn't work if I don't do this instead
     # of using warnings.warn
     if elabel == "":
-        log.error("No Energy or PI information available. " "No energy filter applied to events")
+        log.error("No Energy or PI information available. No energy filter applied to events")
         return ev, ""
 
     if emax is None and emin is None:
@@ -230,7 +237,7 @@ def _get_key(dict_like, key):
     >>> a = dict(b=1)
     >>> assert _get_key(a, 'b') == 1
     >>> _get_key(a, 'c') == ""
-     True
+    True
     """
     try:
         return dict_like[key]
@@ -333,96 +340,101 @@ def ref_mjd(fits_file, hdu=1):
 # ---- Base function to save NetCDF4 files
 def save_as_netcdf(vars, varnames, formats, fname):
     """Save variables in a NetCDF4 file."""
-    rootgrp = nc.Dataset(fname, "w", format="NETCDF4")
+    # Use as a context manager: if writing a variable raises partway through
+    # (see the `except Exception: raise` below), the file must still be closed.
+    # Otherwise the open, half-written HDF5 handle can be left dangling, and if
+    # this path is deleted and recreated by a later call (as HENDRICS test and
+    # analysis code routinely do), HDF5's file-open cache can key the new file
+    # to the stale handle and corrupt reads of it, up to segfaulting.
+    with nc.Dataset(fname, "w", format="NETCDF4") as rootgrp:
+        for iv, v in enumerate(vars):
+            dims = {}
+            dimname = varnames[iv] + "dim"
+            dimspec = (varnames[iv] + "dim",)
 
-    for iv, v in enumerate(vars):
-        dims = {}
-        dimname = varnames[iv] + "dim"
-        dimspec = (varnames[iv] + "dim",)
+            if formats[iv] == "c32":
+                # netCDF cannot store a 128-bit float, so this low-level writer
+                # can only decrease the precision. ``_save_data_nc`` splits
+                # complex256 into real and imaginary parts instead, and never
+                # gets here.
+                warnings.warn("complex256 yet unsupported", AstropyUserWarning)
+                formats[iv] = "c16"
 
-        if formats[iv] == "c32":
-            # Too complicated. Let's decrease precision
-            warnings.warn("complex256 yet unsupported", AstropyUserWarning)
-            formats[iv] = "c16"
+            if formats[iv] == "c16":
+                v = np.asarray(v)
+                # unicode_literals breaks something, I need to specify str.
+                if "cpl128" not in rootgrp.cmptypes.keys():
+                    complex128_t = rootgrp.createCompoundType(cpl128, "cpl128")
+                vcomp = np.empty(v.shape, dtype=cpl128)
+                vcomp["real"] = v.real.astype(np.float64)
+                vcomp["imag"] = v.imag.astype(np.float64)
+                v = vcomp
+                formats[iv] = complex128_t
 
-        if formats[iv] == "c16":
-            v = np.asarray(v)
-            # unicode_literals breaks something, I need to specify str.
-            if "cpl128" not in rootgrp.cmptypes.keys():
-                complex128_t = rootgrp.createCompoundType(cpl128, "cpl128")
-            vcomp = np.empty(v.shape, dtype=cpl128)
-            vcomp["real"] = v.real.astype(np.float64)
-            vcomp["imag"] = v.imag.astype(np.float64)
-            v = vcomp
-            formats[iv] = complex128_t
+            unsized = False
+            try:
+                len(v)
+            except TypeError:
+                unsized = True
 
-        unsized = False
-        try:
-            len(v)
-        except TypeError:
-            unsized = True
+            if isinstance(v, Iterable) and formats[iv] != str and not unsized:
+                dim = len(v)
+                dims[dimname] = dim
 
-        if isinstance(v, Iterable) and formats[iv] != str and not unsized:
-            dim = len(v)
-            dims[dimname] = dim
-
-            if isinstance(v[0], Iterable):
-                dim = len(v[0])
-                dims[dimname + "_2"] = dim
-                dimspec = (dimname, dimname + "_2")
-        else:
-            dims[dimname] = 1
-
-        for dimname in dims.keys():
-            rootgrp.createDimension(dimname, dims[dimname])
-        vnc = rootgrp.createVariable(varnames[iv], formats[iv], dimspec)
-        try:
-            if formats[iv] == str:
-                vnc[0] = v
+                if isinstance(v[0], Iterable):
+                    dim = len(v[0])
+                    dims[dimname + "_2"] = dim
+                    dimspec = (dimname, dimname + "_2")
             else:
-                vnc[:] = v
-        except Exception:
-            log.error(f"Bad variable: {varnames[iv]}, {formats[iv]}, {dimspec}, {v}")
-            raise
-    rootgrp.close()
+                dims[dimname] = 1
+
+            for dimname, dimlen in dims.items():
+                rootgrp.createDimension(dimname, dimlen)
+            vnc = rootgrp.createVariable(varnames[iv], formats[iv], dimspec)
+            try:
+                if formats[iv] == str:
+                    vnc[0] = v
+                else:
+                    vnc[:] = v
+            except Exception:
+                log.error(f"Bad variable: {varnames[iv]}, {formats[iv]}, {dimspec}, {v}")
+                raise
 
 
 def read_from_netcdf(fname):
     """Read from a netCDF4 file."""
-    rootgrp = nc.Dataset(fname)
-    out = {}
-    for k in rootgrp.variables.keys():
-        dum = rootgrp.variables[k]
-        values = dum.__array__()
-        # Handle special case of complex
-        if dum.dtype == cpl128:
-            arr = np.empty(values.shape, dtype=np.complex128)
-            arr.real = values["real"]
-            arr.imag = values["imag"]
-            values = arr
+    # See the comment in save_as_netcdf: always close the file, even if an
+    # unexpected variable/dtype below raises partway through.
+    with nc.Dataset(fname) as rootgrp:
+        # By default, netCDF4 applies `_FillValue`/`valid_range` masking to integer
+        # variables, returning `np.ma.MaskedArray` instead of plain `np.ndarray`.
+        # We never write fill values, and masked arrays are not drop-in
+        # replacements for ndarrays (e.g. `MaskedArray.tofile` is not implemented).
+        rootgrp.set_auto_mask(False)
+        out = {}
+        for k in rootgrp.variables.keys():
+            dum = rootgrp.variables[k]
+            values = np.asarray(dum.__array__())
+            # Handle special case of complex
+            if dum.dtype == cpl128:
+                arr = np.empty(values.shape, dtype=np.complex128)
+                arr.real = values["real"]
+                arr.imag = values["imag"]
+                values = arr
 
-        # Handle special case of complex
-        if HAS_C256 and dum.dtype == cpl256:
-            arr = np.empty(values.shape, dtype=np.complex256)
-            arr.real = values["real"]
-            arr.imag = values["imag"]
-            values = arr
+            if dum.dtype == str or dum.size == 1:
+                to_save = values[0]
+            else:
+                to_save = values
+            if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool__"):
+                # Boolean single value
+                to_save = eval(to_save.replace("__bool__", ""))
+            # Boolean array
+            elif k.startswith("__bool__"):
+                to_save = to_save.astype(bool)
+                k = k.replace("__bool__", "")
 
-        if dum.dtype == str or dum.size == 1:
-            to_save = values[0]
-        else:
-            to_save = values
-        if isinstance(to_save, (str, bytes)) and to_save.startswith("__bool_"):
-            # Boolean single value
-            to_save = eval(to_save.replace("__bool__", ""))
-        # Boolean array
-        elif k.startswith("__bool__"):
-            to_save = to_save.astype(bool)
-            k = k.replace("__bool__", "")
-
-        out[k] = to_save
-
-    rootgrp.close()
+            out[k] = to_save
 
     return out
 
@@ -609,7 +621,7 @@ def save_lcurve(lcurve, fname, lctype="Lightcurve"):
     fmt = get_file_format(fname)
 
     if hasattr(lcurve, "_mask") and lcurve._mask is not None and np.any(~lcurve._mask):
-        logging.info("The light curve has a mask. Applying it before saving.")
+        log.info("The light curve has a mask. Applying it before saving.")
         lcurve = lcurve.apply_mask(lcurve._mask, inplace=False)
         lcurve._mask = None
 
@@ -658,11 +670,8 @@ def save_folding(efperiodogram, fname):
     outdata = copy.copy(efperiodogram.__dict__)
     outdata["__sr__class__type__"] = "EFPeriodogram"
     if "best_fits" in outdata and efperiodogram.best_fits is not None:
-        model_files = []
         for i, b in enumerate(efperiodogram.best_fits):
-            mfile = fname.replace(HEN_FILE_EXTENSION, f"__mod{i}__.p")
-            save_model(b, mfile)
-            model_files.append(mfile)
+            save_model(b, fname.replace(HEN_FILE_EXTENSION, f"__mod{i}__.p"))
         outdata.pop("best_fits")
 
     if get_file_format(fname) == "pickle":
@@ -780,14 +789,9 @@ def save_pds(cpds, fname, save_all=False, save_dyn=False, no_auxil=False, save_l
         cpds.instr = "unknown"
 
     if hasattr(cpds, "best_fits") and cpds.best_fits is not None:
-        model_files = []
         for i, b in enumerate(cpds.best_fits):
-            mfile = os.path.join(
-                outdir,
-                basename + f"__mod{i}__.p",
-            )
-            save_model(b, mfile)
-            model_files.append(mfile)
+            # Mirrors the glob in ``load_pds``; keep the two in step.
+            save_model(b, os.path.join(outdir, basename + f"__mod{i}__.p"))
         del cpds.best_fits
 
     if fmt not in ["nc", "pickle"]:
@@ -952,10 +956,29 @@ def _load_data_nc(fname):
                 integer_part = dtype(contents[integer_key])
                 float_part = dtype(contents[float_key])
 
-            contents[kcorr] = (integer_part + float_part) * 10.0**log10_part
+            # The power of ten has to be the *same number* the writer divided
+            # by in ``_split_high_precision_number``, which computes it in the
+            # precision of the data. ``10.0 ** np.int64(-1)`` is a double, and
+            # a double 0.1 is not a longdouble 0.1: the mismatch comes back as
+            # a ~5e-18 relative error on the reconstructed value.
+            contents[kcorr] = (integer_part + float_part) * 10.0 ** dtype(log10_part)
 
     for k in keys_to_delete:
         del contents[k]
+
+    # The loop above has rebuilt the real and the imaginary parts of any
+    # complex256 as separate longdoubles (see ``_save_data_nc``). Pair them
+    # back up into complex numbers.
+    # The two halves are always written together by the same call, so a
+    # ``__creal__`` without its ``__cimag__`` means a corrupt file; let the
+    # resulting KeyError say so rather than returning half a number.
+    for real_key in [key for key in contents if key.startswith("__creal__")]:
+        name = real_key[len("__creal__") :]
+        imag_key = "__cimag__" + name
+        real_part = np.asarray(contents.pop(real_key), dtype=np.longdouble)
+        imag_part = np.asarray(contents.pop(imag_key), dtype=np.longdouble)
+        combined = real_part + 1j * imag_part
+        contents[name] = combined if combined.ndim > 0 else combined[()]
 
     return contents
 
@@ -1025,6 +1048,21 @@ def _save_data_nc(struct, fname, kind="data"):
             values.extend([var_I, var_log10, var_F, kind_str])
             formats.extend(["i8", "i8", "f8", str])
             varnames.extend([k + "_I", k + "_L", k + "_F", k + "_k"])
+        elif probekind == "c" and probesize > 16:
+            # A complex256. netCDF cannot store a 128-bit float in any shape or
+            # form, so split the real and the imaginary parts separately, each
+            # the same way a longdouble is split above. ``_load_data_nc`` puts
+            # the two back together. complex128 has itemsize 16 and does not
+            # come here: it is stored as a `cpl128` compound type.
+            for prefix, part in (
+                ("__creal__", np.real(var)),
+                ("__cimag__", np.imag(var)),
+            ):
+                part_size = np.result_type(part).itemsize
+                var_I, var_F, var_log10, kind_str = _split_high_precision_number(k, part, part_size)
+                values.extend([var_I, var_log10, var_F, kind_str])
+                formats.extend(["i8", "i8", "f8", str])
+                varnames.extend([prefix + k + suffix for suffix in ("_I", "_L", "_F", "_k")])
         elif probekind == str:
             values.append(var)
             formats.append(probekind)
@@ -1085,7 +1123,7 @@ def load_data(fname):
             f"The file type is not recognized fmt={fmt}. Did you convert the"
             " original files into HENDRICS format (e.g. with "
             "HENreadevents or HENlcurve)?"
-        )
+        ) from e
 
 
 # QDP format is often used in FTOOLS
@@ -1234,7 +1272,7 @@ def main(args=None):
     parser.add_argument("files", help="List of files", nargs="+")
     parser.add_argument(
         "--print-header",
-        help="Print the full FITS header if present in the " "meta data.",
+        help="Print the full FITS header if present in the meta data.",
         default=False,
         action="store_true",
     )
@@ -1267,26 +1305,19 @@ def sort_files(files):
         ftype, contents = get_file_type(f)
         instr = contents.instr
         ftypes.append(ftype)
-        if instr not in list(allfiles.keys()):
-            allfiles[instr] = []
-        # Add file name to the dictionary
-        contents.__sort__filename__ = f
-        allfiles[instr].append(contents)
+        # Keep the start time and the file name together in a local tuple. The
+        # file name used to be stored as a ``__sort__filename__`` attribute on
+        # the stingray object itself, which could collide with anything
+        # stingray decides to add later.
+        allfiles.setdefault(instr, []).append((np.min(contents.gti), f))
 
     # Check if files are all of the same kind (lcs, PDSs, ...)
     ftypes = list(set(ftypes))
     assert len(ftypes) == 1, "Files are not all of the same kind."
 
-    instrs = list(allfiles.keys())
-    for instr in instrs:
-        contents = list(allfiles[instr])
-        tstarts = [np.min(c.gti) for c in contents]
-        fnames = [c.__sort__filename__ for c in contents]
-
-        fnames = [x for (y, x) in sorted(zip(tstarts, fnames))]
-
+    for instr in list(allfiles.keys()):
         # Substitute dictionaries with the sorted list of files
-        allfiles[instr] = fnames
+        allfiles[instr] = [f for _, f in sorted(allfiles[instr])]
 
     return allfiles
 
@@ -1313,13 +1344,12 @@ def save_model(model, fname="model.p", constraints=None):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError("Accepted callable models have only one " "non-keyword argument")
+            raise TypeError("Accepted callable models have only one non-keyword argument")
         modeldata["kind"] = "callable"
         modeldata["constraints"] = constraints
     else:
         raise TypeError(
-            "The model has to be an Astropy model or a callable"
-            " with only one non-keyword argument"
+            "The model has to be an Astropy model or a callable with only one non-keyword argument"
         )
 
     with open(fname, "wb") as fobj:
@@ -1369,7 +1399,7 @@ def load_model(modelstring):
         nargs = model.__code__.co_argcount
         nkwargs = len(model.__defaults__)
         if not nargs - nkwargs == 1:
-            raise TypeError("Accepted callable models have only one " "non-keyword argument")
+            raise TypeError("Accepted callable models have only one non-keyword argument")
         return model, "callable", constraints
 
 

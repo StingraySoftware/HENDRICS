@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 from stingray import AveragedPowerspectrum, EventList
 
+from astropy.logger import AstropyUserWarning
 from hendrics.fake import main as main_fake
 from hendrics.parallel import main as main_parallel
 
@@ -96,6 +97,52 @@ class TestParallel:
         assert np.allclose(pds.unnorm_power, compare_pds.unnorm_power, rtol=1e-2)
         assert np.isclose(pds.nphots, compare_pds.nphots, rtol=1e-2)
 
+    def test_parallel_norm_rms_is_an_alias_for_frac(self):
+        """``rms`` is advertised in the --norm help text.
+
+        It used to be handed straight to stingray, which does not know it and
+        raised ``ValueError: Unknown value for the norm``.
+        """
+        out_file = tempfile.NamedTemporaryFile(suffix=".hdf5", delete=False)
+        command = [
+            self.fname,
+            "-o",
+            out_file.name,
+            "-b",
+            "0.1",
+            "-f",
+            "10.0",
+            "--method",
+            "none",
+            "--norm",
+            "rms",
+        ]
+        main_parallel(command)
+
+        pds = AveragedPowerspectrum.read(out_file.name)
+        assert pds.norm == "frac"
+        assert np.allclose(pds.power, self.pds.to_norm("frac").power, rtol=1e-2)
+
+    def test_parallel_default_outfile_and_unknown_norm(self):
+        """Without ``-o`` the output goes next to the input, not to ``out_pds.fits``.
+
+        And an unrecognized ``--norm`` falls back to leahy with a warning,
+        instead of reaching stingray and raising ``Unknown value for the norm``.
+        """
+        from hendrics.base import hen_root
+
+        expected = hen_root(self.fname) + "_pds.fits"
+        if os.path.exists(expected):
+            os.unlink(expected)
+
+        command = [self.fname, "-b", "0.1", "-f", "10.0", "--method", "none", "--norm", "bubu"]
+        with pytest.warns(AstropyUserWarning, match="Beware! Unknown normalization!"):
+            main_parallel(command)
+
+        assert os.path.exists(expected)
+        assert AveragedPowerspectrum.read(expected).norm == "leahy"
+        os.unlink(expected)
+
     @pytest.mark.parametrize("method", test_cases[1:])  # Skip "none" method for this test
     def test_parallel_versions_fail_unsorted(self, method, caplog):
         command = [
@@ -125,3 +172,29 @@ class TestParallel:
                 break
         else:
             raise AssertionError("Expected error message not found in logs")
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        # stingray's FITSTimeseriesReader trips one of two assertions on an
+        # unsorted file, depending on the data. Both mean the same thing.
+        "Start: 80000000.0; -5.117239788174629 > 0",
+        "Stop: 80000650.0; -5.117239788174629 < 0",
+    ],
+)
+def test_unsorted_error_is_reported_for_either_assertion(message, monkeypatch, caplog, tmp_path):
+    def raise_assertion(*args, **kwargs):
+        raise AssertionError(message)
+
+    monkeypatch.setattr("hendrics.parallel.main_none", raise_assertion)
+
+    fname = str(tmp_path / "fake.evt")
+    main_fake(["-o", fname, "-c", "10", "--tstart", "0", "--tstop", "100", "--seed", "42"])
+
+    main_parallel([fname, "-b", "0.1", "-f", "10.0", "--method", "none"])
+
+    assert any(
+        record.levelname == "ERROR" and "probably not sorted" in record.message
+        for record in caplog.records
+    )

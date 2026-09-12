@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """Test a full run of the codes from the command line."""
 
+import inspect
 import os
 import subprocess as sp
 
@@ -24,7 +25,7 @@ from hendrics import (
 from hendrics.io import HAS_H5PY
 from hendrics.tests import _dummy_par
 
-from . import cleanup_test_dir, find_file_pattern_in_dir
+from . import cleanup_test_dir, find_file_pattern_in_dir, hen_script
 
 try:
     FileNotFoundError
@@ -87,11 +88,11 @@ class TestFullRun:
             os.path.join(cls.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
         )
         command = (
-            f"{cls.ev_fileAcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " f"-o {cls.lcA}"
+            f"{cls.ev_fileAcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 -o {cls.lcA}"
         )
         lcurve.main(command.split())
         command = (
-            f"{cls.ev_fileBcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " f"-o {cls.lcB}"
+            f"{cls.ev_fileBcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 -o {cls.lcB}"
         )
         lcurve.main(command.split())
 
@@ -120,8 +121,7 @@ class TestFullRun:
     def test_scripts_are_installed(self):
         """Test only once that command line scripts are installed correctly."""
         fits_file = os.path.join(self.datadir, "monol_testA.evt")
-        command = f"HENreadfile {fits_file}"
-        sp.check_call(command.split())
+        sp.check_call([hen_script("HENreadfile"), fits_file])
 
     def test_get_file_type(self):
         """Test getting file type."""
@@ -131,8 +131,8 @@ class TestFullRun:
             "pds": "monol_testA_E3-50_0d000244141_128_leahy_pds",
             "cpds": "monol_test_E3-50_0d000244141_128_leahy_cpds",
         }
-        for realtype in file_list.keys():
-            fname = os.path.join(self.datadir, file_list[realtype] + HEN_FILE_EXTENSION)
+        for realtype, basename in file_list.items():
+            fname = os.path.join(self.datadir, basename + HEN_FILE_EXTENSION)
             ftype, _ = io.get_file_type(fname)
             assert ftype == realtype, "File types do not match"
 
@@ -218,6 +218,72 @@ class TestFullRun:
 
         assert os.path.exists(new_filenames[0])
         plot.main(new_filenames)
+
+    def test_power_colors_cross_odd_files_and_unrelated_names(self):
+        """``--cross`` with an odd number of files, and names with nothing in common.
+
+        The odd file used to be silently swallowed. And when the two names of a
+        pair have nothing in common, the output used to be named after a random
+        number, so two runs of the same command produced two different files.
+        """
+        import shutil
+
+        # Deliberately different lengths, so ``common_name`` falls back
+        names = ["zebra", "quokka", "aardvark"]
+        paths = []
+        for name in names:
+            path = os.path.join(self.datadir, f"{name}_ev" + HEN_FILE_EXTENSION)
+            shutil.copyfile(self.ev_fileAcal, path)
+            paths.append(path)
+
+        command = ["--cross", *paths, "-s", "16", "-b", "-6", "-f", "1", "2", "4", "8", "16"]
+        with pytest.warns(UserWarning, match="--cross needs an even number of files"):
+            new_filenames = power_colors.main(command)
+
+        # Three files make one pair; the third is dropped
+        assert len(new_filenames) == 1
+        assert os.path.exists(new_filenames[0])
+
+        # Named after both inputs, deterministically -- not after a random number
+        assert "zebra" in os.path.basename(new_filenames[0])
+        assert "quokka" in os.path.basename(new_filenames[0])
+
+        for path in paths:
+            os.unlink(path)
+
+    def test_power_colors_cli_and_api_defaults_agree(self):
+        """The CLI and the Python API must default to the same values.
+
+        They used to differ, and the Python API's own defaults could not
+        produce a result at all: ``bintime=1/32`` puts the Nyquist frequency at
+        exactly 16 Hz, the topmost default frequency edge, which is not in the
+        returned frequency range.
+        """
+        recorded = {}
+
+        def spy(fname, *args, **kwargs):
+            recorded["positional"] = args
+            return "dummy.nc"
+
+        real = power_colors.treat_power_colors
+        power_colors.treat_power_colors = spy
+        try:
+            power_colors.main(["dummy_ev.nc"])
+        finally:
+            power_colors.treat_power_colors = real
+
+        frequency_edges, segment_size, bintime, rebin, outfile, poisson_noise = recorded[
+            "positional"
+        ]
+        defaults = inspect.signature(real).parameters
+        assert frequency_edges == power_colors.DEFAULT_FREQUENCY_EDGES
+        assert segment_size == defaults["segment_size"].default
+        assert np.isclose(bintime, defaults["bintime"].default)
+        assert rebin == defaults["rebin"].default
+
+        # ...and those defaults have to bracket the default frequency edges.
+        assert 1 / segment_size <= power_colors.DEFAULT_FREQUENCY_EDGES[0]
+        assert 1 / (2 * bintime) > power_colors.DEFAULT_FREQUENCY_EDGES[-1]
 
     def test_power_colors_2files_raises_no_cross_output(self):
         """Test light curve using PI filtering."""

@@ -1,7 +1,18 @@
 import glob
 import os
 import shutil
+import sysconfig
 from pathlib import Path
+
+
+def hen_script(name):
+    """Full path of a HENDRICS console script in *this* interpreter's environment.
+
+    Calling the scripts by bare name goes through ``PATH``, which can easily
+    turn up a different HENDRICS installation altogether -- a Homebrew one, for
+    instance, whose Python knows nothing about this package.
+    """
+    return os.path.join(sysconfig.get_path("scripts"), name)
 
 
 def _dummy_par(par, pb=1e20, a1=0.0, f0=1.0):
@@ -37,7 +48,11 @@ def cleanup_test_dir(datadir):
         "*monol_test*.dat",
         "*monol_test*.png",
         "*monol_test*.txt",
+        "*monol_test*.pdf",
         "*monol_test_fake*.evt",
+        # HENphasetag's outputs. Deliberately narrower than "*monol_test*.evt",
+        # which would delete the tracked event files this directory ships.
+        "*_phasetag*.evt",
         "*bubu*",
         "*.p",
         "*.qdp",

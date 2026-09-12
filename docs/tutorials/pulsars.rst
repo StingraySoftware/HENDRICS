@@ -17,13 +17,19 @@ Let's say we have found a peak in the power density spectrum at about 0.101
 seconds, or 9.9 Hz, and we want to investigate more.
 
 We start from the _event_ file. If we have run `HENreadevents` on the original
-mission-specific event file, we have a HENRICS-format event file (ending with
+mission-specific event file, we have a HENDRICS-format event file (ending with
 `_ev.nc` or `_ev.p`), e.g.
 
 ::
 
     $ ls
     002A.evt 002A_ev.nc
+
+.. Note ::
+
+    If the source already has a measured spin solution, a blind search is not
+    the right tool: see :ref:`targeted-searches-tutorial` for how to search
+    around a known ephemeris and pay far fewer trials for it.
 
 Accelerated searches
 ~~~~~~~~~~~~~~~~~~~~~~~~~

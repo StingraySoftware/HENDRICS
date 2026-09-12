@@ -1,0 +1,7 @@
+Fixed three places where data was quietly lost. ``HENexposure`` built a
+``stingray`` event list purely to read its arrival times, which sorts them, so
+they no longer lined up with the columns they are differenced against; the
+experimental ``folding_orbital_search`` indexed each chunk of its parameter
+table with labels from the full table, so every chunk after the first raised
+inside a bare ``except`` and was discarded; and ``HENpowercolors --cross`` now
+warns about the unpaired last file of an odd-length list instead of dropping it.

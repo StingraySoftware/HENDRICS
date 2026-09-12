@@ -1,0 +1,5 @@
+Fixed file handling in ``hendrics.io`` and ``hendrics.base``: ``common_name()``
+raised ``IndexError`` on two names of different lengths, ``get_file_format()``
+did not recognise uppercase extensions or see through ``.gz``/``.bz2``/``.Z``,
+and integer columns read back from NetCDF came out as masked arrays instead of
+plain ones.

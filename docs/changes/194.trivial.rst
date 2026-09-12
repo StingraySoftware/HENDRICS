@@ -1,1 +1,0 @@
-Eliminate the only direct use of statsmodels, which could be easily avoided

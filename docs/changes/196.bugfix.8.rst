@@ -1,0 +1,3 @@
+The memory-mapped scratch files behind the large searches are now removed when
+the process exits, instead of being left in the system temporary directory.
+They cannot be deleted any earlier: the search returns views onto them.

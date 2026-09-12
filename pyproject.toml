@@ -9,14 +9,15 @@ authors = [
     { name = "Matteo Bachetti", email = "matteo@matteobachetti.it" }
 ]
 license = { text = "3-clause BSD" }
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
-    "Programming Language :: C",
-    "Programming Language :: Cython",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Scientific/Engineering :: Astronomy",
     "Topic :: Scientific/Engineering :: Physics",
@@ -33,15 +34,15 @@ keywords = [
     "space",
     "science",
 ]
+# Floors match the `oldestdeps` pins in tox.ini, which are the oldest versions
+# actually tested in CI. Anything lower is not installable on Python 3.11 anyway.
 dependencies = [
-    "numpy>=1.17",
-    "astropy>=4.0",
-    "scipy>=1.1.0",
+    "numpy>=1.23",
+    "astropy>=5.2",
+    "scipy>=1.9",
     "matplotlib>=3.8.0",
     "stingray>=2.3.2",
     "tqdm",
-    "pyyaml",
-    "pyparsing<3.2.2; python_version<'3.10'",
 ]
 
 
@@ -62,8 +63,6 @@ test_all = [
 recommended = [
     "numba",
     "h5py",
-    "pyyaml",
-    "pyfftw",
 ]
 all = [
     "hendrics[recommended]",
@@ -74,7 +73,6 @@ all = [
     "scikit-image",
 ]
 docs = [
-    "tomli>=1.1.0; python_version < '3.11'",
     "jinja2==3.1.3",
     "docutils",
     "sphinx-astropy",
@@ -101,7 +99,6 @@ HENcalibrate = "hendrics.calibrate:main"
 HENcolors = "hendrics.colors:main"
 HENcreategti = "hendrics.create_gti:main"
 HENdeorbit = "hendrics.fold:main_deorbit"
-HENdumpdyn = "hendrics.fspec:dumpdyn_main"
 HENefsearch = "hendrics.efsearch:main_efsearch"
 HENexcvar = "hendrics.exvar:main"
 HENexposure = "hendrics.exposure:main"
@@ -207,6 +204,11 @@ filterwarnings = [
     "ignore:SIMON says. Number of segments used in averaging:UserWarning",
     "ignore:.*deprecated alias for.*:DeprecationWarning",
     "ignore:.*namespace is deprecated.*:DeprecationWarning",
+    # scipy sparse matrix -> array migration, triggered from stingray.utils._als
+    # (baseline_als), not from HENDRICS code. Remove once stingray follows scipy's
+    # sparse array API. https://github.com/StingraySoftware/stingray/issues
+    "ignore:.*is being replaced by.*\\..*:DeprecationWarning:stingray",
+    "ignore:Setting the shape on a NumPy array has been deprecated.*:DeprecationWarning",
 ]
 
 [tool.towncrier]
@@ -258,23 +260,17 @@ filterwarnings = [
     [tool.coverage.run]
         source = ["hendrics"]
         omit = [
-            "hendrics/_astropy_init*",
             "hendrics/conftest.py",
-            "hendrics/*setup_package*",
             "hendrics/tests/*",
             "hendrics/compat/*",
             "hendrics/*/tests/*",
             "hendrics/extern/*",
-            "hendrics/version*",
             "hendrics/_version*",
-            "*/hendrics/_astropy_init*",
             "*/hendrics/conftest.py",
-            "*/hendrics/*setup_package*",
             "*/hendrics/tests/*",
             "*/hendrics/*/tests/*",
             "*/hendrics/extern/*",
-            "*/hendrics/version*",
-
+            "*/hendrics/_version*",
         ]
         parallel="true"
 
@@ -303,7 +299,6 @@ exclude=[
     "*.svg",
     "docs/conf.py",
     "docs/scripts/cli.rst",
-    "_astropy_init.py",
     "__init__.py",
     "compatibility.py",
 ]
@@ -313,16 +308,15 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
     # New ones should be avoided and is up to maintainers to enforce.
     "A00",
 
-    # flake8-annotations (ANN)
-    "ANN101",  # No annotation for `self`.
-    "ANN102",  # No annotation for `cls`.
-
     # flake8-bugbear (B)
     "B008",  # FunctionCallArgumentDefault
 
     # flake8-commas (COM)
     "COM812",  # TrailingCommaMissing
     "COM819",  # TrailingCommaProhibited
+
+    # flake8-copyright (CPY)
+    "CPY001",  # missing-copyright-notice. This project does not use per-file copyright headers.
 
     # pydocstyle (D)
     # Missing Docstrings
@@ -353,6 +347,9 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
     "PD",
 
     "PGH004", # noqa
+
+    # pylint (PLC)
+    "PLC0415", # import-outside-top-level. Optional dependencies are imported lazily on purpose.
 
     # pylint (PLR and PLW)
     "PLR1730", # if-stmt-min-max (not always clearer, and sometimes slower)

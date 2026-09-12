@@ -1,42 +1,38 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-"""This is proposed as an Astropy affiliated package."""
+"""High ENergy Data Reduction Interface from the Command Shell."""
 
-# Affiliated packages may add whatever they like to this file, but
-# should keep this content at the top.
-# ----------------------------------------------------------------------------
-from ._astropy_init import *
+# The version file is written at build time by setuptools_scm; it is absent in
+# a source checkout that has never been built or installed.
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = ""
 
-# ----------------------------------------------------------------------------
+# Workaround: import netCDF4 before everything else. This loads the HDF5
+# library that netCDF4 uses and not something else.
+try:
+    import netCDF4 as nc
 
-# For egg_info test builds to pass, put package imports here.
-if not _ASTROPY_SETUP_:
-    # Workaround: import netCDF4 before everything else. This loads the HDF5
-    # library that netCDF4 uses and not something else.
+    HEN_FILE_EXTENSION = ".nc"
+    HAS_NETCDF = True
+except ImportError:
+    HEN_FILE_EXTENSION = ".p"
+    HAS_NETCDF = False
 
-    try:
-        import netCDF4 as nc
+import warnings
 
-        HEN_FILE_EXTENSION = ".nc"
-        HAS_NETCDF = True
-    except ImportError:
-        HEN_FILE_EXTENSION = ".p"
-        HAS_NETCDF = False
+import stingray
 
-    import warnings
+warnings.filterwarnings("ignore", message=".*Errorbars on cross.*")
 
-    import stingray
-
-    warnings.filterwarnings("ignore", message=".*Errorbars on cross.*")
-
-    from .compat import (
-        HAS_NUMBA,
-        array_take,
-        float32,
-        float64,
-        int32,
-        int64,
-        njit,
-        prange,
-        vectorize,
-    )
+from .compat import (
+    HAS_NUMBA,
+    float32,
+    float64,
+    int32,
+    int64,
+    njit,
+    prange,
+    vectorize,
+)

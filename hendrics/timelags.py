@@ -9,7 +9,7 @@ def main(args=None):
 
     from .base import _add_default_args
 
-    description = "Read timelags from cross spectrum results and save them" " to a qdp file"
+    description = "Read timelags from cross spectrum results and save them to a qdp file"
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of files", nargs="+")
@@ -26,7 +26,13 @@ def main(args=None):
     for fname in args.files:
         cross = load_pds(fname)
 
-        lag, lag_err = cross.time_lag()
+        lag = cross.time_lag()
+        lag_err = None
+        # ``AveragedCrossspectrum`` returns a (lag, lag_err) pair; a single or
+        # Lomb-Scargle cross spectrum has no ensemble to take errors from and
+        # returns the lags alone, as a bare array.
+        if isinstance(lag, tuple):
+            lag, lag_err = lag
         out = hen_root(fname) + "_lags.qdp"
         save_as_qdp([cross.freq, lag], [None, lag_err], filename=out)
         filelist.append(out)

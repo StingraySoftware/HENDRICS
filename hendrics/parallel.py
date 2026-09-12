@@ -1,3 +1,7 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Parallel calculation of power spectra, over MPI or Python multiprocessing."""
+
+import warnings
 from functools import partial
 from multiprocessing import Pool
 
@@ -6,8 +10,10 @@ from stingray import AveragedPowerspectrum, EventList
 from stingray.fourier import positive_fft_bins
 from stingray.gti import time_intervals_from_gtis
 from stingray.io import FITSTimeseriesReader
-from stingray.loggingconfig import logger
 from stingray.utils import histogram
+
+from astropy import log
+from astropy.logger import AstropyUserWarning
 
 
 def get_data_intervals(interval_idxs, info=None, fname=None, sample_time=None):
@@ -118,7 +124,7 @@ def main_none(fname, sample_time, segment_size):
     This function uses the standard Stingray processing pipeline and does not
     parallelize the computation.
     """
-    logger.info("Using standard Stingray processing")
+    log.info("Using standard Stingray processing")
     tsreader = FITSTimeseriesReader(fname, output_class=EventList)
 
     data = tsreader[:]
@@ -134,12 +140,14 @@ def main_none(fname, sample_time, segment_size):
 
 
 def main_mpi(fname, sample_time, segment_size):
-    """
-    Perform parallel processing of time series data using MPI.
+    """Perform parallel processing of time series data using MPI.
+
     This function distributes the processing of time series intervals across multiple MPI ranks.
     Each rank processes a subset of intervals, computes partial results, and then combines them
     using a binary tree reduction algorithm to obtain the final result.
+
     Algorithm:
+
         1. The root rank (rank 0) loads time series data and computes interval boundaries.
         2. The interval information is broadcasted to all ranks.
         3. Each rank determines its assigned intervals and processes them using `single_rank_intervals`.
@@ -190,13 +198,13 @@ def main_mpi(fname, sample_time, segment_size):
 
     info = None
     if my_rank == 0:
-        logger.debug(f"{my_rank}: Loading data")
+        log.debug(f"{my_rank}: Loading data")
         info = data_lookup()
 
     info = world_comm.bcast(info, root=0)
 
     if my_rank == 0:
-        logger.debug(f"{my_rank}: Info:", info)
+        log.debug(f"{my_rank}: Info: {info}")
 
     total_n_intervals = info["n_intervals"]
 
@@ -207,8 +215,8 @@ def main_mpi(fname, sample_time, segment_size):
         (all_intervals >= my_rank * intervals_per_rank)
         & (all_intervals < (my_rank + 1) * intervals_per_rank)
     ]
-    logger.debug(
-        f"{my_rank}: Intervals {this_ranks_intervals[0] + 1} " f"to {this_ranks_intervals[-1] + 1}"
+    log.debug(
+        f"{my_rank}: Intervals {this_ranks_intervals[0] + 1} to {this_ranks_intervals[-1] + 1}"
     )
 
     # data = get_data_intervals(this_ranks_intervals)
@@ -228,22 +236,22 @@ def main_mpi(fname, sample_time, segment_size):
         parner_processors = previous_processors[1::2]
 
         if my_rank == 0:
-            logger.debug(f"{my_rank}: New processors: {new_processors}")
+            log.debug(f"{my_rank}: New processors: {new_processors}")
         if my_rank == 0:
-            logger.debug(f"{my_rank}: Partners: {parner_processors}")
+            log.debug(f"{my_rank}: Partners: {parner_processors}")
         if len(parner_processors) == 0:
             if my_rank == 0:
-                logger.debug(f"{my_rank}: Done.")
+                log.debug(f"{my_rank}: Done.")
             break
         world_comm.Barrier()
 
         for i, (sender, receiver) in enumerate(zip(parner_processors, new_processors)):
             if my_rank == 0:
-                logger.debug(f"Loop {i + 1}: {sender}, {receiver}")
+                log.debug(f"Loop {i + 1}: {sender}, {receiver}")
             tag = 10000 + 100 * sender + receiver
             if my_rank == receiver:
                 data_from_partners = np.zeros(totals.size)
-                logger.debug(f"{my_rank}: Receiving from {sender} with tag {tag}")
+                log.debug(f"{my_rank}: Receiving from {sender} with tag {tag}")
                 # Might be good to use a non-blocking receive here
                 world_comm.Recv(
                     data_from_partners,
@@ -251,15 +259,15 @@ def main_mpi(fname, sample_time, segment_size):
                     tag=tag,
                 )
                 totals += data_from_partners
-                logger.debug(f"{my_rank}: New data are now {totals}")
+                log.debug(f"{my_rank}: New data are now {totals}")
             elif my_rank == sender:
                 # Only one partner for now. Might be tweaked differently. The rest should work with
                 # any number of partners for a given processing rank
 
-                logger.debug(f"{my_rank}: Sending to {receiver} with tag {tag}")
+                log.debug(f"{my_rank}: Sending to {receiver} with tag {tag}")
                 world_comm.Send(totals, dest=receiver, tag=tag)
             else:
-                logger.debug(f"{my_rank}: Doing nothing")
+                log.debug(f"{my_rank}: Doing nothing")
 
             world_comm.Barrier()
             previous_processors = new_processors
@@ -268,7 +276,7 @@ def main_mpi(fname, sample_time, segment_size):
 
     assert len(new_processors) == 1
     if my_rank == new_processors[0]:
-        logger.debug("Results")
+        log.debug("Results")
         totals /= total_n_intervals
 
         freq = np.fft.fftfreq(data_size, d=sample_time)[positive_fft_bins(data_size)]
@@ -296,7 +304,9 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
     This function divides the input time series data into segments and distributes the analysis
     across multiple processes. Each process computes results for a subset of intervals, and the
     results are aggregated to produce the final output.
+
     Algorithm:
+
         1. Load time series data and determine Good Time Intervals (GTIs).
         2. Split the data into segments of specified size.
         3. Assign segments to worker processes based on the number of available processes (`world_size`).
@@ -337,7 +347,7 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
     info = data_lookup()
     data_size = np.rint(segment_size / sample_time).astype(int)
 
-    logger.debug("Info:", info)
+    log.debug(f"Info: {info}")
 
     total_n_intervals = info["n_intervals"]
 
@@ -354,22 +364,21 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
             ]
         )
 
-    p = Pool(world_size)
-
     totals = 0
     nphots = 0
-    for results, data_size in p.imap_unordered(
-        partial(
-            single_rank_intervals,
-            info=info,
-            fname=fname,
-            sample_time=sample_time,
-        ),
-        this_ranks_intervals,
-    ):
-        totals += results.power * results.m
-        nphots += results.nphots * results.m
-    logger.debug("Results")
+    with Pool(world_size) as p:
+        for results, data_size in p.imap_unordered(
+            partial(
+                single_rank_intervals,
+                info=info,
+                fname=fname,
+                sample_time=sample_time,
+            ),
+            this_ranks_intervals,
+        ):
+            totals += results.power * results.m
+            nphots += results.nphots * results.m
+    log.debug("Results")
     totals /= total_n_intervals
     nphots /= total_n_intervals
 
@@ -394,7 +403,12 @@ def main_multiprocessing(fname, sample_time, segment_size, world_size=8):
 def main(args=None):
     import argparse
 
-    from hendrics.base import _add_default_args, check_negative_numbers_in_args
+    from .base import (
+        _add_default_args,
+        check_negative_numbers_in_args,
+        hen_root,
+        interpret_bintime,
+    )
 
     description = (
         "Compute the Leahy-normalized power spectrum of an event list in parallel.\n"
@@ -402,37 +416,61 @@ def main(args=None):
         "mpiexec -n 10 python HENparfspec filename.fits --method mpi\n"
         "To run the algorithm in parallel using multiprocessing, use:\n"
         "python HENparfspec filename.fits --method multiprocessing --nproc 10\n"
-        "To run the algorithm sequentially, for testing purposes, just execute"
+        "To run the algorithm sequentially, for testing purposes, just execute "
         "HENparfspec filename.fits\n"
     )
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("fname", help="Input FITS file name")
-    parser.add_argument("-o", "--outfname", help="Output FITS file name", default="out_pds.fits")
+    parser.add_argument(
+        "-o",
+        "--outfname",
+        help="Output FITS file name. Default: <input root>_pds.fits, next to the input file",
+        default=None,
+    )
     parser.add_argument(
         "-b",
-        "--sample_time",
+        "--sample-time",
         type=float,
-        default=1 / 8129 / 2,
+        default=1 / 8192 / 2,
         help=(
             "Light curve bin time; if negative, interpreted"
             " as negative power of 2."
-            " Default: 2^-13, or keep input lc bin time"
-            " (whatever is larger)"
+            " Default: 2^-14 s"
         ),
     )
 
     parser.add_argument(
         "-f",
-        "--segment_size",
+        "--segment-size",
         type=float,
         default=128,
-        help="Length of FFTs. Default: 16 s",
+        help="Length of FFTs. Default: 128 s",
+    )
+    # The 8.5 spellings, kept working but out of the help text. ``SUPPRESS``
+    # defaults mean they only ever set the destination when actually given.
+    parser.add_argument(
+        "--sample_time",
+        dest="sample_time",
+        type=float,
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--segment_size",
+        dest="segment_size",
+        type=float,
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--norm",
         type=str,
         default="leahy",
-        help="Normalization to use" + " (Accepted: leahy and rms;" + ' Default: "leahy")',
+        help=(
+            "Normalization to use"
+            " (Accepted: leahy, frac, abs, none, rms, where rms is an alias"
+            ' for frac; Default: "leahy")'
+        ),
     )
     parser.add_argument(
         "--method",
@@ -455,12 +493,15 @@ def main(args=None):
     if args.debug:
         args.loglevel = "DEBUG"
 
-    logger.setLevel(args.loglevel)
+    log.setLevel(args.loglevel)
 
     fname = args.fname
 
-    sample_time = args.sample_time
+    sample_time = interpret_bintime(args.sample_time)
     segment_size = args.segment_size
+    outfname = args.outfname
+    if outfname is None:
+        outfname = hen_root(fname) + "_pds.fits"
 
     unsorted_error = False
     try:
@@ -472,7 +513,10 @@ def main(args=None):
         else:
             pds = main_none(fname, sample_time, segment_size)
     except AssertionError as e:  # pragma: no cover
-        if "Start:" in str(e):
+        # stingray's reader trips one of two assertions on an unsorted file,
+        # depending on whether it is the start or the stop edge that ends up
+        # on the wrong side. Both mean the same thing.
+        if str(e).startswith(("Start:", "Stop:")):
             unsorted_error = True
         else:
             raise
@@ -488,14 +532,22 @@ def main(args=None):
             raise
 
     if unsorted_error:
-        logger.error(
+        log.error(
             "The input file is probably not sorted. Please sort it (e.g. with ftsort) and try again."
         )
         return
 
     if pds is None:
         return
-    if args.norm != "leahy":
-        pds = pds.to_norm(args.norm)
 
-    pds.write(args.outfname)
+    normalization = args.norm.lower()
+    if normalization not in ["frac", "abs", "leahy", "none", "rms"]:
+        warnings.warn("Beware! Unknown normalization!", AstropyUserWarning)
+        normalization = "leahy"
+    if normalization == "rms":
+        normalization = "frac"
+
+    if normalization != "leahy":
+        pds = pds.to_norm(normalization)
+
+    pds.write(outfname)

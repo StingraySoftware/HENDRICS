@@ -1,0 +1,9 @@
+Corrected docstrings that described a different function. ``HENmodel``,
+``HENbaseline`` and ``HENpowercolors`` were named after other commands in their
+own entry points, ``hendrics.fold``'s module docstring described the interactive
+phaseogram, which lives in ``hendrics.phaseogram``, and ``search_with_ffa`` was
+labelled as the "quite fast folding" algorithm. In ``hendrics.efsearch``,
+``transient_search`` and ``search_with_ffa`` documented parameters they do not
+accept, and ``search_with_qffa`` gave the wrong default for ``nprof`` and stated
+that ``search_fdot`` defaults to ``False`` when it defaults to ``True`` — so a
+user reading it believed no fdot search was happening when one was.

@@ -3,9 +3,9 @@ codecov:
     # do not notify (default notification is email)
 
 comment:
-    after_n_builds: 7
-    # will leave a comment on the pull request after 7 (out of 9)
-    # continuous integration tests have completed
+    after_n_builds: 6
+    # will leave a comment on the pull request once all 6 coverage-reporting
+    # (-cov) jobs of the CI matrix have uploaded their results
 
 coverage:
   round: nearest

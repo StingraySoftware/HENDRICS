@@ -2,6 +2,7 @@
 
 import glob
 import os
+import re
 
 import numpy as np
 import pytest
@@ -266,9 +267,9 @@ class TestFullRun:
 
         lc_txt = lcdata_txt.counts
 
-        assert np.all(
-            np.abs(lc_mp - lc_txt) <= 1e-3
-        ), "Light curve data do not coincide between txt and HEN"
+        assert np.all(np.abs(lc_mp - lc_txt) <= 1e-3), (
+            "Light curve data do not coincide between txt and HEN"
+        )
 
         with pytest.warns(AstropyUserWarning, match="File exists, and noclobber"):
             command = command + " --noclobber"
@@ -335,6 +336,21 @@ class TestFullRun:
         gti_to_test = io.load_events(self.ev_fileA).gti
         assert np.allclose(gti_to_test, out_lc.gti)
 
+    def testbaselinelc_multiple_nooutroot(self):
+        """Two inputs and no ``-o`` must give two outputs, not a TypeError.
+
+        ``_baseline_lightcurves`` used to overwrite its ``outroot`` argument on
+        the first iteration, so the second file hit ``None + "_1"``.
+        """
+        a_in = os.path.join(self.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
+        b_in = os.path.join(self.datadir, "monol_testB_E3-50_lc" + HEN_FILE_EXTENSION)
+        command = f"{a_in} {b_in} -p 0.001 --lam 1e5"
+
+        lcurve.baseline_main(command.split())
+        for fname in (a_in, b_in):
+            out_lc = io.load_lcurve(base.hen_root(fname) + "_lc_baseline" + HEN_FILE_EXTENSION)
+            assert hasattr(out_lc, "base")
+
     def test_lcurve_error_uncalibrated(self):
         """Test light curve error from uncalibrated file."""
         data = os.path.join(
@@ -343,7 +359,7 @@ class TestFullRun:
         )
         command = f"{data} -e 3 50"
 
-        with pytest.raises(ValueError, match="Did you run HENcalibrate?"):
+        with pytest.raises(ValueError, match=re.escape("Did you run HENcalibrate?")):
             lcurve.main(command.split())
 
     def test_lcurve_pi_filtering(self):

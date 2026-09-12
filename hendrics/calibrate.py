@@ -23,6 +23,12 @@ def default_nustar_rmf():
               on observing time
     """
     warnings.warn("Rmf not specified. Using default NuSTAR rmf.")
+    if "CALDB" not in os.environ:
+        raise ValueError(
+            "The CALDB environment variable is not set, so the default NuSTAR "
+            "rmf cannot be found. Point CALDB at the local CALDB installation, "
+            "or pass an rmf file explicitly."
+        )
     rmf = "data/nustar/fpm/cpf/rmf/nuAdet3_20100101v002.rmf"
     path = rmf.split("/")
     newpath = os.path.join(os.environ["CALDB"], *path)
@@ -79,12 +85,24 @@ def read_calibration(pis, rmf_file=None):
         the one given by default_nustar_rmf() is used.
     """
     calp, calEmin, calEmax = read_rmf(rmf_file)
-    es = np.zeros(len(pis), dtype=float)
-    for ic, c in enumerate(calp):
-        good = pis == c
-        if not np.any(good):
-            continue
-        es[good] = (calEmin[ic] + calEmax[ic]) / 2
+    pis = np.asarray(pis)
+    es = np.zeros(pis.size, dtype=float)
+    if calp.size == 0:
+        return es
+
+    # One binary search per event, rather than one full pass over the events
+    # per RMF channel. ``calp`` is the EBOUNDS CHANNEL column, which OGIP wants
+    # increasing, but sort it here instead of trusting the file.
+    order = np.argsort(calp)
+    channels = calp[order]
+    energies = (calEmin[order] + calEmax[order]) / 2
+
+    # ``searchsorted`` returns the position a value *would* take, so channels
+    # that are not in the RMF at all have to be dropped again: they keep the
+    # zero energy the old loop left them with.
+    positions = np.searchsorted(channels, pis).clip(0, channels.size - 1)
+    found = channels[positions] == pis
+    es[found] = energies[positions[found]]
 
     return es
 

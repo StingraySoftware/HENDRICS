@@ -1,5 +1,9 @@
-"""
-@author: marta
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Variability-energy spectra: count, rms, covariance and lag spectra.
+
+Thin wrappers around the :mod:`stingray.varenergyspectrum` classes, adding
+HENDRICS input/output and conversion of the results to Astropy tables.
+Called by the ``HENvarenergy`` command line script.
 """
 
 import warnings
@@ -65,8 +69,10 @@ def varenergy_from_astropy_table(fname):
     >>> assert np.allclose(spec.spectrum_error, varen.spectrum_error)
     >>> assert np.allclose(spec.energy_intervals, varen.energy_intervals)
     >>> assert np.allclose(spec.ref_band, varen.ref_band)
-    >>> table.write("varenergyboubou.ecsv", overwrite=True)
-    >>> spec_file = varenergy_from_astropy_table("varenergyboubou.ecsv")
+    >>> import os, tempfile
+    >>> tmpfile = os.path.join(tempfile.mkdtemp(), "varenergy.ecsv")
+    >>> table.write(tmpfile, overwrite=True)
+    >>> spec_file = varenergy_from_astropy_table(tmpfile)
     >>> assert np.allclose(spec.spectrum, spec_file.spectrum)
     >>> assert np.allclose(spec.spectrum_error, spec_file.spectrum_error)
     """
@@ -135,14 +141,14 @@ def main(args=None):
         "--energy-values",
         nargs=4,
         type=str,
-        default="0.3 12 5 lin".split(" "),
-        help="Choose Emin, Emax, number of intervals," "interval spacing, lin or log",
+        default=["0.3", "12", "5", "lin"],
+        help="Choose Emin, Emax, number of intervals, interval spacing, lin or log",
     )
     parser.add_argument(
         "--segment-size",
         type=float,
         default=512,
-        help="Length of the light curve intervals to be " "averaged",
+        help="Length of the light curve intervals to be averaged",
     )
     parser.add_argument(
         "--ref-band",
@@ -168,9 +174,9 @@ def main(args=None):
         "--cross-instr",
         default=False,
         action="store_true",
-        help="Use data files in pairs, for example with the"
+        help="Use data files in pairs, for example with the "
         "reference band from one and the subbands from "
-        "the  other (useful in NuSTAR and "
+        "the other (useful in NuSTAR and "
         "multiple-detector missions)",
     )
     parser.add_argument(
@@ -202,8 +208,7 @@ def main(args=None):
         "--format",
         default="ecsv",
         help=(
-            "Output format for the table. Can be ECSV, QDP, or any other "
-            "format accepted by astropy"
+            "Output format for the table. Can be ECSV, QDP, or any other format accepted by astropy"
         ),
     )
 
@@ -266,7 +271,7 @@ def main(args=None):
         additional_output_args = {}
         if args.format == "qdp":
             additional_output_args["err_specs"] = {"serr": [3]}
-        if args.format in ["hdf5"]:
+        if args.format == "hdf5":
             additional_output_args["serialize_meta"] = True
 
         if args.rms:
