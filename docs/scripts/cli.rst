@@ -33,6 +33,9 @@ HENaccelsearch
                           [--zmax ZMAX] [--delta-z DELTA_Z] [--interbin]
                           [--pad-to-double] [--detrend DETREND]
                           [--deorbit-par DEORBIT_PAR] [--red-noise-filter]
+                          [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
+                          [--known-fddot KNOWN_FDDOT]
+                          [--known-pepoch KNOWN_PEPOCH] [--known-par KNOWN_PAR]
                           [--loglevel LOGLEVEL] [--debug]
                           fname
 
@@ -57,6 +60,26 @@ HENaccelsearch
       --deorbit-par DEORBIT_PAR
                             Parameter file in TEMPO2/PINT format
       --red-noise-filter    Correct FFT for red noise (use with caution)
+      --known-freq KNOWN_FREQ
+                            Spin frequency (Hz) of a previously known solution.
+                            When given, the search becomes targeted: candidates
+                            close to the solution, extrapolated to the epoch of
+                            this observation, are charged far fewer trials than in
+                            a blind search. The solution must be known
+                            *beforehand*: picking it after looking at the
+                            periodogram invalidates the correction
+      --known-fdot KNOWN_FDOT
+                            First frequency derivative (Hz/s) of the known
+                            solution
+      --known-fddot KNOWN_FDDOT
+                            Second frequency derivative (Hz/s^2) of the known
+                            solution
+      --known-pepoch KNOWN_PEPOCH
+                            Reference epoch (MJD) of the known solution
+      --known-par KNOWN_PAR
+                            Parameter file in TEMPO2/PINT format containing the
+                            known solution, as an alternative to --known-freq and
+                            friends
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
@@ -260,7 +283,10 @@ HENefsearch
                        [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
                        [--fit-candidates] [--curve CURVE]
                        [--fit-frequency FIT_FREQUENCY] [-N N] [--force-memmap]
-                       [-p DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
+                       [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
+                       [--known-fddot KNOWN_FDDOT] [--known-pepoch KNOWN_PEPOCH]
+                       [--known-par KNOWN_PAR] [-p DEORBIT_PAR]
+                       [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -317,6 +343,26 @@ HENefsearch
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
       --force-memmap        Force the use of memory-mapped files
+      --known-freq KNOWN_FREQ
+                            Spin frequency (Hz) of a previously known solution.
+                            When given, the search becomes targeted: candidates
+                            close to the solution, extrapolated to the epoch of
+                            this observation, are charged far fewer trials than in
+                            a blind search. The solution must be known
+                            *beforehand*: picking it after looking at the
+                            periodogram invalidates the correction
+      --known-fdot KNOWN_FDOT
+                            First frequency derivative (Hz/s) of the known
+                            solution
+      --known-fddot KNOWN_FDDOT
+                            Second frequency derivative (Hz/s^2) of the known
+                            solution
+      --known-pepoch KNOWN_PEPOCH
+                            Reference epoch (MJD) of the known solution
+      --known-par KNOWN_PAR
+                            Parameter file in TEMPO2/PINT format containing the
+                            known solution, as an alternative to --known-freq and
+                            friends
       -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
@@ -1089,7 +1135,7 @@ HENsumfspec
       -h, --help            show this help message and exit
       -o, --outname OUTNAME
                             Output file name for summed (C)PDS. Default:
-                            tot_(c)pds.nc
+                            tot_(c)pds.p
 
 
 HENvarenergy
@@ -1191,7 +1237,10 @@ HENzsearch
                       [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
                       [--fit-candidates] [--curve CURVE]
                       [--fit-frequency FIT_FREQUENCY] [-N N] [--force-memmap]
-                      [-p DEORBIT_PAR] [--loglevel LOGLEVEL] [--debug]
+                      [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
+                      [--known-fddot KNOWN_FDDOT] [--known-pepoch KNOWN_PEPOCH]
+                      [--known-par KNOWN_PAR] [-p DEORBIT_PAR]
+                      [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
 
     Search for pulsars using the epoch folding or the Z_n^2 algorithm
@@ -1248,6 +1297,26 @@ HENzsearch
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
       --force-memmap        Force the use of memory-mapped files
+      --known-freq KNOWN_FREQ
+                            Spin frequency (Hz) of a previously known solution.
+                            When given, the search becomes targeted: candidates
+                            close to the solution, extrapolated to the epoch of
+                            this observation, are charged far fewer trials than in
+                            a blind search. The solution must be known
+                            *beforehand*: picking it after looking at the
+                            periodogram invalidates the correction
+      --known-fdot KNOWN_FDOT
+                            First frequency derivative (Hz/s) of the known
+                            solution
+      --known-fddot KNOWN_FDDOT
+                            Second frequency derivative (Hz/s^2) of the known
+                            solution
+      --known-pepoch KNOWN_PEPOCH
+                            Reference epoch (MJD) of the known solution
+      --known-par KNOWN_PAR
+                            Parameter file in TEMPO2/PINT format containing the
+                            known solution, as an alternative to --known-freq and
+                            friends
       -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
