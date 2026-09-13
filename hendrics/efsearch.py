@@ -61,7 +61,9 @@ from .known_ephemeris import (
     effective_ntrial,
     ephemeris_from_parfile,
     extrapolate_ephemeris,
+    extrapolate_ephemeris_uncertainty,
     prior_corrected_p_value,
+    uncertainty_ntrial,
 )
 
 try:
@@ -1684,24 +1686,56 @@ def _add_known_ephemeris_args(parser):
         help="Parameter file in TEMPO2/PINT format containing the known "
         "solution, as an alternative to --known-freq and friends",
     )
+    parser.add_argument(
+        "--known-freq-err",
+        type=float,
+        default=None,
+        help="Uncertainty (1 sigma, Hz) on the frequency of the known solution, "
+        "at its reference epoch. It is propagated to the epoch of this "
+        "observation, and every candidate within 3 sigma of the extrapolated "
+        "solution is charged the same number of trials, so that a noise peak "
+        "close to the prediction is not favoured. Overrides the uncertainty "
+        "read from --known-par. Formal timing uncertainties are usually much "
+        "smaller than the effect of timing noise: be generous",
+    )
+    parser.add_argument(
+        "--known-fdot-err",
+        type=float,
+        default=None,
+        help="Uncertainty (1 sigma, Hz/s) on the frequency derivative of the "
+        "known solution. Overrides the uncertainty read from --known-par",
+    )
     return parser
 
 
 def _known_ephemeris_at(args, target_epoch):
     """Extrapolate the known solution, if any, to ``target_epoch``.
 
-    Returns a pair of NaNs when no known solution was given on the command
-    line, which is how the rest of the code recognizes a blind search.
+    Returns the frequency, its derivative and their uncertainties, all at
+    ``target_epoch``. The uncertainties come from the parameter file, unless
+    they are given on the command line.
+
+    Returns NaNs (and zero uncertainties) when no known solution was given on
+    the command line, which is how the rest of the code recognizes a blind
+    search.
     """
+    f_err = fdot_err = fddot_err = 0.0
     if getattr(args, "known_par", None) is not None:
-        freq, fdot, fddot, pepoch = ephemeris_from_parfile(args.known_par)
+        freq, fdot, fddot, pepoch, (f_err, fdot_err, fddot_err) = ephemeris_from_parfile(
+            args.known_par, return_errors=True
+        )
     elif getattr(args, "known_freq", None) is not None:
         freq = args.known_freq
         fdot = args.known_fdot
         fddot = args.known_fddot
         pepoch = args.known_pepoch
     else:
-        return np.nan, np.nan
+        return np.nan, np.nan, 0.0, 0.0
+
+    if getattr(args, "known_freq_err", None) is not None:
+        f_err = args.known_freq_err
+    if getattr(args, "known_fdot_err", None) is not None:
+        fdot_err = args.known_fdot_err
 
     if pepoch is None:
         raise ValueError("--known-pepoch is needed together with --known-freq")
@@ -1711,10 +1745,14 @@ def _known_ephemeris_at(args, target_epoch):
     freq, fdot, _ = extrapolate_ephemeris(
         freq, fdot=fdot, fddot=fddot, pepoch=pepoch, target_epoch=target_epoch
     )
-    log.info(
-        f"Known ephemeris extrapolated to MJD {target_epoch}: f={freq!r} Hz, fdot={fdot!r} Hz/s"
+    f_err, fdot_err = extrapolate_ephemeris_uncertainty(
+        f_err, fdot_err=fdot_err, fddot_err=fddot_err, pepoch=pepoch, target_epoch=target_epoch
     )
-    return freq, fdot
+    log.info(
+        f"Known ephemeris extrapolated to MJD {target_epoch}: f={freq!r} +- {f_err:.2g} Hz, "
+        f"fdot={fdot!r} +- {fdot_err:.2g} Hz/s"
+    )
+    return freq, fdot, f_err, fdot_err
 
 
 def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
@@ -1755,15 +1793,19 @@ def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
         )
         delta_fdot = fdots
 
-    n_eff = effective_ntrial(
-        freq - known_freq,
-        delta_fdot,
+    # Periodograms saved before uncertainties were supported have none
+    f_err = float(np.nan_to_num(getattr(input_ef_periodogram, "known_freq_err", 0.0) or 0.0))
+    fdot_err = float(np.nan_to_num(getattr(input_ef_periodogram, "known_fdot_err", 0.0) or 0.0))
+    grid = dict(
         f_step=f_step,
         fdot_step=fdot_step,
         n_grid=stat.size,
         ntrial_blind=ntrial_blind,
         search_fdot=search_fdot,
     )
+    ntrial_min = uncertainty_ntrial(f_err, fdot_err, **grid)
+
+    n_eff = effective_ntrial(freq - known_freq, delta_fdot, ntrial_min=ntrial_min, **grid)
 
     if input_ef_periodogram.kind == "Z2n":
         p_single = z2_n_probability(
@@ -2133,7 +2175,9 @@ def _common_main(args, func):
                 **kwargs,
             )
 
-        known_freq, known_fdot = _known_ephemeris_at(args, mjdref + ref_time / 86400)
+        known_freq, known_fdot, known_freq_err, known_fdot_err = _known_ephemeris_at(
+            args, mjdref + ref_time / 86400
+        )
 
         efperiodogram = EFPeriodogram(
             frequencies,
@@ -2153,6 +2197,8 @@ def _common_main(args, func):
             oversample=args.oversample,
             known_freq=known_freq,
             known_fdot=known_fdot,
+            known_freq_err=known_freq_err,
+            known_fdot_err=known_fdot_err,
         )
         efperiodogram.upperlim = pf_upper_limit(np.max(stats), events.time.size, n=args.N)
         efperiodogram.ncounts = events.time.size
@@ -2511,7 +2557,9 @@ def main_accelsearch(args=None):
         # Half of the bins are zeros.
         det_p_value = 0.068 * 2
 
-    known_freq, known_fdot = _known_ephemeris_at(args, events.mjdref + t0 / 86400)
+    known_freq, known_fdot, known_freq_err, known_fdot_err = _known_ephemeris_at(
+        args, events.mjdref + t0 / 86400
+    )
     targeted = bool(np.isfinite(known_freq))
     single_trial_p_value = det_p_value
     if targeted:
@@ -2587,14 +2635,19 @@ def main_accelsearch(args=None):
         n_freq = int(results["ntrial"][0])
         n_z = max(np.arange(-zmax, zmax, delta_z).size, 1)
 
-        n_eff = effective_ntrial(
-            results["frequency"] - known_freq,
-            results["fdot"] - known_fdot,
+        grid = dict(
             f_step=1 / length,
             fdot_step=delta_z / length**2,
             n_grid=n_freq * n_z,
             ntrial_blind=n_freq,
             search_fdot=True,
+        )
+        ntrial_min = uncertainty_ntrial(known_freq_err, known_fdot_err, **grid)
+        n_eff = effective_ntrial(
+            results["frequency"] - known_freq,
+            results["fdot"] - known_fdot,
+            ntrial_min=ntrial_min,
+            **grid,
         )
         p_value = prior_corrected_p_value(pds_probability(results["power"], ntrial=1), n_eff)
 

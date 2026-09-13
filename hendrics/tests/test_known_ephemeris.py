@@ -534,6 +534,133 @@ class TestTargetedZSearch:
         best = detected[np.argmin(detected["p_value"])]
         assert np.isclose(best["f"], self.FTRUE, atol=1e-3)
 
+    def test_uncertainty_sets_a_floor_on_the_trials(self):
+        """With an uncertain solution, the on-prior candidate pays for the region."""
+        from hendrics.efsearch import main_zsearch
+        from hendrics.io import load_folding
+
+        f_err = 1e-2
+        outfiles = main_zsearch(
+            self.common
+            + [
+                "--known-freq",
+                str(self.known_freq),
+                "--known-fdot",
+                str(self.KNOWN_FDOT),
+                "--known-pepoch",
+                str(self.KNOWN_PEPOCH),
+                "--known-freq-err",
+                str(f_err),
+            ]
+        )
+        ef = load_folding(outfiles[0])
+        # With no fdot uncertainty, the frequency one is not changed by the
+        # extrapolation
+        assert np.isclose(ef.known_freq_err, f_err)
+        assert ef.known_fdot_err == 0
+
+        expected = uncertainty_ntrial(
+            f_err,
+            0.0,
+            f_step=np.median(np.diff(ef.freq[0, :])),
+            fdot_step=np.median(np.diff(ef.fdots[:, 0])),
+            n_grid=ef.stat.size,
+            ntrial_blind=int(ef.stat.size / ef.oversample),
+            search_fdot=True,
+        )
+        # A meaningful floor, not the single trial of a precise prior
+        assert expected > 5
+
+        table = self._candidates(outfiles)
+        assert np.all(table["ntrial_eff"] >= expected * (1 - 1e-6))
+        # Paying for the whole region may well push this weak signal below the
+        # detection threshold: that is the point. It is still the most
+        # significant candidate, though.
+        best = table[np.argmin(table["p_value"])]
+        assert np.isclose(best["f"], self.FTRUE, atol=1e-3)
+        # Sitting on the prediction, it pays exactly for the uncertainty region
+        assert np.isclose(best["ntrial_eff"], expected)
+
+
+class TestKnownEphemerisAt:
+    """The known solution, and its uncertainty, at the epoch of the search."""
+
+    TEN_DAYS = 864000.0
+
+    @staticmethod
+    def _args(**kwargs):
+        from argparse import Namespace
+
+        defaults = dict(
+            known_par=None,
+            known_freq=None,
+            known_fdot=0.0,
+            known_fddot=0.0,
+            known_pepoch=None,
+            known_freq_err=None,
+            known_fdot_err=None,
+        )
+        defaults.update(kwargs)
+        return Namespace(**defaults)
+
+    @staticmethod
+    def _write_par(path):
+        with open(path, "w") as fobj:
+            print("PSR              TEST", file=fobj)
+            print("F0               1.0 1 2e-9", file=fobj)
+            print("F1               -1e-12 1 3e-18", file=fobj)
+            print("PEPOCH           50000", file=fobj)
+            print("EPHEM            DE421", file=fobj)
+            print("UNITS            TDB", file=fobj)
+        return str(path)
+
+    def test_blind_search(self):
+        from hendrics.efsearch import _known_ephemeris_at
+
+        freq, fdot, f_err, fdot_err = _known_ephemeris_at(self._args(), 50000)
+        assert np.isnan(freq)
+        assert np.isnan(fdot)
+        assert f_err == 0
+        assert fdot_err == 0
+
+    def test_no_uncertainty_given(self):
+        from hendrics.efsearch import _known_ephemeris_at
+
+        args = self._args(known_freq=1.0, known_pepoch=50000)
+        _, _, f_err, fdot_err = _known_ephemeris_at(args, 50010)
+        assert f_err == 0
+        assert fdot_err == 0
+
+    def test_command_line_errors_are_propagated(self):
+        from hendrics.efsearch import _known_ephemeris_at
+
+        args = self._args(
+            known_freq=1.0, known_pepoch=50000, known_freq_err=1e-6, known_fdot_err=1e-12
+        )
+        _, _, f_err, fdot_err = _known_ephemeris_at(args, 50010)
+        assert np.isclose(f_err, np.hypot(1e-6, 1e-12 * self.TEN_DAYS))
+        assert np.isclose(fdot_err, 1e-12)
+
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_par_file_errors_are_used(self, tmp_path):
+        from hendrics.efsearch import _known_ephemeris_at
+
+        args = self._args(known_par=self._write_par(tmp_path / "err.par"))
+        _, _, f_err, fdot_err = _known_ephemeris_at(args, 50010)
+        assert np.isclose(f_err, np.hypot(2e-9, 3e-18 * self.TEN_DAYS))
+        assert np.isclose(fdot_err, 3e-18)
+
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_command_line_overrides_the_par_file(self, tmp_path):
+        """Formal timing errors are often too optimistic: let the user widen them."""
+        from hendrics.efsearch import _known_ephemeris_at
+
+        args = self._args(known_par=self._write_par(tmp_path / "err.par"), known_freq_err=1e-3)
+        _, _, f_err, fdot_err = _known_ephemeris_at(args, 50010)
+        # The frequency error is replaced, the fdot one still comes from the file
+        assert np.isclose(f_err, np.hypot(1e-3, 3e-18 * self.TEN_DAYS))
+        assert np.isclose(fdot_err, 3e-18)
+
 
 class TestTargetedAccelSearch:
     """End-to-end: HENaccelsearch given a previously known spin solution."""
@@ -629,3 +756,33 @@ class TestTargetedAccelSearch:
     def test_wide_band_warns_that_it_buys_little(self):
         with pytest.warns(UserWarning, match="too wide for the known ephemeris"):
             self._run("wide.csv", band=("1.0", "50.0"), extra=self.prior_args)
+
+    def test_uncertainty_sets_a_floor_on_the_trials(self):
+        f_err, fdot_err = 1e-2, 2e-6
+        table = self._run(
+            "uncertain.csv",
+            extra=self.prior_args
+            + ["--known-freq-err", str(f_err), "--known-fdot-err", str(fdot_err)],
+        )
+        # The epochs are 1000 days apart: propagate the fdot error
+        dt = (self.MJDREF - self.KNOWN_PEPOCH) * 86400
+        f_err_now = np.hypot(f_err, fdot_err * dt)
+        length = table["length"][0]
+        n_freq = int(table["ntrial"][0])
+        # --zmax 10, default --delta-z 1
+        n_z = np.arange(-10, 10, 1).size
+        expected = uncertainty_ntrial(
+            f_err_now,
+            fdot_err,
+            f_step=1 / length,
+            fdot_step=1 / length**2,
+            n_grid=n_freq * n_z,
+            ntrial_blind=n_freq,
+            search_fdot=True,
+        )
+        assert expected > 5
+
+        assert np.all(table["ntrial_eff"] >= expected * (1 - 1e-6))
+        best = table[np.argmin(table["p_value"])]
+        assert np.isclose(best["frequency"], self.FTRUE, atol=2e-3)
+        assert np.isclose(best["ntrial_eff"], expected)

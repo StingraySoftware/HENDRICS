@@ -83,6 +83,8 @@ class EFPeriodogram:
         upperlim=None,
         known_freq=np.nan,
         known_fdot=np.nan,
+        known_freq_err=0.0,
+        known_fdot_err=0.0,
     ):
         self.freq = freq
         self.stat = stat
@@ -110,6 +112,10 @@ class EFPeriodogram:
         # blind one. NaN when no prior was given.
         self.known_freq = known_freq
         self.known_fdot = known_fdot
+        # Their uncertainties (one standard deviation) at ``pepoch``. Every
+        # cell inside the uncertainty region is charged the same trials.
+        self.known_freq_err = known_freq_err
+        self.known_fdot_err = known_fdot_err
 
     def find_peaks(self, conflevel=99.0):
         from .base import fold_detection_level, z2_n_detection_level
