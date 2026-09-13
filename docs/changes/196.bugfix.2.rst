@@ -1,0 +1,7 @@
+Fixed several correctness problems in the epoch-folding and Z-searches.
+``HENzsearch --fast`` rounded the number of profiles with an expression that
+was a no-op, leaving never-written zero columns in the result to be read back
+as Z² statistics; the fdot axis of the returned periodogram was filled from the
+frequency array; the transient search dropped its best-candidate comparison and
+could report an unset frequency; and the search summary CSV was skipped
+entirely when ``imageio`` was missing, even though writing it needs no plotting.

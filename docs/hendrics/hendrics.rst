@@ -76,6 +76,22 @@ hendrics.fake module
     :undoc-members:
     :show-inheritance:
 
+hendrics.ffa module
+-------------------
+
+.. automodule:: hendrics.ffa
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hendrics.fold module
+--------------------
+
+.. automodule:: hendrics.fold
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hendrics.fspec module
 ---------------------
 
@@ -100,6 +116,14 @@ hendrics.lcurve module
     :undoc-members:
     :show-inheritance:
 
+hendrics.ml_timing module
+-------------------------
+
+.. automodule:: hendrics.ml_timing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hendrics.modeling module
 ------------------------
 
@@ -108,10 +132,42 @@ hendrics.modeling module
     :undoc-members:
     :show-inheritance:
 
+hendrics.parallel module
+------------------------
+
+.. automodule:: hendrics.parallel
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hendrics.phaseogram module
+--------------------------
+
+.. automodule:: hendrics.phaseogram
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hendrics.phasetag module
+------------------------
+
+.. automodule:: hendrics.phasetag
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hendrics.plot module
 --------------------
 
 .. automodule:: hendrics.plot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hendrics.power_colors module
+----------------------------
+
+.. automodule:: hendrics.power_colors
     :members:
     :undoc-members:
     :show-inheritance:
@@ -152,6 +208,14 @@ hendrics.timelags module
 ------------------------
 
 .. automodule:: hendrics.timelags
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hendrics.varenergy module
+-------------------------
+
+.. automodule:: hendrics.varenergy
     :members:
     :undoc-members:
     :show-inheritance:

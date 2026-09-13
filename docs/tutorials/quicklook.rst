@@ -68,10 +68,11 @@ the name of the command plus -h or --help:
       -r RMF, --rmf RMF  rmf file used for calibration
       -o, --overwrite    Overwrite; default: no
 
-Some scripts (e.g. ``HENreadevents``, ``HENlcurve``, ``HENfspec``) have a
+Some scripts (e.g. ``HENreadevents``, ``HENlcurve``, ``HENcalibrate``) have a
 ``--nproc`` option, useful when one needs to treat multiple files at a
 time. The load is divided among ``nproc`` processors, that work in
-parallel cutting down considerably the execution time.
+parallel cutting down considerably the execution time. To split a single
+long observation over several processors, use ``HENparfspec``.
 
 For I/O, HENDRICS looks if the ``netCDF4`` library is installed. If it's
 found in the system, files will be saved in this format. Otherwise, the

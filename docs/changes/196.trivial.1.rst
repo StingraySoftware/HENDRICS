@@ -1,0 +1,5 @@
+Packaging and continuous integration brought up to date: a single
+``setuptools_scm`` version path, a rewritten ``MANIFEST.in``, the dead
+``requirements.txt`` removed, the tox environment list and dependency floors
+matched to what CI really tests, and the GitHub Actions pins kept current by
+Dependabot.

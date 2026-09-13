@@ -16,6 +16,11 @@ def rebin_file(filename, rebin):
 
     if rebin == int(rebin):
         contents = contents.rebin(f=rebin)
+    elif ftype == "lc":
+        raise ValueError(
+            "Light curves can only be rebinned by integer factors. "
+            "Geometrical (non-integer) rebinning is only available for (C)PDS."
+        )
     else:
         contents = contents.rebin_log(f=rebin)
 

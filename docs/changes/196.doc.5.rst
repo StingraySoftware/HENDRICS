@@ -1,0 +1,13 @@
+New tutorial, :ref:`targeted-searches-tutorial`, on searching around a
+previously measured spin solution. It works through an example — a pulsar seen
+at 0.728 Hz at MJD 56682 and 0.711 Hz at MJD 61100, searched at MJD 50000 — and
+explains how the trials are counted, including why the number of independent
+trials of a folding search cannot be taken as the band width divided by
+``1/T``: the statistic is smooth in frequency, so the effective trial count of
+its maximum depends on the threshold it is evaluated at, and Monte Carlo
+simulations put the true count 3, 5 and 10 times higher than the naive figure
+for :math:`Z^2_1`, :math:`Z^2_2` and :math:`Z^2_4`. Also documents the three
+things that can catch a user out: that the ephemeris must be fixed before the
+data are examined, that ``HENaccelsearch`` needs a narrow ``--fmin``/``--fmax``
+to reach its full sensitivity, and that ``HENzsearch --fast`` and
+``HENaccelsearch`` refer their candidates to different epochs.

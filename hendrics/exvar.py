@@ -1,6 +1,11 @@
-"""Created on Thu Aug 17 08:55:47 2017.
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Excess variance of light curves, calculated in time chunks.
 
-@author: marta
+Wraps :func:`stingray.utils.excess_variance` to produce the excess variance,
+its normalized version, or the fractional rms amplitude :math:`F_{var}` of a
+light curve, evaluated over consecutive (possibly overlapping) chunks. See
+Vaughan et al. 2003 for the definitions. Called by the ``HENexcvar`` command
+line script.
 """
 
 from stingray.utils import excess_variance
@@ -43,8 +48,8 @@ def main(args=None):
         "--fraction-step",
         type=float,
         default=0.5,
-        help="If the step is not a full chunk_length but less,"
-        "this indicates the ratio between step step and"
+        help="If the step is not a full chunk_length but less, "
+        "this indicates the ratio between step and"
         " `chunk_length`",
     )
     parser.add_argument(
@@ -80,7 +85,7 @@ def main(args=None):
                 excvar_norm, args.chunk_length, args.fraction_step
             )
         else:
-            raise ValueError("Normalization must be fvar, norm_excvar " "or excvar")
+            raise ValueError("Normalization must be fvar, norm_excvar or excvar")
         var, var_err = res
         out = hen_root(fname) + "_" + args.norm + ".qdp"
         save_as_qdp(

@@ -66,7 +66,7 @@ def _fill_in_default_information(tbheader):
         False,
         "TRUE if timestamps corrected by gnd sware",
     )
-    tbheader["COMMENT"] = "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT " "time system."
+    tbheader["COMMENT"] = "MJDREFI+MJDREFF = epoch of Jan 1, 2010, in TT time system."
     tbheader["TIMEUNIT"] = ("s", "unit for time keywords")
     return tbheader
 
@@ -155,7 +155,7 @@ def generate_fake_fits_observation(
     livetime = assign_value_if_none(livetime, tstop - tstart)
 
     if livetime > tstop - tstart:
-        raise ValueError("Livetime must be equal or smaller than " "tstop - tstart")
+        raise ValueError("Livetime must be equal or smaller than tstop - tstart")
 
     mission_info = read_mission_info(mission)
     allowed_instr = []
@@ -426,7 +426,10 @@ def scramble(
     >>> assert np.all(new_event_list.gti == event_list.gti)
     """
     new_event_list = copy.deepcopy(event_list)
-    assert np.all(np.diff(new_event_list.time) > 0)
+    # ``np.searchsorted`` below needs the times sorted, and only sorted:
+    # simultaneous events are legitimate, and the check used to reject them.
+    if np.any(np.diff(new_event_list.time) < 0):
+        raise ValueError("The input event list must be sorted in time.")
 
     idxs = np.searchsorted(new_event_list.time, new_event_list.gti)
 
@@ -519,9 +522,7 @@ def main_scramble(args=None):
 
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = (
-        "Scramble the events inside an event list, maintaining the same " "energies and GTIs"
-    )
+    description = "Scramble the events inside an event list, maintaining the same energies and GTIs"
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument(

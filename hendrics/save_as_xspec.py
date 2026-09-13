@@ -7,7 +7,7 @@ import numpy as np
 
 from astropy import log
 
-from .base import get_file_extension
+from .base import splitext_improved
 from .io import get_file_type
 
 
@@ -25,11 +25,11 @@ def save_as_xspec(fname, direct_save=False, save_lags=True):
     Notes
     -----
     Uses method described by Ingram and Done in Appendix A of
-    `this paper<https://arxiv.org/pdf/1108.0789>__`
+    `this paper <https://arxiv.org/pdf/1108.0789>`__
     """
     ftype, contents = get_file_type(fname)
 
-    outroot = fname.replace(get_file_extension(fname), "")
+    outroot = splitext_improved(fname)[0]
     outname = outroot + "_xsp.dat"
     outroot_lags = outroot + "_lags"
     outname_lags = outroot_lags + "_xsp.dat"
@@ -64,7 +64,7 @@ def main(args=None):
 
     description = (
         "Save a frequency spectrum in a qdp file that can be "
-        "read by flx2xsp and produce a XSpec-compatible spectrum"
+        "read by flx2xsp and produce a XSpec-compatible spectrum "
         "file"
     )
     parser = argparse.ArgumentParser(description=description)

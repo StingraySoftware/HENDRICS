@@ -1,0 +1,8 @@
+Extended-precision complex numbers (``complex256``, where the platform has
+them) are now saved without losing precision. They used to be silently cast
+down to ``complex128``, with a ``complex256 yet unsupported`` warning, because
+netCDF has no 128-bit float type. They are now split into their real and
+imaginary parts, each stored with the same integer + fraction + exponent
+scheme that HENDRICS already uses for ``longdouble`` values, and recombined on
+read. The relative error of a round trip drops from about ``1.4e-17`` to
+``1.7e-19``, the machine epsilon of a ``longdouble``.

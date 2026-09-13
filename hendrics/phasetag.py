@@ -1,3 +1,12 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+"""Attach a pulse phase column to the events of a FITS file.
+
+Folds the events of a mission event file with a given ephemeris or
+parameter file, and writes the resulting pulse phases back into a copy of
+the input file as a new ``Phase`` column. Called by the ``HENphasetag``
+command line script.
+"""
+
 import argparse
 import warnings
 
@@ -369,7 +378,7 @@ def main_phasetag(args=None):
         "--refTOA",
         default=None,
         type=np.longdouble,
-        help="Reference TOA in MJD (overrides --tomax) for " "reference pulse phase",
+        help="Reference TOA in MJD (overrides --tomax) for reference pulse phase",
         dest="pulse_ref_time",
     )
     parser.add_argument(

@@ -1,1 +1,0 @@
-HENfspec can now use a new parallel implementation using MPI or multiprocessing for the power spectrum

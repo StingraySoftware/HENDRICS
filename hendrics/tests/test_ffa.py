@@ -2,7 +2,7 @@ import numpy as np
 from stingray.events import EventList
 from stingray.lightcurve import Lightcurve
 
-from hendrics.efsearch import fit
+from hendrics.efsearch import fit, search_with_ffa
 from hendrics.ffa import ffa_search
 
 
@@ -89,3 +89,36 @@ def test_ffa_vs_folding_search():
 
     comparable_stats = np.array([st[idx] for idx in np.searchsorted(per, 1 / freqs)])
     assert (comparable_stats - stats + 127).std() < 127
+
+
+def test_ffa_search_uses_z_n_n():
+    """``z_n_n`` must reach the statistic, not stop at ``ffa_search``.
+
+    The Z^2_n of pure Poisson noise is chi2-distributed with 2n degrees of
+    freedom, so its mean over many trial periods is 2n.
+    """
+    rng = np.random.default_rng(1234)
+    counts = rng.poisson(100, 4096)
+
+    means = {}
+    for n in (1, 2, 4):
+        periods, stats = ffa_search(counts, 1.0, 20.0, 24.0, z_n_n=n)
+        assert stats.size > 0
+        means[n] = np.mean(stats)
+
+    for n, mean in means.items():
+        assert 1.5 * n < mean < 3 * n
+
+
+def test_search_with_ffa_passes_n_to_the_statistic():
+    """``HENzsearch --ffa -N`` used to be accepted and then ignored."""
+    rng = np.random.default_rng(4321)
+    times = np.sort(rng.uniform(0, 100, 20000))
+
+    means = {}
+    for n in (1, 2, 4):
+        _, stats, _, _ = search_with_ffa(times, 9.0, 11.0, nbin=16, n=n)
+        means[n] = np.mean(stats)
+
+    for n, mean in means.items():
+        assert 1.5 * n < mean < 3 * n

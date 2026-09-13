@@ -1,0 +1,18 @@
+The command line reference is regenerated on every documentation build. It used
+to be skipped on Read the Docs, so the site everybody reads served a committed
+copy last refreshed in December 2024: it still listed the removed ``HENdumpdyn``,
+had no section for ``HENparfspec``, and did not mention ``HENfspec
+--fill-short-btis``. The scripts are also resolved inside the building
+interpreter's own script directory rather than through ``PATH``.
+
+Fixed the broken links and commands in the front-page documentation: the
+citation link to stingray rendered as literal text, ``git clone
+git@github.com/...`` needs a colon to be a valid SSH URL, ``pip install ...
+stingray>=2.3`` had the shell create a file called ``=2.3`` instead of pinning
+anything, ``README.rst`` recommended ``python setup.py install``, and the
+copyright line and the changelog's issue links were both built from the wrong
+part of ``pyproject.toml`` — the copyright printed the maintainer's email
+address, and every issue link pointed at ``github.com/https://github.com/...``.
+The installation instructions now mention the ``[recommended]`` and ``[all]``
+extras, no longer suggest ``emcee``, which HENDRICS does not import, and give
+the right Python floor.

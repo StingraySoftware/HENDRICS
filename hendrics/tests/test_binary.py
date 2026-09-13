@@ -59,7 +59,7 @@ class TestBinary:
             os.path.join(cls.datadir, "monol_testA_E3-50_lc" + HEN_FILE_EXTENSION)
         )
         command = (
-            f"{cls.ev_fileAcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 " f"-o {cls.lcA}"
+            f"{cls.ev_fileAcal} -e 3 50 --safe-interval 100 300  --nproc 2 -b 0.5 -o {cls.lcA}"
         )
         lcurve.main(command.split())
 

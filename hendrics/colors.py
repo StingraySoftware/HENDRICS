@@ -10,10 +10,6 @@ from .base import hen_root
 from .io import HEN_FILE_EXTENSION, load_events, save_lcurve
 
 
-def colors():
-    pass
-
-
 def main(args=None):
     """Main function called by the `HENcolors` command line script."""
     import argparse
@@ -50,7 +46,7 @@ def main(args=None):
         [args.energies[2], args.energies[3]],
     ]
     if args.outfile is not None and len(files) > 1:
-        raise ValueError("Specify --output only when processing " "a single file")
+        raise ValueError("Specify --output only when processing a single file")
     for f in files:
         events = load_events(f)
         if not args.use_pi and events.energy is None:
@@ -76,13 +72,14 @@ def main(args=None):
             skip_checks=True,
         )
 
-        if args.outfile is None:
+        outfile = args.outfile
+        if outfile is None:
             label = "_E_"
             if args.use_pi:
                 label = "_PI_"
             label += "{3:g}-{2:g}_over_{1:g}-{0:g}".format(*args.energies)
-            args.outfile = hen_root(f) + label + HEN_FILE_EXTENSION
+            outfile = hen_root(f) + label + HEN_FILE_EXTENSION
         scolor.e_intervals = np.asarray([float(k) for k in args.energies])
         scolor.use_pi = args.use_pi
-        save_lcurve(scolor, args.outfile, lctype="Color")
-        print(args.outfile)
+        save_lcurve(scolor, outfile, lctype="Color")
+        print(outfile)

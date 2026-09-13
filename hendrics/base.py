@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import atexit
 import copy
 import os
+import shutil
 import sys
 import tempfile
 import urllib
@@ -56,7 +58,6 @@ except ImportError:
 
 from . import (
     HAS_NUMBA,
-    array_take,
     njit,
     prange,
 )
@@ -68,7 +69,6 @@ __all__ = [
     "_order_list_of_arrays",
     "adjust_dt_for_power_of_two",
     "adjust_dt_for_small_power",
-    "array_take",
     "check_negative_numbers_in_args",
     "common_name",
     "compute_bin",
@@ -102,6 +102,7 @@ __all__ = [
     "prange",
     "r_det",
     "r_in",
+    "scratch_file_name",
     "show_progress",
     "touch",
     "z2_n_detection_level",
@@ -155,8 +156,8 @@ DEFAULT_PARSER_ARGS["dynprofnorm"] = dict(
             "in place of the mean. Appending '_smooth' smooths the 2d "
             "array with a Gaussian filter.\n"
             "E.g. mediansub_smooth subtracts the median and smooths the "
-            "image"
-            "default None"
+            "image. "
+            "Default None"
         ),
         default=None,
         type=str,
@@ -317,13 +318,18 @@ def common_name(str1, str2, default="common"):
     'common'
     >>> common_name('A_3-50_A.nc', 'B_3-50_B.nc')
     '3-50'
+    >>> # Stripping the HENDRICS suffixes can change the relative lengths
+    >>> common_name('bbbbbb.nc', 'aaa_ev.nc')
+    'common'
     """
+    # Extract the HEN root of the name (in case they're event files) *before*
+    # comparing the lengths: stripping the suffixes can make two equally long
+    # names differ in length, and vice versa.
+    str1 = hen_root(str1)
+    str2 = hen_root(str2)
     if not len(str1) == len(str2):
         return default
     common_str = ""
-    # Extract the HEN root of the name (in case they're event files)
-    str1 = hen_root(str1)
-    str2 = hen_root(str2)
     for i, letter in enumerate(str1):
         if str2[i] == letter:
             common_str += letter
@@ -458,13 +464,13 @@ def deorbit_events(events, parameter_file=None, invert=False, ephem=None):
     """
     events = copy.deepcopy(events)
     if parameter_file is None:
-        warnings.warn("No parameter file specified for deorbit. Returning" " unaltered event list")
+        warnings.warn("No parameter file specified for deorbit. Returning unaltered event list")
         return events
     if not os.path.exists(parameter_file):
         raise FileNotFoundError(f"Parameter file {parameter_file} does not exist")
 
     if events.mjdref < 33282.0:
-        raise ValueError("MJDREF is very low (<01-01-1950), " "this is unsupported.")
+        raise ValueError("MJDREF is very low (<01-01-1950), this is unsupported.")
 
     if not HAS_PINT:
         raise ImportError(
@@ -636,30 +642,34 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     """
     Examples
     --------
-    >>> if os.path.exists('out.npy'): os.unlink('out.npy')
+    >>> import shutil
+    >>> tmpdir = tempfile.mkdtemp()
+    >>> tmpfile = os.path.join(tmpdir, 'out.npy')
     >>> x = np.random.uniform(0., 1., 100)
     >>> H, xedges = np.histogram(x, bins=5, range=[0., 1.])
-    >>> Hn = hist1d_numba_seq(x, bins=5, ranges=[0., 1.], tmp='out.npy',
+    >>> Hn = hist1d_numba_seq(x, bins=5, ranges=[0., 1.], tmp=tmpfile,
     ...                       use_memmap=True)
     >>> assert np.all(H == Hn)
     >>> # The number of bins is small, memory map was not used!
-    >>> assert not os.path.exists('out.npy')
-    >>> H, xedges = np.histogram(x, bins=10**8, range=[0., 1.])
-    >>> Hn = hist1d_numba_seq(x, bins=10**8, ranges=[0., 1.], tmp='out.npy',
+    >>> assert not os.path.exists(tmpfile)
+    >>> nbin = 10**7 + 1  # just above the threshold for using a memory map
+    >>> H, xedges = np.histogram(x, bins=nbin, range=[0., 1.])
+    >>> Hn = hist1d_numba_seq(x, bins=nbin, ranges=[0., 1.], tmp=tmpfile,
     ...                       use_memmap=True)
     >>> assert np.all(H == Hn)
-    >>> assert os.path.exists('out.npy')
+    >>> assert os.path.exists(tmpfile)
     >>> # Now use memmap but do not specify a tmp file
-    >>> Hn = hist1d_numba_seq(x, bins=10**8, ranges=[0., 1.],
+    >>> Hn = hist1d_numba_seq(x, bins=nbin, ranges=[0., 1.],
     ...                       use_memmap=True)
     >>> assert np.all(H == Hn)
+    >>> shutil.rmtree(tmpdir)
     """
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
+        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=np.double, shape=(bins,))
     else:
-        hist_arr = np.zeros((bins,), dtype=a.dtype)
+        hist_arr = np.zeros((bins,), dtype=np.double)
 
     return _hist1d_numba_seq(hist_arr, a, bins, np.asarray(ranges))
 
@@ -701,7 +711,7 @@ def _hist3d_numba_seq(H, tracks, bins, ranges):
         i = (tracks[0, t] - ranges[0, 0]) * delta[0]
         j = (tracks[1, t] - ranges[1, 0]) * delta[1]
         k = (tracks[2, t] - ranges[2, 0]) * delta[2]
-        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+        if 0 <= i < bins[0] and 0 <= j < bins[1] and 0 <= k < bins[2]:
             H[int(i), int(j), int(k)] += 1
 
     return H
@@ -740,31 +750,35 @@ def hist1d_numba_seq_weight(a, weights, bins, ranges, use_memmap=False, tmp=None
     """
     Examples
     --------
-    >>> if os.path.exists('out.npy'): os.unlink('out.npy')
+    >>> import shutil
+    >>> tmpdir = tempfile.mkdtemp()
+    >>> tmpfile = os.path.join(tmpdir, 'out.npy')
     >>> x = np.random.uniform(0., 1., 100)
     >>> weights = np.random.uniform(0, 1, 100)
     >>> H, xedges = np.histogram(x, bins=5, range=[0., 1.], weights=weights)
-    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=5, ranges=[0., 1.], tmp='out.npy',
+    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=5, ranges=[0., 1.], tmp=tmpfile,
     ...                              use_memmap=True)
     >>> assert np.all(H == Hn)
     >>> # The number of bins is small, memory map was not used!
-    >>> assert not os.path.exists('out.npy')
-    >>> H, xedges = np.histogram(x, bins=10**8, range=[0., 1.], weights=weights)
-    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=10**8, ranges=[0., 1.], tmp='out.npy',
+    >>> assert not os.path.exists(tmpfile)
+    >>> nbin = 10**7 + 1  # just above the threshold for using a memory map
+    >>> H, xedges = np.histogram(x, bins=nbin, range=[0., 1.], weights=weights)
+    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=nbin, ranges=[0., 1.], tmp=tmpfile,
     ...                              use_memmap=True)
     >>> assert np.all(H == Hn)
-    >>> assert os.path.exists('out.npy')
+    >>> assert os.path.exists(tmpfile)
     >>> # Now use memmap but do not specify a tmp file
-    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=10**8, ranges=[0., 1.],
+    >>> Hn = hist1d_numba_seq_weight(x, weights, bins=nbin, ranges=[0., 1.],
     ...                              use_memmap=True)
     >>> assert np.all(H == Hn)
+    >>> shutil.rmtree(tmpdir)
     """
     if bins > 10**7 and use_memmap:
         if tmp is None:
             tmp = tempfile.NamedTemporaryFile("w+").name
-        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=a.dtype, shape=(bins,))
+        hist_arr = np.lib.format.open_memmap(tmp, mode="w+", dtype=np.double, shape=(bins,))
     else:
-        hist_arr = np.zeros((bins,), dtype=a.dtype)
+        hist_arr = np.zeros((bins,), dtype=np.double)
 
     return _hist1d_numba_seq_weight(hist_arr, a, weights, bins, np.asarray(ranges))
 
@@ -815,7 +829,7 @@ def _hist3d_numba_seq_weight(H, tracks, weights, bins, ranges):
         i = (tracks[0, t] - ranges[0, 0]) * delta[0]
         j = (tracks[1, t] - ranges[1, 0]) * delta[1]
         k = (tracks[2, t] - ranges[2, 0]) * delta[2]
-        if 0 <= i < bins[0] and 0 <= j < bins[1]:
+        if 0 <= i < bins[0] and 0 <= j < bins[1] and 0 <= k < bins[2]:
             H[int(i), int(j), int(k)] += weights[t]
 
     return H
@@ -851,14 +865,18 @@ def hist3d_numba_seq_weight(tracks, weights, bins, ranges):
 def index_arr(a, ix_arr):
     strides = np.array(a.strides) / a.itemsize
     ix = int((ix_arr * strides).sum())
-    return a.ravel()[ix]
+    # ``reshape``, not ``ravel``: the flat index above is only meaningful for a
+    # contiguous array, and ``ravel`` would silently hand back a copy of a
+    # non-contiguous one -- in ``index_set_arr`` the write would then go to
+    # that copy and be thrown away. ``reshape(-1)`` raises instead.
+    return a.reshape(-1)[ix]
 
 
 @njit(nogil=True, parallel=False)
 def index_set_arr(a, ix_arr, val):
     strides = np.array(a.strides) / a.itemsize
     ix = int((ix_arr * strides).sum())
-    a.ravel()[ix] = val
+    a.reshape(-1)[ix] = val
 
 
 @njit(nogil=True, parallel=False)
@@ -898,7 +916,7 @@ def histnd_numba_seq(tracks, bins, ranges):
     >>> H, _ = np.histogramdd((x, y, z), bins=np.array((5, 6, 7)),
     ...                       range=[(0., 1.), (2., 3.), (4., 5)])
     >>> alldata = np.array([x, y, z])
-    >>> Hn = hist3d_numba_seq(alldata, bins=np.array((5, 6, 7)),
+    >>> Hn = histnd_numba_seq(alldata, bins=np.array((5, 6, 7)),
     ...                       ranges=np.array([[0., 1.], [2., 3.], [4., 5.]]))
     >>> assert np.all(H == Hn)
     """
@@ -948,10 +966,11 @@ if HAS_NUMBA:
         """
         Examples
         --------
+        >>> tmpfile = os.path.join(tempfile.mkdtemp(), 'out.npy')
         >>> x = np.random.uniform(0., 1., 100)
         >>> weights = np.random.uniform(0, 1, 100)
         >>> H, xedges = np.histogram(x, bins=5, range=[0., 1.], weights=weights)
-        >>> Hn = histogram(x, weights=weights, bins=5, ranges=[0., 1.], tmp='out.npy',
+        >>> Hn = histogram(x, weights=weights, bins=5, ranges=[0., 1.], tmp=tmpfile,
         ...                use_memmap=True)
         >>> assert np.all(H == Hn)
         >>> Hn1 = histogram(x, weights=None, bins=5, ranges=[0., 1.])
@@ -974,9 +993,15 @@ if HAS_NUMBA:
 else:
 
     def histogram2d(*args, **kwargs):
+        """Fall back to numpy, translating the ``ranges`` keyword to ``range``."""
+        if "ranges" in kwargs:
+            kwargs["range"] = kwargs.pop("ranges")
         return histogram2d_np(*args, **kwargs)[0]
 
     def histogram(*args, **kwargs):
+        """Fall back to numpy, translating the ``ranges`` keyword to ``range``."""
+        if "ranges" in kwargs:
+            kwargs["range"] = kwargs.pop("ranges")
         return histogram_np(*args, **kwargs)[0]
 
 
@@ -1064,6 +1089,30 @@ def adjust_dt_for_small_power(dt, length):
     return new_dt
 
 
+_SCRATCH_DIR = None
+
+
+def scratch_file_name(suffix=".npy"):
+    """Get the name of a new, empty scratch file.
+
+    The file goes into a single directory, created the first time this
+    function is called and deleted when the interpreter exits. Scratch
+    files here back memory-mapped arrays that get handed out to the caller,
+    sometimes as views; there is no point in the code at which an
+    individual one is provably safe to delete, so they all go away together
+    at the end of the process.
+    """
+    global _SCRATCH_DIR
+
+    if _SCRATCH_DIR is None:
+        _SCRATCH_DIR = tempfile.mkdtemp(prefix="hendrics_")
+        atexit.register(shutil.rmtree, _SCRATCH_DIR, True)
+
+    file_descriptor, fname = tempfile.mkstemp(suffix=suffix, dir=_SCRATCH_DIR)
+    os.close(file_descriptor)
+    return fname
+
+
 def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=float):
     """Arange plus memory mapping.
 
@@ -1074,14 +1123,12 @@ def memmapped_arange(i0, i1, istep, fname=None, nbin_threshold=10**7, dtype=floa
     >>> i0, i1, istep = 0, 10, 1e-7
     >>> assert np.allclose(np.arange(i0, i1, istep), memmapped_arange(i0, i1, istep))
     """
-    import tempfile
-
     chunklen = 10**6
     Nbins = int((i1 - i0) / istep)
     if Nbins < nbin_threshold:
         return np.arange(i0, i1, istep)
     if fname is None:
-        _, fname = tempfile.mkstemp(suffix=".npy")
+        fname = scratch_file_name()
 
     hist_arr = np.lib.format.open_memmap(fname, mode="w+", dtype=dtype, shape=(Nbins,))
 
@@ -1315,24 +1362,41 @@ def get_file_format(fname):
     'ascii.ecsv'
     >>> get_file_format('bu.fits.gz')
     'ogip'
+    >>> # The extension is matched case-insensitively...
+    >>> get_file_format('bu.FITS')
+    'ogip'
+    >>> # ...and a compression suffix does not change the format underneath
+    >>> get_file_format('bu.evt.Z')
+    'ogip'
+    >>> get_file_format('bu.fits.bz2')
+    'ogip'
     >>> get_file_format('bu.pdfghj')
     Traceback (most recent call last):
         ...
     RuntimeError: File format pdfghj not recognized
     """
-    ext = get_file_extension(fname)
+    ext = get_file_extension(fname).lower()
+
+    # The compression format does not change the format underneath it: strip it
+    # so that, e.g., bu.evt.Z is treated exactly like bu.evt
+    for compression in (".gz", ".bz2", ".bz", ".z"):
+        if ext.endswith(compression):
+            ext = ext.removesuffix(compression)
+            break
+
     if ext in [".p", ".pickle"]:
         return "pickle"
 
     if ext == ".nc":
         return "nc"
 
-    if ext in [".evt", ".evt.gz", ".fits", ".fits.gz"]:
+    if ext in [".evt", ".fits"]:
         return "ogip"
 
-    # For the rest of formats, use Astropy
-    fmts = identify_format("write", Table, fname, None, [], {})
+    # For the rest of formats, use Astropy. Astropy's identifiers match the
+    # extension case-sensitively, so hand them a lower-cased name.
+    fmts = identify_format("write", Table, str(fname).lower(), None, [], {})
     if len(fmts) > 0:
         return fmts[0]
 
-    raise RuntimeError(f"File format {ext[1:]} " f"not recognized")
+    raise RuntimeError(f"File format {ext[1:]} not recognized")

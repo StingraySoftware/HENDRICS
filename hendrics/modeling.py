@@ -10,12 +10,12 @@ from .io import HEN_FILE_EXTENSION, load_model, load_pds, save_model, save_pds
 
 
 def main_model(args=None):
-    """Main function called by the `HENfspec` command line script."""
+    """Main function called by the `HENmodel` command line script."""
     import argparse
 
     from .base import _add_default_args, check_negative_numbers_in_args
 
-    description = "Fit frequency spectra (PDS, CPDS, cospectrum) " "with user-defined models"
+    description = "Fit frequency spectra (PDS, CPDS, cospectrum) with user-defined models"
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument("files", help="List of light curve files", nargs="+")
@@ -23,7 +23,7 @@ def main_model(args=None):
         "-m",
         "--modelfile",
         type=str,
-        help="File containing an Astropy model with or without" " constraints",
+        help="File containing an Astropy model with or without constraints",
     )
     parser.add_argument(
         "--fitmethod",
@@ -65,6 +65,9 @@ def main_model(args=None):
         root = os.path.splitext(f)[0]
         spectrum = load_pds(f)
 
+        # The fit is done on the (possibly frequency-filtered) spectrum, but the
+        # full spectrum is what gets saved, with the best-fit model attached.
+        spectrum_filt = spectrum
         if freqs is not None:
             good = np.zeros(len(spectrum.freq), dtype=bool)
             for f0, f1 in zip(freqs[::2], freqs[1::2]):
@@ -84,7 +87,7 @@ def main_model(args=None):
             max_post = True
 
         parest, res = fit_powerspectrum(
-            spectrum,
+            spectrum_filt,
             model,
             model.parameters,
             max_post=max_post,

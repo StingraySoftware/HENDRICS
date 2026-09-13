@@ -82,6 +82,12 @@ def test_distributed_pds():
     assert pds_distr.m == single_periodogram.m
 
 
+def test_average_periodograms_empty_raises():
+    """An empty iterable used to raise ``UnboundLocalError`` on ``tot_contents``."""
+    with pytest.raises(ValueError, match="No periodograms to average"):
+        fspec.average_periodograms([])
+
+
 def test_distributed_cpds():
     events1 = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]]))
     events2 = EventList(np.sort(np.random.uniform(0, 1000, 1000)), gti=np.asarray([[0.0, 1000]]))
@@ -397,14 +403,14 @@ class TestFullRun:
             os.path.join(self.datadir, f"monol_testA_{labelA}") + HEN_FILE_EXTENSION,
             os.path.join(self.datadir, f"monol_testB_{labelB}") + HEN_FILE_EXTENSION,
         )
-        command = f"{data_a} {data_b} -f 16 -k {kind} --norm frac --test"
+        command = f"{data_a} {data_b} -f 16 -k {kind} --norm frac"
         fspec.main(command.split())
 
     def test_cpds_ignore_instr(self):
         """Test CPDS production."""
         out = os.path.join(self.datadir, "ignore_instr") + HEN_FILE_EXTENSION
         command = (
-            f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS,lag --save-all --ignore-instr"
+            f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS --save-all --ignore-instr"
             f" -o {out} --debug"
         )
 
@@ -424,22 +430,18 @@ class TestFullRun:
         with pytest.warns(UserWarning, match="Beware! Unknown normalization"):
             fspec.main(command.split())
 
+    def test_wrong_kind(self):
+        """An unknown -k value must be refused, not silently ignored."""
+        command = f"{self.lcA} {self.lcB} -f 128 -k cos"
+        with pytest.raises(SystemExit):
+            fspec.main(command.split())
+
     def test_cpds_dtbig(self):
         """Test CPDS production."""
         out = os.path.join(self.datadir, "monol_test_1_128_leahy_3-50keV_dtb")
         command = f"{self.lcA} {self.lcB} -f 128 --save-dyn -k CPDS --save-all --norm frac -o {out}"
         command += " -b 1"
         fspec.main(command.split())
-
-    def test_dumpdynpds(self):
-        """Test dump dynamical PDSs."""
-        command = (
-            "--noplot "
-            + os.path.join(self.datadir, "monol_testA_3-50keV_pds_bad")
-            + HEN_FILE_EXTENSION
-        )
-        with pytest.raises(NotImplementedError):
-            fspec.dumpdyn_main(command.split())
 
     def test_sumpds(self):
         """Test the sum of pdss."""
@@ -457,14 +459,6 @@ class TestFullRun:
                 os.path.join(self.datadir, "monol_test_sum" + HEN_FILE_EXTENSION),
             ]
         )
-
-    def test_dumpdyncpds(self):
-        """Test dump dynamical PDSs."""
-        command = (
-            "--noplot " + os.path.join(self.datadir, "monol_test_3-50keV_cpds") + HEN_FILE_EXTENSION
-        )
-        with pytest.raises(NotImplementedError):
-            fspec.dumpdyn_main(command.split())
 
     def test_rebinpds(self):
         """Test PDS rebinning 1."""
@@ -546,7 +540,31 @@ class TestFullRun:
         )
         timelags.main([fname])
         out = base.hen_root(fname) + "_lags.qdp"
-        os.path.exists(out)
+        assert os.path.exists(out)
+
+    def test_save_lags_lombscargle(self):
+        """A Lomb-Scargle cross spectrum returns the lags without error bars.
+
+        ``time_lag`` gives an ``(lag, lag_err)`` tuple for an averaged cross
+        spectrum but a bare array here, since there is no ensemble to take the
+        errors from. The old check was ``len(lag) == 2``, which happens to work
+        only as long as the lag array is not two elements long.
+        """
+        command = f"{self.ev_fileA} {self.ev_fileB} -k CPDS --norm leahy --lombscargle -b -1"
+        fspec.main(command.split())
+        fname = (
+            self.ev_fileA.replace("fpma", "fpm")
+            .replace("testA", "test")
+            .replace("_ev", "_0d5_512_leahy_LS_cpds")
+        )
+        assert os.path.exists(fname)
+
+        timelags.main([fname])
+        out = base.hen_root(fname) + "_lags.qdp"
+        assert os.path.exists(out)
+
+        # Two columns (freq, lag), not three: there are no error bars
+        assert np.genfromtxt(out).shape[1] == 2
 
     def test_fit_pds(self):
         modelstring = """

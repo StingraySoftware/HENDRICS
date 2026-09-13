@@ -84,15 +84,26 @@ def treat_event_file(
         events.cal_pi = None
 
     mission = events.mission
+    instr = "unknown"
     if hasattr(events, "instr") and isinstance(events.instr, str):
         instr = events.instr.lower()
+
+    # The safe interval is applied first, so that it is taken into account
+    # whether or not we also filter out occultations below.
     gti = events.gti
+    if safe_interval is not None:
+        if not isinstance(safe_interval, Iterable):
+            safe_interval = [safe_interval, safe_interval]
+        gti[:, 0] += safe_interval[0]
+        gti[:, 1] -= safe_interval[1]
+        events.gti = gti
+
     if bin_time_for_occultations is not None and bin_time_for_occultations > 0:
         lc = events.to_lc(bin_time_for_occultations)
         meanrate = np.median(lc.counts)
         if meanrate > 25:
             log.info("Filtering out occultations")
-            good_gti = create_gti_mask(lc.time, lc.gti, safe_interval=safe_interval)
+            good_gti = create_gti_mask(lc.time, lc.gti)
             good = lc.counts > 0
             new_bad = (~good) & good_gti
             if np.any(new_bad):
@@ -101,11 +112,6 @@ def treat_event_file(
                     lc.time, (good_gti & good), safe_interval=bin_time_for_occultations
                 )
                 events.gti = gti
-    elif safe_interval is not None:
-        if not isinstance(safe_interval, Iterable):
-            safe_interval = [safe_interval, safe_interval]
-        gti[:, 0] += safe_interval[0]
-        gti[:, 1] -= safe_interval[1]
 
     lengths = gti[:, 1] - gti[:, 0]
     gti = gti[lengths >= min_length]
@@ -509,7 +515,7 @@ def main_splitevents(args=None):
     parser.add_argument(
         "--overlap",
         type=float,
-        help="Overlap factor. 0 for no overlap, 0.5 for " "half-interval overlap, and so on.",
+        help="Overlap factor. 0 for no overlap, 0.5 for half-interval overlap, and so on.",
         default=None,
     )
     parser.add_argument(

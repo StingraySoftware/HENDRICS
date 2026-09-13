@@ -53,6 +53,8 @@ distribute-*.tar.gz
 *.nc
 *.qdp
 *.prof
+out_pds.*
+coverage.xml
 pip-wheel-metadata/
 
 # Mac OSX
@@ -69,3 +71,6 @@ pip-wheel-metadata/
 .tmp/*
 .eggs/*
 notebooks/*
+
+# Referee report (local, untracked)
+CODE_REVIEW.md

@@ -1,0 +1,12 @@
+# Keep the pinned GitHub Actions up to date, so the workflow files do not drift
+# out of support the way they had before they were bumped by hand.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "no-changelog-entry-needed"
+    commit-message:
+      prefix: "Bump"

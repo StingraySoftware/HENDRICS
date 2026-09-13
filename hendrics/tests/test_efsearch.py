@@ -11,12 +11,15 @@ from stingray.lightcurve import Lightcurve
 from hendrics.base import HAS_PINT, hen_root
 from hendrics.efsearch import (
     HAS_IMAGEIO,
+    _average_and_z_sub_search,
     decide_binary_parameters,
     folding_orbital_search,
     main_accelsearch,
     main_efsearch,
     main_z2vspf,
     main_zsearch,
+    search_with_qffa,
+    transient_search,
 )
 from hendrics.fold import (
     fit_profile_with_sinusoids,
@@ -39,6 +42,20 @@ from hendrics.tests import _dummy_par
 from . import cleanup_test_dir
 
 HAS_PD = importlib.util.find_spec("pandas") is not None
+
+
+@pytest.mark.parametrize("nprof,expected", [(64, 64), (100, 64), (127, 64), (63, 32)])
+def test_average_and_z_sub_search_uses_powers_of_two(nprof, expected):
+    """The sub-profile search must truncate to the power of two below nprof.
+
+    ``2 ** int(np.log2(nprof))`` is not the same as ``int(2 ** np.log2(nprof))``:
+    the latter is a no-op up to floating point noise, and left the trailing,
+    never-filled columns of the result array to be interpreted as statistics.
+    """
+    profiles = np.ones((nprof, 16))
+    n_ave, results = _average_and_z_sub_search(profiles, n=2)
+    assert results.shape == (int(np.log2(expected)), expected)
+    assert n_ave.size == results.shape[0]
 
 
 class TestEFsearch:
@@ -620,7 +637,9 @@ class TestEFsearch:
         )
         table = pd.read_csv(csv_file)
         assert len(table) == 10
-        folding_orbital_search(events, csv_file, chunksize=10, outfile="out.csv")
+        # A chunk size smaller than the table exercises more than one chunk.
+        # Every chunk but the first used to be dropped silently.
+        folding_orbital_search(events, csv_file, chunksize=4, outfile="out.csv")
         table = pd.read_csv("out.csv")
         assert len(table) == 10
         assert np.all(table["done"])
@@ -853,3 +872,40 @@ class TestEFsearch:
     @classmethod
     def teardown_class(cls):
         cleanup_test_dir(".")
+
+
+def test_searches_with_forced_memmap(tmp_path, monkeypatch):
+    """The scratch files backing the memory-mapped results are cleaned up.
+
+    They used to be built from ``NamedTemporaryFile(delete=True).name``, which
+    left a ``*_hen.npy`` file behind in the system temp directory for every
+    call. They now come from ``scratch_file_name``, which puts them all in a
+    single directory removed when the interpreter exits.
+    """
+    from hendrics.base import scratch_file_name
+
+    monkeypatch.chdir(tmp_path)
+    rng = np.random.default_rng(20250910)
+    times = np.sort(rng.uniform(0, 200, 5000))
+
+    frequencies, fdots, stats = search_with_qffa(
+        times, 0.9, 1.1, nbin=8, oversample=2, force_memmap=True
+    )[:3]
+    assert np.all(np.isfinite(stats))
+    assert frequencies.size == fdots.size == stats.size
+
+    results = transient_search(times, 0.9, 1.1, nbin=8, oversample=2, force_memmap=True)
+    assert results.stats.size > 0
+
+    # The results really are memory-mapped, and the file backing them lives in
+    # the one scratch directory that gets cleaned up at exit
+    assert isinstance(results.stats, np.memmap)
+    scratch_dir = os.path.dirname(scratch_file_name())
+    assert os.path.dirname(results.stats.filename) == scratch_dir
+
+    # Arrays handed back to the caller keep their scratch files: deleting one
+    # while it is still mapped is an error on Windows, and elsewhere it leaves
+    # the caller holding an array with no file behind it
+    assert os.path.exists(results.stats.filename)
+    assert os.path.exists(results.freqs.filename)
+    assert np.all(np.isfinite(results.freqs))

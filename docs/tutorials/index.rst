@@ -9,5 +9,6 @@ Tutorials
    variability
    agn
    pulsars
+   targeted_searches
    reverberation
    simulation

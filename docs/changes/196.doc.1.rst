@@ -1,0 +1,6 @@
+Fixed the heading levels in ``CHANGELOG.rst``. The sections for 8.4 and earlier
+used a different underline character from the ones towncrier writes, and
+reStructuredText assigns heading levels in order of first appearance, so the
+entire project history rendered as a subsection of the latest release. Added
+``docs/changes/README.rst`` explaining how changelog fragments are named and
+written, and referenced it from ``CONTRIBUTING.md``.

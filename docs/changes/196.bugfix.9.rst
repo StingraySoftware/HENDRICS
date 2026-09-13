@@ -1,0 +1,7 @@
+``HENpowercolors``' Python-level defaults could not produce a result at all —
+its ``segment_size`` and ``bintime`` did not bracket the frequency edges it
+also defaults to — and are now the ones the command line has always used.
+``HENscramble`` accepts event files containing simultaneous arrival times,
+which it used to reject. ``HENcalibrate`` names ``CALDB`` when that variable is
+unset, instead of raising a bare ``KeyError``. ``HENlcurve`` and ``HENparfspec``
+no longer leak their worker processes.

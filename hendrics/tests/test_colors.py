@@ -71,7 +71,7 @@ class TestFullRun:
             os.path.join(cls.datadir, "monol_testA_E3-10_lc" + HEN_FILE_EXTENSION)
         )
 
-        command = f"{cls.ev_fileAcal} -e 3 10 -b 100 " f"-o {cls.lc3_10}"
+        command = f"{cls.ev_fileAcal} -e 3 10 -b 100 -o {cls.lc3_10}"
         lcurve.main(command.split())
 
         command = f"{cls.ev_fileAcal} -b 100 -e {3} {5} {5} {10}"

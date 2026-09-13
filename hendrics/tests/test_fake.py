@@ -290,6 +290,28 @@ class TestFake:
         assert os.path.exists(newfile)
         os.remove(newfile)
 
+    def test_scramble_events_simultaneous(self):
+        """Two photons with the same time tag are legitimate.
+
+        ``scramble`` used to assert that the times were *strictly* increasing,
+        which made it fail on them; all it needs is a sorted array, for
+        ``np.searchsorted``.
+        """
+        times = np.sort(np.random.uniform(126, 1000, 500))
+        times[10] = times[9]
+        event_list = EventList(times, gti=np.array([[125.123, 1000]]))
+
+        new_event_list = scramble(event_list, "flat")
+        assert new_event_list.time.size == times.size
+
+    def test_scramble_events_unsorted_raises(self):
+        unsorted = np.array([500.0, 200.0, 900.0])
+        event_list = EventList(gti=np.array([[125.123, 1000]]))
+        # Assigning ``time`` directly bypasses the sorting the constructor does
+        event_list.time = unsorted
+        with pytest.raises(ValueError, match="must be sorted in time"):
+            scramble(event_list, "flat")
+
     def test_scramble_events(self):
         nevents = 3003
         times = np.random.uniform(0, 1000, nevents)

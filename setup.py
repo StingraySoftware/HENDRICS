@@ -4,7 +4,6 @@
 # other information are set in the pyproject.toml file.
 
 import sys
-from pathlib import Path
 
 from setuptools import setup
 
@@ -61,20 +60,6 @@ if "build_docs" in sys.argv or "build_sphinx" in sys.argv:
     print(DOCS_HELP)
     sys.exit(1)
 
-VERSION_TEMPLATE = """
-# Note that we need to fall back to the hard-coded version if either
-# setuptools_scm can't be imported or setuptools_scm can't determine the
-# version, so we catch the generic 'Exception'.
-try:
-    from setuptools_scm import get_version
-    version = get_version(root='..', relative_to=__file__)
-except Exception:
-    version = '{version}'
-""".lstrip()
-
-setup(
-    use_scm_version={
-        "write_to": Path("hendrics", "version.py"),
-        "write_to_template": VERSION_TEMPLATE,
-    }
-)
+# The version is handled by setuptools_scm, configured in pyproject.toml under
+# [tool.setuptools_scm]; it writes hendrics/_version.py at build time.
+setup()

@@ -26,10 +26,14 @@
 
 import datetime
 import os
-import sys
-from importlib import import_module
-import warnings
 import subprocess as sp
+import sys
+import sysconfig
+import warnings
+from importlib import import_module
+
+from docutils import nodes
+from docutils.parsers.rst import roles
 
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
@@ -46,9 +50,6 @@ from pathlib import Path
 warnings.filterwarnings("ignore", message=".*recommended numba.*")
 warnings.filterwarnings("ignore", message=".*Using pickle.*")
 warnings.filterwarnings("ignore", message=".*PINT is not installed.*")
-
-ON_RTD = os.environ.get("READTHEDOCS") == "True"
-ON_TRAVIS = os.environ.get("TRAVIS") == "true"
 
 # Grab minversion from pyproject.toml
 with (Path(__file__).parents[1] / "pyproject.toml").open("rb") as f:
@@ -77,12 +78,23 @@ exclude_patterns.append("changes")
 rst_epilog += """
 """
 
+
+# ``SliderOnSteroids`` inherits its documentation from ``matplotlib.widgets.
+# Slider``, which is written with matplotlib's own ``:mpltype:`` role. Sphinx
+# knows nothing about it here, so register a version that renders as literal
+# text rather than raising an error on the page.
+def mpltype_role(name, rawtext, text, lineno, inliner, options=None, content=None):
+    return [nodes.literal(rawtext, text)], []
+
+
+roles.register_local_role("mpltype", mpltype_role)
+
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
 project = pyproject["project"]["name"]
-author = ",".join(pyproject["project"]["authors"][0]["name"])
-copyright = "{0}, {1}".format(datetime.datetime.now().year, pyproject["project"]["authors"])
+author = ", ".join(a["name"] for a in pyproject["project"]["authors"])
+copyright = f"{datetime.datetime.now().year}, {author}"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -173,6 +185,10 @@ linkcheck_ignore = [
     r"https://zenodo.org/",
     r"http.*://stackoverflow.com/questions/.*",
     r"https://.*.nasa.gov/.*",
+    # The server omits its intermediate certificate, so Python cannot verify it
+    r"https://ascl.net/",
+    # Bot protection redirects automated requests to a challenge page
+    r"https://iopscience.iop.org/",
 ]
 
 # -- Options for the edit_on_github extension ---------------------------------
@@ -180,9 +196,7 @@ linkcheck_ignore = [
 edit_on_github_branch = "main"
 
 # -- Resolving issue number to links in changelog -----------------------------
-github_issues_url = "https://github.com/{0}/issues/".format(
-    pyproject["project"]["urls"]["repository"]
-)
+github_issues_url = pyproject["project"]["urls"]["repository"] + "/issues/"
 
 # -- Turn on nitpicky mode for sphinx (to warn about references not found) ----
 #
@@ -210,44 +224,46 @@ github_issues_url = "https://github.com/{0}/issues/".format(
 #     target = target.strip()
 #     nitpick_ignore.append((dtype, six.u(target)))
 
-if not ON_RTD and not ON_TRAVIS:
-    # scripts = dict(conf.items("options.entry_points"))["console_scripts"]
-    scripts = pyproject["project"]["scripts"]
-    pwarn = os.getenv("PYTHONWARNINGS")
+# Regenerate the command line reference from the installed scripts. This used
+# to be skipped on Read the Docs, so the site everybody reads served whatever
+# stale copy happened to be committed.
+scripts = pyproject["project"]["scripts"]
+pwarn = os.getenv("PYTHONWARNINGS")
 
-    os.environ["PYTHONWARNINGS"] = "ignore"
-    cols = os.getenv("COLUMNS")
-    os.environ["COLUMNS"] = "80"
+os.environ["PYTHONWARNINGS"] = "ignore"
+cols = os.getenv("COLUMNS")
+os.environ["COLUMNS"] = "80"
 
-    cli_file = os.path.join(os.getcwd(), "scripts", "cli.rst")
-    if os.path.exists(cli_file):
-        with open(cli_file, "w") as fobj:
-            print("""Command line interface""", file=fobj)
-            print("""======================\n""", file=fobj)
+cli_file = Path(__file__).parent / "scripts" / "cli.rst"
+cli_file.parent.mkdir(parents=True, exist_ok=True)
+with cli_file.open("w") as fobj:
+    print("""Command line interface""", file=fobj)
+    print("""======================\n""", file=fobj)
 
-            for cl in sorted(scripts.keys()):
-                print(f"Writing help for {cl}")
-                if cl.startswith("MP"):
-                    continue
-                print(cl, file=fobj)
-                print("-" * len(cl), file=fobj)
+    for cl in sorted(scripts.keys()):
+        print(f"Writing help for {cl}")
+        # Calling the scripts by bare name would go through PATH, where a
+        # different HENDRICS installation can easily shadow this one.
+        command = os.path.join(sysconfig.get_path("scripts"), cl)
+        print(cl, file=fobj)
+        print("-" * len(cl), file=fobj)
+        print(file=fobj)
+        print("::", file=fobj)
+        print(file=fobj)
+        lines = sp.check_output([command, "--help"]).decode().split("\n")
+        for line in lines:
+            if line.strip() == "":
                 print(file=fobj)
-                print("::", file=fobj)
-                print(file=fobj)
-                lines = sp.check_output([cl, "--help"]).decode().split("\n")
-                for l in lines:
-                    if l.strip() == "":
-                        print(file=fobj)
-                    else:
-                        print("    " + l, file=fobj)
-                print(file=fobj)
+            else:
+                print("    " + line, file=fobj)
+        print(file=fobj)
 
-    if cols is not None:
-        os.environ["COLUMNS"] = cols
-    else:
-        del os.environ["COLUMNS"]
+if cols is not None:
+    os.environ["COLUMNS"] = cols
+else:
+    del os.environ["COLUMNS"]
 
-    if pwarn is not None:
-        os.environ["PYTHONWARNINGS"] = pwarn
-    else:
-        del os.environ["PYTHONWARNINGS"]
+if pwarn is not None:
+    os.environ["PYTHONWARNINGS"] = pwarn
+else:
+    del os.environ["PYTHONWARNINGS"]

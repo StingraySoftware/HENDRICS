@@ -1,0 +1,5 @@
+``HENzsearch --ffa`` now honours ``-N``. The number of harmonics was accepted,
+written into the name of the output file and used to label the result, but
+``search_with_ffa`` never passed it on to ``ffa_search``, which always scored
+trial periods with Z^2_2. A file labelled ``Z24`` therefore contained Z^2_2
+statistics.

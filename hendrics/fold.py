@@ -1,4 +1,12 @@
-"""Interactive phaseogram."""
+"""Fold event lists into pulse profiles, and extract times of arrival.
+
+:func:`run_folding` produces the folded profile plotted by ``HENfold``,
+:func:`get_TOAs_from_events` fits each folded profile against a template to
+produce a ``.tim`` file of pulse times of arrival, and the
+``create_template_from_profile*`` helpers build those templates. ``HENdeorbit``
+also lives here, correcting event arrival times for binary motion. The
+interactive phaseogram is in :mod:`hendrics.phaseogram`.
+"""
 
 import argparse
 import copy
@@ -32,7 +40,7 @@ try:
     # import pint
     HAS_PINT = True
 except (ImportError, urllib.error.URLError):
-    warnings.warn("PINT is not installed. " "Some pulsar functionality will not be available")
+    warnings.warn("PINT is not installed. Some pulsar functionality will not be available")
     HAS_PINT = False
 from .base import deorbit_events
 
@@ -57,9 +65,7 @@ def _load_and_prepare_TOAs(mjds, errs_us=None, ephem="DE421"):
     return toalist
 
 
-def create_template_from_profile_sins(
-    phase, profile, profile_err, imagefile="template.png", norm=1
-):
+def create_template_from_profile_sins(phase, profile, profile_err, imagefile=None, norm=1):
     """
     Parameters
     ----------
@@ -67,7 +73,8 @@ def create_template_from_profile_sins(
     profile: :class:`np.array`
     profile_err: :class:`np.array`
         Phase, pulse profile, and error bars
-    imagefile: str
+    imagefile: str or None
+        Where to save a diagnostic plot. No plot is made if None (the default).
     norm: float or :class:`np.array`
 
     Returns
@@ -94,11 +101,12 @@ def create_template_from_profile_sins(
         prof, proferr, nperiods=3, baseline=True, debug=False
     )
     template = std_fold_fit_func(fit_pars_save, phase)
-    fig = plt.figure()
-    plt.plot(phase, profile, drawstyle="steps-mid")
-    plt.plot(phase, template, drawstyle="steps-mid")
-    plt.savefig(imagefile)
-    plt.close(fig)
+    if imagefile is not None:
+        fig = plt.figure()
+        plt.plot(phase, profile, drawstyle="steps-mid")
+        plt.plot(phase, template, drawstyle="steps-mid")
+        plt.savefig(imagefile)
+        plt.close(fig)
     # start template from highest bin!
     template *= norm
     template_fine = std_fold_fit_func(fit_pars_save, np.arange(0, 1, 0.001))
@@ -106,7 +114,7 @@ def create_template_from_profile_sins(
     return template, additional_phase
 
 
-def create_template_from_profile(phase, profile, profile_err, imagefile="template.png", norm=1):
+def create_template_from_profile(phase, profile, profile_err, imagefile=None, norm=1):
     """
     Parameters
     ----------
@@ -114,7 +122,8 @@ def create_template_from_profile(phase, profile, profile_err, imagefile="templat
     profile: :class:`np.array`
     profile_err: :class:`np.array`
         Phase, pulse profile, and error bars
-    imagefile: str
+    imagefile: str or None
+        Where to save a diagnostic plot. No plot is made if None (the default).
     norm: float or :class:`np.array`
 
     Returns
@@ -147,11 +156,12 @@ def create_template_from_profile(phase, profile, profile_err, imagefile="templat
     template_fine = splev(phases_fine, spl)
     template = splev(phase, spl)
 
-    fig = plt.figure()
-    plt.plot(phase, profile, drawstyle="steps-mid")
-    plt.plot(phase, template, drawstyle="steps-mid")
-    plt.savefig(imagefile)
-    plt.close(fig)
+    if imagefile is not None:
+        fig = plt.figure()
+        plt.plot(phase, profile, drawstyle="steps-mid")
+        plt.plot(phase, template, drawstyle="steps-mid")
+        plt.savefig(imagefile)
+        plt.close(fig)
 
     additional_phase = np.argmax(template_fine) / len(template_fine)
     return template, additional_phase
@@ -161,7 +171,7 @@ def create_template_from_profile_harm(
     phase,
     profile,
     profile_err=0,
-    imagefile="template.png",
+    imagefile=None,
     norm=1,
     nharm=None,
     final_nbin=None,
@@ -173,7 +183,8 @@ def create_template_from_profile_harm(
     profile: :class:`np.array`
     profile_err: :class:`np.array`
         Phase, pulse profile, and error bars
-    imagefile: str
+    imagefile: str or None
+        Where to save a diagnostic plot. No plot is made if None (the default).
     norm: float or :class:`np.array`
     final_nbin: int
 
@@ -223,11 +234,12 @@ def create_template_from_profile_harm(
 
     additional_phase = np.argmax(template_fine) / len(template_fine) + dph_fine / 2
     template = template[:final_nbin].real
-    fig = plt.figure()
-    plt.plot(phase, profile, drawstyle="steps-mid")
-    plt.plot(phas[:final_nbin], template, drawstyle="steps-mid")
-    plt.savefig(imagefile)
-    plt.close(fig)
+    if imagefile is not None:
+        fig = plt.figure()
+        plt.plot(phase, profile, drawstyle="steps-mid")
+        plt.plot(phas[:final_nbin], template, drawstyle="steps-mid")
+        plt.savefig(imagefile)
+        plt.close(fig)
     return template * final_nbin / nbin, additional_phase
 
 
@@ -363,7 +375,6 @@ def get_TOAs_from_events(events, folding_length, *frequency_derivatives, **kwarg
             nbin=nbin,
         )
         template, additional_phase = create_default_template(profile)
-    print(template.size)
 
     min_phase_err = 1 / template.size
     fit_base = False
@@ -710,14 +721,14 @@ def run_folding(
         ax0 = plt.subplot()
 
     # Plot pulse profile
-    max = np.max(smooth)
-    min = np.min(smooth)
+    smooth_max = np.max(smooth)
+    smooth_min = np.min(smooth)
     ax0.plot(meanbins, profile, drawstyle="steps-mid", color="white", zorder=2)
     ax0.plot(
         meanbins,
         smooth,
         drawstyle="steps-mid",
-        label="Smooth profile " f"(P.F. = {100 * (max - min) / max:.1f}%)",
+        label=f"Smooth profile (P.F. = {100 * (smooth_max - smooth_min) / smooth_max:.1f}%)",
         color="k",
         zorder=3,
     )
@@ -746,8 +757,8 @@ def run_folding(
             label="3-sigma confidence",
         )
 
-    ax0.axhline(max, lw=1, color="k")
-    ax0.axhline(min, lw=1, color="k")
+    ax0.axhline(smooth_max, lw=1, color="k")
+    ax0.axhline(smooth_min, lw=1, color="k")
 
     mean = np.mean(profile)
     ax0.fill_between(meanbins, mean - np.sqrt(mean), mean + np.sqrt(mean), alpha=0.5)
@@ -772,9 +783,9 @@ def run_folding(
             smooth = savgol_filter(prof, window_length=smooth_window, polyorder=3, mode="wrap")
             mean = np.mean(smooth)
             shift = 3 * np.sqrt(mean)
-            max = np.max(smooth)
-            min = np.min(smooth)
-            pf = 100 * (max - min) / max
+            smooth_max = np.max(smooth)
+            smooth_min = np.min(smooth)
+            pf = 100 * (smooth_max - smooth_min) / smooth_max
             ax2.plot(
                 meanbins,
                 prof - mean + i * shift,
@@ -789,7 +800,7 @@ def run_folding(
             )
             std = np.std(prof - smooth)
             pfs.append(pf)
-            errs.append(100 * std / max)
+            errs.append(100 * std / smooth_max)
         ax2.set_xlabel("Phase")
         ax2.set_ylabel("Counts (shifted arbitrarily)")
 

@@ -628,7 +628,7 @@ def lcurve_from_fits(
             dt *= 86400
     except Exception:
         warnings.warn(
-            "Assuming that TIMEDEL is the median difference between the" " light curve times",
+            "Assuming that TIMEDEL is the median difference between the light curve times",
             AstropyUserWarning,
         )
         dt = np.median(np.diff(time))
@@ -759,16 +759,15 @@ def lcurve_from_txt(
 
 
 def _baseline_lightcurves(lcurves, outroot, p, lam):
-    outroot_save = outroot
     for i, f in enumerate(lcurves):
         if outroot is None:
-            outroot = hen_root(f) + "_lc_baseline"
+            outroot_f = hen_root(f) + "_lc_baseline"
         else:
-            outroot = outroot_save + f"_{i}"
+            outroot_f = outroot + f"_{i}"
         ftype, lc = get_file_type(f)
         baseline = lc.baseline(p, lam)
         lc.base = baseline
-        save_lcurve(lc, outroot + HEN_FILE_EXTENSION)
+        save_lcurve(lc, outroot_f + HEN_FILE_EXTENSION)
 
 
 def _wrap_lc(args):
@@ -776,6 +775,11 @@ def _wrap_lc(args):
     try:
         return lcurve_from_events(f, **kwargs)
     except Exception as e:
+        # Deliberately re-raised, unlike in ``_wrap_txt`` and ``_wrap_fits``:
+        # a HENDRICS-format event file that cannot be turned into a light curve
+        # means the user got the pipeline wrong (an uncalibrated file, say), and
+        # ``test_lcurve_error_uncalibrated`` pins that down. The warning adds
+        # the file name to the traceback.
         warnings.warn(f"HENlcurve exception: {str(e)}")
         raise
 
@@ -808,7 +812,7 @@ def _execute_lcurve(args):
     if args.pi_interval is not None:
         pi_interval = np.array(args.pi_interval)
     if e_interval is not None:
-        args.e_interval = np.array(args.energy_interval)
+        e_interval = np.array(e_interval)
 
     # ------ Use functools.partial to wrap lcurve* with relevant keywords---
     if args.fits_input:
@@ -837,10 +841,9 @@ def _execute_lcurve(args):
     na = len(arglist)
     outfile = args.outfile
     if outfile is not None:
-        outname, ext = splitext_improved(outfile)
+        outroot, _ = splitext_improved(outfile)
         for i in range(na):
-            if na > 1:
-                outname = outfile + f"_{i}"
+            outname = outroot if na == 1 else f"{outroot}_{i}"
             arglist[i][1]["outfile"] = outname
 
     # -------------------------------------------------------------------------
@@ -850,9 +853,8 @@ def _execute_lcurve(args):
         for a in arglist:
             outfiles.append(wrap_fun(a))
     else:
-        pool = Pool(processes=args.nproc)
-        outfiles = list(pool.imap_unordered(wrap_fun, arglist))
-        pool.close()
+        with Pool(processes=args.nproc) as pool:
+            outfiles = list(pool.imap_unordered(wrap_fun, arglist))
 
     log.debug(f"{outfiles}")
 
@@ -1003,8 +1005,10 @@ def scrunch_main(args=None):
 
 
 def baseline_main(args=None):
-    """Main function called by the `HENbaselinesub` command line script."""
+    """Main function called by the `HENbaseline` command line script."""
     import argparse
+
+    from .base import _add_default_args
 
     description = (
         "Subtract a baseline from the lightcurve using the Asymmetric Least "
@@ -1014,22 +1018,6 @@ def baseline_main(args=None):
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("files", help="List of files", nargs="+")
     parser.add_argument("-o", "--out", type=str, default=None, help="Output file")
-    parser.add_argument(
-        "--loglevel",
-        help=(
-            "use given logging level (one between INFO, "
-            "WARNING, ERROR, CRITICAL, DEBUG; "
-            "default:WARNING)"
-        ),
-        default="WARNING",
-        type=str,
-    )
-    parser.add_argument(
-        "--debug",
-        help="use DEBUG logging level",
-        default=False,
-        action="store_true",
-    )
     parser.add_argument(
         "-p",
         "--asymmetry",
@@ -1048,6 +1036,7 @@ def baseline_main(args=None):
         "1e2 < lam < 1e9",
         default=1e5,
     )
+    _add_default_args(parser, ["loglevel", "debug"])
 
     args = parser.parse_args(args)
     files = args.files
