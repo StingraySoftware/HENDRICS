@@ -164,11 +164,15 @@ def run_accel(times, fmin, fmax, zmax, delta_z, interbin):
     return freqs, fdots, powers, band.size, range_z
 
 
-def single_trial_p(stats, kind, nharm):
-    from stingray.stats import pds_probability, z2_n_probability
+def single_trial_p(stats, kind, nharm, freqs=None, fdots=None, interbin=False):
+    from stingray.stats import z2_n_probability
 
     if kind == "accel":
-        return pds_probability(stats, ntrial=1)
+        from hendrics.known_ephemeris import accel_single_trial_probability
+
+        # Regular bins are chi^2 with 2 d.o.f.; the in-between bins of
+        # interbinning have a stretched distribution, depending on z
+        return accel_single_trial_probability(stats, freqs, fdots, T, interbin=interbin)
     return z2_n_probability(stats, n=nharm)
 
 
@@ -293,7 +297,9 @@ def noise_worker(job):
     cfg, seed = job
     rng = np.random.default_rng(seed)
     freqs, fdots, stats, naive, n_z = run_search(cfg, noise_events(rng))
-    p = single_trial_p(stats, cfg["kind"], cfg["nharm"])
+    p = single_trial_p(
+        stats, cfg["kind"], cfg["nharm"], freqs, fdots, interbin=cfg.get("interbin", False)
+    )
     out = dict(p_min=float(p.min()), naive=float(naive), n_cells=int(stats.size))
     out["fdot_span"] = float(np.ptp(fdots))
     out["n_fdot"] = int(np.unique(fdots).size)
@@ -333,7 +339,9 @@ def targeted_worker(job):
     cfg, seed, blind_scales, floors = job
     rng = np.random.default_rng(seed)
     freqs, fdots, stats, naive, _ = run_search(cfg, noise_events(rng))
-    p = single_trial_p(stats, cfg["kind"], cfg["nharm"])
+    p = single_trial_p(
+        stats, cfg["kind"], cfg["nharm"], freqs, fdots, interbin=cfg.get("interbin", False)
+    )
     # -n * log1p(-p) is monotonic in the corrected p-value, and cheap
     log1m = -np.log1p(-np.clip(p, 0, 1 - 1e-16))
 
