@@ -1421,6 +1421,33 @@ def get_boundaries_from_level(x, y, level, x0):
     return min_x, max_x
 
 
+def _qffa_naive_ntrial(stat, oversample):
+    """Number of resolution elements covered by a fast search plane.
+
+    A resolution element is 1/T in frequency and 4/T^2 in frequency derivative
+    (the same phase error at the edges of the observation), and the fast search
+    samples both with ``oversample`` points per element.
+
+    Parameters
+    ----------
+    stat : array
+        The statistic plane, of shape ``(n_fdot, n_freq)`` or ``(n_freq,)``
+    oversample : float or None
+        Grid points per resolution element. ``None`` counts every point
+
+    Returns
+    -------
+    ntrial : int
+        The naive number of trials, at least 1
+    """
+    stat = np.asarray(stat)
+    if oversample is None:
+        return max(stat.size, 1)
+    search_fdot = stat.ndim > 1 and stat.shape[0] > 1
+    n_axes = 2 if search_fdot else 1
+    return max(int(stat.size / oversample**n_axes), 1)
+
+
 def _analyze_qffa_results(input_ef_periodogram, fname=None):
     """Search best candidates in a quasi-fast-folding search.
 
@@ -1436,10 +1463,9 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     if not hasattr(input_ef_periodogram, "M") or input_ef_periodogram.M is None:
         input_ef_periodogram.M = 1
 
-    ntrial = input_ef_periodogram.stat.size
-    if hasattr(input_ef_periodogram, "oversample") and input_ef_periodogram.oversample is not None:
-        ntrial /= input_ef_periodogram.oversample
-        ntrial = int(ntrial)
+    ntrial = _qffa_naive_ntrial(
+        input_ef_periodogram.stat, getattr(input_ef_periodogram, "oversample", None)
+    )
     epsilon_det = 0.001
     if input_ef_periodogram.kind == "Z2n":
         ndof = input_ef_periodogram.N - 1

@@ -565,7 +565,8 @@ class TestTargetedZSearch:
             f_step=np.median(np.diff(ef.freq[0, :])),
             fdot_step=np.median(np.diff(ef.fdots[:, 0])),
             n_grid=ef.stat.size,
-            ntrial_blind=int(ef.stat.size / ef.oversample),
+            # Resolution elements in both frequency and fdot
+            ntrial_blind=int(ef.stat.size / ef.oversample**2),
             search_fdot=True,
         )
         # A meaningful floor, not the single trial of a precise prior

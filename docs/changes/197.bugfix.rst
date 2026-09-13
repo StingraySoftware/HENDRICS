@@ -1,0 +1,4 @@
+The number of trials of ``HENzsearch --fast`` with a frequency derivative search
+divided the grid by ``--oversample`` only once, although both axes are
+oversampled, so it grew with ``--oversample``. It now counts resolution
+elements: 1/T in frequency and 4/T^2 in frequency derivative.

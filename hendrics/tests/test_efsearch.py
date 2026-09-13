@@ -12,6 +12,7 @@ from hendrics.base import HAS_PINT, hen_root
 from hendrics.efsearch import (
     HAS_IMAGEIO,
     _average_and_z_sub_search,
+    _qffa_naive_ntrial,
     decide_binary_parameters,
     folding_orbital_search,
     main_accelsearch,
@@ -88,6 +89,27 @@ def test_qffa_grid_follows_oversample(oversample):
     )
     assert np.unique(freq_only).size == freq_only.size
     assert np.allclose(np.diff(freq_only), 1 / (oversample * length))
+
+
+@pytest.mark.parametrize(
+    "shape,oversample,expected",
+    [
+        ((400,), 4, 100),
+        ((1, 400), 4, 100),
+        # Both axes are oversampled
+        ((16, 400), 4, 400),
+        ((16, 400), None, 6400),
+        ((2, 3), 8, 1),
+    ],
+)
+def test_qffa_naive_ntrial(shape, oversample, expected):
+    """The naive trials of a fast search count resolution elements.
+
+    That is 1/T in frequency and 4/T^2 in frequency derivative, so the grid is
+    divided by ``oversample`` once for each searched axis. Dividing only once
+    made the count of a search with fdot grow with ``oversample``.
+    """
+    assert _qffa_naive_ntrial(np.zeros(shape), oversample) == expected
 
 
 class TestEFsearch:
