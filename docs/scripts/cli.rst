@@ -335,7 +335,8 @@ HENefsearch
                             1/oversample/obs_length.
       --oversample OVERSAMPLE
                             Oversampling factor - frequency resolution improvement
-                            w.r.t. the standard FFT's 1/obs_length.
+                            w.r.t. the standard FFT's 1/obs_length. Defaults to 2,
+                            or to 2 * N with --fast.
       --fast                Use a faster folding algorithm. It automatically
                             searches for the first spin derivative using an
                             optimized step. This option ignores expocorr,
@@ -1304,7 +1305,8 @@ HENzsearch
                             1/oversample/obs_length.
       --oversample OVERSAMPLE
                             Oversampling factor - frequency resolution improvement
-                            w.r.t. the standard FFT's 1/obs_length.
+                            w.r.t. the standard FFT's 1/obs_length. Defaults to 2,
+                            or to 2 * N with --fast.
       --fast                Use a faster folding algorithm. It automatically
                             searches for the first spin derivative using an
                             optimized step. This option ignores expocorr,

@@ -922,11 +922,26 @@ def search_with_qffa_step(
     nbin=16,
     nprof=64,
     npfact=2,
-    oversample=8,
+    oversample=2,
     n=1,
     search_fdot=True,
+    length=None,
 ) -> tuple[np.array, np.array, np.array]:
-    """Single step of quasi-fast folding algorithm."""
+    """Single step of quasi-fast folding algorithm.
+
+    The sub-profiles are shifted by up to ``npfact`` full cycles at the edges
+    of the observation, in either direction. Phases are measured from the
+    middle of the observation, so this covers a slice of ``4 * npfact / length``
+    in frequency, sampled with ``oversample`` points per ``1 / length``. The
+    frequency derivative axis is sampled with the same phase error at the
+    edges, i.e. a step of ``4 / (oversample * length**2)``.
+
+    Other Parameters
+    ----------------
+    length : float, default ``times[-1] - times[0]``
+        Length of the observation. Pass the one used to space the sub-searches,
+        so that they tile the band exactly.
+    """
     # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
 
@@ -947,15 +962,19 @@ def search_with_qffa_step(
     # Assume times are sorted
     t1, t0 = times[-1], times[0]
 
-    # dn = max(1, int(nbin / oversample))
-    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, int(oversample * npfact))
+    if length is None:
+        length = t1 - t0
+
+    # Without the upper end, which is the lower end of the next sub-search
+    nshifts = max(int(np.rint(4 * oversample * npfact)), 1)
+    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, nshifts, endpoint=False)
     if search_fdot:
-        quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, int(oversample * npfact))
+        quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, nshifts, endpoint=False)
     else:
         quabinshifts = np.array([0])
 
     dphi = 1 / nbin
-    delta_t = (t1 - t0) / 2
+    delta_t = length / 2
     bin_to_frequency = dphi / delta_t
     bin_to_fdot = 2 * dphi / delta_t**2
 
@@ -975,7 +994,7 @@ def search_with_qffa(
     nbin=16,
     nprof=None,
     npfact=2,
-    oversample=8,
+    oversample=2,
     n=1,
     search_fdot=True,
     t0=None,
@@ -1003,8 +1022,11 @@ def search_with_qffa(
         ``8 * nbin * npfact``. Motivation in the comments.
     npfact : int, default 2
         maximum "sliding" of the dataset, in phase.
-    oversample : int, default 8
-        Oversampling wrt the standard FFT delta f = 1/T
+    oversample : int, default 2
+        Oversampling wrt the standard FFT delta f = 1/T: the frequency step is
+        ``1 / (oversample * T)``, and the frequency derivative step is
+        ``4 / (oversample * T**2)``, which gives the same phase error at the
+        edges of the observation
     search_fdot : bool, default True
         Switch fdot search on or off
     t0 : float, default min(times)
@@ -1082,6 +1104,7 @@ def search_with_qffa(
             oversample=oversample,
             n=n,
             search_fdot=search_fdot,
+            length=length,
         )
 
         if all_fgrid is None:
@@ -1926,7 +1949,7 @@ def _common_parser(args=None):
         type=float,
         help="Oversampling factor - frequency resolution "
         "improvement w.r.t. the standard FFT's "
-        "1/obs_length.",
+        "1/obs_length. Defaults to 2, or to 2 * N with --fast.",
     )
     parser.add_argument(
         "--fast",
@@ -2078,7 +2101,7 @@ def _common_main(args, func):
                 events = deorbit_events(events, args.deorbit_par)
 
         if args.fast:
-            oversample = assign_value_if_none(args.oversample, 4 * n)
+            oversample = assign_value_if_none(args.oversample, 2 * n)
         else:
             oversample = assign_value_if_none(args.oversample, 2)
 
@@ -2274,7 +2297,7 @@ def z2_vs_pf(event_list, deadtime=0.0, ntrials=100, outfile=None, N=2):
             1 + df * 2,
             fdot=0,
             nbin=32,
-            oversample=16,
+            oversample=4,
             search_fdot=False,
             silent=True,
             n=N,

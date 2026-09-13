@@ -438,7 +438,7 @@ class TestTargetedZSearch:
             "16",
             "--fast",
             "--oversample",
-            "16",
+            "4",
             "-N",
             "2",
         ]

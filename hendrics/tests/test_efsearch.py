@@ -58,6 +58,38 @@ def test_average_and_z_sub_search_uses_powers_of_two(nprof, expected):
     assert n_ave.size == results.shape[0]
 
 
+@pytest.mark.parametrize("oversample", [1, 2, 4])
+def test_qffa_grid_follows_oversample(oversample):
+    """``oversample`` counts grid points per 1/T in frequency.
+
+    Each sub-search used to cover its 4 * npfact / T slice with only
+    ``oversample * npfact`` points, including both ends, so the grid step was
+    about 4 / (oversample * T) and neighbouring sub-searches repeated a
+    frequency. The frequency derivative axis was coarse by the same factor 4.
+    """
+    rng = np.random.default_rng(1)
+    length = 200.0
+    times = np.sort(rng.uniform(0, length, 2000))
+    times[0], times[-1] = 0.0, length
+
+    freqs, fdots, stats, step, fdotstep, _ = search_with_qffa(
+        times, 1.0, 1.5, nbin=8, oversample=oversample, silent=True
+    )
+    freq_axis = freqs[0]
+    assert np.unique(freq_axis).size == freq_axis.size
+    assert np.allclose(np.diff(freq_axis), 1 / (oversample * length))
+    assert np.isclose(step, 1 / (oversample * length))
+    # The same phase error at the edges of the observation as the frequency step
+    assert np.allclose(np.diff(fdots[:, 0]), 4 / (oversample * length**2))
+    assert np.isclose(fdotstep, 4 / (oversample * length**2))
+
+    freq_only, _, step_only, _ = search_with_qffa(
+        times, 1.0, 1.5, nbin=8, oversample=oversample, search_fdot=False, silent=True
+    )
+    assert np.unique(freq_only).size == freq_only.size
+    assert np.allclose(np.diff(freq_only), 1 / (oversample * length))
+
+
 class TestEFsearch:
     def setup_class(cls):
         cls.pulse_period = 0.101
@@ -462,7 +494,7 @@ class TestEFsearch:
                 "--fast",
                 "--find-candidates",
                 "--oversample",
-                "4",
+                "1",
             ]
             + options
         )
