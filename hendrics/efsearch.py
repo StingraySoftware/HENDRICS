@@ -63,6 +63,7 @@ from .known_ephemeris import (
     extrapolate_ephemeris,
     extrapolate_ephemeris_uncertainty,
     prior_corrected_p_value,
+    qffa_calibrated_ntrial,
     uncertainty_ntrial,
 )
 
@@ -1324,7 +1325,7 @@ def print_qffa_results(best_cand_table):
             f"{a:g} ± {e:g}" for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
         ]
 
-    columns = ["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"]
+    columns = ["mjd", "f", "fdot", "fddot", "power", "p_ntrial_adj", "Pulsed amplitude (%)"]
     if "p_value" in newtable.colnames:
         # A targeted search: what matters is the distance from the expected
         # solution and the significance once that is paid for
@@ -1463,16 +1464,29 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     if not hasattr(input_ef_periodogram, "M") or input_ef_periodogram.M is None:
         input_ef_periodogram.M = 1
 
-    ntrial = _qffa_naive_ntrial(
-        input_ef_periodogram.stat, getattr(input_ef_periodogram, "oversample", None)
-    )
+    oversample = getattr(input_ef_periodogram, "oversample", None)
+    ntrial_naive = _qffa_naive_ntrial(input_ef_periodogram.stat, oversample)
+    ntrial = ntrial_naive
+    stat_shape = np.shape(input_ef_periodogram.stat)
+    if input_ef_periodogram.kind == "Z2n" and oversample is not None:
+        # Neighbouring points of an oversampled grid are correlated, but each
+        # resolution element still holds more than one trial: use the Monte
+        # Carlo calibration
+        ntrial = qffa_calibrated_ntrial(
+            ntrial_naive,
+            nharm=int(input_ef_periodogram.N),
+            oversample=oversample,
+            search_fdot=len(stat_shape) > 1 and stat_shape[0] > 1,
+        )
     epsilon_det = 0.001
+    # Stingray wants an integer number of trials: round up, to stay conservative
+    ntrial_int = int(np.ceil(ntrial))
     if input_ef_periodogram.kind == "Z2n":
         ndof = input_ef_periodogram.N - 1
         detlev = z2_n_detection_level(
             epsilon=epsilon_det,
             n=int(input_ef_periodogram.N),
-            ntrial=ntrial,
+            ntrial=ntrial_int,
             n_summed_spectra=int(input_ef_periodogram.M),
         )
         nbin = max(
@@ -1484,7 +1498,7 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     else:
         ndof = input_ef_periodogram.nbin
         detlev = fold_detection_level(
-            nbin=int(input_ef_periodogram.nbin), epsilon=epsilon_det, ntrial=ntrial
+            nbin=int(input_ef_periodogram.nbin), epsilon=epsilon_det, ntrial=ntrial_int
         )
         nbin = max(16, input_ef_periodogram.nbin)
         label = rf"$\chi^2_{ndof}$ Stat"
@@ -1525,6 +1539,10 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
         "fddot_idx",
     ]
     dtype = [str] + [float] * 15 + [int] * 3
+    # Single-trial probability, and corrected with the naive and calibrated
+    # number of trials of the blind search
+    names += ["p_1trial", "p_ntrial", "p_ntrial_adj"]
+    dtype += [float] * 3
     if p_corr is not None:
         names += ["f_offset", "fdot_offset", "ntrial_eff", "p_value"]
         dtype += [float] * 4
@@ -1539,6 +1557,8 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     best_cand_table["pulse_amp"].info.format = ".2f"
     best_cand_table["pulse_amp_err"].info.format = ".2f"
     best_cand_table["pulse_amp_ul_0.9"].info.format = ".2f"
+    for name in ("p_1trial", "p_ntrial", "p_ntrial_adj"):
+        best_cand_table[name].info.format = ".2e"
     if p_corr is not None:
         best_cand_table["f_offset"].info.format = ".3e"
         best_cand_table["fdot_offset"].info.format = ".2e"
@@ -1635,6 +1655,13 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
             fdot_idx,
             fddot_idx,
         ]
+        # Stingray may return a one-element array for a scalar statistic
+        p_1trial = float(np.ravel(_qffa_single_trial_p(input_ef_periodogram, max_stat))[0])
+        row += [
+            p_1trial,
+            float(prior_corrected_p_value(p_1trial, ntrial_naive)),
+            float(prior_corrected_p_value(p_1trial, ntrial)),
+        ]
         if p_corr is not None:
             row += [
                 f - input_ef_periodogram.known_freq,
@@ -1666,7 +1693,15 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
 
     print_qffa_results(best_cand_table)
     best_cand_table.meta.update(
-        dict(nbin=nbin, ndof=ndof, label=label, filename=None, detlev=detlev)
+        dict(
+            nbin=nbin,
+            ndof=ndof,
+            label=label,
+            filename=None,
+            detlev=detlev,
+            ntrial_naive=ntrial_naive,
+            ntrial=ntrial,
+        )
     )
     if (
         hasattr(input_ef_periodogram, "filename")
@@ -1856,16 +1891,20 @@ def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
 
     n_eff = effective_ntrial(freq - known_freq, delta_fdot, ntrial_min=ntrial_min, **grid)
 
-    if input_ef_periodogram.kind == "Z2n":
-        p_single = z2_n_probability(
-            stat,
-            n=int(input_ef_periodogram.N),
-            n_summed_spectra=int(input_ef_periodogram.M),
-        )
-    else:
-        p_single = fold_profile_probability(stat, int(input_ef_periodogram.nbin))
+    p_single = _qffa_single_trial_p(input_ef_periodogram, stat)
 
     return prior_corrected_p_value(p_single, n_eff), n_eff
+
+
+def _qffa_single_trial_p(input_ef_periodogram, stat):
+    """Single-trial probability of a statistic of the folding periodogram."""
+    if input_ef_periodogram.kind == "Z2n":
+        return z2_n_probability(
+            stat,
+            n=int(input_ef_periodogram.N),
+            n_summed_spectra=int(getattr(input_ef_periodogram, "M", 1) or 1),
+        )
+    return fold_profile_probability(stat, int(input_ef_periodogram.nbin))
 
 
 def _common_parser(args=None):

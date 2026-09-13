@@ -541,6 +541,27 @@ class TestTargetedZSearch:
         best = table[np.argmax(table["power"])]
         assert np.abs(best["f"] - self.FTRUE) > 0.01
 
+    def test_every_search_reports_all_significances(self):
+        """Single-trial, naive and calibrated probabilities, with or without a prior."""
+        from hendrics.efsearch import main_zsearch
+
+        table = self._candidates(main_zsearch(self.common))
+        for name in ("p_1trial", "p_ntrial", "p_ntrial_adj"):
+            assert name in table.colnames
+        assert np.all(table["p_ntrial"] >= table["p_1trial"])
+        assert np.all(table["p_ntrial_adj"] >= table["p_ntrial"])
+
+        # The calibrated count multiplies the naive one, for a Z^2_2 search of
+        # frequency and fdot with 4 points per resolution element
+        meta = table.meta
+        assert np.isclose(
+            meta["ntrial"],
+            qffa_calibrated_ntrial(meta["ntrial_naive"], nharm=2, oversample=4, search_fdot=True),
+        )
+        assert np.allclose(
+            table["p_ntrial_adj"], prior_corrected_p_value(table["p_1trial"], meta["ntrial"])
+        )
+
     def test_targeted_search_finds_it(self):
         """The same data, with the ephemeris extrapolated from 1000 days back."""
         from hendrics.efsearch import main_zsearch
@@ -640,8 +661,13 @@ class TestTargetedZSearch:
             f_step=np.median(np.diff(ef.freq[0, :])),
             fdot_step=np.median(np.diff(ef.fdots[:, 0])),
             n_grid=ef.stat.size,
-            # Resolution elements in both frequency and fdot
-            ntrial_blind=int(ef.stat.size / ef.oversample**2),
+            # The calibrated count of the blind search over the same plane
+            ntrial_blind=qffa_calibrated_ntrial(
+                int(ef.stat.size / ef.oversample**2),
+                nharm=2,
+                oversample=ef.oversample,
+                search_fdot=True,
+            ),
             search_fdot=True,
         )
         # A meaningful floor, not the single trial of a precise prior
