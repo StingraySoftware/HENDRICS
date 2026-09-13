@@ -66,6 +66,34 @@ longer the tallest one but the most significant one *after* the correction: a
 modest peak on the expected solution beats a taller one at the other end of the
 band.
 
+Uncertain solutions
+~~~~~~~~~~~~~~~~~~~
+
+An extrapolated solution is never exact, and ranking candidates by their
+distance from it has a side effect: a noise peak that happens to fall right on
+the prediction pays a single trial, however imprecise the prediction was. When
+the uncertainty on the solution is known, give it::
+
+    $ HENzsearch events_ev.nc -f 0.7 -F 0.8 --fast \
+        --known-freq 0.728 --known-fdot -4.45e-11 --known-pepoch 56682 \
+        --known-freq-err 1e-6 --known-fdot-err 1e-15
+
+The uncertainties (one standard deviation) refer to the reference epoch of the
+known solution, and are propagated to the epoch of the observation, ignoring the
+covariances between parameters. With ``--known-par`` they are read from the
+parameter file, and the command line options override them.
+
+Every candidate within three standard deviations of the extrapolated solution is
+then charged the same number of trials: what the whole region would cost.
+Candidates outside the region are still charged by their distance, so the charge
+is continuous at the edge of the region. Charging some candidates more can only
+make false alarms rarer, so the argument of the next section still holds.
+
+Formal timing uncertainties are usually much smaller than the effect of timing
+noise over a long extrapolation. Be generous: an uncertainty that is too large
+costs a little significance, while one that is too small lets noise close to the
+prediction look more significant than it is.
+
 How the trials are counted
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -109,7 +137,9 @@ invalidates the correction completely.
 never need to know how accurate the extrapolated solution is. If it is off,
 the candidate simply lands further away and is charged more trials. Timing
 noise, an unmodelled second derivative or a missed glitch cost significance,
-they do not bias the result.
+they do not bias the result. The one thing to be honest about is the
+uncertainty: without one, noise sitting right on an imprecise prediction is
+charged a single trial (see `Uncertain solutions`_).
 
 **Narrow the band in** ``HENaccelsearch``. ``HENaccelsearch`` delegates the
 search to Stingray, which thresholds candidates internally using the false

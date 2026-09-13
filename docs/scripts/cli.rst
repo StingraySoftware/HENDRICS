@@ -36,7 +36,9 @@ HENaccelsearch
                           [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
                           [--known-fddot KNOWN_FDDOT]
                           [--known-pepoch KNOWN_PEPOCH] [--known-par KNOWN_PAR]
-                          [--loglevel LOGLEVEL] [--debug]
+                          [--known-freq-err KNOWN_FREQ_ERR]
+                          [--known-fdot-err KNOWN_FDOT_ERR] [--loglevel LOGLEVEL]
+                          [--debug]
                           fname
 
     Run the accelerated search on pulsar data.
@@ -80,6 +82,20 @@ HENaccelsearch
                             Parameter file in TEMPO2/PINT format containing the
                             known solution, as an alternative to --known-freq and
                             friends
+      --known-freq-err KNOWN_FREQ_ERR
+                            Uncertainty (1 sigma, Hz) on the frequency of the
+                            known solution, at its reference epoch. It is
+                            propagated to the epoch of this observation, and every
+                            candidate within 3 sigma of the extrapolated solution
+                            is charged the same number of trials, so that a noise
+                            peak close to the prediction is not favoured.
+                            Overrides the uncertainty read from --known-par.
+                            Formal timing uncertainties are usually much smaller
+                            than the effect of timing noise: be generous
+      --known-fdot-err KNOWN_FDOT_ERR
+                            Uncertainty (1 sigma, Hz/s) on the frequency
+                            derivative of the known solution. Overrides the
+                            uncertainty read from --known-par
       --loglevel LOGLEVEL   use given logging level (one between INFO, WARNING,
                             ERROR, CRITICAL, DEBUG; default:WARNING)
       --debug               set DEBUG logging level
@@ -285,7 +301,8 @@ HENefsearch
                        [--fit-frequency FIT_FREQUENCY] [-N N] [--force-memmap]
                        [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
                        [--known-fddot KNOWN_FDDOT] [--known-pepoch KNOWN_PEPOCH]
-                       [--known-par KNOWN_PAR] [-p DEORBIT_PAR]
+                       [--known-par KNOWN_PAR] [--known-freq-err KNOWN_FREQ_ERR]
+                       [--known-fdot-err KNOWN_FDOT_ERR] [-p DEORBIT_PAR]
                        [--loglevel LOGLEVEL] [--debug]
                        files [files ...]
 
@@ -363,6 +380,20 @@ HENefsearch
                             Parameter file in TEMPO2/PINT format containing the
                             known solution, as an alternative to --known-freq and
                             friends
+      --known-freq-err KNOWN_FREQ_ERR
+                            Uncertainty (1 sigma, Hz) on the frequency of the
+                            known solution, at its reference epoch. It is
+                            propagated to the epoch of this observation, and every
+                            candidate within 3 sigma of the extrapolated solution
+                            is charged the same number of trials, so that a noise
+                            peak close to the prediction is not favoured.
+                            Overrides the uncertainty read from --known-par.
+                            Formal timing uncertainties are usually much smaller
+                            than the effect of timing noise: be generous
+      --known-fdot-err KNOWN_FDOT_ERR
+                            Uncertainty (1 sigma, Hz/s) on the frequency
+                            derivative of the known solution. Overrides the
+                            uncertainty read from --known-par
       -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
@@ -1239,7 +1270,8 @@ HENzsearch
                       [--fit-frequency FIT_FREQUENCY] [-N N] [--force-memmap]
                       [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
                       [--known-fddot KNOWN_FDDOT] [--known-pepoch KNOWN_PEPOCH]
-                      [--known-par KNOWN_PAR] [-p DEORBIT_PAR]
+                      [--known-par KNOWN_PAR] [--known-freq-err KNOWN_FREQ_ERR]
+                      [--known-fdot-err KNOWN_FDOT_ERR] [-p DEORBIT_PAR]
                       [--loglevel LOGLEVEL] [--debug]
                       files [files ...]
 
@@ -1317,6 +1349,20 @@ HENzsearch
                             Parameter file in TEMPO2/PINT format containing the
                             known solution, as an alternative to --known-freq and
                             friends
+      --known-freq-err KNOWN_FREQ_ERR
+                            Uncertainty (1 sigma, Hz) on the frequency of the
+                            known solution, at its reference epoch. It is
+                            propagated to the epoch of this observation, and every
+                            candidate within 3 sigma of the extrapolated solution
+                            is charged the same number of trials, so that a noise
+                            peak close to the prediction is not favoured.
+                            Overrides the uncertainty read from --known-par.
+                            Formal timing uncertainties are usually much smaller
+                            than the effect of timing noise: be generous
+      --known-fdot-err KNOWN_FDOT_ERR
+                            Uncertainty (1 sigma, Hz/s) on the frequency
+                            derivative of the known solution. Overrides the
+                            uncertainty read from --known-par
       -p, --deorbit-par DEORBIT_PAR
                             Deorbit data with this parameter file (requires PINT
                             installed)
