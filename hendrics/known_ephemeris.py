@@ -35,10 +35,12 @@ import warnings
 import numpy as np
 
 __all__ = [
+    "accel_single_trial_probability",
     "effective_ntrial",
     "ephemeris_from_parfile",
     "extrapolate_ephemeris",
     "extrapolate_ephemeris_uncertainty",
+    "interbin_stretch",
     "prior_corrected_p_value",
     "qffa_calibrated_ntrial",
     "uncertainty_ntrial",
@@ -489,6 +491,126 @@ def qffa_calibrated_ntrial(naive_ntrial, *, nharm, oversample, search_fdot):
     i_os = _next_tabulated(oversample, _QFFA_OVERSAMPLES[search_fdot], "oversample")
     per_element = _QFFA_TRIALS_PER_ELEMENT[search_fdot][i_nharm, i_os]
     return max(float(naive_ntrial) * per_element, 1.0)
+
+
+def interbin_stretch(z):
+    """Stretch of the noise distribution of the in-between bins of interbinning.
+
+    Interbinning adds a bin between each pair of Fourier bins,
+    :math:`A_{k+1/2} = \\pi/4\\,(A_{k+1} - A_k)`. For white noise the Fourier
+    amplitudes are independent, so the power of the new bin is distributed
+    like a normal power (an exponential with mean 2, in Leahy normalization)
+    stretched by :math:`\\pi^2/8`. After the correction for an acceleration
+    ``z``, the spectrum is convolved with a response :math:`w`, and neighbouring
+    bins become correlated. The variance of their difference, and hence the
+    stretch, becomes
+
+    .. math::
+
+        s(z) = \\frac{\\pi^2}{8}\\left(1 - \\Re\\,\\rho_1(z)\\right),\\qquad
+        \\rho_1(z) = \\frac{\\sum_q w_{q+1} w_q^*}{\\sum_q |w_q|^2}.
+
+    Simulations of pure noise match this to better than 0.5% for
+    :math:`0 \\le z \\le 100`. The power of an in-between bin then has the
+    single-trial probability :math:`\\exp(-P / 2s)`.
+
+    Parameters
+    ----------
+    z : float or array of floats
+        Acceleration, in Fourier bins drifted over the observation
+        (:math:`z = \\dot{f} T^2`).
+
+    Returns
+    -------
+    stretch : float or array of floats
+        The stretch factor :math:`s(z)`.
+
+    Examples
+    --------
+    >>> assert np.isclose(interbin_stretch(0), np.pi**2 / 8)
+    >>> # Neighbouring bins are anti-correlated at z=5: larger spread
+    >>> assert interbin_stretch(5) > np.pi**2 / 8
+    """
+    # ``_create_responses`` is private in stingray, but it is exactly the
+    # response ``accelsearch`` convolves the spectrum with
+    from stingray.pulse.accelsearch import _create_responses
+
+    z = np.asarray(z, dtype=float)
+    unique_z, inverse = np.unique(z.ravel(), return_inverse=True)
+    stretch = np.full(unique_z.size, np.pi**2 / 8)
+    for i, response in enumerate(_create_responses(unique_z)):
+        # No acceleration: no convolution, and no correlation
+        if np.size(response) == 1:
+            continue
+        lag1 = np.sum(response[1:] * np.conj(response[:-1])) / np.sum(np.abs(response) ** 2)
+        stretch[i] *= 1 - lag1.real
+
+    stretch = stretch[inverse].reshape(z.shape)
+    if stretch.ndim == 0:
+        return float(stretch)
+    return stretch
+
+
+def accel_single_trial_probability(power, frequency, fdot, length, interbin=False):
+    """Single-trial probability of a power of the accelerated search.
+
+    Normal Fourier bins have Leahy powers distributed as :math:`\\chi^2` with 2
+    degrees of freedom. With interbinning, the in-between bins are recognized
+    from their frequency, half-way between two multiples of ``1 / length``,
+    and their distribution is stretched by :func:`interbin_stretch`, evaluated
+    at their acceleration :math:`z = \\dot{f}\\,T^2`.
+
+    Parameters
+    ----------
+    power : float or array of floats
+        Leahy-normalized powers, as reported by ``accelsearch``.
+    frequency : float or array of floats
+        Frequency of each candidate, in Hz.
+    fdot : float or array of floats
+        Frequency derivative of each candidate, in Hz/s.
+    length : float
+        Length of the light curve used by ``accelsearch``, in s.
+
+    Other Parameters
+    ----------------
+    interbin : bool, default False
+        Whether the search used interbinning.
+
+    Returns
+    -------
+    p : float or array of floats
+        Single-trial probability of each power.
+
+    Examples
+    --------
+    >>> # A regular bin: exp(-P/2)
+    >>> p = accel_single_trial_probability(20, 100 / 1000, 0, 1000, interbin=True)
+    >>> assert np.isclose(p, np.exp(-10))
+    >>> # An in-between bin, with no acceleration, is less significant
+    >>> p = accel_single_trial_probability(20, 100.5 / 1000, 0, 1000, interbin=True)
+    >>> assert np.isclose(p, np.exp(-20 / (np.pi**2 / 4)))
+    """
+    power, frequency, fdot = np.broadcast_arrays(
+        np.asarray(power, dtype=float),
+        np.asarray(frequency, dtype=float),
+        np.asarray(fdot, dtype=float),
+    )
+    # A single Leahy-normalized spectrum: chi^2 with 2 degrees of freedom
+    # (np.array, so that even a single power can be modified in place)
+    log_p = np.array(-power / 2, dtype=float)
+    if interbin:
+        r = frequency * length
+        half_bin = np.abs(r - np.floor(r) - 0.5) < 0.25
+        if np.any(half_bin):
+            # Round away the floating point noise of fdot * T^2, so that the
+            # responses of each row are only calculated once
+            z = np.round(fdot[half_bin] * length**2, 6)
+            log_p[half_bin] = -power[half_bin] / (2 * interbin_stretch(z))
+
+    p = np.exp(log_p)
+    if p.ndim == 0:
+        return float(p)
+    return p
 
 
 def prior_corrected_p_value(p_single, ntrial):

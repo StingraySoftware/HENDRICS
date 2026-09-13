@@ -10,10 +10,12 @@ import pytest
 
 from hendrics.base import HAS_PINT
 from hendrics.known_ephemeris import (
+    accel_single_trial_probability,
     effective_ntrial,
     ephemeris_from_parfile,
     extrapolate_ephemeris,
     extrapolate_ephemeris_uncertainty,
+    interbin_stretch,
     prior_corrected_p_value,
     qffa_calibrated_ntrial,
     uncertainty_ntrial,
@@ -304,6 +306,68 @@ class TestQffaCalibratedNtrial:
 
     def test_never_below_one(self):
         assert qffa_calibrated_ntrial(1, nharm=1, oversample=1, search_fdot=True) >= 1
+
+
+class TestInterbinStatistics:
+    """Probability of the powers of an interbinned, accelerated search."""
+
+    T = 1000.0
+
+    @staticmethod
+    def _half_bin_powers(z, n=2**19, seed=42):
+        """Interbinned powers of pure noise, after correcting for acceleration z."""
+        from stingray.pulse.accelsearch import _create_responses, convolve, interbin_fft
+
+        rng = np.random.default_rng(seed)
+        # Leahy-normalized white noise: its powers are chi^2 with 2 d.o.f.
+        spectrum = rng.normal(size=n) + 1j * rng.normal(size=n)
+        (response,) = _create_responses([z])
+        if np.size(response) > 1:
+            spectrum = convolve(spectrum, response)
+        # Stay away from the edges of the convolution
+        spectrum = spectrum[2000:-2000]
+        _, interbinned = interbin_fft(np.arange(spectrum.size), spectrum)
+        powers = (interbinned * interbinned.conj()).real
+        return powers[1::2]
+
+    def test_no_acceleration_is_pi_squared_over_eight(self):
+        assert np.isclose(interbin_stretch(0.0), np.pi**2 / 8)
+
+    def test_works_on_arrays(self):
+        stretch = interbin_stretch(np.array([0.0, 5.0, 100.0]))
+        assert stretch.shape == (3,)
+        assert np.isclose(stretch[0], np.pi**2 / 8)
+        # Neighbouring bins are correlated after the acceleration correction
+        assert not np.isclose(stretch[1], np.pi**2 / 8)
+
+    @pytest.mark.parametrize("z", [0, 0.25, 0.5, 1, 5, 10, 100])
+    def test_half_bin_probabilities_are_calibrated(self, z):
+        from scipy import stats
+
+        powers = self._half_bin_powers(z)
+        p = np.exp(-powers / (2 * interbin_stretch(z)))
+        # Neighbouring powers are correlated: test the uniformity of distant ones
+        assert stats.kstest(p[::256], "uniform").pvalue > 1e-3
+        # ...and the tail, where detections live, on all of them
+        assert 0.007 < np.mean(p < 0.01) < 0.013
+
+    def test_regular_bins_follow_chi_squared(self):
+        power = np.array([10.0, 20.0])
+        freq = np.array([100.0, 101.0]) / self.T
+        p = accel_single_trial_probability(power, freq, 5 / self.T**2, self.T, interbin=True)
+        assert np.allclose(p, np.exp(-power / 2))
+
+    def test_half_bins_are_stretched(self):
+        freq = np.array([100.5, 100.5]) / self.T
+        fdot = np.array([0.0, 5.0]) / self.T**2
+        p = accel_single_trial_probability(20.0, freq, fdot, self.T, interbin=True)
+        expected = np.exp(-20 / (2 * interbin_stretch(np.array([0.0, 5.0]))))
+        assert np.allclose(p, expected)
+
+    def test_without_interbin_every_bin_follows_chi_squared(self):
+        freq = np.array([100.0, 100.5]) / self.T
+        p = accel_single_trial_probability(20.0, freq, 5 / self.T**2, self.T, interbin=False)
+        assert np.allclose(p, np.exp(-10))
 
 
 class TestPriorCorrectedPValue:
