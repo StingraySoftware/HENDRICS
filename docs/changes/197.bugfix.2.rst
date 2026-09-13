@@ -1,0 +1,9 @@
+``HENaccelsearch`` counted one trial per frequency bin, ignoring the
+acceleration (z) axis and interbinning. It now charges the number of trials
+measured with Monte Carlo simulations of pure noise (e.g. 0.9 per frequency bin
+per z row with ``--delta-z 1``), and gives the in-between bins of ``--interbin``
+their own, wider, noise distribution. Every candidate reports its single-trial
+probability (``p_1trial``) and the probability corrected with the naive
+(``p_ntrial``) and calibrated (``p_ntrial_adj``) number of trials. Blind
+searches only write candidates whose ``p_ntrial_adj`` is below the detection
+threshold, which removes many noise candidates that used to be reported.

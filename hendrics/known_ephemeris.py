@@ -35,6 +35,7 @@ import warnings
 import numpy as np
 
 __all__ = [
+    "accel_calibrated_ntrial",
     "accel_single_trial_probability",
     "effective_ntrial",
     "ephemeris_from_parfile",
@@ -70,6 +71,12 @@ _QFFA_TRIALS_PER_ELEMENT = {
         ]
     ),
 }
+
+# Trials per (frequency bin x z row) of ``HENaccelsearch``, measured the same
+# way: (no z search, delta_z <= 0.5, delta_z = 1), without and with interbinning.
+# Steps between 0.5 and 1 are interpolated linearly; coarser steps count the
+# rows as independent (the "no z search" value).
+_ACCEL_TRIALS_PER_CELL = {False: (1.0, 0.7, 0.9), True: (2.1, 0.9, 1.1)}
 
 
 def extrapolate_ephemeris(freq, fdot=0.0, fddot=0.0, pepoch=None, target_epoch=None):
@@ -491,6 +498,63 @@ def qffa_calibrated_ntrial(naive_ntrial, *, nharm, oversample, search_fdot):
     i_os = _next_tabulated(oversample, _QFFA_OVERSAMPLES[search_fdot], "oversample")
     per_element = _QFFA_TRIALS_PER_ELEMENT[search_fdot][i_nharm, i_os]
     return max(float(naive_ntrial) * per_element, 1.0)
+
+
+def accel_calibrated_ntrial(n_freq, *, zmax, delta_z, interbin):
+    """Calibrated number of independent trials of an accelerated search.
+
+    ``stingray.pulse.accelsearch`` searches ``n_freq`` Fourier bins for each of
+    the z rows ``np.arange(-zmax, zmax, delta_z)``. Neighbouring z rows are
+    correlated, while interbinning adds an in-between bin for each pair of
+    Fourier bins. Monte Carlo simulations of pure noise (see
+    ``notebooks/trials_calibration.py`` and the technical details in the
+    documentation) give the number of independent trials per frequency bin
+    per z row:
+
+    ================  ============  ===========
+    Search            No interbin   Interbin
+    ================  ============  ===========
+    no z search       1.0           2.1
+    ``delta_z`` = 1   0.9           1.1
+    ``delta_z`` = 0.5 0.7           0.9
+    ================  ============  ===========
+
+    Steps between 0.5 and 1 are interpolated linearly. Finer steps use the
+    0.5 value, and coarser steps count the rows as independent: both
+    overestimate the number of trials, which is conservative.
+
+    Parameters
+    ----------
+    n_freq : int
+        Number of frequency bins searched (the ``ntrial`` column of stingray).
+
+    Other Parameters
+    ----------------
+    zmax : float
+        Maximum absolute z searched (0 for a plain Fourier search).
+    delta_z : float
+        Step in z.
+    interbin : bool
+        Whether interbinning was used.
+
+    Returns
+    -------
+    ntrial : float
+        Calibrated number of trials, at least 1.
+
+    Examples
+    --------
+    >>> # 20 z rows, 0.9 trials per frequency bin per row
+    >>> ntrial = accel_calibrated_ntrial(1000, zmax=10, delta_z=1, interbin=False)
+    >>> assert np.isclose(ntrial, 18000)
+    """
+    independent, fine, coarse = _ACCEL_TRIALS_PER_CELL[bool(interbin)]
+    n_z = np.arange(-zmax, zmax, delta_z).size if zmax > 0 else 0
+    if n_z == 0 or delta_z > 1 + 1e-9:
+        per_cell = independent
+    else:
+        per_cell = float(np.interp(delta_z, [0.5, 1], [fine, coarse]))
+    return max(float(n_freq) * max(n_z, 1) * per_cell, 1.0)
 
 
 def interbin_stretch(z):

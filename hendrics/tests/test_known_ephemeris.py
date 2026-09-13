@@ -10,6 +10,7 @@ import pytest
 
 from hendrics.base import HAS_PINT
 from hendrics.known_ephemeris import (
+    accel_calibrated_ntrial,
     accel_single_trial_probability,
     effective_ntrial,
     ephemeris_from_parfile,
@@ -368,6 +369,53 @@ class TestInterbinStatistics:
         freq = np.array([100.0, 100.5]) / self.T
         p = accel_single_trial_probability(20.0, freq, 5 / self.T**2, self.T, interbin=False)
         assert np.allclose(p, np.exp(-10))
+
+
+class TestAccelCalibratedNtrial:
+    """The Monte Carlo calibration of the trials of ``HENaccelsearch``."""
+
+    def test_plain_fft_is_one_trial_per_bin(self):
+        assert np.isclose(accel_calibrated_ntrial(1000, zmax=0, delta_z=1, interbin=False), 1000)
+
+    def test_plain_fft_with_interbin(self):
+        assert np.isclose(accel_calibrated_ntrial(1000, zmax=0, delta_z=1, interbin=True), 2100)
+
+    @pytest.mark.parametrize(
+        "delta_z, interbin, per_cell",
+        [(1, False, 0.9), (1, True, 1.1), (0.5, False, 0.7), (0.5, True, 0.9)],
+    )
+    def test_tabulated_steps(self, delta_z, interbin, per_cell):
+        n_z = np.arange(-10, 10, delta_z).size
+        ntrial = accel_calibrated_ntrial(1000, zmax=10, delta_z=delta_z, interbin=interbin)
+        assert np.isclose(ntrial, 1000 * n_z * per_cell)
+
+    def test_linear_between_tabulated_steps(self):
+        n_z = np.arange(-10, 10, 0.75).size
+        ntrial = accel_calibrated_ntrial(1000, zmax=10, delta_z=0.75, interbin=False)
+        assert np.isclose(ntrial, 1000 * n_z * 0.8)
+
+    def test_finer_steps_use_the_finest_calibration(self):
+        # Finer steps are more correlated: this overestimates the trials
+        n_z = np.arange(-10, 10, 0.25).size
+        ntrial = accel_calibrated_ntrial(1000, zmax=10, delta_z=0.25, interbin=True)
+        assert np.isclose(ntrial, 1000 * n_z * 0.9)
+
+    @pytest.mark.parametrize("interbin, per_cell", [(False, 1.0), (True, 2.1)])
+    def test_coarser_steps_count_rows_as_independent(self, interbin, per_cell):
+        n_z = np.arange(-10, 10, 2).size
+        ntrial = accel_calibrated_ntrial(1000, zmax=10, delta_z=2, interbin=interbin)
+        assert np.isclose(ntrial, 1000 * n_z * per_cell)
+
+    def test_no_warning_outside_the_simulated_steps(self):
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            accel_calibrated_ntrial(1000, zmax=10, delta_z=0.1, interbin=False)
+            accel_calibrated_ntrial(1000, zmax=10, delta_z=3, interbin=True)
+
+    def test_never_below_one(self):
+        assert accel_calibrated_ntrial(1, zmax=1, delta_z=0.5, interbin=False) >= 1
 
 
 class TestPriorCorrectedPValue:
@@ -913,15 +961,42 @@ class TestTargetedAccelSearch:
         far = table[np.abs(table["f_offset"]) > 0.02]
         assert np.all(far["ntrial_eff"] > 1)
 
-    def test_blind_search_is_untouched(self):
-        """Without a prior, the output keeps its original columns."""
+    def test_blind_search_reports_calibrated_significances(self):
+        """Without a prior: all the significances, but no prior correction."""
         table = self._run("blind.csv")
+        assert len(table) > 0
         assert "p_value" not in table.colnames
         assert "ntrial_eff" not in table.colnames
+        for name in ("p_1trial", "p_ntrial", "p_ntrial_adj"):
+            assert name in table.colnames
+
+        # --zmax 10, default --delta-z 1
+        n_freq = int(table["ntrial"][0])
+        ntrial = accel_calibrated_ntrial(n_freq, zmax=10, delta_z=1, interbin=False)
+        assert ntrial > n_freq
+        assert np.allclose(table["p_ntrial"], prior_corrected_p_value(table["p_1trial"], n_freq))
+        assert np.allclose(
+            table["p_ntrial_adj"], prior_corrected_p_value(table["p_1trial"], ntrial)
+        )
+        # Only candidates below the threshold, with the calibrated trials
+        assert np.all(table["p_ntrial_adj"] < 0.068)
 
     def test_wide_band_warns_that_it_buys_little(self):
         with pytest.warns(UserWarning, match="too wide for the known ephemeris"):
             self._run("wide.csv", band=("1.0", "50.0"), extra=self.prior_args)
+
+    def test_targeted_interbin_search(self):
+        table = self._run("targeted_interbin.csv", extra=self.prior_args + ["--interbin"])
+        best = table[np.argmin(table["p_value"])]
+        assert np.isclose(best["frequency"], self.FTRUE, atol=2e-3)
+        assert np.isclose(best["ntrial_eff"], 1.0)
+        assert best["p_value"] < 1e-6
+
+        # The in-between bins pay for their wider noise distribution
+        r = table["frequency"] * table["length"][0]
+        half_bin = np.abs(r - np.floor(r) - 0.5) < 0.25
+        assert np.any(half_bin)
+        assert np.all(table["p_1trial"][half_bin] > np.exp(-table["power"][half_bin] / 2))
 
     def test_uncertainty_sets_a_floor_on_the_trials(self):
         f_err, fdot_err = 1e-2, 2e-6
@@ -943,7 +1018,7 @@ class TestTargetedAccelSearch:
             f_step=1 / length,
             fdot_step=1 / length**2,
             n_grid=n_freq * n_z,
-            ntrial_blind=n_freq,
+            ntrial_blind=accel_calibrated_ntrial(n_freq, zmax=10, delta_z=1, interbin=False),
             search_fdot=True,
         )
         assert expected > 5

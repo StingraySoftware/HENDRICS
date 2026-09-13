@@ -58,10 +58,13 @@ from .io import (
     save_folding,
 )
 from .known_ephemeris import (
+    accel_calibrated_ntrial,
+    accel_single_trial_probability,
     effective_ntrial,
     ephemeris_from_parfile,
     extrapolate_ephemeris,
     extrapolate_ephemeris_uncertainty,
+    interbin_stretch,
     prior_corrected_p_value,
     qffa_calibrated_ntrial,
     uncertainty_ntrial,
@@ -2649,19 +2652,33 @@ def main_accelsearch(args=None):
         args, events.mjdref + t0 / 86400
     )
     targeted = bool(np.isfinite(known_freq))
-    single_trial_p_value = det_p_value
+
+    # The frequency bins and z rows that ``accelsearch`` will search
+    fft_length = times.size * dt
+    n_freq = max(int(np.rint((fmax - fmin) * fft_length)), 1)
+    range_z = np.arange(-zmax, zmax, delta_z)
+    ntrial = accel_calibrated_ntrial(n_freq, zmax=zmax, delta_z=delta_z, interbin=interbin)
+    # det_p_value is the false alarm probability of the whole blind search,
+    # charged the calibrated number of trials. A targeted search instead needs
+    # to see every candidate below that probability for a single trial.
     if targeted:
-        # ``accelsearch`` interprets det_p_value as the false alarm probability
-        # of the *whole* blind search, so its internal threshold rises with the
-        # width of the band. A targeted search needs to see candidates that a
-        # blind one would discard, so ask for the loosest threshold that can
-        # still be expressed, and tell the user what it bought them.
-        fft_length = max_length * 2 if args.pad_to_double else max_length
-        n_freq = max((fmax - fmin) * fft_length, 1)
-        # stingray refuses to invert a multi-trial probability closer than
-        # 1e-12 to 1, so stop an order of magnitude short of that
-        det_p_value = min(-np.expm1(n_freq * np.log1p(-single_trial_p_value)), 1 - 1e-9)
-        reachable = -np.expm1(np.log1p(-det_p_value) / n_freq)
+        single_trial_p_value = det_p_value
+    else:
+        single_trial_p_value = -np.expm1(np.log1p(-det_p_value) / ntrial)
+    # ``accelsearch`` thresholds the power as if the search were ``n_freq``
+    # regular Fourier bins. In-between bins of interbinning can have a narrower
+    # noise distribution (stretch < 1), so lower the power threshold enough to
+    # keep them too. The final selection is done below, on the probabilities.
+    stretch = 1.0
+    if interbin and range_z.size > 0:
+        stretch = min(1.0, float(np.min(interbin_stretch(range_z))))
+    power_threshold = -2 * stretch * np.log(single_trial_p_value)
+    # stingray refuses to invert a multi-trial probability closer than
+    # 1e-12 to 1, so stop an order of magnitude short of that
+    stingray_p_value = min(float(pds_probability(power_threshold, ntrial=n_freq)), 1 - 1e-9)
+    if targeted:
+        # Single-trial probability of the weakest candidate stingray can report
+        reachable = -(np.expm1(np.log1p(-stingray_p_value) / n_freq) ** (1 / stretch))
         log.info(
             f"Targeted search: single-trial threshold {reachable:.2g} "
             f"over {n_freq:.0f} frequency bins"
@@ -2698,7 +2715,7 @@ def main_accelsearch(args=None):
         debug=debug,
         interbin=interbin,
         nproc=nproc,
-        det_p_value=det_p_value,
+        det_p_value=stingray_p_value,
         fft_rescale=fft_rescale,
         candidate_file=outfile.replace(".csv", ""),
     )
@@ -2716,18 +2733,43 @@ def main_accelsearch(args=None):
         )
         results = results[~bad]
 
-    if targeted and len(results) > 0:
-        # stingray searches a grid of 1/T in frequency and delta_z/T^2 in fdot,
-        # and reports the number of frequency bins it covered as ``ntrial``
-        length = results["length"][0]
+    # stingray reports the number of frequency bins it covered as ``ntrial``
+    length = results["length"][0] if len(results) > 0 else fft_length
+    if len(results) > 0:
         n_freq = int(results["ntrial"][0])
-        n_z = max(np.arange(-zmax, zmax, delta_z).size, 1)
+        ntrial = accel_calibrated_ntrial(n_freq, zmax=zmax, delta_z=delta_z, interbin=interbin)
+    p_1trial = np.asarray(
+        accel_single_trial_probability(
+            np.asarray(results["power"]),
+            np.asarray(results["frequency"]),
+            np.asarray(results["fdot"]),
+            length,
+            interbin=interbin,
+        ),
+        dtype=float,
+    ).reshape(-1)
+    results["p_1trial"] = p_1trial
+    results["p_ntrial"] = np.asarray(prior_corrected_p_value(p_1trial, n_freq), dtype=float)
+    results["p_ntrial_adj"] = np.asarray(prior_corrected_p_value(p_1trial, ntrial), dtype=float)
 
+    if not targeted:
+        n_before = len(results)
+        results = results[results["p_ntrial_adj"] < det_p_value]
+        log.info(
+            f"{len(results)} of {n_before} candidates have a false alarm probability "
+            f"below {det_p_value} with {ntrial:.0f} calibrated trials"
+        )
+
+    if targeted and len(results) > 0:
+        # stingray searches a grid of 1/T in frequency (1/2T with interbinning)
+        # and delta_z/T^2 in fdot
+        n_z = max(range_z.size, 1)
+        n_f_cells = 2 * n_freq - 1 if interbin else n_freq
         grid = dict(
-            f_step=1 / length,
+            f_step=1 / length / (2 if interbin else 1),
             fdot_step=delta_z / length**2,
-            n_grid=n_freq * n_z,
-            ntrial_blind=n_freq,
+            n_grid=n_f_cells * n_z,
+            ntrial_blind=ntrial,
             search_fdot=True,
         )
         ntrial_min = uncertainty_ntrial(known_freq_err, known_fdot_err, **grid)
@@ -2737,7 +2779,7 @@ def main_accelsearch(args=None):
             ntrial_min=ntrial_min,
             **grid,
         )
-        p_value = prior_corrected_p_value(pds_probability(results["power"], ntrial=1), n_eff)
+        p_value = prior_corrected_p_value(np.asarray(results["p_1trial"]), n_eff)
 
         results["f_offset"] = results["frequency"] - known_freq
         results["fdot_offset"] = results["fdot"] - known_fdot
@@ -2773,7 +2815,9 @@ def main_accelsearch(args=None):
             ].pprint_all()
         else:
             results.sort("power")
-            results["time", "frequency", "fdot", "power", "pepoch"][-10:][::-1].pprint()
+            results["time", "frequency", "fdot", "power", "p_ntrial_adj", "pepoch"][-10:][
+                ::-1
+            ].pprint()
         print(f"See all {len(results)} candidates in {outfile}")
     else:
         print("No candidates found")
