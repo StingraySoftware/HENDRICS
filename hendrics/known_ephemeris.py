@@ -36,7 +36,9 @@ __all__ = [
     "effective_ntrial",
     "ephemeris_from_parfile",
     "extrapolate_ephemeris",
+    "extrapolate_ephemeris_uncertainty",
     "prior_corrected_p_value",
+    "uncertainty_ntrial",
 ]
 
 
@@ -92,13 +94,74 @@ def extrapolate_ephemeris(freq, fdot=0.0, fddot=0.0, pepoch=None, target_epoch=N
     return new_freq, new_fdot, fddot
 
 
-def ephemeris_from_parfile(parfile):
+def extrapolate_ephemeris_uncertainty(
+    f_err, fdot_err=0.0, fddot_err=0.0, pepoch=None, target_epoch=None
+):
+    """Propagate the uncertainties of a spin solution to a different epoch.
+
+    The contributions of each parameter are added in quadrature, ignoring the
+    covariances between them.
+
+    .. note::
+        Formal timing uncertainties are usually far smaller than the effect of
+        timing noise, glitches or unmodelled derivatives over a long
+        extrapolation. Treat the result as a lower limit.
+
+    Parameters
+    ----------
+    f_err : float
+        Uncertainty on the spin frequency at ``pepoch``, in Hz.
+
+    Other Parameters
+    ----------------
+    fdot_err : float, default 0
+        Uncertainty on the first frequency derivative, in Hz/s.
+    fddot_err : float, default 0
+        Uncertainty on the second frequency derivative, in Hz/s^2.
+    pepoch : float
+        Reference epoch of the input solution, in MJD.
+    target_epoch : float
+        Epoch the solution should be extrapolated to, in MJD.
+
+    Returns
+    -------
+    f_err : float
+        Uncertainty on the extrapolated frequency, in Hz.
+    fdot_err : float
+        Uncertainty on the extrapolated first frequency derivative, in Hz/s.
+
+    Examples
+    --------
+    >>> # An fdot known to 1e-12 Hz/s, ten days later
+    >>> f_err, fdot_err = extrapolate_ephemeris_uncertainty(
+    ...     0, fdot_err=1e-12, pepoch=50000, target_epoch=50010)
+    >>> assert np.isclose(f_err, 1e-12 * 864000)
+    >>> assert np.isclose(fdot_err, 1e-12)
+    """
+    if pepoch is None or target_epoch is None:
+        raise ValueError("Both pepoch and target_epoch are needed to extrapolate an ephemeris")
+
+    dt = (target_epoch - pepoch) * 86400.0
+
+    new_f_err = np.sqrt(f_err**2 + (fdot_err * dt) ** 2 + (0.5 * fddot_err * dt**2) ** 2)
+    new_fdot_err = np.sqrt(fdot_err**2 + (fddot_err * dt) ** 2)
+
+    return new_f_err, new_fdot_err
+
+
+def ephemeris_from_parfile(parfile, return_errors=False):
     """Read F0, F1, F2 and PEPOCH from a TEMPO2/PINT parameter file.
 
     Parameters
     ----------
     parfile : str
         Path to a parameter file in TEMPO2/PINT format.
+
+    Other Parameters
+    ----------------
+    return_errors : bool, default False
+        Also return the uncertainties on F0, F1 and F2. Parameters without an
+        uncertainty (or absent from the file) are given an uncertainty of 0.
 
     Returns
     -------
@@ -110,6 +173,9 @@ def ephemeris_from_parfile(parfile):
         Second frequency derivative, in Hz/s^2.
     pepoch : float
         Reference epoch, in MJD.
+    errors : tuple of floats
+        Uncertainties on ``freq``, ``fdot`` and ``fddot``. Only returned if
+        ``return_errors`` is True.
     """
     from .base import get_model
 
@@ -127,7 +193,16 @@ def ephemeris_from_parfile(parfile):
     if freq is None:
         raise ValueError(f"No spin frequency (F0) found in {parfile}")
 
-    return freq, _value("F1"), _value("F2"), _value("PEPOCH", None)
+    result = (freq, _value("F1"), _value("F2"), _value("PEPOCH", None))
+    if not return_errors:
+        return result
+
+    def _error(name):
+        if not hasattr(model, name) or getattr(model, name).uncertainty_value is None:
+            return 0.0
+        return float(getattr(model, name).uncertainty_value)
+
+    return result + ((_error("F0"), _error("F1"), _error("F2")),)
 
 
 def effective_ntrial(
@@ -138,6 +213,7 @@ def effective_ntrial(
     n_grid=None,
     ntrial_blind=None,
     search_fdot=True,
+    ntrial_min=1.0,
 ):
     """Number of trials to charge a candidate offset from a known ephemeris.
 
@@ -183,11 +259,17 @@ def effective_ntrial(
         searching the whole band.
     search_fdot : bool, default True
         Whether the search covers frequency derivatives as well.
+    ntrial_min : float, default 1
+        Minimum number of trials charged to any cell, typically the output of
+        :func:`uncertainty_ntrial` when the known ephemeris has an uncertainty.
+        Raising the charge of some cells can only lower the false alarm rate,
+        so the correction stays valid.
 
     Returns
     -------
     ntrial : float or array of floats
-        Effective number of trials, between 1 and ``ntrial_blind``.
+        Effective number of trials, between ``ntrial_min`` (or 1, if larger)
+        and ``ntrial_blind``.
 
     Examples
     --------
@@ -220,7 +302,94 @@ def effective_ntrial(
 
     ntrial = ntrial_blind * n_closer / n_grid
 
-    return np.clip(ntrial, 1.0, float(ntrial_blind))
+    ntrial_min = min(max(float(ntrial_min), 1.0), float(ntrial_blind))
+
+    return np.clip(ntrial, ntrial_min, float(ntrial_blind))
+
+
+def uncertainty_ntrial(
+    f_err,
+    fdot_err=0.0,
+    *,
+    f_step=None,
+    fdot_step=None,
+    n_grid=None,
+    ntrial_blind=None,
+    search_fdot=True,
+    nsigma=3.0,
+):
+    """Number of trials charged to every cell inside the uncertainty region.
+
+    When the known ephemeris has an uncertainty, all the cells within
+    ``nsigma`` standard deviations of it are, a priori, equally good places for
+    the pulsation to be. Ranking them by their distance from the central value
+    would be arbitrary, and would charge a noise peak that happens to land near
+    the centre far too little. Instead, all of them are charged the same number
+    of trials: the number of cells in the region, rescaled to the blind-search
+    count exactly as :func:`effective_ntrial` does. Pass the result as
+    ``ntrial_min`` to :func:`effective_ntrial`.
+
+    The region is an interval in a frequency-only search, and an ellipse when a
+    frequency derivative is searched too. Each semi-axis is at least half a
+    grid cell, since even a perfectly known value spans the cell it falls in. A
+    candidate on the edge of a circular region costs the same whether it is
+    charged by the region or by its rank.
+
+    Parameters
+    ----------
+    f_err : float
+        Uncertainty (one standard deviation) on the expected frequency, in Hz.
+
+    Other Parameters
+    ----------------
+    fdot_err : float, default 0
+        Uncertainty (one standard deviation) on the expected frequency
+        derivative, in Hz/s. Ignored if ``search_fdot`` is False.
+    f_step : float
+        Step of the frequency grid, in Hz.
+    fdot_step : float
+        Step of the frequency derivative grid, in Hz/s. Only needed if
+        ``search_fdot`` is True.
+    n_grid : int
+        Total number of points in the search grid.
+    ntrial_blind : int
+        Number of independent trials of the equivalent blind search.
+    search_fdot : bool, default True
+        Whether the search covers frequency derivatives as well.
+    nsigma : float, default 3
+        Half-width of the region, in standard deviations.
+
+    Returns
+    -------
+    ntrial : float
+        Number of trials charged inside the region, between 1 and
+        ``ntrial_blind``.
+
+    Examples
+    --------
+    >>> kw = dict(f_step=1e-5, n_grid=1000, ntrial_blind=200,
+    ...           search_fdot=False)
+    >>> # +-3 sigma covers 60 of the 1000 grid cells: 6% of the blind trials
+    >>> assert np.isclose(uncertainty_ntrial(1e-4, **kw), 12)
+    >>> # A candidate on the edge of the region costs the same either way
+    >>> assert np.isclose(effective_ntrial(3e-4, **kw), 12)
+    """
+    if f_step is None:
+        raise ValueError("The frequency grid step f_step is needed")
+    if n_grid is None or ntrial_blind is None:
+        raise ValueError("Both n_grid and ntrial_blind are needed")
+
+    half_f = nsigma * np.abs(np.asarray(f_err, dtype=float)) / f_step
+
+    if search_fdot:
+        if fdot_step is None:
+            raise ValueError("The fdot grid step fdot_step is needed")
+        half_fdot = nsigma * np.abs(np.asarray(fdot_err, dtype=float)) / fdot_step
+        n_cells = np.pi * np.maximum(half_f, 0.5) * np.maximum(half_fdot, 0.5)
+    else:
+        n_cells = 2 * half_f
+
+    return np.clip(ntrial_blind * n_cells / n_grid, 1.0, float(ntrial_blind))
 
 
 def prior_corrected_p_value(p_single, ntrial):

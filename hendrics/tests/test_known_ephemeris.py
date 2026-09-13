@@ -13,7 +13,9 @@ from hendrics.known_ephemeris import (
     effective_ntrial,
     ephemeris_from_parfile,
     extrapolate_ephemeris,
+    extrapolate_ephemeris_uncertainty,
     prior_corrected_p_value,
+    uncertainty_ntrial,
 )
 
 
@@ -50,6 +52,45 @@ class TestExtrapolateEphemeris:
     def test_missing_epoch_raises(self):
         with pytest.raises(ValueError, match="Both pepoch and target_epoch"):
             extrapolate_ephemeris(1.0, pepoch=50000)
+
+
+class TestExtrapolateEphemerisUncertainty:
+    TEN_DAYS = 864000.0
+
+    def test_frequency_error_alone_is_unchanged(self):
+        f_err, fdot_err = extrapolate_ephemeris_uncertainty(1e-6, pepoch=50000, target_epoch=55000)
+        assert np.isclose(f_err, 1e-6)
+        assert fdot_err == 0
+
+    def test_fdot_error_grows_linearly(self):
+        f_err, fdot_err = extrapolate_ephemeris_uncertainty(
+            0.0, fdot_err=1e-12, pepoch=50000, target_epoch=50010
+        )
+        assert np.isclose(f_err, 1e-12 * self.TEN_DAYS)
+        assert np.isclose(fdot_err, 1e-12)
+
+    def test_fddot_error_grows_quadratically(self):
+        f_err, fdot_err = extrapolate_ephemeris_uncertainty(
+            0.0, fddot_err=1e-20, pepoch=50000, target_epoch=50010
+        )
+        assert np.isclose(f_err, 0.5 * 1e-20 * self.TEN_DAYS**2)
+        assert np.isclose(fdot_err, 1e-20 * self.TEN_DAYS)
+
+    def test_terms_add_in_quadrature(self):
+        f_err, _ = extrapolate_ephemeris_uncertainty(
+            3e-6, fdot_err=4e-6 / self.TEN_DAYS, pepoch=50000, target_epoch=50010
+        )
+        assert np.isclose(f_err, 5e-6)
+
+    def test_backwards_in_time_is_the_same(self):
+        kw = dict(fdot_err=1e-12, fddot_err=1e-20, pepoch=50000)
+        forward = extrapolate_ephemeris_uncertainty(1e-6, target_epoch=50010, **kw)
+        backward = extrapolate_ephemeris_uncertainty(1e-6, target_epoch=49990, **kw)
+        assert np.allclose(forward, backward)
+
+    def test_missing_epoch_raises(self):
+        with pytest.raises(ValueError, match="Both pepoch and target_epoch"):
+            extrapolate_ephemeris_uncertainty(1e-6, target_epoch=50000)
 
 
 class TestEffectiveNtrial:
@@ -116,6 +157,79 @@ class TestEffectiveNtrial:
         with pytest.raises(ValueError, match="fdot_step"):
             effective_ntrial(1e-4, f_step=1e-5, n_grid=10, ntrial_blind=10, search_fdot=True)
 
+    def test_floor_applies_near_the_prior(self):
+        # On the prediction the rank costs 1 trial, the floor raises it
+        assert np.isclose(effective_ntrial(0.0, ntrial_min=12, **self.ONE_D), 12)
+        assert np.isclose(effective_ntrial(0.0, 0.0, ntrial_min=12, **self.TWO_D), 12)
+
+    def test_floor_is_irrelevant_far_away(self):
+        # 50 grid steps away the rank already costs 20 trials
+        assert np.isclose(effective_ntrial(50e-5, ntrial_min=12, **self.ONE_D), 20)
+
+    def test_floor_never_exceeds_the_blind_search(self):
+        assert np.isclose(effective_ntrial(0.0, ntrial_min=1e6, **self.ONE_D), 200)
+
+    def test_floor_works_on_arrays(self):
+        offsets = np.array([0.0, 50e-5, 1.0])
+        ntrial = effective_ntrial(offsets, ntrial_min=12, **self.ONE_D)
+        assert np.allclose(ntrial, [12, 20, 200])
+
+
+class TestUncertaintyNtrial:
+    """Trials charged to every cell inside the uncertainty region of the prior."""
+
+    ONE_D = TestEffectiveNtrial.ONE_D
+    TWO_D = TestEffectiveNtrial.TWO_D
+
+    def test_no_uncertainty_is_one_trial(self):
+        assert np.isclose(uncertainty_ntrial(0.0, **self.ONE_D), 1)
+        assert np.isclose(uncertainty_ntrial(0.0, 0.0, **self.TWO_D), 1)
+
+    def test_frequency_only_counts_the_interval(self):
+        # +-3 sigma = +-30 grid steps: 60 of the 1000 cells, i.e. 12 of 200 trials
+        assert np.isclose(uncertainty_ntrial(10e-5, **self.ONE_D), 12)
+
+    def test_continuous_with_the_rank_at_the_edge(self):
+        """A candidate on the edge of the region costs the same either way."""
+        f_err = 10e-5
+        assert np.isclose(
+            uncertainty_ntrial(f_err, **self.ONE_D), effective_ntrial(3 * f_err, **self.ONE_D)
+        )
+        fdot_err = 10e-10
+        assert np.isclose(
+            uncertainty_ntrial(f_err, fdot_err, **self.TWO_D),
+            effective_ntrial(3 * f_err, 0.0, **self.TWO_D),
+        )
+
+    def test_fdot_search_counts_an_ellipse(self):
+        # Semi-axes of 6 frequency cells and 12 fdot cells
+        expected = 1000 * np.pi * 6 * 12 / 10000
+        assert np.isclose(uncertainty_ntrial(2e-5, 4e-10, **self.TWO_D), expected)
+
+    def test_semi_axes_are_at_least_half_a_cell(self):
+        # A perfectly known fdot still spans the cell the prediction falls in
+        expected = 1000 * np.pi * 30 * 0.5 / 10000
+        assert np.isclose(uncertainty_ntrial(10e-5, 0.0, **self.TWO_D), expected)
+
+    def test_nsigma_scales_the_region(self):
+        one = uncertainty_ntrial(10e-5, nsigma=1, **self.ONE_D)
+        three = uncertainty_ntrial(10e-5, nsigma=3, **self.ONE_D)
+        assert np.isclose(three, 3 * one)
+
+    def test_capped_at_the_blind_search(self):
+        assert np.isclose(uncertainty_ntrial(1.0, **self.ONE_D), 200)
+        assert np.isclose(uncertainty_ntrial(1.0, 1.0, **self.TWO_D), 1000)
+
+    def test_missing_arguments_raise(self):
+        with pytest.raises(ValueError, match="f_step"):
+            uncertainty_ntrial(1e-4, n_grid=10, ntrial_blind=10, search_fdot=False)
+        with pytest.raises(ValueError, match="n_grid and ntrial_blind"):
+            uncertainty_ntrial(1e-4, f_step=1e-5, search_fdot=False)
+        with pytest.raises(ValueError, match="fdot_step"):
+            uncertainty_ntrial(
+                1e-4, 1e-10, f_step=1e-5, n_grid=10, ntrial_blind=10, search_fdot=True
+            )
+
 
 class TestPriorCorrectedPValue:
     def test_single_trial_is_unchanged(self):
@@ -146,6 +260,25 @@ class TestPriorCorrectedPValue:
 
 @pytest.mark.skipif("not HAS_PINT")
 class TestEphemerisFromParfile:
+    def test_read_uncertainties(self, tmp_path):
+        parfile = tmp_path / "errors.par"
+        with open(parfile, "w") as fobj:
+            print("PSR              TEST", file=fobj)
+            print("F0               0.728 1 2e-9", file=fobj)
+            print("F1               -4.45e-11 1 3e-18", file=fobj)
+            print("PEPOCH           56682", file=fobj)
+            print("EPHEM            DE421", file=fobj)
+            print("UNITS            TDB", file=fobj)
+
+        freq, fdot, fddot, pepoch, errors = ephemeris_from_parfile(parfile, return_errors=True)
+        assert np.isclose(freq, 0.728)
+        assert np.isclose(pepoch, 56682)
+        f_err, fdot_err, fddot_err = errors
+        assert np.isclose(f_err, 2e-9)
+        assert np.isclose(fdot_err, 3e-18)
+        # F2 is not in the file, so it has no uncertainty either
+        assert fddot_err == 0
+
     def test_read_back(self, tmp_path):
         parfile = tmp_path / "test.par"
         parfile.write_text(
