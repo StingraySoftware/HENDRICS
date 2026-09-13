@@ -15,6 +15,7 @@ from hendrics.known_ephemeris import (
     extrapolate_ephemeris,
     extrapolate_ephemeris_uncertainty,
     prior_corrected_p_value,
+    qffa_calibrated_ntrial,
     uncertainty_ntrial,
 )
 
@@ -229,6 +230,80 @@ class TestUncertaintyNtrial:
             uncertainty_ntrial(
                 1e-4, 1e-10, f_step=1e-5, n_grid=10, ntrial_blind=10, search_fdot=True
             )
+
+
+class TestQffaCalibratedNtrial:
+    """The Monte Carlo calibration of the trials of ``HENzsearch --fast``."""
+
+    def test_tabulated_frequency_search(self):
+        ntrial = qffa_calibrated_ntrial(1000, nharm=2, oversample=4, search_fdot=False)
+        assert np.isclose(ntrial, 4700)
+
+    def test_tabulated_fdot_search(self):
+        ntrial = qffa_calibrated_ntrial(1000, nharm=2, oversample=4, search_fdot=True)
+        assert np.isclose(ntrial, 11000)
+
+    def test_frequency_and_fdot_tables_are_different(self):
+        kw = dict(nharm=1, oversample=2)
+        assert not np.isclose(
+            qffa_calibrated_ntrial(1000, search_fdot=False, **kw),
+            qffa_calibrated_ntrial(1000, search_fdot=True, **kw),
+        )
+
+    @pytest.mark.parametrize("search_fdot", [False, True])
+    def test_between_oversamples_uses_the_next_larger(self, search_fdot):
+        kw = dict(nharm=2, search_fdot=search_fdot)
+        assert np.isclose(
+            qffa_calibrated_ntrial(1000, oversample=3, **kw),
+            qffa_calibrated_ntrial(1000, oversample=4, **kw),
+        )
+
+    @pytest.mark.parametrize("search_fdot", [False, True])
+    def test_between_harmonics_uses_the_next_larger(self, search_fdot):
+        kw = dict(oversample=4, search_fdot=search_fdot)
+        assert np.isclose(
+            qffa_calibrated_ntrial(1000, nharm=3, **kw),
+            qffa_calibrated_ntrial(1000, nharm=4, **kw),
+        )
+
+    def test_oversample_below_one_uses_the_first_column(self):
+        kw = dict(nharm=2, search_fdot=False)
+        assert np.isclose(
+            qffa_calibrated_ntrial(1000, oversample=0.5, **kw),
+            qffa_calibrated_ntrial(1000, oversample=1, **kw),
+        )
+
+    @pytest.mark.parametrize(
+        "kw, largest",
+        [
+            (dict(nharm=2, oversample=16, search_fdot=False), dict(nharm=2, oversample=8)),
+            (dict(nharm=2, oversample=8, search_fdot=True), dict(nharm=2, oversample=4)),
+            (dict(nharm=8, oversample=4, search_fdot=False), dict(nharm=4, oversample=4)),
+        ],
+    )
+    def test_beyond_the_table_warns_and_uses_the_largest(self, kw, largest):
+        with pytest.warns(UserWarning, match="not covered by the calibration"):
+            ntrial = qffa_calibrated_ntrial(1000, **kw)
+        expected = qffa_calibrated_ntrial(1000, search_fdot=kw["search_fdot"], **largest)
+        assert np.isclose(ntrial, expected)
+
+    @pytest.mark.parametrize("search_fdot", [False, True])
+    def test_monotonic_in_harmonics_and_oversample(self, search_fdot):
+        oversamples = (1, 2, 4, 8) if not search_fdot else (1, 2, 4)
+        table = np.array(
+            [
+                [
+                    qffa_calibrated_ntrial(1000, nharm=n, oversample=o, search_fdot=search_fdot)
+                    for o in oversamples
+                ]
+                for n in (1, 2, 4)
+            ]
+        )
+        assert np.all(np.diff(table, axis=0) >= 0)
+        assert np.all(np.diff(table, axis=1) >= 0)
+
+    def test_never_below_one(self):
+        assert qffa_calibrated_ntrial(1, nharm=1, oversample=1, search_fdot=True) >= 1
 
 
 class TestPriorCorrectedPValue:

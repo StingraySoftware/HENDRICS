@@ -30,6 +30,8 @@ in a blind search).
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 
 __all__ = [
@@ -38,8 +40,34 @@ __all__ = [
     "extrapolate_ephemeris",
     "extrapolate_ephemeris_uncertainty",
     "prior_corrected_p_value",
+    "qffa_calibrated_ntrial",
     "uncertainty_ntrial",
 ]
+
+# Effective number of trials per resolution element of ``search_with_qffa``
+# (1/T in frequency, times 4/T^2 in frequency derivative when that is searched
+# too), measured on pure Poisson noise with ``notebooks/trials_calibration.py``.
+# Each value is the largest estimate at 10% and 1% false alarm probability over
+# all the runs, rounded up to 0.1 and made non-decreasing in both axes.
+# Rows: number of harmonics; columns: grid points per resolution element.
+_QFFA_NHARMS = (1, 2, 4)
+_QFFA_OVERSAMPLES = {False: (1, 2, 4, 8), True: (1, 2, 4)}
+_QFFA_TRIALS_PER_ELEMENT = {
+    False: np.array(
+        [
+            [1.1, 1.9, 3.0, 3.1],
+            [1.1, 2.1, 4.7, 8.0],
+            [1.1, 2.1, 5.0, 8.0],
+        ]
+    ),
+    True: np.array(
+        [
+            [0.8, 3.7, 6.1],
+            [0.9, 3.7, 11.0],
+            [1.0, 4.3, 13.9],
+        ]
+    ),
+}
 
 
 def extrapolate_ephemeris(freq, fdot=0.0, fddot=0.0, pepoch=None, target_epoch=None):
@@ -390,6 +418,77 @@ def uncertainty_ntrial(
         n_cells = 2 * half_f
 
     return np.clip(ntrial_blind * n_cells / n_grid, 1.0, float(ntrial_blind))
+
+
+def _next_tabulated(value, tabulated, name):
+    """Index of the first tabulated value not smaller than ``value``.
+
+    Values beyond the table get the last index, with a warning.
+    """
+    # A tiny tolerance, so that e.g. 4.0000000001 still maps to 4
+    idx = int(np.searchsorted(tabulated, value * (1 - 1e-9)))
+    if idx >= len(tabulated):
+        warnings.warn(
+            f"{name}={value:g} is not covered by the calibration of the number of "
+            f"trials (largest tabulated value: {tabulated[-1]}). Using the largest "
+            "one: the number of trials, and hence the significances, may be "
+            "underestimated."
+        )
+        idx = len(tabulated) - 1
+    return idx
+
+
+def qffa_calibrated_ntrial(naive_ntrial, *, nharm, oversample, search_fdot):
+    """Calibrated number of independent trials of a fast (QFFA) folding search.
+
+    The grid of ``search_with_qffa`` is oversampled, so neighbouring points are
+    correlated, but not so much that they count as a single trial: Monte Carlo
+    simulations of pure noise show that the maximum of an oversampled
+    :math:`Z^2_N` plane behaves as the maximum of several independent trials
+    per resolution element. This function multiplies the naive count of
+    resolution elements by the number of trials per element measured in those
+    simulations (see ``notebooks/trials_calibration.py`` and the technical
+    details in the documentation).
+
+    Numbers of harmonics and oversampling factors between the tabulated values
+    use the next larger one, which gives more trials and is thus conservative.
+    Beyond the table the largest value is used, with a warning.
+
+    Parameters
+    ----------
+    naive_ntrial : float
+        Number of resolution elements covered by the search: the number of
+        grid points divided by ``oversample`` for each searched axis.
+
+    Other Parameters
+    ----------------
+    nharm : int
+        Number of harmonics of the :math:`Z^2_N` statistic.
+    oversample : float
+        Grid points per resolution element (1/T in frequency, 4/T^2 in
+        frequency derivative).
+    search_fdot : bool
+        Whether the frequency derivative was searched too.
+
+    Returns
+    -------
+    ntrial : float
+        Calibrated number of trials, at least 1.
+
+    Examples
+    --------
+    >>> # 1000 resolution elements, Z^2_2, four points per 1/T
+    >>> ntrial = qffa_calibrated_ntrial(1000, nharm=2, oversample=4, search_fdot=False)
+    >>> assert np.isclose(ntrial, 4700)
+    >>> # Three points per 1/T are charged as four
+    >>> ntrial = qffa_calibrated_ntrial(1000, nharm=2, oversample=3, search_fdot=False)
+    >>> assert np.isclose(ntrial, 4700)
+    """
+    search_fdot = bool(search_fdot)
+    i_nharm = _next_tabulated(nharm, _QFFA_NHARMS, "nharm")
+    i_os = _next_tabulated(oversample, _QFFA_OVERSAMPLES[search_fdot], "oversample")
+    per_element = _QFFA_TRIALS_PER_ELEMENT[search_fdot][i_nharm, i_os]
+    return max(float(naive_ntrial) * per_element, 1.0)
 
 
 def prior_corrected_p_value(p_single, ntrial):
