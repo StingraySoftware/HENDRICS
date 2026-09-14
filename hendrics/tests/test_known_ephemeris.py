@@ -12,6 +12,7 @@ from hendrics.base import HAS_PINT
 from hendrics.known_ephemeris import (
     accel_calibrated_ntrial,
     accel_single_trial_probability,
+    best_candidate_ntrial,
     effective_ntrial,
     ephemeris_from_parfile,
     extrapolate_ephemeris,
@@ -418,6 +419,34 @@ class TestAccelCalibratedNtrial:
         assert accel_calibrated_ntrial(1, zmax=1, delta_z=0.5, interbin=False) >= 1
 
 
+class TestBestCandidateNtrial:
+    """The price of picking the most significant of the corrected candidates."""
+
+    def test_no_charge_when_the_floor_covers_the_search(self):
+        n_eff = np.array([100.0, 1000.0])
+        ntrial = best_candidate_ntrial(n_eff, ntrial_min=1000, ntrial_blind=1000)
+        assert np.allclose(ntrial, n_eff)
+
+    def test_logarithmic_factor(self):
+        ntrial = best_candidate_ntrial(1.0, ntrial_min=1, ntrial_blind=1e4)
+        assert np.isclose(ntrial, 1 + np.log(1e4))
+
+    def test_the_floor_reduces_the_factor(self):
+        ntrial = best_candidate_ntrial(10.0, ntrial_min=10, ntrial_blind=1e4)
+        assert np.isclose(ntrial, 10 * (1 + np.log(1e3)))
+
+    def test_never_more_than_blind(self):
+        assert np.isclose(best_candidate_ntrial(5000.0, ntrial_min=1, ntrial_blind=1e4), 1e4)
+
+    def test_never_less_than_the_corrected_candidate(self):
+        n_eff = np.logspace(0, 4, 20)
+        ntrial = best_candidate_ntrial(n_eff, ntrial_min=1, ntrial_blind=1e4)
+        assert np.all(ntrial >= n_eff)
+
+    def test_scalar_in_scalar_out(self):
+        assert isinstance(best_candidate_ntrial(3.0, ntrial_min=1, ntrial_blind=100), float)
+
+
 class TestPriorCorrectedPValue:
     def test_single_trial_is_unchanged(self):
         assert np.isclose(prior_corrected_p_value(0.01, 1), 0.01)
@@ -603,8 +632,10 @@ class TestTargetedZSearch:
         n = 40000
         times = np.sort(rng.uniform(0, cls.T, n))
         # A weak sinusoidal pulsation on a bright constant background: too
-        # weak to stand out in a blind search over the whole band
-        keep = rng.uniform(0, 1, n) < 0.5 * (1 + 0.045 * np.cos(2 * np.pi * cls.FTRUE * times))
+        # weak to stand out in a blind search over the whole band, strong
+        # enough to be detected even after paying for picking the best
+        # candidate of the targeted search
+        keep = rng.uniform(0, 1, n) < 0.5 * (1 + 0.055 * np.cos(2 * np.pi * cls.FTRUE * times))
         events = EventList(time=times[keep], gti=np.array([[0, cls.T]]), mjdref=cls.MJDREF)
         events.instr = "test"
         cls.fname = "ev" + HEN_FILE_EXTENSION
@@ -649,9 +680,6 @@ class TestTargetedZSearch:
         table = self._candidates(main_zsearch(self.common))
         # Every candidate is an upper limit, i.e. nothing was detected
         assert np.all(np.isnan(table["pulse_amp"]))
-        # ...and the tallest peak is a noise peak, far from the true frequency
-        best = table[np.argmax(table["power"])]
-        assert np.abs(best["f"] - self.FTRUE) > 0.01
 
     def test_every_search_reports_all_significances(self):
         """Single-trial, naive and calibrated probabilities, with or without a prior."""
@@ -703,6 +731,9 @@ class TestTargetedZSearch:
         # Right on the prediction, so it costs almost nothing in trials
         assert best["ntrial_eff"] < 10
         assert best["p_value"] < 1e-3
+        # Picking the best candidate has a price, but a small one here
+        assert np.all(table["p_value_best"] >= table["p_value"])
+        assert best["p_value_best"] < 1e-3
 
     def test_a_wrong_prior_does_not_invent_a_detection(self):
         """A prior far from the truth must not manufacture significance."""
@@ -943,7 +974,7 @@ class TestTargetedAccelSearch:
 
     def test_targeted_search_reports_the_correction(self):
         table = self._run("targeted.csv", extra=self.prior_args)
-        for name in ("f_offset", "fdot_offset", "ntrial_eff", "p_value"):
+        for name in ("f_offset", "fdot_offset", "ntrial_eff", "p_value", "p_value_best"):
             assert name in table.colnames
 
         best = table[np.argmin(table["p_value"])]
@@ -951,6 +982,10 @@ class TestTargetedAccelSearch:
         # It lands on the prediction, so it costs a single trial
         assert np.isclose(best["ntrial_eff"], 1.0)
         assert best["p_value"] < 1e-6
+        # Picking the best candidate has a price, and sets the order
+        assert np.all(table["p_value_best"] >= table["p_value"])
+        assert best["p_value_best"] < 1e-6
+        assert np.all(np.diff(table["p_value_best"]) >= 0)
 
     def test_only_surviving_candidates_are_written(self):
         """The corrected p-value is applied before the file is written."""

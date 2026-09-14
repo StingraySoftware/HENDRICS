@@ -334,7 +334,7 @@ def sensitivity_worker(job):
 
 
 def targeted_worker(job):
-    from hendrics.known_ephemeris import effective_ntrial
+    from hendrics.known_ephemeris import best_candidate_ntrial, effective_ntrial
 
     cfg, seed, blind_scales, floors = job
     rng = np.random.default_rng(seed)
@@ -370,6 +370,9 @@ def targeted_worker(job):
             n_eff = np.clip(rank, floor, ntrial_blind)
             best = np.argmin(n_eff * log1m)
             out[f"pcorr_s{scale}_f{floor}"] = float(-np.expm1(-(n_eff * log1m).flat[best]))
+            # The same, charging the price of picking the best candidate
+            n_best = best_candidate_ntrial(n_eff, ntrial_min=floor, ntrial_blind=ntrial_blind)
+            out[f"pbest_s{scale}_f{floor}"] = float(-np.expm1(-np.min(n_best * log1m)))
     return out
 
 
@@ -451,6 +454,9 @@ def summarize_targeted(cfg, rows, blind_scales, floors):
             if alpha * pc.size < 5:
                 continue
             row[f"inflation_a{alpha}"] = np.mean(pc < alpha) / alpha
+            if f"pbest_s{scale}_f{floor}" in rows[0]:
+                pb = np.array([r[f"pbest_s{scale}_f{floor}"] for r in rows])
+                row[f"inflation_best_a{alpha}"] = np.mean(pb < alpha) / alpha
         out.append(row)
     return out
 

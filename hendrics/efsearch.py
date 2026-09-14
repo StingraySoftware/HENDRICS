@@ -60,6 +60,7 @@ from .io import (
 from .known_ephemeris import (
     accel_calibrated_ntrial,
     accel_single_trial_probability,
+    best_candidate_ntrial,
     effective_ntrial,
     ephemeris_from_parfile,
     extrapolate_ephemeris,
@@ -1340,6 +1341,7 @@ def print_qffa_results(best_cand_table):
             "power",
             "ntrial_eff",
             "p_value",
+            "p_value_best",
             "Pulsed amplitude (%)",
         ]
     # ``good`` is a mask when there are detections and the index of the best
@@ -1506,7 +1508,7 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
         nbin = max(16, input_ef_periodogram.nbin)
         label = rf"$\chi^2_{ndof}$ Stat"
     n_cands = 5
-    p_corr, n_eff = _prior_corrected_p_values(input_ef_periodogram, ntrial)
+    p_corr, n_eff, p_best = _prior_corrected_p_values(input_ef_periodogram, ntrial)
     if p_corr is None:
         best_cands = find_peaks_in_image(input_ef_periodogram.stat, n=n_cands)
     else:
@@ -1547,8 +1549,8 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     names += ["p_1trial", "p_ntrial", "p_ntrial_adj"]
     dtype += [float] * 3
     if p_corr is not None:
-        names += ["f_offset", "fdot_offset", "ntrial_eff", "p_value"]
-        dtype += [float] * 4
+        names += ["f_offset", "fdot_offset", "ntrial_eff", "p_value", "p_value_best"]
+        dtype += [float] * 5
 
     best_cand_table = Table(names=names, dtype=dtype)
     best_cand_table["power"].info.format = ".2f"
@@ -1567,6 +1569,7 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
         best_cand_table["fdot_offset"].info.format = ".2e"
         best_cand_table["ntrial_eff"].info.format = ".1f"
         best_cand_table["p_value"].info.format = ".2e"
+        best_cand_table["p_value_best"].info.format = ".2e"
 
     for i, idx in enumerate(best_cands):
         f_idx = fdot_idx = fddot_idx = 0
@@ -1620,12 +1623,13 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
 
         # A targeted search pays fewer trials, so it uses its own, lower
         # threshold: what counts is the corrected p-value, not the blind
-        # detection level.
+        # detection level. The candidate is the best of the plane, so it also
+        # pays for having been picked.
         idx_tuple = None
         detected = max_stat >= detlev
         if p_corr is not None:
             idx_tuple = (f_idx, fdot_idx) if p_corr.ndim > 1 else f_idx
-            detected = p_corr[idx_tuple] < epsilon_det
+            detected = p_best[idx_tuple] < epsilon_det
 
         sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=input_ef_periodogram.N)
         amp = amp_err = amp_ul = amp_1 = amp_0 = np.nan
@@ -1671,6 +1675,7 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
                 fdot - input_ef_periodogram.known_fdot,
                 float(n_eff[idx_tuple]),
                 float(p_corr[idx_tuple]),
+                float(p_best[idx_tuple]),
             ]
         best_cand_table.add_row(row)
 
@@ -1850,12 +1855,14 @@ def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
     candidate landing on the expected solution costs a single trial and one at
     the far edge of the band costs the full blind-search count.
 
-    Returns ``(None, None)`` when no known ephemeris was given.
+    Returns the corrected p-values, the trials charged to each cell, and the
+    p-values that also pay for picking the best candidate, or three ``None``
+    when no known ephemeris was given.
     """
     known_freq = getattr(input_ef_periodogram, "known_freq", np.nan)
     known_fdot = getattr(input_ef_periodogram, "known_fdot", np.nan)
     if known_freq is None or not np.isfinite(known_freq):
-        return None, None
+        return None, None, None
 
     freq = np.asarray(input_ef_periodogram.freq)
     stat = np.asarray(input_ef_periodogram.stat)
@@ -1894,9 +1901,15 @@ def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
 
     n_eff = effective_ntrial(freq - known_freq, delta_fdot, ntrial_min=ntrial_min, **grid)
 
+    n_best = best_candidate_ntrial(n_eff, ntrial_min=ntrial_min, ntrial_blind=ntrial_blind)
+
     p_single = _qffa_single_trial_p(input_ef_periodogram, stat)
 
-    return prior_corrected_p_value(p_single, n_eff), n_eff
+    return (
+        prior_corrected_p_value(p_single, n_eff),
+        n_eff,
+        prior_corrected_p_value(p_single, n_best),
+    )
 
 
 def _qffa_single_trial_p(input_ef_periodogram, stat):
@@ -2780,11 +2793,14 @@ def main_accelsearch(args=None):
             **grid,
         )
         p_value = prior_corrected_p_value(np.asarray(results["p_1trial"]), n_eff)
+        n_best = best_candidate_ntrial(n_eff, ntrial_min=ntrial_min, ntrial_blind=ntrial)
+        p_value_best = prior_corrected_p_value(np.asarray(results["p_1trial"]), n_best)
 
         results["f_offset"] = results["frequency"] - known_freq
         results["fdot_offset"] = results["fdot"] - known_fdot
         results["ntrial_eff"] = n_eff
         results["p_value"] = p_value
+        results["p_value_best"] = p_value_best
 
         # Filter on the corrected significance, not on raw power: this is what
         # keeps the candidate file small despite the loosened threshold
@@ -2809,8 +2825,8 @@ def main_accelsearch(args=None):
 
         print("Best candidates:")
         if targeted:
-            results.sort("p_value")
-            results["frequency", "f_offset", "fdot", "power", "ntrial_eff", "p_value"][
+            results.sort("p_value_best")
+            results["frequency", "f_offset", "fdot", "power", "ntrial_eff", "p_value_best"][
                 :10
             ].pprint_all()
         else:

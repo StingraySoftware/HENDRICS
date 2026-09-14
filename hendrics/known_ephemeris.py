@@ -37,6 +37,7 @@ import numpy as np
 __all__ = [
     "accel_calibrated_ntrial",
     "accel_single_trial_probability",
+    "best_candidate_ntrial",
     "effective_ntrial",
     "ephemeris_from_parfile",
     "extrapolate_ephemeris",
@@ -675,6 +676,53 @@ def accel_single_trial_probability(power, frequency, fdot, length, interbin=Fals
     if p.ndim == 0:
         return float(p)
     return p
+
+
+def best_candidate_ntrial(ntrial_eff, *, ntrial_min, ntrial_blind):
+    """Number of trials to charge the most significant of the corrected candidates.
+
+    ``effective_ntrial`` gives a fair price to a cell chosen *before* looking
+    at the data. Picking the most significant cell *after* the correction is a
+    further choice: every shell of cells at the same distance from the prior
+    can produce a noise fluke that passes the corrected threshold. Charging
+    each cell trials proportional to its rank ``r``, the chance that any of
+    them passes is bounded by the sum of ``alpha / r`` over the ranks. The
+    first ``ntrial_min`` cells, inside the uncertainty floor, add up to
+    ``alpha``, and the rest to ``alpha * ln(ntrial_blind / ntrial_min)``.
+    Multiplying the trials by ``k = 1 + ln(ntrial_blind / ntrial_min)`` pays
+    for this.
+
+    The result is capped at the blind-search number, so a prior never makes a
+    candidate look less significant than a blind search would, and there is no
+    charge when the floor covers the whole search.
+
+    Parameters
+    ----------
+    ntrial_eff : float or array
+        Trials charged to each candidate by ``effective_ntrial``.
+
+    Other Parameters
+    ----------------
+    ntrial_min : float
+        Floor on the trials, from ``uncertainty_ntrial``.
+    ntrial_blind : float
+        Number of trials of the whole blind search.
+
+    Returns
+    -------
+    ntrial : float or array
+        Trials to charge the best candidate.
+
+    Examples
+    --------
+    >>> # A candidate on the prediction, in a search of 10000 trials
+    >>> ntrial = best_candidate_ntrial(1, ntrial_min=1, ntrial_blind=1e4)
+    >>> assert np.isclose(ntrial, 1 + np.log(1e4))
+    """
+    ntrial_eff = np.asarray(ntrial_eff, dtype=float)
+    k = 1 + np.log(max(float(ntrial_blind) / float(ntrial_min), 1.0))
+    ntrial = np.maximum(np.minimum(ntrial_eff * k, float(ntrial_blind)), ntrial_eff)
+    return float(ntrial) if ntrial.ndim == 0 else ntrial
 
 
 def prior_corrected_p_value(p_single, ntrial):
