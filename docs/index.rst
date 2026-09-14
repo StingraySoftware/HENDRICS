@@ -134,6 +134,14 @@ Command line interface
 
    scripts/cli
 
+Technical details
+-----------------
+
+.. toctree::
+   :maxdepth: 2
+
+   technical_details
+
 API documentation
 -----------------
 

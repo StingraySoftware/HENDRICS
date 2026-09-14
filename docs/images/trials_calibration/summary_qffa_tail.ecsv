@@ -1,0 +1,36 @@
+# %ECSV 1.0
+# ---
+# datatype:
+# - {name: kind, datatype: string}
+# - {name: nharm, datatype: int64}
+# - {name: oversample, datatype: int64}
+# - {name: search_fdot, datatype: int64}
+# - {name: band, datatype: float64}
+# - {name: nreal, datatype: int64}
+# - {name: naive, datatype: float64}
+# - {name: n_cells, datatype: int64}
+# - {name: n_res, datatype: float64}
+# - {name: fdot_span_T2, datatype: float64}
+# - {name: neff_a0.5, datatype: float64}
+# - {name: neff_a0.5_lo, datatype: float64}
+# - {name: neff_a0.5_hi, datatype: float64}
+# - {name: ratio_naive_a0.5, datatype: float64}
+# - {name: ratio_res_a0.5, datatype: float64}
+# - {name: neff_a0.1, datatype: float64}
+# - {name: neff_a0.1_lo, datatype: float64}
+# - {name: neff_a0.1_hi, datatype: float64}
+# - {name: ratio_naive_a0.1, datatype: float64}
+# - {name: ratio_res_a0.1, datatype: float64}
+# - {name: neff_a0.01, datatype: float64}
+# - {name: neff_a0.01_lo, datatype: float64}
+# - {name: neff_a0.01_hi, datatype: float64}
+# - {name: ratio_naive_a0.01, datatype: float64}
+# - {name: ratio_res_a0.01, datatype: float64}
+# - {name: neff_a0.001, datatype: float64}
+# - {name: neff_a0.001_lo, datatype: float64}
+# - {name: neff_a0.001_hi, datatype: float64}
+# - {name: ratio_naive_a0.001, datatype: float64}
+# - {name: ratio_res_a0.001, datatype: float64}
+# schema: astropy-2.0
+kind nharm oversample search_fdot band nreal naive n_cells n_res fdot_span_T2 neff_a0.5 neff_a0.5_lo neff_a0.5_hi ratio_naive_a0.5 ratio_res_a0.5 neff_a0.1 neff_a0.1_lo neff_a0.1_hi ratio_naive_a0.1 ratio_res_a0.1 neff_a0.01 neff_a0.01_lo neff_a0.01_hi ratio_naive_a0.01 ratio_res_a0.01 neff_a0.001 neff_a0.001_lo neff_a0.001_hi ratio_naive_a0.001 ratio_res_a0.001
+qffa 2 4 0 0.25 20000 256.0 1024 250.0 0.0 816.6559688156641 809.1127645608857 825.383843650589 3.190062378186188 3.266623875262656 870.6006243715917 851.4879639395003 889.356968893973 3.40078368895153 3.4824024974863668 939.940037920303 848.3914594451347 1004.3794262823509 3.6716407731261835 3.759760151681212 735.5560833535307 604.1211819649885 817.437898700105 2.873265950599729 2.9422243334141225

@@ -558,84 +558,135 @@ def main(args=None):
 
 
 def plot(outdir):
+    """Make the figures of the technical documentation from the summary tables."""
     import matplotlib.pyplot as plt
 
-    plt.rcParams.update({"font.size": 7, "axes.labelsize": 7, "legend.fontsize": 6})
+    from hendrics.known_ephemeris import (
+        _ACCEL_TRIALS_PER_CELL,
+        _QFFA_OVERSAMPLES,
+        _QFFA_TRIALS_PER_ELEMENT,
+        interbin_stretch,
+    )
+
+    plt.rcParams.update(
+        {"font.size": 7, "axes.labelsize": 7, "legend.fontsize": 6, "xtick.labelsize": 7}
+    )
 
     def _read(name):
         fname = os.path.join(outdir, f"summary_{name}.ecsv")
         return Table.read(fname) if os.path.exists(fname) else None
 
-    qffa, folding, accel = _read("qffa"), _read("folding"), _read("accel")
-    if qffa is not None:
+    def _errorbar(ax, x, table, col, **kwargs):
+        lo = table[f"neff_{col}_lo"] / table[f"neff_{col}"] * table[f"ratio_{col}"]
+        hi = table[f"neff_{col}_hi"] / table[f"neff_{col}"] * table[f"ratio_{col}"]
+        y = table[f"ratio_{col}"]
+        ax.errorbar(x, y, yerr=[y - lo, hi - y], ms=3, capsize=1.5, **kwargs)
+
+    qffa, qffa_fdot, accel = _read("qffa"), _read("qffa_fdot"), _read("accel")
+    if qffa is not None and qffa_fdot is not None and accel is not None:
         fig, axes = plt.subplots(1, 2, figsize=(7, 3.5))
-        for nharm, color in zip((1, 2, 4), ("C0", "C1", "C2")):
-            good = (qffa["nharm"] == nharm) & (qffa["band"] == 1.0)
-            sub = qffa[good]
-            for alpha, ls in zip((0.5, 0.01), ("--", "-")):
-                col = f"ratio_res_a{alpha}"
-                axes[0].plot(
-                    sub["oversample"],
-                    sub[col],
-                    ls=ls,
+        ax = axes[0]
+        colors = {1: "C0", 2: "C1", 4: "C2"}
+        # The oversampling scan of the frequency-only search (32 phase bins)
+        scan = qffa[(qffa["band"] == 0.25) & ~(qffa["nbin"] > 0)]
+        for i_n, nharm in enumerate((1, 2, 4)):
+            color = colors[nharm]
+            sub = scan[scan["nharm"] == nharm]
+            sub.sort("oversample")
+            # Resolution elements are grid points / oversample
+            sub["ratio_os_a0.01"] = sub["ratio_naive_a0.01"]
+            for c in ("lo", "hi"):
+                sub[f"neff_os_a0.01_{c}"] = sub[f"neff_a0.01_{c}"]
+            sub["neff_os_a0.01"] = sub["neff_a0.01"]
+            _errorbar(
+                ax,
+                sub["oversample"] * 0.97,
+                sub,
+                "os_a0.01",
+                color=color,
+                marker="o",
+                ls="-",
+                label=rf"$Z^2_{nharm}$, frequency",
+            )
+            sub = qffa_fdot[(qffa_fdot["nharm"] == nharm) & (qffa_fdot["band"] == 0.05)]
+            sub.sort("oversample")
+            sub["ratio_f4_a0.01"] = sub["ratio_res_fdot4_a0.01"]
+            for c in ("", "_lo", "_hi"):
+                sub[f"neff_f4_a0.01{c}"] = sub[f"neff_a0.01{c}"]
+            _errorbar(
+                ax,
+                sub["oversample"] * 1.03,
+                sub,
+                "f4_a0.01",
+                color=color,
+                marker="s",
+                ls="--",
+                label=rf"$Z^2_{nharm}$, frequency and $\dot\nu$",
+            )
+            for search_fdot, marker in ((False, "_"), (True, "x")):
+                oversamples = _QFFA_OVERSAMPLES[search_fdot]
+                ax.scatter(
+                    oversamples,
+                    _QFFA_TRIALS_PER_ELEMENT[search_fdot][i_n, : len(oversamples)],
+                    marker=marker,
                     color=color,
+                    s=25,
+                    zorder=3,
+                )
+        ax.set_xscale("log", base=2)
+        ax.set_yscale("log")
+        ax.set_xlabel("--oversample (grid points per resolution element)")
+        ax.set_ylabel("Independent trials per resolution element")
+        ax.set_title("HENzsearch --fast, 1% false alarm probability", fontsize=7)
+        ax.set_ylim(0.5, 100)
+        ax.legend(ncol=2, loc="upper left")
+
+        ax = axes[1]
+        rows = list(accel)
+        labels = []
+        for i, row in enumerate(rows):
+            n_z = max(np.arange(-row["zmax"], row["zmax"], row["delta_z"]).size, 1)
+            n_z = n_z if row["zmax"] > 0 else 1
+            norm = row["naive"] * n_z
+            for alpha, color, dx in ((0.1, "C0", -0.12), (0.01, "C3", 0.12)):
+                y = row[f"neff_a{alpha}"] / norm
+                lo, hi = row[f"neff_a{alpha}_lo"] / norm, row[f"neff_a{alpha}_hi"] / norm
+                ax.errorbar(
+                    i + dx,
+                    y,
+                    yerr=[[y - lo], [hi - y]],
                     marker="o",
                     ms=3,
-                    label=rf"$Z^2_{nharm}$ fast, $\alpha$={alpha}",
+                    capsize=1.5,
+                    color=color,
+                    label=rf"$\alpha$={alpha}" if i == 0 else None,
                 )
-            if folding is not None:
-                fsub = folding[folding["nharm"] == nharm]
-                if len(fsub) > 0:
-                    axes[0].plot(
-                        fsub["oversample"],
-                        fsub["ratio_res_a0.01"],
-                        ls=":",
-                        color=color,
-                        marker="s",
-                        ms=3,
-                        label=rf"$Z^2_{nharm}$ folding, $\alpha$=0.01",
-                    )
-        axes[0].set_xscale("log", base=2)
-        axes[0].set_xlabel("--oversample")
-        axes[0].set_ylabel(r"$N_{\rm eff}$ / (band $\times T$)")
-        axes[0].legend()
-        if accel is not None:
-            for i, row in enumerate(accel):
-                name = f"zmax={row['zmax']}, dz={row['delta_z']}" + (
-                    ", interbin" if row["interbin"] else ""
-                )
-                for alpha, marker in zip((0.5, 0.01), ("o", "s")):
-                    axes[1].errorbar(
-                        i,
-                        row[f"ratio_naive_a{alpha}"],
-                        yerr=[
-                            [
-                                row[f"ratio_naive_a{alpha}"]
-                                - row[f"neff_a{alpha}_lo"] / row["naive"]
-                            ],
-                            [
-                                row[f"neff_a{alpha}_hi"] / row["naive"]
-                                - row[f"ratio_naive_a{alpha}"]
-                            ],
-                        ],
-                        marker=marker,
-                        color="C0" if alpha == 0.5 else "C3",
-                        ms=3,
-                        label=rf"$\alpha$={alpha}" if i == 0 else None,
-                    )
-            axes[1].set_xticks(range(len(accel)))
-            axes[1].set_xticklabels(
-                [
-                    f"z{r['zmax']:g} dz{r['delta_z']:g}" + (" ib" if r["interbin"] else "")
-                    for r in accel
-                ],
-                rotation=45,
-                ha="right",
+            independent, fine, coarse = _ACCEL_TRIALS_PER_CELL[bool(row["interbin"])]
+            if row["zmax"] == 0:
+                tab = independent
+            else:
+                tab = fine if row["delta_z"] <= 0.5 else coarse
+            ax.scatter(
+                i,
+                tab,
+                marker="_",
+                s=150,
+                color="k",
+                zorder=3,
+                label="tabulated" if i == 0 else None,
             )
-            axes[1].set_ylabel(r"$N_{\rm eff}$ / stingray ntrial")
-            axes[1].legend()
+            labels.append(
+                f"zmax {row['zmax']:g}, dz {row['delta_z']:g}"
+                + (", interbin" if row["interbin"] else "")
+            )
+        ax.set_xticks(range(len(rows)))
+        ax.set_xticklabels(labels, rotation=45, ha="right")
+        ax.set_ylabel("Independent trials per frequency bin per z row")
+        ax.set_title("HENaccelsearch", fontsize=7)
+        ax.legend()
         fig.tight_layout()
-        fig.savefig(os.path.join(outdir, "trials_vs_oversample.png"), dpi=200)
+        fig.savefig(os.path.join(outdir, "trials_calibration.png"), dpi=200)
+        plt.close(fig)
 
     sens = _read("sensitivity")
     if sens is not None:
@@ -648,22 +699,85 @@ def plot(outdir):
                 yerr=sub["mean_ratio_err"],
                 marker=marker,
                 ms=3,
-                label="fast" if kind == "qffa" else "folding",
+                label="--fast" if kind == "qffa" else "folding",
             )
-        sub = sens[sens["kind"] == "accel"]
-        for row in sub:
+        for row in sens[sens["kind"] == "accel"]:
             ax.axhline(
                 row["mean_ratio"],
                 ls="--" if row["interbin"] else ":",
                 color="grey",
-                label="accel" + (" interbin" if row["interbin"] else ""),
+                label="HENaccelsearch" + (" --interbin" if row["interbin"] else ""),
             )
         ax.set_xscale("log", base=2)
         ax.set_xlabel("--oversample")
         ax.set_ylabel("Recovered / true power")
+        ax.set_title(r"HENzsearch, $Z^2_2$", fontsize=7)
         ax.legend()
         fig.tight_layout()
         fig.savefig(os.path.join(outdir, "sensitivity_vs_oversample.png"), dpi=200)
+        plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(3.5, 2.65))
+    z = np.concatenate([np.arange(0, 2, 0.05), np.arange(2, 100.5, 0.5)])
+    ax.plot(z, interbin_stretch(z), color="C0")
+    integer = np.arange(0, 101)
+    ax.scatter(integer, interbin_stretch(integer), s=4, color="C1", zorder=3, label="integer z")
+    ax.axhline(np.pi**2 / 8, color="grey", ls=":", label=r"$\pi^2/8$")
+    ax.set_xscale("symlog", linthresh=1)
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("z")
+    ax.set_ylabel("Noise stretch s(z) of in-between bins")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(os.path.join(outdir, "interbin_stretch.png"), dpi=200)
+    plt.close(fig)
+
+    targeted = _read("targeted")
+    if targeted is not None:
+        from hendrics.known_ephemeris import accel_calibrated_ntrial, qffa_calibrated_ntrial
+
+        # The rows with the blind count that the tools really charge
+        calibrated = {
+            "qffa": qffa_calibrated_ntrial(8192 / 4**2, nharm=2, oversample=4, search_fdot=True),
+            "accel": accel_calibrated_ntrial(1000, zmax=10, delta_z=1, interbin=False),
+        }
+        names = {"qffa": "HENzsearch --fast", "accel": "HENaccelsearch"}
+        fig, axes = plt.subplots(1, 2, figsize=(7, 2.65), sharey=True)
+        for ax, alpha in zip(axes, (0.1, 0.01)):
+            for kind, color in (("qffa", "C0"), ("accel", "C3")):
+                sub = targeted[
+                    (targeted["kind"] == kind)
+                    & np.isclose(targeted["ntrial_blind"], calibrated[kind])
+                ]
+                sub.sort("floor")
+                ax.plot(
+                    sub["floor"],
+                    sub[f"inflation_a{alpha}"],
+                    color=color,
+                    ls=":",
+                    marker="o",
+                    ms=3,
+                    label=f"{names[kind]}, p_value",
+                )
+                ax.plot(
+                    sub["floor"],
+                    sub[f"inflation_best_a{alpha}"],
+                    color=color,
+                    ls="-",
+                    marker="s",
+                    ms=3,
+                    label=f"{names[kind]}, p_value_best",
+                )
+            ax.axhline(1, color="grey", lw=0.5)
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            ax.set_xlabel("Floor on the trials (ntrial_min)")
+            ax.set_title(rf"$\alpha$ = {alpha}", fontsize=7)
+        axes[0].set_ylabel("False alarm rate / nominal")
+        axes[0].legend()
+        fig.tight_layout()
+        fig.savefig(os.path.join(outdir, "targeted_false_alarms.png"), dpi=200)
+        plt.close(fig)
 
 
 if __name__ == "__main__":
