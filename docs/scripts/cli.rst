@@ -299,7 +299,7 @@ HENefsearch
                        [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
                        [--fit-candidates] [--curve CURVE]
                        [--fit-frequency FIT_FREQUENCY] [-N N] [--force-memmap]
-                       [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
+                       [--use-gpu] [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
                        [--known-fddot KNOWN_FDDOT] [--known-pepoch KNOWN_PEPOCH]
                        [--known-par KNOWN_PAR] [--known-freq-err KNOWN_FREQ_ERR]
                        [--known-fdot-err KNOWN_FDOT_ERR] [-p DEORBIT_PAR]
@@ -361,6 +361,8 @@ HENefsearch
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
       --force-memmap        Force the use of memory-mapped files
+      --use-gpu             Compute the histograms of the fast, FFA and transient
+                            searches on the GPU (requires CuPy and a CUDA device)
       --known-freq KNOWN_FREQ
                             Spin frequency (Hz) of a previously known solution.
                             When given, the search becomes targeted: candidates
@@ -1269,7 +1271,7 @@ HENzsearch
                       [--expocorr] [--find-candidates] [--conflevel CONFLEVEL]
                       [--fit-candidates] [--curve CURVE]
                       [--fit-frequency FIT_FREQUENCY] [-N N] [--force-memmap]
-                      [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
+                      [--use-gpu] [--known-freq KNOWN_FREQ] [--known-fdot KNOWN_FDOT]
                       [--known-fddot KNOWN_FDDOT] [--known-pepoch KNOWN_PEPOCH]
                       [--known-par KNOWN_PAR] [--known-freq-err KNOWN_FREQ_ERR]
                       [--known-fdot-err KNOWN_FDOT_ERR] [-p DEORBIT_PAR]
@@ -1331,6 +1333,8 @@ HENzsearch
       -N N                  The number of harmonics to use in the search (the 'N'
                             in Z^2_N; only relevant to Z search!)
       --force-memmap        Force the use of memory-mapped files
+      --use-gpu             Compute the histograms of the fast, FFA and transient
+                            searches on the GPU (requires CuPy and a CUDA device)
       --known-freq KNOWN_FREQ
                             Spin frequency (Hz) of a previously known solution.
                             When given, the search becomes targeted: candidates

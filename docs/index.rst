@@ -150,6 +150,14 @@ API documentation
 
    hendrics/modules
 
+Technical details
+-----------------
+
+.. toctree::
+   :maxdepth: 2
+
+   technical_details
+
 Indices and tables
 ==================
 
