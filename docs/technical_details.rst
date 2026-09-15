@@ -343,7 +343,9 @@ Installation
 ``pip install "hendrics[gpu]"`` installs the ``cupy`` package, which is compiled
 from source and needs the CUDA toolkit. It is usually easier to install the
 pre-built CuPy wheel matching your CUDA version, e.g. ``pip install cupy-cuda12x``
-(see the `CuPy installation guide <https://docs.cupy.dev/en/stable/install.html>`__).
+or ``pip install "cupy-cuda13x[ctk]"``, where ``[ctk]`` also installs the CUDA
+libraries (see the `CuPy installation guide
+<https://docs.cupy.dev/en/stable/install.html>`__).
 
 What runs on the GPU
 ~~~~~~~~~~~~~~~~~~~~
@@ -436,13 +438,46 @@ agrees with the CPU version, for:
 The custom ``numba.cuda`` kernel comes from the original GPU prototype (PR #181).
 It is kept only in the benchmark: HENDRICS uses ``cupy.histogram`` and
 ``cupy.histogram2d``, which are tested upstream and also support weights and 2D
-histograms. The benchmark tells whether a custom kernel is ever worth it.
+histograms. On the hardware below, the custom kernel was 1.5 to 2.3 times as fast as
+``cupy.histogram``, but a 1D histogram alone beat the CPU only with 1e7 events.
 
-The averaged power spectrum comparison will tell whether a GPU version of the
-averaged power spectrum needs to keep all data on the GPU. It is not yet used by
-``HENfspec``.
+On the same hardware, a GPU averaged power spectrum that keeps all data on the
+GPU was 3.3 to 4.7 times faster than one copying each light curve and each FFT back
+to host memory. This loop is not yet used by ``HENfspec``.
 
-.. note::
+Results on real hardware
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Timings and results on real GPU hardware have not been collected yet. They
-    need a machine with an NVIDIA GPU, where the tests using the real CuPy also run.
+Measured on 2026-09-15 on an NVIDIA GeForce RTX 2070 SUPER (8 GB, driver
+595.91.07, CUDA 13.2) and an Intel Core i7-10700 (8 cores, 16 threads), with
+Python 3.14.4, NumPy 2.4.3, Numba 0.66.0 with numba-cuda 0.30.4, CuPy 14.2.0
+(``cupy-cuda13x``) and Stingray 2.3.2. CuPy needed the CUDA libraries from
+``pip install "cupy-cuda13x[ctk]"``, and the custom kernel needed
+``pip install "numba-cuda[cu13]"``. All tests passed, including those using
+the real CuPy, and every benchmark result agreed with the CPU.
+
+Speedup with respect to the CPU (CPU time divided by GPU time, so values below 1
+mean that the GPU is slower). Times include the copies to and from the GPU.
+
+======================================================  ======  ======  ======
+Benchmark (number of events)                            1e5     1e6     1e7
+======================================================  ======  ======  ======
+1D histogram, 1e6 bins: ``numba.cuda`` kernel           0.15    0.74    1.49
+1D histogram, 1e6 bins: ``cupy.histogram``              0.10    0.32    0.65
+1D histogram + FFT: ``numba.cuda`` kernel               8.9     6.5     2.7
+1D histogram + FFT: ``cupy.histogram``                  5.4     3.0     1.4
+2D histogram, 16x256 bins: ``cupy.histogram2d``         0.18    0.88    1.42
+2D histogram, 16x4096 bins: ``cupy.histogram2d``        0.21    1.06    1.72
+Averaged PDS, 64 x 524288 bins: unfused                 2.9     2.7     2.5
+Averaged PDS, 64 x 524288 bins: fused                   13.0    12.7    8.2
+Averaged PDS, 256 x 524288 bins: unfused                2.9     2.7     2.8
+Averaged PDS, 256 x 524288 bins: fused                  13.7    12.3    12.3
+======================================================  ======  ======  ======
+
+The Stingray averaged power spectrum took 1.2 s with 64 segments and 4.5-4.9 s
+with 256 segments, almost independently of the number of events.
+
+``HENzsearch --fast -f 1.22 -F 1.25 -N 2 --find-candidates`` on a simulated
+event file with 1e7 events over 1e5 s (376 steps, 16 x 6016 trials) took 50 s
+on the CPU and 40 s with ``--use-gpu`` (45 s and 35 s in the search loop): a
+speedup of 1.25. The Z^2 values and the candidates were identical.
