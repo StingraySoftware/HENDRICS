@@ -61,6 +61,7 @@ from . import (
     njit,
     prange,
 )
+from .gpu import histogram2d_gpu, histogram_gpu
 
 __all__ = [
     "_add_default_args",
@@ -928,7 +929,7 @@ def histnd_numba_seq(tracks, bins, ranges):
 
 if HAS_NUMBA:
 
-    def histogram2d(*args, **kwargs):
+    def _histogram2d_cpu(*args, **kwargs):
         """
         Examples
         --------
@@ -962,7 +963,7 @@ if HAS_NUMBA:
 
         return hist2d_numba_seq(*args, **kwargs)
 
-    def histogram(*args, **kwargs):
+    def _histogram_cpu(*args, **kwargs):
         """
         Examples
         --------
@@ -992,17 +993,64 @@ if HAS_NUMBA:
 
 else:
 
-    def histogram2d(*args, **kwargs):
+    def _histogram2d_cpu(*args, **kwargs):
         """Fall back to numpy, translating the ``ranges`` keyword to ``range``."""
         if "ranges" in kwargs:
             kwargs["range"] = kwargs.pop("ranges")
         return histogram2d_np(*args, **kwargs)[0]
 
-    def histogram(*args, **kwargs):
+    def _histogram_cpu(*args, **kwargs):
         """Fall back to numpy, translating the ``ranges`` keyword to ``range``."""
         if "ranges" in kwargs:
             kwargs["range"] = kwargs.pop("ranges")
         return histogram_np(*args, **kwargs)[0]
+
+
+def _gpu_histogram_kwargs(kwargs):
+    """Adapt the keywords accepted by the CPU histograms to the GPU ones."""
+    if "range" in kwargs:
+        kwargs["ranges"] = kwargs.pop("range")
+    # Memory mapping only applies to host memory
+    kwargs.pop("use_memmap", None)
+    kwargs.pop("tmp", None)
+    return kwargs
+
+
+def histogram2d(*args, use_gpu=False, **kwargs):
+    """Compute a 2D histogram, returning only the histogram values.
+
+    Accepts ``x, y, bins, ranges`` (or ``range``) and ``weights`` as keywords.
+    With Numba or on the GPU, values equal to the upper edge of the range are
+    excluded; the NumPy fallback includes them.
+
+    Other Parameters
+    ----------------
+    use_gpu : bool, default False
+        Compute the histogram on the GPU with :func:`hendrics.gpu.histogram2d_gpu`.
+        Requires CuPy and a CUDA device.
+    """
+    if use_gpu:
+        return histogram2d_gpu(*args, **_gpu_histogram_kwargs(kwargs))
+    return _histogram2d_cpu(*args, **kwargs)
+
+
+def histogram(*args, use_gpu=False, **kwargs):
+    """Compute a 1D histogram, returning only the histogram values.
+
+    Accepts ``a, bins, ranges`` (or ``range``) and ``weights`` as keywords, plus
+    ``use_memmap`` and ``tmp`` for the Numba implementation.
+    With Numba or on the GPU, values equal to the upper edge of the range are
+    excluded; the NumPy fallback includes them.
+
+    Other Parameters
+    ----------------
+    use_gpu : bool, default False
+        Compute the histogram on the GPU with :func:`hendrics.gpu.histogram_gpu`.
+        ``use_memmap`` and ``tmp`` are ignored. Requires CuPy and a CUDA device.
+    """
+    if use_gpu:
+        return histogram_gpu(*args, **_gpu_histogram_kwargs(kwargs))
+    return _histogram_cpu(*args, **kwargs)
 
 
 def touch(fname):

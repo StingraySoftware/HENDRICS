@@ -329,3 +329,155 @@ promise and document the residual excess.
     False alarm rate of the targeted searches relative to nominal, at 10%
     (left) and 1% (right) false alarm probability, as a function of the floor
     on the trials, with and without the price of picking the best candidate.
+
+GPU acceleration
+----------------
+
+HENDRICS can compute some of its histograms on an NVIDIA GPU (Graphics Processing
+Unit) through `CuPy <https://cupy.dev>`__. This is optional and off by default:
+HENDRICS installs, imports and passes its tests on machines without a GPU.
+
+Installation
+~~~~~~~~~~~~
+
+``pip install "hendrics[gpu]"`` installs the ``cupy`` package, which is compiled
+from source and needs the CUDA toolkit. It is usually easier to install the
+pre-built CuPy wheel matching your CUDA version, e.g. ``pip install cupy-cuda12x``
+or ``pip install "cupy-cuda13x[ctk]"``, where ``[ctk]`` also installs the CUDA
+libraries (see the `CuPy installation guide
+<https://docs.cupy.dev/en/stable/install.html>`__).
+
+What runs on the GPU
+~~~~~~~~~~~~~~~~~~~~
+
+The GPU is used only when explicitly requested. From the command line, the
+``--use-gpu`` option of ``HENzsearch`` and ``HENefsearch`` affects:
+
+* ``--fast``: the 2D histogram (pulse phase vs. time) computed at each step of the
+  frequency and frequency-derivative grid. This is the main loop of the search.
+* ``--transient``: the same kind of 2D histogram, at each trial frequency.
+* ``--ffa``: the 1D histogram of the whole event list (computed once).
+
+The standard folding search (without ``--fast``, ``--ffa`` or ``--transient``)
+folds the events with Stingray on the CPU, so ``--use-gpu`` has no effect there
+and a warning is issued.
+
+From Python, :func:`hendrics.base.histogram` and :func:`hendrics.base.histogram2d`
+accept ``use_gpu=True``, and so do :func:`hendrics.efsearch.search_with_qffa`,
+:func:`hendrics.efsearch.transient_search` and
+:func:`hendrics.efsearch.search_with_ffa`. The GPU histograms are also available
+directly as :func:`hendrics.gpu.histogram_gpu` and
+:func:`hendrics.gpu.histogram2d_gpu`.
+
+The GPU histograms give the same results as the CPU ones:
+
+* Values equal to the upper edge of the range are excluded, as in the Numba
+  implementation of HENDRICS. :func:`numpy.histogram` and ``cupy.histogram``
+  include them in the last bin instead, so the GPU functions remove these values
+  before binning. This matters in practice: in the ``--fast`` search the upper
+  edge of the time range is the time of the last photon.
+* The output types are the same: 64-bit floats for 1D histograms and for weighted
+  2D histograms, 64-bit unsigned integers for unweighted 2D histograms.
+* The ``use_memmap`` and ``tmp`` options (memory-mapped output files) only apply
+  to host memory, and are ignored on the GPU.
+
+Each call copies the input to the GPU and the histogram back to host memory. In
+the ``--fast`` search, this happens once per step of the search grid.
+
+Design
+~~~~~~
+
+:mod:`hendrics.gpu` contains a minimal backend registry, ``_BACKENDS``. Each entry
+says whether the backend can be used, which array module implements it (NumPy or
+CuPy), and how to copy its arrays back to host memory. Only ``"cpu"`` and
+``"cupy"`` exist now; other array libraries (e.g. JAX or PyTorch) could be added
+without changing the functions using the registry.
+
+``import cupy`` succeeds even on machines without a GPU, so the presence of a CUDA
+device is checked only when the GPU is requested. If CuPy or a device is missing,
+a ``RuntimeError`` explains what to install. The choice between CPU and GPU is
+never automatic.
+
+Testing without a GPU
+~~~~~~~~~~~~~~~~~~~~~
+
+* ``hendrics/tests/test_gpu.py`` replaces the CuPy entry of the backend registry
+  with a stand-in that uses NumPy and counts the copies to host memory. The GPU
+  code is a thin layer on top of the array module, so this checks argument
+  handling, the edge convention, the output types, the number of copies and the
+  command line options. The tests using the real CuPy are skipped without a GPU.
+* ``hendrics/tests/test_gpu_kernel_sim.py`` runs the benchmark code (below) with
+  numba's CUDA simulator, which executes ``numba.cuda`` kernels on the CPU. The
+  simulator is enabled with ``NUMBA_ENABLE_CUDASIM=1`` before ``numba.cuda`` is
+  imported, so the checks run in a separate Python process. They compare the
+  custom kernel with the CPU histogram (including the case that made the original
+  prototype read past the end of the input array), and the averaged power
+  spectrum loops with Stingray, using NumPy in place of CuPy.
+
+Benchmarks
+~~~~~~~~~~
+
+``benchmarks/gpu_histogram_benchmark.py`` is run by hand on a machine with a GPU::
+
+    python benchmarks/gpu_histogram_benchmark.py --sizes 100000 10000000
+
+It reports the best time of each method, its speedup and whether its result
+agrees with the CPU version, for:
+
+* 1D histograms: HENDRICS Numba (CPU), a custom ``numba.cuda`` kernel, and
+  ``cupy.histogram``;
+* a 1D histogram followed by an FFT, all on the GPU;
+* 2D histograms with the shapes used by the ``--fast`` search: HENDRICS Numba
+  (CPU) and ``cupy.histogram2d``;
+* averaged power spectra from events: Stingray (CPU); an "unfused" GPU loop, that
+  copies each light curve and each FFT back to host memory, as would happen by
+  replacing the histogram and the FFT used by Stingray with GPU versions; and a
+  "fused" GPU loop, where binning, FFT and averaging all stay on the GPU with a
+  single copy at the end.
+
+The custom ``numba.cuda`` kernel comes from the original GPU prototype (PR #181).
+It is kept only in the benchmark: HENDRICS uses ``cupy.histogram`` and
+``cupy.histogram2d``, which are tested upstream and also support weights and 2D
+histograms. On the hardware below, the custom kernel was 1.5 to 2.3 times as fast as
+``cupy.histogram``, but a 1D histogram alone beat the CPU only with 1e7 events.
+
+On the same hardware, a GPU averaged power spectrum that keeps all data on the
+GPU was 3.3 to 4.7 times faster than one copying each light curve and each FFT back
+to host memory. This loop is not yet used by ``HENfspec``.
+
+Results on real hardware
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Measured on 2026-09-15 on an NVIDIA GeForce RTX 2070 SUPER (8 GB, driver
+595.91.07, CUDA 13.2) and an Intel Core i7-10700 (8 cores, 16 threads), with
+Python 3.14.4, NumPy 2.4.3, Numba 0.66.0 with numba-cuda 0.30.4, CuPy 14.2.0
+(``cupy-cuda13x``) and Stingray 2.3.2. CuPy needed the CUDA libraries from
+``pip install "cupy-cuda13x[ctk]"``, and the custom kernel needed
+``pip install "numba-cuda[cu13]"``. All tests passed, including those using
+the real CuPy, and every benchmark result agreed with the CPU.
+
+Speedup with respect to the CPU (CPU time divided by GPU time, so values below 1
+mean that the GPU is slower). Times include the copies to and from the GPU.
+
+======================================================  ======  ======  ======
+Benchmark (number of events)                            1e5     1e6     1e7
+======================================================  ======  ======  ======
+1D histogram, 1e6 bins: ``numba.cuda`` kernel           0.15    0.74    1.49
+1D histogram, 1e6 bins: ``cupy.histogram``              0.10    0.32    0.65
+1D histogram + FFT: ``numba.cuda`` kernel               8.9     6.5     2.7
+1D histogram + FFT: ``cupy.histogram``                  5.4     3.0     1.4
+2D histogram, 16x256 bins: ``cupy.histogram2d``         0.18    0.88    1.42
+2D histogram, 16x4096 bins: ``cupy.histogram2d``        0.21    1.06    1.72
+Averaged PDS, 64 x 524288 bins: unfused                 2.9     2.7     2.5
+Averaged PDS, 64 x 524288 bins: fused                   13.0    12.7    8.2
+Averaged PDS, 256 x 524288 bins: unfused                2.9     2.7     2.8
+Averaged PDS, 256 x 524288 bins: fused                  13.7    12.3    12.3
+======================================================  ======  ======  ======
+
+The Stingray averaged power spectrum took 1.2 s with 64 segments and 4.5-4.9 s
+with 256 segments, almost independently of the number of events.
+
+``HENzsearch --fast -f 1.22 -F 1.25 -N 2 --find-candidates`` on a simulated
+event file with 1e7 events over 1e5 s (376 steps, 16 x 6016 trials) took 50 s
+on the CPU and 40 s with ``--use-gpu`` (45 s and 35 s in the search loop): a
+speedup of 1.25. The Z^2 values and the candidates were identical.

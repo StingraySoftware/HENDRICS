@@ -492,7 +492,7 @@ def _average_and_z_sub_search(profiles, n=2):
 
 
 def _transient_search_step(
-    times: np.double, mean_f: np.double, mean_fdot=0, nbin=16, nprof=64, n=1
+    times: np.double, mean_f: np.double, mean_fdot=0, nbin=16, nprof=64, n=1, use_gpu=False
 ):
     """Single step of transient search."""
     # Cast to standard double, or Numba's histogram2d will fail
@@ -505,6 +505,7 @@ def _transient_search_step(
         times,
         range=[[0, 1], [times[0], times[-1]]],
         bins=(nbin, nprof),
+        use_gpu=use_gpu,
     ).T
 
     n_ave, results = _average_and_z_sub_search(profiles, n=n)
@@ -534,6 +535,7 @@ def transient_search(
     t1=None,
     oversample=4,
     force_memmap=False,
+    use_gpu=False,
 ):
     """Search for transient pulsations.
 
@@ -565,6 +567,8 @@ def transient_search(
         stop time
     force_memmap : bool, default False
         Force the use of memory-mapped profiles, however small the dataset
+    use_gpu : bool, default False
+        Compute the histograms on the GPU (requires CuPy and a CUDA device)
     """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
@@ -619,7 +623,7 @@ def transient_search(
         mean_f = np.double(frequency + offset + 0.12 * step)
         mean_fdot = np.double(fdot + fdot_offset)
         nave, results = _transient_search_step(
-            times, mean_f, mean_fdot=mean_fdot, nbin=nbin, nprof=nprof, n=n
+            times, mean_f, mean_fdot=mean_fdot, nbin=nbin, nprof=nprof, n=n, use_gpu=use_gpu
         )
         if all_results is None:
             results_shape = (len(allvalues), nave.size, results.shape[1])
@@ -931,6 +935,7 @@ def search_with_qffa_step(
     n=1,
     search_fdot=True,
     length=None,
+    use_gpu=False,
 ) -> tuple[np.array, np.array, np.array]:
     """Single step of quasi-fast folding algorithm.
 
@@ -962,6 +967,7 @@ def search_with_qffa_step(
         times,
         range=[[0, 1], [times[0], times[-1]]],
         bins=(nbin, nprof),
+        use_gpu=use_gpu,
     ).T
 
     # Assume times are sorted
@@ -1006,6 +1012,7 @@ def search_with_qffa(
     t1=None,
     silent=False,
     force_memmap=False,
+    use_gpu=False,
 ):
     """'Quite fast folding' algorithm.
 
@@ -1038,6 +1045,8 @@ def search_with_qffa(
         starting time
     t1 : float, default max(times)
         stop time
+    use_gpu : bool, default False
+        Compute the histograms on the GPU (requires CuPy and a CUDA device)
     """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
@@ -1110,6 +1119,7 @@ def search_with_qffa(
             n=n,
             search_fdot=search_fdot,
             length=length,
+            use_gpu=use_gpu,
         )
 
         if all_fgrid is None:
@@ -1156,7 +1166,7 @@ def search_with_qffa(
         return all_fgrid.T[0], all_stats.T[0], step, length
 
 
-def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
+def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None, use_gpu=False):
     """Fast Folding Algorithm search over a range of trial periods.
 
     Parameters
@@ -1178,6 +1188,8 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
         starting time
     t1 : float, default max(times)
         stop time
+    use_gpu : bool, default False
+        Compute the histogram on the GPU (requires CuPy and a CUDA device)
     """
     if t0 is None:
         t0 = times[0]
@@ -1193,6 +1205,7 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
         (times - t0).astype(np.double),
         range=[0, length],
         bins=int(np.rint(length / dt)),
+        use_gpu=use_gpu,
     )
     bin_periods, stats = ffa_search(counts, dt, p0, p1, z_n_n=n)
     return 1 / bin_periods, stats, None, length
@@ -2112,6 +2125,13 @@ def _common_parser(args=None):
         default=False,
         action="store_true",
     )
+    parser.add_argument(
+        "--use-gpu",
+        help="Compute the histograms of the fast, FFA and transient searches on the GPU "
+        "(requires CuPy and a CUDA device)",
+        default=False,
+        action="store_true",
+    )
 
     _add_known_ephemeris_args(parser)
 
@@ -2137,6 +2157,12 @@ def _common_main(args, func):
 
     if func != z_n_search and args.fast:
         raise ValueError("The fast option is only available for z searches")
+
+    if args.use_gpu and not (args.fast or args.ffa or args.transient):
+        warnings.warn(
+            "--use-gpu only affects the --fast, --ffa and --transient searches; "
+            "the standard folding search runs on the CPU."
+        )
 
     outfiles = []
     for i_f, fname in enumerate(files):
@@ -2199,6 +2225,7 @@ def _common_main(args, func):
                 nprof=args.n_transient_intervals,
                 oversample=oversample,
                 force_memmap=args.force_memmap,
+                use_gpu=args.use_gpu,
             )
             _analyze_and_plot_transient_search(results, out_fname + "_transient.gif")
             if not args.fast and not args.ffa:
@@ -2244,6 +2271,7 @@ def _common_main(args, func):
                 oversample=oversample,
                 search_fdot=search_fdot,
                 force_memmap=args.force_memmap,
+                use_gpu=args.use_gpu,
             )
 
             ref_time = (events.time[-1] + events.time[0]) / 2
@@ -2252,7 +2280,9 @@ def _common_main(args, func):
                 "The Fast Folding Algorithm functionality is experimental. Use"
                 " with care, and feel free to report any issues."
             )
-            results = search_with_ffa(events.time, args.fmin, args.fmax, nbin=args.nbin, n=n)
+            results = search_with_ffa(
+                events.time, args.fmin, args.fmax, nbin=args.nbin, n=n, use_gpu=args.use_gpu
+            )
             ref_time = events.time[0]
 
         length = events.time.max() - events.time.min()
