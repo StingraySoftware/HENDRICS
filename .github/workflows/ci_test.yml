@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -60,7 +60,7 @@ jobs:
             tox_env: 'linkcheck'
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           submodules: true
       - name: Check out that no sensitive environment variable is shared
@@ -137,7 +137,7 @@ jobs:
 
     steps:
     - name: Check out repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python }}
       uses: actions/setup-python@v5
       with:
