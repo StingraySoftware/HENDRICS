@@ -64,6 +64,9 @@ recommended = [
     "numba",
     "h5py",
 ]
+gpu = [  # Needs an NVIDIA GPU. Pre-built CuPy wheels exist, e.g. cupy-cuda12x
+    "cupy",
+]
 all = [
     "hendrics[recommended]",
     "pandas",
