@@ -95,6 +95,48 @@ def test_histogram2d_gpu_matches_cpu(fake_cupy, use_weights):
     assert fake_cupy["to_host"] == 1
 
 
+def test_base_histogram_default_does_not_use_gpu(fake_cupy):
+    x = np.random.default_rng(5).uniform(0, 1, 100)
+    histogram(x, bins=5, range=[0.0, 1.0])
+    histogram2d(x, x, bins=(5, 5), range=[[0.0, 1.0], [0.0, 1.0]])
+    assert fake_cupy["to_host"] == 0
+
+
+@pytest.mark.parametrize("use_weights", [False, True])
+def test_base_histogram_use_gpu(fake_cupy, use_weights):
+    rng = np.random.default_rng(6)
+    x = rng.uniform(0, 1, 1000)
+    weights = rng.uniform(0, 1, 1000) if use_weights else None
+    expected = histogram(x, bins=17, range=[0.0, 1.0], weights=weights)
+    # Memory mapping only applies to host memory, and is ignored on the GPU
+    result = histogram(
+        x, bins=17, range=[0.0, 1.0], weights=weights, use_memmap=True, tmp=None, use_gpu=True
+    )
+    assert result.dtype == expected.dtype
+    assert np.allclose(result, expected)
+    assert fake_cupy["to_host"] == 1
+
+
+@pytest.mark.parametrize("use_weights", [False, True])
+def test_base_histogram2d_use_gpu(fake_cupy, use_weights):
+    rng = np.random.default_rng(7)
+    times = np.sort(rng.uniform(0, 1000, 1000))
+    phases = rng.uniform(0, 1, 1000)
+    weights = rng.uniform(0, 1, 1000) if use_weights else None
+    ranges = [[0, 1], [times[0], times[-1]]]
+    expected = histogram2d(phases, times, bins=(16, 8), range=ranges, weights=weights)
+    result = histogram2d(phases, times, bins=(16, 8), range=ranges, weights=weights, use_gpu=True)
+    assert result.dtype == expected.dtype
+    assert np.allclose(result, expected)
+    assert fake_cupy["to_host"] == 1
+
+
+def test_base_histogram_use_gpu_raises_without_backend(monkeypatch):
+    monkeypatch.setitem(gpu._BACKENDS["cupy"], "available", lambda: False)
+    with pytest.raises(RuntimeError, match="CuPy"):
+        histogram(np.zeros(10), bins=5, range=[0, 1], use_gpu=True)
+
+
 @pytest.mark.skipif(not HAS_CUPY, reason="CuPy not installed")
 def test_histogram_gpu_real_cupy():
     if not gpu._BACKENDS["cupy"]["available"]():
