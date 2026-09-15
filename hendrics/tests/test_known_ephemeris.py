@@ -10,10 +10,17 @@ import pytest
 
 from hendrics.base import HAS_PINT
 from hendrics.known_ephemeris import (
+    accel_calibrated_ntrial,
+    accel_single_trial_probability,
+    best_candidate_ntrial,
     effective_ntrial,
     ephemeris_from_parfile,
     extrapolate_ephemeris,
+    extrapolate_ephemeris_uncertainty,
+    interbin_stretch,
     prior_corrected_p_value,
+    qffa_calibrated_ntrial,
+    uncertainty_ntrial,
 )
 
 
@@ -50,6 +57,45 @@ class TestExtrapolateEphemeris:
     def test_missing_epoch_raises(self):
         with pytest.raises(ValueError, match="Both pepoch and target_epoch"):
             extrapolate_ephemeris(1.0, pepoch=50000)
+
+
+class TestExtrapolateEphemerisUncertainty:
+    TEN_DAYS = 864000.0
+
+    def test_frequency_error_alone_is_unchanged(self):
+        f_err, fdot_err = extrapolate_ephemeris_uncertainty(1e-6, pepoch=50000, target_epoch=55000)
+        assert np.isclose(f_err, 1e-6)
+        assert fdot_err == 0
+
+    def test_fdot_error_grows_linearly(self):
+        f_err, fdot_err = extrapolate_ephemeris_uncertainty(
+            0.0, fdot_err=1e-12, pepoch=50000, target_epoch=50010
+        )
+        assert np.isclose(f_err, 1e-12 * self.TEN_DAYS)
+        assert np.isclose(fdot_err, 1e-12)
+
+    def test_fddot_error_grows_quadratically(self):
+        f_err, fdot_err = extrapolate_ephemeris_uncertainty(
+            0.0, fddot_err=1e-20, pepoch=50000, target_epoch=50010
+        )
+        assert np.isclose(f_err, 0.5 * 1e-20 * self.TEN_DAYS**2)
+        assert np.isclose(fdot_err, 1e-20 * self.TEN_DAYS)
+
+    def test_terms_add_in_quadrature(self):
+        f_err, _ = extrapolate_ephemeris_uncertainty(
+            3e-6, fdot_err=4e-6 / self.TEN_DAYS, pepoch=50000, target_epoch=50010
+        )
+        assert np.isclose(f_err, 5e-6)
+
+    def test_backwards_in_time_is_the_same(self):
+        kw = dict(fdot_err=1e-12, fddot_err=1e-20, pepoch=50000)
+        forward = extrapolate_ephemeris_uncertainty(1e-6, target_epoch=50010, **kw)
+        backward = extrapolate_ephemeris_uncertainty(1e-6, target_epoch=49990, **kw)
+        assert np.allclose(forward, backward)
+
+    def test_missing_epoch_raises(self):
+        with pytest.raises(ValueError, match="Both pepoch and target_epoch"):
+            extrapolate_ephemeris_uncertainty(1e-6, target_epoch=50000)
 
 
 class TestEffectiveNtrial:
@@ -116,6 +162,290 @@ class TestEffectiveNtrial:
         with pytest.raises(ValueError, match="fdot_step"):
             effective_ntrial(1e-4, f_step=1e-5, n_grid=10, ntrial_blind=10, search_fdot=True)
 
+    def test_floor_applies_near_the_prior(self):
+        # On the prediction the rank costs 1 trial, the floor raises it
+        assert np.isclose(effective_ntrial(0.0, ntrial_min=12, **self.ONE_D), 12)
+        assert np.isclose(effective_ntrial(0.0, 0.0, ntrial_min=12, **self.TWO_D), 12)
+
+    def test_floor_is_irrelevant_far_away(self):
+        # 50 grid steps away the rank already costs 20 trials
+        assert np.isclose(effective_ntrial(50e-5, ntrial_min=12, **self.ONE_D), 20)
+
+    def test_floor_never_exceeds_the_blind_search(self):
+        assert np.isclose(effective_ntrial(0.0, ntrial_min=1e6, **self.ONE_D), 200)
+
+    def test_floor_works_on_arrays(self):
+        offsets = np.array([0.0, 50e-5, 1.0])
+        ntrial = effective_ntrial(offsets, ntrial_min=12, **self.ONE_D)
+        assert np.allclose(ntrial, [12, 20, 200])
+
+
+class TestUncertaintyNtrial:
+    """Trials charged to every cell inside the uncertainty region of the prior."""
+
+    ONE_D = TestEffectiveNtrial.ONE_D
+    TWO_D = TestEffectiveNtrial.TWO_D
+
+    def test_no_uncertainty_is_one_trial(self):
+        assert np.isclose(uncertainty_ntrial(0.0, **self.ONE_D), 1)
+        assert np.isclose(uncertainty_ntrial(0.0, 0.0, **self.TWO_D), 1)
+
+    def test_frequency_only_counts_the_interval(self):
+        # +-3 sigma = +-30 grid steps: 60 of the 1000 cells, i.e. 12 of 200 trials
+        assert np.isclose(uncertainty_ntrial(10e-5, **self.ONE_D), 12)
+
+    def test_continuous_with_the_rank_at_the_edge(self):
+        """A candidate on the edge of the region costs the same either way."""
+        f_err = 10e-5
+        assert np.isclose(
+            uncertainty_ntrial(f_err, **self.ONE_D), effective_ntrial(3 * f_err, **self.ONE_D)
+        )
+        fdot_err = 10e-10
+        assert np.isclose(
+            uncertainty_ntrial(f_err, fdot_err, **self.TWO_D),
+            effective_ntrial(3 * f_err, 0.0, **self.TWO_D),
+        )
+
+    def test_fdot_search_counts_an_ellipse(self):
+        # Semi-axes of 6 frequency cells and 12 fdot cells
+        expected = 1000 * np.pi * 6 * 12 / 10000
+        assert np.isclose(uncertainty_ntrial(2e-5, 4e-10, **self.TWO_D), expected)
+
+    def test_semi_axes_are_at_least_half_a_cell(self):
+        # A perfectly known fdot still spans the cell the prediction falls in
+        expected = 1000 * np.pi * 30 * 0.5 / 10000
+        assert np.isclose(uncertainty_ntrial(10e-5, 0.0, **self.TWO_D), expected)
+
+    def test_nsigma_scales_the_region(self):
+        one = uncertainty_ntrial(10e-5, nsigma=1, **self.ONE_D)
+        three = uncertainty_ntrial(10e-5, nsigma=3, **self.ONE_D)
+        assert np.isclose(three, 3 * one)
+
+    def test_capped_at_the_blind_search(self):
+        assert np.isclose(uncertainty_ntrial(1.0, **self.ONE_D), 200)
+        assert np.isclose(uncertainty_ntrial(1.0, 1.0, **self.TWO_D), 1000)
+
+    def test_missing_arguments_raise(self):
+        with pytest.raises(ValueError, match="f_step"):
+            uncertainty_ntrial(1e-4, n_grid=10, ntrial_blind=10, search_fdot=False)
+        with pytest.raises(ValueError, match="n_grid and ntrial_blind"):
+            uncertainty_ntrial(1e-4, f_step=1e-5, search_fdot=False)
+        with pytest.raises(ValueError, match="fdot_step"):
+            uncertainty_ntrial(
+                1e-4, 1e-10, f_step=1e-5, n_grid=10, ntrial_blind=10, search_fdot=True
+            )
+
+
+class TestQffaCalibratedNtrial:
+    """The Monte Carlo calibration of the trials of ``HENzsearch --fast``."""
+
+    def test_tabulated_frequency_search(self):
+        ntrial = qffa_calibrated_ntrial(1000, nharm=2, oversample=4, search_fdot=False)
+        assert np.isclose(ntrial, 4700)
+
+    def test_tabulated_fdot_search(self):
+        ntrial = qffa_calibrated_ntrial(1000, nharm=2, oversample=4, search_fdot=True)
+        assert np.isclose(ntrial, 11000)
+
+    def test_frequency_and_fdot_tables_are_different(self):
+        kw = dict(nharm=1, oversample=2)
+        assert not np.isclose(
+            qffa_calibrated_ntrial(1000, search_fdot=False, **kw),
+            qffa_calibrated_ntrial(1000, search_fdot=True, **kw),
+        )
+
+    @pytest.mark.parametrize("search_fdot", [False, True])
+    def test_between_oversamples_uses_the_next_larger(self, search_fdot):
+        kw = dict(nharm=2, search_fdot=search_fdot)
+        assert np.isclose(
+            qffa_calibrated_ntrial(1000, oversample=3, **kw),
+            qffa_calibrated_ntrial(1000, oversample=4, **kw),
+        )
+
+    @pytest.mark.parametrize("search_fdot", [False, True])
+    def test_between_harmonics_uses_the_next_larger(self, search_fdot):
+        kw = dict(oversample=4, search_fdot=search_fdot)
+        assert np.isclose(
+            qffa_calibrated_ntrial(1000, nharm=3, **kw),
+            qffa_calibrated_ntrial(1000, nharm=4, **kw),
+        )
+
+    def test_oversample_below_one_uses_the_first_column(self):
+        kw = dict(nharm=2, search_fdot=False)
+        assert np.isclose(
+            qffa_calibrated_ntrial(1000, oversample=0.5, **kw),
+            qffa_calibrated_ntrial(1000, oversample=1, **kw),
+        )
+
+    @pytest.mark.parametrize(
+        "kw, largest",
+        [
+            (dict(nharm=2, oversample=16, search_fdot=False), dict(nharm=2, oversample=8)),
+            (dict(nharm=2, oversample=8, search_fdot=True), dict(nharm=2, oversample=4)),
+            (dict(nharm=8, oversample=4, search_fdot=False), dict(nharm=4, oversample=4)),
+        ],
+    )
+    def test_beyond_the_table_warns_and_uses_the_largest(self, kw, largest):
+        with pytest.warns(UserWarning, match="not covered by the calibration"):
+            ntrial = qffa_calibrated_ntrial(1000, **kw)
+        expected = qffa_calibrated_ntrial(1000, search_fdot=kw["search_fdot"], **largest)
+        assert np.isclose(ntrial, expected)
+
+    @pytest.mark.parametrize("search_fdot", [False, True])
+    def test_monotonic_in_harmonics_and_oversample(self, search_fdot):
+        oversamples = (1, 2, 4, 8) if not search_fdot else (1, 2, 4)
+        table = np.array(
+            [
+                [
+                    qffa_calibrated_ntrial(1000, nharm=n, oversample=o, search_fdot=search_fdot)
+                    for o in oversamples
+                ]
+                for n in (1, 2, 4)
+            ]
+        )
+        assert np.all(np.diff(table, axis=0) >= 0)
+        assert np.all(np.diff(table, axis=1) >= 0)
+
+    def test_never_below_one(self):
+        assert qffa_calibrated_ntrial(1, nharm=1, oversample=1, search_fdot=True) >= 1
+
+
+class TestInterbinStatistics:
+    """Probability of the powers of an interbinned, accelerated search."""
+
+    T = 1000.0
+
+    @staticmethod
+    def _half_bin_powers(z, n=2**19, seed=42):
+        """Interbinned powers of pure noise, after correcting for acceleration z."""
+        from stingray.pulse.accelsearch import _create_responses, convolve, interbin_fft
+
+        rng = np.random.default_rng(seed)
+        # Leahy-normalized white noise: its powers are chi^2 with 2 d.o.f.
+        spectrum = rng.normal(size=n) + 1j * rng.normal(size=n)
+        (response,) = _create_responses([z])
+        if np.size(response) > 1:
+            spectrum = convolve(spectrum, response)
+        # Stay away from the edges of the convolution
+        spectrum = spectrum[2000:-2000]
+        _, interbinned = interbin_fft(np.arange(spectrum.size), spectrum)
+        powers = (interbinned * interbinned.conj()).real
+        return powers[1::2]
+
+    def test_no_acceleration_is_pi_squared_over_eight(self):
+        assert np.isclose(interbin_stretch(0.0), np.pi**2 / 8)
+
+    def test_works_on_arrays(self):
+        stretch = interbin_stretch(np.array([0.0, 5.0, 100.0]))
+        assert stretch.shape == (3,)
+        assert np.isclose(stretch[0], np.pi**2 / 8)
+        # Neighbouring bins are correlated after the acceleration correction
+        assert not np.isclose(stretch[1], np.pi**2 / 8)
+
+    @pytest.mark.parametrize("z", [0, 0.25, 0.5, 1, 5, 10, 100])
+    def test_half_bin_probabilities_are_calibrated(self, z):
+        from scipy import stats
+
+        powers = self._half_bin_powers(z)
+        p = np.exp(-powers / (2 * interbin_stretch(z)))
+        # Neighbouring powers are correlated: test the uniformity of distant ones
+        assert stats.kstest(p[::256], "uniform").pvalue > 1e-3
+        # ...and the tail, where detections live, on all of them
+        assert 0.007 < np.mean(p < 0.01) < 0.013
+
+    def test_regular_bins_follow_chi_squared(self):
+        power = np.array([10.0, 20.0])
+        freq = np.array([100.0, 101.0]) / self.T
+        p = accel_single_trial_probability(power, freq, 5 / self.T**2, self.T, interbin=True)
+        assert np.allclose(p, np.exp(-power / 2))
+
+    def test_half_bins_are_stretched(self):
+        freq = np.array([100.5, 100.5]) / self.T
+        fdot = np.array([0.0, 5.0]) / self.T**2
+        p = accel_single_trial_probability(20.0, freq, fdot, self.T, interbin=True)
+        expected = np.exp(-20 / (2 * interbin_stretch(np.array([0.0, 5.0]))))
+        assert np.allclose(p, expected)
+
+    def test_without_interbin_every_bin_follows_chi_squared(self):
+        freq = np.array([100.0, 100.5]) / self.T
+        p = accel_single_trial_probability(20.0, freq, 5 / self.T**2, self.T, interbin=False)
+        assert np.allclose(p, np.exp(-10))
+
+
+class TestAccelCalibratedNtrial:
+    """The Monte Carlo calibration of the trials of ``HENaccelsearch``."""
+
+    def test_plain_fft_is_one_trial_per_bin(self):
+        assert np.isclose(accel_calibrated_ntrial(1000, zmax=0, delta_z=1, interbin=False), 1000)
+
+    def test_plain_fft_with_interbin(self):
+        assert np.isclose(accel_calibrated_ntrial(1000, zmax=0, delta_z=1, interbin=True), 2100)
+
+    @pytest.mark.parametrize(
+        "delta_z, interbin, per_cell",
+        [(1, False, 0.9), (1, True, 1.1), (0.5, False, 0.7), (0.5, True, 0.9)],
+    )
+    def test_tabulated_steps(self, delta_z, interbin, per_cell):
+        n_z = np.arange(-10, 10, delta_z).size
+        ntrial = accel_calibrated_ntrial(1000, zmax=10, delta_z=delta_z, interbin=interbin)
+        assert np.isclose(ntrial, 1000 * n_z * per_cell)
+
+    def test_linear_between_tabulated_steps(self):
+        n_z = np.arange(-10, 10, 0.75).size
+        ntrial = accel_calibrated_ntrial(1000, zmax=10, delta_z=0.75, interbin=False)
+        assert np.isclose(ntrial, 1000 * n_z * 0.8)
+
+    def test_finer_steps_use_the_finest_calibration(self):
+        # Finer steps are more correlated: this overestimates the trials
+        n_z = np.arange(-10, 10, 0.25).size
+        ntrial = accel_calibrated_ntrial(1000, zmax=10, delta_z=0.25, interbin=True)
+        assert np.isclose(ntrial, 1000 * n_z * 0.9)
+
+    @pytest.mark.parametrize("interbin, per_cell", [(False, 1.0), (True, 2.1)])
+    def test_coarser_steps_count_rows_as_independent(self, interbin, per_cell):
+        n_z = np.arange(-10, 10, 2).size
+        ntrial = accel_calibrated_ntrial(1000, zmax=10, delta_z=2, interbin=interbin)
+        assert np.isclose(ntrial, 1000 * n_z * per_cell)
+
+    def test_no_warning_outside_the_simulated_steps(self):
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            accel_calibrated_ntrial(1000, zmax=10, delta_z=0.1, interbin=False)
+            accel_calibrated_ntrial(1000, zmax=10, delta_z=3, interbin=True)
+
+    def test_never_below_one(self):
+        assert accel_calibrated_ntrial(1, zmax=1, delta_z=0.5, interbin=False) >= 1
+
+
+class TestBestCandidateNtrial:
+    """The price of picking the most significant of the corrected candidates."""
+
+    def test_no_charge_when_the_floor_covers_the_search(self):
+        n_eff = np.array([100.0, 1000.0])
+        ntrial = best_candidate_ntrial(n_eff, ntrial_min=1000, ntrial_blind=1000)
+        assert np.allclose(ntrial, n_eff)
+
+    def test_logarithmic_factor(self):
+        ntrial = best_candidate_ntrial(1.0, ntrial_min=1, ntrial_blind=1e4)
+        assert np.isclose(ntrial, 1 + np.log(1e4))
+
+    def test_the_floor_reduces_the_factor(self):
+        ntrial = best_candidate_ntrial(10.0, ntrial_min=10, ntrial_blind=1e4)
+        assert np.isclose(ntrial, 10 * (1 + np.log(1e3)))
+
+    def test_never_more_than_blind(self):
+        assert np.isclose(best_candidate_ntrial(5000.0, ntrial_min=1, ntrial_blind=1e4), 1e4)
+
+    def test_never_less_than_the_corrected_candidate(self):
+        n_eff = np.logspace(0, 4, 20)
+        ntrial = best_candidate_ntrial(n_eff, ntrial_min=1, ntrial_blind=1e4)
+        assert np.all(ntrial >= n_eff)
+
+    def test_scalar_in_scalar_out(self):
+        assert isinstance(best_candidate_ntrial(3.0, ntrial_min=1, ntrial_blind=100), float)
+
 
 class TestPriorCorrectedPValue:
     def test_single_trial_is_unchanged(self):
@@ -146,6 +476,25 @@ class TestPriorCorrectedPValue:
 
 @pytest.mark.skipif("not HAS_PINT")
 class TestEphemerisFromParfile:
+    def test_read_uncertainties(self, tmp_path):
+        parfile = tmp_path / "errors.par"
+        with open(parfile, "w") as fobj:
+            print("PSR              TEST", file=fobj)
+            print("F0               0.728 1 2e-9", file=fobj)
+            print("F1               -4.45e-11 1 3e-18", file=fobj)
+            print("PEPOCH           56682", file=fobj)
+            print("EPHEM            DE421", file=fobj)
+            print("UNITS            TDB", file=fobj)
+
+        freq, fdot, fddot, pepoch, errors = ephemeris_from_parfile(parfile, return_errors=True)
+        assert np.isclose(freq, 0.728)
+        assert np.isclose(pepoch, 56682)
+        f_err, fdot_err, fddot_err = errors
+        assert np.isclose(f_err, 2e-9)
+        assert np.isclose(fdot_err, 3e-18)
+        # F2 is not in the file, so it has no uncertainty either
+        assert fddot_err == 0
+
     def test_read_back(self, tmp_path):
         parfile = tmp_path / "test.par"
         parfile.write_text(
@@ -283,8 +632,10 @@ class TestTargetedZSearch:
         n = 40000
         times = np.sort(rng.uniform(0, cls.T, n))
         # A weak sinusoidal pulsation on a bright constant background: too
-        # weak to stand out in a blind search over the whole band
-        keep = rng.uniform(0, 1, n) < 0.5 * (1 + 0.045 * np.cos(2 * np.pi * cls.FTRUE * times))
+        # weak to stand out in a blind search over the whole band, strong
+        # enough to be detected even after paying for picking the best
+        # candidate of the targeted search
+        keep = rng.uniform(0, 1, n) < 0.5 * (1 + 0.055 * np.cos(2 * np.pi * cls.FTRUE * times))
         events = EventList(time=times[keep], gti=np.array([[0, cls.T]]), mjdref=cls.MJDREF)
         events.instr = "test"
         cls.fname = "ev" + HEN_FILE_EXTENSION
@@ -305,7 +656,7 @@ class TestTargetedZSearch:
             "16",
             "--fast",
             "--oversample",
-            "16",
+            "4",
             "-N",
             "2",
         ]
@@ -329,9 +680,27 @@ class TestTargetedZSearch:
         table = self._candidates(main_zsearch(self.common))
         # Every candidate is an upper limit, i.e. nothing was detected
         assert np.all(np.isnan(table["pulse_amp"]))
-        # ...and the tallest peak is a noise peak, far from the true frequency
-        best = table[np.argmax(table["power"])]
-        assert np.abs(best["f"] - self.FTRUE) > 0.01
+
+    def test_every_search_reports_all_significances(self):
+        """Single-trial, naive and calibrated probabilities, with or without a prior."""
+        from hendrics.efsearch import main_zsearch
+
+        table = self._candidates(main_zsearch(self.common))
+        for name in ("p_1trial", "p_ntrial", "p_ntrial_adj"):
+            assert name in table.colnames
+        assert np.all(table["p_ntrial"] >= table["p_1trial"])
+        assert np.all(table["p_ntrial_adj"] >= table["p_ntrial"])
+
+        # The calibrated count multiplies the naive one, for a Z^2_2 search of
+        # frequency and fdot with 4 points per resolution element
+        meta = table.meta
+        assert np.isclose(
+            meta["ntrial"],
+            qffa_calibrated_ntrial(meta["ntrial_naive"], nharm=2, oversample=4, search_fdot=True),
+        )
+        assert np.allclose(
+            table["p_ntrial_adj"], prior_corrected_p_value(table["p_1trial"], meta["ntrial"])
+        )
 
     def test_targeted_search_finds_it(self):
         """The same data, with the ephemeris extrapolated from 1000 days back."""
@@ -362,6 +731,9 @@ class TestTargetedZSearch:
         # Right on the prediction, so it costs almost nothing in trials
         assert best["ntrial_eff"] < 10
         assert best["p_value"] < 1e-3
+        # Picking the best candidate has a price, but a small one here
+        assert np.all(table["p_value_best"] >= table["p_value"])
+        assert best["p_value_best"] < 1e-3
 
     def test_a_wrong_prior_does_not_invent_a_detection(self):
         """A prior far from the truth must not manufacture significance."""
@@ -400,6 +772,139 @@ class TestTargetedZSearch:
         assert len(detected) > 0
         best = detected[np.argmin(detected["p_value"])]
         assert np.isclose(best["f"], self.FTRUE, atol=1e-3)
+
+    def test_uncertainty_sets_a_floor_on_the_trials(self):
+        """With an uncertain solution, the on-prior candidate pays for the region."""
+        from hendrics.efsearch import main_zsearch
+        from hendrics.io import load_folding
+
+        f_err = 1e-2
+        outfiles = main_zsearch(
+            self.common
+            + [
+                "--known-freq",
+                str(self.known_freq),
+                "--known-fdot",
+                str(self.KNOWN_FDOT),
+                "--known-pepoch",
+                str(self.KNOWN_PEPOCH),
+                "--known-freq-err",
+                str(f_err),
+            ]
+        )
+        ef = load_folding(outfiles[0])
+        # With no fdot uncertainty, the frequency one is not changed by the
+        # extrapolation
+        assert np.isclose(ef.known_freq_err, f_err)
+        assert ef.known_fdot_err == 0
+
+        expected = uncertainty_ntrial(
+            f_err,
+            0.0,
+            f_step=np.median(np.diff(ef.freq[0, :])),
+            fdot_step=np.median(np.diff(ef.fdots[:, 0])),
+            n_grid=ef.stat.size,
+            # The calibrated count of the blind search over the same plane
+            ntrial_blind=qffa_calibrated_ntrial(
+                int(ef.stat.size / ef.oversample**2),
+                nharm=2,
+                oversample=ef.oversample,
+                search_fdot=True,
+            ),
+            search_fdot=True,
+        )
+        # A meaningful floor, not the single trial of a precise prior
+        assert expected > 5
+
+        table = self._candidates(outfiles)
+        assert np.all(table["ntrial_eff"] >= expected * (1 - 1e-6))
+        # Paying for the whole region may well push this weak signal below the
+        # detection threshold: that is the point. It is still the most
+        # significant candidate, though.
+        best = table[np.argmin(table["p_value"])]
+        assert np.isclose(best["f"], self.FTRUE, atol=1e-3)
+        # Sitting on the prediction, it pays exactly for the uncertainty region
+        assert np.isclose(best["ntrial_eff"], expected)
+
+
+class TestKnownEphemerisAt:
+    """The known solution, and its uncertainty, at the epoch of the search."""
+
+    TEN_DAYS = 864000.0
+
+    @staticmethod
+    def _args(**kwargs):
+        from argparse import Namespace
+
+        defaults = dict(
+            known_par=None,
+            known_freq=None,
+            known_fdot=0.0,
+            known_fddot=0.0,
+            known_pepoch=None,
+            known_freq_err=None,
+            known_fdot_err=None,
+        )
+        defaults.update(kwargs)
+        return Namespace(**defaults)
+
+    @staticmethod
+    def _write_par(path):
+        with open(path, "w") as fobj:
+            print("PSR              TEST", file=fobj)
+            print("F0               1.0 1 2e-9", file=fobj)
+            print("F1               -1e-12 1 3e-18", file=fobj)
+            print("PEPOCH           50000", file=fobj)
+            print("EPHEM            DE421", file=fobj)
+            print("UNITS            TDB", file=fobj)
+        return str(path)
+
+    def test_blind_search(self):
+        from hendrics.efsearch import _known_ephemeris_at
+
+        freq, fdot, f_err, fdot_err = _known_ephemeris_at(self._args(), 50000)
+        assert np.isnan(freq)
+        assert np.isnan(fdot)
+        assert f_err == 0
+        assert fdot_err == 0
+
+    def test_no_uncertainty_given(self):
+        from hendrics.efsearch import _known_ephemeris_at
+
+        args = self._args(known_freq=1.0, known_pepoch=50000)
+        _, _, f_err, fdot_err = _known_ephemeris_at(args, 50010)
+        assert f_err == 0
+        assert fdot_err == 0
+
+    def test_command_line_errors_are_propagated(self):
+        from hendrics.efsearch import _known_ephemeris_at
+
+        args = self._args(
+            known_freq=1.0, known_pepoch=50000, known_freq_err=1e-6, known_fdot_err=1e-12
+        )
+        _, _, f_err, fdot_err = _known_ephemeris_at(args, 50010)
+        assert np.isclose(f_err, np.hypot(1e-6, 1e-12 * self.TEN_DAYS))
+        assert np.isclose(fdot_err, 1e-12)
+
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_par_file_errors_are_used(self, tmp_path):
+        from hendrics.efsearch import _known_ephemeris_at
+
+        args = self._args(known_par=self._write_par(tmp_path / "err.par"))
+        _, _, f_err, fdot_err = _known_ephemeris_at(args, 50010)
+        assert np.isclose(f_err, np.hypot(2e-9, 3e-18 * self.TEN_DAYS))
+        assert np.isclose(fdot_err, 3e-18)
+
+    @pytest.mark.skipif("not HAS_PINT")
+    def test_command_line_overrides_the_par_file(self, tmp_path):
+        """Formal timing errors are often too optimistic: let the user widen them."""
+        from hendrics.efsearch import _known_ephemeris_at
+
+        args = self._args(known_par=self._write_par(tmp_path / "err.par"), known_freq_err=1e-3)
+        _, _, f_err, fdot_err = _known_ephemeris_at(args, 50010)
+        # The frequency error is replaced, the fdot one still comes from the file
+        assert np.isclose(f_err, np.hypot(1e-3, 3e-18 * self.TEN_DAYS))
+        assert np.isclose(fdot_err, 3e-18)
 
 
 class TestTargetedAccelSearch:
@@ -469,7 +974,7 @@ class TestTargetedAccelSearch:
 
     def test_targeted_search_reports_the_correction(self):
         table = self._run("targeted.csv", extra=self.prior_args)
-        for name in ("f_offset", "fdot_offset", "ntrial_eff", "p_value"):
+        for name in ("f_offset", "fdot_offset", "ntrial_eff", "p_value", "p_value_best"):
             assert name in table.colnames
 
         best = table[np.argmin(table["p_value"])]
@@ -477,6 +982,10 @@ class TestTargetedAccelSearch:
         # It lands on the prediction, so it costs a single trial
         assert np.isclose(best["ntrial_eff"], 1.0)
         assert best["p_value"] < 1e-6
+        # Picking the best candidate has a price, and sets the order
+        assert np.all(table["p_value_best"] >= table["p_value"])
+        assert best["p_value_best"] < 1e-6
+        assert np.all(np.diff(table["p_value_best"]) >= 0)
 
     def test_only_surviving_candidates_are_written(self):
         """The corrected p-value is applied before the file is written."""
@@ -487,12 +996,69 @@ class TestTargetedAccelSearch:
         far = table[np.abs(table["f_offset"]) > 0.02]
         assert np.all(far["ntrial_eff"] > 1)
 
-    def test_blind_search_is_untouched(self):
-        """Without a prior, the output keeps its original columns."""
+    def test_blind_search_reports_calibrated_significances(self):
+        """Without a prior: all the significances, but no prior correction."""
         table = self._run("blind.csv")
+        assert len(table) > 0
         assert "p_value" not in table.colnames
         assert "ntrial_eff" not in table.colnames
+        for name in ("p_1trial", "p_ntrial", "p_ntrial_adj"):
+            assert name in table.colnames
+
+        # --zmax 10, default --delta-z 1
+        n_freq = int(table["ntrial"][0])
+        ntrial = accel_calibrated_ntrial(n_freq, zmax=10, delta_z=1, interbin=False)
+        assert ntrial > n_freq
+        assert np.allclose(table["p_ntrial"], prior_corrected_p_value(table["p_1trial"], n_freq))
+        assert np.allclose(
+            table["p_ntrial_adj"], prior_corrected_p_value(table["p_1trial"], ntrial)
+        )
+        # Only candidates below the threshold, with the calibrated trials
+        assert np.all(table["p_ntrial_adj"] < 0.068)
 
     def test_wide_band_warns_that_it_buys_little(self):
         with pytest.warns(UserWarning, match="too wide for the known ephemeris"):
             self._run("wide.csv", band=("1.0", "50.0"), extra=self.prior_args)
+
+    def test_targeted_interbin_search(self):
+        table = self._run("targeted_interbin.csv", extra=self.prior_args + ["--interbin"])
+        best = table[np.argmin(table["p_value"])]
+        assert np.isclose(best["frequency"], self.FTRUE, atol=2e-3)
+        assert np.isclose(best["ntrial_eff"], 1.0)
+        assert best["p_value"] < 1e-6
+
+        # The in-between bins pay for their wider noise distribution
+        r = table["frequency"] * table["length"][0]
+        half_bin = np.abs(r - np.floor(r) - 0.5) < 0.25
+        assert np.any(half_bin)
+        assert np.all(table["p_1trial"][half_bin] > np.exp(-table["power"][half_bin] / 2))
+
+    def test_uncertainty_sets_a_floor_on_the_trials(self):
+        f_err, fdot_err = 1e-2, 2e-6
+        table = self._run(
+            "uncertain.csv",
+            extra=self.prior_args
+            + ["--known-freq-err", str(f_err), "--known-fdot-err", str(fdot_err)],
+        )
+        # The epochs are 1000 days apart: propagate the fdot error
+        dt = (self.MJDREF - self.KNOWN_PEPOCH) * 86400
+        f_err_now = np.hypot(f_err, fdot_err * dt)
+        length = table["length"][0]
+        n_freq = int(table["ntrial"][0])
+        # --zmax 10, default --delta-z 1
+        n_z = np.arange(-10, 10, 1).size
+        expected = uncertainty_ntrial(
+            f_err_now,
+            fdot_err,
+            f_step=1 / length,
+            fdot_step=1 / length**2,
+            n_grid=n_freq * n_z,
+            ntrial_blind=accel_calibrated_ntrial(n_freq, zmax=10, delta_z=1, interbin=False),
+            search_fdot=True,
+        )
+        assert expected > 5
+
+        assert np.all(table["ntrial_eff"] >= expected * (1 - 1e-6))
+        best = table[np.argmin(table["p_value"])]
+        assert np.isclose(best["frequency"], self.FTRUE, atol=2e-3)
+        assert np.isclose(best["ntrial_eff"], expected)

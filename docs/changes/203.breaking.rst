@@ -1,0 +1,8 @@
+``--oversample`` in ``HENzsearch --fast`` (and ``oversample`` in
+``search_with_qffa``) now means what the documentation always said: grid points
+per frequency resolution element 1/T. The grid used to be four times coarser in
+both frequency and frequency derivative, and neighbouring sub-searches repeated
+a frequency. To get the grid of an old ``--oversample 16``, use
+``--oversample 4``: the grid and the run time are the same. The default for
+``--fast`` is now ``2 * N`` points per 1/T, for :math:`Z^2_N`, instead of the
+old ``4 * N``, which gave only ``N``.

@@ -1,0 +1,27 @@
+# %ECSV 1.0
+# ---
+# datatype:
+# - {name: kind, datatype: string}
+# - {name: nharm, datatype: int64}
+# - {name: oversample, datatype: float64}
+# - {name: search_fdot, datatype: float64}
+# - {name: band, datatype: float64}
+# - {name: nreal, datatype: int64}
+# - {name: mean_ratio, datatype: float64}
+# - {name: min_ratio, datatype: float64}
+# - {name: mean_ratio_err, datatype: float64}
+# - {name: zmax, datatype: float64}
+# - {name: delta_z, datatype: float64}
+# - {name: interbin, datatype: float64}
+# schema: astropy-2.0
+kind nharm oversample search_fdot band nreal mean_ratio min_ratio mean_ratio_err zmax delta_z interbin
+qffa 2 1.0 0.0 0.02 2000 0.7951113520011985 0.4815169839284035 0.004052714394765407 nan nan nan
+qffa 2 2.0 0.0 0.02 2000 0.9512849708581864 0.8276177168978143 0.001539174427609972 nan nan nan
+qffa 2 4.0 0.0 0.02 2000 0.99697503239086 0.9433893034965553 0.0008807852273319751 nan nan nan
+qffa 2 8.0 0.0 0.02 2000 1.0125555374012791 0.9684462929160713 0.0008066945987507786 nan nan nan
+folding 2 1.0 0.0 0.02 2000 0.8062867208822573 0.4745655079258043 0.0041255073594059334 nan nan nan
+folding 2 2.0 0.0 0.02 2000 0.9526221419323208 0.8394876022199815 0.001464847287672833 nan nan nan
+folding 2 4.0 0.0 0.02 2000 0.9998415029783063 0.95374780525048 0.0007988482782902777 nan nan nan
+folding 2 8.0 0.0 0.02 2000 1.0138783947764491 0.9793912418022853 0.0007187606885377344 nan nan nan
+accel 1 nan nan 0.02 2000 0.7758507426013791 0.4456597457327468 0.004283066148503978 0.0 1.0 0.0
+accel 1 nan nan 0.02 2000 0.96069526376933 0.7804387184529924 0.0024593755026097626 0.0 1.0 1.0

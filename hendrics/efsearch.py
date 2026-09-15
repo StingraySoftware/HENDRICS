@@ -58,10 +58,17 @@ from .io import (
     save_folding,
 )
 from .known_ephemeris import (
+    accel_calibrated_ntrial,
+    accel_single_trial_probability,
+    best_candidate_ntrial,
     effective_ntrial,
     ephemeris_from_parfile,
     extrapolate_ephemeris,
+    extrapolate_ephemeris_uncertainty,
+    interbin_stretch,
     prior_corrected_p_value,
+    qffa_calibrated_ntrial,
+    uncertainty_ntrial,
 )
 
 try:
@@ -920,11 +927,26 @@ def search_with_qffa_step(
     nbin=16,
     nprof=64,
     npfact=2,
-    oversample=8,
+    oversample=2,
     n=1,
     search_fdot=True,
+    length=None,
 ) -> tuple[np.array, np.array, np.array]:
-    """Single step of quasi-fast folding algorithm."""
+    """Single step of quasi-fast folding algorithm.
+
+    The sub-profiles are shifted by up to ``npfact`` full cycles at the edges
+    of the observation, in either direction. Phases are measured from the
+    middle of the observation, so this covers a slice of ``4 * npfact / length``
+    in frequency, sampled with ``oversample`` points per ``1 / length``. The
+    frequency derivative axis is sampled with the same phase error at the
+    edges, i.e. a step of ``4 / (oversample * length**2)``.
+
+    Other Parameters
+    ----------------
+    length : float, default ``times[-1] - times[0]``
+        Length of the observation. Pass the one used to space the sub-searches,
+        so that they tile the band exactly.
+    """
     # Cast to standard double, or Numba's histogram2d will fail
     # horribly.
 
@@ -945,15 +967,19 @@ def search_with_qffa_step(
     # Assume times are sorted
     t1, t0 = times[-1], times[0]
 
-    # dn = max(1, int(nbin / oversample))
-    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, int(oversample * npfact))
+    if length is None:
+        length = t1 - t0
+
+    # Without the upper end, which is the lower end of the next sub-search
+    nshifts = max(int(np.rint(4 * oversample * npfact)), 1)
+    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, nshifts, endpoint=False)
     if search_fdot:
-        quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, int(oversample * npfact))
+        quabinshifts = np.linspace(-nbin * npfact, nbin * npfact, nshifts, endpoint=False)
     else:
         quabinshifts = np.array([0])
 
     dphi = 1 / nbin
-    delta_t = (t1 - t0) / 2
+    delta_t = length / 2
     bin_to_frequency = dphi / delta_t
     bin_to_fdot = 2 * dphi / delta_t**2
 
@@ -973,7 +999,7 @@ def search_with_qffa(
     nbin=16,
     nprof=None,
     npfact=2,
-    oversample=8,
+    oversample=2,
     n=1,
     search_fdot=True,
     t0=None,
@@ -1001,8 +1027,11 @@ def search_with_qffa(
         ``8 * nbin * npfact``. Motivation in the comments.
     npfact : int, default 2
         maximum "sliding" of the dataset, in phase.
-    oversample : int, default 8
-        Oversampling wrt the standard FFT delta f = 1/T
+    oversample : int, default 2
+        Oversampling wrt the standard FFT delta f = 1/T: the frequency step is
+        ``1 / (oversample * T)``, and the frequency derivative step is
+        ``4 / (oversample * T**2)``, which gives the same phase error at the
+        edges of the observation
     search_fdot : bool, default True
         Switch fdot search on or off
     t0 : float, default min(times)
@@ -1080,6 +1109,7 @@ def search_with_qffa(
             oversample=oversample,
             n=n,
             search_fdot=search_fdot,
+            length=length,
         )
 
         if all_fgrid is None:
@@ -1299,7 +1329,7 @@ def print_qffa_results(best_cand_table):
             f"{a:g} ± {e:g}" for (a, e) in zip(newtable["pulse_amp"], newtable["pulse_amp_err"])
         ]
 
-    columns = ["mjd", "f", "fdot", "fddot", "power", "Pulsed amplitude (%)"]
+    columns = ["mjd", "f", "fdot", "fddot", "power", "p_ntrial_adj", "Pulsed amplitude (%)"]
     if "p_value" in newtable.colnames:
         # A targeted search: what matters is the distance from the expected
         # solution and the significance once that is paid for
@@ -1311,6 +1341,7 @@ def print_qffa_results(best_cand_table):
             "power",
             "ntrial_eff",
             "p_value",
+            "p_value_best",
             "Pulsed amplitude (%)",
         ]
     # ``good`` is a mask when there are detections and the index of the best
@@ -1396,6 +1427,33 @@ def get_boundaries_from_level(x, y, level, x0):
     return min_x, max_x
 
 
+def _qffa_naive_ntrial(stat, oversample):
+    """Number of resolution elements covered by a fast search plane.
+
+    A resolution element is 1/T in frequency and 4/T^2 in frequency derivative
+    (the same phase error at the edges of the observation), and the fast search
+    samples both with ``oversample`` points per element.
+
+    Parameters
+    ----------
+    stat : array
+        The statistic plane, of shape ``(n_fdot, n_freq)`` or ``(n_freq,)``
+    oversample : float or None
+        Grid points per resolution element. ``None`` counts every point
+
+    Returns
+    -------
+    ntrial : int
+        The naive number of trials, at least 1
+    """
+    stat = np.asarray(stat)
+    if oversample is None:
+        return max(stat.size, 1)
+    search_fdot = stat.ndim > 1 and stat.shape[0] > 1
+    n_axes = 2 if search_fdot else 1
+    return max(int(stat.size / oversample**n_axes), 1)
+
+
 def _analyze_qffa_results(input_ef_periodogram, fname=None):
     """Search best candidates in a quasi-fast-folding search.
 
@@ -1411,17 +1469,29 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     if not hasattr(input_ef_periodogram, "M") or input_ef_periodogram.M is None:
         input_ef_periodogram.M = 1
 
-    ntrial = input_ef_periodogram.stat.size
-    if hasattr(input_ef_periodogram, "oversample") and input_ef_periodogram.oversample is not None:
-        ntrial /= input_ef_periodogram.oversample
-        ntrial = int(ntrial)
+    oversample = getattr(input_ef_periodogram, "oversample", None)
+    ntrial_naive = _qffa_naive_ntrial(input_ef_periodogram.stat, oversample)
+    ntrial = ntrial_naive
+    stat_shape = np.shape(input_ef_periodogram.stat)
+    if input_ef_periodogram.kind == "Z2n" and oversample is not None:
+        # Neighbouring points of an oversampled grid are correlated, but each
+        # resolution element still holds more than one trial: use the Monte
+        # Carlo calibration
+        ntrial = qffa_calibrated_ntrial(
+            ntrial_naive,
+            nharm=int(input_ef_periodogram.N),
+            oversample=oversample,
+            search_fdot=len(stat_shape) > 1 and stat_shape[0] > 1,
+        )
     epsilon_det = 0.001
+    # Stingray wants an integer number of trials: round up, to stay conservative
+    ntrial_int = int(np.ceil(ntrial))
     if input_ef_periodogram.kind == "Z2n":
         ndof = input_ef_periodogram.N - 1
         detlev = z2_n_detection_level(
             epsilon=epsilon_det,
             n=int(input_ef_periodogram.N),
-            ntrial=ntrial,
+            ntrial=ntrial_int,
             n_summed_spectra=int(input_ef_periodogram.M),
         )
         nbin = max(
@@ -1433,12 +1503,12 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     else:
         ndof = input_ef_periodogram.nbin
         detlev = fold_detection_level(
-            nbin=int(input_ef_periodogram.nbin), epsilon=epsilon_det, ntrial=ntrial
+            nbin=int(input_ef_periodogram.nbin), epsilon=epsilon_det, ntrial=ntrial_int
         )
         nbin = max(16, input_ef_periodogram.nbin)
         label = rf"$\chi^2_{ndof}$ Stat"
     n_cands = 5
-    p_corr, n_eff = _prior_corrected_p_values(input_ef_periodogram, ntrial)
+    p_corr, n_eff, p_best = _prior_corrected_p_values(input_ef_periodogram, ntrial)
     if p_corr is None:
         best_cands = find_peaks_in_image(input_ef_periodogram.stat, n=n_cands)
     else:
@@ -1474,9 +1544,13 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
         "fddot_idx",
     ]
     dtype = [str] + [float] * 15 + [int] * 3
+    # Single-trial probability, and corrected with the naive and calibrated
+    # number of trials of the blind search
+    names += ["p_1trial", "p_ntrial", "p_ntrial_adj"]
+    dtype += [float] * 3
     if p_corr is not None:
-        names += ["f_offset", "fdot_offset", "ntrial_eff", "p_value"]
-        dtype += [float] * 4
+        names += ["f_offset", "fdot_offset", "ntrial_eff", "p_value", "p_value_best"]
+        dtype += [float] * 5
 
     best_cand_table = Table(names=names, dtype=dtype)
     best_cand_table["power"].info.format = ".2f"
@@ -1488,11 +1562,14 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
     best_cand_table["pulse_amp"].info.format = ".2f"
     best_cand_table["pulse_amp_err"].info.format = ".2f"
     best_cand_table["pulse_amp_ul_0.9"].info.format = ".2f"
+    for name in ("p_1trial", "p_ntrial", "p_ntrial_adj"):
+        best_cand_table[name].info.format = ".2e"
     if p_corr is not None:
         best_cand_table["f_offset"].info.format = ".3e"
         best_cand_table["fdot_offset"].info.format = ".2e"
         best_cand_table["ntrial_eff"].info.format = ".1f"
         best_cand_table["p_value"].info.format = ".2e"
+        best_cand_table["p_value_best"].info.format = ".2e"
 
     for i, idx in enumerate(best_cands):
         f_idx = fdot_idx = fddot_idx = 0
@@ -1546,12 +1623,13 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
 
         # A targeted search pays fewer trials, so it uses its own, lower
         # threshold: what counts is the corrected p-value, not the blind
-        # detection level.
+        # detection level. The candidate is the best of the plane, so it also
+        # pays for having been picked.
         idx_tuple = None
         detected = max_stat >= detlev
         if p_corr is not None:
             idx_tuple = (f_idx, fdot_idx) if p_corr.ndim > 1 else f_idx
-            detected = p_corr[idx_tuple] < epsilon_det
+            detected = p_best[idx_tuple] < epsilon_det
 
         sig_0, sig_1 = power_confidence_limits(max_stat, c=0.90, n=input_ef_periodogram.N)
         amp = amp_err = amp_ul = amp_1 = amp_0 = np.nan
@@ -1584,12 +1662,20 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
             fdot_idx,
             fddot_idx,
         ]
+        # Stingray may return a one-element array for a scalar statistic
+        p_1trial = float(np.ravel(_qffa_single_trial_p(input_ef_periodogram, max_stat))[0])
+        row += [
+            p_1trial,
+            float(prior_corrected_p_value(p_1trial, ntrial_naive)),
+            float(prior_corrected_p_value(p_1trial, ntrial)),
+        ]
         if p_corr is not None:
             row += [
                 f - input_ef_periodogram.known_freq,
                 fdot - input_ef_periodogram.known_fdot,
                 float(n_eff[idx_tuple]),
                 float(p_corr[idx_tuple]),
+                float(p_best[idx_tuple]),
             ]
         best_cand_table.add_row(row)
 
@@ -1615,7 +1701,15 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
 
     print_qffa_results(best_cand_table)
     best_cand_table.meta.update(
-        dict(nbin=nbin, ndof=ndof, label=label, filename=None, detlev=detlev)
+        dict(
+            nbin=nbin,
+            ndof=ndof,
+            label=label,
+            filename=None,
+            detlev=detlev,
+            ntrial_naive=ntrial_naive,
+            ntrial=ntrial,
+        )
     )
     if (
         hasattr(input_ef_periodogram, "filename")
@@ -1684,24 +1778,56 @@ def _add_known_ephemeris_args(parser):
         help="Parameter file in TEMPO2/PINT format containing the known "
         "solution, as an alternative to --known-freq and friends",
     )
+    parser.add_argument(
+        "--known-freq-err",
+        type=float,
+        default=None,
+        help="Uncertainty (1 sigma, Hz) on the frequency of the known solution, "
+        "at its reference epoch. It is propagated to the epoch of this "
+        "observation, and every candidate within 3 sigma of the extrapolated "
+        "solution is charged the same number of trials, so that a noise peak "
+        "close to the prediction is not favoured. Overrides the uncertainty "
+        "read from --known-par. Formal timing uncertainties are usually much "
+        "smaller than the effect of timing noise: be generous",
+    )
+    parser.add_argument(
+        "--known-fdot-err",
+        type=float,
+        default=None,
+        help="Uncertainty (1 sigma, Hz/s) on the frequency derivative of the "
+        "known solution. Overrides the uncertainty read from --known-par",
+    )
     return parser
 
 
 def _known_ephemeris_at(args, target_epoch):
     """Extrapolate the known solution, if any, to ``target_epoch``.
 
-    Returns a pair of NaNs when no known solution was given on the command
-    line, which is how the rest of the code recognizes a blind search.
+    Returns the frequency, its derivative and their uncertainties, all at
+    ``target_epoch``. The uncertainties come from the parameter file, unless
+    they are given on the command line.
+
+    Returns NaNs (and zero uncertainties) when no known solution was given on
+    the command line, which is how the rest of the code recognizes a blind
+    search.
     """
+    f_err = fdot_err = fddot_err = 0.0
     if getattr(args, "known_par", None) is not None:
-        freq, fdot, fddot, pepoch = ephemeris_from_parfile(args.known_par)
+        freq, fdot, fddot, pepoch, (f_err, fdot_err, fddot_err) = ephemeris_from_parfile(
+            args.known_par, return_errors=True
+        )
     elif getattr(args, "known_freq", None) is not None:
         freq = args.known_freq
         fdot = args.known_fdot
         fddot = args.known_fddot
         pepoch = args.known_pepoch
     else:
-        return np.nan, np.nan
+        return np.nan, np.nan, 0.0, 0.0
+
+    if getattr(args, "known_freq_err", None) is not None:
+        f_err = args.known_freq_err
+    if getattr(args, "known_fdot_err", None) is not None:
+        fdot_err = args.known_fdot_err
 
     if pepoch is None:
         raise ValueError("--known-pepoch is needed together with --known-freq")
@@ -1711,10 +1837,14 @@ def _known_ephemeris_at(args, target_epoch):
     freq, fdot, _ = extrapolate_ephemeris(
         freq, fdot=fdot, fddot=fddot, pepoch=pepoch, target_epoch=target_epoch
     )
-    log.info(
-        f"Known ephemeris extrapolated to MJD {target_epoch}: f={freq!r} Hz, fdot={fdot!r} Hz/s"
+    f_err, fdot_err = extrapolate_ephemeris_uncertainty(
+        f_err, fdot_err=fdot_err, fddot_err=fddot_err, pepoch=pepoch, target_epoch=target_epoch
     )
-    return freq, fdot
+    log.info(
+        f"Known ephemeris extrapolated to MJD {target_epoch}: f={freq!r} +- {f_err:.2g} Hz, "
+        f"fdot={fdot!r} +- {fdot_err:.2g} Hz/s"
+    )
+    return freq, fdot, f_err, fdot_err
 
 
 def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
@@ -1725,12 +1855,14 @@ def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
     candidate landing on the expected solution costs a single trial and one at
     the far edge of the band costs the full blind-search count.
 
-    Returns ``(None, None)`` when no known ephemeris was given.
+    Returns the corrected p-values, the trials charged to each cell, and the
+    p-values that also pay for picking the best candidate, or three ``None``
+    when no known ephemeris was given.
     """
     known_freq = getattr(input_ef_periodogram, "known_freq", np.nan)
     known_fdot = getattr(input_ef_periodogram, "known_fdot", np.nan)
     if known_freq is None or not np.isfinite(known_freq):
-        return None, None
+        return None, None, None
 
     freq = np.asarray(input_ef_periodogram.freq)
     stat = np.asarray(input_ef_periodogram.stat)
@@ -1755,26 +1887,40 @@ def _prior_corrected_p_values(input_ef_periodogram, ntrial_blind):
         )
         delta_fdot = fdots
 
-    n_eff = effective_ntrial(
-        freq - known_freq,
-        delta_fdot,
+    # Periodograms saved before uncertainties were supported have none
+    f_err = float(np.nan_to_num(getattr(input_ef_periodogram, "known_freq_err", 0.0) or 0.0))
+    fdot_err = float(np.nan_to_num(getattr(input_ef_periodogram, "known_fdot_err", 0.0) or 0.0))
+    grid = dict(
         f_step=f_step,
         fdot_step=fdot_step,
         n_grid=stat.size,
         ntrial_blind=ntrial_blind,
         search_fdot=search_fdot,
     )
+    ntrial_min = uncertainty_ntrial(f_err, fdot_err, **grid)
 
+    n_eff = effective_ntrial(freq - known_freq, delta_fdot, ntrial_min=ntrial_min, **grid)
+
+    n_best = best_candidate_ntrial(n_eff, ntrial_min=ntrial_min, ntrial_blind=ntrial_blind)
+
+    p_single = _qffa_single_trial_p(input_ef_periodogram, stat)
+
+    return (
+        prior_corrected_p_value(p_single, n_eff),
+        n_eff,
+        prior_corrected_p_value(p_single, n_best),
+    )
+
+
+def _qffa_single_trial_p(input_ef_periodogram, stat):
+    """Single-trial probability of a statistic of the folding periodogram."""
     if input_ef_periodogram.kind == "Z2n":
-        p_single = z2_n_probability(
+        return z2_n_probability(
             stat,
             n=int(input_ef_periodogram.N),
-            n_summed_spectra=int(input_ef_periodogram.M),
+            n_summed_spectra=int(getattr(input_ef_periodogram, "M", 1) or 1),
         )
-    else:
-        p_single = fold_profile_probability(stat, int(input_ef_periodogram.nbin))
-
-    return prior_corrected_p_value(p_single, n_eff), n_eff
+    return fold_profile_probability(stat, int(input_ef_periodogram.nbin))
 
 
 def _common_parser(args=None):
@@ -1884,7 +2030,7 @@ def _common_parser(args=None):
         type=float,
         help="Oversampling factor - frequency resolution "
         "improvement w.r.t. the standard FFT's "
-        "1/obs_length.",
+        "1/obs_length. Defaults to 2, or to 2 * N with --fast.",
     )
     parser.add_argument(
         "--fast",
@@ -2036,7 +2182,7 @@ def _common_main(args, func):
                 events = deorbit_events(events, args.deorbit_par)
 
         if args.fast:
-            oversample = assign_value_if_none(args.oversample, 4 * n)
+            oversample = assign_value_if_none(args.oversample, 2 * n)
         else:
             oversample = assign_value_if_none(args.oversample, 2)
 
@@ -2133,7 +2279,9 @@ def _common_main(args, func):
                 **kwargs,
             )
 
-        known_freq, known_fdot = _known_ephemeris_at(args, mjdref + ref_time / 86400)
+        known_freq, known_fdot, known_freq_err, known_fdot_err = _known_ephemeris_at(
+            args, mjdref + ref_time / 86400
+        )
 
         efperiodogram = EFPeriodogram(
             frequencies,
@@ -2153,6 +2301,8 @@ def _common_main(args, func):
             oversample=args.oversample,
             known_freq=known_freq,
             known_fdot=known_fdot,
+            known_freq_err=known_freq_err,
+            known_fdot_err=known_fdot_err,
         )
         efperiodogram.upperlim = pf_upper_limit(np.max(stats), events.time.size, n=args.N)
         efperiodogram.ncounts = events.time.size
@@ -2228,7 +2378,7 @@ def z2_vs_pf(event_list, deadtime=0.0, ntrials=100, outfile=None, N=2):
             1 + df * 2,
             fdot=0,
             nbin=32,
-            oversample=16,
+            oversample=4,
             search_fdot=False,
             silent=True,
             n=N,
@@ -2511,21 +2661,37 @@ def main_accelsearch(args=None):
         # Half of the bins are zeros.
         det_p_value = 0.068 * 2
 
-    known_freq, known_fdot = _known_ephemeris_at(args, events.mjdref + t0 / 86400)
+    known_freq, known_fdot, known_freq_err, known_fdot_err = _known_ephemeris_at(
+        args, events.mjdref + t0 / 86400
+    )
     targeted = bool(np.isfinite(known_freq))
-    single_trial_p_value = det_p_value
+
+    # The frequency bins and z rows that ``accelsearch`` will search
+    fft_length = times.size * dt
+    n_freq = max(int(np.rint((fmax - fmin) * fft_length)), 1)
+    range_z = np.arange(-zmax, zmax, delta_z)
+    ntrial = accel_calibrated_ntrial(n_freq, zmax=zmax, delta_z=delta_z, interbin=interbin)
+    # det_p_value is the false alarm probability of the whole blind search,
+    # charged the calibrated number of trials. A targeted search instead needs
+    # to see every candidate below that probability for a single trial.
     if targeted:
-        # ``accelsearch`` interprets det_p_value as the false alarm probability
-        # of the *whole* blind search, so its internal threshold rises with the
-        # width of the band. A targeted search needs to see candidates that a
-        # blind one would discard, so ask for the loosest threshold that can
-        # still be expressed, and tell the user what it bought them.
-        fft_length = max_length * 2 if args.pad_to_double else max_length
-        n_freq = max((fmax - fmin) * fft_length, 1)
-        # stingray refuses to invert a multi-trial probability closer than
-        # 1e-12 to 1, so stop an order of magnitude short of that
-        det_p_value = min(-np.expm1(n_freq * np.log1p(-single_trial_p_value)), 1 - 1e-9)
-        reachable = -np.expm1(np.log1p(-det_p_value) / n_freq)
+        single_trial_p_value = det_p_value
+    else:
+        single_trial_p_value = -np.expm1(np.log1p(-det_p_value) / ntrial)
+    # ``accelsearch`` thresholds the power as if the search were ``n_freq``
+    # regular Fourier bins. In-between bins of interbinning can have a narrower
+    # noise distribution (stretch < 1), so lower the power threshold enough to
+    # keep them too. The final selection is done below, on the probabilities.
+    stretch = 1.0
+    if interbin and range_z.size > 0:
+        stretch = min(1.0, float(np.min(interbin_stretch(range_z))))
+    power_threshold = -2 * stretch * np.log(single_trial_p_value)
+    # stingray refuses to invert a multi-trial probability closer than
+    # 1e-12 to 1, so stop an order of magnitude short of that
+    stingray_p_value = min(float(pds_probability(power_threshold, ntrial=n_freq)), 1 - 1e-9)
+    if targeted:
+        # Single-trial probability of the weakest candidate stingray can report
+        reachable = -(np.expm1(np.log1p(-stingray_p_value) / n_freq) ** (1 / stretch))
         log.info(
             f"Targeted search: single-trial threshold {reachable:.2g} "
             f"over {n_freq:.0f} frequency bins"
@@ -2562,7 +2728,7 @@ def main_accelsearch(args=None):
         debug=debug,
         interbin=interbin,
         nproc=nproc,
-        det_p_value=det_p_value,
+        det_p_value=stingray_p_value,
         fft_rescale=fft_rescale,
         candidate_file=outfile.replace(".csv", ""),
     )
@@ -2580,28 +2746,61 @@ def main_accelsearch(args=None):
         )
         results = results[~bad]
 
-    if targeted and len(results) > 0:
-        # stingray searches a grid of 1/T in frequency and delta_z/T^2 in fdot,
-        # and reports the number of frequency bins it covered as ``ntrial``
-        length = results["length"][0]
+    # stingray reports the number of frequency bins it covered as ``ntrial``
+    length = results["length"][0] if len(results) > 0 else fft_length
+    if len(results) > 0:
         n_freq = int(results["ntrial"][0])
-        n_z = max(np.arange(-zmax, zmax, delta_z).size, 1)
+        ntrial = accel_calibrated_ntrial(n_freq, zmax=zmax, delta_z=delta_z, interbin=interbin)
+    p_1trial = np.asarray(
+        accel_single_trial_probability(
+            np.asarray(results["power"]),
+            np.asarray(results["frequency"]),
+            np.asarray(results["fdot"]),
+            length,
+            interbin=interbin,
+        ),
+        dtype=float,
+    ).reshape(-1)
+    results["p_1trial"] = p_1trial
+    results["p_ntrial"] = np.asarray(prior_corrected_p_value(p_1trial, n_freq), dtype=float)
+    results["p_ntrial_adj"] = np.asarray(prior_corrected_p_value(p_1trial, ntrial), dtype=float)
 
+    if not targeted:
+        n_before = len(results)
+        results = results[results["p_ntrial_adj"] < det_p_value]
+        log.info(
+            f"{len(results)} of {n_before} candidates have a false alarm probability "
+            f"below {det_p_value} with {ntrial:.0f} calibrated trials"
+        )
+
+    if targeted and len(results) > 0:
+        # stingray searches a grid of 1/T in frequency (1/2T with interbinning)
+        # and delta_z/T^2 in fdot
+        n_z = max(range_z.size, 1)
+        n_f_cells = 2 * n_freq - 1 if interbin else n_freq
+        grid = dict(
+            f_step=1 / length / (2 if interbin else 1),
+            fdot_step=delta_z / length**2,
+            n_grid=n_f_cells * n_z,
+            ntrial_blind=ntrial,
+            search_fdot=True,
+        )
+        ntrial_min = uncertainty_ntrial(known_freq_err, known_fdot_err, **grid)
         n_eff = effective_ntrial(
             results["frequency"] - known_freq,
             results["fdot"] - known_fdot,
-            f_step=1 / length,
-            fdot_step=delta_z / length**2,
-            n_grid=n_freq * n_z,
-            ntrial_blind=n_freq,
-            search_fdot=True,
+            ntrial_min=ntrial_min,
+            **grid,
         )
-        p_value = prior_corrected_p_value(pds_probability(results["power"], ntrial=1), n_eff)
+        p_value = prior_corrected_p_value(np.asarray(results["p_1trial"]), n_eff)
+        n_best = best_candidate_ntrial(n_eff, ntrial_min=ntrial_min, ntrial_blind=ntrial)
+        p_value_best = prior_corrected_p_value(np.asarray(results["p_1trial"]), n_best)
 
         results["f_offset"] = results["frequency"] - known_freq
         results["fdot_offset"] = results["fdot"] - known_fdot
         results["ntrial_eff"] = n_eff
         results["p_value"] = p_value
+        results["p_value_best"] = p_value_best
 
         # Filter on the corrected significance, not on raw power: this is what
         # keeps the candidate file small despite the loosened threshold
@@ -2626,13 +2825,15 @@ def main_accelsearch(args=None):
 
         print("Best candidates:")
         if targeted:
-            results.sort("p_value")
-            results["frequency", "f_offset", "fdot", "power", "ntrial_eff", "p_value"][
+            results.sort("p_value_best")
+            results["frequency", "f_offset", "fdot", "power", "ntrial_eff", "p_value_best"][
                 :10
             ].pprint_all()
         else:
             results.sort("power")
-            results["time", "frequency", "fdot", "power", "pepoch"][-10:][::-1].pprint()
+            results["time", "frequency", "fdot", "power", "p_ntrial_adj", "pepoch"][-10:][
+                ::-1
+            ].pprint()
         print(f"See all {len(results)} candidates in {outfile}")
     else:
         print("No candidates found")

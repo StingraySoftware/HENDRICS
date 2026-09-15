@@ -1,0 +1,7 @@
+``HENzsearch --fast`` now charges the number of independent trials measured
+with Monte Carlo simulations of pure noise, instead of one trial per resolution
+element: neighbouring points of an oversampled grid are correlated, but not
+completely. Its detection threshold, and the targeted search around a known
+ephemeris, use this calibrated count. The candidate table always reports the
+single-trial probability (``p_1trial``) and the probability corrected with the
+naive (``p_ntrial``) and calibrated (``p_ntrial_adj``) number of trials.

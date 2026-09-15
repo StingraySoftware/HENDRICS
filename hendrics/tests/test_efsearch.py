@@ -12,6 +12,7 @@ from hendrics.base import HAS_PINT, hen_root
 from hendrics.efsearch import (
     HAS_IMAGEIO,
     _average_and_z_sub_search,
+    _qffa_naive_ntrial,
     decide_binary_parameters,
     folding_orbital_search,
     main_accelsearch,
@@ -56,6 +57,59 @@ def test_average_and_z_sub_search_uses_powers_of_two(nprof, expected):
     n_ave, results = _average_and_z_sub_search(profiles, n=2)
     assert results.shape == (int(np.log2(expected)), expected)
     assert n_ave.size == results.shape[0]
+
+
+@pytest.mark.parametrize("oversample", [1, 2, 4])
+def test_qffa_grid_follows_oversample(oversample):
+    """``oversample`` counts grid points per 1/T in frequency.
+
+    Each sub-search used to cover its 4 * npfact / T slice with only
+    ``oversample * npfact`` points, including both ends, so the grid step was
+    about 4 / (oversample * T) and neighbouring sub-searches repeated a
+    frequency. The frequency derivative axis was coarse by the same factor 4.
+    """
+    rng = np.random.default_rng(1)
+    length = 200.0
+    times = np.sort(rng.uniform(0, length, 2000))
+    times[0], times[-1] = 0.0, length
+
+    freqs, fdots, stats, step, fdotstep, _ = search_with_qffa(
+        times, 1.0, 1.5, nbin=8, oversample=oversample, silent=True
+    )
+    freq_axis = freqs[0]
+    assert np.unique(freq_axis).size == freq_axis.size
+    assert np.allclose(np.diff(freq_axis), 1 / (oversample * length))
+    assert np.isclose(step, 1 / (oversample * length))
+    # The same phase error at the edges of the observation as the frequency step
+    assert np.allclose(np.diff(fdots[:, 0]), 4 / (oversample * length**2))
+    assert np.isclose(fdotstep, 4 / (oversample * length**2))
+
+    freq_only, _, step_only, _ = search_with_qffa(
+        times, 1.0, 1.5, nbin=8, oversample=oversample, search_fdot=False, silent=True
+    )
+    assert np.unique(freq_only).size == freq_only.size
+    assert np.allclose(np.diff(freq_only), 1 / (oversample * length))
+
+
+@pytest.mark.parametrize(
+    "shape,oversample,expected",
+    [
+        ((400,), 4, 100),
+        ((1, 400), 4, 100),
+        # Both axes are oversampled
+        ((16, 400), 4, 400),
+        ((16, 400), None, 6400),
+        ((2, 3), 8, 1),
+    ],
+)
+def test_qffa_naive_ntrial(shape, oversample, expected):
+    """The naive trials of a fast search count resolution elements.
+
+    That is 1/T in frequency and 4/T^2 in frequency derivative, so the grid is
+    divided by ``oversample`` once for each searched axis. Dividing only once
+    made the count of a search with fdot grow with ``oversample``.
+    """
+    assert _qffa_naive_ntrial(np.zeros(shape), oversample) == expected
 
 
 class TestEFsearch:
@@ -462,7 +516,7 @@ class TestEFsearch:
                 "--fast",
                 "--find-candidates",
                 "--oversample",
-                "4",
+                "1",
             ]
             + options
         )

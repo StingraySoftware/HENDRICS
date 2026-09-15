@@ -1,0 +1,5 @@
+New "Technical details" page explaining how ``HENzsearch`` and
+``HENaccelsearch`` compute the significance of their candidates: the Monte Carlo
+calibration of the number of trials, the noise distribution of interbinned
+powers, and the price of picking the best candidate of a targeted search, with
+the figures and tables of the simulations.

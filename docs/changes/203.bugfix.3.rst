@@ -1,0 +1,9 @@
+Picking the most significant candidate after the known-ephemeris correction
+is itself a choice, which inflated the false alarm probability by about
+``1 + ln(N_blind / ntrial_min)``. Targeted searches of ``HENzsearch`` and
+``HENaccelsearch`` now also report ``p_value_best``, which pays for it (and is
+never worse than the blind search). ``HENzsearch`` uses it to decide whether
+the candidate is detected, and ``HENaccelsearch`` sorts its candidates by it.
+Monte Carlo simulations show that both tools still report false alarms about
+1.3 times more often than nominal at 1% false alarm probability (against 3-6
+times without it).
