@@ -100,6 +100,14 @@ hendrics.fspec module
     :undoc-members:
     :show-inheritance:
 
+hendrics.gpu module
+-------------------
+
+.. automodule:: hendrics.gpu
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hendrics.io module
 ------------------
 
