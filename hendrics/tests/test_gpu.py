@@ -3,7 +3,7 @@ import pytest
 from stingray.events import EventList
 
 from hendrics import gpu
-from hendrics.base import histogram, histogram2d
+from hendrics.base import HAS_NUMBA, histogram, histogram2d
 from hendrics.efsearch import (
     _fast_phase,
     _fast_phase_fddot,
@@ -54,6 +54,14 @@ def fake_cupy(monkeypatch):
         },
     )
     return calls
+
+
+# The CUDA version of _fast_step adds the Z^2 terms in the same order as the Numba code.
+# Without Numba, _fast_step runs as plain Python, and NumPy adds in a different order:
+# the last digits of Z^2 differ, and there is no exact reference to compare with.
+requires_numba = pytest.mark.skipif(
+    not HAS_NUMBA, reason="Exact comparison with the Numba implementation of _fast_step"
+)
 
 
 @pytest.fixture
@@ -126,6 +134,7 @@ def test_fast_search_on_device_stats(fake_cupy):
     assert fake_cupy["to_host"] == copies + 1
 
 
+@requires_numba
 @pytest.mark.parametrize("search_fdot", [True, False])
 @pytest.mark.parametrize("nbin,n", [(16, 2), (24, 3), (32, 1)])
 def test_fast_search_on_device_stats_real_cupy(real_gpu, nbin, n, search_fdot):
@@ -297,6 +306,7 @@ def test_search_with_qffa_step_use_gpu(fake_cupy, event_times):
         assert np.array_equal(exp, res)
 
 
+@requires_numba
 @pytest.mark.parametrize(
     "fdot,fddot,search_fdot", [(0, 0, True), (1e-6, 0, True), (1e-6, 1e-9, True), (0, 0, False)]
 )
