@@ -42,7 +42,7 @@ import functools
 
 import numpy as np
 
-from . import float32, float64, int32, int64, njit, vectorize
+from . import njit
 from .base import show_progress
 
 __all__ = ["ffa_search", "h_test", "z_n_fast_cached", "z_n_fast_cached_all"]
@@ -277,7 +277,9 @@ def start_value(prof_n, step):
     return val
 
 
-@vectorize([(float64, float64), (int64, int64), (float32, float32), (int32, int32)])
+# A plain njit function, not a @vectorize with signatures: those are compiled when
+# the module is imported, even if the FFA is never used
+@njit(cache=True)
 def sum_arrays(arr1, arr2):
     return arr1 + arr2
 

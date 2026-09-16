@@ -90,3 +90,40 @@ def test_fast_search_is_loaded_from_cache_in_a_new_process(tmp_path):
     assert not_from_cache == []
     # The code loaded from the cache gives exactly the same results
     assert np.array_equal(stats[0], stats[1])
+
+
+# Imports what HENzsearch imports, and lists the Numba code already compiled
+IMPORT_ONLY = """
+import sys
+
+import numpy as np
+from numba.core.dispatcher import Dispatcher
+from numba.np.ufunc.dufunc import DUFunc
+
+import hendrics.efsearch
+
+compiled = []
+for module_name, module in list(sys.modules.items()):
+    if not module_name.startswith("hendrics") or module is None:
+        continue
+    for name, obj in vars(module).items():
+        if isinstance(obj, Dispatcher) and obj.signatures:
+            compiled.append(f"{module_name}.{name}")
+        # @vectorize with signatures compiles on the spot, making a DUFunc (or a NumPy
+        # ufunc, with older Numba versions) with compiled loops
+        elif (
+            isinstance(obj, (DUFunc, np.ufunc))
+            and obj.__name__ == name
+            and getattr(np, name, None) is not obj
+            and obj.types
+        ):
+            compiled.append(f"{module_name}.{name}")
+print(sorted(set(compiled)))
+"""
+
+
+def test_importing_efsearch_compiles_no_numba_code():
+    proc = subprocess.run(
+        [sys.executable, "-c", IMPORT_ONLY], capture_output=True, text=True, check=True
+    )
+    assert proc.stdout.strip().splitlines()[-1] == "[]"

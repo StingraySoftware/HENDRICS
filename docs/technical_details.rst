@@ -649,10 +649,25 @@ results do not change.
   after editing only ``ffa.py``, the old compiled ``_fast_step`` would still be
   loaded. After such edits, delete the cache files, e.g. with
   ``find hendrics -name "*.nb[ic]" -delete``.
-* The ``@vectorize`` functions (e.g. ``hendrics.ffa.sum_arrays``) are not
-  cached. They are compiled when HENDRICS is imported, and caching them made
-  almost no difference (0.30 s instead of 0.36 s for ``sum_arrays``), because most
-  of that time is not spent in the part that Numba can cache.
+* ``@vectorize`` functions with a list of signatures are compiled when their
+  module is imported, and caching does not help them: for a test copy of
+  ``sum_arrays``, caching changed that time from 0.36 s to 0.30 s, because most
+  of it is not spent in the part that Numba can cache.
+
+  * ``hendrics.ffa.sum_arrays``, used by the FFA search, was such a function,
+    and made ``import hendrics.efsearch`` (and so ``HENzsearch`` and
+    ``HENefsearch``) compile it even without an FFA search. It is now a cached
+    ``njit`` function, which Numba only compiles when it is first called. The
+    import went from 3.04 s to 2.83 s (median of 10 runs), ``ffa_search`` on 1e6
+    bins from 1.87 s to 1.79 s, and the FFA results did not change (the same
+    values and types, for 64- and 32-bit floats and integers).
+    ``hendrics/tests/test_numba_cache.py`` checks that importing
+    ``hendrics.efsearch`` compiles no Numba code.
+  * ``phases_from_zero_to_one`` and ``phases_around_zero`` in
+    ``hendrics.ml_timing`` are still compiled at import (0.25 s), but only
+    ``HENphaseogram`` imports that module. Compiling them only when first
+    called would change their output types in some cases (e.g. 32-bit input
+    giving 64-bit output), so they were left as they are.
 
 ``hendrics/tests/test_numba_cache.py`` checks that every ``njit`` function of
 HENDRICS has caching turned on, and runs a small ``--fast`` search in two
