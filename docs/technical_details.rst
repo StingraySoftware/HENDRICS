@@ -565,7 +565,10 @@ on a simulated event file with 1e7 events over 1e5 s and a 2% pulsation at
 1.235 Hz (376 steps of the search, 32 x 32 trials each). 16 bins is the minimum
 for N = 2 (8 bins per harmonic); 128 is the default. Total times include reading
 the file and analysing the candidates; the search loop times come from the
-progress bar.
+progress bar. These times were measured before the Numba compilation cache was
+added, so they include compiling the Numba functions, which happens during the
+first step of the search: about 5 s on the CPU and 1.4 s on the GPU (see
+"Numba compilation cache" below).
 
 =============  ==========================  ==========================  =========
 Phase bins     CPU: total (search loop)    GPU: total (search loop)    Speedup
@@ -616,3 +619,71 @@ that did not need a GPU, now removed (1e7 events, 128 bins, 1024 trials):
 
 Overall, one CPU step with 128 bins went from 180 ms (measured on 2026-09-15) to
 131 ms.
+
+Numba compilation cache
+-----------------------
+
+Numba compiles a function the first time it is called in a Python session. Each
+run of a command-line script like ``HENzsearch`` is a new Python session, so
+without a cache the same functions are compiled again at every run. The time
+this takes does not depend on the number of events: compiling ``_fast_step``
+takes about 5 s, the largest part of the fixed cost of a ``--fast`` search.
+
+All the ``njit`` functions of HENDRICS are compiled with ``cache=True``: the
+first time, Numba saves the compiled code to disk, and later Python sessions load
+it instead of compiling again. The code loaded from the cache is the same, so the
+results do not change.
+
+* **Where.** The cache files (``.nbi`` and ``.nbc``) are written to the
+  ``__pycache__`` folders next to the HENDRICS source files. If these folders
+  cannot be written (for example, in a system-wide installation), Numba uses a
+  folder in the user's cache directory (``~/.cache/numba`` on Linux). The
+  ``NUMBA_CACHE_DIR`` environment variable selects another folder.
+* **When Numba compiles again.** The first run after installing or upgrading
+  HENDRICS still compiles, and so does the first call with new types of
+  arguments. Numba also compiles again when the source file of a function
+  changes, or with a different version of Numba or Python.
+* **Caveat for developers.** Numba only checks the source file of the function
+  it loads from the cache, not the files of the functions it calls. For example,
+  ``_fast_step`` in ``efsearch.py`` calls ``_z_n_fast_cached`` in ``ffa.py``:
+  after editing only ``ffa.py``, the old compiled ``_fast_step`` would still be
+  loaded. After such edits, delete the cache files, e.g. with
+  ``find hendrics -name "*.nb[ic]" -delete``.
+* The ``@vectorize`` functions (e.g. ``hendrics.ffa.sum_arrays``) are not
+  cached. They are compiled when HENDRICS is imported, and caching them made
+  almost no difference (0.30 s instead of 0.36 s for ``sum_arrays``), because most
+  of that time is not spent in the part that Numba can cache.
+
+``hendrics/tests/test_numba_cache.py`` checks that every ``njit`` function of
+HENDRICS has caching turned on, and runs a small ``--fast`` search in two
+separate Python processes sharing an empty cache folder: in the second process,
+the functions of the search are loaded from the cache, and the Z^2 values are
+identical to those of the first process.
+
+Measured on 2026-09-16 on the hardware and software described in "Results on real
+hardware" above, with ``HENzsearch --fast -f 1.22 -F 1.25 -N 2 --find-candidates
+-n NBIN`` on the simulated event files of that section (1e5 or 1e7 events over
+1e5 s). Each command was run three times, starting from an empty cache folder:
+the first run compiles and fills the cache, the second and third load from it.
+Times are in seconds, for the whole command. All periodograms were identical.
+
+=========  =====  ======  ===============  ==============  ==============
+Events     Bins   Device  Before (mean)    After: run 1    After: 2 and 3
+=========  =====  ======  ===============  ==============  ==============
+1e5        16     CPU     10.6             11.0            4.8, 5.0
+1e5        16     GPU     5.8              5.8             4.5, 4.5
+1e5        128    CPU     44.8             45.8            35.2, 35.4
+1e5        128    GPU     14.6             14.6            13.3, 13.3
+1e7        16     CPU     27.2             28.1            22.0, 22.0
+1e7        16     GPU     7.4              7.2             6.0, 6.0
+1e7        128    CPU     67.4             67.8            58.3, 57.5
+1e7        128    GPU     16.3             16.3            15.2, 15.0
+=========  =====  ======  ===============  ==============  ==============
+
+From the second run on, each run is about 1.3 s faster on the GPU, where only
+``_fast_step_constants`` is compiled, and 5 to 6 s faster on the CPU with 16
+bins. With 128 bins the CPU saves about 10 s, more than the 5.8 s of compilation
+measured with Numba's compilation events: in these runs, the search itself was
+also faster with the code loaded from the cache (32.8 s, against 34.8 to 37.5 s
+with the code compiled in the same process, 1e5 events). We have not found the
+reason.
