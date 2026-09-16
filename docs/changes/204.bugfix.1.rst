@@ -1,0 +1,4 @@
+Without Numba, the CPU histograms of HENDRICS now give the same results as with
+Numba: values on the upper edge of the range are no longer counted, and the output
+types are the same. Before, results could differ slightly depending on whether
+Numba was installed.

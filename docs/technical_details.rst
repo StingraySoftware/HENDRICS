@@ -378,11 +378,11 @@ directly as :func:`hendrics.gpu.histogram_gpu` and
 
 The GPU histograms give the same results as the CPU ones:
 
-* Values equal to the upper edge of the range are excluded, as in the Numba
-  implementation of HENDRICS. :func:`numpy.histogram` and ``cupy.histogram``
-  include them in the last bin instead, so the GPU functions remove these values
-  before binning. This matters in practice: in the ``--fast`` search the upper
-  edge of the time range is the time of the last photon.
+* Values equal to the upper edge of the range are excluded, as in the CPU
+  histograms of HENDRICS. :func:`numpy.histogram` and ``cupy.histogram`` include
+  them in the last bin instead, so the GPU functions remove these values before
+  binning. This matters in practice: in the ``--fast`` search the upper edge of
+  the time range is the time of the last photon.
 * The output types are the same: 64-bit floats for 1D histograms and for weighted
   2D histograms, 64-bit unsigned integers for unweighted 2D histograms.
 * The ``use_memmap`` and ``tmp`` options (memory-mapped output files) only apply
@@ -413,7 +413,8 @@ running one GPU thread per trial shift. It is compiled at run time by CuPy
 (``cupy.RawKernel``), so it needs no dependency beyond CuPy. Writing it with
 ``numba.cuda`` would have needed the separate ``numba-cuda`` package.
 
-The GPU results are identical to the CPU ones, not only close:
+The GPU results are identical to those of the Numba code on the CPU, not only
+close:
 
 * The phases are computed with the same operations, in the same order, as the
   Numba functions ``_fast_phase*``, and the time slice and phase bin of each event
@@ -432,6 +433,15 @@ The GPU results are identical to the CPU ones, not only close:
 
 When the array module is NumPy, ``_FastSearchOnDevice`` falls back to the Numba
 ``_fast_step``, so the same code runs on the CPU.
+
+**Without Numba.** Numba is an optional dependency. Without it, the CPU
+histograms of HENDRICS (:func:`hendrics.base.histogram` and
+:func:`hendrics.base.histogram2d`) use NumPy with the same bin arithmetic,
+the same treatment of the upper edge and the same output types as the Numba
+versions, so histograms and sub-profiles are identical with or without Numba, and
+on the GPU. ``_fast_step`` then runs as plain Python, where NumPy adds the Z^2
+terms in a different order: Z^2 values can differ from the Numba (and GPU) ones in
+the last digits.
 
 The summed profile of each trial is a small array local to each GPU thread, whose
 size is fixed when the kernel is compiled (one compiled kernel per number of
@@ -466,7 +476,10 @@ Testing without a GPU
   that sub-profiles, Z^2 values and whole ``--fast`` searches are identical to the
   CPU ones (``np.array_equal``, not a tolerance), for all phase formulas, several
   numbers of bins and harmonics, and with and without the frequency derivative
-  search.
+  search. The exact comparisons of Z^2 values with the real CuPy also need Numba.
+* ``hendrics/tests/test_base.py`` checks that the NumPy fallback histograms follow
+  the conventions of the Numba ones, and are identical to them when Numba is
+  installed. The CI environments without the ``all`` extra run without Numba.
 * ``hendrics/tests/test_gpu_kernel_sim.py`` runs the benchmark code (below) with
   numba's CUDA simulator, which executes ``numba.cuda`` kernels on the CPU. The
   simulator is enabled with ``NUMBA_ENABLE_CUDASIM=1`` before ``numba.cuda`` is
