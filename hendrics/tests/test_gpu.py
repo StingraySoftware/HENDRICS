@@ -13,6 +13,7 @@ from hendrics.efsearch import (
     main_zsearch,
     search_with_ffa,
     search_with_qffa,
+    search_with_qffa_step,
     transient_search,
 )
 from hendrics.gpu import (
@@ -276,9 +277,37 @@ def test_search_with_qffa_use_gpu(fake_cupy, event_times):
     kwargs = {"nbin": 8, "oversample": 2, "silent": True}
     expected = search_with_qffa(event_times, 0.9, 1.1, **kwargs)
     result = search_with_qffa(event_times, 0.9, 1.1, use_gpu=True, **kwargs)
-    for exp, res in zip(expected[:3], result[:3], strict=True):
-        assert np.allclose(exp, res)
-    assert fake_cupy["to_host"] > 0
+    for exp, res in zip(expected, result, strict=True):
+        assert np.array_equal(exp, res)
+    # One copy back to host memory per step, and the events uploaded once per search
+    nshifts = 16  # 4 * oversample * npfact
+    n_steps = result[0].shape[1] // nshifts
+    assert n_steps > 1
+    assert fake_cupy["to_host"] == n_steps
+    large_uploads = [s for s in fake_cupy["uploaded_sizes"] if s >= event_times.size - 1]
+    assert len(large_uploads) == 2
+
+
+def test_search_with_qffa_step_use_gpu(fake_cupy, event_times):
+    times = event_times - event_times.mean()
+    kwargs = {"mean_fdot": 1e-4, "nbin": 16, "nprof": 32, "n": 2}
+    expected = search_with_qffa_step(times, 1.0, **kwargs)
+    result = search_with_qffa_step(times, 1.0, use_gpu=True, **kwargs)
+    for exp, res in zip(expected, result, strict=True):
+        assert np.array_equal(exp, res)
+
+
+@pytest.mark.parametrize(
+    "fdot,fddot,search_fdot", [(0, 0, True), (1e-6, 0, True), (1e-6, 1e-9, True), (0, 0, False)]
+)
+def test_search_with_qffa_use_gpu_real_cupy(real_gpu, fdot, fddot, search_fdot):
+    times = np.sort(np.random.default_rng(10).uniform(0, 1000, 200_000))
+    kwargs = {"fdot": fdot, "fddot": fddot, "nbin": 16, "n": 2, "search_fdot": search_fdot}
+    kwargs["silent"] = True
+    expected = search_with_qffa(times, 0.9, 0.95, **kwargs)
+    result = search_with_qffa(times, 0.9, 0.95, use_gpu=True, **kwargs)
+    for exp, res in zip(expected, result, strict=True):
+        assert np.array_equal(exp, res)
 
 
 def test_transient_search_use_gpu(fake_cupy, event_times):

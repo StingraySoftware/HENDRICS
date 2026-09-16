@@ -1087,29 +1087,51 @@ def search_with_qffa_step(
     length : float, default ``times[-1] - times[0]``
         Length of the observation. Pass the one used to space the sub-searches,
         so that they tile the band exactly.
+    use_gpu : bool, default False
+        Compute the sub-profiles and the statistics on the GPU (requires CuPy and a
+        CUDA device). The results are identical.
     """
-    # Cast to standard double, or Numba's histogram2d will fail
-    # horribly.
-
-    if mean_fddot != 0:
-        phases = _fast_phase_fddot(times, mean_f, mean_fdot, mean_fddot)
-    elif mean_fdot != 0:
-        phases = _fast_phase_fdot(times, mean_f, mean_fdot)
-    else:
-        phases = _fast_phase(times, mean_f)
-
-    # One row per sub-profile. The copy makes rows contiguous in memory (the transpose
-    # alone does not), which makes _fast_step about 35% faster
-    profiles = np.ascontiguousarray(
-        histogram2d(
-            phases,
-            times,
-            range=[[0, 1], [times[0], times[-1]]],
-            bins=(nbin, nprof),
-            use_gpu=use_gpu,
-        ).T
+    device_search = None
+    if use_gpu:
+        device_search = _FastSearchOnDevice(times, nbin, nprof, use_gpu=True)
+    return _search_with_qffa_step(
+        times,
+        mean_f,
+        mean_fdot=mean_fdot,
+        mean_fddot=mean_fddot,
+        nbin=nbin,
+        nprof=nprof,
+        npfact=npfact,
+        oversample=oversample,
+        n=n,
+        search_fdot=search_fdot,
+        length=length,
+        device_search=device_search,
     )
 
+
+def _search_with_qffa_step(
+    times,
+    mean_f,
+    mean_fdot=0,
+    mean_fddot=0,
+    nbin=16,
+    nprof=64,
+    npfact=2,
+    oversample=2,
+    n=1,
+    search_fdot=True,
+    length=None,
+    device_search=None,
+):
+    """Single step of quasi-fast folding algorithm; see `search_with_qffa_step`.
+
+    Other Parameters
+    ----------------
+    device_search : `_FastSearchOnDevice`, default None
+        If given, compute the sub-profiles and the statistics with it (e.g. on the GPU),
+        instead of with Numba on the CPU. It must have been created from ``times``.
+    """
     # Assume times are sorted
     t1, t0 = times[-1], times[0]
 
@@ -1130,6 +1152,24 @@ def search_with_qffa_step(
     bin_to_fdot = 2 * dphi / delta_t**2
 
     L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing="ij")
+
+    if device_search is not None:
+        profiles = device_search.profiles(mean_f, mean_fdot, mean_fddot)
+        stats = device_search.stats(profiles, L, Q, linbinshifts, quabinshifts, n=n)
+        return L * bin_to_frequency + mean_f, Q * bin_to_fdot + mean_fdot, stats
+
+    if mean_fddot != 0:
+        phases = _fast_phase_fddot(times, mean_f, mean_fdot, mean_fddot)
+    elif mean_fdot != 0:
+        phases = _fast_phase_fdot(times, mean_f, mean_fdot)
+    else:
+        phases = _fast_phase(times, mean_f)
+
+    # One row per sub-profile. The copy makes rows contiguous in memory (the transpose
+    # alone does not), which makes _fast_step about 35% faster
+    profiles = np.ascontiguousarray(
+        histogram2d(phases, times, range=[[0, 1], [times[0], times[-1]]], bins=(nbin, nprof)).T
+    )
 
     stats = _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=n)
 
@@ -1186,7 +1226,9 @@ def search_with_qffa(
     t1 : float, default max(times)
         stop time
     use_gpu : bool, default False
-        Compute the histograms on the GPU (requires CuPy and a CUDA device)
+        Run the search on the GPU (requires CuPy and a CUDA device). The events are
+        copied to the GPU once; each step computes the sub-profiles and the statistics
+        there, with results identical to the CPU.
     """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
@@ -1240,6 +1282,11 @@ def search_with_qffa(
         def local_show_progress(x):
             return x
 
+    # With the GPU, the events are copied to it once, for all the steps
+    device_search = None
+    if use_gpu:
+        device_search = _FastSearchOnDevice(times, nbin, nprof, use_gpu=True)
+
     for ii, i in enumerate(local_show_progress(allvalues)):
         offset = step * i
         fdot_offset = 0
@@ -1247,7 +1294,7 @@ def search_with_qffa(
         mean_f = np.double(frequency + offset + 0.12 * step)
         mean_fdot = np.double(fdot + fdot_offset)
         mean_fddot = np.double(fddot)
-        fgrid, fdotgrid, stats = search_with_qffa_step(
+        fgrid, fdotgrid, stats = _search_with_qffa_step(
             times,
             mean_f,
             mean_fdot=mean_fdot,
@@ -1259,7 +1306,7 @@ def search_with_qffa(
             n=n,
             search_fdot=search_fdot,
             length=length,
-            use_gpu=use_gpu,
+            device_search=device_search,
         )
 
         if all_fgrid is None:
