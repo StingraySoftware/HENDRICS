@@ -120,6 +120,113 @@ def _get_backend(use_gpu=False):
     return backend["get_module"](), backend["to_device"], backend["to_host"]
 
 
+# CUDA version of the loop of `hendrics.efsearch._fast_step` (`shift_and_sum`, then
+# `_z_n_fast_cached`), one GPU thread per trial shift. The operations are done in the
+# same order as in the Numba code, and multiplications and additions are not merged
+# into one operation (``--fmad=false``, no fused multiply-add), so that the results
+# are identical to the last bit. ``work`` holds one summed profile per trial.
+_FAST_STEP_SOURCE = r"""
+extern "C" __global__ void fast_step(
+    const double* profiles, const double* lshift, const double* qshift,
+    const double* base_shift, const double* quad_shift, const double* cached_cos,
+    const double* cached_sin, int nprof, int nbin, int ntrial, int n,
+    double* work, double* stats)
+{
+    int t = blockDim.x * blockIdx.x + threadIdx.x;
+    if (t >= ntrial) return;
+
+    // shift_and_sum: add all sub-profiles, each shifted by a whole number of bins
+    double* splat = work + (long long)t * nbin;
+    for (int b = 0; b < nbin; b++) splat[b] = 0.0;
+    for (int k = 0; k < nprof; k++) {
+        double shift = rint(base_shift[k] * lshift[t] + quad_shift[k] * qshift[t]);
+        // As np.mod, the result has the sign of the divisor
+        double m = fmod(shift, (double)nbin);
+        if (m < 0) m += nbin;
+        int s = (int)m;
+        const double* row = profiles + (long long)k * nbin;
+        for (int b = 0; b < nbin; b++) {
+            int src = b - s;
+            if (src < 0) src += nbin;
+            splat[b] += row[src];
+        }
+    }
+
+    // _z_n_fast_cached
+    double total = 0.0;
+    for (int b = 0; b < nbin; b++) total += splat[b];
+    double result = 0.0;
+    for (int h = 1; h <= n; h++) {
+        double sum_cos = 0.0, sum_sin = 0.0;
+        for (int b = 0; b < nbin; b++) {
+            sum_cos += cached_cos[b * h] * splat[b];
+            sum_sin += cached_sin[b * h] * splat[b];
+        }
+        result += sum_cos * sum_cos + sum_sin * sum_sin;
+    }
+    stats[t] = 2.0 / total * result;
+}
+"""
+
+_FAST_STEP_KERNEL = {}
+_THREADS_PER_BLOCK = 256
+
+
+def _fast_step_gpu(
+    profiles, lshifts, qshifts, base_shift, quad_base_shift, cached_cos, cached_sin, n=1
+):
+    """Run the shift-and-sum and Z^2 of `hendrics.efsearch._fast_step` on the GPU.
+
+    Parameters
+    ----------
+    profiles : `cupy.ndarray`
+        Sub-profiles, of shape ``(nprof, nbin)``
+    lshifts, qshifts : `cupy.ndarray`
+        Linear and quadratic trial shifts, flattened (float64)
+    base_shift, quad_base_shift, cached_cos, cached_sin : `cupy.ndarray`
+        Output of `hendrics.efsearch._fast_step_constants`, copied to the GPU
+
+    Other Parameters
+    ----------------
+    n : int, default 1
+        Number of harmonics
+
+    Returns
+    -------
+    stats : `cupy.ndarray`
+        Z^2 statistics of each trial, in GPU memory
+    """
+    if "kernel" not in _FAST_STEP_KERNEL:
+        _FAST_STEP_KERNEL["kernel"] = cp.RawKernel(
+            _FAST_STEP_SOURCE, "fast_step", options=("--fmad=false",)
+        )
+    nprof, nbin = profiles.shape
+    ntrial = lshifts.size
+    stats = cp.empty(ntrial, dtype=cp.float64)
+    work = cp.empty(ntrial * nbin, dtype=cp.float64)
+    blocks = (ntrial + _THREADS_PER_BLOCK - 1) // _THREADS_PER_BLOCK
+    _FAST_STEP_KERNEL["kernel"](
+        (blocks,),
+        (_THREADS_PER_BLOCK,),
+        (
+            cp.ascontiguousarray(profiles, dtype=cp.float64),
+            lshifts,
+            qshifts,
+            base_shift,
+            quad_base_shift,
+            cached_cos,
+            cached_sin,
+            np.int32(nprof),
+            np.int32(nbin),
+            np.int32(ntrial),
+            np.int32(n),
+            work,
+            stats,
+        ),
+    )
+    return stats
+
+
 def histogram_gpu(a, bins, ranges, weights=None):
     """Compute a 1D histogram on the GPU.
 

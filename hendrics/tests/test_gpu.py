@@ -8,6 +8,7 @@ from hendrics.efsearch import (
     _fast_phase,
     _fast_phase_fddot,
     _fast_phase_fdot,
+    _fast_step,
     _FastSearchOnDevice,
     main_zsearch,
     search_with_ffa,
@@ -98,6 +99,45 @@ def test_fast_search_on_device_profiles(fake_cupy, mean_f, mean_fdot, mean_fddot
     # The times and their slice indices are uploaded once, whatever the number of steps
     large_uploads = [s for s in fake_cupy["uploaded_sizes"] if s >= times.size - 1]
     assert len(large_uploads) == 2
+
+
+def _trial_shifts(nbin, npfact=2, oversample=4, search_fdot=True):
+    """Trial shifts in bins, as in search_with_qffa_step."""
+    nshifts = max(int(np.rint(4 * oversample * npfact)), 1)
+    linbinshifts = np.linspace(-nbin * npfact, nbin * npfact, nshifts, endpoint=False)
+    quabinshifts = linbinshifts.copy() if search_fdot else np.array([0.0])
+    L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing="ij")
+    return L, Q, linbinshifts, quabinshifts
+
+
+def test_fast_search_on_device_stats(fake_cupy):
+    times = _edge_case_times()
+    nbin, nprof, n = 24, 16, 3
+    search = _FastSearchOnDevice(times, nbin, nprof, use_gpu=True)
+    shifts = _trial_shifts(nbin)
+    expected = _fast_step(
+        np.ascontiguousarray(_cpu_profiles(times, 1.0, 1e-3, 0, nbin, nprof)), *shifts, nbin, n=n
+    )
+    profiles = search.profiles(1.0, 1e-3, 0)
+    copies = fake_cupy["to_host"]
+    result = search.stats(profiles, *shifts, n=n)
+    assert np.array_equal(result, expected)
+    assert fake_cupy["to_host"] == copies + 1
+
+
+@pytest.mark.parametrize("search_fdot", [True, False])
+@pytest.mark.parametrize("nbin,n", [(16, 2), (24, 3), (32, 1)])
+def test_fast_search_on_device_stats_real_cupy(real_gpu, nbin, n, search_fdot):
+    # Same Z^2 values as the Numba _fast_step, to the last bit
+    times = _edge_case_times(200_000)
+    nprof = 8 * nbin * 2
+    search = _FastSearchOnDevice(times, nbin, nprof, use_gpu=True)
+    shifts = _trial_shifts(nbin, search_fdot=search_fdot)
+    cpu_profiles = np.ascontiguousarray(_cpu_profiles(times, 1.0, 1e-3, 1e-6, nbin, nprof))
+    expected = _fast_step(cpu_profiles, *shifts, nbin, n=n)
+    result = search.stats(search.profiles(1.0, 1e-3, 1e-6), *shifts, n=n)
+    assert result.shape == expected.shape
+    assert np.array_equal(result, expected)
 
 
 @pytest.mark.parametrize("mean_f,mean_fdot,mean_fddot", PHASE_CASES)

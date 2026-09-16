@@ -49,7 +49,7 @@ from .base import (
 from .fake import scramble
 from .ffa import _z_n_fast_cached, ffa_search, h_test
 from .fold import filter_energy
-from .gpu import _get_backend
+from .gpu import _fast_step_gpu, _get_backend
 from .io import (
     HEN_FILE_EXTENSION,
     EFPeriodogram,
@@ -866,7 +866,20 @@ def _plot_transient_search_frames(results, gif_name, force_plotting):
 
 
 @njit(nogil=True, parallel=True)
-def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
+def _fast_step_constants(nprof, nbin, n):
+    """Constants of `_fast_step`, shared with its GPU version to get identical results.
+
+    Returns
+    -------
+    base_shift : array of floats
+        Linear shift of each sub-profile, in units of the trial shift
+    quad_base_shift : array of floats
+        Quadratic shift of each sub-profile, in units of the trial shift
+    cached_cos : array of floats
+        Cosine of the phase of each bin, repeated ``n`` times
+    cached_sin : array of floats
+        Sine of the phase of each bin, repeated ``n`` times
+    """
     twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
 
     cached_cos = np.zeros(n * nbin)
@@ -875,13 +888,18 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
         cached_cos[i * nbin : (i + 1) * nbin] = np.cos(twopiphases)
         cached_sin[i * nbin : (i + 1) * nbin] = np.sin(twopiphases)
 
-    stats = np.zeros_like(L)
-    repeated_profiles = np.hstack((profiles, profiles, profiles))
-
-    nprof = repeated_profiles.shape[0]
-
     base_shift = np.linspace(-1, 1, nprof)
     quad_base_shift = base_shift**2
+    return base_shift, quad_base_shift, cached_cos, cached_sin
+
+
+@njit(nogil=True, parallel=True)
+def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
+    nprof = profiles.shape[0]
+    base_shift, quad_base_shift, cached_cos, cached_sin = _fast_step_constants(nprof, nbin, n)
+
+    stats = np.zeros_like(L)
+    repeated_profiles = np.hstack((profiles, profiles, profiles))
 
     for i in prange(linbinshifts.size):
         # This zeros needs to be here, not outside the parallel loop, or
@@ -960,6 +978,8 @@ class _FastSearchOnDevice:
         good = (slices >= 0) & (slices < nprof)
         self.times = self.to_device(times[good])
         self.slices = self.to_device(slices[good].astype(np.int32))
+        # Constants of _fast_step on the device, by number of harmonics
+        self._constants = {}
 
     def profiles(self, mean_f, mean_fdot=0, mean_fddot=0):
         """Compute the sub-profiles on the device.
@@ -997,6 +1017,46 @@ class _FastSearchOnDevice:
         phase_bins = (phases * (1 / (1 / nbin))).astype(np.int32)
         counts = xp.bincount(self.slices * (nbin + 1) + phase_bins, minlength=nprof * (nbin + 1))
         return xp.ascontiguousarray(counts.reshape(nprof, nbin + 1)[:, :nbin])
+
+    def stats(self, profiles, L, Q, linbinshifts, quabinshifts, n=1):
+        """Compute the Z^2 statistics of all trial shifts, as `_fast_step`.
+
+        On the GPU, only the statistics are copied back to host memory.
+
+        Parameters
+        ----------
+        profiles : array
+            Sub-profiles returned by `profiles`
+        L, Q, linbinshifts, quabinshifts : arrays of floats
+            Linear and quadratic trial shifts, as in `search_with_qffa_step`
+
+        Other Parameters
+        ----------------
+        n : int, default 1
+            Number of harmonics
+
+        Returns
+        -------
+        stats : `np.ndarray`
+            Z^2 statistics, with the shape of ``L``, in host memory
+        """
+        if self.xp is np:
+            # Numba implementation. Unsigned integers are also what the 2D histogram
+            # gives, and make _fast_step fastest
+            host_profiles = self.to_host(profiles).astype(np.uint64)
+            return _fast_step(host_profiles, L, Q, linbinshifts, quabinshifts, self.nbin, n=n)
+
+        if n not in self._constants:
+            constants = _fast_step_constants(self.nprof, self.nbin, n)
+            self._constants[n] = [self.to_device(c) for c in constants]
+        stats = _fast_step_gpu(
+            profiles,
+            self.to_device(np.ascontiguousarray(L, dtype=np.double).ravel()),
+            self.to_device(np.ascontiguousarray(Q, dtype=np.double).ravel()),
+            *self._constants[n],
+            n=n,
+        )
+        return self.to_host(stats).reshape(L.shape)
 
 
 def search_with_qffa_step(
