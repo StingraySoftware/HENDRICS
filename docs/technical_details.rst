@@ -687,3 +687,15 @@ measured with Numba's compilation events: in these runs, the search itself was
 also faster with the code loaded from the cache (32.8 s, against 34.8 to 37.5 s
 with the code compiled in the same process, 1e5 events). We have not found the
 reason.
+
+The savings do not depend on the data. The cache depends on the source code and
+on the types of the arguments (e.g. arrays of 64-bit floats), not on their
+values. After filling the cache with the 1e5-event file above, we searched three
+new simulated event files: 1e6 to 5e6 events, lengths from 5e4 to 2e5 s,
+pulsations at 0.7 to 2.1 Hz, 1 to 3 harmonics and 16 to 64 bins. On every file,
+the new code ran 5.5 to 6.0 s faster on the CPU and 1.1 to 1.3 s faster on the
+GPU. It spent 0.08 s loading the cache, while the old code spent 5.7 to 5.9 s
+(CPU) and 1.4 s (GPU) compiling. The periodograms were identical. The first run
+with an option that needs a function not yet in the cache compiles that function
+once: with ``--mean-fdot``, ``_fast_phase_fdot`` took 0.4 s the first time and was
+loaded from the cache afterwards.
