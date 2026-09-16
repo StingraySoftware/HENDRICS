@@ -40,20 +40,27 @@ def _cupy_to_host(array):
     return cp.asnumpy(array)
 
 
+def _cupy_to_device(array):
+    """Copy an array to GPU memory."""
+    return cp.asarray(array)
+
+
 # Minimal backend registry. Each entry says whether the backend can be used, which
-# array module implements it, and how to copy its arrays back to host memory.
-# Other array libraries (e.g. JAX, PyTorch) can be added here without touching
-# the functions below.
+# array module implements it, and how to copy arrays to its memory and back to host
+# memory. Other array libraries (e.g. JAX, PyTorch) can be added here without
+# touching the functions below.
 _BACKENDS = {
     "cpu": {
         "available": lambda: True,
         "get_module": lambda: np,
         "to_host": np.asarray,
+        "to_device": np.asarray,
     },
     "cupy": {
         "available": _cupy_available,
         "get_module": lambda: cp,
         "to_host": _cupy_to_host,
+        "to_device": _cupy_to_device,
     },
 }
 
@@ -90,6 +97,27 @@ def resolve_backend(use_gpu=False):
 def _gpu_backend():
     backend = _BACKENDS[resolve_backend(use_gpu=True)]
     return backend["get_module"](), backend["to_host"]
+
+
+def _get_backend(use_gpu=False):
+    """Array module of the chosen backend, and functions copying to and from it.
+
+    Parameters
+    ----------
+    use_gpu : bool, default False
+        If True, use the GPU backend.
+
+    Returns
+    -------
+    xp : module
+        Array module (NumPy or CuPy)
+    to_device : callable
+        Copies an array to the memory of the backend
+    to_host : callable
+        Copies an array of the backend to host memory
+    """
+    backend = _BACKENDS[resolve_backend(use_gpu)]
+    return backend["get_module"](), backend["to_device"], backend["to_host"]
 
 
 def histogram_gpu(a, bins, ranges, weights=None):

@@ -5,6 +5,10 @@ from stingray.events import EventList
 from hendrics import gpu
 from hendrics.base import histogram, histogram2d
 from hendrics.efsearch import (
+    _fast_phase,
+    _fast_phase_fddot,
+    _fast_phase_fdot,
+    _FastSearchOnDevice,
     main_zsearch,
     search_with_ffa,
     search_with_qffa,
@@ -27,18 +31,83 @@ def fake_cupy(monkeypatch):
     dispatch layer: a backend exposing the same functions with NumPy exercises
     argument handling, edge conventions, dtypes and host conversion.
     """
-    calls = {"to_host": 0}
+    calls = {"to_host": 0, "uploaded_sizes": []}
 
     def to_host(array):
         calls["to_host"] += 1
         return np.asarray(array)
 
+    def to_device(array):
+        calls["uploaded_sizes"].append(np.size(array))
+        return np.asarray(array)
+
     monkeypatch.setitem(
         gpu._BACKENDS,
         "cupy",
-        {"available": lambda: True, "get_module": lambda: np, "to_host": to_host},
+        {
+            "available": lambda: True,
+            "get_module": lambda: np,
+            "to_host": to_host,
+            "to_device": to_device,
+        },
     )
     return calls
+
+
+@pytest.fixture
+def real_gpu():
+    """Skip unless CuPy and a CUDA device are available."""
+    if not HAS_CUPY or not gpu._BACKENDS["cupy"]["available"]():
+        pytest.skip("CuPy or a CUDA device not available")
+
+
+def _edge_case_times(n_events=5000, seed=9):
+    """Sorted, centered times; the last one is on the upper edge of the range, and
+    the one at -1e-17 has a phase that rounds to exactly 1.0 at f = 1."""
+    rng = np.random.default_rng(seed)
+    extra = [-1e-17, 0.0, 100.0]
+    return np.sort(np.concatenate([rng.uniform(-100, 100, n_events - 3), extra]))
+
+
+def _cpu_profiles(times, mean_f, mean_fdot, mean_fddot, nbin, nprof):
+    """Sub-profiles as computed by search_with_qffa_step on the CPU."""
+    if mean_fddot != 0:
+        phases = _fast_phase_fddot(times, mean_f, mean_fdot, mean_fddot)
+    elif mean_fdot != 0:
+        phases = _fast_phase_fdot(times, mean_f, mean_fdot)
+    else:
+        phases = _fast_phase(times, mean_f)
+    ranges = [[0, 1], [times[0], times[-1]]]
+    return histogram2d(phases, times, range=ranges, bins=(nbin, nprof)).T
+
+
+PHASE_CASES = [(1.0, 0, 0), (1.0, 1e-3, 0), (1.0, 1e-3, 1e-6)]
+
+
+@pytest.mark.parametrize("mean_f,mean_fdot,mean_fddot", PHASE_CASES)
+def test_fast_search_on_device_profiles(fake_cupy, mean_f, mean_fdot, mean_fddot):
+    times = _edge_case_times()
+    nbin, nprof = 24, 16
+    search = _FastSearchOnDevice(times, nbin, nprof, use_gpu=True)
+    expected = _cpu_profiles(times, mean_f, mean_fdot, mean_fddot, nbin, nprof)
+    assert expected.sum() == times.size - 2
+    for _ in range(3):
+        result = search.profiles(mean_f, mean_fdot, mean_fddot)
+        assert result.shape == (nprof, nbin)
+        assert np.array_equal(result, expected)
+    # The times and their slice indices are uploaded once, whatever the number of steps
+    large_uploads = [s for s in fake_cupy["uploaded_sizes"] if s >= times.size - 1]
+    assert len(large_uploads) == 2
+
+
+@pytest.mark.parametrize("mean_f,mean_fdot,mean_fddot", PHASE_CASES)
+def test_fast_search_on_device_profiles_real_cupy(real_gpu, mean_f, mean_fdot, mean_fddot):
+    times = _edge_case_times(200_000)
+    nbin, nprof = 24, 64
+    search = _FastSearchOnDevice(times, nbin, nprof, use_gpu=True)
+    expected = _cpu_profiles(times, mean_f, mean_fdot, mean_fddot, nbin, nprof)
+    result = gpu._BACKENDS["cupy"]["to_host"](search.profiles(mean_f, mean_fdot, mean_fddot))
+    assert np.array_equal(result, expected)
 
 
 @pytest.fixture

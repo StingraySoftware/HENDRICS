@@ -49,6 +49,7 @@ from .base import (
 from .fake import scramble
 from .ffa import _z_n_fast_cached, ffa_search, h_test
 from .fold import filter_energy
+from .gpu import _get_backend
 from .io import (
     HEN_FILE_EXTENSION,
     EFPeriodogram,
@@ -921,6 +922,81 @@ def _fast_phase_fddot(ts, mean_f, mean_fdot=0, mean_fddot=0):
 def _fast_phase(ts, mean_f):
     phases = ts * mean_f
     return phases - np.floor(phases)
+
+
+class _FastSearchOnDevice:
+    """Event data of the fast search, kept in the memory of the device for a whole search.
+
+    The times, and the time slice (sub-profile) of each event, are the same at every
+    step of `search_with_qffa`: they are copied to the device (e.g. the GPU) only once.
+    Each step then computes the phases and the sub-profiles on the device, with the same
+    results as the Numba code in `search_with_qffa_step`.
+
+    Parameters
+    ----------
+    times : array of floats
+        Sorted event times, centered as in `search_with_qffa`
+    nbin : int
+        Number of phase bins
+    nprof : int
+        Number of sub-profiles (time slices)
+
+    Other Parameters
+    ----------------
+    use_gpu : bool, default False
+        Use the GPU (requires CuPy and a CUDA device). Otherwise, run with NumPy.
+    """
+
+    def __init__(self, times, nbin, nprof, use_gpu=False):
+        self.xp, self.to_device, self.to_host = _get_backend(use_gpu)
+        self.nbin = nbin
+        self.nprof = nprof
+        times = np.asarray(times, dtype=np.double)
+        lo, hi = times[0], times[-1]
+        # Same arithmetic as the Numba 2D histogram over [times[0], times[-1]], so that
+        # each event falls in the same slice. Events outside the range (i.e. the one on
+        # the upper edge) are dropped
+        slices = (times - lo) * (1 / ((hi - lo) / nprof))
+        good = (slices >= 0) & (slices < nprof)
+        self.times = self.to_device(times[good])
+        self.slices = self.to_device(slices[good].astype(np.int32))
+
+    def profiles(self, mean_f, mean_fdot=0, mean_fddot=0):
+        """Compute the sub-profiles on the device.
+
+        Parameters
+        ----------
+        mean_f : float
+            Frequency used to compute the phases
+
+        Other Parameters
+        ----------------
+        mean_fdot : float, default 0
+            First frequency derivative
+        mean_fddot : float, default 0
+            Second frequency derivative
+
+        Returns
+        -------
+        profiles : array
+            Counts of shape ``(nprof, nbin)``, in the memory of the device
+        """
+        xp, ts, nbin, nprof = self.xp, self.times, self.nbin, self.nprof
+        # Operation by operation as in _fast_phase*, so that rounding is the same
+        if mean_fddot != 0:
+            tssq = ts * ts
+            phases = ts * mean_f + 0.5 * tssq * mean_fdot + ONE_SIXTH * tssq * ts * mean_fddot
+        elif mean_fdot != 0:
+            phases = ts * mean_f + 0.5 * ts * ts * mean_fdot
+        else:
+            phases = ts * mean_f
+        phases -= xp.floor(phases)
+        # A phase just below an integer can round to exactly 1.0, i.e. to phase bin nbin,
+        # which the Numba histogram drops. These events go to an extra column of each
+        # sub-profile, removed at the end
+        phase_bins = (phases * (1 / (1 / nbin))).astype(np.int32)
+        counts = xp.bincount(self.slices * (nbin + 1) + phase_bins, minlength=nprof * (nbin + 1))
+        return xp.ascontiguousarray(counts.reshape(nprof, nbin + 1)[:, :nbin])
 
 
 def search_with_qffa_step(
