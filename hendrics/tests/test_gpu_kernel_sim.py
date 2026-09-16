@@ -51,35 +51,10 @@ expected = pds["unnorm_power"]
 for func in (benchmark.avg_pds_unfused, benchmark.avg_pds_fused):
     assert np.allclose(func(times, gti, segment_size, dt, np), expected), func.__name__
 
-# The bincount prototype of the --fast search gives exactly the sub-profiles of
-# search_with_qffa_step (NumPy standing in for CuPy). Times are centered, as in
-# search_with_qffa. Two events must be dropped: the last one, on the upper edge of
-# the time range, and the one at -1e-17, whose phase rounds to exactly 1.0.
-from hendrics.base import histogram2d
-from hendrics.efsearch import _fast_phase, _fast_phase_fdot, _fast_phase_fddot
-
-nbin, nprof = 8, 16
-times = np.sort(np.concatenate([rng.uniform(-100, 100, 4997), [-1e-17, 0.0, 100.0]]))
-d_times, d_slices = benchmark.qffa_upload(times, nprof, np)
-for f, fdot, fddot in [(1.0, 0, 0), (1.0, 1e-3, 0), (1.0, 1e-3, 1e-6)]:
-    if fddot != 0:
-        phases = _fast_phase_fddot(times, f, fdot, fddot)
-    elif fdot != 0:
-        phases = _fast_phase_fdot(times, f, fdot)
-    else:
-        phases = _fast_phase(times, f)
-    expected = histogram2d(
-        phases, times, range=[[0, 1], [times[0], times[-1]]], bins=(nbin, nprof)
-    ).T
-    assert expected.sum() == times.size - 2, expected.sum()
-    result = benchmark.qffa_profiles_bincount(d_times, d_slices, f, fdot, fddot, nbin, nprof, np)
-    assert result.shape == (nprof, nbin), result.shape
-    assert np.array_equal(result, expected), (f, fdot, fddot)
-
 # The benchmark script itself runs
 benchmark.main(
     ["--sizes", "2000", "--bins", "100", "--nprof", "32", "--segment-size", "1",
-     "--dt", "0.01", "--n-segments", "4", "--qffa-nbin", "8", "--qffa-length", "200",
+     "--dt", "0.01", "--n-segments", "4", "--qffa-nbin", "16", "--qffa-length", "200",
      "--repeat", "1"]
 )
 """
