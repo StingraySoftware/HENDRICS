@@ -363,18 +363,18 @@ def fit(frequencies, stats, center_freq, width=None, obs_length=None, baseline=0
     return s
 
 
-@njit()
+@njit(cache=True)
 def calculate_shifts(nprof: int, nbin: int, nshift: int, order: int = 1) -> np.array:
     shifts = np.linspace(-1.0, 1.0, nprof) ** order
     return nshift * shifts
 
 
-@njit()
+@njit(cache=True)
 def mod(num, n2):
     return np.mod(num, n2)
 
 
-@njit()
+@njit(cache=True)
 def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift, quadbaseshift):
     nprof = repeated_profiles.shape[0]
     nbin = splat_prof.size
@@ -390,7 +390,7 @@ def shift_and_sum(repeated_profiles, lshift, qshift, splat_prof, base_shift, qua
     return splat_prof
 
 
-@njit(fastmath=True)
+@njit(fastmath=True, cache=True)
 def z_n_fast(phase, norm, n=2):
     """Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
 
@@ -431,7 +431,7 @@ def z_n_fast(phase, norm, n=2):
     return 2 / total_norm * result
 
 
-@njit()
+@njit(cache=True)
 def _average_and_z_sub_search(profiles, n=2):
     """Z^2_n statistics calculated in sub-profiles.
 
@@ -865,7 +865,7 @@ def _plot_transient_search_frames(results, gif_name, force_plotting):
     return all_images
 
 
-@njit(nogil=True, parallel=True)
+@njit(nogil=True, parallel=True, cache=True)
 def _fast_step_constants(nprof, nbin, n):
     """Constants of `_fast_step`, shared with its GPU version to get identical results.
 
@@ -893,7 +893,7 @@ def _fast_step_constants(nprof, nbin, n):
     return base_shift, quad_base_shift, cached_cos, cached_sin
 
 
-@njit(nogil=True, parallel=True)
+@njit(nogil=True, parallel=True, cache=True)
 def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     nprof = profiles.shape[0]
     base_shift, quad_base_shift, cached_cos, cached_sin = _fast_step_constants(nprof, nbin, n)
@@ -920,7 +920,7 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
     return stats
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def _fast_phase_fdot(ts, mean_f, mean_fdot=0):
     phases = ts * mean_f + 0.5 * ts * ts * mean_fdot
     return phases - np.floor(phases)
@@ -929,14 +929,14 @@ def _fast_phase_fdot(ts, mean_f, mean_fdot=0):
 ONE_SIXTH = 1 / 6
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def _fast_phase_fddot(ts, mean_f, mean_fdot=0, mean_fddot=0):
     tssq = ts * ts
     phases = ts * mean_f + 0.5 * tssq * mean_fdot + ONE_SIXTH * tssq * ts * mean_fddot
     return phases - np.floor(phases)
 
 
-@njit(parallel=True)
+@njit(parallel=True, cache=True)
 def _fast_phase(ts, mean_f):
     phases = ts * mean_f
     return phases - np.floor(phases)

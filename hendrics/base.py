@@ -571,7 +571,7 @@ def interpret_bintime(bintime):
     raise ValueError("Bin time cannot be = 0")
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def _get_bin_edges(a, bins, a_min, a_max):
     bin_edges = np.zeros(bins + 1, dtype=np.float64)
 
@@ -597,7 +597,7 @@ def get_bin_edges(a, bins):
     return _get_bin_edges(a, bins, a_min, a_max)
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def compute_bin(x, bin_edges):
     """
 
@@ -625,7 +625,7 @@ def compute_bin(x, bin_edges):
         return bin
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def _hist1d_numba_seq(H, tracks, bins, ranges):
     delta = 1 / ((ranges[1] - ranges[0]) / bins)
 
@@ -673,7 +673,7 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
     return _hist1d_numba_seq(hist_arr, a, bins, np.asarray(ranges))
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def _hist2d_numba_seq(H, x, y, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
@@ -710,7 +710,7 @@ def _as_float_array(a):
     return np.asarray(a, dtype=np.float64).ravel()
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def _hist3d_numba_seq(H, tracks, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
@@ -741,7 +741,7 @@ def hist3d_numba_seq(tracks, bins, ranges):
     return _hist3d_numba_seq(H, np.asarray(tracks), np.asarray(list(bins)), np.asarray(ranges))
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def _hist1d_numba_seq_weight(H, tracks, weights, bins, ranges):
     delta = 1 / ((ranges[1] - ranges[0]) / bins)
 
@@ -790,7 +790,7 @@ def hist1d_numba_seq_weight(a, weights, bins, ranges, use_memmap=False, tmp=None
     return _hist1d_numba_seq_weight(hist_arr, a, weights, bins, np.asarray(ranges))
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def _hist2d_numba_seq_weight(H, x, y, weights, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
@@ -829,7 +829,7 @@ def hist2d_numba_seq_weight(x, y, weights, bins, ranges):
     )
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def _hist3d_numba_seq_weight(H, tracks, weights, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
@@ -869,7 +869,7 @@ def hist3d_numba_seq_weight(tracks, weights, bins, ranges):
     )
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def index_arr(a, ix_arr):
     strides = np.array(a.strides) / a.itemsize
     ix = int((ix_arr * strides).sum())
@@ -880,14 +880,14 @@ def index_arr(a, ix_arr):
     return a.reshape(-1)[ix]
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def index_set_arr(a, ix_arr, val):
     strides = np.array(a.strides) / a.itemsize
     ix = int((ix_arr * strides).sum())
     a.reshape(-1)[ix] = val
 
 
-@njit(nogil=True, parallel=False)
+@njit(nogil=True, parallel=False, cache=True)
 def _histnd_numba_seq(H, tracks, bins, ranges, slice_int):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
