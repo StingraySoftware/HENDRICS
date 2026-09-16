@@ -124,19 +124,21 @@ def _get_backend(use_gpu=False):
 # `_z_n_fast_cached`), one GPU thread per trial shift. The operations are done in the
 # same order as in the Numba code, and multiplications and additions are not merged
 # into one operation (``--fmad=false``, no fused multiply-add), so that the results
-# are identical to the last bit. ``work`` holds one summed profile per trial.
+# are identical to the last bit. The summed profile of each trial is a local array,
+# whose size ``NBIN`` is fixed at compile time: the compiler knows that nothing else
+# writes to it, which makes the kernel about 4 times faster than with a shared buffer
+# in GPU memory.
 _FAST_STEP_SOURCE = r"""
 extern "C" __global__ void fast_step(
     const double* profiles, const double* lshift, const double* qshift,
     const double* base_shift, const double* quad_shift, const double* cached_cos,
-    const double* cached_sin, int nprof, int nbin, int ntrial, int n,
-    double* work, double* stats)
+    const double* cached_sin, int nprof, int nbin, int ntrial, int n, double* stats)
 {
     int t = blockDim.x * blockIdx.x + threadIdx.x;
     if (t >= ntrial) return;
 
     // shift_and_sum: add all sub-profiles, each shifted by a whole number of bins
-    double* splat = work + (long long)t * nbin;
+    double splat[NBIN];
     for (int b = 0; b < nbin; b++) splat[b] = 0.0;
     for (int k = 0; k < nprof; k++) {
         double shift = rint(base_shift[k] * lshift[t] + quad_shift[k] * qshift[t]);
@@ -168,7 +170,8 @@ extern "C" __global__ void fast_step(
 }
 """
 
-_FAST_STEP_KERNEL = {}
+# Compiled kernels, by number of bins
+_FAST_STEP_KERNELS = {}
 _THREADS_PER_BLOCK = 256
 
 
@@ -196,16 +199,15 @@ def _fast_step_gpu(
     stats : `cupy.ndarray`
         Z^2 statistics of each trial, in GPU memory
     """
-    if "kernel" not in _FAST_STEP_KERNEL:
-        _FAST_STEP_KERNEL["kernel"] = cp.RawKernel(
-            _FAST_STEP_SOURCE, "fast_step", options=("--fmad=false",)
-        )
     nprof, nbin = profiles.shape
+    if nbin not in _FAST_STEP_KERNELS:
+        _FAST_STEP_KERNELS[nbin] = cp.RawKernel(
+            _FAST_STEP_SOURCE, "fast_step", options=("--fmad=false", f"-DNBIN={nbin}")
+        )
     ntrial = lshifts.size
     stats = cp.empty(ntrial, dtype=cp.float64)
-    work = cp.empty(ntrial * nbin, dtype=cp.float64)
     blocks = (ntrial + _THREADS_PER_BLOCK - 1) // _THREADS_PER_BLOCK
-    _FAST_STEP_KERNEL["kernel"](
+    _FAST_STEP_KERNELS[nbin](
         (blocks,),
         (_THREADS_PER_BLOCK,),
         (
@@ -220,7 +222,6 @@ def _fast_step_gpu(
             np.int32(nbin),
             np.int32(ntrial),
             np.int32(n),
-            work,
             stats,
         ),
     )
