@@ -676,12 +676,12 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
 
 
 @njit(nogil=True, parallel=False)
-def _hist2d_numba_seq(H, tracks, bins, ranges):
+def _hist2d_numba_seq(H, x, y, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
-    for t in range(tracks.shape[1]):
-        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
-        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+    for t in range(x.size):
+        i = (x[t] - ranges[0, 0]) * delta[0]
+        j = (y[t] - ranges[1, 0]) * delta[1]
         if 0 <= i < bins[0] and 0 <= j < bins[1]:
             H[int(i), int(j)] += 1
 
@@ -701,7 +701,15 @@ def hist2d_numba_seq(x, y, bins, ranges):
     >>> assert np.all(H == Hn)
     """
     H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
-    return _hist2d_numba_seq(H, np.array([x, y]), np.asarray(list(bins)), np.asarray(ranges))
+    # x and y are passed separately: stacking them would copy both arrays at each call
+    return _hist2d_numba_seq(
+        H, _as_float_array(x), _as_float_array(y), np.asarray(list(bins)), np.asarray(ranges)
+    )
+
+
+def _as_float_array(a):
+    """Convert to a 1D float64 array, without copying if it already is one."""
+    return np.asarray(a, dtype=np.float64).ravel()
 
 
 @njit(nogil=True, parallel=False)
@@ -785,12 +793,12 @@ def hist1d_numba_seq_weight(a, weights, bins, ranges, use_memmap=False, tmp=None
 
 
 @njit(nogil=True, parallel=False)
-def _hist2d_numba_seq_weight(H, tracks, weights, bins, ranges):
+def _hist2d_numba_seq_weight(H, x, y, weights, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
-    for t in range(tracks.shape[1]):
-        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
-        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+    for t in range(x.size):
+        i = (x[t] - ranges[0, 0]) * delta[0]
+        j = (y[t] - ranges[1, 0]) * delta[1]
         if 0 <= i < bins[0] and 0 <= j < bins[1]:
             H[int(i), int(j)] += weights[t]
 
@@ -815,7 +823,8 @@ def hist2d_numba_seq_weight(x, y, weights, bins, ranges):
     H = np.zeros((bins[0], bins[1]), dtype=np.double)
     return _hist2d_numba_seq_weight(
         H,
-        np.array([x, y]),
+        _as_float_array(x),
+        _as_float_array(y),
         weights,
         np.asarray(list(bins)),
         np.asarray(ranges),

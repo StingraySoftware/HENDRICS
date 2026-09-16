@@ -1,5 +1,6 @@
 import os
 import re
+import tracemalloc
 
 import numpy as np
 import pytest
@@ -7,8 +8,11 @@ from stingray.events import EventList
 
 import hendrics
 from hendrics.base import (
+    HAS_NUMBA,
     HAS_PINT,
     deorbit_events,
+    hist2d_numba_seq,
+    hist2d_numba_seq_weight,
     hist3d_numba_seq,
     hist3d_numba_seq_weight,
     histnd_numba_seq,
@@ -58,6 +62,39 @@ class TestNormalize:
         norm = kind + "ratios"
         nhist = normalize_dyn_profile(self.hist, norm)
         assert np.allclose(nhist.mean(axis=1), 1, atol=0.01)
+
+
+@pytest.mark.skipif(not HAS_NUMBA, reason="Numba not installed")
+@pytest.mark.parametrize("use_weights", [False, True])
+def test_hist2d_numba_does_not_copy_inputs(use_weights):
+    # The 2D histograms are called at every step of the searches, with millions of
+    # events: they must not stack x and y into a new (2, N) array
+    rng = np.random.default_rng(0)
+    x = rng.uniform(0, 1, 1_000_000)
+    y = rng.uniform(2, 3, 1_000_000)
+    kwargs = {"bins": (5, 7), "ranges": [[0.0, 1.0], [2.0, 3.0]]}
+    if use_weights:
+        weights = rng.uniform(0, 1, 1_000_000)
+        expected = np.histogram2d(x, y, weights=weights, range=kwargs["ranges"], bins=(5, 7))[0]
+
+        def func():
+            return hist2d_numba_seq_weight(x, y, weights, **kwargs)
+
+    else:
+        expected = np.histogram2d(x, y, range=kwargs["ranges"], bins=(5, 7))[0]
+
+        def func():
+            return hist2d_numba_seq(x, y, **kwargs)
+
+    func()  # Compile first
+    tracemalloc.start()
+    try:
+        result = func()
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert np.allclose(result, expected)
+    assert peak < x.nbytes / 2, peak
 
 
 def test_deorbit_badpar():
