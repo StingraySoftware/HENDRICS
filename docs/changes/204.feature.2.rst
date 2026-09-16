@@ -1,0 +1,3 @@
+Faster ``HENzsearch --fast`` on the CPU: the Numba 2D histograms no longer copy
+the event arrays at each call, and the sub-profiles are stored so that each of them
+is contiguous in memory.

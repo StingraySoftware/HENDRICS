@@ -351,12 +351,19 @@ What runs on the GPU
 ~~~~~~~~~~~~~~~~~~~~
 
 The GPU is used only when explicitly requested. From the command line, the
-``--use-gpu`` option of ``HENzsearch`` and ``HENefsearch`` affects:
+``--use-gpu`` option of ``HENzsearch`` affects:
 
-* ``--fast``: the 2D histogram (pulse phase vs. time) computed at each step of the
-  frequency and frequency-derivative grid. This is the main loop of the search.
-* ``--transient``: the same kind of 2D histogram, at each trial frequency.
+* ``--fast``: the whole search runs on the GPU. The event times are copied to the
+  GPU once. Then, at each step of the frequency and frequency-derivative grid, the
+  pulse phases, the sub-profiles (the 2D histogram of pulse phase vs. time) and the
+  Z^2 statistics of all trial shifts are computed on the GPU, and only the Z^2
+  values are copied back. The results are identical to the CPU ones, to the last
+  bit (see "Design" below).
+* ``--transient``: the 2D histogram (pulse phase vs. time), at each trial frequency.
 * ``--ffa``: the 1D histogram of the whole event list (computed once).
+
+``HENefsearch`` accepts ``--use-gpu`` with ``--transient`` and ``--ffa`` too
+(``--fast`` is only available for Z searches).
 
 The standard folding search (without ``--fast``, ``--ffa`` or ``--transient``)
 folds the events with Stingray on the CPU, so ``--use-gpu`` has no effect there
@@ -381,17 +388,63 @@ The GPU histograms give the same results as the CPU ones:
 * The ``use_memmap`` and ``tmp`` options (memory-mapped output files) only apply
   to host memory, and are ignored on the GPU.
 
-Each call copies the input to the GPU and the histogram back to host memory. In
-the ``--fast`` search, this happens once per step of the search grid.
+Each call to a GPU histogram copies the input to the GPU and the histogram back
+to host memory. The ``--transient`` search does this at each trial frequency.
 
 Design
 ~~~~~~
 
 :mod:`hendrics.gpu` contains a minimal backend registry, ``_BACKENDS``. Each entry
 says whether the backend can be used, which array module implements it (NumPy or
-CuPy), and how to copy its arrays back to host memory. Only ``"cpu"`` and
-``"cupy"`` exist now; other array libraries (e.g. JAX or PyTorch) could be added
-without changing the functions using the registry.
+CuPy), and how to copy arrays to its memory and back to host memory. Only
+``"cpu"`` and ``"cupy"`` exist now; other array libraries (e.g. JAX or PyTorch)
+could be added without changing the functions using the registry.
+
+**The** ``--fast`` **search on the GPU.** At every step of the search, the event
+times and the time slice (sub-profile) of each event are the same; only the pulse
+phases change. ``hendrics.efsearch._FastSearchOnDevice`` is created once per
+search: it copies the times and the slice indices to the GPU. At each step, its
+``profiles`` method computes the phases and the sub-profiles on the GPU (with
+``bincount`` on precomputed indices), and its ``stats`` method shifts and sums the
+sub-profiles for every trial and computes Z^2, copying back only the Z^2 values.
+
+The second part is a small CUDA program (a "kernel"), in ``hendrics/gpu.py``,
+running one GPU thread per trial shift. It is compiled at run time by CuPy
+(``cupy.RawKernel``), so it needs no dependency beyond CuPy. Writing it with
+``numba.cuda`` would have needed the separate ``numba-cuda`` package.
+
+The GPU results are identical to the CPU ones, not only close:
+
+* The phases are computed with the same operations, in the same order, as the
+  Numba functions ``_fast_phase*``, and the time slice and phase bin of each event
+  with the same arithmetic as the Numba 2D histogram. The events that the Numba
+  histogram drops (the last one, on the upper edge of the time range, and those
+  whose phase rounds to exactly 1.0) are dropped on the GPU too.
+* The shifted sub-profiles are sums of whole-number counts, which are exact in any
+  order.
+* The Z^2 sums follow the same order as the Numba code, and the kernel is compiled
+  with ``--fmad=false``: without this, the compiler could merge a multiplication
+  and an addition into a single operation (a "fused multiply-add"), which rounds
+  differently in the last bit.
+* The shift ramps and the cosine and sine tables are computed once by Numba
+  (``_fast_step_constants``, also used by the CPU ``_fast_step``) and copied to the
+  GPU: Numba's ``linspace`` does not round exactly as NumPy's.
+
+When the array module is NumPy, ``_FastSearchOnDevice`` falls back to the Numba
+``_fast_step``, so the same code runs on the CPU.
+
+The summed profile of each trial is a small array local to each GPU thread, whose
+size is fixed when the kernel is compiled (one compiled kernel per number of
+bins). With a shared buffer in GPU memory instead, the kernel was about 4 times
+slower, because the compiler could not assume that nothing else writes to it.
+
+GPU memory: at most about 49 bytes per event (466 MiB for 1e7 events, with 16 or
+128 phase bins): the times and slice indices (12 bytes per event) for the whole
+search, plus the temporary arrays of each step. It is released at the end of the
+search, and CuPy keeps it in its memory pool for reuse. The first time Numba
+compiles ``_fast_step_constants`` in a Python session, the compiler keeps a
+reference to the running functions until Python's garbage collector runs, so the
+memory of that first search is released a little later.
 
 ``import cupy`` succeeds even on machines without a GPU, so the presence of a CUDA
 device is checked only when the GPU is requested. If CuPy or a device is missing,
@@ -402,10 +455,18 @@ Testing without a GPU
 ~~~~~~~~~~~~~~~~~~~~~
 
 * ``hendrics/tests/test_gpu.py`` replaces the CuPy entry of the backend registry
-  with a stand-in that uses NumPy and counts the copies to host memory. The GPU
-  code is a thin layer on top of the array module, so this checks argument
-  handling, the edge convention, the output types, the number of copies and the
-  command line options. The tests using the real CuPy are skipped without a GPU.
+  with a stand-in that uses NumPy and counts the copies to the GPU and back to
+  host memory. The GPU code is mostly a thin layer on top of the array module, so
+  this checks argument handling, the edge convention, the output types, the
+  command line options and the number of copies: in the ``--fast`` search, the
+  events are copied to the GPU once per search, and one array comes back per step.
+  The CUDA kernel of ``_fast_step`` cannot run on NumPy: with the stand-in, the
+  Numba ``_fast_step`` is used instead.
+* The tests using the real CuPy are skipped without a GPU. With a GPU, they check
+  that sub-profiles, Z^2 values and whole ``--fast`` searches are identical to the
+  CPU ones (``np.array_equal``, not a tolerance), for all phase formulas, several
+  numbers of bins and harmonics, and with and without the frequency derivative
+  search.
 * ``hendrics/tests/test_gpu_kernel_sim.py`` runs the benchmark code (below) with
   numba's CUDA simulator, which executes ``numba.cuda`` kernels on the CPU. The
   simulator is enabled with ``NUMBA_ENABLE_CUDASIM=1`` before ``numba.cuda`` is
@@ -433,7 +494,10 @@ agrees with the CPU version, for:
   copies each light curve and each FFT back to host memory, as would happen by
   replacing the histogram and the FFT used by Stingray with GPU versions; and a
   "fused" GPU loop, where binning, FFT and averaging all stay on the GPU with a
-  single copy at the end.
+  single copy at the end;
+* one step of the ``--fast`` search (``--benchmarks qffa``), split into its parts:
+  phases, 2D histogram and ``_fast_step`` on the CPU; copying the events to the
+  GPU (once per search), sub-profiles and ``_fast_step`` on the GPU.
 
 The custom ``numba.cuda`` kernel comes from the original GPU prototype (PR #181).
 It is kept only in the benchmark: HENDRICS uses ``cupy.histogram`` and
@@ -477,7 +541,65 @@ Averaged PDS, 256 x 524288 bins: fused                  13.7    12.3    12.3
 The Stingray averaged power spectrum took 1.2 s with 64 segments and 4.5-4.9 s
 with 256 segments, almost independently of the number of events.
 
-``HENzsearch --fast -f 1.22 -F 1.25 -N 2 --find-candidates`` on a simulated
-event file with 1e7 events over 1e5 s (376 steps, 16 x 6016 trials) took 50 s
-on the CPU and 40 s with ``--use-gpu`` (45 s and 35 s in the search loop): a
-speedup of 1.25. The Z^2 values and the candidates were identical.
+The ``--fast`` search on the GPU
+""""""""""""""""""""""""""""""""
+
+Measured on 2026-09-16, same hardware and software. The Z^2 values and the
+candidates were identical on CPU and GPU in all cases.
+
+End to end, ``HENzsearch --fast -f 1.22 -F 1.25 -N 2 --find-candidates -n NBIN``
+on a simulated event file with 1e7 events over 1e5 s and a 2% pulsation at
+1.235 Hz (376 steps of the search, 32 x 32 trials each). 16 bins is the minimum
+for N = 2 (8 bins per harmonic); 128 is the default. Total times include reading
+the file and analysing the candidates; the search loop times come from the
+progress bar.
+
+=============  ==========================  ==========================  =========
+Phase bins     CPU: total (search loop)    GPU: total (search loop)    Speedup
+=============  ==========================  ==========================  =========
+16             27.0 s (23 s)               7.2 s (2 s)                 3.8 (11)
+128            64.0 s (60 s)               16.2 s (11 s)               4.0 (5.5)
+=============  ==========================  ==========================  =========
+
+One step of the search (``--benchmarks qffa``), 1e7 events, 1024 trials, best of
+5 calls, in milliseconds:
+
+=====================================================  =========  =========
+Part of the step                                       16 bins    128 bins
+=====================================================  =========  =========
+CPU: phases                                            10.8       11.0
+CPU: 2D histogram                                      28.6       40.9
+CPU: ``_fast_step`` (shift, sum, Z^2)                  1.9        75.7
+**CPU: whole step**                                    **43.8**   **131.6**
+GPU: copy the events to the GPU (once per search)      65.3       66.8
+GPU: phases and sub-profiles                           3.2        4.2
+GPU: ``_fast_step`` and copy back                      0.8        27.6
+**GPU: whole step**                                    **4.0**    **27.6**
+=====================================================  =========  =========
+
+With few bins the histogram dominates the CPU step, and with many bins
+``_fast_step`` does; the GPU speeds up both.
+
+For comparison, before these changes (only the 2D histogram on the GPU, copying
+the event arrays at each step) the same search with 128 bins took 79 s on the CPU
+and 69 s with ``--use-gpu`` in the search loop. An earlier measurement with a
+16 x 16 grid of trials per step (before PR #203 made ``--oversample`` count grid
+points per 1/T) gave 45 s and 35 s.
+
+CPU improvements
+""""""""""""""""
+
+Profiling the ``--fast`` search while preparing the GPU version showed two costs
+that did not need a GPU, now removed (1e7 events, 128 bins, 1024 trials):
+
+* The Numba 2D histograms stacked their two input arrays into a new array at each
+  call (160 MB with 1e7 events). Passing them separately made the 2D histogram go
+  from 62.3 to 42.6 ms.
+* ``_fast_step`` read the sub-profiles through a transposed view of the histogram,
+  with the values of each sub-profile scattered in memory. Copying them so that
+  each sub-profile is contiguous in memory made the whole step go from 161.8 to
+  130.0 ms, with identical results. With 16 bins, ``_fast_step`` is too short for
+  this to matter.
+
+Overall, one CPU step with 128 bins went from 180 ms (measured on 2026-09-15) to
+131 ms.

@@ -1,0 +1,3 @@
+All the Z searches of ``HENzsearch`` (not only ``--fast``) and ``HENz2vspf`` now use
+at least 8 phase bins per harmonic, increasing the number of bins with a warning
+if needed.
