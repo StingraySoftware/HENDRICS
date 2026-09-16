@@ -64,6 +64,9 @@ recommended = [
     "numba",
     "h5py",
 ]
+gpu = [  # Needs an NVIDIA GPU. Pre-built CuPy wheels exist, e.g. cupy-cuda12x
+    "cupy",
+]
 all = [
     "hendrics[recommended]",
     "pandas",
@@ -392,6 +395,10 @@ lint.ignore = [  # NOTE: non-permanent exclusions should be added to `.ruff.toml
 "setup.py" = ["INP001"]  # Part of configuration, not a package.
 ".github/workflows/*.py" = ["INP001"]
 "notebooks/*.py" = ["INP001"]
+"benchmarks/*.py" = [  # Standalone scripts, not a package.
+    "INP001",  # implicit-namespace-package
+    "T201",  # print. Benchmarks report timings on screen.
+]
 
 "test_*.py" = [
     "ANN201",  # Public function without return type annotation

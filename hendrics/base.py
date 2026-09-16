@@ -15,8 +15,6 @@ from collections.abc import Iterable
 from pathlib import Path
 
 import numpy as np
-from numpy import histogram as histogram_np
-from numpy import histogram2d as histogram2d_np
 from scipy.interpolate import interp1d
 from scipy.ndimage import gaussian_filter
 from stingray.pulse.pulsar import _load_and_prepare_TOAs
@@ -61,6 +59,7 @@ from . import (
     njit,
     prange,
 )
+from .gpu import histogram2d_gpu, histogram_gpu
 
 __all__ = [
     "_add_default_args",
@@ -675,12 +674,12 @@ def hist1d_numba_seq(a, bins, ranges, use_memmap=False, tmp=None):
 
 
 @njit(nogil=True, parallel=False)
-def _hist2d_numba_seq(H, tracks, bins, ranges):
+def _hist2d_numba_seq(H, x, y, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
-    for t in range(tracks.shape[1]):
-        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
-        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+    for t in range(x.size):
+        i = (x[t] - ranges[0, 0]) * delta[0]
+        j = (y[t] - ranges[1, 0]) * delta[1]
         if 0 <= i < bins[0] and 0 <= j < bins[1]:
             H[int(i), int(j)] += 1
 
@@ -700,7 +699,15 @@ def hist2d_numba_seq(x, y, bins, ranges):
     >>> assert np.all(H == Hn)
     """
     H = np.zeros((bins[0], bins[1]), dtype=np.uint64)
-    return _hist2d_numba_seq(H, np.array([x, y]), np.asarray(list(bins)), np.asarray(ranges))
+    # x and y are passed separately: stacking them would copy both arrays at each call
+    return _hist2d_numba_seq(
+        H, _as_float_array(x), _as_float_array(y), np.asarray(list(bins)), np.asarray(ranges)
+    )
+
+
+def _as_float_array(a):
+    """Convert to a 1D float64 array, without copying if it already is one."""
+    return np.asarray(a, dtype=np.float64).ravel()
 
 
 @njit(nogil=True, parallel=False)
@@ -784,12 +791,12 @@ def hist1d_numba_seq_weight(a, weights, bins, ranges, use_memmap=False, tmp=None
 
 
 @njit(nogil=True, parallel=False)
-def _hist2d_numba_seq_weight(H, tracks, weights, bins, ranges):
+def _hist2d_numba_seq_weight(H, x, y, weights, bins, ranges):
     delta = 1 / ((ranges[:, 1] - ranges[:, 0]) / bins)
 
-    for t in range(tracks.shape[1]):
-        i = (tracks[0, t] - ranges[0, 0]) * delta[0]
-        j = (tracks[1, t] - ranges[1, 0]) * delta[1]
+    for t in range(x.size):
+        i = (x[t] - ranges[0, 0]) * delta[0]
+        j = (y[t] - ranges[1, 0]) * delta[1]
         if 0 <= i < bins[0] and 0 <= j < bins[1]:
             H[int(i), int(j)] += weights[t]
 
@@ -814,7 +821,8 @@ def hist2d_numba_seq_weight(x, y, weights, bins, ranges):
     H = np.zeros((bins[0], bins[1]), dtype=np.double)
     return _hist2d_numba_seq_weight(
         H,
-        np.array([x, y]),
+        _as_float_array(x),
+        _as_float_array(y),
         weights,
         np.asarray(list(bins)),
         np.asarray(ranges),
@@ -926,9 +934,86 @@ def histnd_numba_seq(tracks, bins, ranges):
     return _histnd_numba_seq(H, tracks, bins, ranges, slice_int)
 
 
+def _histogram_like_numba(a, bins, ranges, weights=None):
+    """Compute a 1D histogram with NumPy, with the same results as the Numba one.
+
+    Used when Numba is not installed. The bin of each value is computed with the
+    same arithmetic as `hist1d_numba_seq`, values on the upper edge of the range are
+    excluded (unlike :func:`numpy.histogram`), and the weights are added in the same
+    order, so the results are identical.
+
+    Parameters
+    ----------
+    a : array-like
+        Input values
+    bins : int
+        Number of bins
+    ranges : (float, float)
+        Lower and upper edge of the histogram
+
+    Other Parameters
+    ----------------
+    weights : array-like, optional
+        Weight of each value
+
+    Returns
+    -------
+    hist : `np.ndarray`
+        Histogram (float64)
+    """
+    lo, hi = ranges
+    index = (np.asarray(a, dtype=np.float64).ravel() - lo) * (1 / ((hi - lo) / bins))
+    good = (index >= 0) & (index < bins)
+    if weights is not None:
+        weights = np.asarray(weights, dtype=np.float64).ravel()[good]
+    hist = np.bincount(index[good].astype(np.int64), weights=weights, minlength=bins)
+    return hist.astype(np.float64)
+
+
+def _histogram2d_like_numba(x, y, bins, ranges, weights=None):
+    """Compute a 2D histogram with NumPy, with the same results as the Numba one.
+
+    Used when Numba is not installed. As `hist2d_numba_seq`: same bin arithmetic,
+    values on the upper edge of either range excluded (unlike
+    :func:`numpy.histogram2d`), and the same output types.
+
+    Parameters
+    ----------
+    x, y : array-like
+        Values along the first and second axis
+    bins : (int, int)
+        Number of bins along each axis
+    ranges : [[float, float], [float, float]]
+        Lower and upper edges along each axis
+
+    Other Parameters
+    ----------------
+    weights : array-like, optional
+        Weight of each value
+
+    Returns
+    -------
+    hist : `np.ndarray`
+        Histogram of shape ``bins``: unsigned 64-bit integers if unweighted, float64
+        if weighted
+    """
+    (xlo, xhi), (ylo, yhi) = ranges
+    nx, ny = bins
+    i = (np.asarray(x, dtype=np.float64).ravel() - xlo) * (1 / ((xhi - xlo) / nx))
+    j = (np.asarray(y, dtype=np.float64).ravel() - ylo) * (1 / ((yhi - ylo) / ny))
+    good = (i >= 0) & (i < nx) & (j >= 0) & (j < ny)
+    flat_index = i[good].astype(np.int64) * ny + j[good].astype(np.int64)
+    if weights is None:
+        hist = np.bincount(flat_index, minlength=nx * ny).astype(np.uint64)
+    else:
+        weights = np.asarray(weights, dtype=np.float64).ravel()[good]
+        hist = np.bincount(flat_index, weights=weights, minlength=nx * ny)
+    return hist.reshape(nx, ny)
+
+
 if HAS_NUMBA:
 
-    def histogram2d(*args, **kwargs):
+    def _histogram2d_cpu(*args, **kwargs):
         """
         Examples
         --------
@@ -962,7 +1047,7 @@ if HAS_NUMBA:
 
         return hist2d_numba_seq(*args, **kwargs)
 
-    def histogram(*args, **kwargs):
+    def _histogram_cpu(*args, **kwargs):
         """
         Examples
         --------
@@ -992,17 +1077,67 @@ if HAS_NUMBA:
 
 else:
 
-    def histogram2d(*args, **kwargs):
-        """Fall back to numpy, translating the ``ranges`` keyword to ``range``."""
-        if "ranges" in kwargs:
-            kwargs["range"] = kwargs.pop("ranges")
-        return histogram2d_np(*args, **kwargs)[0]
+    def _histogram2d_cpu(*args, **kwargs):
+        """Fall back to NumPy, with the same conventions as the Numba histograms."""
+        if "range" in kwargs:
+            kwargs["ranges"] = kwargs.pop("range")
+        return _histogram2d_like_numba(*args, **kwargs)
 
-    def histogram(*args, **kwargs):
-        """Fall back to numpy, translating the ``ranges`` keyword to ``range``."""
-        if "ranges" in kwargs:
-            kwargs["range"] = kwargs.pop("ranges")
-        return histogram_np(*args, **kwargs)[0]
+    def _histogram_cpu(*args, **kwargs):
+        """Fall back to NumPy, with the same conventions as the Numba histograms."""
+        if "range" in kwargs:
+            kwargs["ranges"] = kwargs.pop("range")
+        # Memory-mapped output is only implemented with Numba
+        kwargs.pop("use_memmap", None)
+        kwargs.pop("tmp", None)
+        return _histogram_like_numba(*args, **kwargs)
+
+
+def _gpu_histogram_kwargs(kwargs):
+    """Adapt the keywords accepted by the CPU histograms to the GPU ones."""
+    if "range" in kwargs:
+        kwargs["ranges"] = kwargs.pop("range")
+    # Memory mapping only applies to host memory
+    kwargs.pop("use_memmap", None)
+    kwargs.pop("tmp", None)
+    return kwargs
+
+
+def histogram2d(*args, use_gpu=False, **kwargs):
+    """Compute a 2D histogram, returning only the histogram values.
+
+    Accepts ``x, y, bins, ranges`` (or ``range``) and ``weights`` as keywords.
+    With Numba or on the GPU, values equal to the upper edge of the range are
+    excluded; the NumPy fallback includes them.
+
+    Other Parameters
+    ----------------
+    use_gpu : bool, default False
+        Compute the histogram on the GPU with :func:`hendrics.gpu.histogram2d_gpu`.
+        Requires CuPy and a CUDA device.
+    """
+    if use_gpu:
+        return histogram2d_gpu(*args, **_gpu_histogram_kwargs(kwargs))
+    return _histogram2d_cpu(*args, **kwargs)
+
+
+def histogram(*args, use_gpu=False, **kwargs):
+    """Compute a 1D histogram, returning only the histogram values.
+
+    Accepts ``a, bins, ranges`` (or ``range``) and ``weights`` as keywords, plus
+    ``use_memmap`` and ``tmp`` for the Numba implementation.
+    With Numba or on the GPU, values equal to the upper edge of the range are
+    excluded; the NumPy fallback includes them.
+
+    Other Parameters
+    ----------------
+    use_gpu : bool, default False
+        Compute the histogram on the GPU with :func:`hendrics.gpu.histogram_gpu`.
+        ``use_memmap`` and ``tmp`` are ignored. Requires CuPy and a CUDA device.
+    """
+    if use_gpu:
+        return histogram_gpu(*args, **_gpu_histogram_kwargs(kwargs))
+    return _histogram_cpu(*args, **kwargs)
 
 
 def touch(fname):

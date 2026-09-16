@@ -1,0 +1,4 @@
+``HENzsearch`` and ``HENefsearch`` have a new ``--use-gpu`` option, which uses an
+NVIDIA GPU through CuPy (``pip install "hendrics[gpu]"``) for the ``--fast``,
+``--ffa`` and ``--transient`` searches. The GPU is never used unless requested,
+and HENDRICS still installs and runs without it.

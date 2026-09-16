@@ -49,6 +49,7 @@ from .base import (
 from .fake import scramble
 from .ffa import _z_n_fast_cached, ffa_search, h_test
 from .fold import filter_energy
+from .gpu import _fast_step_gpu, _get_backend
 from .io import (
     HEN_FILE_EXTENSION,
     EFPeriodogram,
@@ -492,7 +493,7 @@ def _average_and_z_sub_search(profiles, n=2):
 
 
 def _transient_search_step(
-    times: np.double, mean_f: np.double, mean_fdot=0, nbin=16, nprof=64, n=1
+    times: np.double, mean_f: np.double, mean_fdot=0, nbin=16, nprof=64, n=1, use_gpu=False
 ):
     """Single step of transient search."""
     # Cast to standard double, or Numba's histogram2d will fail
@@ -505,6 +506,7 @@ def _transient_search_step(
         times,
         range=[[0, 1], [times[0], times[-1]]],
         bins=(nbin, nprof),
+        use_gpu=use_gpu,
     ).T
 
     n_ave, results = _average_and_z_sub_search(profiles, n=n)
@@ -534,6 +536,7 @@ def transient_search(
     t1=None,
     oversample=4,
     force_memmap=False,
+    use_gpu=False,
 ):
     """Search for transient pulsations.
 
@@ -565,6 +568,8 @@ def transient_search(
         stop time
     force_memmap : bool, default False
         Force the use of memory-mapped profiles, however small the dataset
+    use_gpu : bool, default False
+        Compute the histograms on the GPU (requires CuPy and a CUDA device)
     """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
@@ -619,7 +624,7 @@ def transient_search(
         mean_f = np.double(frequency + offset + 0.12 * step)
         mean_fdot = np.double(fdot + fdot_offset)
         nave, results = _transient_search_step(
-            times, mean_f, mean_fdot=mean_fdot, nbin=nbin, nprof=nprof, n=n
+            times, mean_f, mean_fdot=mean_fdot, nbin=nbin, nprof=nprof, n=n, use_gpu=use_gpu
         )
         if all_results is None:
             results_shape = (len(allvalues), nave.size, results.shape[1])
@@ -861,7 +866,20 @@ def _plot_transient_search_frames(results, gif_name, force_plotting):
 
 
 @njit(nogil=True, parallel=True)
-def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
+def _fast_step_constants(nprof, nbin, n):
+    """Constants of `_fast_step`, shared with its GPU version to get identical results.
+
+    Returns
+    -------
+    base_shift : array of floats
+        Linear shift of each sub-profile, in units of the trial shift
+    quad_base_shift : array of floats
+        Quadratic shift of each sub-profile, in units of the trial shift
+    cached_cos : array of floats
+        Cosine of the phase of each bin, repeated ``n`` times
+    cached_sin : array of floats
+        Sine of the phase of each bin, repeated ``n`` times
+    """
     twopiphases = 2 * np.pi * np.arange(0, 1, 1 / nbin)
 
     cached_cos = np.zeros(n * nbin)
@@ -870,13 +888,18 @@ def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
         cached_cos[i * nbin : (i + 1) * nbin] = np.cos(twopiphases)
         cached_sin[i * nbin : (i + 1) * nbin] = np.sin(twopiphases)
 
-    stats = np.zeros_like(L)
-    repeated_profiles = np.hstack((profiles, profiles, profiles))
-
-    nprof = repeated_profiles.shape[0]
-
     base_shift = np.linspace(-1, 1, nprof)
     quad_base_shift = base_shift**2
+    return base_shift, quad_base_shift, cached_cos, cached_sin
+
+
+@njit(nogil=True, parallel=True)
+def _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=2):
+    nprof = profiles.shape[0]
+    base_shift, quad_base_shift, cached_cos, cached_sin = _fast_step_constants(nprof, nbin, n)
+
+    stats = np.zeros_like(L)
+    repeated_profiles = np.hstack((profiles, profiles, profiles))
 
     for i in prange(linbinshifts.size):
         # This zeros needs to be here, not outside the parallel loop, or
@@ -919,6 +942,123 @@ def _fast_phase(ts, mean_f):
     return phases - np.floor(phases)
 
 
+class _FastSearchOnDevice:
+    """Event data of the fast search, kept in the memory of the device for a whole search.
+
+    The times, and the time slice (sub-profile) of each event, are the same at every
+    step of `search_with_qffa`: they are copied to the device (e.g. the GPU) only once.
+    Each step then computes the phases and the sub-profiles on the device, with the same
+    results as the Numba code in `search_with_qffa_step`.
+
+    Parameters
+    ----------
+    times : array of floats
+        Sorted event times, centered as in `search_with_qffa`
+    nbin : int
+        Number of phase bins
+    nprof : int
+        Number of sub-profiles (time slices)
+
+    Other Parameters
+    ----------------
+    use_gpu : bool, default False
+        Use the GPU (requires CuPy and a CUDA device). Otherwise, run with NumPy.
+    """
+
+    def __init__(self, times, nbin, nprof, use_gpu=False):
+        self.xp, self.to_device, self.to_host = _get_backend(use_gpu)
+        self.nbin = nbin
+        self.nprof = nprof
+        times = np.asarray(times, dtype=np.double)
+        lo, hi = times[0], times[-1]
+        # Same arithmetic as the Numba 2D histogram over [times[0], times[-1]], so that
+        # each event falls in the same slice. Events outside the range (i.e. the one on
+        # the upper edge) are dropped
+        slices = (times - lo) * (1 / ((hi - lo) / nprof))
+        good = (slices >= 0) & (slices < nprof)
+        self.times = self.to_device(times[good])
+        self.slices = self.to_device(slices[good].astype(np.int32))
+        # Constants of _fast_step on the device, by number of harmonics
+        self._constants = {}
+
+    def profiles(self, mean_f, mean_fdot=0, mean_fddot=0):
+        """Compute the sub-profiles on the device.
+
+        Parameters
+        ----------
+        mean_f : float
+            Frequency used to compute the phases
+
+        Other Parameters
+        ----------------
+        mean_fdot : float, default 0
+            First frequency derivative
+        mean_fddot : float, default 0
+            Second frequency derivative
+
+        Returns
+        -------
+        profiles : array
+            Counts of shape ``(nprof, nbin)``, in the memory of the device
+        """
+        xp, ts, nbin, nprof = self.xp, self.times, self.nbin, self.nprof
+        # Operation by operation as in _fast_phase*, so that rounding is the same
+        if mean_fddot != 0:
+            tssq = ts * ts
+            phases = ts * mean_f + 0.5 * tssq * mean_fdot + ONE_SIXTH * tssq * ts * mean_fddot
+        elif mean_fdot != 0:
+            phases = ts * mean_f + 0.5 * ts * ts * mean_fdot
+        else:
+            phases = ts * mean_f
+        phases -= xp.floor(phases)
+        # A phase just below an integer can round to exactly 1.0, i.e. to phase bin nbin,
+        # which the Numba histogram drops. These events go to an extra column of each
+        # sub-profile, removed at the end
+        phase_bins = (phases * (1 / (1 / nbin))).astype(np.int32)
+        counts = xp.bincount(self.slices * (nbin + 1) + phase_bins, minlength=nprof * (nbin + 1))
+        return xp.ascontiguousarray(counts.reshape(nprof, nbin + 1)[:, :nbin])
+
+    def stats(self, profiles, L, Q, linbinshifts, quabinshifts, n=1):
+        """Compute the Z^2 statistics of all trial shifts, as `_fast_step`.
+
+        On the GPU, only the statistics are copied back to host memory.
+
+        Parameters
+        ----------
+        profiles : array
+            Sub-profiles returned by `profiles`
+        L, Q, linbinshifts, quabinshifts : arrays of floats
+            Linear and quadratic trial shifts, as in `search_with_qffa_step`
+
+        Other Parameters
+        ----------------
+        n : int, default 1
+            Number of harmonics
+
+        Returns
+        -------
+        stats : `np.ndarray`
+            Z^2 statistics, with the shape of ``L``, in host memory
+        """
+        if self.xp is np:
+            # Numba implementation. Unsigned integers are also what the 2D histogram
+            # gives, and make _fast_step fastest
+            host_profiles = self.to_host(profiles).astype(np.uint64)
+            return _fast_step(host_profiles, L, Q, linbinshifts, quabinshifts, self.nbin, n=n)
+
+        if n not in self._constants:
+            constants = _fast_step_constants(self.nprof, self.nbin, n)
+            self._constants[n] = [self.to_device(c) for c in constants]
+        stats = _fast_step_gpu(
+            profiles,
+            self.to_device(np.ascontiguousarray(L, dtype=np.double).ravel()),
+            self.to_device(np.ascontiguousarray(Q, dtype=np.double).ravel()),
+            *self._constants[n],
+            n=n,
+        )
+        return self.to_host(stats).reshape(L.shape)
+
+
 def search_with_qffa_step(
     times: np.double,
     mean_f: np.double,
@@ -931,6 +1071,7 @@ def search_with_qffa_step(
     n=1,
     search_fdot=True,
     length=None,
+    use_gpu=False,
 ) -> tuple[np.array, np.array, np.array]:
     """Single step of quasi-fast folding algorithm.
 
@@ -946,24 +1087,51 @@ def search_with_qffa_step(
     length : float, default ``times[-1] - times[0]``
         Length of the observation. Pass the one used to space the sub-searches,
         so that they tile the band exactly.
+    use_gpu : bool, default False
+        Compute the sub-profiles and the statistics on the GPU (requires CuPy and a
+        CUDA device). The results are identical.
     """
-    # Cast to standard double, or Numba's histogram2d will fail
-    # horribly.
-
-    if mean_fddot != 0:
-        phases = _fast_phase_fddot(times, mean_f, mean_fdot, mean_fddot)
-    elif mean_fdot != 0:
-        phases = _fast_phase_fdot(times, mean_f, mean_fdot)
-    else:
-        phases = _fast_phase(times, mean_f)
-
-    profiles = histogram2d(
-        phases,
+    device_search = None
+    if use_gpu:
+        device_search = _FastSearchOnDevice(times, nbin, nprof, use_gpu=True)
+    return _search_with_qffa_step(
         times,
-        range=[[0, 1], [times[0], times[-1]]],
-        bins=(nbin, nprof),
-    ).T
+        mean_f,
+        mean_fdot=mean_fdot,
+        mean_fddot=mean_fddot,
+        nbin=nbin,
+        nprof=nprof,
+        npfact=npfact,
+        oversample=oversample,
+        n=n,
+        search_fdot=search_fdot,
+        length=length,
+        device_search=device_search,
+    )
 
+
+def _search_with_qffa_step(
+    times,
+    mean_f,
+    mean_fdot=0,
+    mean_fddot=0,
+    nbin=16,
+    nprof=64,
+    npfact=2,
+    oversample=2,
+    n=1,
+    search_fdot=True,
+    length=None,
+    device_search=None,
+):
+    """Single step of quasi-fast folding algorithm; see `search_with_qffa_step`.
+
+    Other Parameters
+    ----------------
+    device_search : `_FastSearchOnDevice`, default None
+        If given, compute the sub-profiles and the statistics with it (e.g. on the GPU),
+        instead of with Numba on the CPU. It must have been created from ``times``.
+    """
     # Assume times are sorted
     t1, t0 = times[-1], times[0]
 
@@ -984,6 +1152,24 @@ def search_with_qffa_step(
     bin_to_fdot = 2 * dphi / delta_t**2
 
     L, Q = np.meshgrid(linbinshifts, quabinshifts, indexing="ij")
+
+    if device_search is not None:
+        profiles = device_search.profiles(mean_f, mean_fdot, mean_fddot)
+        stats = device_search.stats(profiles, L, Q, linbinshifts, quabinshifts, n=n)
+        return L * bin_to_frequency + mean_f, Q * bin_to_fdot + mean_fdot, stats
+
+    if mean_fddot != 0:
+        phases = _fast_phase_fddot(times, mean_f, mean_fdot, mean_fddot)
+    elif mean_fdot != 0:
+        phases = _fast_phase_fdot(times, mean_f, mean_fdot)
+    else:
+        phases = _fast_phase(times, mean_f)
+
+    # One row per sub-profile. The copy makes rows contiguous in memory (the transpose
+    # alone does not), which makes _fast_step about 35% faster
+    profiles = np.ascontiguousarray(
+        histogram2d(phases, times, range=[[0, 1], [times[0], times[-1]]], bins=(nbin, nprof)).T
+    )
 
     stats = _fast_step(profiles, L, Q, linbinshifts, quabinshifts, nbin, n=n)
 
@@ -1006,6 +1192,7 @@ def search_with_qffa(
     t1=None,
     silent=False,
     force_memmap=False,
+    use_gpu=False,
 ):
     """'Quite fast folding' algorithm.
 
@@ -1038,6 +1225,10 @@ def search_with_qffa(
         starting time
     t1 : float, default max(times)
         stop time
+    use_gpu : bool, default False
+        Run the search on the GPU (requires CuPy and a CUDA device). The events are
+        copied to the GPU once; each step computes the sub-profiles and the statistics
+        there, with results identical to the CPU.
     """
     if nprof is None:
         # total_delta_phi = 2 == dnu * T
@@ -1091,6 +1282,11 @@ def search_with_qffa(
         def local_show_progress(x):
             return x
 
+    # With the GPU, the events are copied to it once, for all the steps
+    device_search = None
+    if use_gpu:
+        device_search = _FastSearchOnDevice(times, nbin, nprof, use_gpu=True)
+
     for ii, i in enumerate(local_show_progress(allvalues)):
         offset = step * i
         fdot_offset = 0
@@ -1098,7 +1294,7 @@ def search_with_qffa(
         mean_f = np.double(frequency + offset + 0.12 * step)
         mean_fdot = np.double(fdot + fdot_offset)
         mean_fddot = np.double(fddot)
-        fgrid, fdotgrid, stats = search_with_qffa_step(
+        fgrid, fdotgrid, stats = _search_with_qffa_step(
             times,
             mean_f,
             mean_fdot=mean_fdot,
@@ -1110,6 +1306,7 @@ def search_with_qffa(
             n=n,
             search_fdot=search_fdot,
             length=length,
+            device_search=device_search,
         )
 
         if all_fgrid is None:
@@ -1156,7 +1353,7 @@ def search_with_qffa(
         return all_fgrid.T[0], all_stats.T[0], step, length
 
 
-def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
+def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None, use_gpu=False):
     """Fast Folding Algorithm search over a range of trial periods.
 
     Parameters
@@ -1178,6 +1375,8 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
         starting time
     t1 : float, default max(times)
         stop time
+    use_gpu : bool, default False
+        Compute the histogram on the GPU (requires CuPy and a CUDA device)
     """
     if t0 is None:
         t0 = times[0]
@@ -1193,6 +1392,7 @@ def search_with_ffa(times, f0, f1, nbin=16, n=1, t0=None, t1=None):
         (times - t0).astype(np.double),
         range=[0, length],
         bins=int(np.rint(length / dt)),
+        use_gpu=use_gpu,
     )
     bin_periods, stats = ffa_search(counts, dt, p0, p1, z_n_n=n)
     return 1 / bin_periods, stats, None, length
@@ -2112,6 +2312,13 @@ def _common_parser(args=None):
         default=False,
         action="store_true",
     )
+    parser.add_argument(
+        "--use-gpu",
+        help="Compute the histograms of the fast, FFA and transient searches on the GPU "
+        "(requires CuPy and a CUDA device)",
+        default=False,
+        action="store_true",
+    )
 
     _add_known_ephemeris_args(parser)
 
@@ -2137,6 +2344,18 @@ def _common_main(args, func):
 
     if func != z_n_search and args.fast:
         raise ValueError("The fast option is only available for z searches")
+
+    if args.use_gpu and not (args.fast or args.ffa or args.transient):
+        warnings.warn(
+            "--use-gpu only affects the --fast, --ffa and --transient searches; "
+            "the standard folding search runs on the CPU."
+        )
+
+    # All Z searches compute the statistic from binned profiles: keep at least 8 bins
+    # per harmonic
+    if func == z_n_search and args.nbin / args.N < 8:
+        args.nbin = args.N * 8
+        warnings.warn(f"The number of bins is too small for Z search. Increasing to {args.nbin}")
 
     outfiles = []
     for i_f, fname in enumerate(files):
@@ -2199,6 +2418,7 @@ def _common_main(args, func):
                 nprof=args.n_transient_intervals,
                 oversample=oversample,
                 force_memmap=args.force_memmap,
+                use_gpu=args.use_gpu,
             )
             _analyze_and_plot_transient_search(results, out_fname + "_transient.gif")
             if not args.fast and not args.ffa:
@@ -2228,9 +2448,6 @@ def _common_main(args, func):
             search_fdot = True
             if args.fdotmax is not None and fdotmax <= fdotmin:
                 search_fdot = False
-            if nbin / n < 8:
-                nbin = n * 8
-                warnings.warn(f"The number of bins is too small for Z search. Increasing to {nbin}")
             results = search_with_qffa(
                 events.time,
                 args.fmin,
@@ -2244,6 +2461,7 @@ def _common_main(args, func):
                 oversample=oversample,
                 search_fdot=search_fdot,
                 force_memmap=args.force_memmap,
+                use_gpu=args.use_gpu,
             )
 
             ref_time = (events.time[-1] + events.time[0]) / 2
@@ -2252,7 +2470,9 @@ def _common_main(args, func):
                 "The Fast Folding Algorithm functionality is experimental. Use"
                 " with care, and feel free to report any issues."
             )
-            results = search_with_ffa(events.time, args.fmin, args.fmax, nbin=args.nbin, n=n)
+            results = search_with_ffa(
+                events.time, args.fmin, args.fmax, nbin=args.nbin, n=n, use_gpu=args.use_gpu
+            )
             ref_time = events.time[0]
 
         length = events.time.max() - events.time.min()
@@ -2377,7 +2597,8 @@ def z2_vs_pf(event_list, deadtime=0.0, ntrials=100, outfile=None, N=2):
             1 - df * 2,
             1 + df * 2,
             fdot=0,
-            nbin=32,
+            # At least 8 bins per harmonic
+            nbin=max(32, 8 * N),
             oversample=4,
             search_fdot=False,
             silent=True,

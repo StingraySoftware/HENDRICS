@@ -1,0 +1,3 @@
+With ``--use-gpu``, the whole ``HENzsearch --fast`` search runs on the GPU: the
+events are copied to the GPU once, and the sub-profiles and the Z^2 statistics of
+each step are computed there. The results are identical to those on the CPU.
