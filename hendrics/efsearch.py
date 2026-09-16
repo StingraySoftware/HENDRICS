@@ -2164,6 +2164,12 @@ def _common_main(args, func):
             "the standard folding search runs on the CPU."
         )
 
+    # All Z searches compute the statistic from binned profiles: keep at least 8 bins
+    # per harmonic
+    if func == z_n_search and args.nbin / args.N < 8:
+        args.nbin = args.N * 8
+        warnings.warn(f"The number of bins is too small for Z search. Increasing to {args.nbin}")
+
     outfiles = []
     for i_f, fname in enumerate(files):
         log.info(f"Treating {fname}")
@@ -2255,9 +2261,6 @@ def _common_main(args, func):
             search_fdot = True
             if args.fdotmax is not None and fdotmax <= fdotmin:
                 search_fdot = False
-            if nbin / n < 8:
-                nbin = n * 8
-                warnings.warn(f"The number of bins is too small for Z search. Increasing to {nbin}")
             results = search_with_qffa(
                 events.time,
                 args.fmin,
@@ -2407,7 +2410,8 @@ def z2_vs_pf(event_list, deadtime=0.0, ntrials=100, outfile=None, N=2):
             1 - df * 2,
             1 + df * 2,
             fdot=0,
-            nbin=32,
+            # At least 8 bins per harmonic
+            nbin=max(32, 8 * N),
             oversample=4,
             search_fdot=False,
             silent=True,

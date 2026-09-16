@@ -571,6 +571,16 @@ class TestEFsearch:
                 ]
             )
 
+    def test_zsearch_nbin_small_warns(self):
+        # All Z searches bin the events: at least 8 bins per harmonic, not only with --fast
+        evfile = self.dum
+        with pytest.warns(UserWarning, match="The number of bins is too small"):
+            main_zsearch([evfile, "-f", "9.85", "-F", "9.95", "-n", "4", "-N", "3"])
+        outfile = "events_Z23_9.85-9.95Hz" + HEN_FILE_EXTENSION
+        efperiod = load_folding(outfile)
+        assert efperiod.nbin == 24
+        os.unlink(outfile)
+
     def test_zsearch_fdots_fast(self):
         evfile = self.dum
         outfiles = main_zsearch(
