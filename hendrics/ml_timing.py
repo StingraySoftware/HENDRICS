@@ -52,7 +52,7 @@ def phases_around_zero(phase):
     return ph
 
 
-@njit()
+@njit(cache=True)
 def poisson_loglike(model, data):
     """Loglikelihood for a Poisson distribution.
 

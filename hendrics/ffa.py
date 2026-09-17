@@ -42,7 +42,7 @@ import functools
 
 import numpy as np
 
-from . import float32, float64, int32, int64, njit, vectorize
+from . import njit
 from .base import show_progress
 
 __all__ = ["ffa_search", "h_test", "z_n_fast_cached", "z_n_fast_cached_all"]
@@ -69,7 +69,7 @@ def cached_cos_harmonics(nbin, z_n_n):
     return cached_cos
 
 
-@njit()
+@njit(cache=True)
 def _z_n_fast_cached(norm, cached_sin, cached_cos, n=2):
     """Z^2_n statistics, a` la Buccheri+03, A&A, 128, 245, eq. 2.
 
@@ -149,7 +149,7 @@ def z_n_fast_cached(norm, n=2):
     return _z_n_fast_cached(norm, cached_sin, cached_cos, n=n)
 
 
-@njit()
+@njit(cache=True)
 def _z_n_fast_cached_all(norm, cached_sin, cached_cos, ks):
     """Numba-compiled core of z_n_fast_cached_all."""
     total_norm = np.sum(norm)
@@ -224,7 +224,7 @@ def h_test(norm, nmax=20):
     return hs[idx], ks[idx]
 
 
-@njit()
+@njit(cache=True)
 def roll(a, shift):
     n = a.size
     reshape = True
@@ -242,17 +242,17 @@ def roll(a, shift):
     return res
 
 
-@njit()
+@njit(cache=True)
 def step_pow(step):
     return 2 ** (step + 1)
 
 
-@njit()
+@njit(cache=True)
 def shift(prof_n, step):
     return (prof_n % step_pow(step) + 1) // 2
 
 
-@njit()
+@njit(cache=True)
 def start_value(prof_n, step):
     """
 
@@ -277,7 +277,9 @@ def start_value(prof_n, step):
     return val
 
 
-@vectorize([(float64, float64), (int64, int64), (float32, float32), (int32, int32)])
+# A plain njit function, not a @vectorize with signatures: those are compiled when
+# the module is imported, even if the FFA is never used
+@njit(cache=True)
 def sum_arrays(arr1, arr2):
     return arr1 + arr2
 
@@ -298,7 +300,7 @@ def sum_rolled(arr1, arr2, out, shift):
     return out
 
 
-@njit()
+@njit(cache=True)
 def ffa_step(array, step, ntables):
     array_reshaped_dum = np.copy(array)
     jump = 2**step
@@ -318,7 +320,7 @@ def ffa_step(array, step, ntables):
     return array_reshaped_dum
 
 
-@njit()
+@njit(cache=True)
 def _ffa(array_reshaped, bin_period, ntables, z_n_n=2):
     """Fast folding algorithm search."""
     periods = np.array([bin_period + n / (ntables - 1) for n in range(ntables)])
