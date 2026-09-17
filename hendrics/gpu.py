@@ -1,8 +1,8 @@
 """Optional GPU implementations of the HENDRICS histograms.
 
-Nothing in this module requires a GPU: CuPy is only imported if installed, the
-presence of a CUDA device is checked lazily, and the GPU code only runs when
-explicitly requested.
+Nothing in this module requires a GPU: CuPy is only imported when the GPU is
+used, the presence of a CUDA device is checked lazily, and the GPU code only runs
+when explicitly requested.
 
 The GPU functions are drop-in replacements for :func:`hendrics.base.histogram`
 and :func:`hendrics.base.histogram2d`: same bin-edge convention (values equal to
@@ -12,16 +12,22 @@ same output dtypes.
 
 from __future__ import annotations
 
+import importlib.util
+
 import numpy as np
 
-try:
-    import cupy as cp
-
-    HAS_CUPY = True
-except ImportError:
-    HAS_CUPY = False
+# Only look for CuPy here: importing it takes about 0.1 s, which all the command
+# line scripts would pay at startup even when they do not use the GPU
+HAS_CUPY = importlib.util.find_spec("cupy") is not None
 
 __all__ = ["HAS_CUPY", "histogram2d_gpu", "histogram_gpu", "resolve_backend"]
+
+
+def _import_cupy():
+    """Import CuPy, the first time the GPU is used."""
+    import cupy
+
+    return cupy
 
 
 def _cupy_available():
@@ -29,7 +35,7 @@ def _cupy_available():
     if not HAS_CUPY:
         return False
     try:
-        return cp.cuda.runtime.getDeviceCount() > 0
+        return _import_cupy().cuda.runtime.getDeviceCount() > 0
     # CuPy raises different exceptions for a missing driver or missing libraries
     except Exception:
         return False
@@ -37,12 +43,12 @@ def _cupy_available():
 
 def _cupy_to_host(array):
     """Copy a CuPy array to host memory."""
-    return cp.asnumpy(array)
+    return _import_cupy().asnumpy(array)
 
 
 def _cupy_to_device(array):
     """Copy an array to GPU memory."""
-    return cp.asarray(array)
+    return _import_cupy().asarray(array)
 
 
 # Minimal backend registry. Each entry says whether the backend can be used, which
@@ -58,7 +64,7 @@ _BACKENDS = {
     },
     "cupy": {
         "available": _cupy_available,
-        "get_module": lambda: cp,
+        "get_module": _import_cupy,
         "to_host": _cupy_to_host,
         "to_device": _cupy_to_device,
     },
@@ -199,6 +205,7 @@ def _fast_step_gpu(
     stats : `cupy.ndarray`
         Z^2 statistics of each trial, in GPU memory
     """
+    cp = _import_cupy()
     nprof, nbin = profiles.shape
     if nbin not in _FAST_STEP_KERNELS:
         _FAST_STEP_KERNELS[nbin] = cp.RawKernel(
