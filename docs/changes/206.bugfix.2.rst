@@ -1,0 +1,5 @@
+A targeted search with ``fdot`` fixed (``--fdotmin``/``--fdotmax`` equal, which gives a
+one-dimensional periodogram) crashed while writing its candidates: the peak index of a
+one-dimensional grid was left as a one-element array, and NumPy 2.4 refuses to convert
+one of those to a scalar. The index is now a plain integer, and the ``f_idx`` column is
+an integer rather than an array.

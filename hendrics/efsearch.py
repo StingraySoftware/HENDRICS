@@ -1803,7 +1803,11 @@ def _analyze_qffa_results(input_ef_periodogram, fname=None):
                     fdot,
                 )
         elif len(input_ef_periodogram.stat.shape) == 1:
-            f_idx = idx
+            # ``find_peaks_in_image`` gives one index per axis, so a one-dimensional
+            # grid yields a one-element array. Everything downstream indexes with it
+            # and calls ``float()`` on the result, which NumPy 2.4 refuses unless the
+            # index was a scalar in the first place.
+            f_idx = int(np.ravel(idx)[0])
             allfreqs = input_ef_periodogram.freq
             allstats_f = input_ef_periodogram.stat
             f = input_ef_periodogram.freq[f_idx]
