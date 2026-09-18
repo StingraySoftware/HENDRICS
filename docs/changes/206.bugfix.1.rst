@@ -1,0 +1,5 @@
+``hendrics.gpu`` no longer imports CuPy when it is imported itself, only when the GPU is
+actually used. Importing CuPy costs about 0.1 s, which every command line script was
+paying at startup whether or not it went anywhere near a GPU. Whether CuPy is installed
+is now decided with :func:`importlib.util.find_spec`, so ``HAS_CUPY`` means the same
+thing as before.

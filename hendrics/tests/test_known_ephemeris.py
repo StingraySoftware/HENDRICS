@@ -735,6 +735,40 @@ class TestTargetedZSearch:
         assert np.all(table["p_value_best"] >= table["p_value"])
         assert best["p_value_best"] < 1e-3
 
+    def test_targeted_search_with_fdot_fixed(self):
+        """With fdot fixed the grid is one-dimensional, and its peak index must be a scalar.
+
+        ``float()`` of a one-element array is a ``TypeError`` from NumPy 2.4 on, so a
+        peak index left as an array breaks every fixed-fdot targeted search.
+        """
+        from hendrics.efsearch import main_zsearch
+
+        table = self._candidates(
+            main_zsearch(
+                self.common
+                + [
+                    "--fdotmin",
+                    "0",
+                    "--fdotmax",
+                    "0",
+                    "--known-freq",
+                    str(self.known_freq),
+                    "--known-fdot",
+                    str(self.KNOWN_FDOT),
+                    "--known-pepoch",
+                    str(self.KNOWN_PEPOCH),
+                ]
+            )
+        )
+        # One number per candidate, not a one-element array
+        assert table["f_idx"].dtype.kind == "i"
+        assert table["f_idx"].ndim == 1
+        assert np.all(table["fdot"] == 0)
+
+        best = table[np.argmin(table["p_value_best"])]
+        assert np.isclose(best["f"], self.FTRUE, atol=1e-3)
+        assert best["p_value_best"] < 1e-3
+
     def test_a_wrong_prior_does_not_invent_a_detection(self):
         """A prior far from the truth must not manufacture significance."""
         from hendrics.efsearch import main_zsearch
